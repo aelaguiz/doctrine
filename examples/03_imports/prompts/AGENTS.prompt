@@ -2,8 +2,12 @@
 # - `import package.module` resolves from this example's `prompts/` root
 # - `import .sibling.module` resolves from the current file's package
 # - `import ..shared.module` walks to the parent package first
-# - imported declarations are referenced by fully qualified symbol path:
-#   `package.module.WorkflowName`
+# - any number of leading dots is allowed; the import walks up one package
+#   level fewer than the dot count before following the remaining module path
+# - imported declarations are composed through keyed `use` entries:
+#   `use local_key: package.module.WorkflowName`
+# - the local key is the outer composition identity if a later phase needs to
+#   patch, reorder, or replace this composed piece
 # The first three imports are intentionally simple.
 # The later imports are intentionally more complex transitive chains.
 import simple.greeting
@@ -20,9 +24,9 @@ agent ImportsDemo:
     workflow: "Imported Steps"
         "Follow the imported instructions below."
 
-        simple.greeting.Greeting
-        simple.object.Object
-        simple.nested.polite.PoliteGreeting
-        chains.absolute.briefing.AbsoluteBriefing
-        chains.relative.entry.RelativeChain
-        chains.deep.levels.one.two.entry.DeepRelativeChain
+        use greeting: simple.greeting.Greeting
+        use object: simple.object.Object
+        use polite_greeting: simple.nested.polite.PoliteGreeting
+        use absolute_briefing: chains.absolute.briefing.AbsoluteBriefing
+        use relative_chain: chains.relative.entry.RelativeChain
+        use deep_relative_chain: chains.deep.levels.one.two.entry.DeepRelativeChain

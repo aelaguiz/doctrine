@@ -68,12 +68,14 @@ The examples imply these are intentionally different, but the reader has to reve
 The clearest friction point used to be `03_imports`, but that pressure is now more productive if the example stays explicit:
 - the import lines should look like Python-like module paths, for example `import simple.greeting`
 - relative imports should show the package walk directly, for example `import .leaf` and `import ..shared.context`
-- the references should stay qualified, for example `simple.greeting.Greeting`
+- composed imported pieces should use keyed `use` entries, for example `use greeting: simple.greeting.Greeting`
 
 That direction makes the teaching job much cleaner:
 - the import line identifies the module path
 - the declaration name identifies the typed object inside that module
-- the qualified reference makes both parts visible instead of forcing the reader to guess
+- the keyed `use` entry makes both the imported symbol and the outer composition identity visible
+- deeper relative imports should still be stated explicitly so `...` and `....`
+  do not look like one-off special cases
 
 ### 4. Inheritance rules are clear for workflow entries, but much less clear for everything else
 
@@ -103,7 +105,7 @@ Suggested fix:
 ### 5. `06` and `07` mix stable teaching material with visibly open design questions
 
 Two examples explicitly signal uncertainty:
-- `06_nested_workflows` says the outer composition surface may later need stable local keys
+- `06_nested_workflows` now points toward keyed `use` entries as the outer composition identity
 - `07_handoffs` opens with "Best-guess syntax sketch"
 
 That may be fine in design notes. It is less fine in a canonical numbered example sequence, because a first-time reader cannot tell which parts are settled and which are still exploratory.
@@ -173,7 +175,8 @@ This example is much clearer if it commits to Python-like import resolution inst
 Current teaching direction:
 - dotted imports like `import simple.greeting`
 - relative imports like `import .leaf` and `import ..shared.context`
-- explicit qualified references like `simple.greeting.Greeting`
+- deeper parent walks like `import ...base.topic` and `import ....base.final_note`
+- keyed qualified composition entries like `use greeting: simple.greeting.Greeting`
 
 That direction removes the earlier confusion about whether identity comes from the file name, the declaration name, or both.
 
@@ -209,14 +212,15 @@ This example teaches an important distinction:
 - nested, reusable, or inherited structure should move into named top-level workflows
 
 What is still dense on a cold read:
-- bare workflow references such as `Preparation` and `Delivery` are doing a lot of semantic work
+- composition entries such as `use preparation: Preparation` and `use delivery: Delivery` still ask the reader to track both a local key and a referenced workflow
 - the example relies heavily on comments to distinguish local composition from inheritance
-- the comments also hint that the outer composition surface may need a different long-term treatment
+- the example now also has to teach that an inheriting child can patch `delivery` directly because the local `use` key is the outer identity
 
 The underlying idea seems right, but the reader has to process a lot of explanation to understand why this is not just another inheritance example.
 
 Suggested fix:
-- add one short plain statement near `Preparation` and `Delivery`: "Referencing a named workflow inside another workflow nests its rendered section here."
+- add one short plain statement near the `use` entries: "The local `use` key is the outer patch identity; the referenced workflow is the reusable inner structure."
+- keep the inherited child example because it proves that keyed outer composition is not just theory
 
 ### 07 Handoffs
 

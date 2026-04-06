@@ -53,6 +53,7 @@ Current intent:
 - A workflow is not just arbitrary text. It is a typed instruction surface.
 - A workflow can contain more than one string in a row before named nested entries begin.
 - the agent-level workflow block should also carry its rendered title explicitly, for example `workflow: "Instructions"`
+- named workflow composition should use keyed `use` entries such as `use greeting: Greeting`
 
 Nested content inside a workflow currently means ordered substructure.
 
@@ -98,7 +99,7 @@ Current choices:
 - inline agent workflows are still allowed for simple local cases
 - inline agent workflows are convenience authoring, not a separate semantic model
 - nested, reusable, or inherited structure should be promoted to named top-level `workflow` declarations
-- agents should compose named workflows when the structure is deeper than a simple local workflow
+- agents should compose named workflows through keyed `use` entries when the structure is deeper than a simple local workflow
 - workflow inheritance should use the same explicit ordered patching model we already use for inherited agent workflows
 
 ## Imports
@@ -112,19 +113,22 @@ Current intent:
   - `import package.module` resolves from the example or package root
   - `import .sibling.module` resolves from the current package
   - `import ..shared.module` walks to the parent package first
-- an imported workflow should be referenceable through an explicit qualified symbol path such as `simple.greeting.Greeting`
+  - any number of leading dots is allowed and walks up one package level fewer than the dot count before following the remaining module path
+- an imported workflow should be composed through a keyed `use` entry such as `use greeting: simple.greeting.Greeting`
 - imported symbol identity should not depend on case guesswork or fallback lookup
+- the first negative `03` contracts should cover missing modules, unresolved qualified symbols, and duplicate declaration names within one imported module
 
-This is why the imported examples are typed as `workflow Greeting: "Greeting"` and referenced as explicit module-qualified symbols instead of as untyped text labels.
+This is why the imported examples are typed as `workflow Greeting: "Greeting"` and composed through explicit keyed `use` entries instead of as untyped text labels.
 
 ## Composition
 
 We currently want composition to stay explicit and understandable.
 
 Current intent:
-- when one workflow references another named workflow, the final rendered output should read like one coherent document
+- when one workflow composes another named workflow, the final rendered output should read like one coherent document
 - composition should feel like assembling semantic pieces, not pasting arbitrary text
 - simple inline workflows and composed named workflows should not behave like two different languages
+- composition should use keyed `use local_key: WorkflowName` entries so outer structure has a stable patch identity
 
 We are deliberately avoiding looser reuse features until the examples prove that we need them.
 
@@ -160,6 +164,8 @@ Current explicit-order syntax direction:
 - `override key:` means "replace the inherited workflow entry and place the replacement here"
 - `override key: "New Title"` means "replace the inherited workflow entry and also replace its rendered title"
 - `key: "Title"` means "create a new workflow entry here"
+- `use local_key: WorkflowName` means "compose this named workflow here with `local_key` as the outer patch identity"
+- `override local_key: WorkflowName` is also valid for an inherited keyed `use` entry and means "keep the outer key, but retarget that composed piece to a different named workflow here"
 
 Current inheritance pattern:
 - use `abstract agent` for any inheritance-only or non-leaf agent

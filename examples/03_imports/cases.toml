@@ -1,0 +1,109 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "python-like imports compose simple and chained workflows"
+status = "planned"
+kind = "render_contract"
+agent = "ImportsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/AGENTS.md"
+expected_lines = [
+  "You are the imports demonstration agent.",
+  "",
+  "## Imported Steps",
+  "",
+  "Follow the imported instructions below.",
+  "",
+  "### Greeting",
+  "",
+  "Say hello.",
+  "",
+  "### Object",
+  "",
+  "Say world.",
+  "",
+  "### Polite Greeting",
+  "",
+  "Say hello politely and keep the tone warm.",
+  "",
+  "### Absolute Briefing",
+  "",
+  "This file composes sibling imports through dotted package paths.",
+  "",
+  "#### Opening",
+  "",
+  "State the topic.",
+  "",
+  "#### Closing",
+  "",
+  "End with one clear next step.",
+  "",
+  "### Relative Chain",
+  "",
+  "This file chains a sibling-relative import with a parent-relative import.",
+  "",
+  "#### Leaf Step",
+  "",
+  "This module reaches back to its parent package before following the path forward again.",
+  "",
+  "##### Shared Context",
+  "",
+  "Start with the shared context.",
+  "",
+  "#### Shared Wrap-Up",
+  "",
+  "Finish with a shared wrap-up.",
+  "",
+  "### Deep Relative Chain",
+  "",
+  "This file uses both a sibling-relative import and a multi-level parent-relative import.",
+  "",
+  "#### Deep Detail",
+  "",
+  "This file walks back up the package tree with `...` before following the path forward again.",
+  "",
+  "##### Root Topic",
+  "",
+  "Name the root topic once.",
+  "",
+  "#### Final Note",
+  "",
+  "End with the final shared note.",
+]
+
+[[cases]]
+name = "missing imported module fails in compile stage"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_MODULE.prompt"
+agent = "MissingModuleDemo"
+exception_type = "CompileError"
+message_contains = [
+  "Missing import module",
+  "simple.missing",
+]
+
+[[cases]]
+name = "unresolved qualified symbol fails in compile stage"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNRESOLVED_SYMBOL.prompt"
+agent = "UnresolvedImportedSymbolDemo"
+exception_type = "CompileError"
+message_contains = [
+  "Missing imported declaration",
+  "simple.greeting.MissingGreeting",
+]
+
+[[cases]]
+name = "duplicate declaration name in one imported module fails in compile stage"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_DECLARATION.prompt"
+agent = "DuplicateDeclarationDemo"
+exception_type = "CompileError"
+message_contains = [
+  "Duplicate declaration name",
+  "duplicate_names.DuplicateGreeting",
+]

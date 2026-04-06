@@ -467,7 +467,7 @@ The current hard boundary for the next grammar phases is also concrete:
 
 - direct parser pressure on `examples/02_sections/prompts/AGENTS.prompt` stops at the first keyed entry such as `step_one`
 - direct parser pressure on `examples/03_imports/prompts/AGENTS.prompt` stops immediately at top-level `import`
-- the shipped AST/compiler path cannot yet represent top-level reusable workflows, bare workflow references, abstract agents, inheritance clauses, `inherit`, or `override`
+- the shipped AST/compiler path cannot yet represent top-level reusable workflows, keyed `use` composition entries, abstract agents, inheritance clauses, `inherit`, or `override`
 
 That path proves the bootstrap works, but it also shows the present architectural limit clearly:
 
@@ -532,7 +532,7 @@ Concretely, the current AST/compiler path still cannot represent:
 - top-level declarations other than `agent`
 - local keyed workflow entries such as `step_one: "Step One"`
 - top-level reusable workflows such as `workflow Greeting: "Greeting"`
-- bare workflow references such as `Greeting`, `Preparation`, or `Delivery`
+- keyed composition entries such as `use greeting: Greeting` or `use preparation: Preparation`
 - `abstract agent`
 - parent clauses such as `[BaseGreeter]` or `[Delivery]`
 - inherited patch operations such as `inherit greeting` or `override main_point:`
@@ -725,7 +725,7 @@ The future full-corpus control path is:
 The future growth path is deliberately phased, not additive by accident:
 
 1. `02_sections` promotes a planned manifest to active support for keyed local workflow entries
-2. `03_imports` widens the compilation unit to include `import` declarations, top-level reusable workflows, and qualified imported workflow references
+2. `03_imports` widens the compilation unit to include `import` declarations, top-level reusable workflows, and keyed qualified imported composition entries
 3. `04_inheritance` adds abstract agents, parent clauses, and explicit inherited patch operations over keyed entries
 4. `05_workflow_merge` hardens that same model into explicit ordered patching with stable compiler-error contracts
 5. `06_nested_workflows` adds named workflow inheritance plus named workflow composition without collapsing those two mechanisms together
@@ -812,7 +812,7 @@ The first future rules should stay tight:
 
 - workflow preamble strings are a distinct container property, not ordinary entries
 - keyed local sections and workflow references are ordered workflow items, not free text
-- bare workflow references are composition items, not inheritance operations
+- keyed `use` entries are composition items, not inheritance operations
 - `inherit` and `override` are explicit patch operations over keyed inherited items
 - heading depth is derived from structural nesting and composition depth, not from key names or file names
 - if these rules stop fitting cleanly, the plan should tighten the language instead of adding a shadow semantic layer
@@ -960,13 +960,13 @@ Not applicable.
 | Approximate Hello World ref | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Manually built approximate output example for `HelloWorld` only | Keep as advisory output-shape evidence, not as an authoritative exact golden | Prevents the plan from treating manual examples as pristine truth while still using them to find bugs | A case may optionally carry `approx_ref`, which never decides pass/fail | `make hello-world`, `make verify-examples` |
 | Sections contract | `examples/02_sections/cases.toml` | planned render contract | Shipped planned `render_contract` for `SectionsDemo` with exact lines and advisory `approx_ref` | Keep it planned until the grammar/renderer genuinely support nested workflow entries, then promote it through the same manifest | Seeds the first next-example output contract without pretending the current parser already supports it | `status = "planned"` until the grammar/renderer grow to support nested workflow entries | `make verify-examples` |
 | Approximate sections ref | `examples/02_sections/ref/AGENTS.md` | rendered Markdown | Approximate manual output example only | Keep as advisory output-shape evidence for the planned contract | Preserves the current example surface without falsely upgrading it into executable truth | Optional `approx_ref`, advisory only | `make verify-examples` |
-| Local workflow items | `pyprompt/model.py`, `pyprompt/compiler.py`, `pyprompt/renderer.py` | workflow item representation | `Workflow` still carries only flat string lines | Widen the workflow model once for `02` and `03` into explicit workflow items such as local keyed sections and workflow references | Prevents solving `02` with one ad hoc shape and `03` with a second ad hoc shape | One ordered workflow-item model with local key identity and rendered-title separation | Future `make verify-examples` |
-| Imports compilation unit | `examples/03_imports/prompts/AGENTS.prompt` plus imported prompt modules under `examples/03_imports/prompts/**` | top-level `import` and reusable `workflow` declarations | Present on disk only; unsupported by shipped grammar and AST | Add compilation-unit support for Python-like example-local imports, top-level reusable workflows, and qualified imported workflow references through the same parser/compiler path | `03` is a document-model expansion, not a small syntax tweak | Import target resolves through Python-like dotted and relative module paths; reusable declarations resolve by case-sensitive declaration name inside that module | Future `make verify-examples` |
+| Local workflow items | `pyprompt/model.py`, `pyprompt/compiler.py`, `pyprompt/renderer.py` | workflow item representation | `Workflow` still carries only flat string lines | Widen the workflow model once for `02`, `03`, and `06` into explicit workflow items such as local keyed sections and keyed `use` composition entries | Prevents solving `02`, `03`, and `06` with three different ad hoc shapes | One ordered workflow-item model with local key identity and rendered-title separation | Future `make verify-examples` |
+| Imports compilation unit | `examples/03_imports/prompts/AGENTS.prompt` plus imported prompt modules under `examples/03_imports/prompts/**` | top-level `import` and reusable `workflow` declarations | Present on disk only; unsupported by shipped grammar and AST | Add compilation-unit support for Python-like example-local imports, top-level reusable workflows, and keyed qualified imported composition entries through the same parser/compiler path | `03` is a document-model expansion, not a small syntax tweak | Import target resolves through Python-like dotted and relative module paths; reusable declarations resolve by case-sensitive declaration name inside that module; outer composition identity comes from the local `use` key | Future `make verify-examples` |
 | Imports contract | `examples/03_imports/cases.toml` | render and failure contracts | Missing | Add adjacent manifest coverage for `03` render output plus earned import-resolution failures | Keeps `03` on the shared verifier path instead of side checks | Active `render_contract` plus `compile_fail` cases for missing import, unresolved symbol, or duplicate declaration if earned | Future `make verify-examples` |
 | Inheritance model | `examples/04_inheritance/prompts/AGENTS.prompt`, `pyprompt/model.py`, `pyprompt/compiler.py` | `abstract agent`, parent clause, `inherit` / `override` | Present in prompts only; unsupported by shipped compiler | Add abstract/concrete agent semantics, parent lookup, and explicit inherited workflow patching over keyed entries | `04` is the first real inheritance contract and already includes transitive inherited-key pressure | Concrete leaves render; abstract agents do not; inherited keyed entries are accounted for explicitly | Future `make verify-examples` |
 | Ordered patching contract | `examples/05_workflow_merge/prompts/AGENTS.prompt`, `pyprompt/compiler.py`, `docs/COMPILER_ERRORS.md` | explicit inherited workflow patching | Present in prompts and docs only | Implement explicit ordered patching and keep “merge” as directory history, not semantic behavior | Prevents implicit merge heuristics from leaking into the compiler | `inherit` and `override` remain exhaustive explicit patch operations with stable compiler errors | Future `make verify-examples` |
 | Error refs | `examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md` | human-facing compiler error example | Present only as prose ref | Keep as advisory explanation unless a future phase explicitly upgrades any part of it into machine-checked verifier truth | Avoids accidentally creating a second error-truth surface | Machine truth stays in `compile_fail` manifest cases; prose refs stay explanatory | Future `make verify-examples` |
-| Named workflow composition | `examples/06_nested_workflows/prompts/AGENTS.prompt`, `pyprompt/model.py`, `pyprompt/renderer.py` | top-level workflows, workflow inheritance, bare workflow references | Present in prompts and refs only | Add named workflow declarations, named workflow inheritance, and named workflow composition without collapsing composition into inheritance | `06` is the first recursive rendering and heading-depth pressure | Composition references and inheritance ops use different AST nodes and different compiler rules | Future `make verify-examples` |
+| Named workflow composition | `examples/06_nested_workflows/prompts/AGENTS.prompt`, `pyprompt/model.py`, `pyprompt/renderer.py` | top-level workflows, workflow inheritance, keyed `use` composition entries | Present in prompts and refs only | Add named workflow declarations, named workflow inheritance, and named workflow composition without collapsing composition into inheritance | `06` is the first recursive rendering and heading-depth pressure | The local `use` key is the outer composition identity; the referenced workflow is the reusable inner structure | Future `make verify-examples` |
 | Live doctrine docs | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md`, `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` | language rules and known gaps | Docs-only truth today | Review and update as implementation lands if shipped behavior or resolved ambiguities differ | Avoid stale truth after code exists | Docs must match the shipped subset and the actual fail-loud behavior | Manual review |
 | Inconsistency surfacing | `docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md`, verifier output, touched doctrine docs | explicit surfaced contradictions | Today this happens only when manually noticed | Make surfaced inconsistencies an explicit implementation outcome: call them out in verifier output and sync them into the plan or doctrine instead of burying them in code | The user is using materialization to discover language mistakes, so contradiction reporting is part of the product of the work | Contradictions discovered during implementation or verification are recorded explicitly before semantics are widened or changed | `make hello-world`, `make verify-examples`, plan review |
 
@@ -1254,10 +1254,10 @@ Status: NOT STARTED
 * Goal:
   Add the smallest real import and reusable-workflow slice needed for `examples/03_imports`, while forcing Python-like import/path/reference semantics into explicit decisions instead of ad hoc loader behavior.
 * Work:
-  Deep-dive the exact contract for top-level `import package.module` lines, relative imports such as `import .sibling.module` and `import ..shared.module`, top-level `workflow Name: "Title"` declarations in imported prompt files, and qualified imported workflow references inside an agent-local workflow body.
+  Deep-dive the exact contract for top-level `import package.module` lines, relative imports such as `import .sibling.module`, `import ..shared.module`, and deeper leading-dot parent walks, top-level `workflow Name: "Title"` declarations in imported prompt files, and keyed qualified imported composition entries such as `use greeting: simple.greeting.Greeting` inside an agent-local workflow body.
   Decide and document the first import-resolution boundary, including Python-like dotted and relative module rules, symbol naming expectations, and duplicate-name failure behavior.
-  Extend the parser, compiler, and shared verifier so `examples/03_imports` can resolve qualified imported declarations through canonical imports instead of hard-coded file knowledge.
-  Add `examples/03_imports/cases.toml` with active render contracts and the smallest earned import-failure cases.
+  Extend the parser, compiler, and shared verifier so `examples/03_imports` can resolve keyed qualified imported composition entries through canonical imports instead of hard-coded file knowledge.
+  Add `examples/03_imports/cases.toml` with active render contracts and the smallest earned import-failure cases, starting with missing modules, unresolved qualified symbols, and duplicate declaration names within one imported module.
   Halt immediately if this phase exposes unresolved contradictions about import namespace, symbol identity, case sensitivity, file resolution, or whether imported workflow references are copied, composed, or inherited.
 * Verification (smallest signal):
   `make verify-examples` exits `0` with `01`, `02`, and `03` active and green.
@@ -1325,14 +1325,15 @@ Status: NOT STARTED
 * Goal:
   Support `examples/06_nested_workflows` as the first real reusable-workflow composition phase, while keeping workflow inheritance and workflow composition distinct instead of collapsing them into one fuzzy mechanism.
 * Work:
-  Deep-dive the exact contract for top-level `workflow` declarations, workflow inheritance via `[Delivery]`, and local composition of named workflows into an agent-owned outer workflow.
-  Decide and document the minimal AST/render model for nested heading depth and reusable workflow inclusion, including when bare workflow references are composition and when inheritance rules apply.
+  Deep-dive the exact contract for top-level `workflow` declarations, workflow inheritance via `[Delivery]`, and local keyed `use` composition of named workflows into an agent-owned outer workflow.
+  Decide and document the minimal AST/render model for nested heading depth and reusable workflow inclusion, including when keyed `use` entries are composition and when inheritance rules apply.
   Extend the canonical grammar/compiler/renderer/verifier path to support:
   - `InlineBriefingAgent`
   - `StructuredBriefingAgent`
   - `RevisedStructuredBriefingAgent`
+  - `InheritedStructuredBriefingAgent`
   Add `examples/06_nested_workflows/cases.toml` with active contracts for those outputs and the smallest earned negative cases if the doctrine settles them cleanly.
-  Halt immediately if this phase exposes unresolved contradictions about heading-depth derivation, stable workflow identity, outer-workflow composition versus inheritance, or whether reusable composed pieces need explicit local keys before they can stay in the language.
+  Halt immediately if this phase exposes unresolved contradictions about heading-depth derivation, stable workflow identity, or whether keyed outer composition and inherited keyed patching remain coherent once both are rendered through the same compiler path.
 * Verification (smallest signal):
   `make verify-examples` exits `0` with `06_nested_workflows` active and green alongside the prior phases.
   Any earned `06` negative cases fail through the shared verifier rather than through an ad hoc deep nesting harness.
@@ -1885,7 +1886,7 @@ Lock one minimal future semantic model for phases `02` through `06`:
 - top-level compilation units widen to ordered declarations, not `agent`-only files
 - workflow containers carry a title plus preamble strings plus ordered workflow items
 - file stem, declaration name, local key, and rendered title are distinct identities
-- bare workflow references are composition items, not inheritance operations
+- keyed `use` entries are composition items, not inheritance operations
 - `inherit` and `override` are explicit inherited patch operations over keyed items
 - child-authored container values such as `role`, workflow title, and workflow preamble replace the parent container values as a unit
 - negative `COMPILER_ERROR.md` refs remain advisory prose unless explicitly upgraded later

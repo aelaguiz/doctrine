@@ -67,25 +67,28 @@ workflow RevisedDelivery[Delivery]: "Delivery"
     inherit closing
 
 # These agent-level workflows are local composition surfaces.
-# `Preparation` and `Delivery` are being dropped into the local workflow here;
-# they are not being inherited here. That means this outer `workflow: "Briefing"`
-# block can put strings or local entries around them freely because there is no
-# inherited outer workflow being patched yet.
+# Named workflows are included through keyed `use` entries such as
+# `use preparation: Preparation`.
+# - the local key is the outer composition identity
+# - the referenced workflow is the reusable inner structure
+# - this is composition, not inheritance
+# That means this outer `workflow: "Briefing"` block can put strings or local
+# entries around them freely because there is no inherited outer workflow being
+# patched yet.
 agent StructuredBriefingAgent:
     role: "You are the structured briefing agent."
 
     workflow: "Briefing"
         "This file is the runtime guide for a structured briefing."
 
-        Preparation
-        Delivery
+        use preparation: Preparation
+        use delivery: Delivery
 
 # Same idea here: this is still local composition at the outer workflow level.
 # The inherited behavior is inside `RevisedDelivery[Delivery]`, not in this
 # agent's `workflow: "Revised Briefing"` block.
-# If we later want the outer briefing structure itself to become inheritable,
-# we should likely give those composed pieces stable local keys as well instead
-# of relying only on bare workflow references.
+# The `use` entries still matter, though: they give the outer workflow stable
+# local identities that a later inheriting child can patch directly.
 agent RevisedStructuredBriefingAgent:
     role: "You are the revised structured briefing agent."
 
@@ -93,5 +96,21 @@ agent RevisedStructuredBriefingAgent:
         "This file is the runtime guide for a structured briefing."
         "This version keeps preparation and revises delivery through workflow reuse."
 
-        Preparation
-        RevisedDelivery
+        use preparation: Preparation
+        use delivery: RevisedDelivery
+
+# Model 4: once outer composition uses keyed `use` entries, a child agent can
+# inherit that outer workflow and patch it directly.
+# - `inherit preparation` keeps the inherited composed piece in place
+# - `override delivery: RevisedDelivery` retargets that outer composition key
+#   to a different named workflow without forcing the child to restate the
+#   whole outer structure
+agent InheritedStructuredBriefingAgent[StructuredBriefingAgent]:
+    role: "You are the inherited structured briefing agent."
+
+    workflow: "Inherited Revised Briefing"
+        "This file inherits the outer briefing structure."
+        "It keeps preparation and replaces delivery through outer workflow inheritance."
+
+        inherit preparation
+        override delivery: RevisedDelivery
