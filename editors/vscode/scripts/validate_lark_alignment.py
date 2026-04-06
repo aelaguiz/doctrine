@@ -15,6 +15,41 @@ TM_LANGUAGE_PATH = ROOT / "editors" / "vscode" / "syntaxes" / "pyprompt.tmLangua
 
 WORD_LITERAL_RE = re.compile(r'"([a-z]+)"')
 IDENTIFIER_LIKE_RE = re.compile(r"^[a-z]+$")
+GENERIC_KEY_STRING_KEYS = (
+    "abstract",
+    "agent",
+    "import",
+    "inherit",
+    "input",
+    "json",
+    "output",
+    "override",
+    "route",
+    "schema",
+    "shape",
+    "skill",
+    "source",
+    "target",
+    "use",
+    "workflow",
+)
+GENERIC_STANDALONE_REFS = (
+    "abstract",
+    "agent",
+    "import",
+    "inherit",
+    "input",
+    "json",
+    "output",
+    "override",
+    "schema",
+    "shape",
+    "skill",
+    "source",
+    "target",
+    "use",
+    "workflow",
+)
 
 
 def _iter_regex_strings(node: object) -> Iterator[str]:
@@ -49,6 +84,28 @@ def _missing_keywords(expected: set[str], regexes: list[str]) -> list[str]:
         if not any(keyword_pattern.search(regex_text) for regex_text in regexes):
             missing.append(keyword)
     return missing
+
+
+def _require_pattern_match(
+    repository: dict[str, object],
+    pattern_name: str,
+    samples: list[str],
+    *,
+    should_match: bool,
+    errors: list[str],
+) -> None:
+    pattern = repository.get(pattern_name, {}).get("match")
+    if not isinstance(pattern, str):
+        errors.append(f"tmLanguage repository must define a `{pattern_name}` match pattern.")
+        return
+    compiled = re.compile(pattern)
+    for sample in samples:
+        matched = compiled.match(sample) is not None
+        if matched != should_match:
+            expectation = "match" if should_match else "reject"
+            errors.append(
+                f"`{pattern_name}` must {expectation} sample `{sample}`."
+            )
 
 
 def main() -> int:
@@ -86,6 +143,50 @@ def main() -> int:
         errors.append("tmLanguage regex coverage must include a `#` comment rule.")
     if not any("->" in regex_text for regex_text in regex_strings):
         errors.append("tmLanguage regex coverage must include the route arrow operator.")
+
+    repository = tm_language.get("repository", {})
+    generic_key_string_samples = [f'    {keyword}: "X"' for keyword in GENERIC_KEY_STRING_KEYS]
+    generic_key_ref_samples = [
+        f"    {keyword}: shared.workflow.Opening" for keyword in GENERIC_KEY_STRING_KEYS
+    ]
+    generic_key_only_samples = [f"    {keyword}:" for keyword in GENERIC_KEY_STRING_KEYS]
+    generic_standalone_ref_samples = [f"    {keyword}" for keyword in GENERIC_STANDALONE_REFS]
+
+    _require_pattern_match(
+        repository,
+        "keyValueString",
+        generic_key_string_samples,
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "keyValueRef",
+        generic_key_ref_samples,
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "keyOnly",
+        generic_key_only_samples,
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "standaloneReference",
+        generic_standalone_ref_samples,
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "standaloneReference",
+        ["    route"],
+        should_match=False,
+        errors=errors,
+    )
 
     if errors:
         print("PyPrompt VS Code alignment check failed:", file=sys.stderr)

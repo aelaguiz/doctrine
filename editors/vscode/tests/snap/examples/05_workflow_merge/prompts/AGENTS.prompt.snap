@@ -15,7 +15,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the briefing in the base order."
 #^^^^^^^^ source.pyprompt
@@ -96,7 +99,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Ordered Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the revised briefing in the explicit order below."
 #^^^^^^^^ source.pyprompt
@@ -172,7 +178,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Revised Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the revised briefing below."
 #^^^^^^^^ source.pyprompt
@@ -236,7 +245,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This example should fail before rendering."
 #^^^^^^^^ source.pyprompt

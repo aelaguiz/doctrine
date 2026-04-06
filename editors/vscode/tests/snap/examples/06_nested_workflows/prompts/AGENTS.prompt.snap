@@ -19,7 +19,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the briefing in the order below."
 #^^^^^^^^ source.pyprompt
@@ -232,7 +235,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This file is the runtime guide for a structured briefing."
 #^^^^^^^^ source.pyprompt
@@ -278,7 +284,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Revised Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This file is the runtime guide for a structured briefing."
 #^^^^^^^^ source.pyprompt
@@ -332,7 +341,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Inherited Revised Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This file inherits the outer briefing structure."
 #^^^^^^^^ source.pyprompt

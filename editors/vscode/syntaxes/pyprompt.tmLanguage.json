@@ -401,7 +401,7 @@
       }
     },
     "keyValueRef": {
-      "match": "^(\\s*)(?!(?:agent|abstract|workflow|input|output|json|skill|import|use|inherit|override|route|role|inputs|outputs|outcome|skills)\\b)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.section.pyprompt"
@@ -415,7 +415,7 @@
       }
     },
     "keyValueString": {
-      "match": "^(\\s*)(?!(?:agent|abstract|workflow|input|output|json|skill|import|use|inherit|override|route|role|inputs|outputs|outcome|skills)\\b)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.section.pyprompt"
@@ -429,7 +429,7 @@
       }
     },
     "keyOnly": {
-      "match": "^(\\s*)(?!(?:agent|abstract|workflow|input|output|json|skill|import|use|inherit|override|route|role|inputs|outputs|outcome|skills)\\b)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
           "name": "entity.name.section.pyprompt"
@@ -440,7 +440,7 @@
       }
     },
     "standaloneReference": {
-      "match": "^(\\s*)(?!(?:agent|abstract|workflow|input|output|json|skill|import|use|inherit|override|route|role|inputs|outputs|outcome|skills)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "match": "^(\\s*)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
           "name": "support.type.reference.pyprompt"

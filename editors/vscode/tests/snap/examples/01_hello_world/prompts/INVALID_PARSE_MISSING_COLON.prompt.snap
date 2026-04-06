@@ -10,7 +10,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Instruction"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This fixture should fail during parse."
 #^^^^^^^^ source.pyprompt

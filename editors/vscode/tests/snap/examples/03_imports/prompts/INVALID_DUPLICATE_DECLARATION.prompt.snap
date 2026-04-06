@@ -17,7 +17,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Imported Steps"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This example should fail before rendering."
 #^^^^^^^^ source.pyprompt

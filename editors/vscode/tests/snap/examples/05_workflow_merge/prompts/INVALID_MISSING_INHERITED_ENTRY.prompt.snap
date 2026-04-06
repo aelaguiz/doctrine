@@ -13,7 +13,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        opening: "Opening"
 #^^^^^^^^ source.pyprompt
@@ -62,7 +65,10 @@
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >
 >    workflow: "Briefing"
-#^^^^^^^^^^^^^^ source.pyprompt
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        inherit opening
 #^^^^^^^^ source.pyprompt
