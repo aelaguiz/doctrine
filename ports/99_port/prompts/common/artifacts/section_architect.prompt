@@ -1,1 +1,35 @@
+import .shared
 
+
+# This folds the old section architecture packet and its sidecars into one
+# agent-owned file.
+output SectionArchitect: "Section Architect"
+    target: File
+        path: "section_root/_authoring/section_architect.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        lesson_map: "Lesson Map"
+            "State the lesson count, lesson order, and what each lesson teaches."
+
+        concept_allocation: "Concept Allocation"
+            "State which locked concepts land in each lesson slot, and what each lesson introduces versus reinforces."
+
+        slot_rationale_and_defers: "Slot Rationale And Defers"
+            "Explain why each lesson slot exists, what would be lost if it were removed or merged, and what is deliberately deferred."
+
+        continuity_and_size_proof: "Continuity And Size Proof"
+            "Show how this section fits the learner's recent section-size pattern, what it builds on from nearby sections, and why the count is not smaller or larger."
+
+        template_family_summary: "Template Family Summary"
+            "State what stays stable, what varies, and any non-default lesson or capstone routing later lanes must preserve."
+
+    owns: "Owns"
+        "This artifact owns lesson count, lesson order, what each lesson teaches, which locked concepts land in each lesson, and what each lesson introduces versus reinforces."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read section_architect.md alone and understand the section lesson map, the sizing rationale, and the template corridor later lanes should follow."
+
+    notes: "Notes"
+        "Fold the old LEARNING_JOBS.md, SECTION_FLOW_AUDIT.md, STRAWMAN_LESSON_CONTAINERS.md, TEMPLATE_DECISION.md, and ARCHITECTURE_LOCK.md support truth into this artifact by default."

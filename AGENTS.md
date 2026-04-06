@@ -2,9 +2,9 @@
 
 ## First Actions
 
-- Install the local package before running repo checks. If the system Python is externally managed, use the repo virtualenv: `.venv/bin/python -m pip install -e .`
-- Run repo checks in that same environment, for example: `PATH="$PWD/.venv/bin:$PATH" make hello-world`
-- Corpus check: `PATH="$PWD/.venv/bin:$PATH" make verify-examples`
+- Sync the repo environment with `uv sync`.
+- Run the full active corpus with `make verify-examples`.
+- For a targeted manifest run, use `uv run --locked python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`.
 - Today, `make verify-examples` discovers active manifests for `examples/01_hello_world` through `examples/06_nested_workflows`.
 - Later example directories are still design pressure until they gain adjacent `cases.toml` coverage and the shipped compiler path can prove them.
 - If a dependency is missing or a check could not run, say that plainly.
@@ -23,14 +23,14 @@
 
 ## Current Bootstrap Scope
 
-- The current parser/compiler is still the tiny bootstrap subset.
+- The current shipped parser/compiler covers examples `01` through `06`.
 - It supports:
-  - top-level `agent`
-  - exactly one `role` followed by exactly one `workflow` per agent
+  - top-level `agent`, `abstract agent`, `workflow`, and `import`
   - `role` as either scalar opening text or a titled block with lines
-  - `workflow` as a titled block of string lines
+  - keyed local workflow sections, keyed `use` composition, and explicit `inherit` / `override`
+  - named workflow reuse and named workflow inheritance
   - indentation-sensitive blocks and standalone `#` comment lines
-- Do not claim a later example feature is implemented just because it exists under `examples/`.
+- Do not claim `07+` features are implemented just because they exist under `examples/`.
 
 ## Examples
 
@@ -78,7 +78,6 @@
 ## Docs Map
 
 - `docs/LANGUAGE_DESIGN_NOTES.md`: current language decisions and pressure areas
-- `docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md`: bootstrap compiler plan and implementation direction
 - `docs/COMPILER_ERRORS.md`: current compiler error catalog
 - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md`: where the examples are confusing or inconsistent
 - `examples/*/cases.toml`: verified example contracts

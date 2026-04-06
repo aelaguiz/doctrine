@@ -1,1 +1,35 @@
+import .shared
 
+
+# This replaces scattered critic verdict and reroute prose with one review file.
+output AcceptanceCritic: "Acceptance Critic"
+    target: File
+        path: "scope_root/_authoring/acceptance_critic.md"
+    shape: ReviewArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        verdict: "Verdict"
+            "State one explicit `accept` or `changes requested` verdict."
+
+        review_basis: "Review Basis"
+            "Name the current artifact or packet chain reviewed, the standards applied, and any copy or exact-move proof rules that materially affected the verdict."
+
+        use_now: "Use Now"
+            "Name the exact current file or files the next owner should trust now."
+
+        next_owner: "Next Owner"
+            "Name the honest next owner for the same issue."
+
+        cleanup_or_stale_file_truth: "Cleanup Or Stale File Truth"
+            "Name any stale-file cleanup, missing proof, or review-boundary problem the next owner must not miss."
+
+    owns: "Owns"
+        "This artifact owns the current verdict, the review basis behind it, the current file-truth the next owner should trust now, and the honest reroute."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read acceptance_critic.md alone and understand what was reviewed, whether it passed, what to use now, and who owns next."
+
+    notes: "Notes"
+        "Use one review artifact per current reviewed scope."
+        "Keep `scope_root` as explained guidance for the current reviewed section or lesson scope."

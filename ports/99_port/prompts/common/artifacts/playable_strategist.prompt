@@ -1,1 +1,31 @@
+import .shared
 
+
+# This keeps section-wide playable strategy as one agent-owned file.
+output PlayableStrategist: "Playable Strategist"
+    target: File
+        path: "section_root/_authoring/playable_strategist.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        accepted_strategy: "Accepted Strategy"
+            "State the accepted section playable strategy and why it fits the section's teaching job."
+
+        ranked_alternatives: "Ranked Alternatives"
+            "List the serious alternative playable families or lesson-shape mixes that were considered."
+
+        rejection_rationale: "Rejection Rationale"
+            "Explain why each rejected family lost and why the winning strategy beat those other options."
+
+        capstone_difference: "Capstone Difference"
+            "When a capstone is in scope, state what should make the capstone lesson different from the earlier lessons."
+
+        downstream_constraints_and_readback: "Downstream Constraints And Readback"
+            "State the downstream rules later lesson lanes must preserve and the current product readback that materially changed the call."
+
+    owns: "Owns"
+        "This artifact owns the accepted section strategy, the serious alternatives, what should make the capstone different when it matters, and the downstream constraints later lesson lanes must preserve."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read playable_strategist.md alone and see the real choice set, why the winner won, and what later lanes must keep stable."

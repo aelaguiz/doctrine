@@ -1,1 +1,36 @@
+import .shared
 
+
+# This folds the old SECTION_CONCEPTS_AND_TERMS packet and its scratch support
+# into one agent-owned file.
+output ConceptsTermsCurator: "Concepts Terms Curator"
+    target: File
+        path: "section_root/_authoring/concepts_terms_curator.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        ordered_concept_map: "Ordered Concept Map"
+            "List the kept concepts for the section in the order later lanes should preserve."
+
+        capability_statements: "Capability Statements"
+            "Give one plain-English capability sentence under each kept concept."
+
+        term_and_alias_calls: "Term And Alias Calls"
+            "List the terms under each concept, plus any glossary or alias call later lanes need to preserve."
+
+        candidate_route_decisions: "Candidate Route Decisions"
+            "For each serious candidate, say whether it became concept truth, defined term truth, both, writer vocabulary, or rejection."
+
+        rationale_and_prerequisites: "Rationale And Prerequisites"
+            "Explain why each serious candidate landed in that bucket and name any dependency or prerequisite rule later lesson order must preserve."
+
+    owns: "Owns"
+        "This artifact owns the ordered concept map, the capability statement for each kept concept, the terms under each concept, what is new versus existing, and any glossary or alias calls."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read concepts_terms_curator.md alone and understand what concepts and terms are locked, what stayed writer vocabulary, and what later lanes must preserve."
+
+    notes: "Notes"
+        "Fold the old CONCEPTS.md and TERM_DECISIONS.md support truth into this artifact by default."
+        "If an idea is locked but the learner-facing wording is not earned yet, keep it as writer vocabulary instead of promoting it into concept or term truth."

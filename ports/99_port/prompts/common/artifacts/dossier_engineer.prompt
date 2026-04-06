@@ -1,1 +1,35 @@
+import .shared
 
+
+# This folds the old SECTION_DOSSIER packet into one agent-owned file.
+output DossierEngineer: "Dossier Engineer"
+    target: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        learner_baseline: "Learner Baseline"
+            "State what the learner already knows and what the section can safely assume."
+
+        section_advancement: "Section Advancement"
+            "State what this section adds now and why it belongs now."
+
+        stop_line: "Stop Line"
+            "State what this section will not reteach or absorb, and where later lanes must stop instead of stretching it into a larger chapter than the learner needs."
+
+        candidate_concept_burden: "Candidate Concept Burden"
+            "List the concepts that may fit inside this section boundary before curator lock."
+
+        grounding_and_open_questions: "Grounding And Open Questions"
+            "Record the evidence behind the section boundary and any open point later lanes still need to respect."
+
+    owns: "Owns"
+        "This artifact owns the learner baseline, the section advancement target, the section scope boundary, and the grounding behind those calls."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read dossier_engineer.md alone and understand why the section exists now, what it refuses to reteach, and where it should stop."
+
+    notes: "Notes"
+        "Fold the old CONCEPTS.md dossier-stage scratch truth into this artifact by default."
+        "Treat inherited section materials as hypotheses to re-earn, not as replacement output truth."

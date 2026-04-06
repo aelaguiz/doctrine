@@ -1,1 +1,42 @@
+import .shared
 
+
+# This collapses the old manifest-plus-validation pair into one agent-owned
+# file and treats lesson_manifest.json as the live product surface.
+output PlayableMaterializer: "Playable Materializer"
+    target: File
+        path: "lesson_root/_authoring/playable_materializer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        built_lesson_scope: "Built Lesson Scope"
+            "Name the built lesson surface, the route chosen for each step, and the current product surface this lane updated."
+
+        validation_record: "Validation Record"
+            "Record the exact validation command or commands that ran, what passed or failed, and which live file or command confirmed the current route."
+
+        placeholder_status: "Placeholder Status"
+            "Say whether placeholder learner-facing copy is still present and which fields still wait for the copy pass because this lane invented or rewrote them."
+
+        guided_walkthrough_and_scripted_hand_proof: "Guided Walkthrough And Scripted Hand Proof"
+            "When those lesson modes are in scope, record the state-honesty proof, visible cue proof, focus proof, and any OHH or cursor proof relied on."
+
+        authority_parity_and_build_constraints: "Authority Parity And Build Constraints"
+            "When exact-move proof still matters, say whether the built lesson still matches that authority basis, and record any build constraint later lanes still need to preserve."
+
+    support_files: "Support Files"
+        lesson_manifest: "Built Lesson Manifest"
+            path: "lesson_root/_authoring/lesson_manifest.json"
+            shape: JsonObject
+            when: "Use as the current live product surface built by this lane."
+
+    owns: "Owns"
+        "This artifact owns the built learner-facing lesson structure, the chosen route for each step, the validation truth behind that build, and any build constraints later lanes must preserve."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read playable_materializer.md alone and understand what was built, how it was validated, what still waits for copy, and which live manifest surface now reflects the build."
+
+    notes: "Notes"
+        "Fold the old MANIFEST_VALIDATION.md truth into this artifact by default."
+        "The live lesson_manifest.json is a support surface behind this artifact, not a second output."

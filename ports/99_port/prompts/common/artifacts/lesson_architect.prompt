@@ -1,1 +1,34 @@
+import .shared
 
+
+# This keeps the lesson-planning contract but makes it one agent-owned file.
+output LessonArchitect: "Lesson Architect"
+    target: File
+        path: "lesson_root/_authoring/lesson_architect.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        lesson_promise: "Lesson Promise"
+            "State what this lesson owns now."
+
+        step_order_and_burden: "Step Order And Burden"
+            "State the step order and the teaching burden each step carries."
+
+        new_reinforced_and_deferred: "New Reinforced And Deferred"
+            "Say what is new, what is reinforced, and what is deliberately deferred."
+
+        recent_lesson_flow_proof: "Recent Lesson Flow Proof"
+            "Show why this lesson fits the nearby lesson flow instead of becoming shorter or longer."
+
+        comparable_lessons_and_boundaries: "Comparable Lessons And Boundaries"
+            "Show the real comparable lessons that shaped the size decision, plus what must stay stable and what may vary safely."
+
+    owns: "Owns"
+        "This artifact owns lesson length, step order, what is new, what is reinforced, what is deferred, and what must stay stable versus what may vary safely."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read lesson_architect.md alone and understand why this lesson is not shorter, not longer, and what later lanes must preserve."
+
+    notes: "Notes"
+        "Keep recent lesson-flow proof separate from real comparable-lesson proof even when both support the same pacing call."
