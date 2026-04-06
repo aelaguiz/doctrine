@@ -1,0 +1,7 @@
+workflow SectionAuthorJob: "Your Job"
+    "Read the current issue plan and current brief before you write."
+    "Use prior review notes only as continuity help, not as proof."
+    "Write the current dossier and current validation record."
+    "Leave one handoff comment that names the exact files to use now."
+    "Say plainly whether current review files apply yet."
+    "Route the issue to the honest next owner."

@@ -1,135 +1,43 @@
-# This example answers a recurring `99` question:
-# how should a role tell the next owner what to use now?
+# This example keeps the same handoff-truth idea but uses the `03_imports`
+# pattern so the source reads by concern instead of as one long file.
+# - `contracts.inputs` holds the turn inputs
+# - `contracts.outputs` holds the produced contracts
+# - `roles.*` holds the role-local job text
 #
-# This example does not add a new primitive.
-# The clean direction in this repo is:
-# - `input` names the current files this turn reads
-# - `output` names the files and comment this turn produces
-# - `outcome` names the honest next owner
-# - prose says plainly whether current review files apply yet
-#
-# It does not model packets, freshness flags, or a separate handoff schema.
-
-input CurrentIssuePlan: "Current Issue Plan"
-    source: Prompt
-    shape: MarkdownDocument
-    requirement: Required
-    "Use the current issue plan to understand the intended lane and current scope."
-
-
-input SectionBrief: "Section Brief"
-    source: File
-        path: "section_root/_authoring/BRIEF.md"
-    shape: MarkdownDocument
-    requirement: Required
-    "Use the current brief as the upstream scope for this turn."
-
-
-input PriorReviewNotes: "Prior Review Notes"
-    source: File
-        path: "section_root/_authoring/PRIOR_REVIEW_NOTES.md"
-    shape: MarkdownDocument
-    requirement: Advisory
-    "Use this only for continuity when it exists."
-    "Do not treat it as proof of the current turn."
-
-
-output target IssueComment: "Issue Comment"
-    required: "Required Target Keys"
-        issue: "Issue"
-
-
-output shape HandoffCommentText: "Handoff Comment Text"
-    kind: CommentText
-
-
-output SectionDossierOutput: "Section Dossier Output"
-    files: "Files"
-        current_dossier: "Current Dossier"
-            path: "section_root/_authoring/SECTION_DOSSIER.md"
-            shape: MarkdownDocument
-
-        validation_record: "Validation Record"
-            path: "section_root/_authoring/DOSSIER_VALIDATION.md"
-            shape: MarkdownDocument
-
-    requirement: Required
-
-    must_include: "Must Include"
-        current_dossier: "Current Dossier"
-            "SECTION_DOSSIER.md must reflect the current section proposal for this turn."
-
-        validation_record: "Validation Record"
-            "DOSSIER_VALIDATION.md must say what checks ran, what passed or failed, or what did not run yet."
-
-    standalone_read: "Standalone Read"
-        "A downstream reader should be able to read SECTION_DOSSIER.md and DOSSIER_VALIDATION.md and understand the current proposal and its validation basis."
-
-
-output SectionAuthorHandoff: "Section Author Handoff"
-    target: IssueComment
-        issue: "CURRENT_ISSUE"
-    shape: HandoffCommentText
-    requirement: Required
-
-    must_include: "Must Include"
-        what_changed: "What Changed"
-            "Say what changed in this turn."
-
-        use_now: "Use Now"
-            "Name the exact current files the next owner should read now."
-
-        review_files: "Review Files"
-            "Either name the current review files explicitly or say plainly that no current review files apply yet."
-
-        next_owner: "Next Owner"
-            "Name the honest next owner."
-
-    standalone_read: "Standalone Read"
-        "A downstream reader should be able to read this comment alone and understand what changed, which files are current now, whether review files apply, and who owns next."
-
-    example: "Example"
-        "- changed: rewrote the dossier scope and added the validation record"
-        "- use now: SECTION_DOSSIER.md and DOSSIER_VALIDATION.md"
-        "- review files: no current review files apply yet"
-        "- next owner: AcceptanceCritic"
+# This still does not add a new primitive.
+# It is the same example, just split into files that are easier to scan.
+import contracts.inputs
+import contracts.outputs
+import roles.project_lead
+import roles.acceptance_critic
+import roles.section_author
 
 
 agent ProjectLead:
     role: "Core job: take the issue back when the route is unclear or the current brief is missing."
 
-    your_job: "Your Job"
-        "Repair the route honestly."
-        "Restore the missing current input before rerouting the work."
+    your_job: roles.project_lead.ProjectLeadJob
 
 
 agent AcceptanceCritic:
     role: "Core job: review the exact current dossier and validation record named in the handoff."
 
-    your_job: "Your Job"
-        "Read the exact files named in the handoff."
-        "Review only the current dossier and validation record for this turn."
+    your_job: roles.acceptance_critic.AcceptanceCriticJob
 
 
 agent SectionAuthor:
     role: "Core job: turn the current brief into the current dossier, leave one honest handoff, and route the same issue truthfully."
 
-    your_job: "Your Job"
-        "Read the current issue plan and current brief before you write."
-        "Use prior review notes only as continuity help, not as proof."
-        "Write the current dossier and current validation record."
-        "Leave one handoff comment that names the exact files to use now."
-        "Say plainly whether current review files apply yet."
-        "Route the issue to the honest next owner."
+    your_job: roles.section_author.SectionAuthorJob
 
     inputs: "Inputs"
-        CurrentIssuePlan
-        SectionBrief
-        PriorReviewNotes
+        contracts.inputs.CurrentIssuePlan
+        contracts.inputs.SectionBrief
+        contracts.inputs.PriorReviewNotes
 
     outputs: "Outputs"
-        SectionDossierOutput
-        SectionAuthorHandoff
+        contracts.outputs.SectionDossierOutput
+        contracts.outputs.SectionAuthorHandoff
 
     outcome: "Section Author Outcome"
         produces: "This Role Produces"
