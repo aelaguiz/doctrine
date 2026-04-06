@@ -1,0 +1,42 @@
+skill PaperclipSkill: "paperclip"
+    purpose: "Handle coordination work in Paperclip."
+
+    provides: "Provides"
+        "Owns the exact procedure for coordination work in Paperclip."
+
+
+skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+    purpose: "Get Books receipts for section truth, concept meaning, glossary wording, or learner-facing copy."
+
+    use_when: "Use When"
+        "Use this when a lane needs Books receipts inside the attached checkout for section truth, concept meaning, glossary wording, or learner-facing copy."
+
+    provides: "Provides"
+        "Provides the normal PokerKB-backed route for lanes that need those receipts."
+        "This is the normal PokerKB skill for Section Dossier Engineer, Section Concepts and Terms Curator, and Lessons Copywriter."
+
+
+skill GitHubAccessSkill: "github-access"
+    purpose: "Access real GitHub truth for the current job."
+
+    use_when: "Use When"
+        "Use this when the job needs real GitHub truth such as pull request state, review state, issue comments, checks, or remote branch state."
+
+    provides: "Provides"
+        "Provides the repo-owned GitHub access path for Lessons work."
+        "For Lessons work, use `paperclip_home/project_homes/lessons/tools/lessons_github_app.env` from the `paperclip_agents` repo root."
+        "Start with its verification command if this run has not already proven GitHub access."
+
+    does_not: "Does Not"
+        "Does not permit inferring GitHub state from local repo state, web search, or issue context."
+
+
+skill ParaMemoryFilesSkill: "para-memory-files"
+    purpose: "Support the self-rework memory loop."
+
+    use_when: "Use When"
+        "Check memory before execution so you do not repeat mistakes you already learned from."
+        "Save a generalized lesson when you are fixing a mistake you previously caused."
+
+    does_not: "Does Not"
+        "Does not overrule the active issue, issue documents, comments, or repo-backed plans as coordination truth."

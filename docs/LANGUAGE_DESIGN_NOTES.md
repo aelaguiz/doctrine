@@ -38,7 +38,7 @@ Current intent:
 - The rendered output should read naturally, not look like a debug dump of the source tree.
 - compiled agent-doc emission is now a separate build concern configured outside
   the prompt language rather than part of `output`
-- explicit build targets emit concrete root agents to canonical
+- explicit package-local build targets in `pyproject.toml` emit concrete root agents to canonical
   `module/agent/AGENTS.md` paths
 - the first shipped bootstrap supports both current `role` shapes from `01_hello_world`:
   - scalar `role: "..."` as opening prose
@@ -292,6 +292,8 @@ Current shipped boundaries:
 - package build emission is configured separately from turn-level `output`
   contracts and currently emits only compiled `AGENTS.md` trees for explicit
   entrypoints
+- emit config is discovered from the nearest `pyproject.toml` or an explicit
+  CLI path; it does not live in prompt syntax
 
 ## Top-Level Buckets From 99
 

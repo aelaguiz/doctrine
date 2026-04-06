@@ -1,11 +1,11 @@
-# Draft handoff example for next-owner routing.
+# Handoff example for next-owner routing.
 # This example stays aligned with `05_workflow_merge`:
 # - inherited named structure uses explicit patching
 # - `inherit key` keeps inherited content in place
 # - `override key:` replaces inherited content in place
-# - agent-level named slots follow the same explicit patching rule
+# - authored workflow slots on agents follow the same explicit patching rule
 #
-# This example is intentionally narrower than the earlier draft:
+# This shipped example is intentionally narrower than the earlier draft:
 # - no critic lane
 # - no review-specific routing
 # - no routing DSL keywords like `review`, `when_ready`, or `on_reject`

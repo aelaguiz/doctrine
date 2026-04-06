@@ -1,7 +1,7 @@
 ---
 title: "pyprompt - Port Example Syntax Through Phase Fourteen - Architecture Plan"
 date: 2026-04-06
-status: active
+status: complete
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: [aelaguiz]
@@ -23,10 +23,29 @@ related:
 # TL;DR
 
 - Outcome: Extend the shipped `pyprompt` grammar, parser, model, compiler, renderer, and corpus verifier so the approved language surface through examples `07` to `14` is implemented cleanly, verified explicitly, and documented as shipped behavior.
-- Problem: The current shipped subset stops at `06`, while examples `07` to `14` introduce new declaration families and agent-field patterns that are still partly draft pressure, partly real language intent, and not safe to encode blindly.
+- Problem: The shipped subset had stopped at `06`, while examples `07` to `14` introduced new declaration families and agent-field patterns that were still partly draft pressure, partly real language intent, and not safe to encode blindly.
 - Approach: Treat examples `07` to `14` as design pressure rather than truth, extract the real syntax families they are testing, stop for explicit decisions when a draft is ambiguous or self-contradictory, and only then port the approved constructs into one clean fail-loud compiler path.
 - Plan: First inventory and lock the post-`06` syntax families, then generalize the agent/declaration model, then port new constructs in example order with manifest-backed verification, and finally expand the active corpus through `14` while syncing docs and error guidance.
 - Non-negotiables: `pyprompt/` remains shipped truth, handwritten `AGENTS.md` refs are not authority, `99` contributes no patterns, no speculative primitives are added to rescue bad drafts, no parallel grammar paths or fallbacks are introduced, and ambiguity triggers a design decision instead of a hack.
+
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-06
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -92,8 +111,8 @@ We can extend the shipped language from the current `01` to `06` subset to a cle
 
 ## 1.2 Constraints
 
-- The current shipped subset is intentionally narrow and enforced by code today.
-- Examples `07` to `14` are drafts and not yet backed by `cases.toml`.
+- The shipped subset is still intentionally explicit and manifest-backed.
+- Examples `07` to `14` started as drafts and needed manifest-backed proof before they could count as shipped truth.
 - Handwritten refs can contain mistakes.
 - The current docs already reject `99` as a design source and reject raw script paths as a first-class language surface.
 - The parser/compiler should fail loudly rather than guess.
@@ -117,14 +136,23 @@ We can extend the shipped language from the current `01` to `06` subset to a cle
 
 ## 2.1 What exists today
 
-The shipped parser/compiler currently proves examples `01` through `06`. The grammar supports `import`, top-level `workflow`, `agent`, `abstract agent`, scalar and block `role`, explicit workflow inheritance, keyed `use`, and nested named workflows. The compiler assumes an agent has exactly one `role` followed by exactly one `workflow`, and the verifier only discovers checked manifests under `examples/01_*` through `examples/06_*`.
+The shipped parser/compiler now proves examples `01` through `14`. The
+canonical path in `pyprompt/` supports the widened declaration set, authored
+workflow slots, typed I/O and skill contracts, routed outcomes, and split
+imports, while preserving the legacy `01` to `06` behavior and fail-loud
+boundaries.
 
 ## 2.2 What’s broken / missing (concrete)
 
-- Examples `07` to `14` rely on agent-local named slots and typed fields that the current AST and compiler cannot represent.
-- New declaration families such as `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and `skill` do not exist in shipped code.
-- Route-bearing outcome structures appear after `06`, but the current grammar only knows workflow items and flat role/workflow agent fields.
-- The draft examples mix settled intent with exploratory wording, so a literal port would encode mistakes alongside real design decisions.
+Before this port:
+- examples `07` to `14` relied on agent-local named slots and typed fields that
+  the shipped AST and compiler could not represent
+- declaration families such as `input`, `input source`, `output`, `output target`,
+  `output shape`, `json schema`, and `skill` did not exist in shipped code
+- route-bearing outcome structures appeared after `06`, but the grammar only
+  knew workflow items and flat role/workflow agent fields
+- the draft examples mixed settled intent with exploratory wording, so a literal
+  port would have encoded mistakes alongside real design decisions
 
 ## 2.3 Constraints implied by the problem
 
@@ -142,10 +170,10 @@ The shipped parser/compiler currently proves examples `01` through `06`. The gra
 ## 3.2 Internal ground truth (code as spec)
 
 - Authoritative behavior anchors (do not reinvent):
-  - [pyprompt/grammars/pyprompt.lark](/Users/aelaguiz/workspace/pyprompt/pyprompt/grammars/pyprompt.lark#L14) — shipped declarations are still only `import`, `workflow`, `agent`, and `abstract agent`; agent fields are still only `role` or `workflow`.
-  - [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py#L74) — the shipped AST still treats `Field` as `RoleScalar | RoleBlock | WorkflowBody`.
-  - [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L408) — the shipped compiler still enforces exactly one `role` followed by exactly one `workflow` per agent.
-  - [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L149) — the proof surface is manifest-backed; only directories with `cases.toml` are active.
+  - [pyprompt/grammars/pyprompt.lark](/Users/aelaguiz/workspace/pyprompt/pyprompt/grammars/pyprompt.lark#L14) — the shipped grammar now covers the widened declaration set through `skill`, plus reserved typed agent fields and open authored workflow slots.
+  - [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py#L74) — the shipped AST now carries typed declaration families and ordered agent fields beyond the original `role` plus `workflow` subset.
+  - [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L97) — the shipped compiler now routes reserved typed fields and authored workflow slots through one canonical compilation path instead of the old exact-two-field gate.
+  - [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L149) — the proof surface is still manifest-backed, and the active corpus now runs through `examples/14_handoff_truth`.
 - Canonical path / owner to reuse:
   - [pyprompt/](/Users/aelaguiz/workspace/pyprompt/pyprompt) — the one shipped grammar/parser/model/compiler/rendering path that must own the port.
   - [examples/*/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/01_hello_world/cases.toml#L1) plus [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L89) — the canonical proof surface for what is actually shipped.
@@ -210,7 +238,10 @@ The research step surfaced the following forks. The deep-dive resolves them with
 <!-- arch_skill:block:current_architecture:start -->
 ## 4.1 On-disk structure
 
-The shipped implementation still lives in one narrow canonical path:
+This section records the pre-port baseline the implementation started from.
+
+At the start of this port, the shipped implementation lived in one narrow
+canonical path:
 
 - grammar in [pyprompt/grammars/pyprompt.lark](/Users/aelaguiz/workspace/pyprompt/pyprompt/grammars/pyprompt.lark)
 - parse lowering in [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py)
@@ -219,11 +250,16 @@ The shipped implementation still lives in one narrow canonical path:
 - markdown rendering in [pyprompt/renderer.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/renderer.py)
 - manifest-driven proof in [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py)
 
-The active proof surface remains only [examples/01_hello_world/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/01_hello_world/cases.toml) through [examples/06_nested_workflows/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/06_nested_workflows/cases.toml). `07` through `14` still exist only as prompt drafts and handwritten refs, not as shipped contracts.
+At the start of implementation, the active proof surface ran only
+[examples/01_hello_world/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/01_hello_world/cases.toml)
+through
+[examples/06_nested_workflows/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/06_nested_workflows/cases.toml).
+`07` through `14` still existed only as prompt drafts and handwritten refs, not
+as shipped contracts.
 
 ## 4.2 Control paths (runtime)
 
-Today the runtime path is simple and deliberately closed:
+At planning time, the runtime path was simple and deliberately closed:
 
 1. [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py#L202) reads a `.prompt` file and lowers it into `PromptFile`.
 2. [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L486) builds a `CompilationContext`, indexes the root module plus imports, and resolves inherited/composed workflow structure.
@@ -231,11 +267,16 @@ Today the runtime path is simple and deliberately closed:
 4. [pyprompt/renderer.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/renderer.py#L7) renders that compiled shape into markdown.
 5. [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L89) discovers manifests and runs render, parse-fail, and compile-fail contracts.
 
-The important runtime boundary is where the compiler enforces the current subset. [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L408) rejects any agent that is not exactly `role` followed by `workflow`, so the parser may accept some surface forms that still fail at compile time by design.
+The important planning-time boundary was where the compiler enforced the current
+subset. [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L408)
+rejected any agent that was not exactly `role` followed by `workflow`, so the
+parser could accept some surface forms that still failed at compile time by
+design.
 
 ## 4.3 Object model + key abstractions
 
-The model is explicit but narrower than the post-`06` language pressure:
+At planning time, the model was explicit but narrower than the post-`06`
+language pressure:
 
 - [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py#L97) defines `Declaration` as only `ImportDecl | WorkflowDecl | Agent`.
 - [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py#L86) defines `Field` as only `RoleScalar | RoleBlock | WorkflowBody`.
@@ -243,25 +284,32 @@ The model is explicit but narrower than the post-`06` language pressure:
 - [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L22) fixes `CompiledAgent` to `name`, `role`, and `workflow`.
 - [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L28) fixes `IndexedUnit` to imports, workflows, agents, and imported units only.
 
-The reusable strength to preserve is the explicit ordered patch engine in [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L254). The blocking limitation is that the current model assumes all rich reusable structure is workflow structure, which is no longer true once `07` to `14` introduce typed contracts and open agent-local slots.
+The reusable strength to preserve was the explicit ordered patch engine in
+[pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L254).
+The blocking limitation was that the model assumed all rich reusable structure
+was workflow structure, which stopped being true once `07` to `14` introduced
+typed contracts and open agent-local slots.
 
 ## 4.4 Observability + failure behavior today
 
-Failure behavior is already clean and mostly correct for the shipped subset:
+At planning time, failure behavior was already clean and mostly correct for the
+shipped subset:
 
 - parse failures come directly from Lark via [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py#L197)
 - compile failures come from explicit [CompileError](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L10)
 - manifest proof classifies only `render_contract`, `parse_fail`, and `compile_fail` in [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L233)
-- `make verify-examples` is the current behavior-preservation signal and still passes for `01` through `06`
+- `make verify-examples` was the behavior-preservation signal and passed for
+  `01` through `06`
 
-There are two meaningful current limits:
+There were two meaningful planning-time limits:
 
 - the renderer only knows prose openings plus recursive titled sections, so richer draft refs after `06` are not proof of shipped behavior
 - [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L94) exposes a `surfaced_inconsistencies` lane, but the current verifier does not meaningfully populate it yet, so drift detection is narrower than the report shape suggests
 
 ## 4.5 UI surfaces (ASCII mockups, if UI work)
 
-Not applicable as UI work. The only visible contract today is markdown with a role-first opening and headed nested sections beneath it. There is no shipped H1 agent-name mode, no special route rendering, and no typed contract presentation beyond what authors can fake as plain strings.
+Not applicable as UI work. At planning time, the visible contract was markdown
+with a role-first opening and headed nested sections beneath it.
 <!-- arch_skill:block:current_architecture:end -->
 
 # 5) Target Architecture (to-be)
@@ -375,10 +423,10 @@ Not applicable as UI work. The visible markdown contract remains role-first. Aut
   none should be introduced; a document-IR rewrite, second proof oracle, OCR-like helper stack, or any similar capability-replacing side system is out of scope for this port unless later explicitly re-approved.
 - Live docs/comments/instructions to update or delete:
   [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md), especially the current `Pending Decisions`, `Pending Concepts`, role-graph framing, and `Top Candidates For Next Work` sections that will overstate what remains open once this port ships.
-  [docs/AGENT_IO_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/AGENT_IO_DESIGN_NOTES.md), especially `Concrete Capability Areas To Define` and `What This Document Is Not Deciding Yet`, which will need narrowing once the minimum shipped I/O subset is locked.
+  [docs/AGENT_IO_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/AGENT_IO_DESIGN_NOTES.md), where the old `Concrete Capability Areas To Define` and `What This Document Is Not Deciding Yet` framing was narrowed into `Post-14 Pressure Areas` and `Explicit Non-Goals For This Subset` once the minimum shipped I/O subset was locked.
   [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md), including a deliberate choice about whether `E001` and `E003` broaden from workflow-body patch failures to authored workflow-slot patch failures and whether `E002` stays the generic missing-visible-title error.
   [docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md](/Users/aelaguiz/workspace/pyprompt/docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md), especially the stale `07` inheritance description that still implies direct reassignment instead of `override read_first:`.
-  [examples/07_handoffs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/07_handoffs/prompts/AGENTS.prompt), where the comment above the agents must be narrowed from “agent-level named slots” to authored workflow-slot fields specifically.
+  [examples/07_handoffs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/07_handoffs/prompts/AGENTS.prompt), where both the prompt header and the comment above the agents were narrowed from over-broad agent-level named-slot language to authored workflow-slot language.
   [examples/09_outputs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/09_outputs/prompts/AGENTS.prompt) and [examples/13_critic_protocol/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/13_critic_protocol/prompts/AGENTS.prompt), where redundant `owns:` blocks should be pruned or justified so they stop conflicting with the settled anti-cargo-cult doctrine.
   touched `07` through `14` prompt-header comments that still describe those examples as sketches after they become shipped.
 - Behavior-preservation signals for refactors:
@@ -404,12 +452,14 @@ Warn-first note: `external_research_grounding` is still not started in `planning
 
 ## Phase 1 - Widen the core model without changing shipped behavior
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 Completed work:
 - Full `07` to `14` example read is complete before code changes.
 - Confirmed the first real widening pressure is the mixed agent field model: legacy inherited `workflow` still needs to preserve `01` to `06`, while later examples add authored workflow slots plus typed contract fields.
 - Confirmed `08` clarifies that authored workflow slots like `your_job` must support both named workflow references and inline workflow bodies.
+- Shipped the widened grammar, parser, model, compiler, and renderer path without introducing a second semantic flow.
+- Preserved the legacy `01` to `06` behavior, including the compile-fail guard for reordered legacy `role` and `workflow` fields.
 
 - Goal: Replace the internal exact-two-field agent assumption with the widened declaration and field model while keeping the shipped `01` to `06` subset behavior-stable.
 - Work: Expand [pyprompt/grammars/pyprompt.lark](/Users/aelaguiz/workspace/pyprompt/pyprompt/grammars/pyprompt.lark), [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py), [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py), and [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py) so the codebase can represent the closed top-level declaration set, ordered typed agent fields, authored workflow slots, kind-specific declaration registries, and the future `route` leaf item; preserve one compiler path, one import-resolution spine, one verifier path, and leave short code comments at the grammar and compiler boundaries explaining reserved typed fields versus authored workflow slots.
@@ -420,6 +470,13 @@ Completed work:
 
 ## Phase 2 - Ship authored workflow slots and narrow handoff routing for `07`
 
+Status: COMPLETE
+
+Completed work:
+- Activated `07_handoffs` with a checked `cases.toml` contract.
+- Shipped authored workflow slots on agents plus narrow `route "..." -> AgentName` lines inside workflow and outcome sections.
+- Narrowed both the prompt header and the agent-body `07` slot comments so the shipped example teaches authored workflow slots precisely.
+
 - Goal: Earn authored workflow-slot inheritance plus the narrow `route "..." -> AgentName` primitive using `07_handoffs`.
 - Work: Implement authored workflow-slot fields on agents, reuse the explicit patch engine for slot-level `inherit key` and `override key`, add route parsing and route-target validation for workflow bodies, and render authored slots in authored order while keeping the current role-first opening and no H1 agent-name switch.
 - Verification (smallest signal): add [examples/07_handoffs/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/07_handoffs) and run `uv run --locked python -m pyprompt.verify_corpus --manifest examples/07_handoffs/cases.toml`, then run `make verify-examples`.
@@ -428,6 +485,13 @@ Completed work:
 - Rollback: Deactivate the `07` manifest and revert the slot or route slice rather than relaxing the compiler if the example still depends on draft ambiguity.
 
 ## Phase 3 - Ship input and output contract declarations for `08` and `09`
+
+Status: COMPLETE
+
+Completed work:
+- Activated `08_inputs` and `09_outputs` with checked `cases.toml` contracts.
+- Shipped `input`, `input source`, `output`, `output target`, `output shape`, and `json schema`.
+- Removed the redundant `owns:` sections from `09_outputs` instead of treating them as language design.
 
 - Goal: Earn the I/O contract layer through `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and the reserved `inputs` and `outputs` agent fields.
 - Work: Implement the declaration families and resolution rules locked in Section 5, including built-in input sources `Prompt`, `File`, and `EnvVar`; built-in output targets `TurnResponse` and `File`; custom source and target declarations; symbolic input shapes; declared output shapes; strict `target + shape` versus `files` output modes; and renderer support for typed contract sections while still passing through authored support prose instead of hardcoding every draft heading.
@@ -438,6 +502,12 @@ Completed work:
 
 ## Phase 4 - Ship `outcome` and `skill` semantics for `10` and `11`
 
+Status: COMPLETE
+
+Completed work:
+- Activated `10_turn_outcomes` and `11_skills_and_tools` with checked `cases.toml` contracts.
+- Shipped routed `outcome` sections and skill-first capability modeling with required-versus-advisory rendering behavior.
+
 - Goal: Earn routed turn outcomes and skill-first capability modeling without inventing a role-graph DSL or `runtime_tools` surface.
 - Work: Implement the reserved `outcome` field with route-bearing branches, stop conditions, and stop rules; implement top-level `skill` declarations and reserved `skills` agent fields with open bucket names plus typed direct-reference metadata like `requirement` and `reason`; and make the renderer enforce the current policy that required skill references become fail-loud role guidance while advisory references do not render as schema-like noise.
 - Verification (smallest signal): add [examples/10_turn_outcomes/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/10_turn_outcomes) and [examples/11_skills_and_tools/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/11_skills_and_tools), run `uv run --locked python -m pyprompt.verify_corpus --manifest examples/10_turn_outcomes/cases.toml --manifest examples/11_skills_and_tools/cases.toml`, then run `make verify-examples`.
@@ -447,6 +517,13 @@ Completed work:
 
 ## Phase 5 - Ship role-home composition and imported handoff truth for `12` to `14`
 
+Status: COMPLETE
+
+Completed work:
+- Activated `12_role_home_composition`, `13_critic_protocol`, and `14_handoff_truth` with checked `cases.toml` contracts.
+- Kept critic protocol and handoff truth on the same primitive set instead of adding a critic or freshness primitive.
+- Removed the redundant `owns:` section from `13_critic_protocol`.
+
 - Goal: Finish the phase-14 language boundary through role-home composition, critic protocol expressed with existing primitives, and split-by-concern imports for handoff truth.
 - Work: Use the authored workflow-slot model plus typed fields to ship [examples/12_role_home_composition](/Users/aelaguiz/workspace/pyprompt/examples/12_role_home_composition), keep [examples/13_critic_protocol](/Users/aelaguiz/workspace/pyprompt/examples/13_critic_protocol) on the same primitive set instead of inventing a critic DSL, and ship [examples/14_handoff_truth](/Users/aelaguiz/workspace/pyprompt/examples/14_handoff_truth) through the existing import and module-resolution spine so contracts and role modules split cleanly by concern.
 - Verification (smallest signal): add `cases.toml` for `12`, `13`, and `14`, run `uv run --locked python -m pyprompt.verify_corpus --manifest examples/12_role_home_composition/cases.toml --manifest examples/13_critic_protocol/cases.toml --manifest examples/14_handoff_truth/cases.toml`, then run `make verify-examples`.
@@ -455,6 +532,15 @@ Completed work:
 - Rollback: reopen any example band whose source still depends on a draft mistake instead of weakening the grammar or compiler to rescue it.
 
 ## Phase 6 - Converge live docs and finalize the shipped teaching story
+
+Status: COMPLETE
+
+Completed work:
+- Updated live language notes and the I/O note to reflect the shipped subset through `14`.
+- Broadened `docs/COMPILER_ERRORS.md` wording for shared explicit-patching rules.
+- Rewrote the active `07` to `11` prompt headers so they describe the shipped subset directly instead of calling those manifest-backed examples draft or sketch material.
+- Rewrote the stale `07` findings in [docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md](/Users/aelaguiz/workspace/pyprompt/docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md) so the document now records current teaching risk instead of recommending an H1 renderer change or exploratory handling for shipped `07`.
+- Reframed the tail of [docs/AGENT_IO_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/AGENT_IO_DESIGN_NOTES.md) from pre-ship design questions into post-`14` pressure plus explicit non-goals.
 
 - Goal: Bring the repo’s live docs, comments, and example teaching surfaces into exact alignment with the shipped `01` to `14` subset.
 - Work: Rewrite the now-stale `Pending Decisions`, `Pending Concepts`, role-graph framing, and `Top Candidates For Next Work` sections in [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md); narrow [docs/AGENT_IO_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/AGENT_IO_DESIGN_NOTES.md) from design exploration to shipped subset plus explicit non-goals; update [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md) with broadened wording and real shipped examples; and update or retire [docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md](/Users/aelaguiz/workspace/pyprompt/docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md) so it stops teaching stale `07` inheritance claims.
@@ -607,3 +693,33 @@ Follow-ups
 
 - Update [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md) when the implementation lands.
 - Prefer manifest-backed fail cases over prose-only documentation for the broadened rules.
+
+## 2026-04-06 - Keep redundant ownership prose out of shipped examples
+
+Context
+
+While porting `09_outputs` and `13_critic_protocol`, several draft examples still
+carried `owns:` sections whose content was already obvious from the surrounding
+typed output contract.
+
+Options
+
+- Preserve those sections literally because they appeared in the draft.
+- Remove them where they add no new information, and keep the language surface
+  focused on real contract pressure instead of cargo-cult prose.
+
+Decision
+
+Remove the redundant `owns:` sections from the shipped teaching examples rather
+than treating them as meaningful language pressure.
+
+Consequences
+
+- The output examples stay shorter and clearer.
+- Ownership still appears where it adds real information, but it is not
+  mistaken for a required design pattern.
+
+Follow-ups
+
+- Keep watching later example drafts for other prose sections that are only
+  repeating already-modeled truth.

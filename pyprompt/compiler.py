@@ -93,6 +93,10 @@ class ConfigSpec:
 
 
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
+# Reserved typed fields get their own compiler paths. Every other key is an
+# authored workflow slot, with one legacy carve-out: the old `workflow` field
+# still preserves 01-06 body inheritance semantics instead of switching to a
+# second slot-patching dialect.
 _RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "outcome", "skills"}
 
 _BUILTIN_INPUT_SOURCES = {

@@ -1,0 +1,45 @@
+import common.inputs.psmobile.catalog
+import common.artifacts.dossier_engineer
+
+
+workflow DossierEngineerJob: "Your Job"
+    "Define learner baseline."
+    "Define section advancement."
+    "Define stop line."
+    "Define candidate concept burden."
+    "Ground the section boundary honestly."
+
+
+workflow DossierEngineerWhenToUse: "When To Use This Role"
+    "Use this role when a section dossier must be created or rebuilt."
+    "Stop before concept lock, lesson architecture, or copy work."
+
+
+# TODO: add PokerGroundingSkill and a real skills section once shared skill declarations exist.
+agent DossierEngineer:
+    role: "Core job: establish the honest section teaching burden from current curriculum truth and poker grounding."
+
+    your_job: DossierEngineerJob
+
+    inputs: "Inputs"
+        common.inputs.psmobile.catalog.FullLessonCatalog
+        common.inputs.psmobile.catalog.TrackCatalogMeta
+        common.inputs.psmobile.catalog.SectionCatalogMeta
+
+    outputs: "Outputs"
+        common.artifacts.dossier_engineer.DossierEngineer
+
+    outcome: "Dossier Engineer Outcome"
+        produces: "This Role Produces"
+            "One current section dossier."
+
+        next_owner_if_accepted: "Next Owner If Accepted"
+            "TODO: route accepted work to AcceptanceCritic."
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            "TODO: return unclear or blocked work to ProjectLead."
+
+        stop_here_if: "Stop Here If"
+            "Stop when the dossier is explicit enough for review."
+
+    when_to_use_this_role: DossierEngineerWhenToUse

@@ -381,7 +381,7 @@ def _run_parse_fail(case: CaseSpec) -> CaseResult:
 
 def _run_build_contract(case: CaseSpec) -> CaseResult:
     try:
-        targets = load_emit_targets(REPO_ROOT / "pyproject.toml")
+        targets = load_emit_targets(start_dir=REPO_ROOT)
         target = targets.get(case.build_target or "")
         if target is None:
             raise VerificationError(f"Unknown build target: {case.build_target}")

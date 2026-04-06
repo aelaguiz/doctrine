@@ -1,10 +1,10 @@
-# This example sketches `input` and `input source` as first-class declarations.
+# This example shows shipped `input` and `input source` declarations.
 # Each input separates:
 # - `source`: how the agent gets the input
 # - `shape`: what kind of thing it is once the agent has it
 # - `requirement`: whether the turn should fail if it is missing
 # `source` is typed, not string-based.
-# Built-in sources in this sketch:
+# Built-in sources in this shipped subset:
 # - `Prompt`
 # - `File` (requires `path`)
 # - `EnvVar` (requires `env`)

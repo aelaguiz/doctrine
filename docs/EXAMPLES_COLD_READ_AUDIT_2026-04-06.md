@@ -6,16 +6,25 @@ Scope:
 - Read both the source-side `prompts/*.prompt` files and the checked-in `ref` outputs
 - Used a cold-read lens: "What would a first-time reader infer from the examples alone?"
 
+Status note on 2026-04-06:
+- the shipped subset now runs through `examples/14_handoff_truth`
+- the renderer stayed role-first; the speculative H1 agent-name refs did not
+  become shipped truth
+- authored workflow slots in `07+` ship through explicit `inherit` and
+  `override`, not through a separate direct-reassignment rule
+- the remaining value in this document is example-teaching cleanup, not active
+  grammar uncertainty for `07` through `14`
+
 ## Summary
 
 The sequence is directionally good: `01` through `06` mostly build from simple authored output to reuse, inheritance, and nested workflow composition. The main friction is not the syntax itself. The friction is that several rules about output shape, identity, and inheritance are only inferable after comparing multiple examples and their refs.
 
 The biggest cold-read issues are:
 - there is no short index explaining how to read `prompts` versus `ref`
-- the rendered output shape changes in `07` without a teaching example that names the rule
+- `07` introduces several new rules at once without a narrow bridge example
 - import identity and case rules are underspecified in `03`
 - inheritance is explained well for workflow entries, but not for workflow preambles or agent-level named slots
-- `07` looks partly exploratory rather than fully canonical
+- `07` is canonical now, but it still carries a steeper teaching jump than the earlier sequence
 
 ## Cross-Example Findings
 
@@ -38,22 +47,26 @@ Why this matters:
 Suggested fix:
 - add a short `examples/README.md` that explains the source/ref contract in 6-10 lines
 
-### 2. The output-opening rule changes without being taught explicitly
+### 2. `07` introduces several new rules at once without enough framing
 
-In `01` through `06`, the rendered document opens with the role text as ordinary prose. In `07`, the rendered document suddenly opens with an H1 agent name such as `# Project Lead`, and the role becomes the paragraph beneath it.
+In `01` through `06`, the sequence mostly grows one main idea at a time. In the
+shipped subset, `07` keeps the visible role-first renderer, but it also
+introduces authored workflow slots on agents, explicit slot inheritance, and
+`route "..." -> AgentName` lines inside workflow sections.
 
-A cold reader cannot tell:
-- what source pattern causes the agent name to render
-- whether `07` is using a new rendering mode
-- whether earlier examples omitted agent titles on purpose
+A cold reader still has to infer:
+- that the renderer did not change
+- that routes stay local content inside titled sections
+- that agent slots follow the same explicit patching model as workflow entries
+- that `07` is canonical, not exploratory
 
 Why this matters:
-- this is not a minor formatting detail; it changes the visible document contract
-- it also changes the mental model of what an `agent` renders into
+- the grammar is settled, but the teaching jump is still larger than the earlier sequence
+- readers can misattribute the complexity to a renderer or role-graph change that never shipped
 
 Suggested fix:
-- either add a dedicated example that introduces agent-name rendering explicitly
-- or keep `07` on the same output shape as `01` through `06` until the rule is settled
+- keep the role-first output shape explicit in `07`
+- add one short bridge note or future bridge example that isolates authored slots plus narrow routing
 
 ### 3. Identity rules are still fuzzy across file name, declaration name, key, and rendered title
 
@@ -102,17 +115,18 @@ Suggested fix:
 - add one compact note in `04` or `05` that scalar fields override, and workflow preambles override as a group
 - if `07` keeps agent-level keyed slots, give them their own focused teaching example
 
-### 5. `06` and `07` mix stable teaching material with visibly open design questions
+### 5. `06` and `07` make the sequence steeper than the earlier run-up
 
-Two examples explicitly signal uncertainty:
-- `06_nested_workflows` now points toward keyed `use` entries as the outer composition identity
-- `07_handoffs` opens with "Best-guess syntax sketch"
+Two back-to-back examples now carry most of the remaining teaching weight:
+- `06_nested_workflows` teaches keyed `use` identity
+- `07_handoffs` teaches authored agent slots plus narrow route lines
 
-That may be fine in design notes. It is less fine in a canonical numbered example sequence, because a first-time reader cannot tell which parts are settled and which are still exploratory.
+That is a real canonical sequence now, but it is still a lot for a first-time
+reader to absorb without a smaller bridge.
 
 Suggested fix:
-- label exploratory examples clearly, or move them into a separate `explorations/` area
-- keep `examples/01` through `N` as the stable teaching sequence
+- keep `07` in the numbered sequence as shipped truth
+- consider adding a narrower bridge example or a tighter local note if first-read clarity becomes a priority
 
 ### 6. Some example names push the wrong mental model
 
@@ -224,24 +238,20 @@ Suggested fix:
 
 ### 07 Handoffs
 
-This is the largest conceptual jump in the sequence. It introduces all of the following at once:
-- a new `route "..." -> AgentName` syntax
-- top-level named slots on agents, not just `role` plus `workflow`
-- agent-level `inherit read_first`
-- direct reassignment of inherited slots such as `read_first: ProjectLeadReadFirst`
-- a new rendered output shape with agent name as H1
-- multi-agent package structure as the normal presentation
+This was the largest conceptual jump in the sequence at cold-read time. The
+shipped language has now resolved the main grammar questions, but the teaching
+risk is still worth remembering:
+- `route "..." -> AgentName` is real and narrow
+- agent-local authored workflow slots are real
+- the renderer did not switch to an H1 agent-name mode
+- authored slots stay explicit through `inherit` and `override`
 
-Any one of those could carry an example by itself. Introducing all of them together makes the example feel more like a design sketch than a teaching example.
-
-Two especially unclear points:
-- why top-level slot override is direct assignment here, while workflow entry override uses explicit `override`
-- why `ProjectLeadReadFirst` is duplicated rather than shown as a small inherited variation of `ReadFirst`
-
-Suggested fix:
-- split `07` into at least two examples:
-  - one for agent-level named sections and their inheritance/override rules
-  - one for `route` syntax and handoff rendering
+What still matters as a teaching concern:
+- `07` introduces several ideas at once
+- the comments need to keep naming authored workflow slots precisely so readers
+  do not infer a wider inheritance rule than the language actually ships
+- the example still works better as a synthesis example than as the first place
+  a reader learns every routing rule
 
 ## Suggested Cleanup Order
 
@@ -250,7 +260,7 @@ Suggested fix:
 3. Tighten `03` with one explicit note about import resolution and symbol identity.
 4. Add one sentence in `04` or `05` that explains workflow preamble/title override behavior.
 5. Rename or reframe `05_workflow_merge` so the name matches the semantics.
-6. Either split `07` or label it explicitly as exploratory.
+6. Tighten `07` with one bridge note or a later bridge example if the teaching jump stays too steep.
 7. Add one minimal example for `E002` or `E003`.
 
 ## Bottom Line

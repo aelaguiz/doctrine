@@ -1,4 +1,4 @@
-# This example sketches an agent-local `outcome` section.
+# This example shows an agent-local `outcome` section in the shipped subset.
 # `output` says what the agent emits.
 # `outcome` says what the turn resolved:
 # - what decision the role produced

@@ -1,4 +1,4 @@
-# This example sketches one output primitive with reusable supporting
+# This example shows the shipped output contract surface with reusable supporting
 # declarations:
 # - `output` is the produced-contract primitive
 # - `output target` is the destination kind

@@ -12,6 +12,7 @@ from pyprompt.parser import parse_file
 from pyprompt.renderer import render_markdown
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+PYPROJECT_FILE_NAME = "pyproject.toml"
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
 
 
@@ -28,7 +29,8 @@ class EmitTarget:
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_arg_parser().parse_args(argv)
-    targets = load_emit_targets()
+    config_path = resolve_pyproject_path(args.pyproject)
+    targets = load_emit_targets(config_path)
 
     for target_name in args.target:
         target = targets.get(target_name)
@@ -45,6 +47,13 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         description="Emit compiled AGENTS.md trees for configured PyPrompt targets."
     )
     parser.add_argument(
+        "--pyproject",
+        help=(
+            "Path to the pyproject.toml that defines [tool.pyprompt.emit]. "
+            "Defaults to the nearest parent pyproject.toml from the current working directory."
+        ),
+    )
+    parser.add_argument(
         "--target",
         action="append",
         required=True,
@@ -53,10 +62,40 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def load_emit_targets(pyproject_path: Path | None = None) -> dict[str, EmitTarget]:
-    config_path = (pyproject_path or (REPO_ROOT / "pyproject.toml")).resolve()
-    if not config_path.is_file():
-        raise EmitError(f"Missing pyproject.toml: {config_path}")
+def resolve_pyproject_path(
+    pyproject_path: str | Path | None = None,
+    *,
+    start_dir: str | Path | None = None,
+) -> Path:
+    base_dir = (Path(start_dir) if start_dir is not None else Path.cwd()).resolve()
+
+    if pyproject_path is not None:
+        candidate = Path(pyproject_path)
+        if not candidate.is_absolute():
+            candidate = base_dir / candidate
+        resolved = candidate.resolve()
+        if resolved.name != PYPROJECT_FILE_NAME:
+            raise EmitError(f"Emit config must point at {PYPROJECT_FILE_NAME}: {resolved}")
+        if not resolved.is_file():
+            raise EmitError(f"Missing {PYPROJECT_FILE_NAME}: {resolved}")
+        return resolved
+
+    for candidate_dir in [base_dir, *base_dir.parents]:
+        candidate = candidate_dir / PYPROJECT_FILE_NAME
+        if candidate.is_file():
+            return candidate.resolve()
+
+    raise EmitError(
+        f"Could not find {PYPROJECT_FILE_NAME} in {base_dir} or any parent directory."
+    )
+
+
+def load_emit_targets(
+    pyproject_path: str | Path | None = None,
+    *,
+    start_dir: str | Path | None = None,
+) -> dict[str, EmitTarget]:
+    config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
 
     raw = tomllib.loads(config_path.read_text())
     emit = (
