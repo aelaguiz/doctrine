@@ -1,0 +1,11 @@
+agent SectionsDemo:
+    role: "You are the sections demonstration agent."
+
+    workflow:
+        "Follow the steps below in order."
+
+        step_one:
+            "Say hello."
+
+        step_two:
+            "Say world."
