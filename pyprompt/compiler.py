@@ -234,14 +234,10 @@ class CompilationContext:
         try:
             parent_slots: tuple[ResolvedAgentSlot, ...] = ()
             parent_label: str | None = None
-            if agent.parent_name is not None:
-                parent_agent = unit.agents_by_name.get(agent.parent_name)
-                if parent_agent is None:
-                    raise CompileError(
-                        f"Missing parent agent for {agent.name}: {agent.parent_name}"
-                    )
-                parent_slots = self._resolve_agent_slots(parent_agent, unit=unit)
-                parent_label = f"agent {parent_agent.name}"
+            if agent.parent_ref is not None:
+                parent_unit, parent_agent = self._resolve_parent_agent_decl(agent, unit=unit)
+                parent_slots = self._resolve_agent_slots(parent_agent, unit=parent_unit)
+                parent_label = f"agent {_dotted_decl_name(parent_unit.module_parts, parent_agent.name)}"
 
             parent_slots_by_key = {slot.key: slot for slot in parent_slots}
             resolved_slots: list[ResolvedAgentSlot] = []
@@ -822,14 +818,15 @@ class CompilationContext:
         try:
             parent_workflow: ResolvedWorkflowBody | None = None
             parent_label: str | None = None
-            if workflow_decl.parent_name is not None:
-                parent_decl = unit.workflows_by_name.get(workflow_decl.parent_name)
-                if parent_decl is None:
-                    raise CompileError(
-                        f"Missing parent workflow for {workflow_decl.name}: {workflow_decl.parent_name}"
-                    )
-                parent_workflow = self._resolve_workflow_decl(parent_decl, unit=unit)
-                parent_label = f"workflow {workflow_decl.parent_name}"
+            if workflow_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_workflow_decl(
+                    workflow_decl,
+                    unit=unit,
+                )
+                parent_workflow = self._resolve_workflow_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"workflow {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
 
             resolved = self._resolve_workflow_body(
                 workflow_decl.body,
@@ -1112,6 +1109,26 @@ class CompilationContext:
             missing_label="workflow declaration",
         )
 
+    def _resolve_parent_workflow_decl(
+        self,
+        workflow_decl: model.WorkflowDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.WorkflowDecl]:
+        parent_ref = workflow_decl.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: workflow has no parent ref: {workflow_decl.name}"
+            )
+        if not parent_ref.module_parts:
+            parent_decl = unit.workflows_by_name.get(parent_ref.declaration_name)
+            if parent_decl is None:
+                raise CompileError(
+                    f"Missing parent workflow for {workflow_decl.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_decl
+        return self._resolve_workflow_ref(parent_ref, unit=unit)
+
     def _resolve_input_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.InputDecl]:
@@ -1181,6 +1198,24 @@ class CompilationContext:
             registry_name="agents_by_name",
             missing_label="agent declaration",
         )
+
+    def _resolve_parent_agent_decl(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.Agent]:
+        parent_ref = agent.parent_ref
+        if parent_ref is None:
+            raise CompileError(f"Internal compiler error: agent has no parent ref: {agent.name}")
+        if not parent_ref.module_parts:
+            parent_agent = unit.agents_by_name.get(parent_ref.declaration_name)
+            if parent_agent is None:
+                raise CompileError(
+                    f"Missing parent agent for {agent.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_agent
+        return self._resolve_agent_ref(parent_ref, unit=unit)
 
     def _resolve_decl_ref(
         self,

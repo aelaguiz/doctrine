@@ -1,31 +1,23 @@
-abstract agent BaseGreeter:
-    role: "You are the base greeter."
-
-    workflow: "Shared Instructions"
-        "Use the shared greeting below."
-
-        greeting: "Greeting"
-            "Say hello."
-
-        object: "Object"
-            "Say world."
+import shared.greeters
+import shared.workflows
 
 
-# This agent is still abstract because concrete leaf agents inherit from it.
-# It adds shared doctrine that both concrete agents reuse.
-abstract agent PoliteGreeter[BaseGreeter]:
-    role: "You are the polite greeter."
+# This abstract agent lives in the root file so the compile-fail contract can
+# still prove that abstract agents do not render, even when the parent is
+# imported from another module.
+abstract agent ImportedBaseGreeter[shared.greeters.PoliteGreeter]:
+    role: "You are the imported base greeter."
 
     workflow: "Shared Instructions"
         inherit greeting
+        inherit courtesy
         inherit object
 
-        courtesy: "Courtesy"
-            "Keep the tone warm and direct."
 
-
-# This is a concrete leaf agent, so it should render.
-agent HelloWorldGreeter[PoliteGreeter]:
+# These concrete agents inherit from abstract parents defined in imported
+# modules. The inheritance model is unchanged; the parent can now be a dotted
+# declaration ref instead of only a local name.
+agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
     role: "You are the hello world greeter."
 
     workflow: "Hello World Instructions"
@@ -34,9 +26,9 @@ agent HelloWorldGreeter[PoliteGreeter]:
         inherit object
 
 
-# This is also a concrete leaf agent, and it keeps the shared doctrine
-# while replacing the final inherited step.
-agent InheritanceDemo[PoliteGreeter]:
+# This is also a concrete leaf agent, and it keeps the shared doctrine from the
+# imported parent while replacing the final inherited step.
+agent InheritanceDemo[shared.greeters.PoliteGreeter]:
     role: "You are the inheritance demonstration agent."
 
     workflow: "Inherited Steps"
@@ -48,3 +40,22 @@ agent InheritanceDemo[PoliteGreeter]:
 
         override object:
             "Say inherited world."
+
+
+# Imported parents work for named workflow declarations too.
+workflow ImportedWorkflowInstructions[shared.workflows.BaseGreeting]: "Imported Workflow Instructions"
+    "This workflow inherits its structure from an imported parent."
+
+    inherit greeting
+
+    courtesy: "Courtesy"
+        "Keep the tone warm and direct."
+
+    override object:
+        "Say imported world."
+
+
+agent ImportedWorkflowGreeter:
+    role: "You are the imported workflow greeter."
+
+    workflow: ImportedWorkflowInstructions

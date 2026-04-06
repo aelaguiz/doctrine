@@ -97,7 +97,7 @@
       }
     },
     "workflow": {
-      "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.pyprompt"
@@ -230,7 +230,7 @@
       }
     },
     "abstractAgent": {
-      "match": "^(\\s*)(abstract)(\\s+)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(abstract)(\\s+)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.pyprompt"
@@ -256,7 +256,7 @@
       }
     },
     "agent": {
-      "match": "^(\\s*)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.pyprompt"
@@ -279,7 +279,7 @@
       }
     },
     "incompleteAbstractAgent": {
-      "match": "^(\\s*)(abstract)(\\s+)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*)(\\]))?\\s*$",
+      "match": "^(\\s*)(abstract)(\\s+)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.declaration.pyprompt"
@@ -302,7 +302,7 @@
       }
     },
     "incompleteAgent": {
-      "match": "^(\\s*)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*)(\\]))?\\s*$",
+      "match": "^(\\s*)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.declaration.pyprompt"

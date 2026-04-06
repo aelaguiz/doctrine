@@ -58,9 +58,36 @@ expected_lines = [
 name = "abstract base agent does not render"
 status = "active"
 kind = "compile_fail"
-agent = "BaseGreeter"
+agent = "ImportedBaseGreeter"
 exception_type = "CompileError"
 message_contains = [
   "Abstract agent does not render",
-  "BaseGreeter",
+  "ImportedBaseGreeter",
+]
+
+[[cases]]
+name = "imported workflow inheritance works through a named workflow parent"
+status = "active"
+kind = "render_contract"
+agent = "ImportedWorkflowGreeter"
+assertion = "exact_lines"
+approx_ref = "ref/imported_workflow_greeter/AGENTS.md"
+expected_lines = [
+  "You are the imported workflow greeter.",
+  "",
+  "## Imported Workflow Instructions",
+  "",
+  "This workflow inherits its structure from an imported parent.",
+  "",
+  "### Greeting",
+  "",
+  "Say hello.",
+  "",
+  "### Courtesy",
+  "",
+  "Keep the tone warm and direct.",
+  "",
+  "### Object",
+  "",
+  "Say imported world.",
 ]

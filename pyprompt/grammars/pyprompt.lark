@@ -36,7 +36,7 @@ skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
 
 agent: "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
-inheritance: "[" CNAME "]"
+inheritance: "[" name_ref "]"
 
 // Reserved typed fields stay explicit. Every other non-reserved key is an
 // authored workflow slot, which keeps the grammar open without making typed

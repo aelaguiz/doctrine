@@ -1,0 +1,24 @@
+abstract agent BaseGreeter:
+    role: "You are the base greeter."
+
+    workflow: "Shared Instructions"
+        "Use the shared greeting below."
+
+        greeting: "Greeting"
+            "Say hello."
+
+        object: "Object"
+            "Say world."
+
+
+# This agent stays abstract because concrete leaf agents inherit from it.
+# It adds shared doctrine that imported children can still reuse directly.
+abstract agent PoliteGreeter[BaseGreeter]:
+    role: "You are the polite greeter."
+
+    workflow: "Shared Instructions"
+        inherit greeting
+        inherit object
+
+        courtesy: "Courtesy"
+            "Keep the tone warm and direct."

@@ -89,7 +89,7 @@ class WorkflowBody:
 class WorkflowDecl:
     name: str
     body: WorkflowBody
-    parent_name: str | None = None
+    parent_ref: NameRef | None = None
 
 
 RecordScalarValue: TypeAlias = str | NameRef
@@ -180,7 +180,7 @@ class Agent:
     name: str
     fields: tuple[Field, ...]
     abstract: bool = False
-    parent_name: str | None = None
+    parent_ref: NameRef | None = None
 
 
 @dataclass(slots=True, frozen=True)

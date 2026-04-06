@@ -4,7 +4,7 @@ import ..shared.workflow
 # <----- keyword.declaration.pyprompt
 #        ^ support.type.reference.pyprompt
 
-workflow ReviewFlow[BaseFlow]: "Workflow"
+workflow ReviewFlow[shared.workflow.BaseFlow]: "Workflow"
 # <------- keyword.declaration.pyprompt
 #         ^ entity.name.type.pyprompt
 #                    ^ entity.other.inherited-class.pyprompt
@@ -29,7 +29,7 @@ abstract agent BaseRole:
 #        ^ keyword.declaration.pyprompt
 #              ^ entity.name.type.pyprompt
 
-agent Reviewer[BaseRole]:
+agent Reviewer[shared.roles.BaseRole]:
 # <---- keyword.declaration.pyprompt
 #      ^ entity.name.type.pyprompt
 #               ^ entity.other.inherited-class.pyprompt

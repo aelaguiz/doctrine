@@ -118,6 +118,7 @@ Current intent:
   - `import ..shared.module` walks to the parent package first
   - any number of leading dots is allowed and walks up one package level fewer than the dot count before following the remaining module path
 - an imported workflow should be composed through a keyed `use` entry such as `use greeting: simple.greeting.Greeting`
+- imported declaration refs also work in inheritance headers such as `agent Child[simple.roles.BaseRole]:`
 - imported symbol identity should not depend on case guesswork or fallback lookup
 - the first negative `03` contracts should cover missing modules, unresolved qualified symbols, and duplicate declaration names within one imported module
 
@@ -140,9 +141,11 @@ We are deliberately avoiding looser reuse features until the examples prove that
 Inheritance has earned a place conceptually, and the current direction is now clearly "explicit ordered patching" rather than any kind of implicit merge.
 
 Current syntax direction:
-- `agent Child[Base]:` means the child extends the base agent
+- `agent Child[Base]:` means the child extends a local base agent
+- `agent Child[shared.roles.Base]:` means the child extends an imported base agent through a normal dotted declaration ref
 - `abstract agent Base:` means the base exists for inheritance and should not render by itself
-- `workflow Child[Base]: "Title"` means the child extends a named base workflow and keeps the same explicit patching model
+- `workflow Child[Base]: "Title"` means the child extends a local named base workflow and keeps the same explicit patching model
+- `workflow Child[shared.flows.Base]: "Title"` means the child extends an imported named base workflow through the same dotted ref model
 
 Current intent:
 - inheritance should produce one merged final document

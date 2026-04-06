@@ -5,7 +5,7 @@
 
 workflow LessonsReadFirst: "Read First"
     read_order: "Read Order"
-        "Read Your Job first."
+        "You are running inside Paperclip. Paperclip is the task tracker and coordination system for this run: it gives the run its coordination context, such as the current issue, plan, assignment, comments, approvals, and workspace when those are relevant."
         "Then read Workflow Core and How To Take A Turn."
         "Then read Skills And Tools, Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support."
 
@@ -18,10 +18,17 @@ workflow LessonsWorkflowCore: "Workflow Core"
         "TODO: keep normal Lessons work on one issue and one honest owner at a time."
 
     handoff_comment: "Handoff Comment"
-        "TODO: leave one clear handoff that says what changed, what to trust now, and who owns next."
+        "Every handoff, verdict, or blocker comment should say what this turn changed."
+        "Say which decisions are now locked."
+        "Say which files the next owner should trust now."
+        "Say the exact failing gate if the work is blocked."
+        "Say the next owner clearly when ownership is changing now."
+        "Use plain current role names when formatting could blur the next owner."
 
     packet_review_rules: "Packet Review Rules"
-        "TODO: name the exact current files and proof surfaces in scope."
+        "Specialist handoff outputs should also name the exact current packet, the current review files, and where the proof lives."
+        "If no current review files apply yet, say that plainly."
+        "Do not point the next owner at stale notes, old copies, or a folder name instead of exact current files."
 
     publish_return: "Publish Return"
         "TODO: keep publish and follow-up on the same issue when that work is live."
@@ -42,9 +49,7 @@ workflow LessonsSkillsAndTools: "Skills And Tools"
     skills_you_can_run: "Skills You Can Run"
         "See the typed Skills section for the role's actual skill references."
 
-    runtime_tools: "Runtime Tools"
-        "TODO: add shared runtime-tool guidance here when those tools are modeled cleanly."
-
+    runtime_tools: "Runtime Tools" "TODO: add shared runtime-tool guidance here when those tools are modeled cleanly."
     not_for_normal_authoring: "Not For Normal Authoring"
         "TODO: name the tools that do not belong in baseline authoring turns."
 
@@ -52,10 +57,13 @@ workflow LessonsSkillsAndTools: "Skills And Tools"
 workflow LessonsStandardsAndSupport: "Standards And Support"
     "Use the support sections below only when the local job needs them."
 
+workflow LessonsYourJob: "Your Job"
+    "This is a stub for the role's your_job section, which should be overridden by concrete roles with a clear statement of the core job to do on each turn."
 
 abstract agent LessonsRoleHome:
     read_first: LessonsReadFirst
     workflow_core: LessonsWorkflowCore
+    your_job: LessonsYourJob
     how_to_take_a_turn: LessonsHowToTakeATurn
     skills_and_tools: LessonsSkillsAndTools
     standards_and_support: LessonsStandardsAndSupport

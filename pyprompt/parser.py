@@ -35,8 +35,8 @@ class ToAst(Transformer):
         return model.PromptFile(declarations=tuple(items))
 
     @v_args(inline=True)
-    def inheritance(self, parent_name):
-        return parent_name
+    def inheritance(self, parent_ref):
+        return parent_ref
 
     def agent(self, items):
         return self._agent(items, abstract=False)
@@ -46,16 +46,16 @@ class ToAst(Transformer):
 
     def _agent(self, items, *, abstract: bool):
         name = items[0]
-        parent_name: str | None = None
+        parent_ref: model.NameRef | None = None
         fields_start = 1
-        if len(items) > 1 and isinstance(items[1], str):
-            parent_name = items[1]
+        if len(items) > 1 and isinstance(items[1], model.NameRef):
+            parent_ref = items[1]
             fields_start = 2
         return model.Agent(
             name=name,
             fields=tuple(items[fields_start:]),
             abstract=abstract,
-            parent_name=parent_name,
+            parent_ref=parent_ref,
         )
 
     @v_args(inline=True)
@@ -137,12 +137,12 @@ class ToAst(Transformer):
         return items[0]
 
     @v_args(inline=True)
-    def workflow_decl(self, name, parent_name_or_title, title_or_body, body=None):
-        parent_name: str | None = None
-        title = parent_name_or_title
+    def workflow_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
         workflow_body = title_or_body
         if body is not None:
-            parent_name = parent_name_or_title
+            parent_ref = parent_ref_or_title
             title = title_or_body
             workflow_body = body
         return model.WorkflowDecl(
@@ -152,7 +152,7 @@ class ToAst(Transformer):
                 preamble=workflow_body.preamble,
                 items=workflow_body.items,
             ),
-            parent_name=parent_name,
+            parent_ref=parent_ref,
         )
 
     @v_args(inline=True)
