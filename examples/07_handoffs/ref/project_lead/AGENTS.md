@@ -1,6 +1,6 @@
 # Project Lead
 
-Core job: start the work, route it to the first specialist, and take it back after the final critic accept.
+Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes.
 
 ## Read First
 
@@ -14,19 +14,18 @@ This file is the runtime guide for a simple multi-agent handoff pattern.
 
 ### Same-Issue Workflow
 
-- Keep the whole job on one issue from setup through final accept.
+- Keep the whole job on one issue from setup through final handoff back.
 - Keep one owner at a time on that issue.
-- The normal order is `Project Lead` -> `Research Specialist` -> `Acceptance Critic` -> `Writing Specialist` -> `Acceptance Critic` -> `Project Lead`.
-- After each specialist lane, the next owner is `Acceptance Critic`.
-- After the final critic accept, the next owner is `Project Lead`.
-- If the route is broken, return the work to `Project Lead`.
-- Use assignment for handoff. Do not rely on comment-only routing.
+- The normal order is `Project Lead` -> `Research Specialist` -> `Writing Specialist` -> `Project Lead`.
+- Route the first specialist handoff to `Research Specialist`.
+- After `Research Specialist`, the next owner is `Writing Specialist`.
+- After `Writing Specialist`, the next owner is `Project Lead`.
+- If the route is broken or the work is blocked before specialist work begins, keep or return the work to `Project Lead`.
 
 ### Handoff
 
-- start -> `Research Specialist`
-- route broken -> `Project Lead`
-- final accept -> `Project Lead`
+When ready to start the work, hand off to `Research Specialist`.
+If the route is broken or the work is blocked before specialist work begins, keep or return the work to `Project Lead`.
 
 ### Handoff Comment
 
@@ -40,5 +39,5 @@ Every handoff comment should say:
 
 - Start the issue with a clear route.
 - Route the first specialist handoff.
-- Keep the issue on a truthful route when work is rejected or blocked.
-- Take the issue back after the final critic accept and close it out honestly.
+- Keep the issue on a truthful route when work is blocked or routing goes stale.
+- Take the issue back after the final specialist handoff and close it out honestly.

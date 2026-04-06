@@ -1,13 +1,14 @@
 # Best-guess syntax sketch for handoff modeling.
-# This example follows the `06_nested_workflows` rule:
+# This example is intentionally narrower than the earlier draft:
+# - no critic lane
+# - no review-specific routing
+# - no handoff DSL keywords like `review`, `when_ready`, or `on_reject`
+# - handoff sections are just ordinary workflow structure for now
+#
+# This example still follows the `06_nested_workflows` rule:
 # - simple local workflow structure can stay inline
 # - nested, reusable, or inherited structure should live in named workflows
 # - agent inheritance should carry named section slots, not anonymous deep trees
-
-# These are named workflow sections that agents can attach to section slots such
-# as `read_first`, `workflow_core`, and `your_job`.
-# The nested structure now lives here instead of being inherited inline from one
-# agent body to another.
 
 workflow ReadFirst: "Read First"
     "Read Workflow Core first. Then read Your Job."
@@ -18,40 +19,55 @@ workflow ProjectLeadReadFirst: "Read First"
     "Read Workflow Core first. Then read Your Job."
 
 
-workflow SpecialistWorkflowCore: "Workflow Core"
+workflow SpecialistWorkflowCoreBase: "Workflow Core"
     same_issue_workflow: "Same-Issue Workflow"
         "Keep the work on the same issue."
         "Do only this lane's job."
-        "Hand off to Acceptance Critic when the work is honestly reviewable."
-        "If the critic rejects the work, take the same issue back, repair only the cited problems, and return it to Acceptance Critic."
-
-    handoff: "Handoff"
-        when_ready -> AcceptanceCritic
-        on_reject -> self
+        "Hand off only when the current lane is honestly ready."
+        "If the work is blocked or the route is unclear, return it to Project Lead."
 
     handoff_comment: "Handoff Comment"
         "Every handoff comment should say:"
         "- what changed"
-        "- what the critic should review now"
+        "- what the next owner should use now"
         "- the next owner when ownership is changing now"
+
+
+workflow ResearchSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
+    inherit same_issue_workflow
+
+    handoff: "Handoff"
+        "When ready, hand off to Writing Specialist."
+        "If blocked or the route is unclear, return the work to Project Lead."
+
+    inherit handoff_comment
+
+
+workflow WritingSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
+    inherit same_issue_workflow
+
+    handoff: "Handoff"
+        "When ready, hand off to Project Lead."
+        "If blocked or the route is unclear, return the work to Project Lead."
+
+    inherit handoff_comment
 
 
 workflow ProjectLeadWorkflowCore: "Workflow Core"
     "This file is the runtime guide for a simple multi-agent handoff pattern."
 
     same_issue_workflow: "Same-Issue Workflow"
-        "Keep the whole job on one issue from setup through final accept."
+        "Keep the whole job on one issue from setup through final handoff back."
         "Keep one owner at a time on that issue."
-        "The normal order is Project Lead -> Research Specialist -> Acceptance Critic -> Writing Specialist -> Acceptance Critic -> Project Lead."
-        "After each specialist lane, the next owner is Acceptance Critic."
-        "After the final critic accept, the next owner is Project Lead."
-        "If the route is broken, return the work to Project Lead."
-        "Use assignment for handoff. Do not rely on comment-only routing."
+        "The normal order is Project Lead -> Research Specialist -> Writing Specialist -> Project Lead."
+        "Route the first specialist handoff to Research Specialist."
+        "After Research Specialist, the next owner is Writing Specialist."
+        "After Writing Specialist, the next owner is Project Lead."
+        "If the route is broken or the work is blocked before specialist work begins, keep or return the work to Project Lead."
 
     handoff: "Handoff"
-        start -> ResearchSpecialist
-        on_route_broken -> self
-        on_final_accept -> self
+        "When ready to start the work, hand off to Research Specialist."
+        "If the route is broken or the work is blocked before specialist work begins, keep or return the work to Project Lead."
 
     handoff_comment: "Handoff Comment"
         "Every handoff comment should say:"
@@ -60,107 +76,53 @@ workflow ProjectLeadWorkflowCore: "Workflow Core"
         "- the exact blocker when the issue is blocked"
 
 
-workflow AcceptanceCriticWorkflowCore: "Workflow Core"
-    same_issue_workflow: "Same-Issue Workflow"
-        "Keep the work on the same issue."
-        "Review only the current specialist's work."
-        "If the current work is not good enough, return the issue to the same specialist."
-        "If the current work clears review, route it to the next honest owner."
-        "Use assignment for handoff. Do not rely on comment-only routing."
-
-    handoff_rules: "Handoff Rules"
-        review ResearchSpecialist:
-            reject -> ResearchSpecialist
-            accept -> WritingSpecialist
-
-        review WritingSpecialist:
-            reject -> WritingSpecialist
-            accept -> ProjectLead
-
-        if_route_broken -> ProjectLead
-
-    handoff_comment: "Handoff Comment"
-        "Every verdict comment should say:"
-        "- accept or reject"
-        "- whose work was reviewed"
-        "- the exact failing gate when rejecting"
-        "- the next owner when accepting"
-        "- the next owner when rejecting"
-
-
 workflow ProjectLeadJob: "Your Job"
     "Start the issue with a clear route."
     "Route the first specialist handoff."
-    "Keep the issue on a truthful route when work is rejected or blocked."
-    "Take the issue back after the final critic accept and close it out honestly."
+    "Keep the issue on a truthful route when work is blocked or routing goes stale."
+    "Take the issue back after the final specialist handoff and close it out honestly."
 
 
 workflow ResearchSpecialistJob: "Your Job"
     "Take the work only when Project Lead routes it to you."
     "Do the research lane's work."
-    "Keep the work reviewable."
-    "Do not skip the critic lane."
+    "Keep the work ready for the next lane."
+    "Do not hand the work anywhere except Writing Specialist or Project Lead."
 
 
 workflow WritingSpecialistJob: "Your Job"
-    "Take the work only when Acceptance Critic accepts the research lane."
+    "Take the work only when Research Specialist hands it to you."
     "Do the writing lane's work."
     "Keep the work within the scope already set upstream."
-    "Do not skip the critic lane."
+    "Hand the work back to Project Lead when the lane is complete or blocked."
 
 
-workflow AcceptanceCriticJob: "Your Job"
-    "Judge the work that is actually current."
-    "Do not do specialist work inside the critic lane."
-    "Keep the route honest."
-    "Make the accept-or-reject decision explicit enough that the next owner is obvious."
-
-
-# Agent inheritance now carries named section slots.
-# `inherit workflow_core` means "keep the same named workflow attached here."
-# The nested structure itself is no longer being inherited anonymously from one
-# agent body to another.
 abstract agent SameIssueRole:
     read_first: ReadFirst
-
-
-abstract agent SpecialistRole[SameIssueRole]:
-    inherit read_first
-
-    workflow_core: SpecialistWorkflowCore
 
 
 agent ProjectLead[SameIssueRole]:
     read_first: ProjectLeadReadFirst
 
-    role: "Core job: start the work, route it to the first specialist, and take it back after the final critic accept."
+    role: "Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes."
 
     workflow_core: ProjectLeadWorkflowCore
     your_job: ProjectLeadJob
 
 
-agent ResearchSpecialist[SpecialistRole]:
+agent ResearchSpecialist[SameIssueRole]:
     inherit read_first
-    inherit workflow_core
 
-    role: "Core job: do the research lane's work and hand it to the critic."
+    role: "Core job: do the research lane's work and hand it to Writing Specialist."
 
+    workflow_core: ResearchSpecialistWorkflowCore
     your_job: ResearchSpecialistJob
 
 
-agent WritingSpecialist[SpecialistRole]:
+agent WritingSpecialist[SameIssueRole]:
     inherit read_first
-    inherit workflow_core
 
-    role: "Core job: do the writing lane's work and hand it to the critic."
+    role: "Core job: do the writing lane's work and hand it back to Project Lead."
 
+    workflow_core: WritingSpecialistWorkflowCore
     your_job: WritingSpecialistJob
-
-
-agent AcceptanceCritic[SameIssueRole]:
-    inherit read_first
-
-    role: "Core job: review the current work, send it back to the same specialist when it is not ready, and advance it when it clears the gate."
-
-    workflow_core: AcceptanceCriticWorkflowCore
-    your_job: AcceptanceCriticJob
