@@ -1,2 +1,4 @@
 /for_reference_only/
+.venv/
+__pycache__/
 *.swp

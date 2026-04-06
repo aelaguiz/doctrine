@@ -551,15 +551,84 @@ Not applicable.
 
 # 7) Depth-First Phased Implementation Plan (authoritative)
 
+<!-- arch_skill:block:phase_plan:start -->
 > Rule: systematic build, foundational first; every phase has exit criteria + explicit verification plan (tests optional). Refactors, consolidations, and shared-path extractions must preserve existing behavior with the smallest credible signal. For agent-backed systems, prefer prompt, grounding, and native-capability changes before new harnesses or scripts. No fallbacks/runtime shims - the system must work correctly or fail loudly (delete superseded paths). Prefer programmatic checks per phase; defer manual/UI verification to finalization. Avoid negative-value tests (deletion checks, visual constants, doc-driven gates). Also: document new patterns/gotchas in code comments at the canonical boundary (high leverage, not comment spam).
 
-This section will be authored fully by `phase-plan` after research and deep-dive. The current expected shape is:
+Warn-first note:
 
-- freeze the first supported grammar subset and acceptance rule for `HelloWorld`
-- implement one grammar -> AST -> render loop
-- wire one simple rerun command such as `make hello-world`
-- use the first running loop to record the next spec holes before expanding to `02_sections`
-- reject hack-driven grammar growth; change the language subset instead when necessary
+- `external_research_grounding` and `deep_dive_pass_2` are still not started.
+- This plan proceeds anyway because the current artifact already locks one narrow owner path, one parser mode, one fixture, one run command, and one fail-loud boundary set. No unresolved external dependency or broader product question is blocking the Hello World bootstrap.
+
+## Phase 1 - Parser Foundation
+
+Status: IN PROGRESS
+
+* Goal:
+  Establish the canonical package/dependency path and get a stock-`Lark` whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt` into typed AST nodes without alternate parser paths.
+* Work:
+  Add `pyproject.toml`, `pyprompt/__init__.py`, `pyprompt/grammars/pyprompt.lark`, `pyprompt/indenter.py`, `pyprompt/model.py`, and `pyprompt/parser.py`.
+  Pin `parser='lalr'`, `lexer='contextual'`, `strict=True`, `maybe_placeholders=False`, stock common terminals, and the `_NL` / `_INDENT` / `_DEDENT` contract already grounded in `for_reference_only/lark/examples/indented_tree.py`.
+  Use the ordinary `Transformer` / `ast_utils` path for parse-tree to AST conversion instead of inventing a bespoke CST walker.
+  Keep this phase limited to syntax parsing and typed AST construction for the whole file; do not add rendering, CLI broadening, or output-generation features here.
+* Verification (smallest signal):
+  Run a direct Python import/invocation that constructs the parser in the active environment and parses `examples/01_hello_world/prompts/AGENTS.prompt` as-authored.
+  Confirm the resulting AST contains both `HelloWorld` and `HelloWorld2`, proving the accepted fixture parses as a whole file rather than via hidden source slicing.
+* Docs/comments (propagation; only if needed):
+  Add one brief code comment at the grammar/indenter boundary explaining that `_NL` owns newline, indentation whitespace, and standalone comment lines.
+  Add one brief code comment at parser construction if the pinned `Lark` options are not otherwise obvious in code.
+* Exit criteria:
+  The canonical package/dependency path exists.
+  Whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt` succeeds as-authored.
+  There is no direct runtime dependency on `for_reference_only/lark` and no second parser path.
+* Rollback:
+  If stock `Lark` cannot parse the accepted fixture cleanly without rescue logic, revert the parser-foundation files together and tighten the language subset before adding compiler or renderer code.
+
+## Phase 2 - Compile, Render, and One Command
+
+* Goal:
+  Turn the parsed AST into explicit agent selection and checked Markdown output behind one repo-root command.
+* Work:
+  Add `pyprompt/compiler.py`, `pyprompt/renderer.py`, `pyprompt/check_hello_world.py`, and `Makefile`.
+  Implement explicit target-agent selection, duplicate-name detection, and exact bootstrap-subset validation for the one-`role`-then-one-`workflow` agent shape.
+  Implement the first render contract exactly as planned: `RoleScalar` opens the document as plain text, `RoleBlock` renders a headed section, `Workflow` renders a headed section, and sibling strings preserve order without invented bullets or extra blank lines.
+  Make `make hello-world` call only `python -m pyprompt.check_hello_world`; do not add a broader CLI, ref-generation mode, or alternate runner surface.
+  Compare rendered output to `examples/01_hello_world/ref/AGENTS.md` and exit nonzero on mismatch.
+* Verification (smallest signal):
+  `make hello-world` exits `0` against the checked `HelloWorld` ref.
+  A tiny direct negative check proves missing-target selection fails nonzero.
+  A tiny inline invalid-source check proves reordered, repeated, missing, or extra bootstrap fields fail before render without needing a permanent duplicate fixture.
+* Docs/comments (propagation; only if needed):
+  Add one brief code comment at the compiler boundary explaining the no-implicit-target rule.
+  Add one brief code comment at the renderer boundary explaining that headings come only from explicit authored titles and source ordering.
+* Exit criteria:
+  The repo has one human-facing command, `make hello-world`, and it drives the canonical parse -> validate -> render -> compare loop.
+  Missing or duplicate target-agent names fail loudly.
+  Out-of-subset agent shapes fail before rendering.
+  No alternate runner, fallback mode, or best-effort output path has been introduced.
+* Rollback:
+  Keep the Phase 1 parser foundation, but revert compiler/renderer/check/Makefile changes if the render contract or target-selection contract proves wrong and needs to be recut before shipping.
+
+## Phase 3 - Reality Sync and Minimal Hardening
+
+* Goal:
+  Sync live docs to the shipped bootstrap, close the most likely drift surfaces, and record any newly exposed next-step holes without broadening product scope.
+* Work:
+  Update `docs/LANGUAGE_DESIGN_NOTES.md` if shipped behavior tightens the supported `role` shapes or the exact bootstrap subset.
+  Update `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` so it no longer lags the canonical plan on parser construction, exact agent shape, or render contract.
+  Update `docs/COMPILER_ERRORS.md` only if concrete numbered parse/compile errors were actually earned by implementation.
+  Update `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` only if explicit `HelloWorld` targeting or shipped behavior materially resolves the `01` ambiguity it called out.
+  Record any newly surfaced post-bootstrap language holes as explicit deferred follow-ups before touching `02_sections`; do not solve later examples in this phase.
+* Verification (smallest signal):
+  Rerun `make hello-world` after reality-sync edits to confirm the green path still holds.
+  Do one short manual spot-check that the live docs now name the actual owner path, command surface, and fail-loud boundaries that the code ships.
+* Docs/comments (propagation; only if needed):
+  Rewrite or delete stale live doc claims instead of leaving legacy wording beside the new code truth.
+* Exit criteria:
+  The canonical plan and the touched live doctrine docs no longer materially disagree about the shipped Hello World bootstrap.
+  Remaining open items are clearly deferred to later grammar growth rather than silently shipped.
+* Rollback:
+  Revert only doc-sync edits that do not match shipped behavior; do not keep stale explanations once code truth is known.
+<!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
 
