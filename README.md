@@ -17,8 +17,7 @@ Build the installable VSIX:
 
 ```bash
 cd editors/vscode
-npm install
-npm run package:vsix
+make
 ```
 
 That writes `pyprompt-language-0.0.1.vsix` into `editors/vscode/`.

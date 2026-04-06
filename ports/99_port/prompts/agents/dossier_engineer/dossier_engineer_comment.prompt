@@ -1,4 +1,4 @@
-import .shared
+import common.handoffs.shared
 
 
 output DossierEngineerHandoff: "Dossier Engineer Handoff"

@@ -15,11 +15,12 @@ Build the installable VSIX:
 
 ```bash
 cd editors/vscode
-npm install
-npm run package:vsix
+make
 ```
 
 That writes `pyprompt-language-0.0.1.vsix` into `editors/vscode/`.
+
+`make` installs the extension's npm dependencies if needed, runs the grammar tests, runs the Lark-alignment validator, and packages the final VSIX.
 
 Install it with either:
 
@@ -44,6 +45,6 @@ uv run --locked python scripts/validate_lark_alignment.py
 
 ## Refresh after grammar changes
 
-1. Re-run `npm run package:vsix`.
+1. Re-run `make`.
 2. Reinstall the new `.vsix` in VS Code.
 3. Reload your VS Code window if the old version is still active.

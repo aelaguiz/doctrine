@@ -3,7 +3,20 @@ import common.support
 import common.skills
 import common.inputs.psmobile.catalog
 import common.artifacts.dossier_engineer
-import dossier_engineer_comment
+import agents.dossier_engineer.dossier_engineer_comment
+
+
+workflow DossierEngineerReadFirst[common.role_home.LessonsReadFirst]: "Read First"
+    inherit start_here
+    inherit paperclip_context
+    inherit shared_skills
+    inherit read_order
+
+    immediate_local_read: "Immediate Local Read"
+        "Read the current issue, the current Issue Plan And Route, the latest issue comment that names the current files, the full lesson catalog, the current track catalog surface, and the current section catalog surface before dossier work begins."
+
+    local_helper_order: "Local Helper Order"
+        "Before you lock section truth, read Poker Grounding, then PokerKB."
 
 
 workflow DossierEngineerJob: "Your Job"
@@ -24,7 +37,7 @@ workflow DossierEngineerWhenToUse: "When To Use This Role"
 agent DossierEngineer[common.role_home.LessonsRoleHome]:
     role: "Core job: establish the honest section teaching burden from current curriculum truth and poker grounding."
 
-    inherit read_first
+    override read_first: DossierEngineerReadFirst
     inherit workflow_core
 
     override your_job: DossierEngineerJob
@@ -39,7 +52,7 @@ agent DossierEngineer[common.role_home.LessonsRoleHome]:
 
     outputs: "Outputs"
         common.artifacts.dossier_engineer.DossierEngineer
-        dossier_engineer_comment.DossierEngineerHandoff
+        agents.dossier_engineer.dossier_engineer_comment.DossierEngineerHandoff
 
     outcome: "Dossier Engineer Outcome"
         produces: "This Role Produces"

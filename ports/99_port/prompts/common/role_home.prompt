@@ -4,10 +4,19 @@
 # stubs so concrete roles can override only what is local.
 
 workflow LessonsReadFirst: "Read First"
-    read_order: "Read Order"
+    start_here: "Start Here"
+        "Start in this role home."
+
+    paperclip_context: "Paperclip Context"
         "You are running inside Paperclip. Paperclip is the task tracker and coordination system for this run: it gives the run its coordination context, such as the current issue, plan, assignment, comments, approvals, and workspace when those are relevant."
-        "Then read Workflow Core and How To Take A Turn."
-        "Then read Skills And Tools, Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support."
+
+    shared_skills: "Shared Skills"
+        "Use the injected `paperclip` skill for coordination work in Paperclip. The skill owns the exact procedure."
+        "Use the injected `github-access` skill when GitHub access is required."
+
+    read_order: "Read Order"
+        "Read Workflow Core and How To Take A Turn first."
+        "Then read Skills And Tools for shared skills and runtime tools, then read Your Job, Inputs, Outputs, Outcome, Skills, and When To Use This Role so the local job, stop rule, and file expectations are clear before you lean on later support sections."
 
 
 workflow LessonsWorkflowCore: "Workflow Core"
@@ -49,7 +58,9 @@ workflow LessonsSkillsAndTools: "Skills And Tools"
     skills_you_can_run: "Skills You Can Run"
         "See the typed Skills section for the role's actual skill references."
 
-    runtime_tools: "Runtime Tools" "TODO: add shared runtime-tool guidance here when those tools are modeled cleanly."
+    runtime_tools: "Runtime Tools"
+        "TODO: add shared runtime-tool guidance here when those tools are modeled cleanly."
+
     not_for_normal_authoring: "Not For Normal Authoring"
         "TODO: name the tools that do not belong in baseline authoring turns."
 
