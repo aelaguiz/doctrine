@@ -10,7 +10,9 @@
 # - `outputs`
 # - `outcome`
 # - `skills`
-# - `runtime_tools`
+#
+# Tool-specific helper guidance stays in support prose. It does not require a
+# separate tools field.
 #
 # When an agent references a skill, point directly at the declared skill and
 # attach agent-local metadata there. Do not add an extra wrapper key unless it
@@ -20,7 +22,7 @@
 workflow LessonsReadFirst: "Read First"
     read_order: "Read Order"
         "Read Workflow Core and How To Take A Turn first."
-        "Then read Inputs, Outputs, Outcome, Skills, Runtime Tools, Your Job, When To Use This Role, and Standards And Support."
+        "Then read Inputs, Outputs, Outcome, Skills, Your Job, When To Use This Role, and Standards And Support."
 
 
 workflow ProjectLeadReadFirst[LessonsReadFirst]: "Read First"
@@ -99,6 +101,12 @@ workflow ProjectLeadStandardsAndSupport[LessonsStandardsAndSupport]: "Standards 
         "Keep the issue explicit about publish intent: ship or prototype."
         "Do not use publish as a shortcut around current output or review rules."
 
+    github_helpers: "GitHub Helpers"
+        "Use repo-owned GitHub helpers when the live job needs remote GitHub access."
+
+    staging_qr_helpers: "Staging QR Helpers"
+        "Use repo-owned QR helpers when publish proof depends on current QR state."
+
     inherit attached_checkout
 
 
@@ -110,6 +118,14 @@ workflow CopywriterStandardsAndSupport[LessonsStandardsAndSupport]: "Standards A
     copy_standards: "Copy Standards"
         "Keep locked concepts and terms intact."
         "Do not sharpen exact-action claims in copy."
+
+    pokerkb: "PokerKB"
+        "Use it for definitions, grounded claim checks, terminology, and real poker wording."
+        "Do not use it as exact right-move authority."
+
+    step_json_validator: "Step JSON Validator"
+        "Use it after copy changes to validate the changed lesson manifest surfaces."
+        "Record the command and result in COPY_GROUNDING.md."
 
     inherit attached_checkout
 
@@ -299,13 +315,6 @@ agent LessonsProjectLead[LessonsRoleHome]:
             PublishFollowthroughSkill
                 requirement: Advisory
 
-    runtime_tools: "Runtime Tools"
-        github_helpers: "GitHub Helpers"
-            "Use repo-owned GitHub helpers when the live job needs remote GitHub access."
-
-        staging_qr_helpers: "Staging QR Helpers"
-            "Use repo-owned QR helpers when publish proof depends on current QR state."
-
     your_job: ProjectLeadJob
     when_to_use_this_role: ProjectLeadWhenToUse
 
@@ -348,15 +357,6 @@ agent LessonsCopywriter[LessonsRoleHome]:
 
             CopyRewriteSkill
                 requirement: Advisory
-
-    runtime_tools: "Runtime Tools"
-        pokerkb: "PokerKB"
-            "Use it for definitions, grounded claim checks, terminology, and real poker wording."
-            "Do not use it as exact right-move authority."
-
-        step_json_validator: "Step JSON Validator"
-            "Use it after copy changes to validate the changed lesson manifest surfaces."
-            "Record the command and result in COPY_GROUNDING.md."
 
     your_job: CopywriterJob
     when_to_use_this_role: CopywriterWhenToUse

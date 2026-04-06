@@ -7,7 +7,7 @@
 # - required review inputs
 # - one review output that owns both the verdict and the gate log
 # - outcome routes for accepted, changes requested, and escalate
-# - optional skills and runtime tools
+# - optional skills and support guidance
 #
 # If this reads cleanly, then critic protocol is already expressible with the
 # current language surface.
@@ -16,7 +16,7 @@
 workflow CriticReadFirst: "Read First"
     read_order: "Read Order"
         "Read Workflow Core and How To Take A Turn first."
-        "Then read Inputs, Outputs, Outcome, Skills, Runtime Tools, Your Job, and Standards And Support."
+        "Then read Inputs, Outputs, Outcome, Skills, Your Job, and Standards And Support."
 
     current_review_scope: "Current Review Scope"
         "Read the current issue plan, the current dossier, and the current validation record before you issue a verdict."
@@ -58,6 +58,13 @@ workflow CriticStandardsAndSupport: "Standards And Support"
     evidence_rule: "Evidence Rule"
         "Record the evidence you actually relied on in the gate log."
         "If the validation record is missing or stale, do not pretend the work was validated."
+
+    diff_tools: "Diff Tools"
+        "Use repo-owned diff tools when you need to isolate what changed in the current dossier."
+
+    validator_runner: "Validator Runner"
+        "Use the named dossier validator when the validation record depends on a rerun."
+        "Record the exact command and result in RUN_GATE_LOG.md."
 
 
 input CurrentIssuePlan: "Current Issue Plan"
@@ -177,14 +184,6 @@ agent AcceptanceCritic:
         can_run: "Can Run"
             ReviewChecklistSkill
                 requirement: Advisory
-
-    runtime_tools: "Runtime Tools"
-        diff_tools: "Diff Tools"
-            "Use repo-owned diff tools when you need to isolate what changed in the current dossier."
-
-        validator_runner: "Validator Runner"
-            "Use the named dossier validator when the validation record depends on a rerun."
-            "Record the exact command and result in RUN_GATE_LOG.md."
 
     your_job: "Your Job"
         "Review the current dossier against the current issue plan."

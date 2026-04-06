@@ -86,7 +86,8 @@ A small `Lark`-based grammar and one repeatable local verification path can grow
 
 ## 0.3 Out of scope
 
-- Nested field blocks, keyed workflow entries, or block shapes beyond the exact `role` and `workflow` forms already present in `examples/01_hello_world/prompts/AGENTS.prompt`
+- Shipping support for examples `02` through `06` in the current implemented compiler slice before their dedicated phases are deep-dived and implemented one at a time
+- Any attempt to batch the semantic jumps from `02` through `06` into one implementation wave instead of keeping them as separate halt-capable phases
 - `07_handoffs` and later language features, including:
   - handoff routing
   - input and output primitives
@@ -423,6 +424,11 @@ The repo now has a real but still narrow compiler slice:
   - adjacent `cases.toml` verifier contracts under `01_hello_world/` and `02_sections/`
   - approximate `ref/AGENTS.md` outputs
   - checked-in negative prompt fixtures under `examples/01_hello_world/prompts/`
+  - prompt-plus-ref example pressure already present on disk for:
+    - `03_imports`
+    - `04_inheritance`
+    - `05_workflow_merge`
+    - `06_nested_workflows`
 - `for_reference_only/lark/`
   - local design/reference tree only
   - not a runtime dependency surface
@@ -431,6 +437,8 @@ The important remaining gaps are now specific, not vague:
 
 - `examples/02_sections/` is machine-readable verifier truth, but still only as a planned case rather than active supported syntax
 - there is still no adjacent manifest coverage for later examples beyond `02_sections`
+- `03_imports` is on disk only as prompts plus approximate ref; it is not on the verifier path and its compilation-unit model is still unimplemented
+- `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` are on disk only as prompts plus approximate refs/error refs; none of their semantics is active on the shared verifier path yet
 - the contradiction-reporting lane is intentionally simple and local: verifier summary output plus canonical-doc updates
 - no surfaced inconsistency has yet forced a verifier-level stop after Phase 5, so later grammar growth still has to prove that discipline holds in practice
 
@@ -455,10 +463,18 @@ The broader shipped corpus flow is:
 3. the verifier discovers `examples/*/cases.toml`
 4. it executes all `status = "active"` cases and reports all `status = "planned"` cases without treating them as green support
 
+The current hard boundary for the next grammar phases is also concrete:
+
+- direct parser pressure on `examples/02_sections/prompts/AGENTS.prompt` stops at the first keyed entry such as `step_one`
+- direct parser pressure on `examples/03_imports/prompts/AGENTS.prompt` stops immediately at top-level `import`
+- the shipped AST/compiler path cannot yet represent top-level reusable workflows, bare workflow references, abstract agents, inheritance clauses, `inherit`, or `override`
+
 That path proves the bootstrap works, but it also shows the present architectural limit clearly:
 
 - render-contract truth has moved out of Python constants and into adjacent manifests, but only for the first two example directories
 - `02_sections` now has a runtime presence, but only as a planned contract rather than active supported syntax
+- `03_imports` is not yet on the runtime path at all, even as planned verifier truth
+- `04` through `06` are not yet on the runtime path at all, even though they already establish the next semantic boundaries the language notes talk about
 - the contradiction-reporting lane exists, but this first version is intentionally plain-text and human-reviewed rather than richer structured tooling
 - later examples still need to earn the same adjacent-manifest treatment instead of relying on the current green `01` slice
 
@@ -511,6 +527,23 @@ None of those concepts currently has:
 - a checked-in machine-readable verifier contract
 - a shared case runner that can report pass/fail stage consistently across examples
 
+Concretely, the current AST/compiler path still cannot represent:
+
+- top-level declarations other than `agent`
+- local keyed workflow entries such as `step_one: "Step One"`
+- top-level reusable workflows such as `workflow Greeting: "Greeting"`
+- bare workflow references such as `Greeting`, `Preparation`, or `Delivery`
+- `abstract agent`
+- parent clauses such as `[BaseGreeter]` or `[Delivery]`
+- inherited patch operations such as `inherit greeting` or `override main_point:`
+
+That means the current object model is not just missing syntax coverage. It is also missing the semantic identities later phases need:
+
+- file/module identity for imports
+- declaration identity for named workflows
+- local key identity for explicit ordered patching
+- container identity for `role`, workflow title, and workflow preamble
+
 ## 4.4 Observability + failure behavior today
 
 There is now an explicit parser/compiler failure surface for the shipped bootstrap:
@@ -526,6 +559,8 @@ Current remaining observability gaps are:
 - no advisory ref diff is currently exercised beyond `HelloWorld`, because `HelloWorld2` still has no approximate sibling ref and `02_sections` is planned-only
 - surfaced inconsistencies still depend on the current engineer updating the plan or doctrine after the run when material findings occur
 - later examples still have no adjacent negative or positive machine-checked contracts
+- negative `COMPILER_ERROR.md` refs such as `examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md` are still advisory docs only, not runtime-checked verifier artifacts
+- the verifier does not yet surface any direct machine-checked signal for unresolved `03` import identity, `04` transitive inherited-key lookup, or `06` composition-versus-inheritance ambiguity because those examples are not yet on the manifest path
 
 In practice, the current inconsistency signals now flow through a better but still small lane:
 
@@ -576,15 +611,55 @@ The minimal relevant repo tree should look like this after the shared verifier l
 │   ├── 01_hello_world/
 │   │   ├── cases.toml
 │   │   ├── prompts/
+│   │   │   ├── AGENTS.prompt
+│   │   │   └── INVALID_*.prompt
+│   │   └── ref/
+│   │       └── AGENTS.md
+│   ├── 02_sections/
+│   │   ├── cases.toml
+│   │   ├── prompts/
 │   │   │   └── AGENTS.prompt
 │   │   └── ref/
 │   │       └── AGENTS.md
-│   └── 02_sections/
+│   ├── 03_imports/
+│   │   ├── cases.toml
+│   │   ├── prompts/
+│   │   │   ├── AGENTS.prompt
+│   │   │   ├── greeting.prompt
+│   │   │   └── object.prompt
+│   │   └── ref/
+│   │       └── AGENTS.md
+│   ├── 04_inheritance/
+│   │   ├── cases.toml
+│   │   ├── prompts/
+│   │   │   └── AGENTS.prompt
+│   │   └── ref/
+│   │       ├── hello_world_greeter/
+│   │       │   └── AGENTS.md
+│   │       └── inheritance_demo/
+│   │           └── AGENTS.md
+│   ├── 05_workflow_merge/
+│   │   ├── cases.toml
+│   │   ├── prompts/
+│   │   │   └── AGENTS.prompt
+│   │   └── ref/
+│   │       ├── ordered_briefing_agent/
+│   │       │   └── AGENTS.md
+│   │       ├── retitled_briefing_agent/
+│   │       │   └── AGENTS.md
+│   │       └── invalid_override_briefing_agent/
+│   │           └── COMPILER_ERROR.md
+│   └── 06_nested_workflows/
 │       ├── cases.toml
 │       ├── prompts/
 │       │   └── AGENTS.prompt
 │       └── ref/
-│           └── AGENTS.md
+│           ├── inline_briefing_agent/
+│           │   └── AGENTS.md
+│           ├── structured_briefing_agent/
+│           │   └── AGENTS.md
+│           └── revised_structured_briefing_agent/
+│               └── AGENTS.md
 └── pyprompt/
     ├── __init__.py
     ├── compiler.py
@@ -603,6 +678,8 @@ Reading the tree top-down should already explain ownership:
 - `examples/01_hello_world/cases.toml` is the machine-readable verifier contract for both Hello World renders plus any local negative cases that example earns
 - `examples/01_hello_world/ref/AGENTS.md` is the approximate rendered example, not a pristine contract
 - `examples/02_sections/cases.toml` is part of the initial shared-verifier seed set and begins life as a planned render contract, not a falsely green passing example
+- `examples/03_imports/cases.toml` is the first compilation-unit expansion surface and should own import plus reusable-workflow verification once that phase lands
+- `examples/04_inheritance/cases.toml`, `examples/05_workflow_merge/cases.toml`, and `examples/06_nested_workflows/cases.toml` should arrive as adjacent per-example contracts rather than via side test fixtures or verifier-only data
 - `pyprompt/grammars/pyprompt.lark` is the syntax SSOT
 - `pyprompt/*.py` owns parse -> validate -> render behavior
 - `pyprompt/verify_corpus.py` is the only long-term verification owner path
@@ -645,6 +722,16 @@ The future full-corpus control path is:
    - surfaced inconsistencies that require human language decisions
 9. the harness exits nonzero if any active case fails, any manifest is structurally invalid, or any surfaced inconsistency requires semantic invention beyond current prompt semantics plus doctrine
 
+The future growth path is deliberately phased, not additive by accident:
+
+1. `02_sections` promotes a planned manifest to active support for keyed local workflow entries
+2. `03_imports` widens the compilation unit to include `import` declarations, top-level reusable workflows, and bare workflow references
+3. `04_inheritance` adds abstract agents, parent clauses, and explicit inherited patch operations over keyed entries
+4. `05_workflow_merge` hardens that same model into explicit ordered patching with stable compiler-error contracts
+5. `06_nested_workflows` adds named workflow inheritance plus named workflow composition without collapsing those two mechanisms together
+
+Each of those phases uses the same verifier path and must stop if the next syntax jump requires semantic invention or parser rescue logic.
+
 The retained convenience path is:
 
 1. `make hello-world`
@@ -663,6 +750,7 @@ Dependency and failure boundary:
 - parser construction remains `strict=True`; there is no downgrade path
 - missing dependencies, grammar collisions, parse errors, semantic validation errors, active-case assertion failures, and manifest-structure failures all exit nonzero
 - advisory diffs against approximate refs are reported explicitly and never decide pass/fail on their own
+- negative `COMPILER_ERROR.md` refs remain advisory human-facing examples; machine-checked failure truth lives in `compile_fail` manifest cases, not in byte-for-byte error-file comparison
 - if active verification exposes an inconsistency that requires choosing language semantics rather than fixing a local bug, that inconsistency is surfaced for explicit discussion instead of being normalized in the verifier
 - the first architecture keeps this reporting human-readable and local; there is no separate JSON reporter, issue registry, or sidecar inconsistency database
 
@@ -686,11 +774,48 @@ There is intentionally still no first-pass UX for:
 The compiler AST stays narrow and explicit:
 
 - `PromptFile`
-- `Agent`
+  - should widen from `agents`-only into ordered top-level declarations for phases `03` through `06`
+- `ImportDecl`
+  - import target keyed by exact example-local file stem, not by rendered title
+- `WorkflowDecl`
+  - named top-level reusable workflow declaration
+- `AgentDecl`
+  - concrete or abstract agent declaration, with optional parent clause
 - `RoleScalar`
+  - opening prose that behaves like a scalar container field
 - `RoleBlock`
-- `Workflow`
-- later, when `02_sections` is implemented, `Workflow` should gain ordered nested section/entry nodes through the same AST instead of through a verifier-only flattening layer
+  - titled role section that behaves like a scalar container field
+- `WorkflowBody`
+  - explicit workflow container with:
+    - rendered title
+    - preamble strings
+    - ordered workflow items
+- `WorkflowItem`
+  - the first future union should be one ordered semantic surface for:
+    - `LocalSection`
+    - `WorkflowRef`
+    - `InheritRef`
+    - `OverrideSection`
+
+The target semantic split needs to be explicit before `02` through `06` implementation:
+
+- file stem identity
+  - import target such as `greeting`
+- declaration identity
+  - reusable workflow name such as `Greeting`
+- local key identity
+  - compiler key such as `step_one`, `greeting`, or `main_point`
+- rendered title
+  - visible heading text such as `"Step One"` or `"Main Point"`
+
+The first future rules should stay tight:
+
+- workflow preamble strings are a distinct container property, not ordinary entries
+- keyed local sections and workflow references are ordered workflow items, not free text
+- bare workflow references are composition items, not inheritance operations
+- `inherit` and `override` are explicit patch operations over keyed inherited items
+- heading depth is derived from structural nesting and composition depth, not from key names or file names
+- if these rules stop fitting cleanly, the plan should tighten the language instead of adding a shadow semantic layer
 
 The shared verifier adds one small contract model, kept deliberately minimal:
 
@@ -733,6 +858,10 @@ Initial manifests are now fully specified:
   - one planned `render_contract` for `SectionsDemo`
   - exact line contract is authored now as the first non-Hello-World output contract
   - optional `approx_ref = "ref/AGENTS.md"` remains advisory only
+- `examples/03_imports/cases.toml`
+  - should be the first manifest to require imported prompt resolution plus reusable workflow references
+- `examples/04_inheritance/cases.toml`, `examples/05_workflow_merge/cases.toml`, and `examples/06_nested_workflows/cases.toml`
+  - should widen the shared harness through the same schema rather than introducing verifier-only truth surfaces
 
 Compiler responsibilities stay explicit:
 
@@ -750,8 +879,11 @@ Bootstrap validation and render behavior remain explicit:
 - reordered fields, duplicate fields, missing required fields, or extra fields are outside the first subset and fail before rendering
 - `RoleScalar` renders as opening body text with no heading
 - `RoleBlock` renders as `## <title>` followed by its ordered lines
-- `Workflow` renders as `## <title>` followed by its ordered lines
-- sibling quoted strings inside one block preserve order and render as consecutive lines; the renderer must not invent bullets or extra blank lines between them
+- `WorkflowBody` renders as `## <title>` followed by its preamble and ordered items
+- sibling preamble strings preserve order and render as consecutive lines; the renderer must not invent bullets or extra blank lines between them
+- `LocalSection` renders as a nested heading beneath its containing workflow
+- `WorkflowRef` renders by composing the referenced workflow body at the current structural depth
+- inherited keyed items keep the parent title unless an explicit override title is authored
 
 ## 5.4 Invariants and boundaries
 
@@ -772,6 +904,14 @@ Bootstrap validation and render behavior remain explicit:
 - `for_reference_only/lark` is design input only and never a runtime dependency surface
 - unsupported syntax fails before rendering
 - post-bootstrap grammar growth from `02` through `06` proceeds in separate example phases over the same canonical code path rather than one batched parser widening
+- for phases `02` through `06`, workflow preamble strings are a container property that appear before structured workflow items; if the language later needs interleaved free strings, that must be re-earned explicitly
+- local workflow keys are compiler identity local to their containing workflow; rendered headings come only from authored title strings
+- duplicate local workflow keys should fail at compile time once keyed workflow entries are supported
+- the first import model should resolve example-local prompt files by exact imported file stem, then resolve reusable declarations by case-sensitive declaration name
+- file stem, declaration name, local key, and rendered title are distinct identities and must not be conflated by parser or compiler shortcuts
+- child-authored `role`, workflow title, and workflow preamble replace the parent container values as a unit; inherited keyed entries still require exhaustive explicit accounting
+- named workflow composition and workflow inheritance are different semantic operations with different AST nodes and must not be collapsed into one “include or inherit” fallback
+- heading depth must be derived from structural containment and composition depth, not from key names, file names, or formatting heuristics
 - if a future syntax feature requires non-idiomatic parser rescue logic, the default answer is to change or defer that language feature
 - one shared corpus verifier, `pyprompt.verify_corpus`, must own full-compiler verification once the follow-on phase lands
 - `pyprompt/check_hello_world.py` is deleted once `verify_corpus` covers `examples/01_hello_world`
@@ -783,6 +923,7 @@ Bootstrap validation and render behavior remain explicit:
 - `compile_fail` cases carry an explicit target `agent` name because compile-stage failures happen after parse succeeds and still need intentional target selection
 - exact rendered-output contracts are stored only where the repo deliberately stabilizes them in machine-readable manifests, not by treating approximate refs as goldens
 - approximate refs remain advisory only, even when a case points at them with `approx_ref`
+- `COMPILER_ERROR.md` refs remain advisory human-facing examples unless and until the plan explicitly upgrades any part of them into machine-checked verifier truth
 - expected-failure cases are first-class and must encode stable failure-stage expectations
 - inconsistency surfacing is a primary product of the verifier: when materialization exposes a contradiction the system cannot settle from existing doctrine, it should stop with the contradiction visible, not silently choose
 - the canonical recording lane for surfaced inconsistencies is:
@@ -819,6 +960,13 @@ Not applicable.
 | Approximate Hello World ref | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Manually built approximate output example for `HelloWorld` only | Keep as advisory output-shape evidence, not as an authoritative exact golden | Prevents the plan from treating manual examples as pristine truth while still using them to find bugs | A case may optionally carry `approx_ref`, which never decides pass/fail | `make hello-world`, `make verify-examples` |
 | Sections contract | `examples/02_sections/cases.toml` | planned render contract | Shipped planned `render_contract` for `SectionsDemo` with exact lines and advisory `approx_ref` | Keep it planned until the grammar/renderer genuinely support nested workflow entries, then promote it through the same manifest | Seeds the first next-example output contract without pretending the current parser already supports it | `status = "planned"` until the grammar/renderer grow to support nested workflow entries | `make verify-examples` |
 | Approximate sections ref | `examples/02_sections/ref/AGENTS.md` | rendered Markdown | Approximate manual output example only | Keep as advisory output-shape evidence for the planned contract | Preserves the current example surface without falsely upgrading it into executable truth | Optional `approx_ref`, advisory only | `make verify-examples` |
+| Local workflow items | `pyprompt/model.py`, `pyprompt/compiler.py`, `pyprompt/renderer.py` | workflow item representation | `Workflow` still carries only flat string lines | Widen the workflow model once for `02` and `03` into explicit workflow items such as local keyed sections and workflow references | Prevents solving `02` with one ad hoc shape and `03` with a second ad hoc shape | One ordered workflow-item model with local key identity and rendered-title separation | Future `make verify-examples` |
+| Imports compilation unit | `examples/03_imports/prompts/AGENTS.prompt`, `examples/03_imports/prompts/greeting.prompt`, `examples/03_imports/prompts/object.prompt` | top-level `import` and reusable `workflow` declarations | Present on disk only; unsupported by shipped grammar and AST | Add compilation-unit support for example-local imports, top-level reusable workflows, and bare workflow references through the same parser/compiler path | `03` is a document-model expansion, not a small syntax tweak | Import target resolves exact file stem; reusable declarations resolve by case-sensitive declaration name | Future `make verify-examples` |
+| Imports contract | `examples/03_imports/cases.toml` | render and failure contracts | Missing | Add adjacent manifest coverage for `03` render output plus earned import-resolution failures | Keeps `03` on the shared verifier path instead of side checks | Active `render_contract` plus `compile_fail` cases for missing import, unresolved symbol, or duplicate declaration if earned | Future `make verify-examples` |
+| Inheritance model | `examples/04_inheritance/prompts/AGENTS.prompt`, `pyprompt/model.py`, `pyprompt/compiler.py` | `abstract agent`, parent clause, `inherit` / `override` | Present in prompts only; unsupported by shipped compiler | Add abstract/concrete agent semantics, parent lookup, and explicit inherited workflow patching over keyed entries | `04` is the first real inheritance contract and already includes transitive inherited-key pressure | Concrete leaves render; abstract agents do not; inherited keyed entries are accounted for explicitly | Future `make verify-examples` |
+| Ordered patching contract | `examples/05_workflow_merge/prompts/AGENTS.prompt`, `pyprompt/compiler.py`, `docs/COMPILER_ERRORS.md` | explicit inherited workflow patching | Present in prompts and docs only | Implement explicit ordered patching and keep “merge” as directory history, not semantic behavior | Prevents implicit merge heuristics from leaking into the compiler | `inherit` and `override` remain exhaustive explicit patch operations with stable compiler errors | Future `make verify-examples` |
+| Error refs | `examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md` | human-facing compiler error example | Present only as prose ref | Keep as advisory explanation unless a future phase explicitly upgrades any part of it into machine-checked verifier truth | Avoids accidentally creating a second error-truth surface | Machine truth stays in `compile_fail` manifest cases; prose refs stay explanatory | Future `make verify-examples` |
+| Named workflow composition | `examples/06_nested_workflows/prompts/AGENTS.prompt`, `pyprompt/model.py`, `pyprompt/renderer.py` | top-level workflows, workflow inheritance, bare workflow references | Present in prompts and refs only | Add named workflow declarations, named workflow inheritance, and named workflow composition without collapsing composition into inheritance | `06` is the first recursive rendering and heading-depth pressure | Composition references and inheritance ops use different AST nodes and different compiler rules | Future `make verify-examples` |
 | Live doctrine docs | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md`, `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` | language rules and known gaps | Docs-only truth today | Review and update as implementation lands if shipped behavior or resolved ambiguities differ | Avoid stale truth after code exists | Docs must match the shipped subset and the actual fail-loud behavior | Manual review |
 | Inconsistency surfacing | `docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md`, verifier output, touched doctrine docs | explicit surfaced contradictions | Today this happens only when manually noticed | Make surfaced inconsistencies an explicit implementation outcome: call them out in verifier output and sync them into the plan or doctrine instead of burying them in code | The user is using materialization to discover language mistakes, so contradiction reporting is part of the product of the work | Contradictions discovered during implementation or verification are recorded explicitly before semantics are widened or changed | `make hello-world`, `make verify-examples`, plan review |
 
@@ -835,6 +983,9 @@ Not applicable.
   - no second grammar file for the same supported subset
   - no stand-alone parser artifact in the first pass
   - no inline source-mutation DSL inside `cases.toml`
+  - no import-resolution search heuristics, wildcard imports, or fallback namespace lookup when `03_imports` lands
+  - no implicit workflow-merge helper once `04` and `05` land; ordered patching must stay explicit
+  - no composition-as-inheritance fallback when `06_nested_workflows` lands
 - Capability-replacing harnesses to delete or justify:
   - any hand-written lexer
   - any custom indentation preprocessor
@@ -848,11 +999,15 @@ Not applicable.
   - `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` if the shipped bootstrap subset hardens the exact `01` agent shape or render contract beyond its earlier scalar-only summary
   - `docs/COMPILER_ERRORS.md` if the first implementation earns concrete parse/compile failures that should be numbered
   - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` if the `01_hello_world` ambiguity is materially resolved by shipped architecture or the shared verifier changes how that ambiguity is described
+  - `docs/LANGUAGE_DESIGN_NOTES.md` again when `02` through `06` lock local-key rules, import identity, container override behavior, explicit ordered patching, or named workflow composition semantics
+  - `docs/COMPILER_ERRORS.md` when `04` through `06` widen inherited-workflow errors beyond the current agent-centric wording
+  - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` when `03` import identity or `04` workflow-container override behavior stops being a cold-read ambiguity
 - Behavior-preservation signals for refactors:
   - whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt`
   - existing green `make hello-world` before migrating it onto `verify_corpus`
   - post-migration green `make hello-world` running both active Hello World cases through the shared harness
   - green `make verify-examples` with active cases passing and planned cases reported separately
+  - once `02` through `06` land, each phase must preserve prior active example behavior on `make verify-examples` while promoting only the next earned example contract
   - surfaced inconsistencies appear in the shared verifier summary instead of disappearing during migration
   - advisory diffs against approximate refs when useful for finding renderer/ref bugs
   - `strict=True` grammar construction with no silent fallback
@@ -870,8 +1025,11 @@ Not applicable.
 | Discovery loop | verifier output plus touched doctrine docs | Treat surfaced contradictions as first-class findings to discuss, not as noise to code around | Prevents the language from drifting through silent local fixes | include |
 | Contradiction reporting lane | `pyprompt/verify_corpus.py`, canonical plan, touched doctrine docs | Keep contradiction surfacing on the canonical verifier-output-plus-doc-update path | Prevents premature overbuilding of issue-tracking machinery while still making findings visible | include |
 | Next grammar pressure | `examples/02_sections/prompts/AGENTS.prompt` | Extend the same `pyprompt/` package and the same `pyprompt.lark` grammar file for keyed workflow entries | Prevents a second parser path when grammar scope grows | defer |
-| Next grammar pressure | `examples/03_imports/prompts/AGENTS.prompt` and imported prompt files | Extend the same owner path for imports and symbol resolution | Prevents import behavior from being prototyped in side scripts | defer |
-| Semantic growth | `examples/04_inheritance` through `examples/07_handoffs` | Add inheritance and routing semantics through the same AST/compiler path, not parallel prototypes | Prevents semantic drift and duplicated merge logic | defer |
+| Next grammar pressure | `examples/03_imports/prompts/AGENTS.prompt` and imported prompt files | Extend the same owner path for imports, top-level reusable workflows, and symbol resolution | Prevents import behavior from being prototyped in side scripts or loader helpers | defer |
+| Semantic growth | `examples/04_inheritance` | Add abstract-agent and inherited-workflow semantics through the same AST/compiler path | Prevents inheritance from being prototyped in a separate merge helper | defer |
+| Semantic growth | `examples/05_workflow_merge` | Keep explicit ordered patching on the same inheritance path instead of inventing implicit merge behavior | Prevents the directory name from steering implementation toward the wrong model | defer |
+| Semantic growth | `examples/06_nested_workflows` | Add named workflow composition and named workflow inheritance through the same package and grammar SSOT | Prevents recursive rendering from being prototyped in a workflow flattener sidecar | defer |
+| Later frontier | `examples/07_handoffs` | Keep handoff syntax and agent-level named-slot behavior out of the current `02` through `06` architecture slice | Prevents `07` from broadening the grammar before `02` through `06` are settled | exclude |
 | Declaration growth | `examples/08_inputs`, `examples/09_outputs`, `examples/10_turn_outcomes`, `examples/11_skills_and_tools` | Add new declarations and agent-side contract structure through the same package and grammar SSOT | Prevents declaration-specific side parsers and one-off side readers | defer |
 | Output-pressure corpus | `examples/99_not_clean_but_useful` | Keep as rendering pressure only, not bootstrap grammar ownership | Prevents overbuilding the grammar too early | exclude |
 | Alternative parser libs | `for_reference_only/LibCST`, `for_reference_only/pyparsing` | Do not reopen parser choice during bootstrap implementation | Prevents tool drift and parallel experiments | exclude |
@@ -1708,3 +1866,37 @@ Follow-ups
 
 - Run another deep-dive pass against the newly opened `02` through `06` phases before implementing any of them.
 - Keep the same halt-on-inconsistency rule when those phases are later deep-dived or implemented.
+
+## 2026-04-06 - Use one workflow-item model and keep composition distinct from inheritance through 06
+
+Context
+
+Deep-dive against `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` showed that the next risk is not parser mechanics alone. The real risk is solving each example with a different local semantic shortcut: one shape for local keyed entries, another for imported workflow references, another for inherited patching, and a fourth for named workflow composition.
+
+Options
+
+- let each example earn its own narrow semantic structure and reconcile them later
+- lock one minimal ordered workflow-item model now, even before all phases are implemented
+
+Decision
+
+Lock one minimal future semantic model for phases `02` through `06`:
+
+- top-level compilation units widen to ordered declarations, not `agent`-only files
+- workflow containers carry a title plus preamble strings plus ordered workflow items
+- file stem, declaration name, local key, and rendered title are distinct identities
+- bare workflow references are composition items, not inheritance operations
+- `inherit` and `override` are explicit inherited patch operations over keyed items
+- child-authored container values such as `role`, workflow title, and workflow preamble replace the parent container values as a unit
+- negative `COMPILER_ERROR.md` refs remain advisory prose unless explicitly upgraded later
+
+Consequences
+
+- `02` and `03` now share one intended workflow-item model instead of two future ad hoc expansions.
+- `04` through `06` now have a tighter semantic target before implementation starts.
+- The plan is less likely to drift into hidden merge, include, or loader heuristics.
+
+Follow-ups
+
+- Keep Sections 4 through 6 aligned with this semantic split before implementation starts.
+- Revisit only if later evidence shows this model cannot fit cleanly in stock `Lark` without hack pressure.

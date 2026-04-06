@@ -212,9 +212,18 @@ The current examples are intentionally pushing on these rules so we can validate
   currently need a separate top-level `artifact` concept.
 - `11_skills_and_tools` is intentionally skill-first.
 - reusable capabilities should be modeled as `skill` declarations.
+- `12_role_home_composition` has already earned the basic role-home shell by
+  composing shared `workflow` sections into named agent fields.
+- that means the open question is what belongs inside those composed sections,
+  not whether role homes need a new primitive.
 - telling an agent to run a raw script or Python file path is currently treated
   as a workaround, not as a supported parallel authoring pattern.
 - we are not currently supporting a separate `runtime_tools` language surface.
+- `12_role_home_composition` and `13_critic_protocol` should stay aligned with
+  that no-`runtime_tools` rule.
+- packets are not a current language primitive direction.
+- the same authoring pressure should be handled through inputs, outputs,
+  outcomes, ownership, and readable file contracts instead.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -240,7 +249,7 @@ These are concepts we expect to revisit, but they are not locked into the exampl
 - skills
 - more explicit workflow declarations and reuse patterns
 - formal runtime-root declarations and path interpolation
-- packet contracts
+- file ownership and review-readability conventions built on inputs and outputs
 - policies and tool boundaries
 - role graphs and handoff structure
 
@@ -252,8 +261,6 @@ They suggest a handful of bigger buckets that will shape the workflow language a
 
 ### 1. Role Home Composition
 
-The `99` outputs are not just one workflow plus one role.
-
 They are large role homes built from repeated sections such as:
 - `Read First`
 - `Workflow Core`
@@ -264,7 +271,13 @@ They are large role homes built from repeated sections such as:
 - `When To Use This Role`
 - `Standards And Support`
 
-This means we likely need to decide how a role home is composed from shared doctrine plus role-local sections before we keep refining low-level workflow syntax.
+`12_role_home_composition` already earned the basic shell for this.
+
+That means the remaining question is not whether role homes need a new
+primitive.
+
+The remaining question is what guidance belongs inside those composed sections
+without turning them back into copied doctrine blobs.
 
 ### 2. Role Graph And Handoff Model
 
@@ -279,19 +292,22 @@ They repeatedly specify:
 
 This suggests the language needs a first-class way to express role-to-role routing and ownership flow.
 
-### 3. Packet And File Contract Model
+### 3. I/O, File Ownership, And Review Truth
 
-The `99` outputs spend a lot of energy defining packets, support files, inputs, produced outputs, and stop conditions.
+The `99` outputs spend a lot of energy defining what a role reads, what it
+produces, which files are in scope now, what the next owner should trust, and
+what should happen when review truth is missing.
 
-This looks like a bigger bucket than workflow detail.
+That pressure is real, but it should not become a packet primitive.
 
-We likely need a real model for:
-- main packet vs support files
+We should handle it through:
 - inputs
 - outputs
+- outcomes
+- file ownership and readability rules
 - next owner if accepted
 - stop rule
-- review packet shape
+- review truth that can be named explicitly without creating a packet surface
 
 ### 4. Shared Doctrine, Standards, And Support
 
@@ -326,6 +342,8 @@ What is still real pressure from `99`:
 What is not a current language goal:
 - a separate `runtime_tools` declaration surface
 - a language feature whose main job is to tell the agent where a script lives
+- examples should not drift into a `runtime_tools` field when the design
+  decision above already rejects that surface
 
 ### 6. Scope Roots And Path Variables
 
@@ -363,24 +381,30 @@ That means the language may need a way to talk about attached repos, external ar
 
 ## Current Priorities
 
-Before we spend much more effort on workflow micro-rules, the bigger buckets to resolve are:
+Before we spend much more effort on workflow micro-rules, the bigger buckets to
+resolve are:
 
-1. role home composition and shared doctrine
+1. clean up what belongs inside already-earned role-home shells
 2. role graph and handoff model
-3. packet and file contract model
+3. I/O, ownership, and review truth without adding packets
 4. skills and proof boundaries
 5. attached checkouts and evidence surfaces
+6. keep later examples aligned with the no-`runtime_tools` rule
 
 Those buckets appear to be the real structure underneath the `99` examples.
 
 ## Top Candidates For Next Work
 
-- Decide how role homes are composed from shared doctrine plus role-local sections.
+- Decide what should live in shared doctrine sections versus role-local fields
+  now that the basic role-home shell is already earned.
 - Decide how to represent role graphs, handoff order, critic lanes, and next-owner rules.
-- Decide the packet and file contract model before adding more workflow detail.
+- Decide how to express ownership and review truth through inputs, outputs,
+  outcomes, and file contracts without introducing packets.
 - Decide how skills and proof boundaries should be represented while keeping the
   language skill-first.
 - Decide how attached checkouts and review/evidence files should be modeled.
+- Keep `12_role_home_composition` and `13_critic_protocol` consistent with the
+  no-`runtime_tools` rule.
 
 ## Current Bias
 

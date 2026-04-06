@@ -7,7 +7,7 @@ Core job: turn the approved manifest into grounded learner-facing copy without c
 ### Read Order
 
 Read Workflow Core and How To Take A Turn first.
-Then read Inputs, Outputs, Outcome, Skills, Runtime Tools, Your Job, When To Use This Role, and Standards And Support.
+Then read Inputs, Outputs, Outcome, Skills, Your Job, When To Use This Role, and Standards And Support.
 
 ### Immediate Local Read
 
@@ -153,18 +153,6 @@ Rewrite learner-facing poker copy in the repo's expected voice.
 
 Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback.
 
-## Runtime Tools
-
-### PokerKB
-
-Use it for definitions, grounded claim checks, terminology, and real poker wording.
-Do not use it as exact right-move authority.
-
-### Step JSON Validator
-
-Use it after copy changes to validate the changed lesson manifest surfaces.
-Record the command and result in `COPY_GROUNDING.md`.
-
 ## Your Job
 
 Read the whole lesson before you rewrite isolated strings.
@@ -187,6 +175,16 @@ If the grounding is missing, stop and say it is missing.
 
 Keep locked concepts and terms intact.
 Do not sharpen exact-action claims in copy.
+
+### PokerKB
+
+Use it for definitions, grounded claim checks, terminology, and real poker wording.
+Do not use it as exact right-move authority.
+
+### Step JSON Validator
+
+Use it after copy changes to validate the changed lesson manifest surfaces.
+Record the command and result in `COPY_GROUNDING.md`.
 
 ### Attached Checkout
 

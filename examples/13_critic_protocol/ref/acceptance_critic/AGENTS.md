@@ -7,7 +7,7 @@ Core job: review the current dossier, issue an explicit verdict, and route the s
 ### Read Order
 
 Read Workflow Core and How To Take A Turn first.
-Then read Inputs, Outputs, Outcome, Skills, Runtime Tools, Your Job, and Standards And Support.
+Then read Inputs, Outputs, Outcome, Skills, Your Job, and Standards And Support.
 
 ### Current Review Scope
 
@@ -141,17 +141,6 @@ Run the repo's current checklist for critic review of a section dossier.
 
 Use this when the role needs a repeatable review pass against the current dossier contract.
 
-## Runtime Tools
-
-### Diff Tools
-
-Use repo-owned diff tools when you need to isolate what changed in the current dossier.
-
-### Validator Runner
-
-Use the named dossier validator when the validation record depends on a rerun.
-Record the exact command and result in `RUN_GATE_LOG.md`.
-
 ## Your Job
 
 - Review the current dossier against the current issue plan.
@@ -171,3 +160,12 @@ A failed gate should name the actual missing or incorrect thing.
 
 Record the evidence you actually relied on in the gate log.
 If the validation record is missing or stale, do not pretend the work was validated.
+
+### Diff Tools
+
+Use repo-owned diff tools when you need to isolate what changed in the current dossier.
+
+### Validator Runner
+
+Use the named dossier validator when the validation record depends on a rerun.
+Record the exact command and result in `RUN_GATE_LOG.md`.

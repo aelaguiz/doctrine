@@ -8,5 +8,5 @@ agent ImportsDemo:
     workflow: "Imported Steps"
         "Follow the imported instructions below."
 
-        Greeting
-        Object
+        greeting.Greeting
+        object.Object

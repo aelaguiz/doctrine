@@ -7,7 +7,7 @@ Core job: open, route, and finish Lessons issues while keeping publish and follo
 ### Read Order
 
 Read Workflow Core and How To Take A Turn first.
-Then read Inputs, Outputs, Outcome, Skills, Runtime Tools, Your Job, When To Use This Role, and Standards And Support.
+Then read Inputs, Outputs, Outcome, Skills, Your Job, When To Use This Role, and Standards And Support.
 
 ### Immediate Local Read
 
@@ -119,16 +119,6 @@ Handle PR follow-up, QR updates, publish proof, and same-issue closeout.
 
 Use this when publish or follow-up is the live job.
 
-## Runtime Tools
-
-### GitHub Helpers
-
-Use repo-owned GitHub helpers when the live job needs remote GitHub access.
-
-### Staging QR Helpers
-
-Use repo-owned QR helpers when publish proof depends on current QR state.
-
 ## Your Job
 
 Keep one owner and one obvious next step on the same issue.
@@ -146,6 +136,14 @@ Use this role when publish or follow-up is the live job.
 
 Keep the issue explicit about publish intent: ship or prototype.
 Do not use publish as a shortcut around current output or review rules.
+
+### GitHub Helpers
+
+Use repo-owned GitHub helpers when the live job needs remote GitHub access.
+
+### Staging QR Helpers
+
+Use repo-owned QR helpers when publish proof depends on current QR state.
 
 ### Attached Checkout
 
