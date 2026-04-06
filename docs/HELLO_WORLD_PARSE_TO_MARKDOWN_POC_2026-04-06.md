@@ -158,39 +158,69 @@ That means the project can keep inventing syntax faster than it can prove the la
 
 # 3) Research Grounding (external + internal "ground truth")
 
+<!-- arch_skill:block:research_grounding:start -->
 ## 3.1 External anchors (papers, systems, prior art)
 
-For this bootstrap, the relevant external-style anchors already available in-repo are the checked-out `Lark` materials:
-
-- `for_reference_only/lark/docs/grammar.md` for concrete grammar authoring model and terminology
-- `for_reference_only/lark/docs/parsers.md` for parser-mode tradeoffs
-- `for_reference_only/lark/examples/indented_tree.py` for indentation-sensitive parsing patterns close to this DSL's shape
-- `for_reference_only/lark/lark/indenter.py` as the reference boundary for using built-in indentation support instead of inventing our own
-
-Deeper external grounding can happen later if parser mode or grammar structure remains unclear after the first deep dive.
+- `for_reference_only/lark/docs/parsers.md` and `for_reference_only/lark/docs/json_tutorial.md` — adopt `parser='lalr'` as the first product parser mode; reject Earley as the default bootstrap path because the first supported subset is intentionally narrow, the desired loop should hard-fail on grammar pressure, and the local Lark docs position LALR as the fast path when the grammar is LR-compatible.
+- `for_reference_only/lark/examples/indented_tree.py` and `for_reference_only/lark/lark/indenter.py` — adopt the stock `Indenter` pattern with `_INDENT` / `_DEDENT` tokens and a custom `_NL` token; this is the clearest built-in path for indentation-sensitive grammars and keeps indentation handling inside ordinary Lark extension points instead of inventing a side preprocessor.
+- `for_reference_only/lark/lark/grammars/common.lark` — adopt stock terminals for the bootstrap subset where they fit cleanly: `CNAME` for names, `ESCAPED_STRING` for quoted strings, `WS_INLINE` for inline whitespace, and `SH_COMMENT` for `#` comments; reject custom identifier/string/comment regexes unless the examples force them.
+- `for_reference_only/lark/docs/grammar.md` — adopt `%ignore` for inline whitespace and comments rather than threading trivia through the grammar manually, because the Lark docs call out `%ignore` as especially important for LALR grammars.
+- `for_reference_only/lark/examples/advanced/create_ast.py` and `for_reference_only/lark/lark/ast_utils.py` — adopt a normal parse-tree to dataclass-AST flow using `Transformer` and `ast_utils.create_transformer()`; reject a hand-written tree walker as the default bootstrap path because the library already provides the minimal structured transform surface we need.
+- `for_reference_only/lark/docs/how_to_use.md` — adopt `strict=True` as the default grammar-validation stance for the first LALR bootstrap loop because it hard-fails shift/reduce and regex collisions instead of normalizing them; note that regex collision checks depend on the `interegular` dependency path, so this becomes an explicit bootstrap choice rather than hidden behavior.
+- `for_reference_only/lark/README.md` and `for_reference_only/lark/docs/tools.md` — reject stand-alone parser generation as part of the first bootstrap even though Lark supports it for LALR, because it would add a second generated artifact surface before the grammar has stabilized.
 
 ## 3.2 Internal ground truth (code as spec)
 
-Current authoritative inputs for this bootstrap are:
+- Authoritative behavior anchors (do not reinvent):
+  - `examples/01_hello_world/prompts/AGENTS.prompt` — current authored source contract for the first bootstrap, including the scalar `role` form that the checked-in ref already exercises and the out-of-scope `HelloWorld2` nested-role variant that must stay explicit.
+  - `examples/01_hello_world/ref/AGENTS.md` — exact rendered Markdown contract for the `HelloWorld` acceptance target.
+  - `docs/LANGUAGE_DESIGN_NOTES.md` — language doctrine: example-first growth, explicit authored titles, fail-loud validation, and parser growth that follows the example sequence.
+  - `docs/COMPILER_ERRORS.md` — canonical numbered compiler-error direction for fail-loud behavior.
+  - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` — known spec holes, especially the `01_hello_world` source/ref ambiguity and the risk of accidental output-selection behavior.
+  - `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` — prior internal grounding that `Lark` is the best fit if the custom syntax is preserved and that later complexity pressure is more semantic than syntactic.
+- Canonical path / owner to reuse:
+  - `docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md` — current planning SSOT; no code owner path exists yet, so implementation must create exactly one compiler-owned path instead of scattered scripts.
+  - repo root current state (`.`) — there is no existing compiler package, no `Makefile`, and no Python project metadata yet; this confirms there is no canonical implementation path to reuse and also increases the risk of ad hoc drift if deep-dive does not pick one clean owner.
+- Existing patterns to reuse:
+  - `for_reference_only/lark/examples/indented_tree.py` — concrete pattern for `parser='lalr'`, `postlex=Indenter()`, `%declare _INDENT _DEDENT`, `%ignore SH_COMMENT`, and an `_NL` token that absorbs indentation spaces and comments.
+  - `for_reference_only/lark/lark/indenter.py` — stock indentation stack behavior, built-in `DedentError`, and the exact post-lex boundary that should own indentation semantics.
+  - `for_reference_only/lark/lark/grammars/common.lark` — stock reusable terminals that can cover the first subset without custom token regexes.
+  - `for_reference_only/lark/examples/advanced/create_ast.py` and `for_reference_only/lark/lark/ast_utils.py` — minimal AST construction path with dataclasses and automatic rule-to-class transformer mapping.
+  - `for_reference_only/lark/docs/json_tutorial.md` — recommended sequencing: start with a normal parse-tree flow, then only consider tree-less LALR once the transformer is already working.
+- Prompt surfaces / language contract to reuse:
+  - `examples/01_hello_world/prompts/AGENTS.prompt` — the first source-language fixture under test.
+  - `examples/01_hello_world/ref/AGENTS.md` — the first rendered-language fixture under test.
+  - `docs/LANGUAGE_DESIGN_NOTES.md` — the current intended semantics that the first grammar subset must not silently contradict.
+- Existing grounding / tool / file exposure:
+  - `for_reference_only/lark/` — local docs, examples, grammar terminals, and implementation code are already available in-repo, so initial parser research can stay local and evidence-based.
+  - read-only repo shell access — enough to inspect examples, docs, and the reference Lark tree without inventing external dependency on web research for the first pass.
+- Duplicate or drifting paths relevant to this change:
+  - `examples/01_hello_world/prompts/AGENTS.prompt` versus `examples/01_hello_world/ref/AGENTS.md` — one source file currently contains both `HelloWorld` and `HelloWorld2` while the checked-in ref covers only one rendered output.
+  - `docs/LIBRARY_RESEARCH.md` and `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` — overlapping parser-choice research already exists and both point toward `Lark`; deep-dive should reuse that grounding instead of reopening library selection from scratch.
+  - repo-wide absence of compiler code — without a chosen owner path, the main drift risk is spawning one-off scripts, scratch grammars, or alternative parser experiments.
+- Capability-first opportunities before new tooling:
+  - `for_reference_only/lark/lark/grammars/common.lark` and `%ignore` — cover names, strings, inline whitespace, and `#` comments before inventing custom token machinery.
+  - `for_reference_only/lark/lark/indenter.py` — use the stock indentation post-lexer before inventing a custom indentation preprocessor.
+  - `for_reference_only/lark/docs/how_to_use.md` strict mode — use built-in collision failure before writing lint-like side checks.
+  - `for_reference_only/lark/lark/ast_utils.py` — use stock transformer/AST helpers before writing a bespoke tree-to-object layer.
+  - explicit `HelloWorld` targeting in the bootstrap runner — avoids inventing multi-output package semantics before the examples settle.
+- Behavior-preservation signals already available:
+  - `examples/01_hello_world/ref/AGENTS.md` — exact output comparison for the first accepted compile target.
+  - Lark `strict=True` on the bootstrap grammar — structural signal that the grammar is not silently relying on unresolved LALR collisions.
+  - explicit hard failure on unsupported `HelloWorld2` nested-role syntax while it remains out of scope — protects the promise that the first subset is narrow and honest.
+- Likely code implications from this research:
+  - the first grammar file should likely import `common.CNAME`, `common.ESCAPED_STRING`, `common.WS_INLINE`, and `common.SH_COMMENT`, declare `_INDENT` / `_DEDENT`, and define `_NL` in the same style as `for_reference_only/lark/examples/indented_tree.py`.
+  - the first parser path should likely be `Lark(..., parser='lalr', postlex=<custom indenter>, strict=True)` rather than Earley.
+  - the first implementation should keep the ordinary parse-tree -> transformer -> AST -> Markdown flow and only consider tree-less LALR after behavior is stable.
+  - stand-alone parser generation and Earley ambiguity tooling are not first-pass ownership.
 
-- `docs/LANGUAGE_DESIGN_NOTES.md`
-- `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`
-- `docs/COMPILER_ERRORS.md`
-- `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md`
-- `examples/01_hello_world/prompts/AGENTS.prompt`
-- `examples/01_hello_world/ref/AGENTS.md`
+## 3.3 Open questions (evidence-based)
 
-Secondary extension pressure comes from the later example sequence in `examples/02_sections` through `examples/09_outputs`, but those examples should inform the next steps after the first Hello World grammar loop is working.
-
-No canonical owner path exists yet for parsing or compilation; this plan will create that path instead of allowing a second experimental parser surface to appear.
-
-## 3.3 Open questions from research
-
-- Should the first `Lark` implementation start directly with `LALR` plus an indenter, or use a more forgiving parser mode until the grammar stabilizes?
-- Should comment handling be ignored entirely at parse time, or preserved just enough to support better error locations and future tooling?
-- Should the acceptance path use the current `AGENTS.prompt` plus explicit agent targeting, or should the first implementation introduce a dedicated Hello World-only fixture so the first contract is cleaner?
-- Does the first bootstrap grammar need only scalar `role`, or is it worth covering the nested `HelloWorld2` role form immediately to avoid a split example story?
-- Which grammar pressures count as acceptable idiomatic `Lark` use versus "hack pressure" that should force a language simplification?
+- Should `strict=True` be part of the bootstrap verification command from day one, which implies choosing how to handle the `interegular` dependency path for regex-collision checking? — settle by confirming acceptable bootstrap dependencies during deep-dive.
+- Should the first accepted fixture remain `examples/01_hello_world/prompts/AGENTS.prompt` with explicit `HelloWorld` targeting, or should `HelloWorld2` move to a separate later fixture before implementation starts? — settle by comparing the implementation cost of explicit targeting against the cleanup cost of splitting the example.
+- What single on-disk compiler path should own the grammar, runner, AST, and renderer once implementation starts? — settle in deep-dive by choosing one path only and rejecting scratch-script drift.
+- If a future example requires syntax that breaks clean `LALR` + stock `Indenter` usage, do we widen parser mode or simplify the language? — settle by treating LALR collisions or required custom post-processing as evidence and defaulting to language simplification unless the feature is clearly worth the added complexity.
+<!-- arch_skill:block:research_grounding:end -->
 
 # 4) Current Architecture (as-is)
 

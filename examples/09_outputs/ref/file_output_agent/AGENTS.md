@@ -29,6 +29,11 @@ This output owns the current section plan and the unresolved decisions that stil
 
 The next role should be able to read `SECTION_PLAN.md` alone and understand the current plan.
 
+#### Path Notes
+
+Interpret `section_root/...` from the current work context and surrounding instructions.
+This example keeps that interpretation as explained guidance, not as a separate root primitive.
+
 #### Example
 
 ```md

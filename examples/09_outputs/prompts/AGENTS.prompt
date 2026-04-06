@@ -7,6 +7,10 @@
 #
 # Simple outputs can stay small.
 # Richer outputs can add more contract detail directly on `output`.
+# Paths like `section_root/...` and `lesson_root/...` stay plain path strings
+# in this example. The model assumes the surrounding turn guidance explains how
+# to interpret those prefixes; they are not promoted to separate root
+# declarations here.
 
 json schema LessonManifestSchema: "Lesson Manifest Schema"
     profile: OpenAIStructuredOutput
@@ -83,6 +87,10 @@ output SectionPlanOutput: "Section Plan Output"
     standalone_read: "Standalone Read"
         "The next role should be able to read SECTION_PLAN.md alone and understand the current plan."
 
+    path_notes: "Path Notes"
+        "Interpret `section_root/...` from the current work context and surrounding instructions."
+        "This example keeps that interpretation as explained guidance, not as a separate root primitive."
+
     example: "Example"
         "# Section Plan"
         "## Summary"
@@ -124,6 +132,8 @@ output LessonManifestOutput: "Lesson Manifest Output"
         "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
 
     notes: "Notes"
+        "Interpret `lesson_root/...` from the current work context and surrounding instructions."
+        "This example keeps that interpretation as explained guidance, not as a separate root primitive."
         "Keep validator command details, validator output, and placeholder-copy status in MANIFEST_VALIDATION.md unless a modeled support file truly owns them."
 
 

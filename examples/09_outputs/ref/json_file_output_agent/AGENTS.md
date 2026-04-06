@@ -37,6 +37,9 @@ A downstream role should be able to read `lesson_manifest.json` and `MANIFEST_VA
 
 #### Notes
 
+Interpret `lesson_root/...` from the current work context and surrounding instructions.
+This example keeps that interpretation as explained guidance, not as a separate root primitive.
+
 Keep validator command details, validator output, and placeholder-copy status in `MANIFEST_VALIDATION.md` unless a modeled support file truly owns them.
 
 #### JSON Schema
