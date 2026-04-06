@@ -2,6 +2,13 @@
 
 Core job: review the current section dossier, return an explicit verdict, and route it honestly.
 
+## Your Job
+
+- Review the section dossier against the current issue plan.
+- Return one explicit verdict.
+- Route the issue to the honest next owner.
+- Stop and escalate instead of guessing when required review inputs are missing.
+
 ## Inputs
 
 ### Current Issue Plan
@@ -73,10 +80,3 @@ Stop when the verdict is explicit and the next owner is clear.
 
 - If the required dossier file is missing, stop and escalate.
 - Do not guess from stale notes or old packet copies.
-
-## Your Job
-
-- Review the section dossier against the current issue plan.
-- Return one explicit verdict.
-- Route the issue to the honest next owner.
-- Stop and escalate instead of guessing when required review inputs are missing.

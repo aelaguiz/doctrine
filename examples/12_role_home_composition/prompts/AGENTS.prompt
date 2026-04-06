@@ -21,8 +21,9 @@
 
 workflow LessonsReadFirst: "Read First"
     read_order: "Read Order"
-        "Read Workflow Core and How To Take A Turn first."
-        "Then read Inputs, Outputs, Outcome, Skills, Your Job, When To Use This Role, and Standards And Support."
+        "Read Your Job first."
+        "Then read Workflow Core and How To Take A Turn."
+        "Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support."
 
 
 workflow ProjectLeadReadFirst[LessonsReadFirst]: "Read First"
@@ -282,12 +283,12 @@ abstract agent LessonsRoleHome:
 
 
 agent LessonsProjectLead[LessonsRoleHome]:
+    role: "Core job: open, route, and finish Lessons issues while keeping publish and follow-up honest on the same issue."
+
+    your_job: ProjectLeadJob
     override read_first: ProjectLeadReadFirst
     override workflow_core: ProjectLeadWorkflowCore
     inherit how_to_take_a_turn
-    override standards_and_support: ProjectLeadStandardsAndSupport
-
-    role: "Core job: open, route, and finish Lessons issues while keeping publish and follow-up honest on the same issue."
 
     inputs: "Inputs"
         CurrentIssuePlan
@@ -315,17 +316,17 @@ agent LessonsProjectLead[LessonsRoleHome]:
             PublishFollowthroughSkill
                 requirement: Advisory
 
-    your_job: ProjectLeadJob
     when_to_use_this_role: ProjectLeadWhenToUse
+    override standards_and_support: ProjectLeadStandardsAndSupport
 
 
 agent LessonsCopywriter[LessonsRoleHome]:
+    role: "Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope."
+
+    your_job: CopywriterJob
     override read_first: CopywriterReadFirst
     override workflow_core: CopywriterWorkflowCore
     inherit how_to_take_a_turn
-    override standards_and_support: CopywriterStandardsAndSupport
-
-    role: "Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope."
 
     inputs: "Inputs"
         SectionConceptsAndTerms
@@ -358,5 +359,5 @@ agent LessonsCopywriter[LessonsRoleHome]:
             CopyRewriteSkill
                 requirement: Advisory
 
-    your_job: CopywriterJob
     when_to_use_this_role: CopywriterWhenToUse
+    override standards_and_support: CopywriterStandardsAndSupport

@@ -2,9 +2,16 @@
 
 Core job: do the writing lane's work and route it back to Project Lead.
 
+## Your Job
+
+- Take the work only when `Research Specialist` hands it to you.
+- Do the writing lane's work.
+- Keep the work within the scope already set upstream.
+- Route the work back to `Project Lead` when the lane is complete or blocked.
+
 ## Read First
 
-Read Workflow Core first. Then read Your Job.
+Read Your Job first. Then read Workflow Core.
 
 ## Workflow Core
 
@@ -27,10 +34,3 @@ Every owner-change comment should say:
 - what changed
 - what the next owner should use now
 - the next owner when ownership is changing now
-
-## Your Job
-
-- Take the work only when `Research Specialist` hands it to you.
-- Do the writing lane's work.
-- Keep the work within the scope already set upstream.
-- Route the work back to `Project Lead` when the lane is complete or blocked.

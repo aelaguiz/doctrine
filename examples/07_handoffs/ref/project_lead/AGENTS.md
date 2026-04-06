@@ -2,11 +2,17 @@
 
 Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes.
 
+## Your Job
+
+- Start the issue with a clear route.
+- Route the first owner change.
+- Keep the issue on a truthful route when work is blocked or routing goes stale.
+- Take the issue back after the final specialist return and close it out honestly.
+
 ## Read First
 
-Start here.
-
-Read Workflow Core first. Then read Your Job.
+Start by reading Your Job.
+Then read Workflow Core.
 
 ## Workflow Core
 
@@ -34,10 +40,3 @@ Every owner-change comment should say:
 - what this turn changed
 - the next owner when ownership is changing now
 - the exact blocker when the issue is blocked
-
-## Your Job
-
-- Start the issue with a clear route.
-- Route the first owner change.
-- Keep the issue on a truthful route when work is blocked or routing goes stale.
-- Take the issue back after the final specialist return and close it out honestly.

@@ -13,6 +13,8 @@ should be read.
 - This audit is about language direction, example shape, and design pressure.
   It is not about the current shipped compiler being incomplete.
 - `12_role_home_composition` already earns the basic role-home shell.
+- `14_handoff_truth` now shows the clean way to name what the next owner should
+  use now with inputs, outputs, outcomes, and plain prose.
 - The open question is now what belongs inside that shell, not whether role
   homes need a new primitive.
 - Packets are not a language primitive direction.
@@ -69,6 +71,9 @@ It should not become a packet primitive.
 It should be expressed through inputs, outputs, outcomes, readable file
 contracts, and explicit review truth.
 
+`14_handoff_truth` now covers the narrow "tell the next owner what to use now"
+pattern, so this is no longer a reason to invent a new trust primitive.
+
 ### 4. Proof and authority boundaries are real
 
 This is one of the strongest useful pressures in `99`.
@@ -100,6 +105,8 @@ The useful pressure is:
 These show up in `99`, but they should not drive the language:
 
 - packet primitives
+- redundant `owns` prose when the output contract already makes ownership
+  obvious
 - raw helper-command catalogs as first-class syntax
 - env var dumps as first-class syntax
 - giant copied quality-bar doctrine blocks
@@ -130,21 +137,19 @@ contracts.
 
 That drifted into examples 12 and 13.
 
-It is not the intended direction and should be removed from those examples.
+It is not the intended direction.
+
+That cleanup has now been done.
 
 ## Real Issues In Simple Terms
 
 These are the things that still look real after removing the stale framing:
 
-1. `12` and `13` drifted away from the skill-first rule by adding
-   `runtime_tools`.
-2. The examples still need a cleaner way to talk about file ownership, review
-   truth, and what a downstream role should trust now.
-3. The examples still need a cleaner way to talk about proof routes and exact
+1. The examples still need a cleaner way to talk about proof routes and exact
    authority boundaries.
-4. The examples still need a cleaner way to talk about attached checkouts and
+2. The examples still need a cleaner way to talk about attached checkouts and
    external product truth.
-5. `99` still carries too much duplicated doctrine and too many inline helper
+3. `99` still carries too much duplicated doctrine and too many inline helper
    details to be used as a direct design source.
 
 ## What Should Be Treated As Example Cleanup Instead Of New Primitives
@@ -163,9 +168,8 @@ features.
 If the repo wants to keep earning the useful parts of `99`, the next examples
 should be small and narrow:
 
-1. one example for ownership and review truth without packets
-2. one example for proof-route and authority boundaries
-3. one example for attached-checkout truth and fail-loud verification
+1. one example for proof-route and authority boundaries
+2. one example for attached-checkout truth and fail-loud verification
 
 Those would be better than promoting the messy `99` packet pattern into the
 language.

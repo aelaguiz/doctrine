@@ -65,18 +65,15 @@ The language appears to have at least four different identities:
 
 The examples imply these are intentionally different, but the reader has to reverse-engineer that.
 
-The clearest friction point is `03_imports`:
-- the import lines are lowercase: `import greeting`, `import object`
-- the declarations are uppercase: `workflow Greeting`, `workflow Object`
-- the references inside the agent are uppercase: `Greeting`, `Object`
+The clearest friction point used to be `03_imports`, but that pressure is now more productive if the example stays explicit:
+- the import lines should look like Python-like module paths, for example `import simple.greeting`
+- relative imports should show the package walk directly, for example `import .leaf` and `import ..shared.context`
+- the references should stay qualified, for example `simple.greeting.Greeting`
 
-Open questions a cold reader will reasonably have:
-- does `import greeting` import a file, a module namespace, or a declaration named `greeting`?
-- is the language case-sensitive for imported symbols?
-- is `Greeting` resolved from the file name or from the declaration name?
-
-Suggested fix:
-- add one comment in `03_imports` that states the resolution model directly
+That direction makes the teaching job much cleaner:
+- the import line identifies the module path
+- the declaration name identifies the typed object inside that module
+- the qualified reference makes both parts visible instead of forcing the reader to guess
 
 ### 4. Inheritance rules are clear for workflow entries, but much less clear for everything else
 
@@ -171,17 +168,14 @@ Right now that rule is inferable, but not stated here.
 
 ### 03 Imports
 
-This is the first example where the reader needs a symbol-resolution model, but the example does not provide one.
+This example is much clearer if it commits to Python-like import resolution instead of leaving the reader to infer symbol identity.
 
-Main friction:
-- lowercase import target
-- uppercase declaration names
-- uppercase references inside the agent
+Current teaching direction:
+- dotted imports like `import simple.greeting`
+- relative imports like `import .leaf` and `import ..shared.context`
+- explicit qualified references like `simple.greeting.Greeting`
 
-The example works as a concept demo, but a cold reader does not know whether the important identity is the file name, the declaration name, or both.
-
-Suggested fix:
-- add one comment that explicitly says what `import greeting` means and how `Greeting` is resolved
+That direction removes the earlier confusion about whether identity comes from the file name, the declaration name, or both.
 
 ### 04 Inheritance
 

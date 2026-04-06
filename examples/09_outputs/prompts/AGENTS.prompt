@@ -169,41 +169,41 @@ output ProjectTrackerUpdate: "Project Tracker Update"
 agent TurnResponseOutputAgent:
     role: "Core job: return a short issue summary in the turn response."
 
-    outputs: "Outputs"
-        IssueSummaryResponse
-
     your_job: "Your Job"
         "Return the issue summary in the turn response."
+
+    outputs: "Outputs"
+        IssueSummaryResponse
 
 
 # Model 2: a built-in file target with a markdown document shape.
 agent FileOutputAgent:
     role: "Core job: write the section plan to a markdown file."
 
-    outputs: "Outputs"
-        SectionPlanOutput
-
     your_job: "Your Job"
         "Write the section plan to the required file."
+
+    outputs: "Outputs"
+        SectionPlanOutput
 
 
 # Model 3: a built-in file target with a stricter JSON output shape.
 agent JsonFileOutputAgent:
     role: "Core job: write the lesson manifest as structured JSON."
 
-    outputs: "Outputs"
-        LessonManifestOutput
-
     your_job: "Your Job"
         "Write the lesson manifest JSON to the required file."
+
+    outputs: "Outputs"
+        LessonManifestOutput
 
 
 # Model 4: a custom output target with target-specific configuration.
 agent CustomTargetOutputAgent:
     role: "Core job: leave an owner update on the project tracker."
 
-    outputs: "Outputs"
-        ProjectTrackerUpdate
-
     your_job: "Your Job"
         "Write the owner update using the custom tracker comment target."
+
+    outputs: "Outputs"
+        ProjectTrackerUpdate

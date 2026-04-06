@@ -2,6 +2,10 @@
 
 Core job: write the section plan to a markdown file.
 
+## Your Job
+
+- Write the section plan to the required file.
+
 ## Outputs
 
 ### Section Plan Output
@@ -41,7 +45,3 @@ This example keeps that interpretation as explained guidance, not as a separate 
 ## Summary
 ...
 ```
-
-## Your Job
-
-- Write the section plan to the required file.

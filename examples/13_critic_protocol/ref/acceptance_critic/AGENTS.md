@@ -2,12 +2,21 @@
 
 Core job: review the current dossier, issue an explicit verdict, and route the same issue honestly.
 
+## Your Job
+
+- Review the current dossier against the current issue plan.
+- Return one explicit verdict.
+- Write the gate log that supports that verdict.
+- Route the issue to the honest next owner.
+- Stop and escalate instead of guessing when required review inputs are missing.
+
 ## Read First
 
 ### Read Order
 
-Read Workflow Core and How To Take A Turn first.
-Then read Inputs, Outputs, Outcome, Skills, Your Job, and Standards And Support.
+Read Your Job first.
+Then read Workflow Core and How To Take A Turn.
+Then read Inputs, Outputs, Outcome, Skills, and Standards And Support.
 
 ### Current Review Scope
 
@@ -140,14 +149,6 @@ Run the repo's current checklist for critic review of a section dossier.
 ##### Use When
 
 Use this when the role needs a repeatable review pass against the current dossier contract.
-
-## Your Job
-
-- Review the current dossier against the current issue plan.
-- Return one explicit verdict.
-- Write the gate log that supports that verdict.
-- Route the issue to the honest next owner.
-- Stop and escalate instead of guessing when required review inputs are missing.
 
 ## Standards And Support
 

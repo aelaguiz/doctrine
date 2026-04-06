@@ -85,6 +85,12 @@ agent WritingSpecialist:
 agent AcceptanceReviewer:
     role: "Core job: review the current section dossier, return an explicit verdict, and route it honestly."
 
+    your_job: "Your Job"
+        "Review the section dossier against the current issue plan."
+        "Return one explicit verdict."
+        "Route the issue to the honest next owner."
+        "Stop and escalate instead of guessing when required review inputs are missing."
+
     inputs: "Inputs"
         CurrentIssuePlan
         SectionDossier
@@ -110,9 +116,3 @@ agent AcceptanceReviewer:
         stop_rule: "Hard Stop Rule"
             "If the required dossier file is missing, stop and escalate."
             "Do not guess from stale notes or old packet copies."
-
-    your_job: "Your Job"
-        "Review the section dossier against the current issue plan."
-        "Return one explicit verdict."
-        "Route the issue to the honest next owner."
-        "Stop and escalate instead of guessing when required review inputs are missing."

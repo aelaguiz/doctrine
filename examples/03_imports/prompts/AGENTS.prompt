@@ -1,5 +1,17 @@
-import greeting
-import object
+# This example now pressure-tests Python-like import resolution for prompt files.
+# - `import package.module` resolves from this example's `prompts/` root
+# - `import .sibling.module` resolves from the current file's package
+# - `import ..shared.module` walks to the parent package first
+# - imported declarations are referenced by fully qualified symbol path:
+#   `package.module.WorkflowName`
+# The first three imports are intentionally simple.
+# The later imports are intentionally more complex transitive chains.
+import simple.greeting
+import simple.object
+import simple.nested.polite
+import chains.absolute.briefing
+import chains.relative.entry
+import chains.deep.levels.one.two.entry
 
 
 agent ImportsDemo:
@@ -8,5 +20,9 @@ agent ImportsDemo:
     workflow: "Imported Steps"
         "Follow the imported instructions below."
 
-        greeting.Greeting
-        object.Object
+        simple.greeting.Greeting
+        simple.object.Object
+        simple.nested.polite.PoliteGreeting
+        chains.absolute.briefing.AbsoluteBriefing
+        chains.relative.entry.RelativeChain
+        chains.deep.levels.one.two.entry.DeepRelativeChain

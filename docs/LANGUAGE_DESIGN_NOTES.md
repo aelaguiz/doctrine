@@ -107,10 +107,15 @@ Imports exist to compose user-defined pieces.
 
 Current intent:
 - imported definitions should be typed declarations
-- importing a file should bring in real named language objects, not raw text snippets
-- a workflow declared in another file should be referenceable by name inside an agent workflow
+- importing a module should bring in real named language objects, not raw text snippets
+- the current `03_imports` direction is Python-like module resolution:
+  - `import package.module` resolves from the example or package root
+  - `import .sibling.module` resolves from the current package
+  - `import ..shared.module` walks to the parent package first
+- an imported workflow should be referenceable through an explicit qualified symbol path such as `simple.greeting.Greeting`
+- imported symbol identity should not depend on case guesswork or fallback lookup
 
-This is why the imported examples are typed as `workflow Greeting: "Greeting"` and `workflow Object: "Object"` instead of just using untyped labels.
+This is why the imported examples are typed as `workflow Greeting: "Greeting"` and referenced as explicit module-qualified symbols instead of as untyped text labels.
 
 ## Composition
 
@@ -224,6 +229,12 @@ The current examples are intentionally pushing on these rules so we can validate
 - packets are not a current language primitive direction.
 - the same authoring pressure should be handled through inputs, outputs,
   outcomes, ownership, and readable file contracts instead.
+- do not cargo-cult `99` output patterns such as redundant `owns` sections when
+  the output contract already makes ownership obvious.
+- `14_handoff_truth` shows the basic "tell the next owner what to use now"
+  pattern without adding a new primitive.
+- do not treat that handoff-truth pattern as an open language gap unless we
+  later decide we need machine-readable freshness semantics.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained

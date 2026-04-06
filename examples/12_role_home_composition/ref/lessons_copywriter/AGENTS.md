@@ -2,12 +2,19 @@
 
 Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope.
 
+## Your Job
+
+Read the whole lesson before you rewrite isolated strings.
+Use grounded poker wording without changing lesson structure or authority scope.
+Record post-copy validation in the current outputs.
+
 ## Read First
 
 ### Read Order
 
-Read Workflow Core and How To Take A Turn first.
-Then read Inputs, Outputs, Outcome, Skills, Your Job, When To Use This Role, and Standards And Support.
+Read Your Job first.
+Then read Workflow Core and How To Take A Turn.
+Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support.
 
 ### Immediate Local Read
 
@@ -152,12 +159,6 @@ Rewrite learner-facing poker copy in the repo's expected voice.
 ##### Use When
 
 Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback.
-
-## Your Job
-
-Read the whole lesson before you rewrite isolated strings.
-Use grounded poker wording without changing lesson structure or authority scope.
-Record post-copy validation in the current outputs.
 
 ## When To Use This Role
 

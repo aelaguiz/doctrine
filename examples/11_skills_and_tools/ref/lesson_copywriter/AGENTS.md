@@ -2,6 +2,12 @@
 
 Core job: turn an approved lesson manifest into grounded learner copy without changing lesson structure or authority scope.
 
+## Your Job
+
+- Read the whole lesson before you rewrite isolated strings.
+- Use grounded poker wording without changing lesson structure or authority scope.
+- If no named task skill fits cleanly, discover the right one before you guess.
+
 ## Skills
 
 ### Can Run
@@ -75,9 +81,3 @@ Use this only when the job is restoring a live Flutter dev loop.
 ##### Reason
 
 This role is baseline copy work, not Flutter environment repair.
-
-## Your Job
-
-- Read the whole lesson before you rewrite isolated strings.
-- Use grounded poker wording without changing lesson structure or authority scope.
-- If no named task skill fits cleanly, discover the right one before you guess.

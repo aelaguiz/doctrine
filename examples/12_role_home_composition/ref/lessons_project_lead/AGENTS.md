@@ -2,12 +2,19 @@
 
 Core job: open, route, and finish Lessons issues while keeping publish and follow-up honest on the same issue.
 
+## Your Job
+
+Keep one owner and one obvious next step on the same issue.
+Keep the issue plan current on routing-only or process-repair turns.
+Own publish and follow-up state when those are the live jobs.
+
 ## Read First
 
 ### Read Order
 
-Read Workflow Core and How To Take A Turn first.
-Then read Inputs, Outputs, Outcome, Skills, Your Job, When To Use This Role, and Standards And Support.
+Read Your Job first.
+Then read Workflow Core and How To Take A Turn.
+Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support.
 
 ### Immediate Local Read
 
@@ -118,12 +125,6 @@ Handle PR follow-up, QR updates, publish proof, and same-issue closeout.
 ##### Use When
 
 Use this when publish or follow-up is the live job.
-
-## Your Job
-
-Keep one owner and one obvious next step on the same issue.
-Keep the issue plan current on routing-only or process-repair turns.
-Own publish and follow-up state when those are the live jobs.
 
 ## When To Use This Role
 

@@ -65,12 +65,12 @@ input DesignSpec: "Design Spec"
 agent PromptInputAgent:
     role: "Core job: summarize the current issue from prompt-provided input."
 
-    inputs: "Inputs"
-        CurrentIssue
-
     your_job: "Your Job"
         "Read the current issue from the prompt."
         "Summarize it clearly and briefly."
+
+    inputs: "Inputs"
+        CurrentIssue
 
 
 # Model 2: input can be looked up from a named path.
@@ -79,35 +79,35 @@ agent PromptInputAgent:
 agent PathInputAgent:
     role: "Core job: revise a section plan using path-based file input."
 
-    inputs: "Inputs"
-        SectionPlan
-        PreviousSummary
-
     your_job: "Your Job"
         "Read the required section plan from the named path."
         "Use the previous summary only if continuity matters for the current turn."
         "Fail if the required section plan is missing."
+
+    inputs: "Inputs"
+        SectionPlan
+        PreviousSummary
 
 
 # Model 3: input can be looked up from an environment variable.
 agent EnvInputAgent:
     role: "Core job: locate the tracker checkout from an environment variable before doing any tracker work."
 
-    inputs: "Inputs"
-        TrackerRoot
-
     your_job: "Your Job"
         "Look up the tracker root from the environment variable."
         "Fail if the environment variable is missing."
+
+    inputs: "Inputs"
+        TrackerRoot
 
 
 # Model 4: input can come from a declared custom source.
 agent CustomSourceInputAgent:
     role: "Core job: use a design spec from a custom typed input source."
 
-    inputs: "Inputs"
-        DesignSpec
-
     your_job: "Your Job"
         "Use the custom source configuration to find the design document."
         "Fail if the required design source data is missing."
+
+    inputs: "Inputs"
+        DesignSpec

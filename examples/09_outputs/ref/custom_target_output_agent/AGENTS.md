@@ -2,6 +2,10 @@
 
 Core job: leave an owner update on the project tracker.
 
+## Your Job
+
+- Write the owner update using the custom tracker comment target.
+
 ## Outputs
 
 ### Project Tracker Update
@@ -32,7 +36,3 @@ A downstream reader should be able to read this comment alone and understand wha
 - use now: SECTION_PLAN.md
 - next owner: Writing Specialist
 ```
-
-## Your Job
-
-- Write the owner update using the custom tracker comment target.

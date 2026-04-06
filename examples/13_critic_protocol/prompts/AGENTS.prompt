@@ -15,8 +15,9 @@
 
 workflow CriticReadFirst: "Read First"
     read_order: "Read Order"
-        "Read Workflow Core and How To Take A Turn first."
-        "Then read Inputs, Outputs, Outcome, Skills, Your Job, and Standards And Support."
+        "Read Your Job first."
+        "Then read Workflow Core and How To Take A Turn."
+        "Then read Inputs, Outputs, Outcome, Skills, and Standards And Support."
 
     current_review_scope: "Current Review Scope"
         "Read the current issue plan, the current dossier, and the current validation record before you issue a verdict."
@@ -148,6 +149,13 @@ agent SectionAuthor:
 agent AcceptanceCritic:
     role: "Core job: review the current dossier, issue an explicit verdict, and route the same issue honestly."
 
+    your_job: "Your Job"
+        "Review the current dossier against the current issue plan."
+        "Return one explicit verdict."
+        "Write the gate log that supports that verdict."
+        "Route the issue to the honest next owner."
+        "Stop and escalate instead of guessing when required review inputs are missing."
+
     read_first: CriticReadFirst
     workflow_core: CriticWorkflowCore
     how_to_take_a_turn: CriticHowToTakeATurn
@@ -184,12 +192,5 @@ agent AcceptanceCritic:
         can_run: "Can Run"
             ReviewChecklistSkill
                 requirement: Advisory
-
-    your_job: "Your Job"
-        "Review the current dossier against the current issue plan."
-        "Return one explicit verdict."
-        "Write the gate log that supports that verdict."
-        "Route the issue to the honest next owner."
-        "Stop and escalate instead of guessing when required review inputs are missing."
 
     standards_and_support: CriticStandardsAndSupport

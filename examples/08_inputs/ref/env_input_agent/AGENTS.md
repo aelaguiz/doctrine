@@ -2,6 +2,11 @@
 
 Core job: locate the tracker checkout from an environment variable before doing any tracker work.
 
+## Your Job
+
+- Look up the tracker root from the environment variable.
+- Fail if the environment variable is missing.
+
 ## Inputs
 
 ### Tracker Root
@@ -12,8 +17,3 @@ Core job: locate the tracker checkout from an environment variable before doing 
 - Requirement: Required
 
 This environment variable points to the tracker checkout root.
-
-## Your Job
-
-- Look up the tracker root from the environment variable.
-- Fail if the environment variable is missing.

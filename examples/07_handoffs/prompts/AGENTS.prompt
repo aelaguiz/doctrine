@@ -17,12 +17,12 @@
 # - agent inheritance should carry named section slots, not anonymous deep trees
 
 workflow ReadFirst: "Read First"
-    "Read Workflow Core first. Then read Your Job."
+    "Read Your Job first. Then read Workflow Core."
 
 
 workflow ProjectLeadReadFirst[ReadFirst]: "Read First"
-    "Start here."
-    "Read Workflow Core first. Then read Your Job."
+    "Start by reading Your Job."
+    "Then read Workflow Core."
 
 
 workflow SameIssueWorkflowCoreBase: "Workflow Core"
@@ -112,27 +112,24 @@ abstract agent SameIssueRole:
 # - `override read_first: ...` replaces the inherited slot
 # - new slots such as `workflow_core` and `your_job` are introduced directly
 agent ProjectLead[SameIssueRole]:
-    override read_first: ProjectLeadReadFirst
-
     role: "Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes."
 
-    workflow_core: ProjectLeadWorkflowCore
     your_job: ProjectLeadJob
+    override read_first: ProjectLeadReadFirst
+    workflow_core: ProjectLeadWorkflowCore
 
 
 agent ResearchSpecialist[SameIssueRole]:
-    inherit read_first
-
     role: "Core job: do the research lane's work and route it to Writing Specialist."
 
-    workflow_core: ResearchSpecialistWorkflowCore
     your_job: ResearchSpecialistJob
+    inherit read_first
+    workflow_core: ResearchSpecialistWorkflowCore
 
 
 agent WritingSpecialist[SameIssueRole]:
-    inherit read_first
-
     role: "Core job: do the writing lane's work and route it back to Project Lead."
 
-    workflow_core: WritingSpecialistWorkflowCore
     your_job: WritingSpecialistJob
+    inherit read_first
+    workflow_core: WritingSpecialistWorkflowCore
