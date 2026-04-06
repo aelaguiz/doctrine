@@ -1,5 +1,18 @@
+import common.role_home
+import common.support
+import common.skills
 import common.inputs.psmobile.catalog
 import common.artifacts.dossier_engineer
+
+
+workflow DossierEngineerReadFirst[common.role_home.LessonsReadFirst]: "Read First"
+    inherit read_order
+
+    immediate_local_read: "Immediate Local Read"
+        "TODO: read the current issue context plus the current scoped track and section before dossier work begins."
+
+    local_helper_order: "Local Helper Order"
+        "Use the required poker skills before you lock section truth."
 
 
 workflow DossierEngineerJob: "Your Job"
@@ -7,7 +20,8 @@ workflow DossierEngineerJob: "Your Job"
     "Define section advancement."
     "Define stop line."
     "Define candidate concept burden."
-    "Ground the section boundary honestly."
+    "Record grounding and open questions."
+    "Protect the smallest honest section burden."
 
 
 workflow DossierEngineerWhenToUse: "When To Use This Role"
@@ -15,9 +29,19 @@ workflow DossierEngineerWhenToUse: "When To Use This Role"
     "Stop before concept lock, lesson architecture, or copy work."
 
 
-# TODO: add PokerGroundingSkill and a real skills section once shared skill declarations exist.
-agent DossierEngineer:
+workflow DossierEngineerStandardsAndSupport[common.role_home.LessonsStandardsAndSupport]: "Standards And Support"
+    "Use the attached checkout guidance when dossier work needs product truth."
+
+    use attached_checkout: common.support.AttachedCheckoutSupport
+
+
+agent DossierEngineer[common.role_home.LessonsRoleHome]:
     role: "Core job: establish the honest section teaching burden from current curriculum truth and poker grounding."
+
+    override read_first: DossierEngineerReadFirst
+    inherit workflow_core
+    inherit how_to_take_a_turn
+    inherit skills_and_tools
 
     your_job: DossierEngineerJob
 
@@ -42,4 +66,23 @@ agent DossierEngineer:
         stop_here_if: "Stop Here If"
             "Stop when the dossier is explicit enough for review."
 
+    skills: "Skills"
+        can_run: "Can Run"
+            common.skills.PaperclipSkill
+                requirement: Required
+
+            common.skills.PokerGroundingSkill
+                requirement: Required
+
+            common.skills.PokerKBSkill
+                requirement: Required
+
+            common.skills.GitHubAccessSkill
+                requirement: Advisory
+
+            common.skills.ParaMemoryFilesSkill
+                requirement: Advisory
+
     when_to_use_this_role: DossierEngineerWhenToUse
+
+    override standards_and_support: DossierEngineerStandardsAndSupport

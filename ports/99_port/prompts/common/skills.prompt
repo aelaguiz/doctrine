@@ -9,11 +9,38 @@ skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
     purpose: "Get Books receipts for section truth, concept meaning, glossary wording, or learner-facing copy."
 
     use_when: "Use When"
-        "Use this when a lane needs Books receipts inside the attached checkout for section truth, concept meaning, glossary wording, or learner-facing copy."
+        "Use this when a lane needs Books receipts for section truth, concept meaning, glossary wording, or learner-facing copy."
+        "Use this when grounding must prove the meaning of a claim, and the wording too when the wording itself is doing real teaching work."
 
     provides: "Provides"
         "Provides the normal PokerKB-backed route for lanes that need those receipts."
         "This is the normal PokerKB skill for Section Dossier Engineer, Section Concepts and Terms Curator, and Lessons Copywriter."
+        "When grounding matters, it leaves the claim or line, the successful query, the Books result used, and the decision that came out of that work."
+        "When wording matters, it also names the exact returned Books language that shaped the final line."
+
+    does_not: "Does Not"
+        "Does not turn idea grounding into wording grounding."
+        "Does not treat a Books miss as permission to freewrite."
+        "Does not turn a repair pass into prove this draft is right."
+        "If grounding is still missing, block the claim or narrow the scope instead of smoothing over the gap."
+
+
+skill PokerKBSkill: "poker-kb"
+    purpose: "Use PokerKB for Books-grounded meaning, terminology, and wording support without turning it into exact-move proof."
+
+    use_when: "Use When"
+        "Use this when the job is meaning, terminology, or books-grounded learner wording."
+        "Use discovery-style queries when the job is section truth, sequencing, or term choice."
+
+    provides: "Provides"
+        "Provides the normal repo route for Books-backed definitions, concept grounding, and lesson-safe poker wording."
+        "Use the `books` namespace explicitly and prefer the books service over guessed localhost defaults unless local PokerKB service work is itself in scope."
+        "Supports discovery-style queries that ask what books call something or how books would frame it, then narrow and retry once if the first answer is too broad."
+
+    does_not: "Does Not"
+        "Does not prove the concrete move the learner should make."
+        "Does not justify leading queries or asking PokerKB to bless the section, term, or wording you already want."
+        "Does not treat echoed wording from your own query as independent proof."
 
 
 skill GitHubAccessSkill: "github-access"
