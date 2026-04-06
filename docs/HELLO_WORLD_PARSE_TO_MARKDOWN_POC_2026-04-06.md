@@ -1,5 +1,5 @@
 ---
-title: "PyPrompt - Hello World Grammar Bootstrap - Architecture Plan"
+title: "PyPrompt - Grammar Bootstrap And Example-Driven Expansion Through 06 - Architecture Plan"
 date: 2026-04-06
 status: active
 fallback_policy: forbidden
@@ -21,11 +21,11 @@ related:
 
 # TL;DR
 
-- Outcome: Bootstrap the first real PyPrompt language grammar with `Lark`, prove it against the Hello World subset, and use that shipped slice both as compiler scaffolding and as a discovery engine for mistakes, contradictions, and underspecified language behavior.
-- Problem: The repo now has a runnable grammar, compiler, renderer, and shared verifier for the bootstrap slice, but the language is still only partially materialized; the next architecture risks are widening grammar support without extending the shared corpus honestly and silently smoothing over language inconsistencies that should instead be surfaced for design decisions.
-- Approach: Lock the first grammar to the exact syntax pressure already present in `examples/01_hello_world/prompts/AGENTS.prompt`, author one checked-in `Lark` grammar for it, parse into a minimal typed AST, compile a selected agent into Markdown, and treat that bootstrap loop as both proof of viability and a deliberate materialization pass whose job is to expose inconsistencies rather than hide them.
-- Plan: Ground the first grammar in the current examples and design notes, keep the current `01_hello_world` source file parseable as-authored, wire one runner plus one `make` target, keep every unsupported construct fail-loud, repeatedly surface any inconsistency the compiler/verifier uncovers, and then converge verification onto one shared `verify_corpus` path with adjacent `cases.toml` manifests, a filtered `make hello-world` alias, and a planned `02_sections` render contract instead of growing more one-off checker modules.
-- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; materialization is discovery, so newly exposed inconsistencies are first-class outputs of the work; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if implementation or verification exposes a language inconsistency that requires a semantic choice, stop and surface it for explicit discussion instead of silently picking a behavior; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds; the shared verifier must become the only durable compiler-test owner path; and the shipped `check_hello_world` logic must disappear as separate verifier logic once `verify_corpus` covers `01_hello_world`.
+- Outcome: Bootstrap the first real PyPrompt language grammar with `Lark`, prove it against the Hello World subset, and use that shipped slice both as compiler scaffolding and as a discovery engine for mistakes, contradictions, and underspecified language behavior while opening a staged grammar-growth path through examples `01` through `06`.
+- Problem: The repo now has a runnable grammar, compiler, renderer, and shared verifier for the bootstrap slice, but the language is still only partially materialized; the next architecture risks are widening grammar support too quickly across `02` through `06`, extending the shared corpus dishonestly, and silently smoothing over language inconsistencies that should instead be surfaced for design decisions.
+- Approach: Lock the first grammar to the exact syntax pressure already present in `examples/01_hello_world/prompts/AGENTS.prompt`, keep extending the same grammar/AST/compiler/verifier path in strict example order, and treat every grammar-growth phase as both implementation work and a materialization pass whose job is to expose inconsistencies rather than hide them.
+- Plan: Keep the current `01_hello_world` source file parseable as-authored, keep every unsupported construct fail-loud, repeatedly surface any inconsistency the compiler/verifier uncovers, and then grow the grammar in separate phases for `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` instead of batching semantic leaps or growing more one-off checker modules.
+- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; materialization is discovery, so newly exposed inconsistencies are first-class outputs of the work; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; post-bootstrap grammar growth must proceed example-by-example through `02` to `06` rather than as one batched expansion; each grammar-growth phase must halt and surface inconsistencies or hack pressure before widening semantics; if implementation or verification exposes a language inconsistency that requires a semantic choice, stop and surface it for explicit discussion instead of silently picking a behavior; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds; the shared verifier must remain the only durable compiler-test owner path; and no future phase may bypass the shared verifier by smuggling verification truth into ad hoc scripts or hidden defaults.
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -42,7 +42,7 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 
 ## 0.1 The claim (falsifiable)
 
-A small `Lark`-based grammar and one repeatable local verification command can parse the agreed Hello World subset of the PyPrompt input language, compile the targeted `HelloWorld` agent into Markdown that reflects the authored prompt semantics, and deliberately surface contradictions, drift, and underspecified behavior across prompts, refs, and doctrine instead of letting implementation silently normalize them. In this plan, materialization is discovery as much as it is implementation.
+A small `Lark`-based grammar and one repeatable local verification path can grow the PyPrompt input language from the shipped `01_hello_world` slice through examples `02` to `06` one phase at a time, while deliberately surfacing contradictions, drift, and underspecified behavior across prompts, refs, and doctrine instead of letting implementation silently normalize them. In this plan, materialization is discovery as much as it is implementation, and every post-bootstrap phase is allowed to stop on inconsistencies rather than coding through them.
 
 ## 0.2 In scope
 
@@ -66,8 +66,8 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - Wiring one simple local command such as `make hello-world` to run the bootstrap parse/compile/verify loop
 - Using this loop to expose holes in the current example/spec story before extending the grammar to later examples
 - Using grammar pressure, verifier pressure, and ref/prompt mismatches to surface language inconsistencies for explicit decisions instead of quietly smoothing them over
-- Making a reusable full-compiler verification framework an explicit next-step requirement, so the bootstrap checker does not silently become the testing architecture
-- Seeding the first shared verification corpus with three concrete rendered cases:
+- Using the shipped shared verifier, `pyprompt.verify_corpus`, as the only grammar-growth verification path
+- Seeding the shared verification corpus with the current bootstrap and the next queued contract:
   - `HelloWorld`
   - `HelloWorld2`
   - `examples/02_sections`
@@ -75,26 +75,32 @@ A small `Lark`-based grammar and one repeatable local verification command can p
   - `examples/*/cases.toml` loaded through Python stdlib `tomllib`
   - `make verify-examples` as the full active-corpus run
   - `make hello-world` as a filtered alias over `examples/01_hello_world/cases.toml`
+- Planning and sequencing separate grammar-growth phases for:
+  - `examples/02_sections`
+  - `examples/03_imports`
+  - `examples/04_inheritance`
+  - `examples/05_workflow_merge`
+  - `examples/06_nested_workflows`
+- Treating each of those grammar-growth phases as both implementation work and an inconsistency-discovery gate that must halt rather than build hacks when examples, refs, and doctrine stop agreeing cleanly
 - Preferring stock `Lark` facilities wherever they fit cleanly, including ordinary grammar rules, the built-in indentation machinery when needed, and standard tree/transform tooling
 
 ## 0.3 Out of scope
 
 - Nested field blocks, keyed workflow entries, or block shapes beyond the exact `role` and `workflow` forms already present in `examples/01_hello_world/prompts/AGENTS.prompt`
-- `02_sections` and later language features, including:
-  - nested keyed workflow entries
-  - imports
-  - top-level reusable workflows
-  - inheritance
-  - `inherit` / `override`
+- `07_handoffs` and later language features, including:
   - handoff routing
   - input and output primitives
+  - outputs
+  - turn outcomes
+  - skills and tools
 - Settling the full long-term output-file mapping for multi-agent source packages
 - Packaging, release workflows, editor integration, or generalized CLI ergonomics beyond one small local bootstrap command
-- Implementing the generalized compiler test framework in this bootstrap pass; the requirement is in scope now, but its concrete design should be re-cut through external research before more compiler growth lands
+- Batch-implementing examples `02` through `06` in one coding pass instead of treating them as separate phases with separate stop points
 - General agent-field flexibility beyond the exact bootstrap subset, including reordered fields, repeated `role` / `workflow` fields, or additional agent fields
 - Any attempt to model `99_not_clean_but_useful` in this first grammar pass
 - Custom parser sidecars, bespoke recovery layers, or syntax-specific hacks whose main job is to rescue a language shape that does not fit cleanly in `Lark`
 - A custom manifest DSL, inline source-mutation mini-language, snapshot updater, or other verifier machinery beyond adjacent TOML manifests plus ordinary local prompt files
+- Silently resolving contradictions between prompts, approximate refs, and doctrine without recording and discussing them
 
 ## 0.4 Definition of done (acceptance evidence)
 
@@ -105,6 +111,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - When the parser, compiler, or verifier exposes an inconsistency that cannot be resolved from prompt semantics plus explicit doctrine, the work stops and surfaces that inconsistency for explicit language or example decisions
 - The checked-in grammar and runner structure leave a credible extension path to `02_sections` without replacing the parser front-end or inventing a second syntax model
 - The repo ships one shared verifier path, `pyprompt.verify_corpus`, with adjacent example manifests so future example growth does not default to more hard-coded `check_<example>` entrypoints
+- The canonical plan contains separate grammar-growth phases for `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows`, and each phase explicitly says to halt and surface inconsistencies rather than coding around them
 
 ## 0.5 Key invariants (fix immediately if violated)
 
@@ -119,25 +126,27 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - The bootstrap subset stays structurally exact: one `role` followed by one `workflow`, with anything else failing loudly until later examples earn broader flexibility
 - The renderer never invents visible headings or extra blank-line structure that are not implied by explicit authored titles and source ordering
 - Grammar growth follows the example sequence and design notes; unsupported features fail loudly instead of being guessed
+- Post-bootstrap grammar growth through `02` to `06` happens one example phase at a time; no phase may batch multiple unresolved semantic leaps together
 - If a proposed syntax feature requires non-idiomatic parser hacks, the default response is to change or defer the language feature instead of normalizing the hack
 - The compiler/verifier must surface inconsistencies as first-class findings; they are not implementation noise
 - When materialization exposes a contradiction between examples, doctrine, or output expectations, the plan should force an explicit decision or explicit defer, not a silent choice in code
 - Shared compiler verification converges on `pyprompt.verify_corpus`; one-off checker modules are transitional only and must be deleted once migrated
 - `cases.toml` manifests are machine-checked verifier contracts distinct from approximate `AGENTS.md` refs
+- Every grammar-growth phase must prefer tightening the language over carrying hacky parser or compiler rescue logic forward
 
 # 1) Key Design Considerations (what matters most)
 
 ## 1.1 Priorities (ranked)
 
 1. Use materialization as discovery: make the compiler/verifier expose mistakes, contradictions, and underspecified parts of the language early enough to act on them.
-2. Make the language real enough to parse and rerun locally instead of remaining docs-only.
-3. Keep the first supported subset narrow, explicit, and fail-loud.
+2. Grow the grammar strictly in example order through `01` to `06`, one earned slice at a time.
+3. Keep each supported subset narrow, explicit, and fail-loud.
 4. Prefer idiomatic out-of-the-box `Lark` facilities over custom parser wiring.
-5. Lay out the implementation so later examples can extend the same grammar incrementally.
+5. Lay out the implementation so later examples extend the same grammar and shared verifier incrementally.
 
 ## 1.2 Constraints
 
-- The repo currently has no compiler, no build tooling, and no runtime verification loop.
+- The repo now has a shipped compiler slice and shared verifier, but active grammar support still stops at `01_hello_world`.
 - `examples/01_hello_world/prompts/AGENTS.prompt` currently mixes two role forms while the checked-in ref shows only one rendered output.
 - The existing `AGENTS.md` refs were manually built as examples and are expected to contain drift or outright bugs.
 - The language direction is example-first and intentionally wants parser growth to follow the example sequence.
@@ -145,6 +154,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - The likely grammar is indentation-sensitive, so parser-mode and indenter choices matter early.
 - The user explicitly wants hard failure when the language shape starts demanding hacks; changing the language is preferred to building parser scaffolding around it.
 - The shared verifier now exists, but its shipped schema is intentionally narrow and must stay honest as later examples add pressure beyond `exact_lines`, `parse_fail`, and `compile_fail`.
+- Examples `02` through `06` compound semantics quickly, so batching them would hide real language contradictions and increase the chance of building hacks.
 - The user explicitly wants inconsistencies surfaced and discussed, because keeping all emergent language pressure in working memory is unrealistic; the plan must therefore keep rediscovering and restating that obligation.
 
 ## 1.3 Architectural principles (rules we will enforce)
@@ -157,6 +167,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - Prefer stock `Lark` grammar/lexer/parser/indenter/transform patterns before any custom wiring.
 - If clean `Lark` usage stops fitting, treat that as language-design feedback first.
 - If implementation pressure exposes an inconsistency that requires semantic invention, stop and surface it for explicit language or example decisions.
+- Post-bootstrap grammar growth proceeds through separate phases for `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows`, not one combined “support everything” phase.
 - Later example support extends the same core architecture rather than introducing parallel parsers or ad hoc readers.
 - Compiler verification should converge on one reusable corpus-driven or contract-driven framework, not a sequence of bespoke `check_<example>` scripts.
 
@@ -207,6 +218,8 @@ That means the project can still invent semantics faster than it proves them if 
 - The verification surface should be cheap enough to rerun every time a new example or language feature is added.
 - The verification surface must scale structurally as the compiler grows; a hand-written assertion bundle per example is acceptable only as bootstrap proof, not as the long-term model.
 - The plan has to treat inconsistency surfacing as part of the product of the work, because explicit externalization is what lets the language design keep up with implementation pressure.
+- Grammar growth from `02` through `06` should happen in separate phases that each stabilize one semantic jump before the next example compounds it.
+- Each of those phases should explicitly halt for discussion when examples, refs, doctrine, and clean `Lark` fit stop agreeing.
 
 # 3) Research Grounding (external + internal "ground truth")
 
@@ -758,6 +771,7 @@ Bootstrap validation and render behavior remain explicit:
 - target-agent resolution must fail loudly for missing names or duplicate agent declarations
 - `for_reference_only/lark` is design input only and never a runtime dependency surface
 - unsupported syntax fails before rendering
+- post-bootstrap grammar growth from `02` through `06` proceeds in separate example phases over the same canonical code path rather than one batched parser widening
 - if a future syntax feature requires non-idiomatic parser rescue logic, the default answer is to change or defer that language feature
 - one shared corpus verifier, `pyprompt.verify_corpus`, must own full-compiler verification once the follow-on phase lands
 - `pyprompt/check_hello_world.py` is deleted once `verify_corpus` covers `examples/01_hello_world`
@@ -1041,6 +1055,137 @@ Completed work:
   The Hello World bootstrap slice now runs only through the shared verifier plus a `Makefile` alias.
 * Rollback:
   Keep the shipped bootstrap checker only long enough to recover from a bad migration, then either fix the shared harness or revert the migration cleanly; do not let that fallback become a reason to keep two verifier paths.
+
+Expansion rule for the next grammar phases:
+
+- Phases 6 through 10 intentionally follow the example sequence `02` through `06`.
+- Each phase is both grammar implementation work and an inconsistency-discovery gate.
+- If a phase exposes contradiction pressure, ref/prompt drift, doctrine gaps, or parser-hack pressure that cannot be settled directly from existing prompt semantics plus explicit doctrine, stop that phase, record the inconsistency, and re-enter deep-dive instead of widening the grammar anyway.
+- No later phase may be pulled forward in implementation just because it seems nearby; each example family must first earn a clean, tight contract on the shared verifier path.
+
+## Phase 6 - Example 02 Sections
+
+Status: NOT STARTED
+
+* Goal:
+  Extend the shipped bootstrap grammar just far enough to support `examples/02_sections` as a real local-workflow feature instead of a planned contract, while using that work to settle the first headed-subsection model cleanly.
+* Work:
+  Deep-dive the exact contract for keyed local workflow entries inside an agent-owned `workflow: "Title"` block.
+  Decide and document the minimal AST/render model for ordered child sections beneath a workflow without inventing future inheritance or reusable-workflow semantics early.
+  Extend `pyprompt.lark`, the AST, compiler, renderer, and `examples/02_sections/cases.toml` through the same canonical path.
+  Promote `examples/02_sections/cases.toml` from planned to active only once the prompt semantics and exact rendered contract agree.
+  Add the smallest earned negative cases if the clarified doctrine settles them cleanly, such as duplicate local section keys or malformed local entry shape.
+  Halt immediately if this phase exposes unresolved contradictions about key identity versus rendered title, legal mixing of free strings and keyed entries, or heading-depth rules.
+* Verification (smallest signal):
+  `make verify-examples` exits `0` with `01_hello_world` still green and `02_sections` now active and green.
+  Any newly added `02_sections` negative cases fail at the expected stage through the shared verifier.
+  The shared verifier summary stays on the same one-path reporting lane and surfaces any discovered `02` inconsistencies explicitly.
+* Docs/comments (propagation; only if needed):
+  Update the plan and touched doctrine docs if `02` settles the first explicit subsection model or reveals a contradiction in the current notes.
+* Exit criteria:
+  `examples/02_sections` is no longer only planned; it is active on the shared verifier path.
+  The implementation uses the same grammar, AST, compiler, renderer, and verifier path as `01`.
+  No parser rescue layer or sidecar section flattener has been introduced.
+* Rollback:
+  Revert the `02_sections` grammar widening if it requires hacky parsing, hidden flattening, or unrecorded semantic invention.
+
+## Phase 7 - Example 03 Imports
+
+Status: NOT STARTED
+
+* Goal:
+  Add the smallest real import and reusable-workflow slice needed for `examples/03_imports`, while forcing import/path/reference semantics into explicit decisions instead of ad hoc loader behavior.
+* Work:
+  Deep-dive the exact contract for top-level `import name` lines, top-level `workflow Name: "Title"` declarations in imported prompt files, and bare workflow references inside an agent-local workflow body.
+  Decide and document the first import-resolution boundary, including example-local path rules, symbol naming expectations, and duplicate-name failure behavior.
+  Extend the parser, compiler, and shared verifier so `examples/03_imports` can resolve `Greeting` and `Object` through canonical imports instead of hard-coded file knowledge.
+  Add `examples/03_imports/cases.toml` with active render contracts and the smallest earned import-failure cases.
+  Halt immediately if this phase exposes unresolved contradictions about import namespace, symbol identity, case sensitivity, file resolution, or whether imported workflow references are copied, composed, or inherited.
+* Verification (smallest signal):
+  `make verify-examples` exits `0` with `01`, `02`, and `03` active and green.
+  Missing-import or unresolved-symbol cases fail through the shared verifier if the doctrine settles those errors cleanly.
+  The verifier summary explicitly surfaces any `03` import contradictions instead of normalizing them in loader code.
+* Docs/comments (propagation; only if needed):
+  Update doctrine docs if `03` hardens the first import and top-level workflow rules.
+* Exit criteria:
+  `examples/03_imports` is active on the shared verifier path with no side loader scripts, no implicit search heuristics, and no duplicate parser entrypoint.
+* Rollback:
+  Revert `03` support if it starts depending on fuzzy path search, hidden symbol fallbacks, or loader behavior that the language has not actually specified.
+
+## Phase 8 - Example 04 Inheritance
+
+Status: NOT STARTED
+
+* Goal:
+  Introduce the first explicit agent inheritance model for `examples/04_inheritance` while keeping the inheritance contract tight enough that it can still fail loudly instead of silently merging author intent.
+* Work:
+  Deep-dive the exact contract for `abstract agent`, parent clauses like `[BaseGreeter]`, inherited workflow-entry identity, `inherit key`, and `override key:` in this first inheritance slice.
+  Decide and document whether role fields participate in inheritance here or remain child-owned in this example family.
+  Extend the AST/compiler/renderer/verifier path to support concrete leaf rendering for `HelloWorldGreeter` and `InheritanceDemo` while keeping abstract agents non-rendering.
+  Add `examples/04_inheritance/cases.toml` with active contracts for the concrete leaves and any earned compile-failure cases.
+  Halt immediately if this phase exposes unresolved contradictions about abstract-versus-concrete rendering, inherited prose ordering, override semantics, or whether parent entries must be accounted for exhaustively this early.
+* Verification (smallest signal):
+  `make verify-examples` exits `0` with `04_inheritance` active and the concrete leaf outputs green.
+  Any explicit inheritance-failure cases fail at the compiler stage through the shared verifier.
+  The verifier summary calls out any inheritance-model contradictions rather than letting the compiler silently choose a merge rule.
+* Docs/comments (propagation; only if needed):
+  Update doctrine and compiler-error docs if `04` earns the first stable inheritance error surface.
+* Exit criteria:
+  `examples/04_inheritance` is active through the canonical compiler path, abstract agents do not render, and concrete leaves do.
+  No ad hoc merge helper, parent-output cache, or side inheritance interpreter has been introduced.
+* Rollback:
+  Revert `04` support if the inheritance model cannot be made explicit and fail-loud without hidden merge behavior.
+
+## Phase 9 - Example 05 Workflow Merge
+
+Status: NOT STARTED
+
+* Goal:
+  Tighten inherited workflow patching into an explicit, compiler-checked merge model for `examples/05_workflow_merge`, including the first concrete invalid-override error contract.
+* Work:
+  Deep-dive the exact ordered patching rules for inherited workflows: exhaustive accounting, valid insertion of new sections, title-retaining overrides, retitled overrides, and invalid overrides.
+  Extend the compiler and verifier so `OrderedBriefingAgent`, `RetitledBriefingAgent`, and `InvalidOverrideBriefingAgent` all express the same merge doctrine through one canonical path.
+  Add `examples/05_workflow_merge/cases.toml` with active render contracts for the valid agents and an active compile-failure contract for the invalid override example.
+  Align the first stable error coding and message expectations with `docs/COMPILER_ERRORS.md` only where the doctrine is already earned.
+  Halt immediately if this phase exposes unresolved contradictions about exhaustive inherited ordering, where new sections may appear, title-override rules, or whether invalid overrides are parse errors versus compile errors.
+* Verification (smallest signal):
+  `make verify-examples` exits `0` with valid `05` outputs green and the invalid override case failing at the expected compiler stage.
+  The shared verifier summary keeps valid and invalid `05` cases explicit and does not collapse them into one ad hoc checker path.
+  Any inconsistency between `05` refs, prompt semantics, and compiler error doctrine is surfaced explicitly before new merge behavior is kept.
+* Docs/comments (propagation; only if needed):
+  Update `docs/COMPILER_ERRORS.md` and touched doctrine docs if `05` earns stable numbered error behavior.
+* Exit criteria:
+  `examples/05_workflow_merge` is active with both positive and negative contracts on the shared verifier path.
+  Merge behavior remains explicit, ordered, and fail-loud instead of becoming implicit append/patch magic.
+* Rollback:
+  Revert `05` support if it requires implicit merge heuristics, hidden section backfilling, or output-first behavior that the language does not specify.
+
+## Phase 10 - Example 06 Nested Workflows
+
+Status: NOT STARTED
+
+* Goal:
+  Support `examples/06_nested_workflows` as the first real reusable-workflow composition phase, while keeping workflow inheritance and workflow composition distinct instead of collapsing them into one fuzzy mechanism.
+* Work:
+  Deep-dive the exact contract for top-level `workflow` declarations, workflow inheritance via `[Delivery]`, and local composition of named workflows into an agent-owned outer workflow.
+  Decide and document the minimal AST/render model for nested heading depth and reusable workflow inclusion, including when bare workflow references are composition and when inheritance rules apply.
+  Extend the canonical grammar/compiler/renderer/verifier path to support:
+  - `InlineBriefingAgent`
+  - `StructuredBriefingAgent`
+  - `RevisedStructuredBriefingAgent`
+  Add `examples/06_nested_workflows/cases.toml` with active contracts for those outputs and the smallest earned negative cases if the doctrine settles them cleanly.
+  Halt immediately if this phase exposes unresolved contradictions about heading-depth derivation, stable workflow identity, outer-workflow composition versus inheritance, or whether reusable composed pieces need explicit local keys before they can stay in the language.
+* Verification (smallest signal):
+  `make verify-examples` exits `0` with `06_nested_workflows` active and green alongside the prior phases.
+  Any earned `06` negative cases fail through the shared verifier rather than through an ad hoc deep nesting harness.
+  The verifier summary explicitly surfaces any contradiction between nested-workflow refs, prompt semantics, and the inherited/composed workflow doctrine.
+* Docs/comments (propagation; only if needed):
+  Update doctrine docs if `06` hardens the difference between named workflow inheritance and named workflow composition.
+* Exit criteria:
+  `examples/06_nested_workflows` is active through the canonical path with no second grammar, no workflow flattener sidecar, and no hidden heading-depth heuristics.
+  The plan is ready to treat `07_handoffs` as the next semantic frontier rather than still carrying unresolved `06` ambiguity.
+* Rollback:
+  Revert `06` support if it requires collapsing inheritance and composition into one ambiguous mechanism or inventing hidden structure the prompts did not author.
 <!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
@@ -1090,6 +1235,12 @@ The shipped verification framework now looks like this, and these same boundarie
 - expected-failure cases are first-class and should assert stable failure-stage contracts via `exception_type` plus `message_contains`
 - `make hello-world` remains as a filtered alias over `verify_corpus`; it no longer owns separate checker logic
 - the verifier should repeatedly externalize inconsistencies as part of ordinary runs, because surfacing those contradictions is one of the primary jobs of the system
+- the next grammar-growth phases are intentionally separate and ordered:
+  - `02_sections`
+  - `03_imports`
+  - `04_inheritance`
+  - `05_workflow_merge`
+  - `06_nested_workflows`
 - the first reporting lane stays intentionally simple:
   - plain-text verifier summary in the current run
   - canonical plan and touched doctrine updates when the finding materially affects the language contract
@@ -1530,3 +1681,30 @@ Follow-ups
 
 - Implement the shared verifier summary with explicit sections for active cases, planned cases, advisory ref diffs, and surfaced inconsistencies.
 - Revisit structured persistence only if later corpus growth proves the simple reporting lane inadequate.
+
+## 2026-04-06 - Grow the grammar through examples 02 to 06 as separate halt-capable phases
+
+Context
+
+The shared verifier is now shipped, which means the main architecture risk is no longer “do we have a real grammar and test path at all?” The risk is widening the language too quickly across `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` in a way that smooths contradictions into hacky grammar or compiler logic.
+
+Options
+
+- treat `02` through `06` as one broad “next grammar expansion” bucket
+- add separate example-driven phases but still treat them as ordinary implementation work
+- add separate example-driven phases and make each one a halt-capable inconsistency-discovery gate
+
+Decision
+
+Add separate post-bootstrap phases for examples `02` through `06`, and make each phase explicitly halt and surface inconsistencies, doctrine gaps, ref drift, or parser-hack pressure before widening the grammar further.
+
+Consequences
+
+- The plan now commits to example-order grammar growth rather than opportunistic batching.
+- Each semantic jump gets its own verification contracts, stop points, and deep-dive surface.
+- The grammar is less likely to accumulate hidden hacks because every phase is explicitly allowed to stop instead of “finishing through” ambiguity.
+
+Follow-ups
+
+- Run another deep-dive pass against the newly opened `02` through `06` phases before implementing any of them.
+- Keep the same halt-on-inconsistency rule when those phases are later deep-dived or implemented.

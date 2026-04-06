@@ -36,3 +36,6 @@ Plan doc: [docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md](/Users/aelaguiz
 - Rewired `make hello-world` to the filtered manifest run and added `make verify-examples` for the active corpus plus planned-case reporting.
 - Verification passed with `./.venv/bin/python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`, `./.venv/bin/python -m pyprompt.verify_corpus`, `make hello-world PYTHON=./.venv/bin/python`, and `make verify-examples PYTHON=./.venv/bin/python`.
 - The first shipped shared-verifier run surfaced no unresolved language inconsistencies, no advisory ref diffs, and no need for new `.gitignore` rules because this phase only added checked-in manifests and prompt fixtures.
+- Reopened the canonical plan for the next stage of language growth: examples `02` through `06` now have separate not-started phases instead of one vague future grammar bucket.
+- Repeated the doctrine in the North Star and phase plan that each post-bootstrap grammar phase is also an inconsistency-discovery gate and must halt rather than building hacky grammar when examples, refs, and doctrine stop agreeing.
+- Recorded a new decision-log entry that locks example-order growth through `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` as separate halt-capable phases.
