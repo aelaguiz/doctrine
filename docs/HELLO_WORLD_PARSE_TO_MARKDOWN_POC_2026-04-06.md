@@ -511,11 +511,11 @@ The minimal relevant repo tree should look like this after the shared verifier l
 ├── pyproject.toml
 ├── examples/
 │   ├── 01_hello_world/
-│       ├── cases.toml
-│       ├── prompts/
-│       │   └── AGENTS.prompt
-│       └── ref/
-│           └── AGENTS.md
+│   │   ├── cases.toml
+│   │   ├── prompts/
+│   │   │   └── AGENTS.prompt
+│   │   └── ref/
+│   │       └── AGENTS.md
 │   └── 02_sections/
 │       ├── cases.toml
 │       ├── prompts/
@@ -794,8 +794,8 @@ Not applicable.
 
 Warn-first note:
 
-- `external_research_grounding` is now complete and `deep_dive_pass_2` is still not started.
-- External research materially sharpened the verification architecture, so another deep-dive pass is now the recommended next move before implementing the shared verifier.
+- `external_research_grounding` and `deep_dive_pass_2` are now complete.
+- The shared-verifier schema, command surface, and `02_sections` planned-contract boundary are now specific enough to implement directly.
 
 ## Phase 1 - Parser Foundation
 
@@ -930,25 +930,28 @@ Status: NOT STARTED
   Replace the bootstrap-only Hello World checker as the primary testing pattern with one shared corpus-driven verification surface for the compiler.
 * Work:
   Add `pyprompt/verify_corpus.py` as the canonical shared verifier.
-  Add adjacent case manifests such as `examples/01_hello_world/cases.toml` and `examples/02_sections/cases.toml`.
-  Migrate the shipped Hello World assertions into that shared case format and include both `HelloWorld` and `HelloWorld2` in the first `01_hello_world` manifest.
-  Add `02_sections` as the first non-Hello-World output manifest so the shared verifier starts with at least one headed-section example beyond the bootstrap file, even if its passing execution remains coupled to the later grammar-expansion phase for `02`.
-  Add a repo-root command such as `make verify-examples` that runs the shared verifier across the example corpus.
-  Decide whether `pyprompt/check_hello_world.py` becomes a thin filtered alias over the shared verifier or is removed once the shared harness covers the same slice.
-  Add first-class expected-failure cases for the shipped bootstrap boundaries without copying prompts into a second fixture tree.
+  Load manifests through stdlib `tomllib` with a deliberately small schema: `schema_version`, `default_prompt`, and repeated `[[cases]]`.
+  Support only the first required case kinds: `render_contract`, `parse_fail`, and `compile_fail`.
+  Support only the first required success assertion mode: `assertion = "exact_lines"`.
+  Add `examples/01_hello_world/cases.toml` with two active `render_contract` cases for `HelloWorld` and `HelloWorld2`.
+  Add `examples/02_sections/cases.toml` with one planned `render_contract` for `SectionsDemo`, using exact lines as the first next-example output contract without pretending current parser support already exists.
+  Add a repo-root `make verify-examples` target that runs the shared verifier across the example corpus.
+  Rewire `make hello-world` to `python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml` so it becomes a filtered alias over the shared verifier.
+  Delete `pyprompt/check_hello_world.py` once the shared harness covers the same slice.
+  Add first-class expected-failure cases for the shipped bootstrap boundaries by pointing cases at ordinary local prompt files under the owning example directory, not by inventing an inline mutation DSL.
 * Verification (smallest signal):
-  One shared verifier command runs the migrated `HelloWorld` and `HelloWorld2` cases through the new harness and exits `0`.
-  The shared manifest set also includes `examples/02_sections/cases.toml` as the first next-example render contract, ready to turn green when `02_sections` support lands.
+  `make hello-world` runs both active Hello World cases through the shared harness and exits `0`.
+  `make verify-examples` exits `0` with the Hello World cases green and `02_sections` reported as planned, not silently ignored.
   Negative cases fail at the expected stage with machine-checked failure contracts.
-  No new example-specific checker module is introduced to cover the same behavior.
+  `pyprompt/check_hello_world.py` is gone.
 * Docs/comments (propagation; only if needed):
   Update the plan and any touched doctrine docs so the shared harness, case-manifest path, and truth surfaces are explicit.
 * Exit criteria:
   The repo has one canonical reusable compiler verification owner path.
   The example corpus can grow without cloning checker logic.
-  The Hello World bootstrap slice is either delegated into the shared verifier or deliberately retired as a redundant path.
+  The Hello World bootstrap slice now runs only through the shared verifier plus a `Makefile` alias.
 * Rollback:
-  Keep the shipped bootstrap checker if the shared harness design proves wrong, but do not let that fallback become a reason to add more example-specific verifier scripts.
+  Keep the shipped bootstrap checker only long enough to recover from a bad migration, then either fix the shared harness or revert the migration cleanly; do not let that fallback become a reason to keep two verifier paths.
 <!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
@@ -973,18 +976,22 @@ Not applicable beyond the local compiler loop. Do not add bespoke harnesses, edi
 
 The next verification requirement is now concrete:
 
-- the repo should converge on one shared verifier, tentatively `pyprompt/verify_corpus.py`, rather than more `check_<example>` modules
-- machine-readable case manifests should live adjacent to the example corpus, tentatively `examples/*/cases.toml`, so `.prompt` inputs stay authoritative and fixtures do not fork
-- the first shared-verifier seed set should cover both current `01_hello_world` render shapes plus `02_sections`
-- the verifier should support layered case types:
-  - parse-pass and parse-fail
-  - compile-pass and compile-fail
-  - render-contract and end-to-end checks
-- assertion style should be chosen per surface:
-  - exact outputs only for explicitly stabilized artifacts
-  - normalized or targeted excerpt/pattern checks for unstable human-facing Markdown
-  - machine-readable semantic contracts for target selection, required headings, required lines, and expected failure stages
-- expected-failure cases are first-class and should assert stable failure-stage contracts rather than brittle raw stderr blobs
+- the repo should converge on one shared verifier, `pyprompt/verify_corpus.py`, rather than more `check_<example>` modules
+- machine-readable case manifests live adjacent to the example corpus as `examples/*/cases.toml`, loaded through stdlib `tomllib`
+- the first shared-verifier seed set is now explicit:
+  - `examples/01_hello_world/cases.toml` with two active exact-line `render_contract` cases
+  - `examples/02_sections/cases.toml` with one planned exact-line `render_contract`
+- the first manifest schema is intentionally small:
+  - `schema_version`
+  - `default_prompt`
+  - repeated `[[cases]]`
+  - `status = "active" | "planned"`
+  - `kind = "render_contract" | "parse_fail" | "compile_fail"`
+  - optional example-local `prompt`
+  - optional advisory `approx_ref`
+- exact rendered-output contracts are stored only where the repo deliberately stabilizes them in manifests; approximate `AGENTS.md` refs remain advisory
+- expected-failure cases are first-class and should assert stable failure-stage contracts via `exception_type` plus `message_contains`
+- `make hello-world` remains as a filtered alias over `verify_corpus`; it no longer owns separate checker logic
 - fuzzing should be added only after the deterministic corpus harness exists, using the example corpus as seeds and feeding discovered failures back into deterministic regression cases
 
 # 9) Rollout / Ops / Telemetry
@@ -1341,3 +1348,30 @@ Follow-ups
 
 - Lock in the case-manifest schema during the next deep-dive pass.
 - Decide in implementation whether `02_sections` turns green in the same phase as the shared verifier or remains the first queued adopter for the next grammar-expansion phase.
+
+## 2026-04-06 - Lock the shared verifier on adjacent TOML manifests and filtered `Makefile` aliases
+
+Context
+
+External research established the need for one shared verifier, but the plan still had three unresolved implementation-shaping gaps: what the first manifest schema should be, whether `make hello-world` survives, and how `02_sections` can become machine-readable output truth now without pretending the current grammar already supports it.
+
+Options
+
+- keep the shared verifier generic in prose and defer schema plus command-surface choices until implementation
+- lock a deliberately small first schema and command surface now, even if later examples may extend it
+
+Decision
+
+Lock the first shared verifier to adjacent `examples/*/cases.toml` manifests loaded through stdlib `tomllib`, keep `make hello-world` as a filtered alias over `pyprompt.verify_corpus`, delete `pyprompt/check_hello_world.py` once migrated, and allow `status = "planned"` cases for forward output contracts such as `02_sections`.
+
+Consequences
+
+- The implementation phase now has one concrete verifier schema instead of “figure it out while coding”.
+- The durable verifier path is `pyprompt.verify_corpus`; any one-off checker logic is now explicitly temporary and slated for deletion.
+- The first machine-readable output contracts are exact-line manifests for `HelloWorld`, `HelloWorld2`, and planned `SectionsDemo`, while approximate refs remain advisory only.
+- Negative cases are expected to use ordinary local prompt files under the owning example directory rather than a custom mutation DSL.
+
+Follow-ups
+
+- Implement `examples/01_hello_world/cases.toml`, `examples/02_sections/cases.toml`, and `pyprompt/verify_corpus.py` directly against this schema.
+- Extend assertion modes only when later examples prove the first `exact_lines` / `message_contains` boundary is insufficient.

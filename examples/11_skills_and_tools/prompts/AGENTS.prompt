@@ -21,6 +21,10 @@
 # - `discover_with`
 # - `not_for_this_role`
 #
+# A skill reference should point directly at the declared skill.
+# Do not add an extra wrapper key unless it carries real meaning the renderer or
+# compiler actually needs.
+#
 # Requirement belongs on the agent-side reference, not on the skill object.
 # - `Required` means the skill must resolve and the turn should fail if the
 #   role cannot use it honestly here.
@@ -76,26 +80,21 @@ agent LessonCopywriter:
 
     skills: "Skills"
         can_run: "Can Run"
-            poker_grounding:
-                skill: PokerGroundingSkill
+            PokerGroundingSkill
                 requirement: Required
 
-            copy_rewrite:
-                skill: CopyRewriteSkill
+            CopyRewriteSkill
                 requirement: Advisory
 
         discover_with: "Discover With"
-            skill_finder:
-                skill: FindSkills
+            FindSkills
                 requirement: Advisory
 
         not_for_this_role: "Not For This Role"
-            simulator_runtime:
-                skill: MobileSimSkill
+            MobileSimSkill
                 reason: "This role is baseline copy work, not simulator or device investigation."
 
-            dev_loop_restore:
-                skill: FlutterDevReturnSkill
+            FlutterDevReturnSkill
                 reason: "This role is baseline copy work, not Flutter environment repair."
 
     runtime_tools: "Runtime Tools"

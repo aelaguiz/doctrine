@@ -11,6 +11,10 @@
 # - `outcome`
 # - `skills`
 # - `runtime_tools`
+#
+# When an agent references a skill, point directly at the declared skill and
+# attach agent-local metadata there. Do not add an extra wrapper key unless it
+# carries real meaning the compiler or renderer actually needs.
 
 
 workflow LessonsReadFirst: "Read First"
@@ -292,8 +296,7 @@ agent LessonsProjectLead[LessonsRoleHome]:
 
     skills: "Skills"
         can_run: "Can Run"
-            publish_followthrough:
-                skill: PublishFollowthroughSkill
+            PublishFollowthroughSkill
                 requirement: Advisory
 
     runtime_tools: "Runtime Tools"
@@ -340,12 +343,10 @@ agent LessonsCopywriter[LessonsRoleHome]:
 
     skills: "Skills"
         can_run: "Can Run"
-            poker_grounding:
-                skill: PokerGroundingSkill
+            PokerGroundingSkill
                 requirement: Required
 
-            copy_rewrite:
-                skill: CopyRewriteSkill
+            CopyRewriteSkill
                 requirement: Advisory
 
     runtime_tools: "Runtime Tools"
