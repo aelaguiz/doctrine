@@ -4,22 +4,30 @@ Core job: write the section plan to a markdown file.
 
 ## Outputs
 
-### Section Plan File
+### Section Plan Output
 
-- Target: File
-- Path: `section_root/_authoring/SECTION_PLAN.md`
+- Artifact: Section Plan
+- Main File: `section_root/_authoring/SECTION_PLAN.md`
 - Shape: Section Plan Document
 - Requirement: Required
 
-#### Purpose
+#### Must Include
 
-Write the current section plan to a markdown file.
+- Summary: start with a short summary.
+- Planned Sections: list the planned sections in order.
+- Unresolved Risks Or Decisions: list unresolved risks or decisions.
 
-#### Expected Structure
+#### Support Files
 
-- Start with a short summary.
-- Then list the planned sections.
-- Then list unresolved risks or decisions.
+- `SECTION_FLOW_AUDIT.md` at `section_root/_authoring/SECTION_FLOW_AUDIT.md` when section sizing or ordering constraints matter.
+
+#### Owns
+
+This artifact owns the current section plan and the unresolved decisions that still matter.
+
+#### Standalone Read
+
+The next role should be able to read `SECTION_PLAN.md` alone and understand the current plan.
 
 #### Example
 

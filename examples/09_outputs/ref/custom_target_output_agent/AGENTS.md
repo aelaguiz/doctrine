@@ -6,20 +6,33 @@ Core job: leave an owner update on the project tracker.
 
 ### Project Tracker Update
 
+- Artifact: Owner Update
 - Target: Tracker Comment
 - Issue: `CURRENT_ISSUE`
 - Shape: Owner Update Comment
 - Requirement: Required
 
-#### Purpose
+#### Must Include
 
-Tell the next owner what changed and what to use now.
+- What Changed: say what changed.
+- Current Source Of Truth: name the current source of truth.
+- Next Owner: name the next owner.
 
-#### Expected Structure
+#### Owns
 
-- Say what changed.
-- Name the current source of truth.
-- Name the next owner.
+This artifact owns the owner-change summary and the current source of truth for the next owner.
+
+#### Standalone Read
+
+A downstream reader should be able to read this comment alone and understand what changed, what to trust now, and who owns next.
+
+#### Example
+
+```text
+- changed: updated the section plan
+- use now: SECTION_PLAN.md
+- next owner: Writing Specialist
+```
 
 ## Your Job
 

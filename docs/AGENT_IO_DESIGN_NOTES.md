@@ -288,6 +288,38 @@ Current requirement:
 - target and shape should remain separate so "what it looks like" is distinct
   from "where it goes"
 
+## Output Versus Artifact
+
+There is a useful split between a small turn-level output declaration and a
+larger authored artifact contract.
+
+Current intuition:
+- `output` should stay focused on the turn contract
+- a named `artifact` should hold the richer authored specification when the
+  output is more than a simple target plus shape
+- simple outputs should still be able to stay direct when they do not need the
+  extra structure
+
+Examples of rich output details that fit better on an artifact:
+- one main file versus multiple output files
+- required headings or required included content
+- support files that back the output without becoming the output
+- what the artifact owns
+- what a downstream role should be able to learn from it alone
+- examples and notes that help the next role consume or review it
+
+Current requirement:
+- the language should not overload `shape` with every authored output rule
+- the language should give rich output contracts a first-class home
+- the same rich artifact contract should be reusable across multiple outputs if
+  the turn-level requirement changes but the authored output spec does not
+
+Current bias:
+- keep `shape` narrow
+- let `shape` describe form or structural type
+- let `artifact` describe required contents, support surfaces, ownership, and
+  downstream readability expectations
+
 ## JSON Schema Should Be First-Class
 
 Structured JSON output looks important enough that schema should not live as an
