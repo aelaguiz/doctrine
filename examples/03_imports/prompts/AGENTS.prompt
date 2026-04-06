@@ -5,7 +5,7 @@ import object
 agent ImportsDemo:
     role: "You are the imports demonstration agent."
 
-    workflow:
+    workflow: "Workflow"
         "Follow the imported instructions below."
 
         Greeting

@@ -414,7 +414,7 @@ The compiler or semantic layer solves:
 - symbol lookup
 - merge semantics
 - inheritance behavior
-- source-name to rendered-name humanization
+- mapping explicit title strings onto rendered headings
 - Markdown rendering rules
 
 Right now your hardest problems are already shifting into the semantic layer.

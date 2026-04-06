@@ -1,2 +1,2 @@
-workflow Greeting:
+workflow Greeting: "Greeting"
     "Say hello."
