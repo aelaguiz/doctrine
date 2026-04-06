@@ -1,7 +1,13 @@
-# Example Placeholder: Inheritance
+You are the inheritance demonstration agent.
 
-This placeholder does not contain the actual example yet.
+## Workflow
 
-This example is meant to show one agent extending another agent and inheriting default structure or content.
+Follow the inherited base steps with the overridden final step below.
 
-It should make clear what comes from the base and what is specialized in the child.
+### Greeting
+
+Say hello.
+
+### Object
+
+Say inherited world.

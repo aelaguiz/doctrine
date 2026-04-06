@@ -1,0 +1,5 @@
+agent HelloWorld:
+    role: "You are the hello world agent."
+
+    workflow:
+        "Say hello world."

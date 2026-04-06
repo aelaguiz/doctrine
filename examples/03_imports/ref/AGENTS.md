@@ -1,7 +1,13 @@
-# Example Placeholder: Imports
+You are the imports demonstration agent.
 
-This placeholder does not contain the actual example yet.
+## Workflow
 
-This example is meant to show how definitions can be split across files and brought together with `import`.
+Follow the imported instructions below.
 
-The focus is module boundaries, name resolution, and simple composition, not inheritance or merge behavior.
+### Greeting
+
+Say hello.
+
+### Object
+
+Say world.

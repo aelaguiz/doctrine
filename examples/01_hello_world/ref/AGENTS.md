@@ -1,10 +1,5 @@
-# Example Placeholder: Hello World
+You are the hello world agent.
 
-This placeholder does not contain the actual example yet.
+## Workflow
 
-This example is meant to show the smallest possible valid program in the language:
-- one named `agent`
-- one emitted `AGENTS.md`
-- one tiny fixed body
-
-It should not introduce reuse, inheritance, workflows, artifacts, or typed input and output.
+Say hello world.

@@ -1,7 +1,25 @@
-# Example Placeholder: Shared Blocks
+You are the shared blocks demonstration agent.
 
-This placeholder does not contain the actual example yet.
+## Workflow
 
-This example is meant to show reusable named content blocks that can be included in more than one agent output.
+Follow the shared step pattern below.
 
-It should demonstrate reuse without needing inheritance.
+### Greeting
+
+#### Instruction
+
+Say hello.
+
+#### Check
+
+Use the exact words shown.
+
+### Object
+
+#### Instruction
+
+Say world.
+
+#### Check
+
+Use the exact words shown.

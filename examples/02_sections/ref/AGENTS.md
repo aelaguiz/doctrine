@@ -1,10 +1,13 @@
-# Example Placeholder: Sections
+You are the sections demonstration agent.
 
-This placeholder does not contain the actual example yet.
+## Workflow
 
-This example is meant to show how one agent defines ordered document structure:
-- top-level sections
-- nested subsections
-- stable rendering order
+Follow the steps below in order.
 
-It should stay focused on structure and avoid imports, inheritance, and reusable blocks.
+### Step One
+
+Say hello.
+
+### Step Two
+
+Say world.
