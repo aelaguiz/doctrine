@@ -1,0 +1,56 @@
+# Shared attached-checkout lookup inputs.
+
+input source CheckoutFile: "Checkout File"
+    required: "Required Source Keys"
+        root_env: "Root Env"
+        path: "Path"
+
+
+input source CheckoutGlob: "Checkout Glob"
+    required: "Required Source Keys"
+        root_env: "Root Env"
+        glob: "Glob"
+
+
+input AttachedCheckoutRoot: "Attached Checkout Root"
+    source: EnvVar
+        env: "ATTACHED_CHECKOUT_ROOT"
+    shape: DirectoryPath
+    requirement: Required
+    "Use this environment variable to resolve the attached checkout when the lane needs current product truth or validator access."
+
+
+input TermOntologyPages: "Term Ontology Pages"
+    source: CheckoutGlob
+        root_env: "ATTACHED_CHECKOUT_ROOT"
+        glob: "agents/terms/ontology/*.md"
+    shape: NamedSurfaceSet
+    requirement: Required
+    "Use the current attached-checkout ontology pages before you make concept or term id decisions."
+
+
+input TermRegistry: "Term Registry"
+    source: CheckoutFile
+        root_env: "ATTACHED_CHECKOUT_ROOT"
+        path: "packages/game_content/assets/terms/term_registry.v1.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the current attached-checkout term registry when concept or glossary decisions need current registry truth."
+
+
+input ConceptSlugToTermIdMap: "Concept Slug To Term Id Map"
+    source: CheckoutFile
+        root_env: "ATTACHED_CHECKOUT_ROOT"
+        path: "agents/terms/mappings/concept_slug_to_term_id.v1.json"
+    shape: JsonObject
+    requirement: Required
+    "Use this mapping when concept candidates must be checked against current term ids."
+
+
+input VocabStringToTermIdMap: "Vocab String To Term Id Map"
+    source: CheckoutFile
+        root_env: "ATTACHED_CHECKOUT_ROOT"
+        path: "agents/terms/mappings/vocab_string_to_term_id.v1.json"
+    shape: JsonObject
+    requirement: Required
+    "Use this mapping when learner-facing vocabulary needs continuity checks against current term ids."

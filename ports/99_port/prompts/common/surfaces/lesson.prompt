@@ -1,0 +1,43 @@
+import ..artifacts.shared
+
+
+# Semantic lesson-level surfaces that downstream lanes can read.
+
+input LessonPlanContract: "Lesson Plan Contract"
+    source: File
+        path: "lesson_root/_authoring/lesson_architect.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current lesson plan contract as the lesson burden, pacing, and stable-boundary truth."
+
+
+input LessonSituationsContract: "Lesson Situations Contract"
+    source: File
+        path: "lesson_root/_authoring/situation_synthesizer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current lesson situations contract as the kept-rep, rejected-rep, sequencing, and solver-screening truth."
+
+
+input LessonBuildContract: "Lesson Build Contract"
+    source: File
+        path: "lesson_root/_authoring/playable_materializer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current lesson build contract as the route-choice, validation, placeholder-status, and build-constraint truth."
+
+
+input CopyGroundingContract: "Copy Grounding Contract"
+    source: File
+        path: "lesson_root/_authoring/copywriter.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current copy grounding contract as the final learner-facing wording, grounding, anti-leak, and post-copy validation truth."
+
+
+input LessonManifest: "Lesson Manifest"
+    source: File
+        path: "lesson_root/_authoring/lesson_manifest.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the current lesson manifest as the live learner-facing lesson surface when a lane needs the real built content."

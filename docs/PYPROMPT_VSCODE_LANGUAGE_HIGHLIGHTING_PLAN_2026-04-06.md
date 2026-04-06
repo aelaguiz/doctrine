@@ -19,16 +19,16 @@ related:
 - Outcome: Add a repo-local VS Code language extension so current `.prompt` files are no longer plain gray text, with usable syntax highlighting, comment/string treatment, and indentation-aware editor behavior for the shipped PyPrompt surface through `examples/06_nested_workflows`.
 - Problem: PyPrompt authoring is currently verified only through the Python parser/compiler path, so editing in VS Code is visually poor and slow to iterate, while the later draft examples already risk pushing the editor surface ahead of shipped truth.
 - Approach: Build a static, contribution-only VS Code extension under `editors/vscode/`, backed by `language-configuration.json` plus a hand-authored TextMate grammar, and validate its keyword surface directly against `pyprompt/grammars/pyprompt.lark`; keep any unavoidable TextMate-only regex shaping narrow, documented, and tested against the verified `01` through `06` corpus.
-- Plan: Confirm the North Star, research the exact VS Code contribution surface and grammar-to-TextMate bridge, deep-dive the target repo layout and change inventory, then implement the local extension, generation/validation path, and local usage docs.
+- Plan: 1) scaffold the isolated `editors/vscode/` static extension and local debug loop, 2) implement the language configuration, TextMate grammar, and unit fixtures, 3) add Lark-alignment validation plus the mirrored snapshot corpus, and 4) finish local-use docs and cleanup.
 - Non-negotiables: The shipped Lark grammar remains the language source of truth; the first shipped extension only covers the implemented `01` through `06` subset; no parallel Langium or second parser stack is introduced for phase one; no fake indentation semantics are claimed beyond what TextMate and VS Code can actually support.
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
 deep_dive_pass_1: done 2026-04-06
-external_research_grounding: not started
-deep_dive_pass_2: not started
-recommended_flow: deep dive -> external research grounding -> deep dive again -> phase plan -> implement
+external_research_grounding: done 2026-04-06
+deep_dive_pass_2: done 2026-04-06
+recommended_flow: implement
 note: This is a warn-first checklist only. It should not hard-block execution.
 -->
 <!-- arch_skill:block:planning_passes:end -->
@@ -92,6 +92,7 @@ We can add a repo-local VS Code language extension that gives verified PyPrompt 
 - The shipped language implementation currently proves only `examples/01_hello_world` through `examples/06_nested_workflows`.
 - The extension must be useful locally without marketplace publishing or a separate service deployment.
 - The user explicitly wants tight integration with the existing Lark grammar and current shipped compiler path.
+- The repo has no existing Node or editor-tooling package surface, so any JavaScript tooling introduced for VS Code support must stay isolated under the extension subtree instead of spreading to repo root.
 
 ## 1.3 Architectural principles (rules we will enforce)
 
@@ -132,12 +133,13 @@ PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a
 
 - `docs/SYNTAX_HIGHLIGHTING_RESEARCH.md` — adopt the TextMate-first layering facts, reject its Langium-first recommendation for phase one — the doc is right that TextMate is the baseline and ceiling for regex tokenization, semantic tokens are additive, and indentation-sensitive languages usually need stronger tooling later; it is not aligned with this plan's explicit "no second grammar stack" invariant.
 - `docs/VSCODE_REFERENCE.md` — adopt the VS Code contribution and tokenization model, keep the deeper LSP internals as later-phase reference only — it grounds how `contributes.languages`, `contributes.grammars`, `language-configuration.json`, TextMate tokenization, and semantic token overlays actually fit together.
-- `for_reference_only/vscode-extension-samples/language-configuration-sample/package.json` and `for_reference_only/vscode-extension-samples/language-configuration-sample/language-configuration.json` — adopt as the minimal local extension scaffold shape — this is the smallest honest package layout for a repo-local language extension with no runtime code.
+- `for_reference_only/vscode-extension-samples/language-configuration-sample/package.json`, `for_reference_only/vscode-extension-samples/language-configuration-sample/language-configuration.json`, and `for_reference_only/vscode-extension-samples/language-configuration-sample/.vscode/launch.json` — adopt as the minimal local extension scaffold shape — this is the smallest honest package layout for a repo-local language extension with no runtime code, no `main`, and no `activationEvents`.
 - `for_reference_only/vscode/extensions/coffeescript/package.json` and `for_reference_only/vscode/extensions/coffeescript/language-configuration.json` — adopt as a built-in precedent for a mostly declarative indentation-sensitive language surface — it shows that a built-in language can rely on `contributes.languages`, `contributes.grammars`, and `folding.offSide: true` without an LSP.
 - `for_reference_only/vscode/extensions/pug/package.json` and `for_reference_only/vscode/extensions/pug/language-configuration.json` — adopt as a second off-side language reference, especially for folding defaults and trim-whitespace behavior — this is the closest built-in shape to a purely indentation-driven authoring experience.
 - `for_reference_only/vscode/extensions/python/language-configuration.json` — adopt selectively for `onEnterRules` on colon-headed block starters, reject any assumption that this implies parser-accurate structure — it is the strongest built-in proof that VS Code's language configuration can improve block authoring ergonomics for off-side languages without solving semantic structure.
 - `for_reference_only/vscode-textmate/README.md` and `for_reference_only/vscode-textmate/src/main.ts` — adopt for the execution model of grammar loading and tokenization in tests, not as a new language source of truth — this is the same engine VS Code uses to load a scope name and tokenize line-by-line.
 - `for_reference_only/vscode-tmgrammar-test/README.md` — adopt as the first automated grammar test harness — it already knows how to consume an extension-style `package.json`, run TextMate scope assertions, and keep snapshot baselines cheap.
+- `for_reference_only/vscode-tmgrammar-test/package.json` — adopt as proof that phase-one grammar testing can stay npm-only and does not require a VS Code runtime harness.
 - `for_reference_only/vscode-extension-samples/semantic-tokens-sample/src/extension.ts` and `for_reference_only/vscode-languageserver-node/client/src/common/semanticTokens.ts` — reject for phase one, keep as phase-two anchors only — they are the right references if TextMate reaches a real ceiling later, but they add runtime code and a second moving part before the repo even has baseline highlighting.
 
 ## 3.2 Internal ground truth (code as spec)
@@ -187,10 +189,10 @@ PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a
 
 ## 3.3 Open questions (evidence-based)
 
-- How much of the TextMate artifact should be generated from `pyprompt/grammars/pyprompt.lark` versus kept as a small handwritten template? — settle this by inventorying which lexical facts map cleanly from Lark literals and which scopes only exist because TextMate needs regex-oriented structure.
-- Where should the repo-local VS Code extension live on disk? — settle this in deep-dive by comparing the smallest clean subtree that keeps editor code obviously secondary to `pyprompt/` while still making local install, tests, and future packaging straightforward.
-- Should phase one support only the Extension Development Host flow, or also produce a local `.vsix`? — settle this by checking whether local daily use is materially worse without packaging.
-- Do we need `onEnterRules` immediately for colon-headed block starters, or are `comments`, `folding.offSide`, and syntax highlighting enough for the first cut? — settle this by checking the verified prompt corpus for how often users author new block headers versus mostly editing inside existing blocks.
+- How broad should the first `onEnterRules` set be for colon-headed blocks? — settle this by mapping the verified `01` through `06` prompt corpus to the exact header shapes we need to support on day one.
+- Is the unpacked local-install path cheap enough for daily use, or will the user immediately need optional `.vsix` packaging as follow-up? — settle this by trying the documented local-use loop once phase one exists.
+- Does direct validation against `pyprompt/grammars/pyprompt.lark` stay stable enough in practice, or do we eventually need a parser-adjacent helper in `pyprompt/parser.py`? — settle this only if implementation shows the direct-grammar validator becoming brittle or too implicit.
+- Does the mirrored snapshot tree need a tiny sync helper once it exists, or is straightforward manual refresh still cheap enough? — settle this only if keeping `editors/vscode/tests/snap/examples/**` aligned with verified examples becomes annoying in practice.
 <!-- arch_skill:block:research_grounding:end -->
 
 <!-- arch_skill:block:current_architecture:start -->
@@ -210,6 +212,7 @@ PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a
 - `examples/07_*` through `examples/14_*` also contain `.prompt` sources, but they are draft pressure only because there are no adjacent `cases.toml` manifests yet.
 - `docs/` already contains the plan and the syntax-highlighting research, and `for_reference_only/` now contains the checked-out upstream references.
 - The repo does not currently have any Node or editor-tooling subtree. There is no existing `package.json`, `tsconfig.json`, lockfile, or VS Code extension home to converge onto.
+- Because there is no existing Node package surface, the repo also has no established JS package-manager norm. Any Node tooling introduced for the extension will be a new isolated surface.
 
 ## 4.2 Control paths (runtime)
 
@@ -277,8 +280,10 @@ The phase-one editor surface lives in one new repo-local subtree: `editors/vscod
 That subtree should be a static, contribution-only VS Code extension with these owned files:
 
 - `editors/vscode/package.json`
-  - declares the PyPrompt language id, `.prompt` associations, grammar contribution, configuration path, and dev/test scripts
-  - does not define a runtime `main` entry in phase one
+  - declares the PyPrompt language id, `.prompt` associations, grammar contribution, configuration path, and npm-based test scripts
+  - does not define a runtime `main` entry or `activationEvents` in phase one
+- `editors/vscode/package-lock.json`
+  - locks the isolated npm dependency surface for the extension only
 - `editors/vscode/language-configuration.json`
   - owns comments, bracket and quote pairs, off-side folding, and narrowly targeted `onEnterRules`
 - `editors/vscode/syntaxes/pyprompt.tmLanguage.json`
@@ -286,13 +291,16 @@ That subtree should be a static, contribution-only VS Code extension with these 
 - `editors/vscode/scripts/validate_lark_alignment.py`
   - reads `pyprompt/grammars/pyprompt.lark` directly and validates that the extension keyword inventory and lexical assumptions still match shipped syntax truth
 - `editors/vscode/tests/unit/`
-  - focused scope assertions for specific lexical cases that are awkward to express only through snapshots
+  - focused inline scope assertions for specific lexical cases and edge conditions
+- `editors/vscode/tests/snap/examples/**/prompts/**/*.prompt`
+  - mirrored snapshot fixtures for every verified `.prompt` file under `examples/01_*` through `examples/06_*`
+  - adjacent `.snap` files live here because `vscode-tmgrammar-snap` writes snapshots beside its inputs
 - `editors/vscode/.vscode/launch.json`
   - enables rapid local iteration in an Extension Development Host
 - `editors/vscode/README.md`
   - documents the local debug loop and the normal local-install loop for daily use
 
-The verified prompt corpus remains where it already lives under `examples/01_*` through `examples/06_*`; the extension test surface should reuse those prompt files directly instead of copying them into a second fixture tree.
+The verified prompt corpus remains where it already lives under `examples/01_*` through `examples/06_*`. Unit coverage should anchor itself to that shipped corpus directly wherever the tool allows it. Snapshot coverage should mirror every verified `.prompt` file into `editors/vscode/tests/snap/examples/**` because `vscode-tmgrammar-snap` writes adjacent `.snap` files and we do not want those artifacts inside the canonical example directories. This duplication is deliberate and narrow: the examples stay the truth, and the snapshot tree stays an editor-test artifact.
 
 ## 5.2 Control paths (future)
 
@@ -303,13 +311,18 @@ The verified prompt corpus remains where it already lives under `examples/01_*` 
   - loads `language-configuration.json`
   - loads `syntaxes/pyprompt.tmLanguage.json`
   - applies TextMate tokenization and language-configuration behavior with no runtime extension code
+- The local editor/dev flow stays split cleanly:
+  - opening an Extension Development Host requires only the static extension files and `.vscode/launch.json`
+  - grammar testing uses isolated npm tooling under `editors/vscode/`
+  - Lark alignment validation uses the repo's Python toolchain
 - Lark alignment is validation-first, not generation-first:
   - the TextMate grammar is hand-authored because its regex structure does not map honestly from Lark rules one-to-one
   - `validate_lark_alignment.py` reads `pyprompt/grammars/pyprompt.lark` directly and fails if the extension's keyword inventory or lexical assumptions drift from shipped syntax
   - parser/compiler behavior stays untouched unless later evidence shows direct grammar validation is too brittle
 - The editor test flow is likewise layered:
+  - `npm test` under `editors/vscode/` should run grammar tests only
   - `vscode-tmgrammar-test` runs focused unit assertions against the extension package
-  - snapshot coverage runs against representative `examples/01_*` through `examples/06_*` prompt files
+  - `vscode-tmgrammar-snap` runs against the mirrored tree under `editors/vscode/tests/snap/examples/**`, not the live `examples/` tree
   - final manual validation uses either Extension Development Host or an unpacked local install in the user's normal VS Code
 - `.vsix` packaging is not part of the phase-one control path.
 
@@ -323,6 +336,10 @@ The verified prompt corpus remains where it already lives under `examples/01_*` 
   - `language-configuration.json` for comments, folding, pairs, and Enter behavior
   - a hand-authored TextMate grammar for scopes
   - a Python validator that checks those extension-side lexical facts against the Lark grammar
+- The extension package itself is intentionally tiny:
+  - static contribution files
+  - isolated npm metadata and lockfile
+  - no runtime JS or TS entrypoint
 - The editor grammar should explicitly cover the shipped lexical surfaces that actually appear in `01` through `06`:
   - declaration keywords such as `import`, `agent`, `abstract`, `workflow`
   - field and workflow-item keywords such as `role`, `use`, `inherit`, `override`
@@ -340,6 +357,7 @@ The verified prompt corpus remains where it already lives under `examples/01_*` 
 - `editors/vscode/` owns editor presentation only and must not become a parallel parser or language-definition stack.
 - Validation is the bridge in phase one; code generation is not the default.
 - No runtime `extension.js`, `extension.ts`, semantic-token provider, or language server is introduced in phase one.
+- No root-level Node toolchain or package-manager surface is introduced; npm, if used, lives only under `editors/vscode/`.
 - No support is claimed beyond the manifest-backed `01` through `06` subset.
 - No checked-in keyword mirror, generated parser mirror, or second grammar file is allowed to drift independently of `pyprompt.lark`.
 - No top-level `vscode/` extension subtree should be introduced; `editors/vscode/` is the canonical editor home and avoids ambiguity with `for_reference_only/vscode`.
@@ -374,11 +392,13 @@ Enter after a block header indents sensibly
 | AST boundary | `pyprompt/model.py` | dataclasses such as `PromptFile`, `Agent`, `WorkflowBody` | semantic AST loses comments and raw punctuation | do not use as a highlight source | AST is too lossy for lexical truth | editor pipeline bypasses AST for lexical alignment | none |
 | Compiler boundary | `pyprompt/compiler.py` | `CompilationContext`, `compile_prompt()` | resolves imports, inheritance, and field ordering for shipped subset | no phase-one change | highlighting does not need compiled semantics and compiler changes add regression risk | compiler remains out of editor path | `make verify-examples` if later touched |
 | Verification boundary | `pyprompt/verify_corpus.py` | `verify_corpus()`, `_resolve_manifest_paths()` | manifest-backed proof surface for `examples/*/cases.toml` | reuse as the shipped-scope boundary for highlight support claims | cap scope at what the repo actually proves today | editor coverage is anchored to manifest-backed `01` through `06` only | targeted manifests and full corpus |
-| Extension home | `editors/vscode/package.json` | language id, `contributes.languages`, `contributes.grammars`, scripts | missing | add the static extension manifest and local test scripts | register `.prompt` files and own editor-facing packaging | repo-local contribution-only extension contract | package-level grammar tests |
+| Extension home | `editors/vscode/package.json` | language id, `contributes.languages`, `contributes.grammars`, npm scripts | missing | add the static extension manifest and local test scripts with no `main` or `activationEvents` | register `.prompt` files and own editor-facing packaging without runtime code | repo-local contribution-only extension contract | package-level grammar tests |
+| Node tooling isolation | `editors/vscode/package-lock.json` | isolated npm lockfile | missing | add a subtree-local lockfile instead of any repo-root Node tooling | keep the new JS surface narrow and isolated | extension subtree owns npm state | npm-based grammar test reproducibility |
 | Language configuration | `editors/vscode/language-configuration.json` | comments, pairs, folding, `onEnterRules` | missing | add `#` line comments, quote/bracket pairs, `folding.offSide`, and narrow block-header Enter rules | make authoring workable before richer tooling exists | editor mechanics live here, not in runtime code | manual VS Code validation; maybe unit fixtures for tricky block headers |
 | TextMate scopes | `editors/vscode/syntaxes/pyprompt.tmLanguage.json` | scope rules for comments, strings, keywords, keys, targets | missing | add a hand-authored TextMate grammar for the shipped lexical subset | solve the gray-text problem now | static grammar is derived presentation, not syntax truth | `vscode-tmgrammar-test` unit and snapshot coverage |
 | Lark alignment | `editors/vscode/scripts/validate_lark_alignment.py` | direct read of `pyprompt/grammars/pyprompt.lark` | missing | add a Python validator that checks extension keyword and lexical assumptions against Lark | fail loudly on drift without generating a second grammar | validation-first alignment contract | validator run plus grammar tests |
-| Test surface | `editors/vscode/tests/unit/` plus `examples/01_*` through `examples/06_*` prompt trees | scope assertions and snapshot inputs | missing | add focused unit fixtures and reuse verified example prompts directly for snapshots | avoid duplicate fixture truth while still catching regressions | examples remain the canonical snapshot corpus | `vscode-tmgrammar-test` and snapshot diffs |
+| Unit grammar tests | `editors/vscode/tests/unit/` | inline assertion fixtures for lexical edges | missing | add focused `.test.prompt` cases for comments, strings, keywords, keys, imports, and invalid-but-lexically-interesting snippets | catch scope regressions cheaply without runtime harnesses | unit fixtures own assertion syntax | `vscode-tmgrammar-test` |
+| Snapshot grammar tests | `editors/vscode/tests/snap/examples/**/prompts/**/*.prompt` | mirrored verified prompt corpus with adjacent `.snap` outputs | missing | mirror every verified `.prompt` file from `examples/01_*` through `examples/06_*` into a test-owned tree | keep `examples/` clean while still getting broad grammar regression coverage, including nested import fixtures | mirrored snapshot fixtures must cite their source example path and stay editor-test-only | `vscode-tmgrammar-snap` |
 | Local usage docs | `editors/vscode/README.md` and `editors/vscode/.vscode/launch.json` | local install/debug workflow | missing | document Extension Development Host and unpacked local install for everyday VS Code use | the user wants immediate local usability, not just implementation | one cheap local debug loop and one cheap local use path | manual local extension smoke check |
 | Packaging follow-up | `editors/vscode/package.json` | optional packaging scripts | missing | defer `.vsix` packaging and `vsce` integration out of phase one | not required to stop gray text and adds extra tooling surface | packaging is follow-up work, not a first-cut dependency | none in phase one |
 
@@ -388,17 +408,20 @@ Enter after a block header indents sensibly
   - `pyprompt/grammars/pyprompt.lark` owns syntax truth.
   - `editors/vscode/` owns editor presentation and test tooling.
   - `editors/vscode/scripts/validate_lark_alignment.py` is the only allowed bridge for phase-one lexical alignment.
+  - `editors/vscode/package-lock.json` owns the isolated npm dependency graph if Node tooling is added.
 - Deprecated APIs (if any):
   - none
 - Delete list (what must be removed; include superseded shims/parallel paths if any):
   - do not leave a second checked-in keyword list or generated grammar mirror outside `editors/vscode/`
   - do not introduce a competing top-level `vscode/` subtree for the live extension
+  - do not introduce a repo-root `package.json`, lockfile, or TS build surface just to support this static extension
   - delete any temporary scratch grammar files or ad hoc keyword snapshots created during implementation before the phase closes
 - Capability-replacing harnesses to delete or justify:
   - `vscode-languageclient`, `vscode-languageserver-node`, semantic-token runtime code, Langium, Tree-sitter, or `@vscode/test-electron` are all out of phase one unless later evidence proves the static path insufficient
 - Live docs/comments/instructions to update or delete:
   - add `editors/vscode/README.md` as the local usage source of truth
   - keep this plan doc current as the canonical architecture record
+  - each mirrored snapshot fixture should record its source example path so the duplicate remains auditable
   - no existing live product doc currently needs deletion because editor support does not exist yet
 - Behavior-preservation signals for refactors:
   - `make verify-examples`
@@ -410,7 +433,10 @@ Enter after a block header indents sensibly
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude) |
 | ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
 | Editor home | `editors/vscode/` | one canonical VS Code subtree instead of scattered files | prevents editor-tooling drift and avoids ambiguity with `for_reference_only/vscode` | include |
-| Prompt fixtures | `examples/01_*` through `examples/06_*` prompt files | reuse verified prompt sources directly for snapshots | avoids a duplicate test-fixture truth surface | include |
+| Node tooling | `editors/vscode/package.json` and `editors/vscode/package-lock.json` | keep npm isolated under the extension subtree | prevents accidental repo-root JS tooling spread | include |
+| Unit fixtures | `editors/vscode/tests/unit/` | keep lexical edge cases local to the extension package | avoids overloading canonical examples with inline test syntax | include |
+| Snapshot fixtures | `editors/vscode/tests/snap/examples/**` | mirror the verified prompt corpus into a test-owned tree | prevents `.snap` files from polluting `examples/` while preserving broad grammar coverage, including nested import files | include |
+| Snapshot sync helper | `editors/vscode/scripts/` | add only if mirror maintenance becomes annoying | avoids speculative tooling before the sync burden is real | defer |
 | Draft examples | `examples/07_*` through `examples/14_*` prompt files | keep out of phase-one snapshot and support claims | prevents the extension from drifting ahead of shipped syntax | exclude |
 | Lark bridge | `editors/vscode/scripts/validate_lark_alignment.py` | validation-first direct grammar read | prevents codegen theater and keeps `pyprompt.lark` as SSOT | include |
 | Parser helper | `pyprompt/parser.py` | parser-adjacent lexical helper if direct validation proves too brittle | keeps a future escalation path without forcing runtime changes now | defer |
@@ -419,21 +445,126 @@ Enter after a block header indents sensibly
 | E2E editor tests | `@vscode/test-electron` style harness | add only if TextMate tests and manual smoke checks miss real regressions | avoids heavyweight test machinery too early | exclude |
 <!-- arch_skill:block:call_site_audit:end -->
 
+<!-- arch_skill:block:phase_plan:start -->
 # 7) Depth-First Phased Implementation Plan (authoritative)
 
 > Rule: systematic build, foundational first; every phase has exit criteria + explicit verification plan (tests optional). Refactors, consolidations, and shared-path extractions must preserve existing behavior with the smallest credible signal. For agent-backed systems, prefer prompt, grounding, and native-capability changes before new harnesses or scripts. No fallbacks/runtime shims - the system must work correctly or fail loudly (delete superseded paths). Prefer programmatic checks per phase; defer manual/UI verification to finalization. Avoid negative-value tests (deletion checks, visual constants, doc-driven gates). Also: document new patterns/gotchas in code comments at the canonical boundary (high leverage, not comment spam).
 
-The authoritative phased checklist will be written after research and deep-dive lock the exact extension home, derivation strategy, and test surface. The expected high-level flow is: establish the `editors/vscode/` scaffold and local usage path, wire the validation-first Lark alignment path plus the TextMate grammar, then add automated coverage against the verified prompt examples.
+## Phase 1 — Static Extension Scaffold
+
+* Goal:
+  Establish the smallest valid `editors/vscode/` extension home so VS Code can recognize `.prompt` files without introducing runtime code or repo-root Node tooling.
+* Work:
+  - Create `editors/vscode/package.json` with the PyPrompt language id, `.prompt` file association, `contributes.languages`, `contributes.grammars`, configuration path, and grammar-test scripts.
+  - Keep the package contribution-only: no `main`, no `activationEvents`, no `extension.ts`, and no TypeScript build chain.
+  - Create `editors/vscode/package-lock.json` by installing only the phase-one npm dependency surface inside the extension subtree.
+  - Add `editors/vscode/.vscode/launch.json` for Extension Development Host.
+  - Add seed `editors/vscode/language-configuration.json` and seed `editors/vscode/syntaxes/pyprompt.tmLanguage.json` so the extension loads cleanly even before the final grammar exists.
+  - Start `editors/vscode/README.md` with the local debug-loop contract.
+* Verification (smallest signal):
+  - Open the extension in an Extension Development Host and confirm that `*.prompt` files associate to the PyPrompt language id.
+  - Confirm no repo-root `package.json`, lockfile, or TS build surface was introduced.
+* Docs/comments (propagation; only if needed):
+  - Seed `editors/vscode/README.md` with the extension-host workflow so the subtree is self-describing from day one.
+* Exit criteria:
+  - `editors/vscode/` exists as the canonical extension home.
+  - VS Code can load the static extension package.
+  - `.prompt` files are recognized as PyPrompt in the development host.
+* Rollback:
+  - Remove the entire `editors/vscode/` subtree and its isolated npm lockfile.
+
+## Phase 2 — Baseline Highlighting And Editor Mechanics
+
+* Goal:
+  Make shipped `01` through `06` prompt files stop looking like plain text and give them sensible comment, folding, and Enter behavior.
+* Work:
+  - Implement `editors/vscode/language-configuration.json` with `#` comments, quote and bracket pairs, `folding.offSide`, and the initial narrow `onEnterRules` set for colon-headed blocks.
+  - Author `editors/vscode/syntaxes/pyprompt.tmLanguage.json` for the shipped lexical surface:
+    - declaration keywords
+    - field and workflow-item keywords
+    - strings
+    - standalone comments
+    - inheritance brackets
+    - dotted imports and workflow targets
+    - local workflow keys before `:`
+  - Add `editors/vscode/tests/unit/**/*.test.prompt` fixtures for lexical edges and invalid-but-lexically-interesting shapes.
+  - Wire the unit-test script so the extension package can run `vscode-tmgrammar-test` without any VS Code runtime harness.
+* Verification (smallest signal):
+  - Run the unit grammar tests against the extension package.
+  - Manually open representative prompt files in local VS Code or an Extension Development Host:
+    - `examples/01_hello_world/prompts/AGENTS.prompt`
+    - `examples/03_imports/prompts/AGENTS.prompt`
+    - at least one nested import file from `examples/03_imports/prompts/**`
+    - `examples/06_nested_workflows/prompts/AGENTS.prompt`
+    - one invalid prompt such as `examples/01_hello_world/prompts/INVALID_PARSE_MISSING_COLON.prompt`
+* Docs/comments (propagation; only if needed):
+  - Update `editors/vscode/README.md` with the grammar-test command and the representative manual smoke files.
+* Exit criteria:
+  - Representative shipped prompts are no longer plain gray text.
+  - Unit fixtures cover the key lexical edges the grammar is expected to own.
+  - Comment toggling, off-side folding, and initial Enter behavior are present and useful.
+* Rollback:
+  - Revert the grammar, language configuration, and unit fixtures to the Phase 1 scaffold state.
+
+## Phase 3 — Lark Alignment And Mirrored Snapshot Coverage
+
+* Goal:
+  Make grammar drift fail loudly and broaden regression coverage across every verified prompt input without polluting the canonical example tree.
+* Work:
+  - Implement `editors/vscode/scripts/validate_lark_alignment.py` so it reads `pyprompt/grammars/pyprompt.lark` directly and fails if the extension keyword inventory or lexical assumptions drift.
+  - Mirror every verified `.prompt` file from `examples/01_*` through `examples/06_*` into `editors/vscode/tests/snap/examples/**/prompts/**/*.prompt`.
+  - Ensure the mirrored snapshot fixtures record their source example path so the duplication remains auditable.
+  - Wire `vscode-tmgrammar-snap` against the mirrored snapshot tree and make `npm test` run the full grammar-test surface.
+  - Keep the snapshot artifacts inside the editor-owned tree only; do not point snapshot output at `examples/`.
+  - If implementation unexpectedly touched any file under `pyprompt/`, include the shipped-language preservation run in this phase before closing it.
+* Verification (smallest signal):
+  - Run the Lark-alignment validator through the repo’s Python toolchain.
+  - Run the full grammar-test suite, including mirrored snapshot coverage.
+  - If any file under `pyprompt/` changed, run `make verify-examples`; if only a narrower preservation signal is needed first, run a targeted manifest and then the full corpus before finalization.
+* Docs/comments (propagation; only if needed):
+  - Update `editors/vscode/README.md` with the validator command and the snapshot-update workflow.
+  - Add source-path notes where needed in mirrored fixtures so future sync work stays obvious.
+* Exit criteria:
+  - Keyword drift fails loudly against `pyprompt.lark`.
+  - Snapshot coverage spans every verified `.prompt` file, including nested import fixtures.
+  - The canonical `examples/` tree remains free of `.snap` artifacts.
+* Rollback:
+  - Remove the validator and mirrored snapshot tree while keeping the working unit-tested grammar in place.
+
+## Phase 4 — Local Use Docs, Cleanup, And Final Smoke
+
+* Goal:
+  Make the extension cheap to use day to day and leave no stale or accidental truth surfaces behind.
+* Work:
+  - Finish `editors/vscode/README.md` with the normal local use path:
+    - Extension Development Host
+    - unpacked local install in the user’s regular VS Code
+    - refresh steps after grammar changes
+  - Remove any temporary scratch grammars, temporary keyword snapshots, or one-off test debris created during implementation.
+  - Confirm the final package still has no runtime JS/TS entrypoint, no root-level Node tooling, and no support claims beyond `01` through `06`.
+  - If the mirrored snapshot tree already feels painful to maintain, record the sync-helper need as follow-up without broadening phase-one scope.
+* Verification (smallest signal):
+  - Follow the README once in a normal local VS Code workflow and confirm highlighting plus basic folding and Enter behavior on representative files.
+  - Re-run the extension’s grammar-test suite after any cleanup that could affect paths or scripts.
+* Docs/comments (propagation; only if needed):
+  - Make `editors/vscode/README.md` the single local-usage source of truth for this extension surface.
+* Exit criteria:
+  - The extension is locally usable in the user’s normal VS Code.
+  - The docs match the real workflow.
+  - No stray scratch artifacts or accidental competing tool surfaces remain.
+* Rollback:
+  - Revert doc and cleanup-only changes while preserving the tested extension package if needed.
+<!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
 
 ## 8.1 Unit tests (contracts)
 
-Prefer tiny contract checks around any Lark-to-extension derivation logic so keyword drift is caught cheaply.
+Prefer tiny contract checks around the Lark-alignment validator plus `vscode-tmgrammar-test` unit fixtures for keywords, strings, comments, keys, and dotted targets so drift is caught cheaply.
 
 ## 8.2 Integration tests (flows)
 
-Prefer TextMate grammar scope tests or snapshots against representative `01` through `06` prompt files rather than bespoke editor harnesses.
+Prefer a unit-first grammar test loop plus mirrored snapshot coverage under `editors/vscode/tests/snap/examples/**`. Do not point `.snap` output at the canonical `examples/` tree.
 
 ## 8.3 E2E / device tests (realistic)
 
@@ -509,3 +640,57 @@ Follow-ups
 
 - Write the authoritative phase plan against the locked `editors/vscode/` shape.
 - Decide whether the local-use path should be unpacked install only or also include optional packaging as a later follow-up.
+
+## 2026-04-06 - Lock isolated npm surface and editor-owned grammar test shape
+
+Context
+
+The second deep-dive pass confirmed that the extension can stay contribution-only with no runtime code, but it also exposed a tooling detail: `vscode-tmgrammar-snap` writes adjacent `.snap` files, so using canonical example prompts directly for snapshots would dirty the shipped example tree.
+
+Options
+
+- Introduce a broader JS or TS toolchain and runtime-style extension test harness.
+- Keep a tiny isolated npm surface under `editors/vscode/`, use unit-first grammar tests, and mirror verified prompt files into an editor-owned snapshot tree.
+- Point snapshot output directly at `examples/` and accept adjacent `.snap` files in the canonical prompt corpus.
+
+Decision
+
+Keep Node tooling isolated under `editors/vscode/` with a subtree-local `package-lock.json`, avoid runtime extension code and heavyweight editor test harnesses in phase one, and split grammar coverage into two editor-owned layers: small unit fixtures plus a mirrored snapshot tree under `editors/vscode/tests/snap/examples/**` for every verified `.prompt` file in `examples/01_*` through `examples/06_*`.
+
+Consequences
+
+- The package surface stays smaller and easier to iterate on.
+- The canonical prompt corpus remains clean.
+- Snapshot coverage now includes nested import and helper prompt files, not just top-level example entry files.
+
+Follow-ups
+
+- Keep mirrored snapshot duplication explicit and source-linked back to the originating verified examples.
+- Add a sync helper only if mirror maintenance becomes annoying in practice.
+
+## 2026-04-06 - Lock four-phase implementation order
+
+Context
+
+Earlier versions of the plan had the architecture locked but still left Section 7 as a placeholder. That was no longer good enough to guide implementation because the package surface, test split, and cleanup boundaries were already concrete.
+
+Options
+
+- Keep Section 7 high-level and let implementation choose its own execution order.
+- Lock a foundational-first phase order that matches the chosen static-extension architecture.
+- Collapse everything into one implementation pass and rely on the call-site audit alone.
+
+Decision
+
+Use four phases in this order: scaffold the isolated static extension package, implement grammar plus language configuration and unit fixtures, add Lark-alignment validation plus the mirrored snapshot corpus, then finish local-use docs and cleanup.
+
+Consequences
+
+- `implement` now has one authoritative execution checklist.
+- The validator and mirrored snapshot tree are explicitly downstream of the first working grammar, which keeps early implementation simpler.
+- Cleanup and README truth-sync work are now ship-blocking instead of implicit.
+
+Follow-ups
+
+- Execute the plan through `implement`.
+- Revisit snapshot-sync tooling only if Phase 3 proves the manual mirror refresh too annoying.

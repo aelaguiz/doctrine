@@ -107,7 +107,7 @@ abstract agent SameIssueRole:
     read_first: ReadFirst
 
 
-# Agent-level named slots follow the same explicit patching model as `05`.
+# Agent-level authored workflow slots stay explicit.
 # - `inherit read_first` keeps the inherited slot unchanged
 # - `override read_first: ...` replaces the inherited slot
 # - new slots such as `workflow_core` and `your_job` are introduced directly

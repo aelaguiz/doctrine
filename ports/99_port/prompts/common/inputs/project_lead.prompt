@@ -1,21 +1,17 @@
-import ..artifacts.shared
+import .runtime
+import ..surfaces.section
+import ..surfaces.lesson
+import ..surfaces.review
 
 
-# V1 composition for `ProjectLead` is intentionally not frozen as one universal
-# fixed bundle.
+# Consumer bundle for `ProjectLead`:
+# - runtime.ActiveIssue
+# - runtime.CurrentIssuePlanAndRoute
+# - runtime.CurrentHandoffComment
+# - runtime.CurrentPacketInScope
+# - runtime.UpstreamPacketChain
+# - runtime.CurrentPublishState
 #
-# It always starts from:
-# - runtime.CurrentIssuePlan
-# - runtime.CurrentIssueState
-# - the current specialist artifact when one exists
-#
-# This module only declares the coordination artifact that later lanes may
-# consume.
-
-# Artifact-backed input
-input ProjectLeadArtifact: "Project Lead Artifact"
-    source: File
-        path: "track_root/_authoring/project_lead.md"
-    shape: CoordinationArtifactDocument
-    requirement: Required
-    "Use the current Project Lead artifact as the route-state, use-now, next-owner, next-step, and publish-or-follow-up contract."
+# This lane consumes route state, packet-chain truth, and publish state when it
+# is live. It does not consume its own coordination artifact as a required
+# input.

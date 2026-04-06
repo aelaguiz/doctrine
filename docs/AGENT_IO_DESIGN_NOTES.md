@@ -1,21 +1,25 @@
 # Agent I/O Design Notes
 
-This document is a working note for the next foundational language layer after
-workflow composition and next-owner routing.
+This document now records the shipped I/O subset through examples `08` to `14`.
 
-The goal is to describe the turn-level contract of an agent before we jump to
-higher-level conventions like packets.
+The goal is to describe the turn-level contract the language already supports,
+and the explicit non-goals that keep it from drifting into packet or
+root-binding machinery too early.
 
 ## Why This Exists
 
-Right now the language can say useful things about:
+The shipped language can now say useful things about:
 - agent shape
 - workflow shape
 - workflow reuse
 - inheritance
 - next-owner routing
+- typed inputs and typed input sources
+- typed outputs, output targets, output shapes, and JSON schemas
+- routed outcomes
+- skill-first capability references
 
-But it still does not have a clear model for the more primitive question:
+The core turn-contract questions the shipped subset already answers are:
 
 - what an agent turn consumes
 - what an agent turn must have before it can run
@@ -23,9 +27,29 @@ But it still does not have a clear model for the more primitive question:
 - what an agent turn produces
 - what should happen when required inputs are missing
 
-Packets may still become important later, but they look more like a convention
-built on top of these lower-level primitives than like the next primitive
-itself.
+Packets may still become important later, but they are still a convention built
+on top of these lower-level primitives, not a shipped primitive themselves.
+
+## Shipped Boundaries
+
+Current shipped boundaries:
+- `input` separates `source`, `shape`, and `requirement`
+- `source` resolves to built-ins such as `Prompt`, `File`, and `EnvVar`, or to
+  a declared `input source`
+- input `shape` stays a symbolic label in this subset
+- `output` is the one produced-contract primitive
+- `output` supports either `target + shape` or `files`
+- `target` resolves to built-ins such as `TurnResponse` and `File`, or to a
+  declared `output target`
+- `shape` resolves to a declared `output shape` first, then to a symbolic label
+- `json schema` is subordinate to `output shape`, not a competing output
+  primitive
+- richer authored support sections such as `must_include`,
+  `standalone_read`, and `notes` stay authored prose
+- path conventions such as `section_root/...` stay plain strings explained by
+  surrounding guidance
+- there is still no packet primitive, no root-binding declaration, and no
+  `runtime_tools` surface
 
 ## Current Framing
 

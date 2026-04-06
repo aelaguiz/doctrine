@@ -9,14 +9,16 @@ Current intent:
 - parser output and examples should refer to these numbers
 - wording can tighten over time, but the underlying rule should stay stable
 
-## E001: Cannot Override Undefined Workflow Entry
+## E001: Cannot Override Undefined Inherited Entry
 
-This error occurs when a child agent uses `override key:` inside `workflow`, but the inherited workflow does not define that key.
+This error occurs when an explicit override tries to replace an inherited entry
+that does not exist.
 
 Why this is an error:
 - `override` means "replace an inherited entry in place"
 - if the parent does not define the key, there is nothing to replace
-- new workflow entries should be introduced explicitly, not smuggled in through `override`
+- new entries should be introduced explicitly, not smuggled in through
+  `override`
 
 How to fix it:
 - if the entry is new, define it as `key: "Title"` in the inherited order
@@ -27,7 +29,8 @@ Current example:
 
 ## E002: Missing Rendered Section Title
 
-This error occurs when a new workflow section would render a heading, but the source does not provide the heading string explicitly.
+This error occurs when a newly rendered section would need a visible title, but
+the source does not provide that title explicitly.
 
 Why this is an error:
 - rendered section titles are authored data
@@ -40,12 +43,13 @@ How to fix it:
 - add a title string to a reusable workflow declaration, for example `workflow Greeting: "Greeting"`
 - if the entry is a true inherited override that should keep the old title, use `override key:` without a new title
 
-## E003: Missing Inherited Workflow Entry
+## E003: Missing Inherited Entry
 
-This error occurs when a child inherits a workflow but fails to account for one of the parent's inherited entries.
+This error occurs when an inherited surface uses explicit exhaustive patching,
+but the child fails to account for one of the inherited entries.
 
 Why this is an error:
-- inherited workflows are explicit and exhaustive
+- inherited patching in the language is explicit and exhaustive
 - omission should not silently mean keep, move, or drop
 - the compiler should never guess where an inherited section belongs
 

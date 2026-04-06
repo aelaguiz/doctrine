@@ -1,21 +1,16 @@
-import ..artifacts.shared
+import .runtime
+import ..surfaces.section
+import ..surfaces.lesson
+import ..surfaces.support
 
 
-# V1 composition for `AcceptanceCritic` is intentionally not frozen as one
-# universal fixed bundle.
+# Consumer bundle for `AcceptanceCritic`:
+# - runtime.CurrentIssuePlanAndRoute
+# - runtime.CurrentHandoffComment
+# - runtime.CurrentPacketInScope
+# - runtime.UpstreamPacketChain
+# - packet-type-specific semantic surfaces when the reviewed packet depends on
+#   them
 #
-# It always starts from:
-# - runtime.CurrentIssuePlan
-# - the current artifact under review
-# - any additional upstream artifacts explicitly named by that artifact's
-#   contract
-#
-# This module only declares the review artifact that later lanes may consume.
-
-# Artifact-backed input
-input AcceptanceCriticArtifact: "Acceptance Critic Artifact"
-    source: File
-        path: "scope_root/_authoring/acceptance_critic.md"
-    shape: ReviewArtifactDocument
-    requirement: Required
-    "Use the current Acceptance Critic artifact as the review verdict, use-now truth, and reroute contract for the current reviewed scope."
+# This lane consumes review scope and upstream truth. It does not consume its
+# own review artifact as a required input.

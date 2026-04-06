@@ -1,18 +1,19 @@
-import ..artifacts.shared
+import .runtime
+import ..surfaces.section
+import ..surfaces.lesson
 
 
-# V1 input composition for `SituationSynthesizer`:
-# - runtime.CurrentIssuePlan
-# - lesson_architect.LessonArchitectArtifact
-# - playable_strategist.PlayableStrategistArtifact
+# Consumer bundle for `SituationSynthesizer`:
+# - runtime.CurrentIssuePlanAndRoute
+# - lesson.LessonPlanContract
+# - section.SectionPlayableStrategyContract
+# - situation_synthesizer.RepSelectionToolRoute
 #
-# This module declares the artifact-backed input that later lesson lanes use
-# once concrete reps and sequencing truth have been earned.
+# This lane consumes the lesson plan, any still-relevant playable constraints,
+# and the chosen tool route for rep selection and exact-move proof.
 
-# Artifact-backed input
-input SituationSynthesizerArtifact: "Situation Synthesizer Artifact"
-    source: File
-        path: "lesson_root/_authoring/situation_synthesizer.md"
-    shape: ProductionArtifactDocument
+input RepSelectionToolRoute: "Rep Selection Tool Route"
+    source: Prompt
+    shape: ToolRouteSpec
     requirement: Required
-    "Use the current Situation Synthesizer artifact as the kept-rep, rejected-rep, sequencing, solver-screening, and exact-move-authority contract."
+    "Use the named tool route for rep selection, sequencing review, and exact-move proof when exact-move proof is needed."

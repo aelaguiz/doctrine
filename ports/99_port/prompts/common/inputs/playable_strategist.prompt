@@ -1,18 +1,16 @@
-import ..artifacts.shared
+import .runtime
+import .checkout
+import ..surfaces.section
 
 
-# V1 input composition for `PlayableStrategist`:
-# - runtime.CurrentIssuePlan
-# - dossier_engineer.DossierEngineerArtifact
-# - section_architect.SectionArchitectArtifact
+# Consumer bundle for `PlayableStrategist`:
+# - runtime.CurrentIssuePlanAndRoute
+# - section.SectionLessonMapContract
+# - section.SectionDossierContract
+# - runtime.ExplicitUserPlayableGuidance
+# - runtime.CurrentProductReadbackTargets
+# - checkout.AttachedCheckoutRoot
 #
-# This module declares the artifact-backed input that later lesson lanes use
-# when section-wide playable strategy has already been chosen.
-
-# Artifact-backed input
-input PlayableStrategistArtifact: "Playable Strategist Artifact"
-    source: File
-        path: "section_root/_authoring/playable_strategist.md"
-    shape: ProductionArtifactDocument
-    requirement: Required
-    "Use the current Playable Strategist artifact as the accepted section strategy and downstream playable-constraint contract."
+# This lane consumes the section architecture, the section promise, and any
+# explicitly named user guidance or current product readback targets.
+# There are no role-local inputs in this module.

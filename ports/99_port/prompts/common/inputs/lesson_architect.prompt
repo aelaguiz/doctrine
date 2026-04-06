@@ -1,19 +1,14 @@
-import ..artifacts.shared
+import .runtime
+import .continuity
+import ..surfaces.section
 
 
-# V1 input composition for `LessonArchitect`:
-# - runtime.CurrentIssuePlan
-# - concepts_terms_curator.ConceptsTermsCuratorArtifact
-# - section_architect.SectionArchitectArtifact
-# - playable_strategist.PlayableStrategistArtifact
+# Consumer bundle for `LessonArchitect`:
+# - runtime.CurrentIssuePlanAndRoute
+# - section.SectionLessonMapContract
+# - section.SectionConceptsAndTermsContract
+# - section.SectionPlayableStrategyContract
+# - continuity.NearbyLessonContinuityContext
 #
-# This module declares the artifact-backed input that later lesson lanes use
-# once lesson burden and pacing are locked.
-
-# Artifact-backed input
-input LessonArchitectArtifact: "Lesson Architect Artifact"
-    source: File
-        path: "lesson_root/_authoring/lesson_architect.md"
-    shape: ProductionArtifactDocument
-    requirement: Required
-    "Use the current Lesson Architect artifact as the lesson burden, pacing, and stable-boundary contract."
+# This lane consumes the locked section contracts plus nearby lesson continuity
+# only when pacing still depends on it.

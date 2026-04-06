@@ -1,21 +1,18 @@
-import ..artifacts.shared
+import .runtime
+import ..surfaces.section
+import ..surfaces.lesson
+import ..surfaces.support
 
 
-# V1 input composition for `Copywriter`:
-# - runtime.CurrentIssuePlan
-# - concepts_terms_curator.ConceptsTermsCuratorArtifact
-# - lesson_architect.LessonArchitectArtifact
-# - situation_synthesizer.SituationSynthesizerArtifact
-# - playable_materializer.PlayableMaterializerArtifact
-# - live_surfaces.LessonManifest
+# Consumer bundle for `Copywriter`:
+# - runtime.CurrentIssuePlanAndRoute
+# - section.SectionConceptsAndTermsContract
+# - lesson.LessonPlanContract
+# - lesson.LessonSituationsContract
+# - lesson.LessonBuildContract
+# - lesson.LessonManifest
+# - support.ActionAuthorityProof
 #
-# Shared runtime inputs live in `runtime.prompt`.
-# The live lesson surface lives in `live_surfaces.prompt`.
-
-# Artifact-backed input
-input CopywriterArtifact: "Copywriter Artifact"
-    source: File
-        path: "lesson_root/_authoring/copywriter.md"
-    shape: ProductionArtifactDocument
-    requirement: Required
-    "Use the current Copywriter artifact as the learner-facing wording, grounding, anti-leak, and post-copy validation contract."
+# This lane consumes the locked section and lesson contracts, the live manifest,
+# and optional exact-move proof when the copy still carries a concrete move
+# claim. It does not consume its own copy artifact.

@@ -1,0 +1,47 @@
+# Shared continuity lookups for nearby section and lesson context.
+
+input source AdjacentScopeSet: "Adjacent Scope Set"
+    required: "Required Source Keys"
+        scope_kind: "Scope Kind"
+        direction: "Direction"
+        count: "Count"
+
+
+input PreviousTwoSectionsContext: "Previous Two Sections Context"
+    source: AdjacentScopeSet
+        scope_kind: "section"
+        direction: "previous"
+        count: "2"
+    shape: NamedSurfaceSet
+    requirement: Required
+    "Use the previous two sections in the same track when the dossier lane grounds what this section builds on."
+
+
+input ForwardContinuitySectionContext: "Forward Continuity Section Context"
+    source: AdjacentScopeSet
+        scope_kind: "section"
+        direction: "next"
+        count: "1"
+    shape: NamedSurfaceSet
+    requirement: Advisory
+    "Use the next section only when the issue says forward continuity matters."
+
+
+input SectionSizingContinuityContext: "Section Sizing Continuity Context"
+    source: AdjacentScopeSet
+        scope_kind: "section"
+        direction: "previous"
+        count: "2"
+    shape: NamedSurfaceSet
+    requirement: Advisory
+    "Use the previous two sections when section architecture still depends on current lesson-count continuity."
+
+
+input NearbyLessonContinuityContext: "Nearby Lesson Continuity Context"
+    source: AdjacentScopeSet
+        scope_kind: "lesson"
+        direction: "nearby"
+        count: "2"
+    shape: NamedSurfaceSet
+    requirement: Advisory
+    "Use nearby lessons only when lesson pacing or burden still depends on recent lesson continuity."

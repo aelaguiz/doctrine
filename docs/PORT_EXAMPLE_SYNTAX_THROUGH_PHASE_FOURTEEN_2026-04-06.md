@@ -404,6 +404,13 @@ Warn-first note: `external_research_grounding` is still not started in `planning
 
 ## Phase 1 - Widen the core model without changing shipped behavior
 
+Status: IN PROGRESS
+
+Completed work:
+- Full `07` to `14` example read is complete before code changes.
+- Confirmed the first real widening pressure is the mixed agent field model: legacy inherited `workflow` still needs to preserve `01` to `06`, while later examples add authored workflow slots plus typed contract fields.
+- Confirmed `08` clarifies that authored workflow slots like `your_job` must support both named workflow references and inline workflow bodies.
+
 - Goal: Replace the internal exact-two-field agent assumption with the widened declaration and field model while keeping the shipped `01` to `06` subset behavior-stable.
 - Work: Expand [pyprompt/grammars/pyprompt.lark](/Users/aelaguiz/workspace/pyprompt/pyprompt/grammars/pyprompt.lark), [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py), [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py), and [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py) so the codebase can represent the closed top-level declaration set, ordered typed agent fields, authored workflow slots, kind-specific declaration registries, and the future `route` leaf item; preserve one compiler path, one import-resolution spine, one verifier path, and leave short code comments at the grammar and compiler boundaries explaining reserved typed fields versus authored workflow slots.
 - Verification (smallest signal): `make verify-examples` stays green for the active corpus, and any temporary unsupported post-`06` constructs still fail loudly rather than silently downgrading into prose.

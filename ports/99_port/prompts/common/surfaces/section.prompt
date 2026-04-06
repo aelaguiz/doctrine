@@ -1,0 +1,35 @@
+import ..artifacts.shared
+
+
+# Semantic section-level surfaces that downstream lanes can read.
+
+input SectionDossierContract: "Section Dossier Contract"
+    source: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current dossier contract as the section boundary, burden, and grounding truth."
+
+
+input SectionConceptsAndTermsContract: "Section Concepts And Terms Contract"
+    source: File
+        path: "section_root/_authoring/concepts_terms_curator.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current concepts and terms contract as the locked section semantic spine."
+
+
+input SectionLessonMapContract: "Section Lesson Map Contract"
+    source: File
+        path: "section_root/_authoring/section_architect.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current lesson-map contract as the section architecture and template-corridor truth."
+
+
+input SectionPlayableStrategyContract: "Section Playable Strategy Contract"
+    source: File
+        path: "section_root/_authoring/playable_strategist.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current playable strategy contract as the accepted section-wide playable direction and downstream constraint set."

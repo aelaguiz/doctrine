@@ -28,22 +28,31 @@ class ImportDecl:
 
 
 @dataclass(slots=True, frozen=True)
-class WorkflowTarget:
+class NameRef:
     module_parts: tuple[str, ...]
     declaration_name: str
+
+
+@dataclass(slots=True, frozen=True)
+class RouteLine:
+    label: str
+    target: NameRef
+
+
+SectionBodyItem: TypeAlias = str | RouteLine
 
 
 @dataclass(slots=True, frozen=True)
 class LocalSection:
     key: str
     title: str
-    lines: tuple[str, ...]
+    items: tuple[SectionBodyItem, ...]
 
 
 @dataclass(slots=True, frozen=True)
 class WorkflowUse:
     key: str
-    target: WorkflowTarget
+    target: NameRef
 
 
 @dataclass(slots=True, frozen=True)
@@ -55,13 +64,13 @@ class InheritItem:
 class OverrideSection:
     key: str
     title: str | None
-    lines: tuple[str, ...]
+    items: tuple[SectionBodyItem, ...]
 
 
 @dataclass(slots=True, frozen=True)
 class OverrideUse:
     key: str
-    target: WorkflowTarget
+    target: NameRef
 
 
 WorkflowItem: TypeAlias = (
@@ -83,7 +92,87 @@ class WorkflowDecl:
     parent_name: str | None = None
 
 
-Field: TypeAlias = RoleScalar | RoleBlock | WorkflowBody
+RecordScalarValue: TypeAlias = str | NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class RecordScalar:
+    key: str
+    value: RecordScalarValue
+    body: tuple["RecordItem", ...] | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class RecordSection:
+    key: str
+    title: str
+    items: tuple["RecordItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class RecordRef:
+    ref: NameRef
+    body: tuple["RecordItem", ...] | None = None
+
+
+RecordItem: TypeAlias = str | RecordScalar | RecordSection | RecordRef | RouteLine
+
+
+WorkflowSlotValue: TypeAlias = WorkflowBody | NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class AuthoredSlotField:
+    key: str
+    value: WorkflowSlotValue
+
+
+@dataclass(slots=True, frozen=True)
+class AuthoredSlotInherit:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class AuthoredSlotOverride:
+    key: str
+    value: WorkflowSlotValue
+
+
+@dataclass(slots=True, frozen=True)
+class InputsField:
+    title: str
+    refs: tuple[NameRef, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutputsField:
+    title: str
+    refs: tuple[NameRef, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutcomeField:
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SkillsField:
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+Field: TypeAlias = (
+    RoleScalar
+    | RoleBlock
+    | AuthoredSlotField
+    | AuthoredSlotInherit
+    | AuthoredSlotOverride
+    | InputsField
+    | OutputsField
+    | OutcomeField
+    | SkillsField
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -94,7 +183,67 @@ class Agent:
     parent_name: str | None = None
 
 
-Declaration: TypeAlias = ImportDecl | WorkflowDecl | Agent
+@dataclass(slots=True, frozen=True)
+class InputDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class InputSourceDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutputDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutputTargetDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutputShapeDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class JsonSchemaDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SkillDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+
+
+Declaration: TypeAlias = (
+    ImportDecl
+    | WorkflowDecl
+    | Agent
+    | InputDecl
+    | InputSourceDecl
+    | OutputDecl
+    | OutputTargetDecl
+    | OutputShapeDecl
+    | JsonSchemaDecl
+    | SkillDecl
+)
 
 
 @dataclass(slots=True, frozen=True)

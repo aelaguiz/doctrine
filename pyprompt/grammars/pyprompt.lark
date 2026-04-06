@@ -11,20 +11,59 @@ start: prompt_file
 
 prompt_file: _NL* declaration+ _NL*
 
-?declaration: import_decl | workflow_decl | abstract_agent | agent
+?declaration: import_decl
+            | workflow_decl
+            | input_source_decl
+            | input_decl
+            | output_target_decl
+            | output_shape_decl
+            | output_decl
+            | json_schema_decl
+            | skill_decl
+            | abstract_agent
+            | agent
 
 import_decl: "import" import_path _NL
+
+workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
+input_source_decl: "input" "source" CNAME ":" string _NL _INDENT record_body _DEDENT
+input_decl: "input" CNAME ":" string _NL _INDENT record_body _DEDENT
+output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _DEDENT
+output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
+output_decl: "output" CNAME ":" string _NL _INDENT record_body _DEDENT
+json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
+skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
 
 agent: "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
 inheritance: "[" CNAME "]"
-?agent_field: role_field | workflow_field
+
+// Reserved typed fields stay explicit. Every other non-reserved key is an
+// authored workflow slot, which keeps the grammar open without making typed
+// contract fields magical.
+?agent_field: role_field
+            | inputs_field
+            | outputs_field
+            | outcome_field
+            | skills_field
+            | agent_slot_inherit
+            | agent_slot_override
+            | agent_slot_field
 
 role_field: "role" ":" string _NL role_body?
 role_body: _INDENT block_lines _DEDENT
 
-workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
-workflow_field: "workflow" ":" string _NL _INDENT workflow_body _DEDENT
+inputs_field: "inputs" ":" string _NL _INDENT ref_list _DEDENT
+outputs_field: "outputs" ":" string _NL _INDENT ref_list _DEDENT
+outcome_field: "outcome" ":" string _NL _INDENT record_body _DEDENT
+skills_field: "skills" ":" string _NL _INDENT record_body _DEDENT
+
+agent_slot_field: CNAME ":" slot_value _NL slot_body?
+agent_slot_inherit: "inherit" CNAME _NL?
+agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
+
+?slot_value: string | name_ref
+slot_body: _INDENT workflow_body _DEDENT
 
 workflow_body: workflow_preamble workflow_items?
              | workflow_items
@@ -39,13 +78,35 @@ workflow_string: string _NL?
               | workflow_override_section
               | workflow_override_use
 
-local_section: CNAME ":" string _NL _INDENT block_lines _DEDENT
-workflow_use: "use" CNAME ":" workflow_target _NL?
+local_section: CNAME ":" string _NL _INDENT workflow_section_body _DEDENT
+workflow_use: "use" CNAME ":" name_ref _NL?
 workflow_inherit: "inherit" CNAME _NL?
-workflow_override_section: "override" CNAME ":" string? _NL _INDENT block_lines _DEDENT
-workflow_override_use: "override" CNAME ":" workflow_target _NL?
+workflow_override_section: "override" CNAME ":" string? _NL _INDENT workflow_section_body _DEDENT
+workflow_override_use: "override" CNAME ":" name_ref _NL?
 
-workflow_target: dotted_name
+workflow_section_body: workflow_section_item+
+?workflow_section_item: string _NL?
+                      | route_stmt
+
+record_body: record_item+
+?record_item: record_text
+            | record_keyed_item
+            | record_ref_item
+            | route_stmt
+
+record_text: string _NL?
+record_keyed_item: CNAME ":" record_head _NL record_item_body?
+record_ref_item: name_ref _NL record_item_body?
+record_item_body: _INDENT record_body _DEDENT
+
+?record_head: string | name_ref
+
+ref_list: ref_item+
+ref_item: name_ref _NL?
+
+route_stmt: "route" string "->" name_ref _NL?
+
+name_ref: dotted_name
 import_path: absolute_import_path | relative_import_path
 absolute_import_path: dotted_name
 relative_import_path: DOTS dotted_name

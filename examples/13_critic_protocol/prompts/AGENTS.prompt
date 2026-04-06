@@ -124,9 +124,6 @@ output CriticReviewOutput: "Critic Review Output"
         evidence_used: "Evidence Used"
             "RUN_GATE_LOG.md must record the validation evidence the critic actually relied on."
 
-    owns: "Owns"
-        "This output owns the current verdict, the honest next owner, and the gate-by-gate review record for this turn."
-
     standalone_read: "Standalone Read"
         "A downstream reader should be able to read REVIEW_VERDICT.md and RUN_GATE_LOG.md and understand the verdict, route, and review basis."
 

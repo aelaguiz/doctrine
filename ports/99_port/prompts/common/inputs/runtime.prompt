@@ -1,28 +1,60 @@
-# Shared runtime-channel inputs reused across the 99 port.
+# Shared prompt-delivered coordination inputs reused across the 99 port.
 #
-# These stay close to the examples:
-# - prompt-provided context uses `source: Prompt`
-# - file-backed current state uses `source: File`
-# - runtime checkout context uses `source: EnvVar`
+# These declarations model the work-state surfaces that 99 keeps naming on the
+# active issue and in the current handoff comment. They are consumer inputs, not
+# compressed packet abstractions.
 
-input CurrentIssuePlan: "Current Issue Plan"
+input ActiveIssue: "Active Issue"
     source: Prompt
     shape: MarkdownDocument
     requirement: Required
-    "Use the current issue plan to understand the intended lane, current scope, and honest next step."
+    "Use the active issue as the live request, scope, and issue-level coordination surface."
 
 
-input CurrentIssueState: "Current Issue State"
-    source: File
-        path: "track_root/_authoring/CURRENT_ISSUE_STATE.md"
+input CurrentIssuePlanAndRoute: "Current Issue Plan And Route"
+    source: Prompt
     shape: MarkdownDocument
     requirement: Required
-    "Use the current issue state to understand the named current files, publish state, and other live coordination truth."
+    "Use the current issue plan and route to understand the intended lane, current roots, and honest next step."
 
 
-input AttachedCheckoutRoot: "Attached Checkout Root"
-    source: EnvVar
-        env: "ATTACHED_CHECKOUT_ROOT"
-    shape: DirectoryPath
+input CurrentHandoffComment: "Current Handoff Comment"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use the latest handoff comment when it names the current files, review files, or other current scope details."
+
+
+input CurrentPacketInScope: "Current Packet In Scope"
+    source: Prompt
+    shape: NamedSurfaceSet
     requirement: Required
-    "Use this environment variable to resolve the attached checkout when the lane needs current product truth or validator access."
+    "Use the named current packet files in scope for the current turn instead of guessing from stale nearby files."
+
+
+input UpstreamPacketChain: "Upstream Packet Chain"
+    source: Prompt
+    shape: NamedSurfaceSet
+    requirement: Required
+    "Use the named upstream packet chain the current turn depends on."
+
+
+input CurrentPublishState: "Current Publish State"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use this only when PR, QR, publish, or follow-up state is already live on the issue."
+
+
+input ExplicitUserPlayableGuidance: "Explicit User Playable Guidance"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use explicit user guidance about intended teaching shape or playable direction when it exists."
+
+
+input CurrentProductReadbackTargets: "Current Product Readback Targets"
+    source: Prompt
+    shape: NamedSurfaceSet
+    requirement: Advisory
+    "Use the exact attached-checkout files, screens, or captures named for current product readback when they matter."

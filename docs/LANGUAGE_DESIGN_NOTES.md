@@ -248,27 +248,44 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Pending Decisions
+## Shipped Through 14
 
-- How should rendered output file names map from concrete agent names when one source package emits many concrete agents?
-- Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
-- When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
-- Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?
-- should named workflow composition stay as a bare reference line, or do we want a more explicit `use`-style syntax later?
+The shipped language subset now covers examples `01` through `14`.
 
-## Pending Concepts
+Current shipped declaration kinds:
+- `import`
+- `workflow`
+- `agent`
+- `abstract agent`
+- `input`
+- `input source`
+- `output`
+- `output target`
+- `output shape`
+- `json schema`
+- `skill`
 
-These are concepts we expect to revisit, but they are not locked into the example sequence yet.
+Current shipped agent field families:
+- `role`
+- authored workflow slots such as `workflow`, `your_job`, `read_first`,
+  `workflow_core`, `how_to_take_a_turn`, `standards_and_support`, and
+  `when_to_use_this_role`
+- `inputs`
+- `outputs`
+- `outcome`
+- `skills`
 
-- richer ordered workflow semantics
-- multi-agent output from one source package
-- agent input and output signatures
-- skills
-- more explicit workflow declarations and reuse patterns
-- formal runtime-root declarations and path interpolation
-- file ownership and review-readability conventions built on inputs and outputs
-- policies and tool boundaries
-- role graphs and handoff structure
+Current shipped boundaries:
+- the renderer stays role-first; there is no H1 agent-name mode in the shipped
+  subset
+- `route "..." -> AgentName` is a narrow typed line item inside workflow and
+  outcome sections, not a standalone role-graph DSL
+- output paths such as `section_root/...` stay plain path strings explained by
+  surrounding guidance
+- the language is skill-first; it does not ship a parallel `runtime_tools`
+  surface
+- `14_handoff_truth` is satisfied through imports plus existing primitives, not
+  through a new freshness or packet primitive
 
 ## Top-Level Buckets From 99
 
@@ -307,7 +324,11 @@ They repeatedly specify:
 - handoff comment rules
 - stop and escalate behavior
 
-This suggests the language needs a first-class way to express role-to-role routing and ownership flow.
+This pressure is real, but the current shipped answer is intentionally narrow:
+- `route "..." -> AgentName` inside workflow or outcome sections
+- same-issue ownership truth carried by authored guidance plus typed
+  `inputs`, `outputs`, and `outcome`
+- no standalone role-graph or packet primitive yet
 
 ### 3. I/O, File Ownership, And Review Truth
 
@@ -394,7 +415,9 @@ This suggests that "proof and validation surfaces" are a top-level design bucket
 
 Several `99` outputs distinguish repo workflow truth from product truth in an attached checkout.
 
-That means the language may need a way to talk about attached repos, external artifacts, env files, and commands without collapsing them into ordinary workflow text.
+That means the language may need a richer way to talk about attached repos,
+external artifacts, env files, and commands later without collapsing them into
+ordinary workflow text.
 
 ## Current Priorities
 
@@ -410,18 +433,19 @@ resolve are:
 
 Those buckets appear to be the real structure underneath the `99` examples.
 
-## Top Candidates For Next Work
+## Current Pressure Areas
 
-- Decide what should live in shared doctrine sections versus role-local fields
-  now that the basic role-home shell is already earned.
-- Decide how to represent role graphs, handoff order, critic lanes, and next-owner rules.
-- Decide how to express ownership and review truth through inputs, outputs,
-  outcomes, and file contracts without introducing packets.
-- Decide how skills and proof boundaries should be represented while keeping the
-  language skill-first.
-- Decide how attached checkouts and review/evidence files should be modeled.
-- Keep `12_role_home_composition` and `13_critic_protocol` consistent with the
-  no-`runtime_tools` rule.
+Now that `01` through `14` are shipped, the next real design pressure is not
+whether these primitives exist. The pressure is where to stop widening them.
+
+Current live questions:
+- what belongs in shared doctrine sections versus typed field families
+- whether route semantics ever need to grow past the current narrow line-item
+  form
+- whether attached checkout and evidence surfaces need first-class declarations
+- whether path-root conventions ever need more than explained string guidance
+- how much extra validation or normalization the compiler should enforce on the
+  richer contract surfaces without making authoring brittle
 
 ## Current Bias
 
