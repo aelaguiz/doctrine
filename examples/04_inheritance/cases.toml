@@ -1,0 +1,66 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "hello world greeter inherits shared sections from abstract bases"
+status = "active"
+kind = "render_contract"
+agent = "HelloWorldGreeter"
+assertion = "exact_lines"
+approx_ref = "ref/hello_world_greeter/AGENTS.md"
+expected_lines = [
+  "You are the hello world greeter.",
+  "",
+  "## Hello World Instructions",
+  "",
+  "### Greeting",
+  "",
+  "Say hello.",
+  "",
+  "### Courtesy",
+  "",
+  "Keep the tone warm and direct.",
+  "",
+  "### Object",
+  "",
+  "Say world.",
+]
+
+[[cases]]
+name = "inheritance demo overrides one inherited section in place"
+status = "active"
+kind = "render_contract"
+agent = "InheritanceDemo"
+assertion = "exact_lines"
+approx_ref = "ref/inheritance_demo/AGENTS.md"
+expected_lines = [
+  "You are the inheritance demonstration agent.",
+  "",
+  "## Inherited Steps",
+  "",
+  "Follow the inherited steps below.",
+  "This child keeps the shared greeting and replaces the final step.",
+  "",
+  "### Greeting",
+  "",
+  "Say hello.",
+  "",
+  "### Courtesy",
+  "",
+  "Keep the tone warm and direct.",
+  "",
+  "### Object",
+  "",
+  "Say inherited world.",
+]
+
+[[cases]]
+name = "abstract base agent does not render"
+status = "active"
+kind = "compile_fail"
+agent = "BaseGreeter"
+exception_type = "CompileError"
+message_contains = [
+  "Abstract agent does not render",
+  "BaseGreeter",
+]

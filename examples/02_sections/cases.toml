@@ -3,7 +3,7 @@ default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
 name = "sections demo renders headed steps and substeps"
-status = "planned"
+status = "active"
 kind = "render_contract"
 agent = "SectionsDemo"
 assertion = "exact_lines"
@@ -22,4 +22,16 @@ expected_lines = [
   "### Step Two",
   "",
   "Say world.",
+]
+
+[[cases]]
+name = "duplicate local section keys fail in compile stage"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_SECTION_KEY.prompt"
+agent = "DuplicateSectionKeysDemo"
+exception_type = "CompileError"
+message_contains = [
+  "Duplicate workflow item key",
+  "step_one",
 ]

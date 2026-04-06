@@ -46,7 +46,27 @@ class WorkflowUse:
     target: WorkflowTarget
 
 
-WorkflowItem: TypeAlias = LocalSection | WorkflowUse
+@dataclass(slots=True, frozen=True)
+class InheritItem:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class OverrideSection:
+    key: str
+    title: str | None
+    lines: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OverrideUse:
+    key: str
+    target: WorkflowTarget
+
+
+WorkflowItem: TypeAlias = (
+    LocalSection | WorkflowUse | InheritItem | OverrideSection | OverrideUse
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -60,6 +80,7 @@ class WorkflowBody:
 class WorkflowDecl:
     name: str
     body: WorkflowBody
+    parent_name: str | None = None
 
 
 Field: TypeAlias = RoleScalar | RoleBlock | WorkflowBody
@@ -69,6 +90,8 @@ Field: TypeAlias = RoleScalar | RoleBlock | WorkflowBody
 class Agent:
     name: str
     fields: tuple[Field, ...]
+    abstract: bool = False
+    parent_name: str | None = None
 
 
 Declaration: TypeAlias = ImportDecl | WorkflowDecl | Agent

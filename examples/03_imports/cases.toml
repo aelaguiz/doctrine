@@ -3,7 +3,7 @@ default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
 name = "python-like imports compose simple and chained workflows"
-status = "planned"
+status = "active"
 kind = "render_contract"
 agent = "ImportsDemo"
 assertion = "exact_lines"
@@ -74,7 +74,7 @@ expected_lines = [
 
 [[cases]]
 name = "missing imported module fails in compile stage"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_MISSING_MODULE.prompt"
 agent = "MissingModuleDemo"
@@ -86,7 +86,7 @@ message_contains = [
 
 [[cases]]
 name = "unresolved qualified symbol fails in compile stage"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_UNRESOLVED_SYMBOL.prompt"
 agent = "UnresolvedImportedSymbolDemo"
@@ -98,7 +98,7 @@ message_contains = [
 
 [[cases]]
 name = "duplicate declaration name in one imported module fails in compile stage"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_DUPLICATE_DECLARATION.prompt"
 agent = "DuplicateDeclarationDemo"

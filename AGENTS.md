@@ -5,7 +5,8 @@
 - Install the local package before running repo checks. If the system Python is externally managed, use the repo virtualenv: `.venv/bin/python -m pip install -e .`
 - Run repo checks in that same environment, for example: `PATH="$PWD/.venv/bin:$PATH" make hello-world`
 - Corpus check: `PATH="$PWD/.venv/bin:$PATH" make verify-examples`
-- Today, `make verify-examples` discovers checked-in manifests for `examples/01_hello_world` and `examples/02_sections`, but only `examples/01_hello_world` has active cases. `examples/02_sections` is still planned-only.
+- Today, `make verify-examples` discovers active manifests for `examples/01_hello_world` through `examples/06_nested_workflows`.
+- Later example directories are still design pressure until they gain adjacent `cases.toml` coverage and the shipped compiler path can prove them.
 - If a dependency is missing or a check could not run, say that plainly.
 
 ## Shipped Truth

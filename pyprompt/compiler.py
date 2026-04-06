@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,8 +31,32 @@ class IndexedUnit:
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
     workflows_by_name: dict[str, model.WorkflowDecl]
-    agents: tuple[model.Agent, ...]
+    agents_by_name: dict[str, model.Agent]
     imported_units: dict[tuple[str, ...], "IndexedUnit"]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedSectionItem:
+    key: str
+    title: str
+    lines: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedUseItem:
+    key: str
+    target_unit: IndexedUnit
+    workflow_decl: model.WorkflowDecl
+
+
+ResolvedWorkflowItem = ResolvedSectionItem | ResolvedUseItem
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedWorkflowBody:
+    title: str
+    preamble: tuple[str, ...]
+    items: tuple[ResolvedWorkflowItem, ...]
 
 
 class CompilationContext:
@@ -41,38 +64,24 @@ class CompilationContext:
         self.prompt_root = _resolve_prompt_root(prompt_file.source_path)
         self._module_cache: dict[tuple[str, ...], IndexedUnit] = {}
         self._loading_modules: set[tuple[str, ...]] = set()
-        self._workflow_stack: list[tuple[tuple[str, ...], str]] = []
+        self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
+        self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._agent_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._resolved_workflow_cache: dict[tuple[tuple[str, ...], str], ResolvedWorkflowBody] = {}
+        self._resolved_agent_cache: dict[tuple[tuple[str, ...], str], ResolvedWorkflowBody] = {}
         self.root_unit = self._index_unit(prompt_file, module_parts=())
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
-        duplicate_names = [
-            name
-            for name, count in Counter(agent.name for agent in self.root_unit.agents).items()
-            if count > 1
-        ]
-        if duplicate_names:
-            raise CompileError(f"Duplicate agent name(s): {', '.join(sorted(duplicate_names))}")
-
-        selected = [agent for agent in self.root_unit.agents if agent.name == agent_name]
-        if not selected:
+        agent = self.root_unit.agents_by_name.get(agent_name)
+        if agent is None:
             raise CompileError(f"Missing target agent: {agent_name}")
+        if agent.abstract:
+            raise CompileError(f"Abstract agent does not render: {agent_name}")
 
-        return self._compile_agent_decl(selected[0], unit=self.root_unit)
+        return self._compile_agent_decl(agent, unit=self.root_unit)
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
-        # The shipped subset still requires one explicit role and one explicit workflow.
-        if len(agent.fields) != 2:
-            raise CompileError(
-                f"Agent {agent.name} is outside the shipped subset: expected exactly one role and one workflow."
-            )
-
-        role_field, workflow_field = agent.fields
-        if not isinstance(role_field, (model.RoleScalar, model.RoleBlock)) or not isinstance(
-            workflow_field, model.WorkflowBody
-        ):
-            raise CompileError(
-                f"Agent {agent.name} is outside the shipped subset: expected `role` followed by `workflow`."
-            )
+        role_field, _workflow_field = self._split_agent_fields(agent)
 
         compiled_role: model.RoleScalar | CompiledSection
         if isinstance(role_field, model.RoleScalar):
@@ -87,10 +96,8 @@ class CompilationContext:
         return CompiledAgent(
             name=agent.name,
             role=compiled_role,
-            workflow=self._compile_workflow_body(
-                workflow_field,
-                unit=unit,
-                owner_label=f"agent {agent.name}",
+            workflow=self._compile_resolved_workflow(
+                self._resolve_agent_workflow(agent, unit=unit),
             ),
         )
 
@@ -98,48 +105,37 @@ class CompilationContext:
         self, workflow_decl: model.WorkflowDecl, *, unit: IndexedUnit
     ) -> CompiledSection:
         workflow_key = (unit.module_parts, workflow_decl.name)
-        if workflow_key in self._workflow_stack:
+        if workflow_key in self._workflow_compile_stack:
             cycle = " -> ".join(
-                ".".join(parts + (name,)) or name for parts, name in [*self._workflow_stack, workflow_key]
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._workflow_compile_stack, workflow_key]
             )
             raise CompileError(f"Cyclic workflow composition: {cycle}")
 
-        self._workflow_stack.append(workflow_key)
+        self._workflow_compile_stack.append(workflow_key)
         try:
-            return self._compile_workflow_body(
-                workflow_decl.body,
-                unit=unit,
-                owner_label=".".join((*unit.module_parts, workflow_decl.name))
-                if unit.module_parts
-                else workflow_decl.name,
+            return self._compile_resolved_workflow(
+                self._resolve_workflow_decl(workflow_decl, unit=unit)
             )
         finally:
-            self._workflow_stack.pop()
+            self._workflow_compile_stack.pop()
 
-    def _compile_workflow_body(
+    def _compile_resolved_workflow(
         self,
-        workflow_body: model.WorkflowBody,
-        *,
-        unit: IndexedUnit,
-        owner_label: str,
+        workflow_body: ResolvedWorkflowBody,
     ) -> CompiledSection:
-        seen_keys: set[str] = set()
         compiled_children: list[CompiledSection] = []
 
         for item in workflow_body.items:
-            key = item.key
-            if key in seen_keys:
-                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
-            seen_keys.add(key)
-
-            if isinstance(item, model.LocalSection):
+            if isinstance(item, ResolvedSectionItem):
                 compiled_children.append(
                     CompiledSection(title=item.title, preamble=item.lines, children=())
                 )
                 continue
 
-            target_unit, workflow_decl = self._resolve_workflow_use(item, unit=unit)
-            compiled_children.append(self._compile_workflow_decl(workflow_decl, unit=target_unit))
+            compiled_children.append(
+                self._compile_workflow_decl(item.workflow_decl, unit=item.target_unit)
+            )
 
         return CompiledSection(
             title=workflow_body.title,
@@ -147,11 +143,9 @@ class CompilationContext:
             children=tuple(compiled_children),
         )
 
-    def _resolve_workflow_use(
-        self, workflow_use: model.WorkflowUse, *, unit: IndexedUnit
+    def _resolve_workflow_target(
+        self, target: model.WorkflowTarget, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.WorkflowDecl]:
-        target = workflow_use.target
-
         if not target.module_parts:
             workflow_decl = unit.workflows_by_name.get(target.declaration_name)
             if workflow_decl is None:
@@ -176,12 +170,264 @@ class CompilationContext:
 
         return target_unit, workflow_decl
 
+    def _resolve_agent_workflow(
+        self, agent: model.Agent, *, unit: IndexedUnit
+    ) -> ResolvedWorkflowBody:
+        agent_key = (unit.module_parts, agent.name)
+        cached = self._resolved_agent_cache.get(agent_key)
+        if cached is not None:
+            return cached
+
+        if agent_key in self._agent_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._agent_resolution_stack, agent_key]
+            )
+            raise CompileError(f"Cyclic agent inheritance: {cycle}")
+
+        _role_field, workflow_field = self._split_agent_fields(agent)
+        self._agent_resolution_stack.append(agent_key)
+        try:
+            parent_workflow: ResolvedWorkflowBody | None = None
+            parent_label: str | None = None
+            if agent.parent_name is not None:
+                parent_agent = unit.agents_by_name.get(agent.parent_name)
+                if parent_agent is None:
+                    raise CompileError(
+                        f"Missing parent agent for {agent.name}: {agent.parent_name}"
+                    )
+                parent_workflow = self._resolve_agent_workflow(parent_agent, unit=unit)
+                parent_label = f"agent {parent_agent.name}"
+
+            resolved = self._resolve_workflow_body(
+                workflow_field,
+                unit=unit,
+                owner_label=f"agent {agent.name}",
+                parent_workflow=parent_workflow,
+                parent_label=parent_label,
+            )
+            self._resolved_agent_cache[agent_key] = resolved
+            return resolved
+        finally:
+            self._agent_resolution_stack.pop()
+
+    def _resolve_workflow_decl(
+        self, workflow_decl: model.WorkflowDecl, *, unit: IndexedUnit
+    ) -> ResolvedWorkflowBody:
+        workflow_key = (unit.module_parts, workflow_decl.name)
+        cached = self._resolved_workflow_cache.get(workflow_key)
+        if cached is not None:
+            return cached
+
+        if workflow_key in self._workflow_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._workflow_resolution_stack, workflow_key]
+            )
+            raise CompileError(f"Cyclic workflow inheritance: {cycle}")
+
+        self._workflow_resolution_stack.append(workflow_key)
+        try:
+            parent_workflow: ResolvedWorkflowBody | None = None
+            parent_label: str | None = None
+            if workflow_decl.parent_name is not None:
+                parent_decl = unit.workflows_by_name.get(workflow_decl.parent_name)
+                if parent_decl is None:
+                    raise CompileError(
+                        f"Missing parent workflow for {workflow_decl.name}: {workflow_decl.parent_name}"
+                    )
+                parent_workflow = self._resolve_workflow_decl(parent_decl, unit=unit)
+                parent_label = f"workflow {workflow_decl.parent_name}"
+
+            resolved = self._resolve_workflow_body(
+                workflow_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
+                parent_workflow=parent_workflow,
+                parent_label=parent_label,
+            )
+            self._resolved_workflow_cache[workflow_key] = resolved
+            return resolved
+        finally:
+            self._workflow_resolution_stack.pop()
+
+    def _resolve_workflow_body(
+        self,
+        workflow_body: model.WorkflowBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_workflow: ResolvedWorkflowBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedWorkflowBody:
+        if parent_workflow is None:
+            return ResolvedWorkflowBody(
+                title=workflow_body.title,
+                preamble=workflow_body.preamble,
+                items=self._resolve_non_inherited_items(
+                    workflow_body.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                ),
+            )
+
+        parent_items_by_key = {item.key: item for item in parent_workflow.items}
+        resolved_items: list[ResolvedWorkflowItem] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in workflow_body.items:
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.LocalSection):
+                resolved_items.append(
+                    ResolvedSectionItem(key=key, title=item.title, lines=item.lines)
+                )
+                continue
+
+            if isinstance(item, model.WorkflowUse):
+                target_unit, workflow_decl = self._resolve_workflow_target(
+                    item.target,
+                    unit=unit,
+                )
+                resolved_items.append(
+                    ResolvedUseItem(
+                        key=key,
+                        target_unit=target_unit,
+                        workflow_decl=workflow_decl,
+                    )
+                )
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined workflow entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined workflow entry in {parent_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            if isinstance(item, model.OverrideSection):
+                if not isinstance(parent_item, ResolvedSectionItem):
+                    raise CompileError(
+                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    )
+                resolved_items.append(
+                    ResolvedSectionItem(
+                        key=key,
+                        title=item.title if item.title is not None else parent_item.title,
+                        lines=item.lines,
+                    )
+                )
+                continue
+
+            if not isinstance(parent_item, ResolvedUseItem):
+                raise CompileError(
+                    f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                )
+            target_unit, workflow_decl = self._resolve_workflow_target(item.target, unit=unit)
+            resolved_items.append(
+                ResolvedUseItem(
+                    key=key,
+                    target_unit=target_unit,
+                    workflow_decl=workflow_decl,
+                )
+            )
+
+        missing_keys = [
+            parent_item.key
+            for parent_item in parent_workflow.items
+            if parent_item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited workflow entry in {owner_label}: {missing}"
+            )
+
+        return ResolvedWorkflowBody(
+            title=workflow_body.title,
+            preamble=workflow_body.preamble,
+            items=tuple(resolved_items),
+        )
+
+    def _resolve_non_inherited_items(
+        self,
+        workflow_items: tuple[model.WorkflowItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ResolvedWorkflowItem, ...]:
+        resolved_items: list[ResolvedWorkflowItem] = []
+        seen_keys: set[str] = set()
+
+        for item in workflow_items:
+            key = item.key
+            if key in seen_keys:
+                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
+            seen_keys.add(key)
+
+            if isinstance(item, model.LocalSection):
+                resolved_items.append(
+                    ResolvedSectionItem(key=key, title=item.title, lines=item.lines)
+                )
+                continue
+
+            if isinstance(item, model.WorkflowUse):
+                target_unit, workflow_decl = self._resolve_workflow_target(
+                    item.target,
+                    unit=unit,
+                )
+                resolved_items.append(
+                    ResolvedUseItem(
+                        key=key,
+                        target_unit=target_unit,
+                        workflow_decl=workflow_decl,
+                    )
+                )
+                continue
+
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited workflow in {owner_label}: {key}"
+            )
+
+        return tuple(resolved_items)
+
+    def _split_agent_fields(
+        self, agent: model.Agent
+    ) -> tuple[model.RoleScalar | model.RoleBlock, model.WorkflowBody]:
+        if len(agent.fields) != 2:
+            raise CompileError(
+                f"Agent {agent.name} is outside the shipped subset: expected exactly one role and one workflow."
+            )
+
+        role_field, workflow_field = agent.fields
+        if not isinstance(role_field, (model.RoleScalar, model.RoleBlock)) or not isinstance(
+            workflow_field, model.WorkflowBody
+        ):
+            raise CompileError(
+                f"Agent {agent.name} is outside the shipped subset: expected `role` followed by `workflow`."
+            )
+        return role_field, workflow_field
+
     def _index_unit(
         self, prompt_file: model.PromptFile, *, module_parts: tuple[str, ...]
     ) -> IndexedUnit:
         imports: list[model.ImportDecl] = []
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
-        agents: list[model.Agent] = []
+        agents_by_name: dict[str, model.Agent] = {}
 
         for declaration in prompt_file.declarations:
             if isinstance(declaration, model.ImportDecl):
@@ -195,7 +441,10 @@ class CompilationContext:
                 workflows_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.Agent):
-                agents.append(declaration)
+                existing = agents_by_name.get(declaration.name)
+                if existing is not None:
+                    raise CompileError(f"Duplicate agent name: {declaration.name}")
+                agents_by_name[declaration.name] = declaration
                 continue
             raise CompileError(f"Unsupported declaration type: {type(declaration).__name__}")
 
@@ -209,7 +458,7 @@ class CompilationContext:
             prompt_file=prompt_file,
             imports=tuple(imports),
             workflows_by_name=workflows_by_name,
-            agents=tuple(agents),
+            agents_by_name=agents_by_name,
             imported_units=imported_units,
         )
 
@@ -268,3 +517,7 @@ def _resolve_import_path(
         )
 
     return (*package_parts, *import_path.module_parts)
+
+
+def _dotted_decl_name(module_parts: tuple[str, ...], name: str) -> str:
+    return ".".join((*module_parts, name)) if module_parts else name

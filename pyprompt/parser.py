@@ -34,8 +34,37 @@ class ToAst(Transformer):
     def prompt_file(self, items):
         return model.PromptFile(declarations=tuple(items))
 
+    @v_args(inline=True)
+    def inheritance(self, parent_name):
+        return parent_name
+
     def agent(self, items):
-        return model.Agent(name=items[0], fields=tuple(items[1:]))
+        name = items[0]
+        parent_name: str | None = None
+        fields_start = 1
+        if len(items) > 1 and isinstance(items[1], str):
+            parent_name = items[1]
+            fields_start = 2
+        return model.Agent(
+            name=name,
+            fields=tuple(items[fields_start:]),
+            abstract=False,
+            parent_name=parent_name,
+        )
+
+    def abstract_agent(self, items):
+        name = items[0]
+        parent_name: str | None = None
+        fields_start = 1
+        if len(items) > 1 and isinstance(items[1], str):
+            parent_name = items[1]
+            fields_start = 2
+        return model.Agent(
+            name=name,
+            fields=tuple(items[fields_start:]),
+            abstract=True,
+            parent_name=parent_name,
+        )
 
     @v_args(inline=True)
     def import_decl(self, path):
@@ -66,14 +95,22 @@ class ToAst(Transformer):
         return model.RoleBlock(title=title_or_text, lines=tuple(body))
 
     @v_args(inline=True)
-    def workflow_decl(self, name, title, body):
+    def workflow_decl(self, name, parent_name_or_title, title_or_body, body=None):
+        parent_name: str | None = None
+        title = parent_name_or_title
+        workflow_body = title_or_body
+        if body is not None:
+            parent_name = parent_name_or_title
+            title = title_or_body
+            workflow_body = body
         return model.WorkflowDecl(
             name=name,
             body=model.WorkflowBody(
                 title=title,
-                preamble=body.preamble,
-                items=body.items,
+                preamble=workflow_body.preamble,
+                items=workflow_body.items,
             ),
+            parent_name=parent_name,
         )
 
     @v_args(inline=True)
@@ -113,6 +150,23 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def workflow_use(self, key, target):
         return model.WorkflowUse(key=key, target=target)
+
+    @v_args(inline=True)
+    def workflow_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def workflow_override_section(self, key, title_or_lines, lines=None):
+        title: str | None = None
+        block_lines = title_or_lines
+        if lines is not None:
+            title = title_or_lines
+            block_lines = lines
+        return model.OverrideSection(key=key, title=title, lines=tuple(block_lines))
+
+    @v_args(inline=True)
+    def workflow_override_use(self, key, target):
+        return model.OverrideUse(key=key, target=target)
 
     @v_args(inline=True)
     def workflow_target(self, dotted_name):

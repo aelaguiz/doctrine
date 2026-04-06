@@ -39,3 +39,19 @@ Plan doc: [docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md](/Users/aelaguiz
 - Reopened the canonical plan for the next stage of language growth: examples `02` through `06` now have separate not-started phases instead of one vague future grammar bucket.
 - Repeated the doctrine in the North Star and phase plan that each post-bootstrap grammar phase is also an inconsistency-discovery gate and must halt rather than building hacky grammar when examples, refs, and doctrine stop agreeing.
 - Recorded a new decision-log entry that locks example-order growth through `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` as separate halt-capable phases.
+- Re-entered `arch-step implement` with the full example load in view through `07_handoffs` so later examples could clarify the intended semantics instead of leaving the compiler to guess locally.
+- Extended the canonical grammar, AST, and compiler once across `02_sections` through `06_nested_workflows` instead of solving each example with a one-off shape.
+- Shipped keyed local workflow sections, top-level imports, top-level reusable workflows, abstract agents, parent clauses, explicit `inherit` / `override`, named workflow inheritance, and keyed `use` composition through the same `pyprompt/` owner path.
+- Activated adjacent manifests for `examples/02_sections`, `examples/03_imports`, `examples/04_inheritance`, `examples/05_workflow_merge`, and `examples/06_nested_workflows`.
+- Added new local negative fixtures at `examples/02_sections/prompts/INVALID_DUPLICATE_SECTION_KEY.prompt` and `examples/05_workflow_merge/prompts/INVALID_MISSING_INHERITED_ENTRY.prompt`.
+- Implementation surfaced and fixed two real compiler bugs instead of papering over them:
+  - workflow-body lines at EOF needed to tolerate a missing trailing newline before `_DEDENT`
+  - relative imports needed to resolve from the current package, not from the full module path including the current file stem
+- No prompt contradiction across `01` through `06` forced a stop in this pass; the examples compiled cleanly once those real implementation bugs were fixed.
+- Synced root `AGENTS.md` plus the canonical plan so the repo no longer claims `02` through `06` are still planned-only.
+- Verification passed with:
+  - `PATH="$PWD/.venv/bin:$PATH" python -m py_compile pyprompt/*.py`
+  - `PATH="$PWD/.venv/bin:$PATH" python -m pyprompt.verify_corpus --manifest examples/04_inheritance/cases.toml --manifest examples/05_workflow_merge/cases.toml --manifest examples/06_nested_workflows/cases.toml`
+  - `PATH="$PWD/.venv/bin:$PATH" make verify-examples`
+  - `PATH="$PWD/.venv/bin:$PATH" make hello-world`
+- No new `.gitignore` rules were needed in this phase.

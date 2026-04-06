@@ -1,0 +1,168 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "inline briefing agent renders flat local sections"
+status = "active"
+kind = "render_contract"
+agent = "InlineBriefingAgent"
+assertion = "exact_lines"
+approx_ref = "ref/inline_briefing_agent/AGENTS.md"
+expected_lines = [
+  "You are the inline briefing agent.",
+  "",
+  "## Briefing",
+  "",
+  "Deliver the briefing in the order below.",
+  "",
+  "### Opening",
+  "",
+  "State the topic.",
+  "",
+  "### Main Point",
+  "",
+  "Give the main point directly.",
+  "",
+  "### Closing",
+  "",
+  "End with the next step.",
+]
+
+[[cases]]
+name = "structured briefing agent composes named workflows"
+status = "active"
+kind = "render_contract"
+agent = "StructuredBriefingAgent"
+assertion = "exact_lines"
+approx_ref = "ref/structured_briefing_agent/AGENTS.md"
+expected_lines = [
+  "You are the structured briefing agent.",
+  "",
+  "## Briefing",
+  "",
+  "This file is the runtime guide for a structured briefing.",
+  "",
+  "### Preparation",
+  "",
+  "Start with the topic and the audience before you deliver the briefing.",
+  "",
+  "#### Topic",
+  "",
+  "State the topic in one line.",
+  "",
+  "#### Audience",
+  "",
+  "Name who the briefing is for.",
+  "",
+  "### Delivery",
+  "",
+  "Move through the briefing in a fixed sequence.",
+  "",
+  "#### Opening",
+  "",
+  "State the situation.",
+  "",
+  "#### Main Point",
+  "",
+  "Give the main point directly.",
+  "",
+  "#### Closing",
+  "",
+  "End with the next step.",
+]
+
+[[cases]]
+name = "revised structured briefing agent retargets delivery through workflow reuse"
+status = "active"
+kind = "render_contract"
+agent = "RevisedStructuredBriefingAgent"
+assertion = "exact_lines"
+approx_ref = "ref/revised_structured_briefing_agent/AGENTS.md"
+expected_lines = [
+  "You are the revised structured briefing agent.",
+  "",
+  "## Revised Briefing",
+  "",
+  "This file is the runtime guide for a structured briefing.",
+  "This version keeps preparation and revises delivery through workflow reuse.",
+  "",
+  "### Preparation",
+  "",
+  "Start with the topic and the audience before you deliver the briefing.",
+  "",
+  "#### Topic",
+  "",
+  "State the topic in one line.",
+  "",
+  "#### Audience",
+  "",
+  "Name who the briefing is for.",
+  "",
+  "### Delivery",
+  "",
+  "Move through the briefing in the revised sequence.",
+  "",
+  "#### Opening",
+  "",
+  "State the situation.",
+  "",
+  "#### Context Note",
+  "",
+  "Add one sentence of missing context before the main point.",
+  "",
+  "#### Main Point",
+  "",
+  "Give the revised main point directly.",
+  "",
+  "#### Closing",
+  "",
+  "End with the next step.",
+]
+
+[[cases]]
+name = "inherited structured briefing agent patches outer composition keys"
+status = "active"
+kind = "render_contract"
+agent = "InheritedStructuredBriefingAgent"
+assertion = "exact_lines"
+approx_ref = "ref/inherited_structured_briefing_agent/AGENTS.md"
+expected_lines = [
+  "You are the inherited structured briefing agent.",
+  "",
+  "## Inherited Revised Briefing",
+  "",
+  "This file inherits the outer briefing structure.",
+  "It keeps preparation and replaces delivery through outer workflow inheritance.",
+  "",
+  "### Preparation",
+  "",
+  "Start with the topic and the audience before you deliver the briefing.",
+  "",
+  "#### Topic",
+  "",
+  "State the topic in one line.",
+  "",
+  "#### Audience",
+  "",
+  "Name who the briefing is for.",
+  "",
+  "### Delivery",
+  "",
+  "Move through the briefing in the revised sequence.",
+  "",
+  "#### Opening",
+  "",
+  "State the situation.",
+  "",
+  "#### Context Note",
+  "",
+  "Add one sentence of missing context before the main point.",
+  "",
+  "#### Main Point",
+  "",
+  "Give the revised main point directly.",
+  "",
+  "#### Closing",
+  "",
+  "End with the next step.",
+]

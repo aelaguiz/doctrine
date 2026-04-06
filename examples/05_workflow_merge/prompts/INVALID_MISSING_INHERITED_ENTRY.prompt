@@ -1,0 +1,22 @@
+abstract agent BaseBriefingAgent:
+    role: "You are the base briefing agent."
+
+    workflow: "Briefing"
+        opening: "Opening"
+            "State the topic."
+
+        main_point: "Main Point"
+            "Give the original main point."
+
+        closing: "Closing"
+            "Wrap up the briefing."
+
+
+agent MissingInheritedEntryBriefingAgent[BaseBriefingAgent]:
+    role: "You are the missing inherited entry briefing agent."
+
+    workflow: "Briefing"
+        inherit opening
+
+        override main_point:
+            "Give the revised main point."

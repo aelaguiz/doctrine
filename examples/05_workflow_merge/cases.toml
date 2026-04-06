@@ -1,0 +1,97 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "ordered briefing agent explicitly patches inherited order"
+status = "active"
+kind = "render_contract"
+agent = "OrderedBriefingAgent"
+assertion = "exact_lines"
+approx_ref = "ref/ordered_briefing_agent/AGENTS.md"
+expected_lines = [
+  "You are the ordered briefing agent.",
+  "",
+  "## Ordered Briefing",
+  "",
+  "Deliver the revised briefing in the explicit order below.",
+  "This child places inherited, overridden, and new sections on purpose.",
+  "",
+  "### Opening",
+  "",
+  "State the topic.",
+  "",
+  "### Context Note",
+  "",
+  "Add the missing context before the main point.",
+  "",
+  "### Main Point",
+  "",
+  "Give the revised main point.",
+  "",
+  "### Supporting Point",
+  "",
+  "Add one supporting detail.",
+  "",
+  "### Closing",
+  "",
+  "Wrap up the briefing.",
+  "",
+  "### Follow Up",
+  "",
+  "Invite one follow-up question.",
+]
+
+[[cases]]
+name = "retitled briefing agent keeps inherited structure with a title override"
+status = "active"
+kind = "render_contract"
+agent = "RetitledBriefingAgent"
+assertion = "exact_lines"
+approx_ref = "ref/retitled_briefing_agent/AGENTS.md"
+expected_lines = [
+  "You are the retitled briefing agent.",
+  "",
+  "## Revised Briefing",
+  "",
+  "Deliver the revised briefing below.",
+  "This child keeps the structure but changes one section title on purpose.",
+  "",
+  "### Opening",
+  "",
+  "State the topic.",
+  "",
+  "### Revised Main Point",
+  "",
+  "Give the revised main point.",
+  "",
+  "### Supporting Point",
+  "",
+  "Add one supporting detail.",
+  "",
+  "### Closing",
+  "",
+  "Wrap up the briefing.",
+]
+
+[[cases]]
+name = "invalid override fails with E001"
+status = "active"
+kind = "compile_fail"
+agent = "InvalidOverrideBriefingAgent"
+exception_type = "CompileError"
+message_contains = [
+  "E001",
+  "context_note",
+]
+
+[[cases]]
+name = "missing inherited entry fails with E003"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_INHERITED_ENTRY.prompt"
+agent = "MissingInheritedEntryBriefingAgent"
+exception_type = "CompileError"
+message_contains = [
+  "E003",
+  "closing",
+]
