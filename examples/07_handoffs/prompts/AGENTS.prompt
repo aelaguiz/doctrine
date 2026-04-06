@@ -1,9 +1,9 @@
-# Best-guess syntax sketch for handoff modeling.
+# Best-guess syntax sketch for next-owner routing.
 # This example is intentionally narrower than the earlier draft:
 # - no critic lane
 # - no review-specific routing
-# - no handoff DSL keywords like `review`, `when_ready`, or `on_reject`
-# - handoff sections are just ordinary workflow structure for now
+# - no routing DSL keywords like `review`, `when_ready`, or `on_reject`
+# - the arrow is preserved, but only inside an explicit `route` statement
 #
 # This example still follows the `06_nested_workflows` rule:
 # - simple local workflow structure can stay inline
@@ -23,11 +23,11 @@ workflow SpecialistWorkflowCoreBase: "Workflow Core"
     same_issue_workflow: "Same-Issue Workflow"
         "Keep the work on the same issue."
         "Do only this lane's job."
-        "Hand off only when the current lane is honestly ready."
+        "Route to the next owner only when the current lane is honestly ready."
         "If the work is blocked or the route is unclear, return it to Project Lead."
 
-    handoff_comment: "Handoff Comment"
-        "Every handoff comment should say:"
+    owner_change_comment: "Owner Change Comment"
+        "Every owner-change comment should say:"
         "- what changed"
         "- what the next owner should use now"
         "- the next owner when ownership is changing now"
@@ -36,41 +36,41 @@ workflow SpecialistWorkflowCoreBase: "Workflow Core"
 workflow ResearchSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
     inherit same_issue_workflow
 
-    handoff: "Handoff"
-        "When ready, hand off to Writing Specialist."
-        "If blocked or the route is unclear, return the work to Project Lead."
+    next_owner: "Next Owner"
+        route "When ready" -> WritingSpecialist
+        route "If blocked or the route is unclear" -> ProjectLead
 
-    inherit handoff_comment
+    inherit owner_change_comment
 
 
 workflow WritingSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
     inherit same_issue_workflow
 
-    handoff: "Handoff"
-        "When ready, hand off to Project Lead."
-        "If blocked or the route is unclear, return the work to Project Lead."
+    next_owner: "Next Owner"
+        route "When ready" -> ProjectLead
+        route "If blocked or the route is unclear" -> ProjectLead
 
-    inherit handoff_comment
+    inherit owner_change_comment
 
 
 workflow ProjectLeadWorkflowCore: "Workflow Core"
-    "This file is the runtime guide for a simple multi-agent handoff pattern."
+    "This file is the runtime guide for a simple multi-agent routing pattern."
 
     same_issue_workflow: "Same-Issue Workflow"
-        "Keep the whole job on one issue from setup through final handoff back."
+        "Keep the whole job on one issue from setup through final return."
         "Keep one owner at a time on that issue."
         "The normal order is Project Lead -> Research Specialist -> Writing Specialist -> Project Lead."
-        "Route the first specialist handoff to Research Specialist."
+        "Route the first owner change to Research Specialist."
         "After Research Specialist, the next owner is Writing Specialist."
         "After Writing Specialist, the next owner is Project Lead."
         "If the route is broken or the work is blocked before specialist work begins, keep or return the work to Project Lead."
 
-    handoff: "Handoff"
-        "When ready to start the work, hand off to Research Specialist."
-        "If the route is broken or the work is blocked before specialist work begins, keep or return the work to Project Lead."
+    next_owner: "Next Owner"
+        route "When ready to start the work" -> ResearchSpecialist
+        route "If the route is broken or the work is blocked before specialist work begins" -> ProjectLead
 
-    handoff_comment: "Handoff Comment"
-        "Every handoff comment should say:"
+    owner_change_comment: "Owner Change Comment"
+        "Every owner-change comment should say:"
         "- what this turn changed"
         "- the next owner when ownership is changing now"
         "- the exact blocker when the issue is blocked"
@@ -78,23 +78,23 @@ workflow ProjectLeadWorkflowCore: "Workflow Core"
 
 workflow ProjectLeadJob: "Your Job"
     "Start the issue with a clear route."
-    "Route the first specialist handoff."
+    "Route the first owner change."
     "Keep the issue on a truthful route when work is blocked or routing goes stale."
-    "Take the issue back after the final specialist handoff and close it out honestly."
+    "Take the issue back after the final specialist return and close it out honestly."
 
 
 workflow ResearchSpecialistJob: "Your Job"
     "Take the work only when Project Lead routes it to you."
     "Do the research lane's work."
     "Keep the work ready for the next lane."
-    "Do not hand the work anywhere except Writing Specialist or Project Lead."
+    "Do not route the work anywhere except Writing Specialist or Project Lead."
 
 
 workflow WritingSpecialistJob: "Your Job"
     "Take the work only when Research Specialist hands it to you."
     "Do the writing lane's work."
     "Keep the work within the scope already set upstream."
-    "Hand the work back to Project Lead when the lane is complete or blocked."
+    "Route the work back to Project Lead when the lane is complete or blocked."
 
 
 abstract agent SameIssueRole:
@@ -113,7 +113,7 @@ agent ProjectLead[SameIssueRole]:
 agent ResearchSpecialist[SameIssueRole]:
     inherit read_first
 
-    role: "Core job: do the research lane's work and hand it to Writing Specialist."
+    role: "Core job: do the research lane's work and route it to Writing Specialist."
 
     workflow_core: ResearchSpecialistWorkflowCore
     your_job: ResearchSpecialistJob
@@ -122,7 +122,7 @@ agent ResearchSpecialist[SameIssueRole]:
 agent WritingSpecialist[SameIssueRole]:
     inherit read_first
 
-    role: "Core job: do the writing lane's work and hand it back to Project Lead."
+    role: "Core job: do the writing lane's work and route it back to Project Lead."
 
     workflow_core: WritingSpecialistWorkflowCore
     your_job: WritingSpecialistJob

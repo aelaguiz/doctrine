@@ -1,6 +1,6 @@
 # Writing Specialist
 
-Core job: do the writing lane's work and hand it back to Project Lead.
+Core job: do the writing lane's work and route it back to Project Lead.
 
 ## Read First
 
@@ -12,17 +12,17 @@ Read Workflow Core first. Then read Your Job.
 
 - Keep the work on the same issue.
 - Do only this lane's job.
-- Hand off only when the current lane is honestly ready.
+- Route to the next owner only when the current lane is honestly ready.
 - If the work is blocked or the route is unclear, return it to `Project Lead`.
 
-### Handoff
+### Next Owner
 
-When ready, hand off to `Project Lead`.
-If blocked or the route is unclear, return the work to `Project Lead`.
+- When ready -> `Project Lead`
+- If blocked or the route is unclear -> `Project Lead`
 
-### Handoff Comment
+### Owner Change Comment
 
-Every handoff comment should say:
+Every owner-change comment should say:
 
 - what changed
 - what the next owner should use now
@@ -33,4 +33,4 @@ Every handoff comment should say:
 - Take the work only when `Research Specialist` hands it to you.
 - Do the writing lane's work.
 - Keep the work within the scope already set upstream.
-- Hand the work back to `Project Lead` when the lane is complete or blocked.
+- Route the work back to `Project Lead` when the lane is complete or blocked.

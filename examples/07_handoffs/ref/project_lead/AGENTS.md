@@ -10,26 +10,26 @@ Read Workflow Core first. Then read Your Job.
 
 ## Workflow Core
 
-This file is the runtime guide for a simple multi-agent handoff pattern.
+This file is the runtime guide for a simple multi-agent routing pattern.
 
 ### Same-Issue Workflow
 
-- Keep the whole job on one issue from setup through final handoff back.
+- Keep the whole job on one issue from setup through final return.
 - Keep one owner at a time on that issue.
 - The normal order is `Project Lead` -> `Research Specialist` -> `Writing Specialist` -> `Project Lead`.
-- Route the first specialist handoff to `Research Specialist`.
+- Route the first owner change to `Research Specialist`.
 - After `Research Specialist`, the next owner is `Writing Specialist`.
 - After `Writing Specialist`, the next owner is `Project Lead`.
 - If the route is broken or the work is blocked before specialist work begins, keep or return the work to `Project Lead`.
 
-### Handoff
+### Next Owner
 
-When ready to start the work, hand off to `Research Specialist`.
-If the route is broken or the work is blocked before specialist work begins, keep or return the work to `Project Lead`.
+- When ready to start the work -> `Research Specialist`
+- If the route is broken or the work is blocked before specialist work begins -> `Project Lead`
 
-### Handoff Comment
+### Owner Change Comment
 
-Every handoff comment should say:
+Every owner-change comment should say:
 
 - what this turn changed
 - the next owner when ownership is changing now
@@ -38,6 +38,6 @@ Every handoff comment should say:
 ## Your Job
 
 - Start the issue with a clear route.
-- Route the first specialist handoff.
+- Route the first owner change.
 - Keep the issue on a truthful route when work is blocked or routing goes stale.
-- Take the issue back after the final specialist handoff and close it out honestly.
+- Take the issue back after the final specialist return and close it out honestly.
