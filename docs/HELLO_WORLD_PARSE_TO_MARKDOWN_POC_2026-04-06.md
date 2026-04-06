@@ -25,7 +25,7 @@ related:
 - Problem: The repo has language notes, examples, and a checked-out `Lark` reference tree, but no runnable grammar, no parse/compile loop, and no cheap way to rerun the language contract as examples evolve.
 - Approach: Lock the first grammar to the exact syntax pressure already present in `examples/01_hello_world/prompts/AGENTS.prompt`, author one checked-in `Lark` grammar for it, parse into a minimal typed AST, compile a selected agent into Markdown, and use that loop to surface unresolved spec holes instead of silently inventing semantics.
 - Plan: Ground the first grammar in the current examples and design notes, keep the current `01_hello_world` source file parseable as-authored, wire one runner plus one `make` target, and keep every unsupported construct fail-loud so later examples extend the same grammar rather than replace it.
-- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds.
+- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds.
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -42,7 +42,7 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 
 ## 0.1 The claim (falsifiable)
 
-A small `Lark`-based grammar and one repeatable local verification command can parse the agreed Hello World subset of the PyPrompt language, compile the targeted `HelloWorld` agent into Markdown matching the checked-in reference output, and fail loudly on unresolved syntax holes so later examples can extend the same grammar instead of forcing a parser reset.
+A small `Lark`-based grammar and one repeatable local verification command can parse the agreed Hello World subset of the PyPrompt input language, compile the targeted `HelloWorld` agent into Markdown that reflects the authored prompt semantics, and surface drift or bugs in approximate `AGENTS.md` examples explicitly so later examples can extend the same grammar instead of forcing a parser reset.
 
 ## 0.2 In scope
 
@@ -61,6 +61,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
     - titled `role: "Title"` block with quoted string lines
   - `workflow: "Title"` with one or more indented quoted string lines
 - Choosing an explicit acceptance path for the current `examples/01_hello_world/prompts/AGENTS.prompt` multi-agent file so the system targets `HelloWorld` on purpose rather than by accident
+- Treating checked `AGENTS.md` files as approximate rendered examples and bug-finding aids, not as byte-level language truth
 - Building one small runner that reads source, parses it, builds a minimal AST, and renders Markdown
 - Wiring one simple local command such as `make hello-world` to run the bootstrap parse/compile/verify loop
 - Using this loop to expose holes in the current example/spec story before extending the grammar to later examples
@@ -86,7 +87,8 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 ## 0.4 Definition of done (acceptance evidence)
 
 - A documented local command such as `make hello-world` runs the first end-to-end loop
-- That loop parses `examples/01_hello_world/prompts/AGENTS.prompt` as-authored, explicitly targets `HelloWorld`, and emits Markdown matching `examples/01_hello_world/ref/AGENTS.md`
+- That loop parses `examples/01_hello_world/prompts/AGENTS.prompt` as-authored, explicitly targets `HelloWorld`, emits Markdown from prompt semantics, and passes a small semantic smoke check for the expected Hello World shape
+- If the rendered output differs from `examples/01_hello_world/ref/AGENTS.md`, the loop reports that diff explicitly as advisory evidence or a likely ref/renderer bug instead of assuming the ref wins
 - Unsupported constructs outside the initial subset fail loudly with a clear parser or compiler error
 - The checked-in grammar and runner structure leave a credible extension path to `02_sections` without replacing the parser front-end or inventing a second syntax model
 
@@ -96,8 +98,10 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - One checked-in grammar file is the syntax source of truth for the supported subset
 - Parsing, AST construction, semantic validation, and Markdown rendering remain separate responsibilities even if each layer is small
 - No hand-written fallback parser, best-effort rendering, or hidden alternate parse path is allowed
+- `.prompt` files are the language input SSOT; `AGENTS.md` files are derived output examples only
+- Checked `AGENTS.md` refs are approximate, manually built artifacts that may contain bugs and must not overrule prompt semantics or explicit design decisions
 - The current accepted source fixture must parse as-authored without pre-slicing, fixture duplication, or hidden source rewriting
-- The acceptance path for `HelloWorld` must be explicit while the current `01_hello_world` source/ref relationship remains one-source-to-one-checked-ref
+- The acceptance path for `HelloWorld` must be explicit while the current `01_hello_world` source/ref relationship remains one-source-to-one-approximate-output-example
 - The bootstrap subset stays structurally exact: one `role` followed by one `workflow`, with anything else failing loudly until later examples earn broader flexibility
 - The renderer never invents visible headings or extra blank-line structure that are not implied by explicit authored titles and source ordering
 - Grammar growth follows the example sequence and design notes; unsupported features fail loudly instead of being guessed
@@ -117,6 +121,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 
 - The repo currently has no compiler, no build tooling, and no runtime verification loop.
 - `examples/01_hello_world/prompts/AGENTS.prompt` currently mixes two role forms while the checked-in ref shows only one rendered output.
+- The existing `AGENTS.md` refs were manually built as examples and are expected to contain drift or outright bugs.
 - The language direction is example-first and intentionally wants parser growth to follow the example sequence.
 - The checked-out `for_reference_only/lark` tree is available for reference, but it is not itself the product code path.
 - The likely grammar is indentation-sensitive, so parser-mode and indenter choices matter early.
@@ -146,7 +151,7 @@ The repo currently contains:
 
 - language-design notes
 - parser-fit and library research
-- example source/reference pairs for `01` through `09`
+- example source pairs for `01` through `09` plus manually built approximate rendered refs
 - a checked-out `for_reference_only/lark` tree that can be consulted while designing the first grammar
 
 There is already a canonical planning doc for the Hello World compiler bootstrap, but there is still no runnable grammar or verification path.
@@ -157,6 +162,7 @@ There is already a canonical planning doc for the Hello World compiler bootstrap
 - No parser or compiler implementation exists
 - No local `make` or similar rerun command exists
 - The current `01_hello_world` example set has a cold-read hole: the source file contains `HelloWorld` and `HelloWorld2`, but the checked-in ref corresponds to only one rendered output
+- The current `AGENTS.md` refs are approximate examples, so output disagreements cannot be resolved by blindly assuming the ref is correct
 
 That means the project can keep inventing syntax faster than it can prove the language is actually parseable.
 
@@ -183,7 +189,7 @@ That means the project can keep inventing syntax faster than it can prove the la
 
 - Authoritative behavior anchors (do not reinvent):
   - `examples/01_hello_world/prompts/AGENTS.prompt` — current authored source contract for the first bootstrap, including both `role` forms that the first grammar must parse as-authored.
-  - `examples/01_hello_world/ref/AGENTS.md` — exact rendered Markdown contract for the `HelloWorld` acceptance target.
+  - `examples/01_hello_world/ref/AGENTS.md` — approximate manually built rendered example for `HelloWorld`; useful for output-shape guidance and ref-bug discovery, but not a byte-level spec.
   - `docs/LANGUAGE_DESIGN_NOTES.md` — language doctrine: example-first growth, explicit authored titles, fail-loud validation, and parser growth that follows the example sequence.
   - `docs/COMPILER_ERRORS.md` — canonical numbered compiler-error direction for fail-loud behavior.
   - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` — known spec holes, especially the `01_hello_world` source/ref ambiguity and the risk of accidental output-selection behavior.
@@ -199,7 +205,7 @@ That means the project can keep inventing syntax faster than it can prove the la
   - `for_reference_only/lark/docs/json_tutorial.md` — recommended sequencing: start with a normal parse-tree flow, then only consider tree-less LALR once the transformer is already working.
 - Prompt surfaces / language contract to reuse:
   - `examples/01_hello_world/prompts/AGENTS.prompt` — the first source-language fixture under test.
-  - `examples/01_hello_world/ref/AGENTS.md` — the first rendered-language fixture under test.
+  - `examples/01_hello_world/ref/AGENTS.md` — the first approximate rendered-language example under review.
   - `docs/LANGUAGE_DESIGN_NOTES.md` — the current intended semantics that the first grammar subset must not silently contradict.
 - Existing grounding / tool / file exposure:
   - `for_reference_only/lark/` — local docs, examples, grammar terminals, and implementation code are already available in-repo, so initial parser research can stay local and evidence-based.
@@ -215,7 +221,8 @@ That means the project can keep inventing syntax faster than it can prove the la
   - `for_reference_only/lark/lark/ast_utils.py` — use stock transformer/AST helpers before writing a bespoke tree-to-object layer.
   - explicit `HelloWorld` targeting in the bootstrap runner — avoids inventing multi-output package semantics before the examples settle.
 - Behavior-preservation signals already available:
-  - `examples/01_hello_world/ref/AGENTS.md` — exact output comparison for the first accepted compile target.
+  - semantic smoke checks derived from `examples/01_hello_world/prompts/AGENTS.prompt` plus the current design notes — the primary signal that the renderer preserved authored semantics.
+  - advisory diff against `examples/01_hello_world/ref/AGENTS.md` — useful for catching renderer bugs or ref bugs without pretending the ref is pristine truth.
   - Lark `strict=True` on the bootstrap grammar — structural signal that the grammar is not silently relying on unresolved LALR collisions.
   - whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt` plus explicit `HelloWorld` selection — protects against fixture slicing or hidden first-agent behavior.
 - Likely code implications from this research:
@@ -226,7 +233,7 @@ That means the project can keep inventing syntax faster than it can prove the la
 
 ## 3.3 Open questions (evidence-based)
 
-- When should the repo add a checked rendered ref for `HelloWorld2`, so the second `role` form present in `examples/01_hello_world/prompts/AGENTS.prompt` stops being parseable-but-lightly-verified bootstrap pressure and becomes a first-class checked output contract? — settle when the first loop is running and `phase-plan` decides whether that is part of the next grammar step or a separate cleanup pass.
+- When should the repo add either a second approximate rendered example for `HelloWorld2` or a stronger machine-checked output contract distinct from `AGENTS.md`, so the second `role` form present in `examples/01_hello_world/prompts/AGENTS.prompt` stops being parseable-but-lightly-verified bootstrap pressure? — settle when the first loop is running and `phase-plan` decides whether that is part of the next grammar step or a separate cleanup pass.
 - If a future example requires syntax that breaks clean `LALR` + stock `Indenter` usage, do we widen parser mode or simplify the language? — settle by treating LALR collisions or required custom post-processing as evidence and defaulting to language simplification unless the feature is clearly worth the added complexity.
 <!-- arch_skill:block:research_grounding:end -->
 
@@ -237,7 +244,7 @@ That means the project can keep inventing syntax faster than it can prove the la
 Current repo structure is still docs-and-examples only:
 
 - `docs/` contains language direction, parser-fit research, and the current architecture plan
-- `examples/` contains the authoritative source/ref corpus, including `examples/01_hello_world/prompts/AGENTS.prompt` and `examples/01_hello_world/ref/AGENTS.md`
+- `examples/` contains the authoritative prompt corpus plus approximate rendered refs, including `examples/01_hello_world/prompts/AGENTS.prompt` and `examples/01_hello_world/ref/AGENTS.md`
 - `for_reference_only/lark/` contains a checked-out local Lark reference tree for design grounding only
 - `.gitignore` excludes `/for_reference_only/`, which reinforces that the reference clone is not the product code path
 
@@ -248,14 +255,14 @@ There is no compiler-owned package, no `Makefile`, no build metadata, and no run
 There is no runtime control path yet. The current effective flow is human-only:
 
 1. Read example source under `examples/`
-2. Read checked refs under `examples/*/ref`
+2. Read approximate rendered refs under `examples/*/ref`
 3. Read language notes and research docs under `docs/`
 4. Infer the intended grammar and output behavior by hand
 
 For Hello World specifically, the source/ref relationship is manual:
 
 - `examples/01_hello_world/prompts/AGENTS.prompt` contains both `HelloWorld` and `HelloWorld2`
-- `examples/01_hello_world/ref/AGENTS.md` contains one checked rendered output only
+- `examples/01_hello_world/ref/AGENTS.md` contains one approximate rendered output only
 - inline comments in `examples/01_hello_world/prompts/AGENTS.prompt` also carry render-contract pressure:
   - scalar `role` should render as plain leading text
   - titled `role` should render as a Markdown heading block
@@ -292,7 +299,7 @@ Current failure signals are indirect:
 - docs and examples can drift without an executable proof
 - the `01_hello_world` mixed-fixture ambiguity is visible only through manual reading
 - grammar collisions, indentation mistakes, and unsupported syntax have no runtime error path yet
-- output mismatches can only be spotted by human comparison against checked refs
+- output mismatches can only be spotted by human comparison today, and those mismatches may indicate either a renderer bug or a bug in the approximate ref
 
 ## 4.5 UI surfaces (ASCII mockups, if UI work)
 
@@ -354,7 +361,7 @@ The minimal relevant repo tree should look like this once the bootstrap exists:
 Reading the tree top-down should already explain ownership:
 
 - `examples/01_hello_world/prompts/AGENTS.prompt` is the authored source fixture
-- `examples/01_hello_world/ref/AGENTS.md` is the checked rendered contract
+- `examples/01_hello_world/ref/AGENTS.md` is the approximate rendered example, not a pristine contract
 - `pyprompt/grammars/pyprompt.lark` is the syntax SSOT
 - `pyprompt/*.py` owns parse -> validate -> render behavior
 - `Makefile` is the human-facing run surface
@@ -379,13 +386,14 @@ The first canonical control path will be:
 6. `pyprompt.parser` parses `examples/01_hello_world/prompts/AGENTS.prompt` as-authored and returns a typed AST for the whole file; the grammar declares `_INDENT` / `_DEDENT`, and `_NL` must own newline + trailing indentation whitespace + standalone `#` comment lines in the same stock pattern used by `for_reference_only/lark/examples/indented_tree.py`
 7. `pyprompt.compiler` selects `HelloWorld` explicitly, validates the supported subset for that selected agent, and hands the validated node to `pyprompt.renderer`
 8. `pyprompt.renderer` emits Markdown
-9. `pyprompt.check_hello_world` compares the emitted Markdown against `examples/01_hello_world/ref/AGENTS.md` and exits nonzero on mismatch
+9. `pyprompt.check_hello_world` renders Markdown, runs a small semantic smoke check derived from the prompt/input contract, and may diff the result against `examples/01_hello_world/ref/AGENTS.md` as advisory output-shape evidence
 
 Dependency boundary:
 
 - the active Python environment must provide `lark` and `interegular`
 - the bootstrap command does not silently downgrade from `strict=True`
-- missing dependencies, grammar collisions, parse errors, semantic validation errors, and output mismatches all fail loudly
+- missing dependencies, grammar collisions, parse errors, semantic validation errors, and semantic smoke-check failures all fail loudly
+- advisory diffs against approximate refs are reported explicitly and may indicate either renderer bugs or ref bugs
 
 The intended developer UX from repo root is deliberately small:
 
@@ -406,7 +414,7 @@ Expected run behavior:
 - success path:
   - parse `examples/01_hello_world/prompts/AGENTS.prompt`
   - compile the explicitly selected `HelloWorld` agent
-  - compare rendered Markdown to `examples/01_hello_world/ref/AGENTS.md`
+  - render Markdown and pass the semantic smoke check derived from the input contract
   - exit `0`
 - fail-loud path:
   - missing `lark` or `interegular` exits nonzero
@@ -414,7 +422,9 @@ Expected run behavior:
   - parse errors exit nonzero
   - missing or duplicate target-agent names exit nonzero
   - out-of-subset agent shapes exit nonzero
-  - rendered-output mismatches exit nonzero
+  - semantic smoke-check failures exit nonzero
+- advisory path:
+  - diff against `examples/01_hello_world/ref/AGENTS.md` may be printed as a likely renderer bug or ref bug
 
 There is intentionally no first-pass UX for:
 
@@ -460,7 +470,7 @@ Bootstrap validation and render behavior are also explicit:
 - `Workflow` renders as `## <title>` followed by its ordered lines
 - sibling quoted strings inside one block preserve order and render as consecutive lines; the renderer must not invent bullets or extra blank lines between them
 
-The first grammar will intentionally parse both `role` shapes already present in `examples/01_hello_world/prompts/AGENTS.prompt`, but the first checked acceptance loop will still compare only the rendered `HelloWorld` output because that is the only checked ref that exists today.
+The first grammar will intentionally parse both `role` shapes already present in `examples/01_hello_world/prompts/AGENTS.prompt`, but the first bootstrap loop will treat the `HelloWorld` `AGENTS.md` file as an approximate rendered example only, not as an exact golden.
 
 ## 5.4 Invariants and boundaries
 
@@ -501,10 +511,10 @@ Not applicable.
 | Parser boundary | `pyprompt/parser.py` | grammar loader, `Lark` constructor, transformer | Missing | Add grammar loading via `Lark.open(..., rel_to=__file__)`, `parser='lalr'`, `lexer='contextual'`, `strict=True`, `maybe_placeholders=False`, and parse-tree -> AST transform | Canonical parse owner path must exist before implementation grows and the bootstrap AST should not be padded with placeholder `None` values | Parse current `01` source file as-authored and return AST for all agents in file | `make hello-world` |
 | Compiler boundary | `pyprompt/compiler.py` | explicit agent selection + semantic validation | Missing | Add fail-loud target-agent selection, duplicate-name checks, and subset validation | Avoid hidden first-agent behavior and keep unsupported constructs loud | `compile_prompt(..., agent_name)` or equivalent narrow boundary; missing or duplicate targets fail | `make hello-world` |
 | Markdown render | `pyprompt/renderer.py` | Markdown emitter | Missing | Add renderer for the first supported AST subset with explicit `RoleScalar` versus headed-block behavior | Renderer must own Markdown shape explicitly instead of leaving `HelloWorld2` semantics to guesswork | Selected agent -> Markdown string with scalar `role` as plain text and block forms as headed sections | Ref comparison in `make hello-world` |
-| Bootstrap entrypoint | `pyprompt/check_hello_world.py` | `main` | Missing | Add one narrow bootstrap verification module | One canonical runtime path should sit behind the Make target | Parse current fixture, select `HelloWorld`, render, compare, exit nonzero on failure | `make hello-world` |
+| Bootstrap entrypoint | `pyprompt/check_hello_world.py` | `main` | Missing | Add one narrow bootstrap verification module | One canonical runtime path should sit behind the Make target without pretending approximate refs are exact goldens | Parse current fixture, select `HelloWorld`, render, run semantic smoke checks, and optionally print advisory diff evidence | `make hello-world` |
 | User command | `Makefile` | `hello-world` | Missing | Add one simple rerun command | The user asked for a cheap verification loop as examples evolve | `make hello-world` is the human-facing bootstrap contract | `make hello-world` |
 | Source fixture | `examples/01_hello_world/prompts/AGENTS.prompt` | `HelloWorld`, `HelloWorld2` | Authoritative source contains both `role` shapes in one file, plus inline comments about render intent | Keep as the first authoritative source fixture and require the parser to accept it as-authored | Avoid source slicing, duplicate fixtures, or drift between examples and implementation | Whole-file parse plus explicit target-agent selection; source comments remain behavior evidence until a second checked ref exists | `make hello-world` |
-| Checked output ref | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Authoritative output ref for `HelloWorld` only | Keep as the first checked renderer contract | Smallest credible behavior signal for the first loop | Selected `HelloWorld` output must match exactly | `make hello-world` |
+| Approximate output example | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Manually built approximate output example for `HelloWorld` only | Keep as advisory output-shape evidence, not as an authoritative exact golden | Prevents the plan from treating manual examples as pristine truth while still using them to find bugs | Rendered output may be diffed against it and any mismatch must be called out as a likely ref bug or renderer bug | `make hello-world` |
 | Live doctrine docs | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md`, `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` | language rules and known gaps | Docs-only truth today | Review and update as implementation lands if shipped behavior or resolved ambiguities differ | Avoid stale truth after code exists | Docs must match the shipped subset and the actual fail-loud behavior | Manual review |
 
 ## 6.2 Migration notes
@@ -530,8 +540,9 @@ Not applicable.
   - `docs/COMPILER_ERRORS.md` if the first implementation earns concrete parse/compile failures that should be numbered
   - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` if the `01_hello_world` ambiguity is materially resolved by shipped architecture
 - Behavior-preservation signals for refactors:
-  - exact comparison against `examples/01_hello_world/ref/AGENTS.md`
   - whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt`
+  - semantic smoke checks derived from the prompt/input contract and current design notes
+  - advisory diff against `examples/01_hello_world/ref/AGENTS.md` when useful for finding renderer/ref bugs
   - `strict=True` grammar construction with no silent fallback
 
 ## 6.3 Pattern Consolidation Sweep (anti-blinders; scoped by plan)
@@ -539,7 +550,7 @@ Not applicable.
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude) |
 |---|---|---|---|---|
 | Live doctrine | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md` | Keep shipped subset and failure behavior aligned with the one canonical compiler path | Prevents docs from drifting ahead of the implemented grammar | include |
-| First runtime fixtures | `examples/01_hello_world/prompts/AGENTS.prompt`, `examples/01_hello_world/ref/AGENTS.md` | Treat `examples/` as the only authoritative first-pass source/ref corpus | Prevents parallel fixture truth | include |
+| First runtime fixtures | `examples/01_hello_world/prompts/AGENTS.prompt`, `examples/01_hello_world/ref/AGENTS.md` | Treat `examples/` as the authoritative prompt corpus plus approximate rendered examples | Prevents source/ref truth from being silently inverted | include |
 | Next grammar pressure | `examples/02_sections/prompts/AGENTS.prompt` | Extend the same `pyprompt/` package and the same `pyprompt.lark` grammar file for keyed workflow entries | Prevents a second parser path when grammar scope grows | defer |
 | Next grammar pressure | `examples/03_imports/prompts/AGENTS.prompt` and imported prompt files | Extend the same owner path for imports and symbol resolution | Prevents import behavior from being prototyped in side scripts | defer |
 | Semantic growth | `examples/04_inheritance` through `examples/07_handoffs` | Add inheritance and routing semantics through the same AST/compiler path, not parallel prototypes | Prevents semantic drift and duplicated merge logic | defer |
@@ -590,20 +601,22 @@ Status: IN PROGRESS
 * Work:
   Add `pyprompt/compiler.py`, `pyprompt/renderer.py`, `pyprompt/check_hello_world.py`, and `Makefile`.
   Implement explicit target-agent selection, duplicate-name detection, and exact bootstrap-subset validation for the one-`role`-then-one-`workflow` agent shape.
-  Implement the first render contract exactly as planned: `RoleScalar` opens the document as plain text, `RoleBlock` renders a headed section, `Workflow` renders a headed section, and sibling strings preserve order without invented bullets or extra blank lines.
+  Implement the first render contract exactly as planned from the input-language semantics: `RoleScalar` opens the document as plain text, `RoleBlock` renders a headed section, `Workflow` renders a headed section, and sibling strings preserve order without invented bullets or extra blank lines.
   Make `make hello-world` call only `python -m pyprompt.check_hello_world`; do not add a broader CLI, ref-generation mode, or alternate runner surface.
-  Compare rendered output to `examples/01_hello_world/ref/AGENTS.md` and exit nonzero on mismatch.
+  Run semantic smoke checks against the rendered output and, when helpful, diff it against `examples/01_hello_world/ref/AGENTS.md` as advisory evidence without treating that ref as exact truth.
 * Verification (smallest signal):
-  `make hello-world` exits `0` against the checked `HelloWorld` ref.
+  `make hello-world` exits `0` when parse/render/smoke checks pass for `HelloWorld`.
   A tiny direct negative check proves missing-target selection fails nonzero.
   A tiny inline invalid-source check proves reordered, repeated, missing, or extra bootstrap fields fail before render without needing a permanent duplicate fixture.
+  If the advisory diff against `examples/01_hello_world/ref/AGENTS.md` shows drift, that drift is called out explicitly as a likely ref bug or renderer bug rather than silently treated as a compiler failure.
 * Docs/comments (propagation; only if needed):
   Add one brief code comment at the compiler boundary explaining the no-implicit-target rule.
   Add one brief code comment at the renderer boundary explaining that headings come only from explicit authored titles and source ordering.
 * Exit criteria:
-  The repo has one human-facing command, `make hello-world`, and it drives the canonical parse -> validate -> render -> compare loop.
+  The repo has one human-facing command, `make hello-world`, and it drives the canonical parse -> validate -> render -> semantic-smoke-check loop.
   Missing or duplicate target-agent names fail loudly.
   Out-of-subset agent shapes fail before rendering.
+  Any drift against approximate `AGENTS.md` examples is surfaced explicitly instead of being mistaken for canonical truth.
   No alternate runner, fallback mode, or best-effort output path has been introduced.
 * Rollback:
   Keep the Phase 1 parser foundation, but revert compiler/renderer/check/Makefile changes if the render contract or target-selection contract proves wrong and needs to be recut before shipping.
@@ -616,7 +629,7 @@ Status: IN PROGRESS
   Update `docs/LANGUAGE_DESIGN_NOTES.md` if shipped behavior tightens the supported `role` shapes or the exact bootstrap subset.
   Update `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` so it no longer lags the canonical plan on parser construction, exact agent shape, or render contract.
   Update `docs/COMPILER_ERRORS.md` only if concrete numbered parse/compile errors were actually earned by implementation.
-  Update `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` only if explicit `HelloWorld` targeting or shipped behavior materially resolves the `01` ambiguity it called out.
+  Update `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` only if explicit `HelloWorld` targeting, discovered ref bugs, or shipped behavior materially clarifies the `01` ambiguity it called out.
   Record any newly surfaced post-bootstrap language holes as explicit deferred follow-ups before touching `02_sections`; do not solve later examples in this phase.
 * Verification (smallest signal):
   Rerun `make hello-world` after reality-sync edits to confirm the green path still holds.
@@ -640,7 +653,7 @@ Prefer at most one or two tight checks around AST construction or Markdown rende
 
 ## 8.2 Integration tests (flows)
 
-The primary signal should be one end-to-end local command, likely `make hello-world`, that parses the supported source, compiles `HelloWorld`, and compares the result to the checked-in Markdown ref.
+The primary signal should be one end-to-end local command, likely `make hello-world`, that parses the supported source, compiles `HelloWorld`, and runs semantic smoke checks derived from the prompt/input contract. Diffs against checked `AGENTS.md` refs are advisory bug-finding signals, not byte-level truth.
 
 ## 8.3 E2E / device tests (realistic)
 
@@ -782,17 +795,17 @@ Options
 
 Decision
 
-Parse `examples/01_hello_world/prompts/AGENTS.prompt` as-authored, support both `role` shapes already present in that file, and keep explicit `HelloWorld` selection for the first checked acceptance loop.
+Parse `examples/01_hello_world/prompts/AGENTS.prompt` as-authored, support both `role` shapes already present in that file, and keep explicit `HelloWorld` selection for the first bootstrap loop.
 
 Consequences
 
 - The first grammar stays honest to the current example corpus without adding preprocessing hacks.
-- The bootstrap loop still has one clear checked output contract because `examples/01_hello_world/ref/AGENTS.md` remains the first acceptance target.
-- `HelloWorld2` becomes real syntax pressure for the first parser and renderer even before it has its own checked ref.
+- The bootstrap loop still has one approximate Hello World output example for human comparison because `examples/01_hello_world/ref/AGENTS.md` remains the first rendered example on disk.
+- `HelloWorld2` becomes real syntax pressure for the first parser and renderer even before it has its own approximate output example.
 
 Follow-ups
 
-- Decide in a later phase whether to add a checked rendered ref for `HelloWorld2` or move it into a separate example once the first loop is running.
+- Decide in a later phase whether to add a second approximate rendered example for `HelloWorld2`, or a stronger checked output contract distinct from `AGENTS.md`, once the first loop is running.
 
 ## 2026-04-06 - Treat strict LALR plus stock `Lark` pieces as a hard boundary
 
@@ -840,7 +853,7 @@ Consequences
 - The first parser/AST path stays closer to ordinary `Lark` behavior and avoids accidental `None` handling complexity.
 - Regex-collision checking stays on an explicitly supported strict-mode lexer instead of a hidden default.
 - Comment handling and indentation remain one coherent grammar/postlex contract instead of drifting into parser rescue logic.
-- `HelloWorld2` stops being render-shaped guesswork even before it has its own checked ref.
+- `HelloWorld2` stops being render-shaped guesswork even before it has its own approximate output example.
 
 Follow-ups
 
@@ -870,3 +883,28 @@ Consequences
 Follow-ups
 
 - Keep broader field flexibility explicitly deferred until later examples earn it.
+
+## 2026-04-06 - Treat `AGENTS.md` refs as approximate output examples, not exact truth
+
+Context
+
+The `AGENTS.md` files in `examples/*/ref` were manually built as examples. They are output artifacts, not the input language, and the user explicitly clarified that they should not be treated as pristine byte-level goldens. We should expect to find bugs or drift in them.
+
+Options
+
+- keep treating `AGENTS.md` refs as exact output contracts
+- demote them to advisory examples while the `.prompt` files and language doctrine carry the real truth
+
+Decision
+
+Treat `.prompt` files as the input-language SSOT and treat checked `AGENTS.md` refs as approximate rendered examples that may contain bugs.
+
+Consequences
+
+- The bootstrap verifier must derive primary correctness from prompt semantics and explicit language rules, not from byte-for-byte ref matching.
+- Diffs against `AGENTS.md` refs become explicit review signals that may indicate either renderer bugs or bugs in the ref artifact.
+- Future work may still add a stronger machine-checked output contract, but that contract should be distinct from the current approximate `AGENTS.md` examples unless they are deliberately re-earned and cleaned up.
+
+Follow-ups
+
+- Keep the plan, verifier design, and worklog explicit about approximate refs so the truth hierarchy does not invert again.

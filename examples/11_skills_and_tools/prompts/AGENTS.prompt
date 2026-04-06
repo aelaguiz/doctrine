@@ -14,11 +14,22 @@
 # - `FindSkills` uses only the required `purpose`
 # - `CopyRewriteSkill` adds one optional field
 # - `PokerGroundingSkill` shows a fuller optional contract
+# - agent-side skill references show `Required`, `Advisory`, and `reason`
 #
 # The agent then references skill objects by relationship:
 # - `can_run`
 # - `discover_with`
 # - `not_for_this_role`
+#
+# Requirement belongs on the agent-side reference, not on the skill object.
+# - `Required` means the skill must resolve and the turn should fail if the
+#   role cannot use it honestly here.
+# - `Advisory` means use it when needed if it is available; absence alone is
+#   not a turn failure.
+# In rendered `AGENTS.md`, do not print schema-like lines such as
+# `Requirement: Advisory`.
+# - required references should render as fail-loud role guidance
+# - advisory references should just render the skill normally
 
 skill FindSkills: "find-skills"
     purpose: "Find the best matching repo skill for the current job."
@@ -65,15 +76,27 @@ agent LessonCopywriter:
 
     skills: "Skills"
         can_run: "Can Run"
-            PokerGroundingSkill
-            CopyRewriteSkill
+            poker_grounding:
+                skill: PokerGroundingSkill
+                requirement: Required
+
+            copy_rewrite:
+                skill: CopyRewriteSkill
+                requirement: Advisory
 
         discover_with: "Discover With"
-            FindSkills
+            skill_finder:
+                skill: FindSkills
+                requirement: Advisory
 
         not_for_this_role: "Not For This Role"
-            MobileSimSkill
-            FlutterDevReturnSkill
+            simulator_runtime:
+                skill: MobileSimSkill
+                reason: "This role is baseline copy work, not simulator or device investigation."
+
+            dev_loop_restore:
+                skill: FlutterDevReturnSkill
+                reason: "This role is baseline copy work, not Flutter environment repair."
 
     runtime_tools: "Runtime Tools"
         pokerkb: "PokerKB"

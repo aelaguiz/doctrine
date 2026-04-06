@@ -12,6 +12,8 @@ Core job: turn an approved lesson manifest into grounded learner copy without ch
 
 Ground learner-facing poker wording against current poker truth.
 
+This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.
+
 ##### Use When
 
 Use this when the lane needs Books or Forums receipts for learner-facing copy.
@@ -56,6 +58,10 @@ Find the best matching repo skill for the current job.
 
 Drive a simulator or device for runtime investigation.
 
+##### Reason
+
+This role is baseline copy work, not simulator or device investigation.
+
 #### flutter-dev-return
 
 ##### Purpose
@@ -65,6 +71,10 @@ Restore a live Flutter development loop.
 ##### Use When
 
 Use this only when the job is restoring a live Flutter dev loop.
+
+##### Reason
+
+This role is baseline copy work, not Flutter environment repair.
 
 ## Runtime Tools
 
