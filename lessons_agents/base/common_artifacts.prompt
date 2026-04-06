@@ -1,7 +1,0 @@
-# 
-
-artifact LessonManifest[JsonDisk]:
-    schema: "manifest_schema.json"
-
-artifact LessonDirectory[Disk]:
-    lesson_manifest: LessonManifest

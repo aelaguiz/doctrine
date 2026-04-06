@@ -10,6 +10,7 @@ The goal is to capture the language decisions we have made so far, why we made t
 - Each example should prove one new idea at a time.
 - We do not want speculative features in the language unless an example clearly needs them.
 - The parser should grow in the same order as the examples.
+- We intentionally pruned the speculative examples after inheritance so we can re-earn the next concepts instead of carrying forward placeholders we do not fully believe in.
 
 ## Core Declarations So Far
 
@@ -81,7 +82,7 @@ We are deliberately avoiding looser reuse features until the examples prove that
 
 ## Inheritance
 
-Inheritance has earned a place conceptually, and we now have a first concrete shape for it.
+Inheritance has earned a place conceptually, but the current direction is less "implicit merge" and more "ordered patching."
 
 Current syntax direction:
 - `agent Child[Base]:` means the child extends the base agent
@@ -91,17 +92,55 @@ Current intent:
 - the child should be able to specialize inherited behavior without rewriting everything
 - inherited output should feel natural, not expose internal implementation details unless we want that explicitly
 - scalar fields like `role` should override
-- nested workflow entries should merge by key
-- omitted child workflow entries should be inherited
-- child workflow entries with the same key should replace the parent version
-- the child workflow string list should replace the parent workflow string list
+- workflow preamble strings should override as a group when the child provides them
 
-Current example intent:
-- in the inheritance example, `greeting` is inherited because the child does not redefine it
-- `object` is overridden because the child defines it
-- the child also overrides the workflow intro strings by providing its own two-line preamble
+Current workflow inheritance direction:
+- default inheritance should stay simple
+- explicit order should be opt-in
+- when a child wants to control exact workflow order, it should say so in the source rather than relying on hidden merge rules
 
-We still do not want to over-design merge semantics beyond what the current examples force.
+Current explicit-order syntax direction:
+- `inherit key` means "place the inherited workflow entry here unchanged"
+- `override key:` means "replace the inherited workflow entry and place the replacement here"
+- a bare `key:` means "create a new workflow entry here"
+
+Why this direction currently looks better than implicit merge:
+- it makes placement explicit in the source
+- it removes a lot of merge guesswork
+- it gives the parser cleaner semantics
+- it makes compiler errors easier to explain
+
+Current compiler validation direction:
+- `override key:` should fail if the parent does not define that key
+- `inherit key` should fail if the parent does not define that key
+- if the intent is to add something new, the author should define a new key directly instead of using `override`
+
+The current examples are intentionally pushing on these rules so we can decide where explicit ordering should begin and how strict it should be.
+
+## Pending Decisions
+
+- Should explicit-order mode only start when the child uses `inherit`, or should other syntax trigger it too?
+- If a child starts explicit-order mode, must every inherited workflow entry that survives be named explicitly?
+- In non-explicit mode, should new workflow keys append automatically, or should new keys require explicit-order mode?
+- Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
+- When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
+- How aggressively should source names be humanized during rendering?
+- Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?
+
+## Pending Concepts
+
+These are concepts we expect to revisit, but they are not locked into the example sequence yet.
+
+- richer ordered workflow semantics
+- multi-agent output from one source package
+- typed artifacts
+- agent input and output signatures
+- skills
+- more explicit workflow declarations and reuse patterns
+- context variables and path interpolation
+- packet contracts
+- policies and tool boundaries
+- role graphs and handoff structure
 
 ## Current Bias
 

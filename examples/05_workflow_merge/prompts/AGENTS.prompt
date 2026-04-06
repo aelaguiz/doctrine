@@ -1,0 +1,61 @@
+agent BaseBriefingAgent:
+    role: "You are the base briefing agent."
+
+    workflow:
+        "Deliver the briefing in the base order."
+        "Keep the framing brief and direct."
+
+        opening:
+            "State the topic."
+
+        main_point:
+            "Give the original main point."
+
+        supporting_point:
+            "Add one supporting detail."
+
+        closing:
+            "Wrap up the briefing."
+
+# This child demonstrates explicit-order mode.
+# In this mode, the child takes control of placement:
+# - `inherit key` keeps the inherited section and places it exactly here
+# - `override key:` replaces the inherited section and places it exactly here
+# - bare `key:` creates a new section exactly where it is written
+# The goal is to make ordering obvious in the source instead of inferred by merge magic.
+agent OrderedBriefingAgent[BaseBriefingAgent]:
+    role: "You are the ordered briefing agent."
+
+    workflow:
+        "Deliver the revised briefing in the explicit order below."
+        "This child places inherited, overridden, and new sections on purpose."
+
+        inherit opening
+
+        context_note:
+            "Add the missing context before the main point."
+
+        override main_point:
+            "Give the revised main point."
+
+        inherit supporting_point
+        inherit closing
+
+        follow_up:
+            "Invite one follow-up question."
+
+# This child demonstrates the compiler error rule for `override`.
+# `override key:` only works when the parent already defines that key.
+# If the intent is to add something new, drop `override` and define a new key.
+# If order matters, use explicit-order mode and place the new key directly.
+agent InvalidOverrideBriefingAgent[BaseBriefingAgent]:
+    role: "You are the invalid override briefing agent."
+
+    workflow:
+        "This example should fail before rendering."
+
+        override context_note:
+            "Add the missing context before the main point."
+
+        override main_point:
+            "Give the revised main point."
