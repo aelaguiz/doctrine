@@ -1,0 +1,97 @@
+# Model 1: simple local workflows can still live inline inside an agent.
+# This is still just a local workflow owned by this one agent.
+# There is no inherited parent workflow at this level, so there is nothing
+# to account for explicitly and no inherited order to preserve.
+agent InlineBriefingAgent:
+    role: "You are the inline briefing agent."
+
+    workflow: "Briefing"
+        "Deliver the briefing in the order below."
+
+        opening: "Opening"
+            "State the topic."
+
+        main_point: "Main Point"
+            "Give the main point directly."
+
+        closing: "Closing"
+            "End with the next step."
+
+
+# Model 2: nested or reusable structure should live in named workflows.
+# `Preparation` and `Delivery` are real named workflow declarations.
+# That gives nested structure a stable identity and lets workflow inheritance
+# use the same explicit ordered patching rules we already use elsewhere.
+workflow Preparation: "Preparation"
+    "Start with the topic and the audience before you deliver the briefing."
+
+    topic: "Topic"
+        "State the topic in one line."
+
+    audience: "Audience"
+        "Name who the briefing is for."
+
+
+workflow Delivery: "Delivery"
+    "Move through the briefing in a fixed sequence."
+
+    opening: "Opening"
+        "State the situation."
+
+    main_point: "Main Point"
+        "Give the main point directly."
+
+    closing: "Closing"
+        "End with the next step."
+
+# This is the inherited case.
+# Because `RevisedDelivery` extends `Delivery`, it must still account for each
+# inherited entry exactly once:
+# - `inherit opening` keeps the inherited entry in this exact position
+# - `context_note: "Context Note"` adds a new entry at this exact position
+# - `override main_point:` replaces the inherited entry in this exact position
+# - `inherit closing` keeps the inherited entry in this exact position
+# This is the same explicit patching model as `05_workflow_merge`, just applied
+# to a named workflow instead of an agent-owned workflow block.
+workflow RevisedDelivery[Delivery]: "Delivery"
+    "Move through the briefing in the revised sequence."
+
+    inherit opening
+
+    context_note: "Context Note"
+        "Add one sentence of missing context before the main point."
+
+    override main_point:
+        "Give the revised main point directly."
+
+    inherit closing
+
+# These agent-level workflows are local composition surfaces.
+# `Preparation` and `Delivery` are being dropped into the local workflow here;
+# they are not being inherited here. That means this outer `workflow: "Briefing"`
+# block can put strings or local entries around them freely because there is no
+# inherited outer workflow being patched yet.
+agent StructuredBriefingAgent:
+    role: "You are the structured briefing agent."
+
+    workflow: "Briefing"
+        "This file is the runtime guide for a structured briefing."
+
+        Preparation
+        Delivery
+
+# Same idea here: this is still local composition at the outer workflow level.
+# The inherited behavior is inside `RevisedDelivery[Delivery]`, not in this
+# agent's `workflow: "Revised Briefing"` block.
+# If we later want the outer briefing structure itself to become inheritable,
+# we should likely give those composed pieces stable local keys as well instead
+# of relying only on bare workflow references.
+agent RevisedStructuredBriefingAgent:
+    role: "You are the revised structured briefing agent."
+
+    workflow: "Revised Briefing"
+        "This file is the runtime guide for a structured briefing."
+        "This version keeps preparation and revises delivery through workflow reuse."
+
+        Preparation
+        RevisedDelivery

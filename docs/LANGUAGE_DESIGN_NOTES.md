@@ -43,8 +43,9 @@ Current intent:
 `workflow` is currently our main semantic unit for instructions.
 
 Current intent:
-- A workflow can live directly inside an agent.
+- A simple local workflow can live directly inside an agent.
 - A workflow can also be declared at the top level and reused.
+- top-level named workflows are the canonical reusable and inheritable form
 - A workflow is not just arbitrary text. It is a typed instruction surface.
 - A workflow can contain more than one string in a row before named nested entries begin.
 - the agent-level workflow block should also carry its rendered title explicitly, for example `workflow: "Instructions"`
@@ -75,6 +76,27 @@ Current intent for adjacent workflow strings:
 - sibling strings should render as consecutive lines
 - the renderer should not automatically insert an extra blank line between those lines unless the source structure explicitly calls for it
 
+## Nested Workflow Direction
+
+The `06_nested_workflows` examples forced a clearer boundary between "small local workflow" and "real nested workflow structure."
+
+Current constraints:
+- we do not want one workflow inheritance model at depth 1 and a different ad hoc model below it
+- if nested workflow structure is real semantic structure, it must follow the same explicit inheritance rules as other workflows
+- we do not want deep anonymous workflow trees inside inheriting agents to become a second hidden composition system
+
+Current requirements:
+- simple local flat workflows should still be easy to author inline inside an agent
+- nested, reusable, or inherited workflow structure should have stable names and stable identities
+- agents should stay readable and should not become giant deep patch surfaces just to express shared structure
+
+Current choices:
+- inline agent workflows are still allowed for simple local cases
+- inline agent workflows are convenience authoring, not a separate semantic model
+- nested, reusable, or inherited structure should be promoted to named top-level `workflow` declarations
+- agents should compose named workflows when the structure is deeper than a simple local workflow
+- workflow inheritance should use the same explicit ordered patching model we already use for inherited agent workflows
+
 ## Imports
 
 Imports exist to compose user-defined pieces.
@@ -93,6 +115,7 @@ We currently want composition to stay explicit and understandable.
 Current intent:
 - when one workflow references another named workflow, the final rendered output should read like one coherent document
 - composition should feel like assembling semantic pieces, not pasting arbitrary text
+- simple inline workflows and composed named workflows should not behave like two different languages
 
 We are deliberately avoiding looser reuse features until the examples prove that we need them.
 
@@ -103,6 +126,7 @@ Inheritance has earned a place conceptually, and the current direction is now cl
 Current syntax direction:
 - `agent Child[Base]:` means the child extends the base agent
 - `abstract agent Base:` means the base exists for inheritance and should not render by itself
+- `workflow Child[Base]: "Title"` means the child extends a named base workflow and keeps the same explicit patching model
 
 Current intent:
 - inheritance should produce one merged final document
@@ -119,6 +143,8 @@ Current workflow inheritance direction:
 - a child must account for every inherited workflow entry exactly once
 - inherited workflow structure should never survive by omission or move by guesswork
 - deletion of inherited workflow entries is not supported right now
+- the same explicit workflow inheritance rules should apply whether the workflow is attached directly to an agent or declared as a named top-level workflow
+- moving to nested workflow structure should not introduce a second inheritance model
 
 Current explicit-order syntax direction:
 - `inherit key` means "place the inherited workflow entry here unchanged"
@@ -159,6 +185,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - concrete agents are written as plain `agent` declarations.
 - only concrete leaf agents should render.
 - `04_inheritance` should follow the same inheritance model as `05_workflow_merge`.
+- `06_nested_workflows` should show both allowed authoring modes: simple inline local workflows and named workflows for nested or reusable structure.
 - The inheritance model we are carrying forward is explicit ordered patching, not implicit key-merge magic.
 - Inherited workflows are now explicit-only. There is no second implicit merge mode.
 - A child that inherits a workflow must account for every inherited workflow entry exactly once.
@@ -166,6 +193,10 @@ The current examples are intentionally pushing on these rules so we can validate
 - `inherit key` is the clearest syntax we have found so far for "keep this inherited workflow entry and place it here."
 - `override key:` is the clearest syntax we have found so far for "replace this inherited workflow entry and place the replacement here."
 - `key: "Title"` inside an inherited child means "this is a new workflow entry and it belongs exactly here."
+- simple local workflows may still live inline inside an agent.
+- named top-level workflows are the canonical home for nested, reusable, or inherited workflow structure.
+- inline agent workflows are convenience authoring, not a second semantic model.
+- workflow inheritance should work the same way for named workflows as it does for inherited agent workflows.
 - Rendered section titles are explicit authored data. Keys are never used as visible headings.
 - Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
 - Invalid overrides should be real compiler errors, not silent fallbacks.
@@ -177,6 +208,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
 - When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
 - Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?
+- should named workflow composition stay as a bare reference line, or do we want a more explicit `use`-style syntax later?
 
 ## Pending Concepts
 
