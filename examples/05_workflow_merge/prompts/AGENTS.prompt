@@ -17,13 +17,13 @@ agent BaseBriefingAgent:
         closing: "Closing"
             "Wrap up the briefing."
 
-# This child demonstrates explicit-order mode.
-# In this mode, the child takes control of placement:
+# Inherited workflows are always explicit and exhaustive.
+# A child must account for every inherited section exactly once.
 # - `inherit key` keeps the inherited section and places it exactly here
 # - `override key:` replaces the inherited section and keeps the inherited title
 # - `override key: "New Title"` replaces the inherited section and its title
 # - `key: "Title"` creates a new section exactly where it is written
-# The goal is to make ordering obvious in the source instead of inferred by merge magic.
+# There is no implicit merge or append behavior.
 agent OrderedBriefingAgent[BaseBriefingAgent]:
     role: "You are the ordered briefing agent."
 
@@ -63,17 +63,22 @@ agent RetitledBriefingAgent[BaseBriefingAgent]:
         inherit closing
 
 # This child demonstrates the compiler error rule for `override`.
+# The inherited order is still accounted for explicitly.
 # `override key:` only works when the parent already defines that key.
-# If the intent is to add something new, drop `override` and define a new key.
-# If order matters, use explicit-order mode and place the new key directly.
+# If the intent is to add something new, drop `override` and define a new key with a title.
 agent InvalidOverrideBriefingAgent[BaseBriefingAgent]:
     role: "You are the invalid override briefing agent."
 
     workflow: "Briefing"
         "This example should fail before rendering."
 
+        inherit opening
+
         override context_note: "Context Note"
             "Add the missing context before the main point."
 
         override main_point: "Overridden Main Point Title"
             "Give the revised main point."
+
+        inherit supporting_point
+        inherit closing

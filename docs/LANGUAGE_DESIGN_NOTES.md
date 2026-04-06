@@ -94,7 +94,7 @@ We are deliberately avoiding looser reuse features until the examples prove that
 
 ## Inheritance
 
-Inheritance has earned a place conceptually, and the current direction is now clearly "ordered patching" rather than "implicit merge."
+Inheritance has earned a place conceptually, and the current direction is now clearly "explicit ordered patching" rather than any kind of implicit merge.
 
 Current syntax direction:
 - `agent Child[Base]:` means the child extends the base agent
@@ -107,9 +107,11 @@ Current intent:
 - workflow preamble strings should override as a group when the child provides them
 
 Current workflow inheritance direction:
-- the language should avoid hidden merge heuristics when order matters
-- explicit order should be opt-in
-- when a child wants to control exact workflow order, it should say so in the source
+- inherited workflow order is always explicit
+- there is no implicit merge mode for inherited workflow entries
+- a child must account for every inherited workflow entry exactly once
+- inherited workflow structure should never survive by omission or move by guesswork
+- deletion of inherited workflow entries is not supported right now
 
 Current explicit-order syntax direction:
 - `inherit key` means "place the inherited workflow entry here unchanged"
@@ -119,26 +121,32 @@ Current explicit-order syntax direction:
 
 Why this direction currently looks better than implicit merge:
 - it makes placement explicit in the source
-- it removes a lot of merge guesswork
+- it removes merge guesswork entirely
 - it gives the parser cleaner semantics
 - it makes compiler errors easier to explain
 
 Current compiler validation direction:
 - `override key:` should fail if the parent does not define that key
 - `inherit key` should fail if the parent does not define that key
+- an inherited workflow should fail if any inherited entry is omitted
+- an inherited workflow should fail if any inherited entry is accounted for more than once
+- an inherited workflow should fail if the author attempts to remove an inherited entry
 - an agent-level workflow block should fail if it omits its explicit title string
 - a new rendered section should fail if it omits its explicit title string
 - if the intent is to add something new, the author should define a new key directly instead of using `override`
 
-The current examples are intentionally pushing on these rules so we can decide how strict explicit ordering should be.
+The current examples are intentionally pushing on these rules so we can validate that explicit exhaustive inheritance is actually the right simplification.
 
 ## Recently Settled
 
 - `04_inheritance` should follow the same inheritance model as `05_workflow_merge`.
 - The inheritance model we are carrying forward is explicit ordered patching, not implicit key-merge magic.
+- Inherited workflows are now explicit-only. There is no second implicit merge mode.
+- A child that inherits a workflow must account for every inherited workflow entry exactly once.
+- Dropping inherited workflow entries is not supported right now.
 - `inherit key` is the clearest syntax we have found so far for "keep this inherited workflow entry and place it here."
 - `override key:` is the clearest syntax we have found so far for "replace this inherited workflow entry and place the replacement here."
-- `key: "Title"` inside an explicit-order child means "this is a new workflow entry and it belongs exactly here."
+- `key: "Title"` inside an inherited child means "this is a new workflow entry and it belongs exactly here."
 - Rendered section titles are explicit authored data. Keys are never used as visible headings.
 - Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
 - Invalid overrides should be real compiler errors, not silent fallbacks.
@@ -146,9 +154,6 @@ The current examples are intentionally pushing on these rules so we can decide h
 
 ## Pending Decisions
 
-- Does explicit-order mode begin only when the child uses `inherit`, or can some other syntax trigger it too?
-- If a child starts explicit-order mode, must every inherited workflow entry that survives be named explicitly?
-- Outside explicit-order mode, are brand new workflow keys allowed at all, or should they require explicit placement?
 - Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
 - When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
 - Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?
@@ -168,12 +173,127 @@ These are concepts we expect to revisit, but they are not locked into the exampl
 - policies and tool boundaries
 - role graphs and handoff structure
 
+## Top-Level Buckets From 99
+
+The `99_not_clean_but_useful` examples suggest that the next language questions should not be tiny workflow details.
+
+They suggest a handful of bigger buckets that will shape the workflow language anyway.
+
+### 1. Role Home Composition
+
+The `99` outputs are not just one workflow plus one role.
+
+They are large role homes built from repeated sections such as:
+- `Read First`
+- `Workflow Core`
+- `How To Take A Turn`
+- `Skills And Tools`
+- `Your Job`
+- `Files For This Role`
+- `When To Use This Role`
+- `Standards And Support`
+
+This means we likely need to decide how a role home is composed from shared doctrine plus role-local sections before we keep refining low-level workflow syntax.
+
+### 2. Role Graph And Handoff Model
+
+The `99` outputs clearly encode a multi-role system, not isolated agents.
+
+They repeatedly specify:
+- normal owner order
+- critic lanes
+- next owner
+- handoff comment rules
+- stop and escalate behavior
+
+This suggests the language needs a first-class way to express role-to-role routing and ownership flow.
+
+### 3. Packet And File Contract Model
+
+The `99` outputs spend a lot of energy defining packets, support files, inputs, produced outputs, and stop conditions.
+
+This looks like a bigger bucket than workflow detail.
+
+We likely need a real model for:
+- main packet vs support files
+- inputs
+- outputs
+- next owner if accepted
+- stop rule
+- review packet shape
+
+### 4. Shared Doctrine, Standards, And Support
+
+The repeated support sections in `99` are not just ordinary workflow steps.
+
+They include things like:
+- quality bars
+- proof rules
+- grounding standards
+- escalation rules
+- local read order
+
+This suggests we need to decide how shared doctrine is represented and reused across many roles.
+
+### 5. Skills, Runtime Tools, And Tool Boundaries
+
+The `99` examples do not just name tools.
+
+They distinguish:
+- skills you can run
+- runtime tools
+- what each tool may support
+- what a tool may not prove
+- proof-route selection
+
+This likely needs its own language surface rather than being hidden inside freeform workflow prose.
+
+### 6. Scope Roots And Path Variables
+
+The `99` outputs rely heavily on named roots and path conventions such as:
+- `track_root`
+- `section_root`
+- `lesson_root`
+- `<owner_root>`
+
+That suggests a real need for language support around scope roots, path interpolation, and file references.
+
+### 7. Evidence, Validation, And Review Runs
+
+The `99` outputs repeatedly talk about:
+- current review files
+- receipt-backed proof
+- validation commands
+- output contracts
+- attached checkout truth
+
+This suggests that "proof and validation surfaces" are a top-level design bucket, not just later detail.
+
+### 8. Attached Checkouts And External Truth Sources
+
+Several `99` outputs distinguish repo workflow truth from product truth in an attached checkout.
+
+That means the language may need a way to talk about attached repos, external artifacts, env files, and commands without collapsing them into ordinary workflow text.
+
+## Current Priorities
+
+Before we spend much more effort on workflow micro-rules, the bigger buckets to resolve are:
+
+1. role home composition and shared doctrine
+2. role graph and handoff model
+3. packet and file contract model
+4. skills, runtime tools, and proof boundaries
+5. scope roots, attached checkouts, and evidence surfaces
+
+Those buckets appear to be the real structure underneath the `99` examples.
+
 ## Top Candidates For Next Work
 
-- Finish the explicit-order contract. The main open question is whether using `inherit` means the child must account for every inherited workflow entry that survives.
-- Decide the non-explicit workflow rule. We still need to choose whether new workflow keys may appear without explicit placement, or whether explicit-order mode is required for all additions.
-- Decide whether workflows can contain anything besides strings and keyed entries. That decision affects the parser shape early.
-- Decide how far imports and top-level reuse should go beyond `workflow`. That will shape the next example after inheritance.
+- Decide how role homes are composed from shared doctrine plus role-local sections.
+- Decide how to represent role graphs, handoff order, critic lanes, and next-owner rules.
+- Decide the packet and file contract model before adding more workflow detail.
+- Decide how skills, runtime tools, and proof boundaries should be represented.
+- Decide how scope roots, attached checkouts, and review/evidence files should be modeled.
 
 ## Current Bias
 

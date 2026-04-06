@@ -19,8 +19,7 @@ Why this is an error:
 - new workflow entries should be introduced explicitly, not smuggled in through `override`
 
 How to fix it:
-- if the entry is new, define it as a bare `key:`
-- if order matters, use explicit-order mode and place the new key intentionally
+- if the entry is new, define it as `key: "Title"` in the inherited order
 - if the key was meant to override something inherited, correct the key name so it matches the parent
 
 Current example:
@@ -40,3 +39,17 @@ How to fix it:
 - add a title string to the agent-level workflow block, for example `workflow: "Instructions"`
 - add a title string to a reusable workflow declaration, for example `workflow Greeting: "Greeting"`
 - if the entry is a true inherited override that should keep the old title, use `override key:` without a new title
+
+## E003: Missing Inherited Workflow Entry
+
+This error occurs when a child inherits a workflow but fails to account for one of the parent's inherited entries.
+
+Why this is an error:
+- inherited workflows are explicit and exhaustive
+- omission should not silently mean keep, move, or drop
+- the compiler should never guess where an inherited section belongs
+
+How to fix it:
+- add `inherit key` where the inherited section should remain unchanged
+- add `override key:` or `override key: "New Title"` where the inherited section should be replaced
+- if we eventually add an explicit deletion form, use that instead of omission
