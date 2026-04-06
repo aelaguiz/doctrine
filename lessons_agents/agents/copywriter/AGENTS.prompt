@@ -44,6 +44,8 @@ agents LessonsCritic[LessonsAgent]:
     pass
         
 
+# Input is in the parenthesis
+# Output is after the ->
 agent LessonCopywriter[LessonsAgent](LessonArtifact) -> LessonArtifact
     """
     Mutates a lesson artifact
