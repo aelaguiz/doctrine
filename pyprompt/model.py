@@ -39,7 +39,12 @@ class RouteLine:
     target: NameRef
 
 
-SectionBodyItem: TypeAlias = str | RouteLine
+@dataclass(slots=True, frozen=True)
+class SectionBodyRef:
+    ref: NameRef
+
+
+SectionBodyItem: TypeAlias = str | RouteLine | SectionBodyRef
 
 
 @dataclass(slots=True, frozen=True)

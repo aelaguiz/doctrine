@@ -52,7 +52,12 @@ class ResolvedRouteLine:
     target_name: str
 
 
-ResolvedSectionBodyItem: TypeAlias = str | ResolvedRouteLine
+@dataclass(slots=True, frozen=True)
+class ResolvedSectionRef:
+    title: str
+
+
+ResolvedSectionBodyItem: TypeAlias = str | ResolvedRouteLine | ResolvedSectionRef
 
 
 @dataclass(slots=True, frozen=True)
@@ -109,6 +114,16 @@ _BUILTIN_OUTPUT_TARGETS = {
     "TurnResponse": ConfigSpec(title="Turn Response", required_keys={}, optional_keys={}),
     "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
 }
+
+_WORKFLOW_SECTION_REF_REGISTRIES = (
+    ("input declaration", "inputs_by_name"),
+    ("input source declaration", "input_sources_by_name"),
+    ("output declaration", "outputs_by_name"),
+    ("output target declaration", "output_targets_by_name"),
+    ("output shape declaration", "output_shapes_by_name"),
+    ("json schema declaration", "json_schemas_by_name"),
+    ("skill declaration", "skills_by_name"),
+)
 
 
 class CompilationContext:
@@ -1020,11 +1035,84 @@ class CompilationContext:
             if isinstance(item, str):
                 resolved.append(item)
                 continue
+            if isinstance(item, model.SectionBodyRef):
+                resolved.append(
+                    self._resolve_section_body_ref(item.ref, unit=unit, owner_label=owner_label)
+                )
+                continue
             self._validate_route_target(item.target, unit=unit)
             resolved.append(
                 ResolvedRouteLine(label=item.label, target_name=item.target.declaration_name)
             )
         return tuple(resolved)
+
+    def _resolve_section_body_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ResolvedSectionRef:
+        target_unit = self._resolve_section_body_lookup_unit(ref, unit=unit)
+        matches = self._find_workflow_section_ref_matches(
+            ref.declaration_name,
+            unit=target_unit,
+        )
+        dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
+
+        if len(matches) == 1:
+            return ResolvedSectionRef(title=matches[0][1])
+
+        if len(matches) > 1:
+            labels = ", ".join(label for label, _title in matches)
+            raise CompileError(
+                f"Ambiguous workflow section declaration ref in {owner_label}: "
+                f"{dotted_name} matches {labels}"
+            )
+
+        if target_unit.workflows_by_name.get(ref.declaration_name) is not None:
+            raise CompileError(
+                "Workflow refs are not allowed in workflow section bodies; "
+                f"use `use` for workflow composition: {dotted_name}"
+            )
+
+        if target_unit.agents_by_name.get(ref.declaration_name) is not None:
+            raise CompileError(
+                "Agent refs are not allowed in workflow section bodies; "
+                f'use `route "..." -> AgentName` for owner transitions: {dotted_name}'
+            )
+
+        if ref.module_parts:
+            raise CompileError(f"Missing imported declaration: {dotted_name}")
+
+        raise CompileError(
+            f"Missing local declaration ref in workflow section body {owner_label}: "
+            f"{ref.declaration_name}"
+        )
+
+    def _resolve_section_body_lookup_unit(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> IndexedUnit:
+        if not ref.module_parts or ref.module_parts == unit.module_parts:
+            return unit
+
+        target_unit = unit.imported_units.get(ref.module_parts)
+        if target_unit is None:
+            raise CompileError(f"Missing import module: {'.'.join(ref.module_parts)}")
+        return target_unit
+
+    def _find_workflow_section_ref_matches(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[tuple[str, str], ...]:
+        matches: list[tuple[str, str]] = []
+        for label, registry_name in _WORKFLOW_SECTION_REF_REGISTRIES:
+            decl = getattr(unit, registry_name).get(declaration_name)
+            if decl is not None:
+                matches.append((label, decl.title))
+        return tuple(matches)
 
     def _validate_route_target(self, ref: model.NameRef, *, unit: IndexedUnit) -> None:
         _target_unit, agent = self._resolve_agent_ref(ref, unit=unit)
@@ -1055,13 +1143,12 @@ class CompilationContext:
         body: list[CompiledBodyItem] = list(workflow_body.preamble)
         for item in workflow_body.items:
             if isinstance(item, ResolvedSectionItem):
-                section_body = [
-                    section_item
-                    if isinstance(section_item, str)
-                    else f"{section_item.label} -> {section_item.target_name}"
-                    for section_item in item.items
-                ]
-                body.append(CompiledSection(title=item.title, body=tuple(section_body)))
+                body.append(
+                    CompiledSection(
+                        title=item.title,
+                        body=self._compile_section_body(item.items),
+                    )
+                )
                 continue
 
             body.append(
@@ -1069,6 +1156,30 @@ class CompilationContext:
             )
 
         return CompiledSection(title=workflow_body.title, body=tuple(body))
+
+    def _compile_section_body(
+        self,
+        items: tuple[ResolvedSectionBodyItem, ...],
+    ) -> tuple[str, ...]:
+        body: list[str] = []
+        previous_kind: str | None = None
+
+        for item in items:
+            current_kind = "ref" if isinstance(item, ResolvedSectionRef) else "prose"
+            if previous_kind is not None and current_kind != previous_kind and body:
+                if body[-1] != "":
+                    body.append("")
+
+            if isinstance(item, str):
+                body.append(item)
+            elif isinstance(item, ResolvedRouteLine):
+                body.append(f"{item.label} -> {item.target_name}")
+            else:
+                body.append(f"- {item.title}")
+
+            previous_kind = current_kind
+
+        return tuple(body)
 
     def _split_record_items(
         self,

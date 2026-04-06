@@ -19,7 +19,15 @@ Then read Skills And Tools for shared skills and runtime tools, then read Your J
 
 If this role tells you to read a named helper or support section later in the file before you act, follow that local read order too. Use Standards And Support only after the local core is clear.
 
+
+^^^^^^ PORTED
+
+vvvv CURRENTLY PORTING
+
 Immediate local read: the current issue, the current Issue Plan And Route, the latest issue comment that names the current files, track.meta.json at `track_root/track.meta.json`, any current CONCEPTS.md at `section_root/_authoring/CONCEPTS.md`, and nearby section context only as support evidence to re-earn.
+
+^^^^^ CURRENTLY PORTING
+vvvvvvvvvvv NOT WORKING ON YET
 
 Before you lock section truth, read Poker Grounding, then PokerKB.
 

@@ -1,0 +1,65 @@
+>input CurrentIssuePlan: "Current Issue Plan"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    source: Prompt
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    shape: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    "Use the current issue plan to confirm the intended owner and next step."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>input TrackMetadata: "Track Metadata"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt support.type.reference.pyprompt
+>        path: "track_root/track.meta.json"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: JsonObject
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    "Use this file as the current track metadata truth."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

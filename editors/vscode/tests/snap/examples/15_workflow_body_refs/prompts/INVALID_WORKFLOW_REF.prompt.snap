@@ -1,0 +1,60 @@
+># Bare workflow refs are intentionally not allowed inside titled workflow
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># sections. Use `use` when a workflow needs to compose another workflow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>workflow SharedRead: "Shared Read"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    first: "First"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Read this first."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow InvalidWorkflowBodyRefs: "Invalid Workflow Body Refs"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                 ^ source.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    bad: "Bad"
+#^^^^ source.pyprompt
+#    ^^^ source.pyprompt entity.name.section.pyprompt
+#       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        SharedRead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent InvalidWorkflowBodyRefsAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "This agent exists only to trigger the compile-fail contract."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    read_first: InvalidWorkflowBodyRefs
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

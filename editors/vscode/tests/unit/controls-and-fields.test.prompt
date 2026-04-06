@@ -34,3 +34,9 @@
 #       ^ entity.name.section.pyprompt
 #                      ^ punctuation.separator.key-value.pyprompt
 #                        ^ string.quoted.double.pyprompt
+
+        CurrentIssue
+#       ^^^^^^^^^^^^ support.type.reference.pyprompt
+
+        shared.contracts.TrackMetadata
+#       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt

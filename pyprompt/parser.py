@@ -209,6 +209,10 @@ class ToAst(Transformer):
         return tuple(items)
 
     @v_args(inline=True)
+    def workflow_section_ref_item(self, ref):
+        return model.SectionBodyRef(ref=ref)
+
+    @v_args(inline=True)
     def local_section(self, key, title, items):
         return model.LocalSection(key=key, title=title, items=tuple(items))
 

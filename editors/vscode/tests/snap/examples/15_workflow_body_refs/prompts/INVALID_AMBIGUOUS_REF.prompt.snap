@@ -1,0 +1,84 @@
+># Bare workflow section refs must resolve to exactly one allowed declaration
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># family. If a name matches more than one allowed declaration kind, fail loud.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>input SharedThing: "Shared Thing Input"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    source: Prompt
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    shape: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>skill SharedThing: "Shared Thing Skill"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    purpose: "Prove that ambiguous bare workflow section refs fail loud."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow InvalidAmbiguousBodyRefs: "Invalid Ambiguous Body Refs"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                  ^ source.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    bad: "Bad"
+#^^^^ source.pyprompt
+#    ^^^ source.pyprompt entity.name.section.pyprompt
+#       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        SharedThing
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent InvalidAmbiguousBodyRefsAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "This agent exists only to trigger the compile-fail contract."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    read_first: InvalidAmbiguousBodyRefs
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

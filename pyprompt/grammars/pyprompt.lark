@@ -87,6 +87,8 @@ workflow_override_use: "override" CNAME ":" name_ref _NL?
 workflow_section_body: workflow_section_item+
 ?workflow_section_item: string _NL?
                       | route_stmt
+                      | workflow_section_ref_item
+workflow_section_ref_item: name_ref _NL?
 
 record_body: record_item+
 ?record_item: record_text
