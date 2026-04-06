@@ -1,0 +1,113 @@
+# This example sketches `input` and `input source` as first-class declarations.
+# Each input separates:
+# - `source`: how the agent gets the input
+# - `shape`: what kind of thing it is once the agent has it
+# - `requirement`: whether the turn should fail if it is missing
+# `source` is typed, not string-based.
+# Built-in sources in this sketch:
+# - `Prompt`
+# - `File` (requires `path`)
+# - `EnvVar` (requires `env`)
+# A custom source can define its own required and optional keys.
+
+input CurrentIssue: "Current Issue"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "This content is already present in the invocation prompt."
+
+
+input SectionPlan: "Section Plan"
+    source: File
+        path: "section_root/_authoring/SECTION_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Read this file before changing section planning."
+
+
+input PreviousSummary: "Previous Summary"
+    source: File
+        path: "section_root/_authoring/PREVIOUS_SUMMARY.md"
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use this only if continuity with earlier work matters for the current turn."
+
+
+input TrackerRoot: "Tracker Root"
+    source: EnvVar
+        env: "TRACKER_ROOT"
+    shape: DirectoryPath
+    requirement: Required
+    "This environment variable points to the tracker checkout root."
+
+
+# A custom source can define its own source-specific keys.
+# This keeps `source` typed and extensible without making every input accept
+# every possible source field.
+input source FigmaDocument: "Figma Document"
+    required: "Required Source Keys"
+        url: "URL"
+
+    optional: "Optional Source Keys"
+        node: "Node"
+
+
+input DesignSpec: "Design Spec"
+    source: FigmaDocument
+        url: "https://figma.com/design/abc123/Example-Design"
+        node: "12:34"
+    shape: DesignDocument
+    requirement: Required
+    "Use this design document when the turn depends on a specific Figma source."
+
+
+# Model 1: input can be provided directly in the invocation prompt.
+agent PromptInputAgent:
+    role: "Core job: summarize the current issue from prompt-provided input."
+
+    inputs: "Inputs"
+        CurrentIssue
+
+    your_job: "Your Job"
+        "Read the current issue from the prompt."
+        "Summarize it clearly and briefly."
+
+
+# Model 2: input can be looked up from a named path.
+# This also shows that requiredness is separate from source:
+# both inputs come from a path, but one is required and the other is advisory.
+agent PathInputAgent:
+    role: "Core job: revise a section plan using path-based file input."
+
+    inputs: "Inputs"
+        SectionPlan
+        PreviousSummary
+
+    your_job: "Your Job"
+        "Read the required section plan from the named path."
+        "Use the previous summary only if continuity matters for the current turn."
+        "Fail if the required section plan is missing."
+
+
+# Model 3: input can be looked up from an environment variable.
+agent EnvInputAgent:
+    role: "Core job: locate the tracker checkout from an environment variable before doing any tracker work."
+
+    inputs: "Inputs"
+        TrackerRoot
+
+    your_job: "Your Job"
+        "Look up the tracker root from the environment variable."
+        "Fail if the environment variable is missing."
+
+
+# Model 4: input can come from a declared custom source.
+agent CustomSourceInputAgent:
+    role: "Core job: use a design spec from a custom typed input source."
+
+    inputs: "Inputs"
+        DesignSpec
+
+    your_job: "Your Job"
+        "Use the custom source configuration to find the design document."
+        "Fail if the required design source data is missing."
