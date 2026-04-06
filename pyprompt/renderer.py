@@ -1,20 +1,29 @@
 from __future__ import annotations
 
-from pyprompt.compiler import CompiledAgent
-from pyprompt.model import RoleBlock, RoleScalar
+from pyprompt.compiler import CompiledAgent, CompiledSection
+from pyprompt.model import RoleScalar
 
 
 def render_markdown(agent: CompiledAgent) -> str:
-    sections = [_render_role(agent.role), _render_section(agent.workflow.title, agent.workflow.lines)]
+    sections: list[str] = []
+    if isinstance(agent.role, RoleScalar):
+        sections.append(agent.role.text)
+    else:
+        sections.append(_render_section(agent.role, depth=2))
+    sections.append(_render_section(agent.workflow, depth=2))
     return "\n\n".join(section for section in sections if section) + "\n"
 
 
-def _render_role(role: RoleScalar | RoleBlock) -> str:
-    if isinstance(role, RoleScalar):
-        return role.text
-    return _render_section(role.title, role.lines)
+def _render_section(section: CompiledSection, *, depth: int) -> str:
+    lines = [f"{'#' * depth} {section.title}", ""]
+    lines.extend(section.preamble)
 
+    if section.children:
+        if section.preamble:
+            lines.append("")
+        for index, child in enumerate(section.children):
+            lines.extend(_render_section(child, depth=depth + 1).splitlines())
+            if index != len(section.children) - 1:
+                lines.append("")
 
-def _render_section(title: str, lines: tuple[str, ...]) -> str:
-    # Headings come only from explicit authored titles and preserve source order.
-    return "\n".join([f"## {title}", "", *lines])
+    return "\n".join(lines)

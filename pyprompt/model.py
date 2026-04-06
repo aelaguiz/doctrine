@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TypeAlias
 
 
@@ -16,12 +17,52 @@ class RoleBlock:
 
 
 @dataclass(slots=True, frozen=True)
-class Workflow:
+class ImportPath:
+    level: int
+    module_parts: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ImportDecl:
+    path: ImportPath
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowTarget:
+    module_parts: tuple[str, ...]
+    declaration_name: str
+
+
+@dataclass(slots=True, frozen=True)
+class LocalSection:
+    key: str
     title: str
     lines: tuple[str, ...]
 
 
-Field: TypeAlias = RoleScalar | RoleBlock | Workflow
+@dataclass(slots=True, frozen=True)
+class WorkflowUse:
+    key: str
+    target: WorkflowTarget
+
+
+WorkflowItem: TypeAlias = LocalSection | WorkflowUse
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowBody:
+    title: str
+    preamble: tuple[str, ...]
+    items: tuple[WorkflowItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowDecl:
+    name: str
+    body: WorkflowBody
+
+
+Field: TypeAlias = RoleScalar | RoleBlock | WorkflowBody
 
 
 @dataclass(slots=True, frozen=True)
@@ -30,6 +71,10 @@ class Agent:
     fields: tuple[Field, ...]
 
 
+Declaration: TypeAlias = ImportDecl | WorkflowDecl | Agent
+
+
 @dataclass(slots=True, frozen=True)
 class PromptFile:
-    agents: tuple[Agent, ...]
+    declarations: tuple[Declaration, ...]
+    source_path: Path | None = None

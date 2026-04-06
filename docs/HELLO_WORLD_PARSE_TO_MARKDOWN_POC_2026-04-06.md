@@ -208,7 +208,7 @@ There is already a canonical planning doc for the Hello World compiler bootstrap
 - The current `01_hello_world` example set still has a cold-read hole: the source file contains `HelloWorld` and `HelloWorld2`, but the checked-in approximate ref corresponds to only one rendered output.
 - The current `AGENTS.md` refs remain approximate examples, so output disagreements still cannot be resolved by blindly assuming the ref is correct.
 - The first shared verifier intentionally keeps contradiction surfacing simple; it emits a plain-text summary and depends on plan/doctrine updates rather than a richer persistence or triage system.
-- Later examples still lack adjacent manifests, so the corpus can drift again if example growth outruns verifier growth.
+- `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` still lack adjacent manifests, so the corpus can drift again if implementation outruns verifier coverage.
 
 That means the project can still invent semantics faster than it proves them if later grammar growth is not forced back through the shared corpus and explicit contradiction reporting loop.
 
@@ -421,11 +421,10 @@ The repo now has a real but still narrow compiler slice:
   - `verify_corpus.py`
 - `examples/`
   - authoritative `.prompt` inputs
-  - adjacent `cases.toml` verifier contracts under `01_hello_world/` and `02_sections/`
+  - adjacent `cases.toml` verifier contracts under `01_hello_world/`, `02_sections/`, and `03_imports/`
   - approximate `ref/AGENTS.md` outputs
-  - checked-in negative prompt fixtures under `examples/01_hello_world/prompts/`
+  - checked-in negative prompt fixtures under `examples/01_hello_world/prompts/` and `examples/03_imports/prompts/`
   - prompt-plus-ref example pressure already present on disk for:
-    - `03_imports`
     - `04_inheritance`
     - `05_workflow_merge`
     - `06_nested_workflows`
@@ -436,11 +435,17 @@ The repo now has a real but still narrow compiler slice:
 The important remaining gaps are now specific, not vague:
 
 - `examples/02_sections/` is machine-readable verifier truth, but still only as a planned case rather than active supported syntax
-- there is still no adjacent manifest coverage for later examples beyond `02_sections`
-- `03_imports` is on disk only as prompts plus approximate ref; it is not on the verifier path and its compilation-unit model is still unimplemented
+- `03_imports` now has planned manifest coverage, local negative fixtures, and aligned keyed `use` composition syntax, but its compilation-unit model is still unimplemented
 - `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` are on disk only as prompts plus approximate refs/error refs; none of their semantics is active on the shared verifier path yet
 - the contradiction-reporting lane is intentionally simple and local: verifier summary output plus canonical-doc updates
 - no surfaced inconsistency has yet forced a verifier-level stop after Phase 5, so later grammar growth still has to prove that discipline holds in practice
+
+Semantic implementation-readiness is now clearer than the runtime path:
+
+- `01_hello_world` is shipped and active
+- `02_sections`, `03_imports`, `04_inheritance`, `05_workflow_merge`, and `06_nested_workflows` are all semantically ready to build
+- their current missing or planned manifests are implementation work, not evidence that their language contracts are still unclear
+- example-order still matters, so semantic readiness does not authorize skipping the sequence
 
 ## 4.2 Control paths (runtime)
 
@@ -471,12 +476,12 @@ The current hard boundary for the next grammar phases is also concrete:
 
 That path proves the bootstrap works, but it also shows the present architectural limit clearly:
 
-- render-contract truth has moved out of Python constants and into adjacent manifests, but only for the first two example directories
+- render-contract truth has moved out of Python constants and into adjacent manifests for the first three example directories
 - `02_sections` now has a runtime presence, but only as a planned contract rather than active supported syntax
-- `03_imports` is not yet on the runtime path at all, even as planned verifier truth
+- `03_imports` is now on the runtime path as planned verifier truth plus planned negative cases, but it is still not implemented in the shipped grammar/compiler
 - `04` through `06` are not yet on the runtime path at all, even though they already establish the next semantic boundaries the language notes talk about
 - the contradiction-reporting lane exists, but this first version is intentionally plain-text and human-reviewed rather than richer structured tooling
-- later examples still need to earn the same adjacent-manifest treatment instead of relying on the current green `01` slice
+- `04` through `06` still need to earn the same adjacent-manifest treatment instead of relying on the current green `01` slice
 
 ## 4.3 Object model + key abstractions
 
@@ -511,8 +516,8 @@ The remaining architectural gap is that this first contract model is still inten
 
 - only `exact_lines` render assertions are supported
 - only `01_hello_world` is active
-- `02_sections` is present only as planned output truth
-- later examples do not yet have case coverage
+- `02_sections` and `03_imports` are present only as planned output truth
+- `04` through `06` do not yet have case coverage
 
 Near-term extension pressure remains unchanged:
 
@@ -524,7 +529,7 @@ Near-term extension pressure remains unchanged:
 None of those concepts currently has:
 
 - an implemented AST extension
-- a checked-in machine-readable verifier contract
+- an active shared verifier path
 - a shared case runner that can report pass/fail stage consistently across examples
 
 Concretely, the current AST/compiler path still cannot represent:
@@ -532,6 +537,7 @@ Concretely, the current AST/compiler path still cannot represent:
 - top-level declarations other than `agent`
 - local keyed workflow entries such as `step_one: "Step One"`
 - top-level reusable workflows such as `workflow Greeting: "Greeting"`
+- keyed imported composition entries such as `use greeting: simple.greeting.Greeting`
 - keyed composition entries such as `use greeting: Greeting` or `use preparation: Preparation`
 - `abstract agent`
 - parent clauses such as `[BaseGreeter]` or `[Delivery]`
@@ -625,8 +631,10 @@ The minimal relevant repo tree should look like this after the shared verifier l
 │   │   ├── cases.toml
 │   │   ├── prompts/
 │   │   │   ├── AGENTS.prompt
-│   │   │   ├── greeting.prompt
-│   │   │   └── object.prompt
+│   │   │   ├── INVALID_*.prompt
+│   │   │   ├── simple/
+│   │   │   ├── chains/
+│   │   │   └── invalid_duplicates/
 │   │   └── ref/
 │   │       └── AGENTS.md
 │   ├── 04_inheritance/
@@ -656,6 +664,8 @@ The minimal relevant repo tree should look like this after the shared verifier l
 │       └── ref/
 │           ├── inline_briefing_agent/
 │           │   └── AGENTS.md
+│           ├── inherited_structured_briefing_agent/
+│           │   └── AGENTS.md
 │           ├── structured_briefing_agent/
 │           │   └── AGENTS.md
 │           └── revised_structured_briefing_agent/
@@ -678,7 +688,7 @@ Reading the tree top-down should already explain ownership:
 - `examples/01_hello_world/cases.toml` is the machine-readable verifier contract for both Hello World renders plus any local negative cases that example earns
 - `examples/01_hello_world/ref/AGENTS.md` is the approximate rendered example, not a pristine contract
 - `examples/02_sections/cases.toml` is part of the initial shared-verifier seed set and begins life as a planned render contract, not a falsely green passing example
-- `examples/03_imports/cases.toml` is the first compilation-unit expansion surface and should own import plus reusable-workflow verification once that phase lands
+- `examples/03_imports/cases.toml` is already the first compilation-unit expansion surface; Phase 7 should promote it from planned to active once the implementation lands
 - `examples/04_inheritance/cases.toml`, `examples/05_workflow_merge/cases.toml`, and `examples/06_nested_workflows/cases.toml` should arrive as adjacent per-example contracts rather than via side test fixtures or verifier-only data
 - `pyprompt/grammars/pyprompt.lark` is the syntax SSOT
 - `pyprompt/*.py` owns parse -> validate -> render behavior
@@ -961,8 +971,8 @@ Not applicable.
 | Sections contract | `examples/02_sections/cases.toml` | planned render contract | Shipped planned `render_contract` for `SectionsDemo` with exact lines and advisory `approx_ref` | Keep it planned until the grammar/renderer genuinely support nested workflow entries, then promote it through the same manifest | Seeds the first next-example output contract without pretending the current parser already supports it | `status = "planned"` until the grammar/renderer grow to support nested workflow entries | `make verify-examples` |
 | Approximate sections ref | `examples/02_sections/ref/AGENTS.md` | rendered Markdown | Approximate manual output example only | Keep as advisory output-shape evidence for the planned contract | Preserves the current example surface without falsely upgrading it into executable truth | Optional `approx_ref`, advisory only | `make verify-examples` |
 | Local workflow items | `pyprompt/model.py`, `pyprompt/compiler.py`, `pyprompt/renderer.py` | workflow item representation | `Workflow` still carries only flat string lines | Widen the workflow model once for `02`, `03`, and `06` into explicit workflow items such as local keyed sections and keyed `use` composition entries | Prevents solving `02`, `03`, and `06` with three different ad hoc shapes | One ordered workflow-item model with local key identity and rendered-title separation | Future `make verify-examples` |
-| Imports compilation unit | `examples/03_imports/prompts/AGENTS.prompt` plus imported prompt modules under `examples/03_imports/prompts/**` | top-level `import` and reusable `workflow` declarations | Present on disk only; unsupported by shipped grammar and AST | Add compilation-unit support for Python-like example-local imports, top-level reusable workflows, and keyed qualified imported composition entries through the same parser/compiler path | `03` is a document-model expansion, not a small syntax tweak | Import target resolves through Python-like dotted and relative module paths; reusable declarations resolve by case-sensitive declaration name inside that module; outer composition identity comes from the local `use` key | Future `make verify-examples` |
-| Imports contract | `examples/03_imports/cases.toml` | render and failure contracts | Missing | Add adjacent manifest coverage for `03` render output plus earned import-resolution failures | Keeps `03` on the shared verifier path instead of side checks | Active `render_contract` plus `compile_fail` cases for missing import, unresolved symbol, or duplicate declaration if earned | Future `make verify-examples` |
+| Imports compilation unit | `examples/03_imports/prompts/AGENTS.prompt` plus imported prompt modules under `examples/03_imports/prompts/**` | top-level `import`, reusable `workflow` declarations, and keyed imported composition entries | Present in prompts plus planned manifest contracts; syntax is now explicit in the example corpus and doctrine, but unsupported by the shipped grammar and AST | Add compilation-unit support for Python-like example-local imports, top-level reusable workflows, and keyed qualified imported composition entries through the same parser/compiler path | `03` is a document-model expansion, not a small syntax tweak | Import target resolves through Python-like dotted and relative module paths; reusable declarations resolve by case-sensitive declaration name inside that module; outer composition identity comes from the local `use` key | Future `make verify-examples` |
+| Imports contract | `examples/03_imports/cases.toml` | render and failure contracts | Shipped planned `render_contract` plus planned `compile_fail` cases for missing module, unresolved symbol, and duplicate declaration | Promote the existing contract from planned to active once the imported-composition syntax is explicit and implemented | Keeps `03` on the shared verifier path instead of side checks and prevents the syntax decision from being buried inside code | Active `render_contract` plus `compile_fail` cases for missing import, unresolved symbol, or duplicate declaration if earned | Future `make verify-examples` |
 | Inheritance model | `examples/04_inheritance/prompts/AGENTS.prompt`, `pyprompt/model.py`, `pyprompt/compiler.py` | `abstract agent`, parent clause, `inherit` / `override` | Present in prompts only; unsupported by shipped compiler | Add abstract/concrete agent semantics, parent lookup, and explicit inherited workflow patching over keyed entries | `04` is the first real inheritance contract and already includes transitive inherited-key pressure | Concrete leaves render; abstract agents do not; inherited keyed entries are accounted for explicitly | Future `make verify-examples` |
 | Ordered patching contract | `examples/05_workflow_merge/prompts/AGENTS.prompt`, `pyprompt/compiler.py`, `docs/COMPILER_ERRORS.md` | explicit inherited workflow patching | Present in prompts and docs only | Implement explicit ordered patching and keep “merge” as directory history, not semantic behavior | Prevents implicit merge heuristics from leaking into the compiler | `inherit` and `override` remain exhaustive explicit patch operations with stable compiler errors | Future `make verify-examples` |
 | Error refs | `examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md` | human-facing compiler error example | Present only as prose ref | Keep as advisory explanation unless a future phase explicitly upgrades any part of it into machine-checked verifier truth | Avoids accidentally creating a second error-truth surface | Machine truth stays in `compile_fail` manifest cases; prose refs stay explanatory | Future `make verify-examples` |
@@ -974,6 +984,11 @@ Not applicable.
 
 - Canonical owner path / shared code path:
   - repo-root package `pyprompt/` plus repo-root `Makefile`, with `pyprompt.verify_corpus` as the durable verification owner
+- Semantic readiness snapshot for examples `01` through `06`:
+  - `01` is shipped and active
+  - `02` through `06` are all semantically ready to build
+  - none of `01` through `06` is currently blocked by unresolved language shape
+  - the remaining gates are sequence, implementation work, and verifier wiring
 - Deprecated APIs (if any):
   - direct use of `python -m pyprompt.check_hello_world` once the shared verifier covers `01_hello_world`
 - Delete list (what must be removed; include superseded shims/parallel paths if any):
@@ -1254,11 +1269,11 @@ Status: NOT STARTED
 * Goal:
   Add the smallest real import and reusable-workflow slice needed for `examples/03_imports`, while forcing Python-like import/path/reference semantics into explicit decisions instead of ad hoc loader behavior.
 * Work:
-  Deep-dive the exact contract for top-level `import package.module` lines, relative imports such as `import .sibling.module`, `import ..shared.module`, and deeper leading-dot parent walks, top-level `workflow Name: "Title"` declarations in imported prompt files, and keyed qualified imported composition entries such as `use greeting: simple.greeting.Greeting` inside an agent-local workflow body.
+  Deep-dive the exact contract for top-level `import package.module` lines, relative imports such as `import .sibling.module`, `import ..shared.module`, deeper leading-dot parent walks, top-level `workflow Name: "Title"` declarations in imported prompt files, and keyed qualified imported composition entries such as `use greeting: simple.greeting.Greeting` inside an agent-local workflow body.
   Decide and document the first import-resolution boundary, including Python-like dotted and relative module rules, symbol naming expectations, and duplicate-name failure behavior.
   Extend the parser, compiler, and shared verifier so `examples/03_imports` can resolve keyed qualified imported composition entries through canonical imports instead of hard-coded file knowledge.
-  Add `examples/03_imports/cases.toml` with active render contracts and the smallest earned import-failure cases, starting with missing modules, unresolved qualified symbols, and duplicate declaration names within one imported module.
-  Halt immediately if this phase exposes unresolved contradictions about import namespace, symbol identity, case sensitivity, file resolution, or whether imported workflow references are copied, composed, or inherited.
+  Promote the existing `examples/03_imports/cases.toml` from planned to active and keep the smallest earned import-failure cases, starting with missing modules, unresolved qualified symbols, and duplicate declaration names within one imported module.
+  Halt immediately if this phase exposes unresolved contradictions about import namespace, symbol identity, case sensitivity, file resolution, or whether the keyed imported-composition form stays coherent with the later workflow-item model.
 * Verification (smallest signal):
   `make verify-examples` exits `0` with `01`, `02`, and `03` active and green.
   Missing-import or unresolved-symbol cases fail through the shared verifier if the doctrine settles those errors cleanly.
@@ -1901,3 +1916,63 @@ Follow-ups
 
 - Keep Sections 4 through 6 aligned with this semantic split before implementation starts.
 - Revisit only if later evidence shows this model cannot fit cleanly in stock `Lark` without hack pressure.
+
+## 2026-04-06 - Treat `03_imports` syntax drift as the one current pre-implementation blocker through 06
+
+Context
+
+Another deep-dive pass across examples `01` through `06` showed that missing future `cases.toml` files were being conflated with semantic unreadiness. That was the wrong readiness bar. The real remaining blocker is narrower: `examples/03_imports/prompts/AGENTS.prompt` currently composes imported workflows through bare qualified references such as `simple.greeting.Greeting`, while `docs/LANGUAGE_DESIGN_NOTES.md` and parts of this plan still lean toward keyed `use` composition.
+
+Options
+
+- treat all missing future manifests as example-readiness blockers
+- ignore the `03` syntax drift and just implement whichever imported-composition form is easiest
+- treat manifest absence as implementation work, but stop on the `03` composition-syntax contradiction because it would force a hidden semantic choice
+
+Decision
+
+Use the third option. For examples `01` through `06`, semantic readiness is now:
+
+- `01` shipped
+- `02` ready to build
+- `03` not yet ready until imported workflow composition is made explicit as either bare qualified references or keyed `use`
+- `04`, `05`, and `06` ready to build semantically once sequence reaches them
+
+Do not treat missing future manifests by themselves as proof that an example is still semantically unclear.
+
+Consequences
+
+- The next genuine stop point is now explicit instead of being hidden behind verifier-infrastructure gaps.
+- `03` implementation must begin with a syntax decision or example rewrite, not with parser work that quietly supports both forms.
+- `04` through `06` remain sequence-gated by `03`, but they are no longer being mislabeled as semantically unready.
+
+Follow-ups
+
+- Resolve the imported-composition form for `03` before implementing Phase 7.
+- Add manifests for `04` through `06` when their phases land, but do not confuse that implementation work with unresolved language design.
+
+## 2026-04-06 - `03_imports` keyed `use` update clears the earlier readiness blocker
+
+Context
+
+After the previous readiness pass, the `03_imports` example corpus was tightened again. The prompt now composes imported workflows through explicit keyed `use` entries, and `docs/LANGUAGE_DESIGN_NOTES.md` matches that direction. That removes the earlier mismatch between the prompt corpus and doctrine.
+
+Options
+
+- keep treating `03` as blocked because it was inconsistent in an earlier read
+- update the plan to reflect the current repo truth and re-evaluate readiness across `01` through `06`
+
+Decision
+
+Use the second option. With the keyed `use` update in place, no example from `01` through `06` is currently blocked by unresolved language shape. `01` is shipped, and `02` through `06` are semantically ready to build in strict example order.
+
+Consequences
+
+- The next move can stay on sequence discipline instead of stopping for another `03` syntax decision.
+- Missing `cases.toml` files for `04` through `06` remain implementation work, not semantic blockers.
+- The plan now distinguishes historical contradiction reports from current readiness.
+
+Follow-ups
+
+- Keep the sequence strict: `02`, then `03`, then `04`, `05`, and `06`.
+- If the examples drift again, surface that new contradiction explicitly instead of relying on this decision entry.

@@ -1,5 +1,12 @@
 # 99 Language Gap Audit
 
+## Current Read
+
+Right now, `99` is not showing a clear hard language blocker.
+
+The remaining useful pressure mostly looks like example work and authoring
+cleanup, not proof that the language needs new primitives.
+
 ## Purpose
 
 This audit looks at the useful pressure from `examples/99_not_clean_but_useful`
