@@ -1,7 +1,7 @@
 agent BaseBriefingAgent:
     role: "You are the base briefing agent."
 
-    workflow: "Workflow"
+    workflow: "Briefing"
         "Deliver the briefing in the base order."
         "Keep the framing brief and direct."
 
@@ -27,7 +27,7 @@ agent BaseBriefingAgent:
 agent OrderedBriefingAgent[BaseBriefingAgent]:
     role: "You are the ordered briefing agent."
 
-    workflow: "Workflow"
+    workflow: "Ordered Briefing"
         "Deliver the revised briefing in the explicit order below."
         "This child places inherited, overridden, and new sections on purpose."
 
@@ -50,7 +50,7 @@ agent OrderedBriefingAgent[BaseBriefingAgent]:
 agent RetitledBriefingAgent[BaseBriefingAgent]:
     role: "You are the retitled briefing agent."
 
-    workflow: "Workflow"
+    workflow: "Revised Briefing"
         "Deliver the revised briefing below."
         "This child keeps the structure but changes one section title on purpose."
 
@@ -69,7 +69,7 @@ agent RetitledBriefingAgent[BaseBriefingAgent]:
 agent InvalidOverrideBriefingAgent[BaseBriefingAgent]:
     role: "You are the invalid override briefing agent."
 
-    workflow: "Workflow"
+    workflow: "Briefing"
         "This example should fail before rendering."
 
         override context_note: "Context Note"

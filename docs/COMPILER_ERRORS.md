@@ -37,6 +37,6 @@ Why this is an error:
 
 How to fix it:
 - add a title string to the new section, for example `context_note: "Context Note"`
-- add a title string to the agent-level workflow block, for example `workflow: "Workflow"`
+- add a title string to the agent-level workflow block, for example `workflow: "Instructions"`
 - add a title string to a reusable workflow declaration, for example `workflow Greeting: "Greeting"`
 - if the entry is a true inherited override that should keep the old title, use `override key:` without a new title

@@ -43,7 +43,7 @@ Current intent:
 - A workflow can also be declared at the top level and reused.
 - A workflow is not just arbitrary text. It is a typed instruction surface.
 - A workflow can contain more than one string in a row before named nested entries begin.
-- the agent-level workflow block should also carry its rendered title explicitly, for example `workflow: "Workflow"`
+- the agent-level workflow block should also carry its rendered title explicitly, for example `workflow: "Instructions"`
 
 Nested content inside a workflow currently means ordered substructure.
 
@@ -54,7 +54,7 @@ Current intent:
 - rendered subsection titles come only from explicit authored strings
 
 Current section-title direction:
-- an agent-level workflow block looks like `workflow: "Workflow"`
+- an agent-level workflow block looks like `workflow: "Instructions"`
 - a keyed workflow entry looks like `main_point: "Main Point"`
 - a reusable top-level workflow can look like `workflow Greeting: "Greeting"`
 - the key is the stable compiler identity

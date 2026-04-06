@@ -1,6 +1,6 @@
 You are the retitled briefing agent.
 
-## Workflow
+## Revised Briefing
 
 Deliver the revised briefing below.
 This child keeps the structure but changes one section title on purpose.

@@ -1,6 +1,6 @@
 You are the imports demonstration agent.
 
-## Workflow
+## Imported Steps
 
 Follow the imported instructions below.
 

@@ -1,7 +1,7 @@
 agent SectionsDemo:
     role: "You are the sections demonstration agent."
 
-    workflow: "Workflow"
+    workflow: "Steps"
         "Follow the steps below in order."
 
         step_one: "Step One"

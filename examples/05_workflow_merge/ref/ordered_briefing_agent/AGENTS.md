@@ -1,6 +1,6 @@
 You are the ordered briefing agent.
 
-## Workflow
+## Ordered Briefing
 
 Deliver the revised briefing in the explicit order below.
 This child places inherited, overridden, and new sections on purpose.

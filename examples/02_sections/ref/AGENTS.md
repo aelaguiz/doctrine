@@ -1,6 +1,6 @@
 You are the sections demonstration agent.
 
-## Workflow
+## Steps
 
 Follow the steps below in order.
 

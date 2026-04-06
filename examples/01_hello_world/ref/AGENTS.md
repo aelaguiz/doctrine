@@ -1,5 +1,5 @@
 You are the hello world agent.
 
-## Workflow
+## Instruction
 
 Say hello world.

@@ -1,7 +1,7 @@
 agent BaseAgent:
     role: "You are the base agent."
 
-    workflow: "Workflow"
+    workflow: "Base Steps"
         "Follow the base steps below."
 
         greeting: "Greeting"
@@ -17,7 +17,7 @@ agent BaseAgent:
 agent InheritanceDemo[BaseAgent]:
     role: "You are the inheritance demonstration agent."
 
-    workflow: "Workflow"
+    workflow: "Inherited Steps"
         "Follow the inherited steps below."
         "This child keeps the greeting and replaces the final step."
 
