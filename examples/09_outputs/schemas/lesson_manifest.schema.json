@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "steps"],
+  "properties": {
+    "title": { "type": "string" },
+    "steps": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

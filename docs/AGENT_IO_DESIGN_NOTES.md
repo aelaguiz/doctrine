@@ -288,6 +288,45 @@ Current requirement:
 - target and shape should remain separate so "what it looks like" is distinct
   from "where it goes"
 
+## JSON Schema Should Be First-Class
+
+Structured JSON output looks important enough that schema should not live as an
+escaped string buried inside an output shape.
+
+Current intuition:
+- JSON schema should be a named first-class declaration
+- output shapes should reference a schema by name instead of embedding it inline
+- the compiler should validate the schema as part of compilation
+- the schema declaration should carry the profile or flavor it is meant to
+  satisfy
+
+Examples of likely schema profiles:
+- generic JSON Schema
+- an OpenAI structured-output profile
+
+Current requirement:
+- schema should not be reduced to a multi-line prose string
+- authors should be able to reuse one schema across multiple output shapes or
+  targets
+- profile-specific validation should be attached to the schema declaration, not
+  hidden in workflow prose
+- explanatory notes and examples should still live on the output shape, while
+  the schema declaration remains the source of structural truth
+
+Current bias:
+- use a first-class `json schema` primitive rather than inventing a second
+  schema language inside the prompt language
+- let the schema declaration own validation and profile selection
+- let the output shape own purpose, usage notes, and examples
+
+Current simplifying assumption:
+- schema declarations should load their schema body from a file rather than
+  embedding raw JSON directly in `.prompt` files
+- this keeps prompt files readable while still letting the compiler validate
+  the schema during compilation
+- rendered output can still show the resolved schema if that is useful, but
+  authored prompt source should stay file-backed for now
+
 ### 6. Output Modalities Must Be Distinct
 
 Like inputs, outputs are not one thing.
@@ -368,6 +407,8 @@ The next questions to answer are probably:
 11. How much richer than input shape should the output contract surface be?
 12. How much of this belongs on the agent declaration versus inside a reusable
    named declaration?
+13. How should first-class schema declarations work, and how should profile-
+   specific validation attach to them?
 
 ## What This Document Is Not Deciding Yet
 

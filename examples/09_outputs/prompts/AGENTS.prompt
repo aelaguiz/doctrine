@@ -12,6 +12,14 @@
 # A custom output target can define its own required and optional keys.
 # Output shapes can carry richer authored contracts than inputs, including
 # purpose, expected structure, examples, and schema.
+# JSON schema is modeled here as a named first-class declaration so output
+# shapes can reference it and the compiler can validate it separately.
+# For now, the schema body is loaded from a file rather than embedded directly
+# in the `.prompt` source.
+
+json schema LessonManifestSchema: "Lesson Manifest Schema"
+    profile: OpenAIStructuredOutput
+    file: "schemas/lesson_manifest.schema.json"
 
 output shape IssueSummaryText: "Issue Summary Text"
     kind: PlainText
@@ -47,11 +55,7 @@ output shape LessonManifestJson: "Lesson Manifest JSON"
     purpose: "Purpose"
         "Write a machine-readable lesson manifest."
 
-    schema: "JSON Schema"
-        "{"
-        "  \"title\": \"string\","
-        "  \"steps\": [\"string\"]"
-        "}"
+    schema: LessonManifestSchema
 
     explanation: "Field Notes"
         "`title` is the learner-facing title."
