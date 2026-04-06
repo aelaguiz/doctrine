@@ -6,7 +6,6 @@ Core job: write the lesson manifest as structured JSON.
 
 ### Lesson Manifest Output
 
-- Artifact: Lesson Manifest
 - Built Lesson: `lesson_root/_authoring/lesson_manifest.json`
 - Built Lesson Shape: Lesson Manifest JSON
 - Validation File: `lesson_root/_authoring/MANIFEST_VALIDATION.md`
@@ -30,7 +29,7 @@ Core job: write the lesson manifest as structured JSON.
 
 #### Owns
 
-This artifact owns the built learner-facing lesson structure, the chosen route for each step, and the validation proof.
+This output owns the built learner-facing lesson structure, the chosen route for each step, and the validation proof.
 
 #### Standalone Read
 

@@ -6,8 +6,8 @@ Core job: write the section plan to a markdown file.
 
 ### Section Plan Output
 
-- Artifact: Section Plan
-- Main File: `section_root/_authoring/SECTION_PLAN.md`
+- Target: File
+- Path: `section_root/_authoring/SECTION_PLAN.md`
 - Shape: Section Plan Document
 - Requirement: Required
 
@@ -23,7 +23,7 @@ Core job: write the section plan to a markdown file.
 
 #### Owns
 
-This artifact owns the current section plan and the unresolved decisions that still matter.
+This output owns the current section plan and the unresolved decisions that still matter.
 
 #### Standalone Read
 

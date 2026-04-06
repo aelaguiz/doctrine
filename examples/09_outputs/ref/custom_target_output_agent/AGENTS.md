@@ -6,7 +6,6 @@ Core job: leave an owner update on the project tracker.
 
 ### Project Tracker Update
 
-- Artifact: Owner Update
 - Target: Tracker Comment
 - Issue: `CURRENT_ISSUE`
 - Shape: Owner Update Comment
@@ -20,7 +19,7 @@ Core job: leave an owner update on the project tracker.
 
 #### Owns
 
-This artifact owns the owner-change summary and the current source of truth for the next owner.
+This output owns the owner-change summary and the current source of truth for the next owner.
 
 #### Standalone Read
 
