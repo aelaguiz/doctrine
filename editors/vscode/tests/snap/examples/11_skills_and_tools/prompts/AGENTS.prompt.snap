@@ -1,0 +1,334 @@
+># This example sketches top-level `skill` declarations with a small required
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># contract.
+#^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This direction is intentionally skill-first.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Do not treat "tell the agent to run this Python script" as a parallel authoring
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># pattern. That is a hack around the language, not the intended design.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># If a repeated capability matters enough to name, model it as a skill.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># In this direction, every skill must say:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `purpose`: the job it helps with
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># Everything else is optional typed structure layered on top, such as:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `use_when`
+#^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `requires`
+#^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `provides`
+#^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `does_not`
+#^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This file intentionally shows progressive disclosure:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `FindSkills` uses only the required `purpose`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `CopyRewriteSkill` adds one optional field
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `PokerGroundingSkill` shows a fuller optional contract
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - agent-side skill references show `Required`, `Advisory`, and `reason`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># The agent then references skill objects by relationship:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `can_run`
+#^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `discover_with`
+#^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `not_for_this_role`
+#^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This example does not model a separate `runtime_tools` section.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># If the role needs a reusable helper and no skill exists yet, the intended move
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># is to build the skill, not to smuggle a raw script path into agent guidance.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># A skill reference should point directly at the declared skill.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Do not add an extra wrapper key unless it carries real meaning the renderer or
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># compiler actually needs.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># Requirement belongs on the agent-side reference, not on the skill object.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `Required` means the skill must resolve and the turn should fail if the
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#   role cannot use it honestly here.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `Advisory` means use it when needed if it is available; absence alone is
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#   not a turn failure.
+#^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># In rendered `AGENTS.md`, do not print schema-like lines such as
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># `Requirement: Advisory`.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - required references should render as fail-loud role guidance
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - advisory references should just render the skill normally
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>skill FindSkills: "find-skills"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    purpose: "Find the best matching repo skill for the current job."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    purpose: "Ground learner-facing poker wording against current poker truth."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    use_when: "Use When"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    requires: "Requires"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A wording surface or claim that needs poker grounding."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    provides: "Provides"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "The normal repo workflow for grounding poker wording against current poker truth."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A clear route for collecting the receipts this lane needs."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    does_not: "Does Not"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Does not change lesson structure."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Does not establish exact right-move authority."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>skill CopyRewriteSkill: "poker-native-copy"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    use_when: "Use When"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>skill MobileSimSkill: "mobile-sim"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    purpose: "Drive a simulator or device for runtime investigation."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>skill FlutterDevReturnSkill: "flutter-dev-return"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    purpose: "Restore a live Flutter development loop."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    use_when: "Use When"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Use this only when the job is restoring a live Flutter dev loop."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>agent LessonCopywriter:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: turn an approved lesson manifest into grounded learner copy without changing lesson structure or authority scope."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Read the whole lesson before you rewrite isolated strings."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Use grounded poker wording without changing lesson structure or authority scope."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "If no named task skill fits cleanly, discover the right one before you guess."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    skills: "Skills"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        can_run: "Can Run"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            PokerGroundingSkill
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>                requirement: Required
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>            CopyRewriteSkill
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>                requirement: Advisory
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        discover_with: "Discover With"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                      ^ source.pyprompt
+#                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            FindSkills
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>                requirement: Advisory
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        not_for_this_role: "Not For This Role"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            MobileSimSkill
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>                reason: "This role is baseline copy work, not simulator or device investigation."
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>            FlutterDevReturnSkill
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>                reason: "This role is baseline copy work, not Flutter environment repair."
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

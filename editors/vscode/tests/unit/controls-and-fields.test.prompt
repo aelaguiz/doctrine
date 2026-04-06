@@ -1,0 +1,36 @@
+# SYNTAX TEST "source.pyprompt" "controls, fields, keys, and routes"
+
+    role: "Role"
+#   ^^^^ keyword.other.field.pyprompt
+#       ^ punctuation.separator.key-value.pyprompt
+
+        use opening: shared.workflow.Opening
+#       ^^^ keyword.control.pyprompt
+#           ^ entity.name.section.pyprompt
+#                  ^ punctuation.separator.key-value.pyprompt
+#                    ^ support.type.reference.pyprompt
+
+        inherit preparation
+#       ^^^^^^^ keyword.control.pyprompt
+#               ^ support.type.reference.pyprompt
+
+        override delivery: RevisedDelivery
+#       ^^^^^^^^ keyword.control.pyprompt
+#                ^ entity.name.section.pyprompt
+#                        ^ punctuation.separator.key-value.pyprompt
+#                          ^ support.type.reference.pyprompt
+
+            route "If accepted" -> ProjectLead
+#           ^^^^^ keyword.control.pyprompt
+#                                ^ keyword.operator.route.pyprompt
+#                                   ^ support.type.reference.pyprompt
+
+    your_job: roles.project_lead.ProjectLeadJob
+#   ^^^^^^^^ entity.name.section.pyprompt
+#           ^ punctuation.separator.key-value.pyprompt
+#             ^ support.type.reference.pyprompt
+
+        produced_output: "Produced Output"
+#       ^ entity.name.section.pyprompt
+#                      ^ punctuation.separator.key-value.pyprompt
+#                        ^ string.quoted.double.pyprompt

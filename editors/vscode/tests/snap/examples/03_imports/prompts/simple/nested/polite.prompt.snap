@@ -1,0 +1,11 @@
+>workflow PoliteGreeting: "Polite Greeting"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Say hello politely and keep the tone warm."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

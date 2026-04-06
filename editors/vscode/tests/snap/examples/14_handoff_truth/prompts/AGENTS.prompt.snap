@@ -1,0 +1,203 @@
+># This example keeps the same handoff-truth idea but uses the `03_imports`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># pattern so the source reads by concern instead of as one long file.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `contracts.inputs` holds the turn inputs
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `contracts.outputs` holds the produced contracts
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `roles.*` holds the role-local job text
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This still does not add a new primitive.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># It is the same example, just split into files that are easier to scan.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>import contracts.inputs
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import contracts.outputs
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import roles.project_lead
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import roles.acceptance_critic
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import roles.section_author
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent ProjectLead:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: take the issue back when the route is unclear or the current brief is missing."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: roles.project_lead.ProjectLeadJob
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent AcceptanceCritic:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: review the exact current dossier and validation record named in the handoff."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: roles.acceptance_critic.AcceptanceCriticJob
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent SectionAuthor:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: turn the current brief into the current dossier, leave one honest handoff, and route the same issue truthfully."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: roles.section_author.SectionAuthorJob
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    inputs: "Inputs"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        contracts.inputs.CurrentIssuePlan
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        contracts.inputs.SectionBrief
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        contracts.inputs.PriorReviewNotes
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    outputs: "Outputs"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        contracts.outputs.SectionDossierOutput
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        contracts.outputs.SectionAuthorHandoff
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    outcome: "Section Author Outcome"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        produces: "This Role Produces"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "One current dossier."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "One current validation record."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "One honest handoff comment."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        next_owner_if_ready: "Next Owner If Ready"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            route "If the dossier is ready for review" -> AcceptanceCritic
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt
+#                                                       ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                         ^ source.pyprompt
+#                                                          ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        if_the_work_is_not_ready: "If The Work Is Not Ready"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                 ^ source.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            route "If the route is unclear or the current brief is missing" -> ProjectLead
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                           ^ source.pyprompt
+#                                                                            ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                                              ^ source.pyprompt
+#                                                                               ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        stop_here_if: "Stop Here If"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Stop when the handoff comment names the exact files to use now and the next owner is clear."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        stop_rule: "Hard Stop Rule"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "If the current brief is missing, stop and escalate."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Do not point the next owner at stale notes, old copies, or a folder name instead of exact files."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

@@ -1,0 +1,419 @@
+># This example sketches an agent-local `outcome` section.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># `output` says what the agent emits.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># `outcome` says what the turn resolved:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - what decision the role produced
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - who owns next if the work is accepted
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - what happens if the work is not ready
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - when the turn is complete
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - when to stop and escalate instead of guessing
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This example stays intentionally narrow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># It takes the repeated reviewer pattern from `99` and earns only:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - a separate accepted path and not-ready path
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - explicit routes with `route "..." -> AgentName`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - a soft completion condition in `stop_here_if`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - a hard failure rule in `stop_rule`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># It does not try to model packets, proof files, or a full critic DSL.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>input CurrentIssuePlan: "Current Issue Plan"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    source: Prompt
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    shape: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    "Use the current issue plan to understand the intended lane order."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>input SectionDossier: "Section Dossier"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt support.type.reference.pyprompt
+>        path: "section_root/_authoring/SECTION_DOSSIER.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    "Review the current dossier before issuing a verdict."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>output shape ReviewVerdictText: "Review Verdict Text"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                               ^ source.pyprompt
+#                                ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    kind: PlainText
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>output ReviewVerdictResponse: "Review Verdict Response"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                             ^ source.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    target: TurnResponse
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    shape: ReviewVerdictText
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    must_include: "Must Include"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        verdict: "Verdict"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "State `accept` or `changes requested` explicitly."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        next_owner: "Next Owner"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Name the honest next owner."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        reason: "Reason"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Give the short reason for the verdict and route."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A downstream reader should be able to read this response alone and understand the verdict and reroute."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    example: "Example"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- verdict: changes requested"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- next owner: SectionAuthor"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- reason: the dossier does not make the scope boundary explicit yet"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>agent ProjectLead:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: take the issue back when routing is unclear and keep the same-issue route honest."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Take the issue back when the right owner is unclear."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Repair the route honestly."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>agent SectionAuthor:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: revise the section dossier when review sends the work back."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Revise the dossier when review requests changes."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>agent WritingSpecialist:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: continue the next normal lane after the review is accepted."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Take the issue only after the review is accepted."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Continue the next normal lane."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>agent AcceptanceReviewer:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: review the current section dossier, return an explicit verdict, and route it honestly."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Review the section dossier against the current issue plan."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Return one explicit verdict."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Route the issue to the honest next owner."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Stop and escalate instead of guessing when required review inputs are missing."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    inputs: "Inputs"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        CurrentIssuePlan
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        SectionDossier
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    outputs: "Outputs"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        ReviewVerdictResponse
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    outcome: "Acceptance Review Outcome"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        produces: "This Role Produces"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "One explicit `accept` or `changes requested` verdict."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "One honest next owner on the same issue."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        next_owner_if_accepted: "Next Owner If Accepted"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                               ^ source.pyprompt
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            route "If accepted" -> WritingSpecialist
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                               ^ source.pyprompt
+#                                ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                  ^ source.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        if_the_work_is_not_ready: "If The Work Is Not Ready"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                 ^ source.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            route "If changes are required" -> SectionAuthor
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt
+#                                            ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                              ^ source.pyprompt
+#                                               ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>            route "If the right owner is unclear" -> ProjectLead
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt
+#                                                  ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                    ^ source.pyprompt
+#                                                     ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        stop_here_if: "Stop Here If"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Stop when the verdict is explicit and the next owner is clear."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        stop_rule: "Hard Stop Rule"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "If the required dossier file is missing, stop and escalate."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Do not guess from stale notes or old packet copies."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

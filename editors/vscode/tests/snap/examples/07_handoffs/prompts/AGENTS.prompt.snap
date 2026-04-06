@@ -1,0 +1,484 @@
+># Draft handoff example for next-owner routing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># This example stays aligned with `05_workflow_merge`:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - inherited named structure uses explicit patching
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `inherit key` keeps inherited content in place
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `override key:` replaces inherited content in place
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - agent-level named slots follow the same explicit patching rule
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This example is intentionally narrower than the earlier draft:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - no critic lane
+#^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - no review-specific routing
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - no routing DSL keywords like `review`, `when_ready`, or `on_reject`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - the arrow is preserved, but only inside an explicit `route` statement
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># This example still follows the `06_nested_workflows` rule:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - simple local workflow structure can stay inline
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - nested, reusable, or inherited structure should live in named workflows
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - agent inheritance should carry named section slots, not anonymous deep trees
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>workflow ReadFirst: "Read First"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Read Your Job first. Then read Workflow Core."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow ProjectLeadReadFirst[ReadFirst]: "Read First"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                              ^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                       ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                         ^ source.pyprompt
+#                                          ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Start by reading Your Job."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Then read Workflow Core."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow SameIssueWorkflowCoreBase: "Workflow Core"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                   ^ source.pyprompt
+#                                    ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    same_issue_workflow: "Same-Issue Workflow"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Keep the work on the same issue."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Do only this lane's job."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Route to the next owner only when the current lane is honestly ready."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "If the work is blocked or the route is unclear, return it to Project Lead."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    owner_change_comment: "Owner Change Comment"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Every owner-change comment should say:"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- what changed"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- what the next owner should use now"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- the next owner when ownership is changing now"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow ResearchSpecialistWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                       ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                                        ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                                 ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                                                   ^ source.pyprompt
+#                                                                    ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    inherit same_issue_workflow
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    next_owner: "Next Owner"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        route "When ready" -> WritingSpecialist
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                          ^ source.pyprompt
+#                           ^^ source.pyprompt keyword.operator.route.pyprompt
+#                             ^ source.pyprompt
+#                              ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        route "If blocked or the route is unclear" -> ProjectLead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt
+#                                                   ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                     ^ source.pyprompt
+#                                                      ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    inherit owner_change_comment
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow WritingSpecialistWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                      ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                                       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                                ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                                                  ^ source.pyprompt
+#                                                                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    inherit same_issue_workflow
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    next_owner: "Next Owner"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        route "When ready" -> ProjectLead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                          ^ source.pyprompt
+#                           ^^ source.pyprompt keyword.operator.route.pyprompt
+#                             ^ source.pyprompt
+#                              ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        route "If blocked or the route is unclear" -> ProjectLead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt
+#                                                   ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                     ^ source.pyprompt
+#                                                      ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    inherit owner_change_comment
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow ProjectLeadWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                          ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                                            ^ source.pyprompt
+#                                                             ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "This file is the runtime guide for a simple multi-agent routing pattern."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    override same_issue_workflow:
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>        "Keep the whole job on one issue from setup through final return."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Keep one owner at a time on that issue."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "The normal order is Project Lead -> Research Specialist -> Writing Specialist -> Project Lead."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Route the first owner change to Research Specialist."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "After Research Specialist, the next owner is Writing Specialist."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "After Writing Specialist, the next owner is Project Lead."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "If the route is broken or the work is blocked before specialist work begins, keep or return the work to Project Lead."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    next_owner: "Next Owner"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        route "When ready to start the work" -> ResearchSpecialist
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                            ^ source.pyprompt
+#                                             ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                               ^ source.pyprompt
+#                                                ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        route "If the route is broken or the work is blocked before specialist work begins" -> ProjectLead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                           ^ source.pyprompt
+#                                                                                            ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                                                              ^ source.pyprompt
+#                                                                                               ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    override owner_change_comment:
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>        "Every owner-change comment should say:"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- what this turn changed"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- the next owner when ownership is changing now"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- the exact blocker when the issue is blocked"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow ProjectLeadJob: "Your Job"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Start the issue with a clear route."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Route the first owner change."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Keep the issue on a truthful route when work is blocked or routing goes stale."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Take the issue back after the final specialist return and close it out honestly."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow ResearchSpecialistJob: "Your Job"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                               ^ source.pyprompt
+#                                ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Take the work only when Project Lead routes it to you."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Do the research lane's work."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Keep the work ready for the next lane."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Do not route the work anywhere except Writing Specialist or Project Lead."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>workflow WritingSpecialistJob: "Your Job"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Take the work only when Research Specialist hands it to you."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Do the writing lane's work."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Keep the work within the scope already set upstream."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Route the work back to Project Lead when the lane is complete or blocked."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>abstract agent SameIssueRole:
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    read_first: ReadFirst
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+># Agent-level authored workflow slots stay explicit.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `inherit read_first` keeps the inherited slot unchanged
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `override read_first: ...` replaces the inherited slot
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - new slots such as `workflow_core` and `your_job` are introduced directly
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent ProjectLead[SameIssueRole]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                  ^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                               ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: ProjectLeadJob
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    override read_first: ProjectLeadReadFirst
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    workflow_core: ProjectLeadWorkflowCore
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent ResearchSpecialist[SameIssueRole]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                         ^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                      ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: do the research lane's work and route it to Writing Specialist."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: ResearchSpecialistJob
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    inherit read_first
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    workflow_core: ResearchSpecialistWorkflowCore
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent WritingSpecialist[SameIssueRole]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                        ^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                     ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: do the writing lane's work and route it back to Project Lead."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    your_job: WritingSpecialistJob
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    inherit read_first
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    workflow_core: WritingSpecialistWorkflowCore
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

@@ -1,0 +1,38 @@
+>import .opening
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import .closing
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow AbsoluteBriefing: "Absolute Briefing"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "This file composes sibling imports through dotted package paths."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    use opening: chains.absolute.opening.Opening
+#^^^^ source.pyprompt
+#    ^^^ source.pyprompt keyword.control.pyprompt
+#       ^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    use closing: chains.absolute.closing.Closing
+#^^^^ source.pyprompt
+#    ^^^ source.pyprompt keyword.control.pyprompt
+#       ^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

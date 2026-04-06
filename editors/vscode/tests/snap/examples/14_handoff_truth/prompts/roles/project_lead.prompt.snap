@@ -1,0 +1,14 @@
+>workflow ProjectLeadJob: "Your Job"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Repair the route honestly."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Restore the missing current input before rerouting the work."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

@@ -1,0 +1,285 @@
+># This base is abstract because concrete leaf agents inherit from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>abstract agent BaseBriefingAgent:
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the base briefing agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    workflow: "Briefing"
+#^^^^^^^^^^^^^^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Deliver the briefing in the base order."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Keep the framing brief and direct."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        opening: "Opening"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "State the topic."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        main_point: "Main Point"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Give the original main point."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        supporting_point: "Supporting Point"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Add one supporting detail."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        closing: "Closing"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Wrap up the briefing."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+># Inherited workflows are always explicit and exhaustive.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Concrete leaf agents inherit from this abstract base.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># A child must account for every inherited section exactly once.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `inherit key` keeps the inherited section and places it exactly here
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `override key:` replaces the inherited section and keeps the inherited title
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `override key: "New Title"` replaces the inherited section and its title
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `key: "Title"` creates a new section exactly where it is written
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># There is no implicit merge or append behavior.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent OrderedBriefingAgent[BaseBriefingAgent]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                          ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                           ^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                            ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the ordered briefing agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    workflow: "Ordered Briefing"
+#^^^^^^^^^^^^^^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Deliver the revised briefing in the explicit order below."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "This child places inherited, overridden, and new sections on purpose."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        inherit opening
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        context_note: "Context Note"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Add the missing context before the main point."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        override main_point:
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>            "Give the revised main point."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        inherit supporting_point
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit closing
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        follow_up: "Follow Up"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Invite one follow-up question."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+># This child demonstrates a valid title override on an inherited section.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># The key identity stays the same, but the rendered section title changes.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent RetitledBriefingAgent[BaseBriefingAgent]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                            ^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                             ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the retitled briefing agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    workflow: "Revised Briefing"
+#^^^^^^^^^^^^^^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Deliver the revised briefing below."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "This child keeps the structure but changes one section title on purpose."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        inherit opening
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        override main_point: "Revised Main Point"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Give the revised main point."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        inherit supporting_point
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit closing
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+># This child demonstrates the compiler error rule for `override`.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># It is still a concrete leaf agent, so it would render if compilation succeeded.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># The inherited order is still accounted for explicitly.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># `override key:` only works when the parent already defines that key.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># If the intent is to add something new, drop `override` and define a new key with a title.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent InvalidOverrideBriefingAgent[BaseBriefingAgent]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                  ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                    ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the invalid override briefing agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    workflow: "Briefing"
+#^^^^^^^^^^^^^^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "This example should fail before rendering."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        inherit opening
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        override context_note: "Context Note"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Add the missing context before the main point."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        override main_point: "Overridden Main Point Title"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Give the revised main point."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        inherit supporting_point
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit closing
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

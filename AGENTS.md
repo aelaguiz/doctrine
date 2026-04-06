@@ -5,8 +5,8 @@
 - Sync the repo environment with `uv sync`.
 - Run the full active corpus with `make verify-examples`.
 - For a targeted manifest run, use `uv run --locked python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`.
-- Today, `make verify-examples` discovers active manifests for `examples/01_hello_world` through `examples/06_nested_workflows`.
-- Later example directories are still design pressure until they gain adjacent `cases.toml` coverage and the shipped compiler path can prove them.
+- Today, `make verify-examples` discovers active manifests for `examples/01_hello_world` through `examples/14_handoff_truth`.
+- `examples/99_not_clean_but_useful/` is still design pressure only and is not part of the shipped verification surface.
 - If a dependency is missing or a check could not run, say that plainly.
 
 ## Shipped Truth
@@ -23,14 +23,14 @@
 
 ## Current Bootstrap Scope
 
-- The current shipped parser/compiler covers examples `01` through `06`.
+- The current shipped parser/compiler covers examples `01` through `14` in this worktree.
 - It supports:
-  - top-level `agent`, `abstract agent`, `workflow`, and `import`
+  - top-level `agent`, `abstract agent`, `workflow`, `import`, `input source`, `input`, `output target`, `output shape`, `output`, `json schema`, and `skill`
   - `role` as either scalar opening text or a titled block with lines
-  - keyed local workflow sections, keyed `use` composition, and explicit `inherit` / `override`
-  - named workflow reuse and named workflow inheritance
+  - keyed local workflow sections, authored agent slots, keyed `use` composition, explicit `inherit` / `override`, and `route "..." -> Target` statements
+  - named workflow reuse, named workflow inheritance, dotted references, and typed `inputs` / `outputs` / `outcome` / `skills` fields
   - indentation-sensitive blocks and standalone `#` comment lines
-- Do not claim `07+` features are implemented just because they exist under `examples/`.
+- Do not claim anything outside the manifest-backed `01` through `14` corpus is implemented just because it appears under `examples/`.
 
 ## Examples
 

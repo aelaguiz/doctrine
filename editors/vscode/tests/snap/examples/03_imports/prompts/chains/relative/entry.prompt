@@ -1,0 +1,9 @@
+import .leaf
+import ..shared.wrap_up
+
+
+workflow RelativeChain: "Relative Chain"
+    "This file chains a sibling-relative import with a parent-relative import."
+
+    use leaf_step: chains.relative.leaf.LeafStep
+    use shared_wrap_up: chains.shared.wrap_up.SharedWrapUp

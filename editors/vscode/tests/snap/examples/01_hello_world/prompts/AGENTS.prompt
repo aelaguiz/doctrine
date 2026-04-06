@@ -1,0 +1,14 @@
+agent HelloWorld:
+    # When there is no body beneath the key: heading it renders as plain text
+    role: "You are the hello world agent."
+
+    workflow: "Instruction"
+        "Say hello world."
+
+agent HelloWorld2:
+    # This renders a "Role" markdown heading
+    role: "Role"
+        "You are the hello world agent."
+
+    workflow: "Instruction"
+        "Say hello world."

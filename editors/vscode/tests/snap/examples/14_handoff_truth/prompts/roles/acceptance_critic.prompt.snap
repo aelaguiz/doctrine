@@ -1,0 +1,14 @@
+>workflow AcceptanceCriticJob: "Your Job"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                             ^ source.pyprompt
+#                              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Read the exact files named in the handoff."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    "Review only the current dossier and validation record for this turn."
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

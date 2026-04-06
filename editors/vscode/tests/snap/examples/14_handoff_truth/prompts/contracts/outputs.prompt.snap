@@ -1,0 +1,242 @@
+>output target IssueComment: "Issue Comment"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                           ^ source.pyprompt
+#                            ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    required: "Required Target Keys"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        issue: "Issue"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>output shape HandoffCommentText: "Handoff Comment Text"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                ^ source.pyprompt
+#                                 ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    kind: CommentText
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>output SectionDossierOutput: "Section Dossier Output"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    files: "Files"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        current_dossier: "Current Dossier"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            path: "section_root/_authoring/SECTION_DOSSIER.md"
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            shape: MarkdownDocument
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        validation_record: "Validation Record"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            path: "section_root/_authoring/DOSSIER_VALIDATION.md"
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            shape: MarkdownDocument
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    must_include: "Must Include"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        current_dossier: "Current Dossier"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "SECTION_DOSSIER.md must reflect the current section proposal for this turn."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        validation_record: "Validation Record"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "DOSSIER_VALIDATION.md must say what checks ran, what passed or failed, or what did not run yet."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A downstream reader should be able to read SECTION_DOSSIER.md and DOSSIER_VALIDATION.md and understand the current proposal and its validation basis."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>output SectionAuthorHandoff: "Section Author Handoff"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    target: IssueComment
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        issue: "CURRENT_ISSUE"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: HandoffCommentText
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    must_include: "Must Include"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        what_changed: "What Changed"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Say what changed in this turn."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        use_now: "Use Now"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Name the exact current files the next owner should read now."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        review_files: "Review Files"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Either name the current review files explicitly or say plainly that no current review files apply yet."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        next_owner: "Next Owner"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Name the honest next owner."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A downstream reader should be able to read this comment alone and understand what changed, which files are current now, whether review files apply, and who owns next."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    example: "Example"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- changed: rewrote the dossier scope and added the validation record"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- use now: SECTION_DOSSIER.md and DOSSIER_VALIDATION.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- review files: no current review files apply yet"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- next owner: AcceptanceCritic"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

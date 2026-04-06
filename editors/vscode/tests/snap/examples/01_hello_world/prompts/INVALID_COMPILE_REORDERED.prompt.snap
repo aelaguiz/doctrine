@@ -1,0 +1,19 @@
+>agent ReorderedFields:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    workflow: "Instruction"
+#^^^^^^^^^^^^^^ source.pyprompt
+#              ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "This fixture should fail during compile."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    role: "You are a broken agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>

@@ -1,0 +1,118 @@
+># This example now pressure-tests Python-like import resolution for prompt files.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `import package.module` resolves from this example's `prompts/` root
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `import .sibling.module` resolves from the current file's package
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `import ..shared.module` walks to the parent package first
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - any number of leading dots is allowed; the import walks up one package
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#   level fewer than the dot count before following the remaining module path
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - imported declarations are composed through keyed `use` entries:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#   `use local_key: package.module.WorkflowName`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - the local key is the outer composition identity if a later phase needs to
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#   patch, reorder, or replace this composed piece
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># The first three imports are intentionally simple.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># The later imports are intentionally more complex transitive chains.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>import simple.greeting
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import simple.object
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import simple.nested.polite
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import chains.absolute.briefing
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import chains.relative.entry
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import chains.deep.levels.one.two.entry
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent ImportsDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the imports demonstration agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    workflow: "Imported Steps"
+#^^^^^^^^^^^^^^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Follow the imported instructions below."
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>        use greeting: simple.greeting.Greeting
+#^^^^^^^^ source.pyprompt
+#        ^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        use object: simple.object.Object
+#^^^^^^^^ source.pyprompt
+#        ^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        use polite_greeting: simple.nested.polite.PoliteGreeting
+#^^^^^^^^ source.pyprompt
+#        ^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        use absolute_briefing: chains.absolute.briefing.AbsoluteBriefing
+#^^^^^^^^ source.pyprompt
+#        ^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        use relative_chain: chains.relative.entry.RelativeChain
+#^^^^^^^^ source.pyprompt
+#        ^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                           ^ source.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        use deep_relative_chain: chains.deep.levels.one.two.entry.DeepRelativeChain
+#^^^^^^^^ source.pyprompt
+#        ^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                ^ source.pyprompt
+#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

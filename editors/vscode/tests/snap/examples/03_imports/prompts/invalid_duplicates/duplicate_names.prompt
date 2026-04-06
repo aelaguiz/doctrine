@@ -1,0 +1,6 @@
+workflow DuplicateGreeting: "Duplicate Greeting"
+    "Say hello once."
+
+
+workflow DuplicateGreeting: "Duplicate Greeting Again"
+    "Say hello twice."

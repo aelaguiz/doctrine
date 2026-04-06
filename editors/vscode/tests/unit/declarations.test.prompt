@@ -1,0 +1,39 @@
+# SYNTAX TEST "source.pyprompt" "declarations and references"
+
+import ..shared.workflow
+# <----- keyword.declaration.pyprompt
+#        ^ support.type.reference.pyprompt
+
+workflow ReviewFlow[BaseFlow]: "Workflow"
+# <------- keyword.declaration.pyprompt
+#         ^ entity.name.type.pyprompt
+#                    ^ entity.other.inherited-class.pyprompt
+
+input source FigmaDocument: "Figma Document"
+# <---- keyword.declaration.pyprompt
+#      ^ keyword.declaration.pyprompt
+#             ^ entity.name.type.pyprompt
+
+output target TrackerComment: "Tracker Comment"
+# <----- keyword.declaration.pyprompt
+#       ^ keyword.declaration.pyprompt
+#              ^ entity.name.type.pyprompt
+
+json schema LessonManifestSchema: "Lesson Manifest Schema"
+# <--- keyword.declaration.pyprompt
+#     ^ keyword.declaration.pyprompt
+#            ^ entity.name.type.pyprompt
+
+abstract agent BaseRole:
+# <------ keyword.declaration.pyprompt
+#        ^ keyword.declaration.pyprompt
+#              ^ entity.name.type.pyprompt
+
+agent Reviewer[BaseRole]:
+# <---- keyword.declaration.pyprompt
+#      ^ entity.name.type.pyprompt
+#               ^ entity.other.inherited-class.pyprompt
+
+skill CopyRewriteSkill: "copy-rewrite"
+# <---- keyword.declaration.pyprompt
+#      ^ entity.name.type.pyprompt
