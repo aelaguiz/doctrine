@@ -220,6 +220,74 @@ Current requirement:
 - authors should be able to distinguish "the agent says this back in the turn"
   from "the agent writes a file" or "the agent leaves a tracker comment"
 
+## Output Target Should Be Typed And Extensible
+
+Like input source, output destination should not stay a loose descriptive
+string forever.
+
+Current intuition:
+- output target should come from a typed built-in but extensible set of target
+  kinds
+- the built-in set should stay small and standard
+- custom workflow-specific targets should be declarable without changing the
+  core language
+
+Examples we already expect as built-ins:
+- `TurnResponse`
+- `File`
+
+Example of a likely custom target:
+- `TrackerComment`
+
+Current requirement:
+- target selection should be validated as a known built-in or declared custom
+  target kind
+- workflow-specific destinations should not have to become built-ins just to be
+  expressible
+- built-ins should cover common generic destinations, not every product or
+  workflow convention
+
+## Common Output Fields Versus Target-Specific Fields
+
+Like inputs, outputs seem to need two layers:
+- common output fields that every output can use
+- target-specific fields that only make sense for certain targets
+
+Examples:
+- common fields: target, shape, requirement
+- `File`-specific field: `path`
+- `TrackerComment`-specific field: `issue`
+
+Current requirement:
+- the language should separate the stable common output contract from
+  target-specific configuration
+- target-specific required keys should be defined by the selected target kind
+- the model should allow different targets to require different keys without
+  polluting every output with every possible field
+
+## Output Shape Needs A Richer Contract Surface
+
+Outputs often need more authored structure than inputs.
+
+Current intuition:
+- an output may need not just a type label but an explanation of what it is for
+- an output may need structural guidance, examples, or schema
+- output shape should be reusable across different targets when the content
+  contract is the same
+
+Examples:
+- a plain-text turn response may need a short purpose and expected structure
+- a Markdown file may need a purpose, expected sections, and an example
+- a JSON output may need schema plus explanatory notes
+
+Current requirement:
+- output shape should be able to carry richer authored contract material than a
+  short type label alone
+- the model should let us attach explanations, expected structure, examples, and
+  schema when needed
+- target and shape should remain separate so "what it looks like" is distinct
+  from "where it goes"
+
 ### 6. Output Modalities Must Be Distinct
 
 Like inputs, outputs are not one thing.
@@ -294,8 +362,11 @@ The next questions to answer are probably:
 5. How much contract strength do we need before full schema becomes necessary?
 6. What are the minimum output modalities we need to name explicitly?
 7. Should outputs be single or multiple per turn?
-8. How should output shape differ from output destination?
-9. How much of this belongs on the agent declaration versus inside a reusable
+8. What are the minimum built-in output targets we actually want to ship?
+9. How should custom output targets be declared?
+10. How should output shape differ from output destination?
+11. How much richer than input shape should the output contract surface be?
+12. How much of this belongs on the agent declaration versus inside a reusable
    named declaration?
 
 ## What This Document Is Not Deciding Yet

@@ -1,0 +1,155 @@
+# This example sketches `output`, `output target`, and `output shape` as
+# first-class declarations.
+# Each output separates:
+# - `target`: where the output goes
+# - `shape`: what kind of thing it is
+# - `requirement`: whether the turn must produce it
+#
+# Built-in targets in this sketch:
+# - `TurnResponse`
+# - `File` (requires `path`)
+#
+# A custom output target can define its own required and optional keys.
+# Output shapes can carry richer authored contracts than inputs, including
+# purpose, expected structure, examples, and schema.
+
+output shape IssueSummaryText: "Issue Summary Text"
+    kind: PlainText
+
+    purpose: "Purpose"
+        "Give a short human-readable summary back in the turn."
+
+    structure: "Expected Structure"
+        "State the issue in one or two sentences."
+        "End with the main blocker or next step if one matters."
+
+
+output shape SectionPlanDocument: "Section Plan Document"
+    kind: MarkdownDocument
+
+    purpose: "Purpose"
+        "Write the current section plan to a markdown file."
+
+    structure: "Expected Structure"
+        "Start with a short summary."
+        "Then list the planned sections."
+        "Then list unresolved risks or decisions."
+
+    example: "Example"
+        "# Section Plan"
+        "## Summary"
+        "..."
+
+
+output shape LessonManifestJson: "Lesson Manifest JSON"
+    kind: JsonObject
+
+    purpose: "Purpose"
+        "Write a machine-readable lesson manifest."
+
+    schema: "JSON Schema"
+        "{"
+        "  \"title\": \"string\","
+        "  \"steps\": [\"string\"]"
+        "}"
+
+    explanation: "Field Notes"
+        "`title` is the learner-facing title."
+        "`steps` is the ordered list of step identifiers."
+
+    example: "Example"
+        "{"
+        "  \"title\": \"Intro To Pot Odds\","
+        "  \"steps\": [\"intro\", \"quiz\", \"review\"]"
+        "}"
+
+
+output shape OwnerUpdateComment: "Owner Update Comment"
+    kind: CommentText
+
+    purpose: "Purpose"
+        "Tell the next owner what changed and what to use now."
+
+    structure: "Expected Structure"
+        "Say what changed."
+        "Name the current source of truth."
+        "Name the next owner."
+
+
+output IssueSummaryResponse: "Issue Summary Response"
+    target: TurnResponse
+    shape: IssueSummaryText
+    requirement: Required
+
+
+output SectionPlanFile: "Section Plan File"
+    target: File
+        path: "section_root/_authoring/SECTION_PLAN.md"
+    shape: SectionPlanDocument
+    requirement: Required
+
+
+output LessonManifestFile: "Lesson Manifest File"
+    target: File
+        path: "lesson_root/_authoring/lesson_manifest.json"
+    shape: LessonManifestJson
+    requirement: Required
+
+
+# A custom target can define its own target-specific keys.
+# This keeps the built-in set small while still letting projects define
+# destinations like tracker comments.
+output target TrackerComment: "Tracker Comment"
+    required: "Required Target Keys"
+        issue: "Issue"
+
+
+output ProjectTrackerUpdate: "Project Tracker Update"
+    target: TrackerComment
+        issue: "CURRENT_ISSUE"
+    shape: OwnerUpdateComment
+    requirement: Required
+
+
+# Model 1: a built-in turn response target.
+agent TurnResponseOutputAgent:
+    role: "Core job: return a short issue summary in the turn response."
+
+    outputs: "Outputs"
+        IssueSummaryResponse
+
+    your_job: "Your Job"
+        "Return the issue summary in the turn response."
+
+
+# Model 2: a built-in file target with a markdown document shape.
+agent FileOutputAgent:
+    role: "Core job: write the section plan to a markdown file."
+
+    outputs: "Outputs"
+        SectionPlanFile
+
+    your_job: "Your Job"
+        "Write the section plan to the required file."
+
+
+# Model 3: a built-in file target with a stricter JSON output shape.
+agent JsonFileOutputAgent:
+    role: "Core job: write the lesson manifest as structured JSON."
+
+    outputs: "Outputs"
+        LessonManifestFile
+
+    your_job: "Your Job"
+        "Write the lesson manifest JSON to the required file."
+
+
+# Model 4: a custom output target with target-specific configuration.
+agent CustomTargetOutputAgent:
+    role: "Core job: leave an owner update on the project tracker."
+
+    outputs: "Outputs"
+        ProjectTrackerUpdate
+
+    your_job: "Your Job"
+        "Write the owner update using the custom tracker comment target."
