@@ -36,7 +36,10 @@ Current intent:
 - `role` is not hidden metadata. It is output-facing text.
 - `role` currently opens the rendered document directly.
 - The rendered output should read naturally, not look like a debug dump of the source tree.
-- output file-name mapping for rendered agents is a future concern, not a locked rule yet
+- compiled agent-doc emission is now a separate build concern configured outside
+  the prompt language rather than part of `output`
+- explicit build targets emit concrete root agents to canonical
+  `module/agent/AGENTS.md` paths
 - the first shipped bootstrap supports both current `role` shapes from `01_hello_world`:
   - scalar `role: "..."` as opening prose
   - titled `role: "Title"` with indented lines as a rendered section
@@ -286,6 +289,9 @@ Current shipped boundaries:
   surface
 - `14_handoff_truth` is satisfied through imports plus existing primitives, not
   through a new freshness or packet primitive
+- package build emission is configured separately from turn-level `output`
+  contracts and currently emits only compiled `AGENTS.md` trees for explicit
+  entrypoints
 
 ## Top-Level Buckets From 99
 

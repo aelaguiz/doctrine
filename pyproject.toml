@@ -17,3 +17,15 @@ packages = ["pyprompt"]
 
 [tool.setuptools.package-data]
 pyprompt = ["grammars/*.lark"]
+
+[tool.pyprompt.emit]
+
+[[tool.pyprompt.emit.targets]]
+name = "example_07_handoffs"
+entrypoint = "examples/07_handoffs/prompts/AGENTS.prompt"
+output_dir = "examples/07_handoffs/build"
+
+[[tool.pyprompt.emit.targets]]
+name = "example_14_handoff_truth"
+entrypoint = "examples/14_handoff_truth/prompts/AGENTS.prompt"
+output_dir = "examples/14_handoff_truth/build"

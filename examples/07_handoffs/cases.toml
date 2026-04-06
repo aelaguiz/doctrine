@@ -48,3 +48,9 @@ expected_lines = [
   "- the next owner when ownership is changing now",
   "- the exact blocker when the issue is blocked",
 ]
+
+[[cases]]
+name = "handoff routing builds the canonical agent-doc tree"
+status = "active"
+kind = "build_contract"
+build_target = "example_07_handoffs"

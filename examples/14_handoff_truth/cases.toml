@@ -135,3 +135,9 @@ expected_lines = [
   "If the current brief is missing, stop and escalate.",
   "Do not point the next owner at stale notes, old copies, or a folder name instead of exact files.",
 ]
+
+[[cases]]
+name = "split-by-concern imports build the canonical agent-doc tree"
+status = "active"
+kind = "build_contract"
+build_target = "example_14_handoff_truth"

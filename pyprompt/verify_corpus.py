@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 import tomllib
 from dataclasses import dataclass
 from difflib import unified_diff
@@ -9,10 +10,12 @@ from pathlib import Path
 from typing import Any
 
 from pyprompt.compiler import compile_prompt
+from pyprompt.emit_docs import EmitError, emit_target, load_emit_targets
 from pyprompt.parser import parse_file
 from pyprompt.renderer import render_markdown
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+BUILD_CONTRACT_REF_DIR = "build_ref"
 
 
 class ManifestError(RuntimeError):
@@ -33,6 +36,7 @@ class CaseSpec:
     prompt_path: Path
     approx_ref_path: Path | None
     agent: str | None = None
+    build_target: str | None = None
     assertion: str | None = None
     expected_lines: tuple[str, ...] = ()
     exception_type: str | None = None
@@ -126,6 +130,8 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         try:
             if case.kind == "render_contract":
                 active_results.append(_run_render_contract(case, advisory_diffs))
+            elif case.kind == "build_contract":
+                active_results.append(_run_build_contract(case))
             elif case.kind == "parse_fail":
                 active_results.append(_run_parse_fail(case))
             elif case.kind == "compile_fail":
@@ -233,7 +239,7 @@ def _load_case(
     kind = _require_choice(
         raw_case,
         "kind",
-        {"render_contract", "parse_fail", "compile_fail"},
+        {"render_contract", "build_contract", "parse_fail", "compile_fail"},
         case_index=case_index,
     )
 
@@ -276,6 +282,19 @@ def _load_case(
             agent=agent,
             assertion=assertion,
             expected_lines=expected_lines,
+        )
+
+    if kind == "build_contract":
+        build_target = _require_str(raw_case, "build_target", case_index=case_index)
+        return CaseSpec(
+            manifest_path=manifest_path,
+            example_dir=example_dir,
+            name=name,
+            status=status,
+            kind=kind,
+            prompt_path=prompt_path,
+            approx_ref_path=approx_ref_path,
+            build_target=build_target,
         )
 
     exception_type = _require_str(raw_case, "exception_type", case_index=case_index)
@@ -360,6 +379,42 @@ def _run_parse_fail(case: CaseSpec) -> CaseResult:
     raise VerificationError("Expected parse to fail, but it succeeded.")
 
 
+def _run_build_contract(case: CaseSpec) -> CaseResult:
+    try:
+        targets = load_emit_targets(REPO_ROOT / "pyproject.toml")
+        target = targets.get(case.build_target or "")
+        if target is None:
+            raise VerificationError(f"Unknown build target: {case.build_target}")
+    except EmitError as exc:
+        raise VerificationError(str(exc)) from exc
+
+    expected_root = case.example_dir / BUILD_CONTRACT_REF_DIR
+    if not expected_root.is_dir():
+        raise VerificationError(
+            "Checked-in build reference tree does not exist for target "
+            f"{target.name}: {expected_root}"
+        )
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        actual_root = Path(temp_dir)
+        try:
+            emit_target(target, output_dir_override=actual_root)
+        except EmitError as exc:
+            raise VerificationError(str(exc)) from exc
+
+        diff = _build_tree_diff(expected_root=expected_root, actual_root=actual_root)
+        if diff is not None:
+            raise VerificationError(
+                "Emitted build tree did not match the checked-in build contract.\n" + diff
+            )
+
+    return CaseResult(
+        case=case,
+        outcome="PASS",
+        detail="build matched checked-in tree",
+    )
+
+
 def _run_compile_fail(case: CaseSpec) -> CaseResult:
     prompt_file = parse_file(case.prompt_path)
     try:
@@ -424,6 +479,55 @@ def _build_diff(
             tofile=tofile,
         )
     )
+
+
+def _build_tree_diff(*, expected_root: Path, actual_root: Path) -> str | None:
+    expected_files = {
+        path.relative_to(expected_root): path
+        for path in expected_root.rglob("*")
+        if path.is_file()
+    }
+    actual_files = {
+        path.relative_to(actual_root): path
+        for path in actual_root.rglob("*")
+        if path.is_file()
+    }
+
+    lines: list[str] = []
+
+    missing = sorted(expected_files.keys() - actual_files.keys())
+    if missing:
+        lines.append("Missing emitted files:")
+        for rel_path in missing:
+            lines.append(f"- {rel_path.as_posix()}")
+
+    unexpected = sorted(actual_files.keys() - expected_files.keys())
+    if unexpected:
+        if lines:
+            lines.append("")
+        lines.append("Unexpected emitted files:")
+        for rel_path in unexpected:
+            lines.append(f"- {rel_path.as_posix()}")
+
+    common = sorted(expected_files.keys() & actual_files.keys())
+    for rel_path in common:
+        expected_lines = tuple(expected_files[rel_path].read_text().splitlines())
+        actual_lines = tuple(actual_files[rel_path].read_text().splitlines())
+        if expected_lines == actual_lines:
+            continue
+        if lines:
+            lines.append("")
+        rel_label = rel_path.as_posix()
+        lines.append(
+            _build_diff(
+                expected_lines,
+                actual_lines,
+                fromfile=f"expected://{rel_label}",
+                tofile=f"emitted://{rel_label}",
+            ).rstrip("\n")
+        )
+
+    return "\n".join(lines) if lines else None
 
 
 def format_report(report: VerificationReport) -> str:
