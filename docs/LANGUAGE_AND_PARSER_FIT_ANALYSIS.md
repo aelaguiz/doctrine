@@ -58,7 +58,7 @@ That is a very manageable grammar.
 
 The current examples progressively add complexity:
 
-- `01_hello_world`: one declaration, one scalar field, one workflow string
+- `01_hello_world`: one source file, two agents, two current `role` forms, and one titled workflow block per agent
 - `02_sections`: keyed nested workflow entries
 - `03_imports`: top-level reusable workflow declarations plus symbol references
 - `04_inheritance`: single inheritance, scalar override, keyed workflow override, inherited workflow entries, replacement of workflow string preamble
@@ -228,6 +228,12 @@ The sharp edge to watch is indentation tokenization:
 
 - the newline token must include the trailing spaces that determine indentation
 - if comments are legal in indentation-sensitive positions, the newline token must account for them correctly
+
+The first shipped Hello World bootstrap made that comment rule concrete:
+
+- standalone `#` comment lines are easiest to support by folding them into `_NL`
+- using `%ignore SH_COMMENT` alongside `_NL` in `strict=True` mode creates a regex-collision failure instead of a clean bootstrap
+- that is good language feedback, because it pushes the bootstrap toward one clear comment rule instead of parser rescue logic
 
 That is manageable, but it is a real implementation detail, not magic.
 
@@ -530,6 +536,12 @@ If you keep the richer behavior, add syntax or explicit rules for it. Do not lea
 Comment syntax is not glamorous, but indentation-sensitive grammars care about it.
 
 Pick one comment form early and keep it stable.
+
+The first bootstrap already earned a narrow answer:
+
+- standalone `#` comment lines are in
+- they ride through the `_NL` token for the stock `Indenter`
+- free-floating ignored `SH_COMMENT` trivia is not part of the bootstrap contract
 
 ### 6. Reserve keywords early
 

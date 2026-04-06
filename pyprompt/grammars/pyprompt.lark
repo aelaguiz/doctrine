@@ -1,0 +1,30 @@
+%import common.CNAME
+%import common.ESCAPED_STRING
+%import common.SH_COMMENT
+%import common.WS_INLINE
+
+%ignore WS_INLINE
+
+%declare _INDENT _DEDENT
+
+start: prompt_file
+
+prompt_file: _NL* agent+ _NL*
+
+agent: "agent" CNAME ":" _NL _INDENT agent_field+ _DEDENT
+
+?agent_field: role_field | workflow
+
+role_field: "role" ":" string _NL role_body?
+role_body: _INDENT block_lines _DEDENT
+
+workflow: "workflow" ":" string _NL _INDENT block_lines _DEDENT
+
+block_lines: string (_NL string)* _NL?
+
+?string: ESCAPED_STRING
+
+// `_NL` owns newlines, indentation whitespace, and standalone comment lines so
+// the stock Indenter can derive _INDENT/_DEDENT without a side preprocessor.
+// Keeping comment lines here avoids a strict-mode regex collision with `%ignore`.
+_NL: (/\r?\n[\t ]*/ | SH_COMMENT)+

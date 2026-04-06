@@ -37,6 +37,10 @@ Current intent:
 - `role` currently opens the rendered document directly.
 - The rendered output should read naturally, not look like a debug dump of the source tree.
 - output file-name mapping for rendered agents is a future concern, not a locked rule yet
+- the first shipped bootstrap supports both current `role` shapes from `01_hello_world`:
+  - scalar `role: "..."` as opening prose
+  - titled `role: "Title"` with indented lines as a rendered section
+- the first shipped bootstrap subset accepts exactly one `role` followed by exactly one `workflow` per agent
 
 ## Workflow Shape
 
@@ -210,6 +214,8 @@ The current examples are intentionally pushing on these rules so we can validate
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
   path conventions, not separate root-binding declarations.
+- the indentation-sensitive bootstrap grammar supports standalone `#` comment
+  lines through the newline token rather than as separately ignored trivia
 
 ## Pending Decisions
 

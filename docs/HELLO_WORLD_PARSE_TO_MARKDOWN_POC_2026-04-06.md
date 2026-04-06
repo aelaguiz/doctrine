@@ -21,11 +21,11 @@ related:
 
 # TL;DR
 
-- Outcome: Bootstrap the first real PyPrompt language grammar with `Lark`, prove it against the Hello World subset, and make it rerunnable with one simple local command such as `make hello-world`.
-- Problem: The repo has language notes, examples, and a checked-out `Lark` reference tree, but no runnable grammar, no parse/compile loop, and no cheap way to rerun the language contract as examples evolve.
-- Approach: Lock the first grammar to the exact syntax pressure already present in `examples/01_hello_world/prompts/AGENTS.prompt`, author one checked-in `Lark` grammar for it, parse into a minimal typed AST, compile a selected agent into Markdown, and use that loop to surface unresolved spec holes instead of silently inventing semantics.
-- Plan: Ground the first grammar in the current examples and design notes, keep the current `01_hello_world` source file parseable as-authored, wire one runner plus one `make` target, and keep every unsupported construct fail-loud so later examples extend the same grammar rather than replace it.
-- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds.
+- Outcome: Bootstrap the first real PyPrompt language grammar with `Lark`, prove it against the Hello World subset, and use that shipped slice to define the next requirement: a reusable compiler-verification framework rather than a growing pile of one-off example checkers.
+- Problem: The repo had no runnable grammar, no parse/compile loop, and no cheap way to rerun the language contract as examples evolve; now that the first loop exists, the next architecture risk is scaling verification by hard-coding more `hello world`-style checks one example at a time.
+- Approach: Lock the first grammar to the exact syntax pressure already present in `examples/01_hello_world/prompts/AGENTS.prompt`, author one checked-in `Lark` grammar for it, parse into a minimal typed AST, compile a selected agent into Markdown, and treat that bootstrap loop as proof of viability rather than the final compiler-test architecture.
+- Plan: Ground the first grammar in the current examples and design notes, keep the current `01_hello_world` source file parseable as-authored, wire one runner plus one `make` target, keep every unsupported construct fail-loud, and explicitly open the next phase to research and design a reusable compiler test framework before example growth turns verification into a maintenance mess.
+- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds; and the shipped `check_hello_world` path must remain a bootstrap proof, not the long-term pattern for full-compiler verification.
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -42,7 +42,7 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 
 ## 0.1 The claim (falsifiable)
 
-A small `Lark`-based grammar and one repeatable local verification command can parse the agreed Hello World subset of the PyPrompt input language, compile the targeted `HelloWorld` agent into Markdown that reflects the authored prompt semantics, and surface drift or bugs in approximate `AGENTS.md` examples explicitly so later examples can extend the same grammar instead of forcing a parser reset.
+A small `Lark`-based grammar and one repeatable local verification command can parse the agreed Hello World subset of the PyPrompt input language, compile the targeted `HelloWorld` agent into Markdown that reflects the authored prompt semantics, surface drift or bugs in approximate `AGENTS.md` examples explicitly, and force the next compiler stage to converge on a reusable verification framework instead of proliferating one-off hard-coded example checkers.
 
 ## 0.2 In scope
 
@@ -65,6 +65,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - Building one small runner that reads source, parses it, builds a minimal AST, and renders Markdown
 - Wiring one simple local command such as `make hello-world` to run the bootstrap parse/compile/verify loop
 - Using this loop to expose holes in the current example/spec story before extending the grammar to later examples
+- Making a reusable full-compiler verification framework an explicit next-step requirement, so the bootstrap checker does not silently become the testing architecture
 - Preferring stock `Lark` facilities wherever they fit cleanly, including ordinary grammar rules, the built-in indentation machinery when needed, and standard tree/transform tooling
 
 ## 0.3 Out of scope
@@ -80,6 +81,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
   - input and output primitives
 - Settling the full long-term output-file mapping for multi-agent source packages
 - Packaging, release workflows, editor integration, or generalized CLI ergonomics beyond one small local bootstrap command
+- Implementing the generalized compiler test framework in this bootstrap pass; the requirement is in scope now, but its concrete design should be re-cut through external research before more compiler growth lands
 - General agent-field flexibility beyond the exact bootstrap subset, including reordered fields, repeated `role` / `workflow` fields, or additional agent fields
 - Any attempt to model `99_not_clean_but_useful` in this first grammar pass
 - Custom parser sidecars, bespoke recovery layers, or syntax-specific hacks whose main job is to rescue a language shape that does not fit cleanly in `Lark`
@@ -91,6 +93,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - If the rendered output differs from `examples/01_hello_world/ref/AGENTS.md`, the loop reports that diff explicitly as advisory evidence or a likely ref/renderer bug instead of assuming the ref wins
 - Unsupported constructs outside the initial subset fail loudly with a clear parser or compiler error
 - The checked-in grammar and runner structure leave a credible extension path to `02_sections` without replacing the parser front-end or inventing a second syntax model
+- The canonical plan explicitly reserves a next phase for a reusable compiler-verification framework, so future example growth does not default to more hard-coded `check_<example>` entrypoints
 
 ## 0.5 Key invariants (fix immediately if violated)
 
@@ -106,6 +109,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - The renderer never invents visible headings or extra blank-line structure that are not implied by explicit authored titles and source ordering
 - Grammar growth follows the example sequence and design notes; unsupported features fail loudly instead of being guessed
 - If a proposed syntax feature requires non-idiomatic parser hacks, the default response is to change or defer the language feature instead of normalizing the hack
+- Example-specific hard-coded checks may prove the first slice, but they must not become the durable verification architecture for the full compiler
 
 # 1) Key Design Considerations (what matters most)
 
@@ -126,6 +130,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - The checked-out `for_reference_only/lark` tree is available for reference, but it is not itself the product code path.
 - The likely grammar is indentation-sensitive, so parser-mode and indenter choices matter early.
 - The user explicitly wants hard failure when the language shape starts demanding hacks; changing the language is preferred to building parser scaffolding around it.
+- The current `check_hello_world` loop is intentionally narrow and would become a maintenance problem if copied across `02`, `03`, `04`, and beyond.
 
 ## 1.3 Architectural principles (rules we will enforce)
 
@@ -136,6 +141,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - Prefer stock `Lark` grammar/lexer/parser/indenter/transform patterns before any custom wiring.
 - If clean `Lark` usage stops fitting, treat that as language-design feedback first.
 - Later example support extends the same core architecture rather than introducing parallel parsers or ad hoc readers.
+- Compiler verification should converge on one reusable corpus-driven or contract-driven framework, not a sequence of bespoke `check_<example>` scripts.
 
 ## 1.4 Known tradeoffs (explicit)
 
@@ -151,7 +157,7 @@ The repo currently contains:
 
 - language-design notes
 - parser-fit and library research
-- example source pairs for `01` through `09` plus manually built approximate rendered refs
+- example source pairs for `01` through `11` plus manually built approximate rendered refs
 - a checked-out `for_reference_only/lark` tree that can be consulted while designing the first grammar
 
 There is already a canonical planning doc for the Hello World compiler bootstrap, but there is still no runnable grammar or verification path.
@@ -171,6 +177,7 @@ That means the project can keep inventing syntax faster than it can prove the la
 - The first runnable loop should turn example ambiguity into an explicit plan decision or explicit error, not hidden behavior.
 - The bootstrap must stay tight enough that later feature additions extend the grammar rather than replacing it.
 - The verification surface should be cheap enough to rerun every time a new example or language feature is added.
+- The verification surface must scale structurally as the compiler grows; a hand-written assertion bundle per example is acceptable only as bootstrap proof, not as the long-term model.
 
 # 3) Research Grounding (external + internal "ground truth")
 
@@ -179,8 +186,8 @@ That means the project can keep inventing syntax faster than it can prove the la
 
 - `for_reference_only/lark/docs/parsers.md` and `for_reference_only/lark/docs/json_tutorial.md` — adopt `parser='lalr'` as the first product parser mode and pin `lexer='contextual'` with it; reject Earley as the default bootstrap path because the first supported subset is intentionally narrow, the desired loop should hard-fail on grammar pressure, and the local Lark docs position LALR plus the contextual lexer as the idiomatic fast path for LR-compatible grammars.
 - `for_reference_only/lark/examples/indented_tree.py` and `for_reference_only/lark/lark/indenter.py` — adopt the stock `Indenter` pattern with `_INDENT` / `_DEDENT` tokens and a custom `_NL` token; this is the clearest built-in path for indentation-sensitive grammars and keeps indentation handling inside ordinary Lark extension points instead of inventing a side preprocessor.
-- `for_reference_only/lark/lark/grammars/common.lark` — adopt stock terminals for the bootstrap subset where they fit cleanly: `CNAME` for names, `ESCAPED_STRING` for quoted strings, `WS_INLINE` for inline whitespace, and `SH_COMMENT` for `#` comments; reject custom identifier/string/comment regexes unless the examples force them.
-- `for_reference_only/lark/docs/grammar.md` — adopt `%ignore` for inline whitespace and comments rather than threading trivia through the grammar manually, because the Lark docs call out `%ignore` as especially important for LALR grammars.
+- `for_reference_only/lark/lark/grammars/common.lark` — adopt stock terminals for the bootstrap subset where they fit cleanly: `CNAME` for names, `ESCAPED_STRING` for quoted strings, `WS_INLINE` for inline whitespace, and `SH_COMMENT` for `#` comment lines; reject custom identifier/string/comment regexes unless the examples force them.
+- `for_reference_only/lark/docs/grammar.md` — adopt `%ignore` for inline whitespace, but keep standalone comment lines inside `_NL` when indentation handling and `strict=True` make `%ignore SH_COMMENT` collide with the newline token; this keeps the bootstrap on ordinary grammar boundaries instead of adding rescue logic.
 - `for_reference_only/lark/examples/advanced/create_ast.py` and `for_reference_only/lark/lark/ast_utils.py` — adopt a normal parse-tree to dataclass-AST flow using `Transformer` and `ast_utils.create_transformer()`; reject a hand-written tree walker as the default bootstrap path because the library already provides the minimal structured transform surface we need.
 - `for_reference_only/lark/docs/how_to_use.md` — adopt `strict=True` as the default grammar-validation stance for the first LALR bootstrap loop because it hard-fails shift/reduce and regex collisions instead of normalizing them; note that regex collision checks depend on the `interegular` dependency path, so this becomes an explicit bootstrap choice rather than hidden behavior.
 - `for_reference_only/lark/README.md` and `for_reference_only/lark/docs/tools.md` — reject stand-alone parser generation as part of the first bootstrap even though Lark supports it for LALR, because it would add a second generated artifact surface before the grammar has stabilized.
@@ -198,7 +205,7 @@ That means the project can keep inventing syntax faster than it can prove the la
   - `docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md` — current planning SSOT; no code owner path exists yet, so implementation must create exactly one compiler-owned path instead of scattered scripts.
   - repo root current state (`.`) — there is no existing compiler package, no `Makefile`, and no Python project metadata yet; this confirms there is no canonical implementation path to reuse and also increases the risk of ad hoc drift if deep-dive does not pick one clean owner.
 - Existing patterns to reuse:
-  - `for_reference_only/lark/examples/indented_tree.py` — concrete pattern for `parser='lalr'`, `postlex=Indenter()`, `%declare _INDENT _DEDENT`, `%ignore SH_COMMENT`, and an `_NL` token that absorbs indentation spaces and comments.
+  - `for_reference_only/lark/examples/indented_tree.py` — concrete pattern for `parser='lalr'`, `postlex=Indenter()`, `%declare _INDENT _DEDENT`, and an `_NL` token that absorbs indentation spaces and comment lines; the shipped bootstrap keeps comment lines in `_NL` rather than separately ignoring `SH_COMMENT` so `strict=True` stays clean.
   - `for_reference_only/lark/lark/indenter.py` — stock indentation stack behavior, built-in `DedentError`, and the exact post-lex boundary that should own indentation semantics.
   - `for_reference_only/lark/lark/grammars/common.lark` — stock reusable terminals that can cover the first subset without custom token regexes.
   - `for_reference_only/lark/examples/advanced/create_ast.py` and `for_reference_only/lark/lark/ast_utils.py` — minimal AST construction path with dataclasses and automatic rule-to-class transformer mapping.
@@ -215,7 +222,7 @@ That means the project can keep inventing syntax faster than it can prove the la
   - `docs/LIBRARY_RESEARCH.md` and `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` — overlapping parser-choice research already exists and both point toward `Lark`; deep-dive should reuse that grounding instead of reopening library selection from scratch.
   - repo-wide absence of compiler code — without a chosen owner path, the main drift risk is spawning one-off scripts, scratch grammars, or alternative parser experiments.
 - Capability-first opportunities before new tooling:
-  - `for_reference_only/lark/lark/grammars/common.lark` and `%ignore` — cover names, strings, inline whitespace, and `#` comments before inventing custom token machinery.
+  - `for_reference_only/lark/lark/grammars/common.lark` and `%ignore` — cover names, strings, inline whitespace, and standalone `#` comment lines before inventing custom token machinery.
   - `for_reference_only/lark/lark/indenter.py` — use the stock indentation post-lexer before inventing a custom indentation preprocessor.
   - `for_reference_only/lark/docs/how_to_use.md` strict mode — use built-in collision failure before writing lint-like side checks.
   - `for_reference_only/lark/lark/ast_utils.py` — use stock transformer/AST helpers before writing a bespoke tree-to-object layer.
@@ -226,7 +233,7 @@ That means the project can keep inventing syntax faster than it can prove the la
   - Lark `strict=True` on the bootstrap grammar — structural signal that the grammar is not silently relying on unresolved LALR collisions.
   - whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt` plus explicit `HelloWorld` selection — protects against fixture slicing or hidden first-agent behavior.
 - Likely code implications from this research:
-  - the first grammar file should likely import `common.CNAME`, `common.ESCAPED_STRING`, `common.WS_INLINE`, and `common.SH_COMMENT`, declare `_INDENT` / `_DEDENT`, define `_NL` in the same style as `for_reference_only/lark/examples/indented_tree.py`, and cover both `role` shapes present in `examples/01_hello_world/prompts/AGENTS.prompt`.
+  - the first grammar file should likely import `common.CNAME`, `common.ESCAPED_STRING`, `common.WS_INLINE`, and `common.SH_COMMENT`, declare `_INDENT` / `_DEDENT`, define `_NL` in the same style as `for_reference_only/lark/examples/indented_tree.py`, keep standalone comment lines inside `_NL`, and cover both `role` shapes present in `examples/01_hello_world/prompts/AGENTS.prompt`.
   - the first parser path should likely be `Lark(..., parser='lalr', lexer='contextual', postlex=<custom indenter>, strict=True)` rather than Earley.
   - the first implementation should keep the ordinary parse-tree -> transformer -> AST -> Markdown flow and only consider tree-less LALR after behavior is stable.
   - stand-alone parser generation and Earley ambiguity tooling are not first-pass ownership.
@@ -235,6 +242,7 @@ That means the project can keep inventing syntax faster than it can prove the la
 
 - When should the repo add either a second approximate rendered example for `HelloWorld2` or a stronger machine-checked output contract distinct from `AGENTS.md`, so the second `role` form present in `examples/01_hello_world/prompts/AGENTS.prompt` stops being parseable-but-lightly-verified bootstrap pressure? — settle when the first loop is running and `phase-plan` decides whether that is part of the next grammar step or a separate cleanup pass.
 - If a future example requires syntax that breaks clean `LALR` + stock `Indenter` usage, do we widen parser mode or simplify the language? — settle by treating LALR collisions or required custom post-processing as evidence and defaulting to language simplification unless the feature is clearly worth the added complexity.
+- What is the best-practice verification architecture for a growing compiler like this: golden files, corpus-driven contract tests, AST snapshots, layered parser/compiler/render checks, or some blend? — settle with `arch-step external-research` before the repo adds more example-specific checker entrypoints.
 <!-- arch_skill:block:research_grounding:end -->
 
 # 4) Current Architecture (as-is)
@@ -286,7 +294,7 @@ Near-term extension pressure already exists in later examples:
 - keyed nested workflow entries in `examples/02_sections`
 - imports and symbol references in `examples/03_imports`
 - inheritance and ordered patching in `examples/04_inheritance` through `examples/06_nested_workflows`
-- additional top-level declaration kinds in `examples/08_inputs`, `examples/09_outputs`, and `examples/10_runtime_roots`
+- additional declaration and contract pressure in `examples/08_inputs`, `examples/09_outputs`, `examples/10_turn_outcomes`, and `examples/11_skills_and_tools`
 
 None of those concepts has an implemented AST, parser tree transform, semantic validator, or renderer today.
 
@@ -409,6 +417,8 @@ python -m pyprompt.check_hello_world
 
 The direct module invocation remains valid for debugging, but it is not a second product surface. The first pass should not add a broader CLI, subcommands, or alternate runners.
 
+This bootstrap entrypoint is intentionally narrow. It is a proof slice, not permission to add `check_sections.py`, `check_imports.py`, and more one-off verifier modules as the compiler grows. The next verification phase must converge on one reusable compiler-test surface.
+
 Expected run behavior:
 
 - success path:
@@ -480,7 +490,7 @@ The first grammar will intentionally parse both `role` shapes already present in
   - `lexer='contextual'`
   - stock `Indenter`
   - stock `common` terminals
-  - `%ignore`
+  - `%ignore` for inline whitespace only
   - `strict=True`
 - parser construction also pins `maybe_placeholders=False` so optional branches do not inject surprise `None` values into the bootstrap AST
 - `_NL` owns newline + indentation whitespace + standalone comment lines; comment handling must stay compatible with the stock `Indenter` contract rather than moving into a side preprocessor
@@ -515,6 +525,7 @@ Not applicable.
 | User command | `Makefile` | `hello-world` | Missing | Add one simple rerun command | The user asked for a cheap verification loop as examples evolve | `make hello-world` is the human-facing bootstrap contract | `make hello-world` |
 | Source fixture | `examples/01_hello_world/prompts/AGENTS.prompt` | `HelloWorld`, `HelloWorld2` | Authoritative source contains both `role` shapes in one file, plus inline comments about render intent | Keep as the first authoritative source fixture and require the parser to accept it as-authored | Avoid source slicing, duplicate fixtures, or drift between examples and implementation | Whole-file parse plus explicit target-agent selection; source comments remain behavior evidence until a second checked ref exists | `make hello-world` |
 | Approximate output example | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Manually built approximate output example for `HelloWorld` only | Keep as advisory output-shape evidence, not as an authoritative exact golden | Prevents the plan from treating manual examples as pristine truth while still using them to find bugs | Rendered output may be diffed against it and any mismatch must be called out as a likely ref bug or renderer bug | `make hello-world` |
+| Verification architecture follow-on | `pyprompt/check_hello_world.py`, future compiler-test surface TBD | bootstrap checker versus reusable framework | Current shipped verifier is intentionally hard-coded to the Hello World slice | Use external research plus a follow-on design pass to choose one scalable compiler verification architecture before more examples land | Prevents the repo from normalizing a `check_<example>` proliferation pattern | Bootstrap checker is proof only; future compiler verification must converge on one reusable contract framework | Phase 4 planning, then future implementation |
 | Live doctrine docs | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md`, `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` | language rules and known gaps | Docs-only truth today | Review and update as implementation lands if shipped behavior or resolved ambiguities differ | Avoid stale truth after code exists | Docs must match the shipped subset and the actual fail-loud behavior | Manual review |
 
 ## 6.2 Migration notes
@@ -554,10 +565,11 @@ Not applicable.
 | Next grammar pressure | `examples/02_sections/prompts/AGENTS.prompt` | Extend the same `pyprompt/` package and the same `pyprompt.lark` grammar file for keyed workflow entries | Prevents a second parser path when grammar scope grows | defer |
 | Next grammar pressure | `examples/03_imports/prompts/AGENTS.prompt` and imported prompt files | Extend the same owner path for imports and symbol resolution | Prevents import behavior from being prototyped in side scripts | defer |
 | Semantic growth | `examples/04_inheritance` through `examples/07_handoffs` | Add inheritance and routing semantics through the same AST/compiler path, not parallel prototypes | Prevents semantic drift and duplicated merge logic | defer |
-| Declaration growth | `examples/08_inputs`, `examples/09_outputs`, `examples/10_runtime_roots` | Add new top-level declarations through the same package and grammar SSOT | Prevents declaration-specific side parsers | defer |
+| Declaration growth | `examples/08_inputs`, `examples/09_outputs`, `examples/10_turn_outcomes`, `examples/11_skills_and_tools` | Add new declarations and agent-side contract structure through the same package and grammar SSOT | Prevents declaration-specific side parsers and one-off side readers | defer |
 | Output-pressure corpus | `examples/99_not_clean_but_useful` | Keep as rendering pressure only, not bootstrap grammar ownership | Prevents overbuilding the grammar too early | exclude |
 | Alternative parser libs | `for_reference_only/LibCST`, `for_reference_only/pyparsing` | Do not reopen parser choice during bootstrap implementation | Prevents tool drift and parallel experiments | exclude |
 | Duplicate test truth | `tests/fixtures/` or similar duplicate corpora | Do not create copied first-pass fixtures outside `examples/` | Prevents source/ref drift | exclude |
+| Compiler verification growth | `pyprompt/check_hello_world.py`, future shared verification owner path | Converge future compiler testing onto one reusable framework instead of per-example scripts | Prevents verification drift and maintenance blow-up as examples multiply | include |
 <!-- arch_skill:block:call_site_audit:end -->
 
 # 7) Depth-First Phased Implementation Plan (authoritative)
@@ -572,7 +584,13 @@ Warn-first note:
 
 ## Phase 1 - Parser Foundation
 
-Status: IN PROGRESS
+Status: COMPLETE
+
+Completed work:
+- Added the canonical package and dependency path with `pyproject.toml`, `pyprompt/__init__.py`, and the Phase 1 parser foundation files.
+- Shipped a stock-`Lark` grammar plus `PyPromptIndenter` on the planned `lalr` / `contextual` / `strict=True` / `maybe_placeholders=False` boundary.
+- Verified whole-file parsing of `examples/01_hello_world/prompts/AGENTS.prompt` and confirmed the AST contains both `HelloWorld` and `HelloWorld2`.
+- Tightened bootstrap comment handling to standalone `#` lines through `_NL` after `strict=True` exposed the `%ignore SH_COMMENT` collision.
 
 * Goal:
   Establish the canonical package/dependency path and get a stock-`Lark` whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt` into typed AST nodes without alternate parser paths.
@@ -595,6 +613,14 @@ Status: IN PROGRESS
   If stock `Lark` cannot parse the accepted fixture cleanly without rescue logic, revert the parser-foundation files together and tighten the language subset before adding compiler or renderer code.
 
 ## Phase 2 - Compile, Render, and One Command
+
+Status: COMPLETE
+
+Completed work:
+- Added `pyprompt/compiler.py`, `pyprompt/renderer.py`, `pyprompt/check_hello_world.py`, and the repo-root `Makefile`.
+- Implemented explicit target-agent selection, duplicate-name detection, and fail-loud bootstrap-subset validation for exactly one `role` followed by one `workflow`.
+- Implemented the first render contract for both current `role` forms and the titled `workflow` block.
+- Verified `make hello-world` passes and the negative checks fail loudly for missing target selection plus invalid bootstrap shapes.
 
 * Goal:
   Turn the parsed AST into explicit agent selection and checked Markdown output behind one repo-root command.
@@ -623,6 +649,14 @@ Status: IN PROGRESS
 
 ## Phase 3 - Reality Sync and Minimal Hardening
 
+Status: COMPLETE
+
+Completed work:
+- Updated `docs/LANGUAGE_DESIGN_NOTES.md` to reflect the shipped Hello World bootstrap subset and comment-handling rule.
+- Updated `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` to remove the stale scalar-only `01` summary and record the strict-mode comment-token lesson.
+- Updated `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` to note that the bootstrap now targets `HelloWorld` explicitly while `HelloWorld2` still lacks its own approximate rendered ref.
+- Reran the Hello World check after doc sync so the code, plan, and live doctrine stayed aligned.
+
 * Goal:
   Sync live docs to the shipped bootstrap, close the most likely drift surfaces, and record any newly exposed next-step holes without broadening product scope.
 * Work:
@@ -641,6 +675,31 @@ Status: IN PROGRESS
   Remaining open items are clearly deferred to later grammar growth rather than silently shipped.
 * Rollback:
   Revert only doc-sync edits that do not match shipped behavior; do not keep stale explanations once code truth is known.
+
+## Phase 4 - Verification Framework Research And Re-cut
+
+Status: NOT STARTED
+
+* Goal:
+  Turn the current bootstrap checker into an explicit stepping stone toward a reusable full-compiler verification architecture instead of letting example-by-example hard-coded checks become the default.
+* Work:
+  Run `arch-step external-research` focused on best practices for compiler and language-tool verification.
+  Compare reusable strategies such as corpus-driven fixture suites, layered parser/compiler/render checks, semantic contract tests, golden-file usage, and negative-corpus error tests.
+  Decide which truth surfaces should be authoritative for compiler testing as the example corpus grows, while keeping `.prompt` as input SSOT and keeping approximate `AGENTS.md` refs out of byte-level truth unless they are deliberately re-earned.
+  Re-cut Sections 5, 6, 7, and 8 so the canonical plan names one durable verification owner path instead of implying more `check_<example>` modules.
+  Record whether `pyprompt/check_hello_world.py` remains as a thin bootstrap slice beneath the shared framework or gets subsumed by it.
+* Verification (smallest signal):
+  External research is folded into the canonical plan with concrete adopt/reject reasoning.
+  The updated plan explicitly rejects verification growth by copy-pasting example-specific checkers.
+  The next implementation pass can name one canonical compiler-test path with bounded truth surfaces and no ambiguity about goldens versus contracts.
+* Docs/comments (propagation; only if needed):
+  Update the plan and any touched doctrine docs so they no longer imply that the current Hello World checker pattern scales by repetition.
+* Exit criteria:
+  The canonical plan names a reusable verification architecture requirement for the full compiler.
+  The next step after research is a concrete design or implementation pass, not more ad hoc checker growth.
+  The artifact is explicit about which verification signals are semantic contracts, which are advisory refs, and which belong in negative-corpus testing.
+* Rollback:
+  If external research does not sharpen the architecture materially, keep the bootstrap checker as-is but do not widen it by cloning the pattern across more examples.
 <!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
@@ -653,11 +712,22 @@ Prefer at most one or two tight checks around AST construction or Markdown rende
 
 ## 8.2 Integration tests (flows)
 
-The primary signal should be one end-to-end local command, likely `make hello-world`, that parses the supported source, compiles `HelloWorld`, and runs semantic smoke checks derived from the prompt/input contract. Diffs against checked `AGENTS.md` refs are advisory bug-finding signals, not byte-level truth.
+The primary shipped signal today is one end-to-end local command, `make hello-world`, that parses the supported source, compiles `HelloWorld`, and runs semantic smoke checks derived from the prompt/input contract. Diffs against checked `AGENTS.md` refs are advisory bug-finding signals, not byte-level truth.
+
+That is bootstrap proof, not the final compiler-test architecture. Once the compiler grows beyond `01`, integration verification must converge on a reusable framework instead of multiplying example-specific checker modules.
 
 ## 8.3 E2E / device tests (realistic)
 
 Not applicable beyond the local compiler loop. Do not add bespoke harnesses, editor automation, or other verification ceremony just to prove the first grammar works.
+
+## 8.4 Compiler Verification Framework (next)
+
+The next verification requirement is architectural, not cosmetic:
+
+- the repo needs one scalable verification framework for the compiler as the example corpus grows
+- that framework should be researched before the repo adds more hard-coded example-specific checkers
+- the framework must keep `.prompt` as input SSOT, keep approximate `AGENTS.md` refs advisory unless explicitly re-earned, and preserve fail-loud negative testing for unsupported or invalid source shapes
+- the framework should separate parser, compiler, renderer, and end-to-end contract signals cleanly enough that later examples do not turn the suite into brittle golden churn
 
 # 9) Rollout / Ops / Telemetry
 
@@ -908,3 +978,54 @@ Consequences
 Follow-ups
 
 - Keep the plan, verifier design, and worklog explicit about approximate refs so the truth hierarchy does not invert again.
+
+## 2026-04-06 - Keep bootstrap comments as standalone lines inside `_NL`
+
+Context
+
+Phase 1 implementation proved one concrete strict-mode edge in the chosen `Lark` shape: keeping `%ignore SH_COMMENT` while also letting `_NL` absorb comment lines created a regex-collision failure under `strict=True`. The bootstrap only needs standalone `#` comment lines today, not free-floating comment trivia.
+
+Options
+
+- keep trying to ignore `SH_COMMENT` separately and add parser-side rescue work
+- tighten the bootstrap comment contract so standalone comment lines are owned by `_NL`
+
+Decision
+
+Treat bootstrap comments as standalone `#` lines that travel through `_NL` with indentation whitespace, and keep `%ignore` limited to inline whitespace.
+
+Consequences
+
+- `strict=True` stays real instead of being weakened or bypassed.
+- The indentation-sensitive grammar remains on ordinary stock-`Lark` boundaries.
+- Inline comment behavior is intentionally out of the bootstrap subset until a later example earns it.
+
+Follow-ups
+
+- Revisit broader comment placement only if a later example proves the language actually needs it.
+
+## 2026-04-06 - Treat the Hello World checker as bootstrap proof, not the full compiler test architecture
+
+Context
+
+The shipped `check_hello_world` path is good evidence that the first grammar slice works, but it is intentionally hard-coded to one example and one target agent. If that pattern is copied into `check_sections`, `check_imports`, `check_inheritance`, and beyond, compiler verification will become a maintenance problem instead of a trustworthy framework.
+
+Options
+
+- keep growing verification by adding more example-specific checker modules
+- make reusable compiler verification a formal next requirement and research the right framework before more growth lands
+
+Decision
+
+Keep `check_hello_world` as bootstrap proof only, and make a reusable full-compiler verification framework a formal next-phase requirement.
+
+Consequences
+
+- The current bootstrap remains valid, but it no longer pretends to be the durable testing shape.
+- Future compiler verification must be re-cut through explicit research and design rather than incremental checker sprawl.
+- The artifact now reserves a dedicated phase for verification-architecture research before wider compiler growth proceeds.
+
+Follow-ups
+
+- Run `arch-step external-research` focused on compiler-test best practices.
+- Re-cut the canonical plan after that research so the reusable verification owner path is explicit.

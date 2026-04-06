@@ -1,4 +1,10 @@
-# Best-guess syntax sketch for next-owner routing.
+# Draft handoff example for next-owner routing.
+# This example stays aligned with `05_workflow_merge`:
+# - inherited named structure uses explicit patching
+# - `inherit key` keeps inherited content in place
+# - `override key:` replaces inherited content in place
+# - agent-level named slots follow the same explicit patching rule
+#
 # This example is intentionally narrower than the earlier draft:
 # - no critic lane
 # - no review-specific routing
@@ -14,12 +20,12 @@ workflow ReadFirst: "Read First"
     "Read Workflow Core first. Then read Your Job."
 
 
-workflow ProjectLeadReadFirst: "Read First"
+workflow ProjectLeadReadFirst[ReadFirst]: "Read First"
     "Start here."
     "Read Workflow Core first. Then read Your Job."
 
 
-workflow SpecialistWorkflowCoreBase: "Workflow Core"
+workflow SameIssueWorkflowCoreBase: "Workflow Core"
     same_issue_workflow: "Same-Issue Workflow"
         "Keep the work on the same issue."
         "Do only this lane's job."
@@ -33,7 +39,7 @@ workflow SpecialistWorkflowCoreBase: "Workflow Core"
         "- the next owner when ownership is changing now"
 
 
-workflow ResearchSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
+workflow ResearchSpecialistWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
     inherit same_issue_workflow
 
     next_owner: "Next Owner"
@@ -43,7 +49,7 @@ workflow ResearchSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow C
     inherit owner_change_comment
 
 
-workflow WritingSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
+workflow WritingSpecialistWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
     inherit same_issue_workflow
 
     next_owner: "Next Owner"
@@ -53,10 +59,10 @@ workflow WritingSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Co
     inherit owner_change_comment
 
 
-workflow ProjectLeadWorkflowCore: "Workflow Core"
+workflow ProjectLeadWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
     "This file is the runtime guide for a simple multi-agent routing pattern."
 
-    same_issue_workflow: "Same-Issue Workflow"
+    override same_issue_workflow:
         "Keep the whole job on one issue from setup through final return."
         "Keep one owner at a time on that issue."
         "The normal order is Project Lead -> Research Specialist -> Writing Specialist -> Project Lead."
@@ -69,7 +75,7 @@ workflow ProjectLeadWorkflowCore: "Workflow Core"
         route "When ready to start the work" -> ResearchSpecialist
         route "If the route is broken or the work is blocked before specialist work begins" -> ProjectLead
 
-    owner_change_comment: "Owner Change Comment"
+    override owner_change_comment:
         "Every owner-change comment should say:"
         "- what this turn changed"
         "- the next owner when ownership is changing now"
@@ -101,8 +107,12 @@ abstract agent SameIssueRole:
     read_first: ReadFirst
 
 
+# Agent-level named slots follow the same explicit patching model as `05`.
+# - `inherit read_first` keeps the inherited slot unchanged
+# - `override read_first: ...` replaces the inherited slot
+# - new slots such as `workflow_core` and `your_job` are introduced directly
 agent ProjectLead[SameIssueRole]:
-    read_first: ProjectLeadReadFirst
+    override read_first: ProjectLeadReadFirst
 
     role: "Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes."
 

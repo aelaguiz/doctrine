@@ -147,6 +147,11 @@ What is unclear:
 - the checked-in ref only shows one rendered `AGENTS.md`
 - the example never says which agent the ref corresponds to or why the second one has no sibling ref
 
+What the current bootstrap now makes explicit:
+- the compiler targets `HelloWorld` deliberately in the first verification loop
+- both current `role` forms in the source file are parseable and renderable
+- the missing sibling ref for `HelloWorld2` is still a documentation gap, not a parser ambiguity
+
 There is also a wording issue in the first comment:
 - "When there is no body beneath the key: heading it renders as plain text"
 
