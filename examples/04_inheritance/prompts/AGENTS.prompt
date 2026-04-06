@@ -1,0 +1,22 @@
+agent BaseAgent:
+    role: "You are the base agent."
+
+    workflow:
+        "Follow the base steps below."
+
+        greeting:
+            "Say hello."
+
+        object:
+            "Say world."
+
+
+agent InheritanceDemo[BaseAgent]:
+    role: "You are the inheritance demonstration agent."
+
+    workflow:
+        "Follow the inherited base steps with the overridden final step below."
+        "Both workflow introduction lines should appear in the final output."
+
+        object:
+            "Say inherited world."
