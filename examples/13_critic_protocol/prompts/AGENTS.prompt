@@ -1,0 +1,196 @@
+# This example asks a narrow question:
+# can a minimal critic protocol be expressed cleanly with the language earned in
+# `01` through `12`?
+#
+# This example does not add a critic-specific primitive.
+# It models the protocol with:
+# - required review inputs
+# - one review output that owns both the verdict and the gate log
+# - outcome routes for accepted, changes requested, and escalate
+# - optional skills and runtime tools
+#
+# If this reads cleanly, then critic protocol is already expressible with the
+# current language surface.
+
+
+workflow CriticReadFirst: "Read First"
+    read_order: "Read Order"
+        "Read Workflow Core and How To Take A Turn first."
+        "Then read Inputs, Outputs, Outcome, Skills, Runtime Tools, Your Job, and Standards And Support."
+
+    current_review_scope: "Current Review Scope"
+        "Read the current issue plan, the current dossier, and the current validation record before you issue a verdict."
+
+
+workflow CriticWorkflowCore: "Workflow Core"
+    same_issue_review: "Same-Issue Review"
+        "Keep review on the same issue as the producer turn."
+        "Judge the current named files, not stale copies or remembered context."
+
+    verdict_rule: "Verdict Rule"
+        "Return one explicit verdict: `accept` or `changes requested`."
+        "Name the honest next owner for that verdict."
+
+    handoff_rule: "Handoff Rule"
+        "If the work is accepted, route the issue forward."
+        "If the work is not ready, route it back to the honest producer."
+        "If the route is unclear, send it to Project Lead instead of guessing."
+
+
+workflow CriticHowToTakeATurn: "How To Take A Turn"
+    turn_sequence: "Turn Sequence"
+        "Read the required review inputs."
+        "Check the work against the current issue plan and the named validation record."
+        "Write the verdict and gate log."
+        "Route the issue to the honest next owner and stop."
+
+    guardrails: "Guardrails"
+        "Do not approve work you cannot support from the current review inputs."
+        "Do not bounce the work for vague reasons."
+        "Do not guess when required review inputs are missing."
+
+
+workflow CriticStandardsAndSupport: "Standards And Support"
+    review_rules: "Review Rules"
+        "Judge only the work that is currently in scope for this issue."
+        "A failed gate should name the actual missing or incorrect thing."
+
+    evidence_rule: "Evidence Rule"
+        "Record the evidence you actually relied on in the gate log."
+        "If the validation record is missing or stale, do not pretend the work was validated."
+
+
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue plan to understand the intended acceptance bar and next normal owner."
+
+
+input SectionDossier: "Section Dossier"
+    source: File
+        path: "section_root/_authoring/SECTION_DOSSIER.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Review the current dossier as the main artifact under review."
+
+
+input DossierValidationRecord: "Dossier Validation Record"
+    source: File
+        path: "section_root/_authoring/DOSSIER_VALIDATION.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current validation record to understand what checks ran and what passed or failed."
+
+
+skill ReviewChecklistSkill: "lesson-review-checklist"
+    purpose: "Run the repo's current checklist for critic review of a section dossier."
+
+    use_when: "Use When"
+        "Use this when the role needs a repeatable review pass against the current dossier contract."
+
+
+output CriticReviewOutput: "Critic Review Output"
+    files: "Files"
+        review_verdict: "Review Verdict"
+            path: "section_root/_authoring/REVIEW_VERDICT.md"
+            shape: MarkdownDocument
+
+        run_gate_log: "Run Gate Log"
+            path: "section_root/_authoring/RUN_GATE_LOG.md"
+            shape: MarkdownDocument
+
+    must_include: "Must Include"
+        verdict: "Verdict"
+            "REVIEW_VERDICT.md must state `accept` or `changes requested` explicitly."
+
+        next_owner: "Next Owner"
+            "REVIEW_VERDICT.md must name the honest next owner."
+
+        reason: "Reason"
+            "REVIEW_VERDICT.md must give the short reason for the verdict and route."
+
+        gate_results: "Gate Results"
+            "RUN_GATE_LOG.md must list every failed gate or say that all named gates passed."
+
+        evidence_used: "Evidence Used"
+            "RUN_GATE_LOG.md must record the validation evidence the critic actually relied on."
+
+    owns: "Owns"
+        "This output owns the current verdict, the honest next owner, and the gate-by-gate review record for this turn."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read REVIEW_VERDICT.md and RUN_GATE_LOG.md and understand the verdict, route, and review basis."
+
+
+agent ProjectLead:
+    role: "Core job: take the issue back when routing is unclear or when accepted work needs the next normal owner."
+
+    your_job: "Your Job"
+        "Take the issue back when the critic says the route is unclear."
+        "Own the next normal lane after accepted review."
+
+
+agent SectionAuthor:
+    role: "Core job: revise the dossier when critic review sends the work back."
+
+    your_job: "Your Job"
+        "Revise the dossier and validation record when the critic requests changes."
+
+
+agent AcceptanceCritic:
+    role: "Core job: review the current dossier, issue an explicit verdict, and route the same issue honestly."
+
+    read_first: CriticReadFirst
+    workflow_core: CriticWorkflowCore
+    how_to_take_a_turn: CriticHowToTakeATurn
+
+    inputs: "Inputs"
+        CurrentIssuePlan
+        SectionDossier
+        DossierValidationRecord
+
+    outputs: "Outputs"
+        CriticReviewOutput
+
+    outcome: "Acceptance Critic Outcome"
+        produces: "This Role Produces"
+            "One explicit verdict."
+            "One honest next owner on the same issue."
+            "One gate-by-gate review record."
+
+        next_owner_if_accepted: "Next Owner If Accepted"
+            route "If accepted" -> ProjectLead
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            route "If changes are required" -> SectionAuthor
+            route "If the route is unclear" -> ProjectLead
+
+        stop_here_if: "Stop Here If"
+            "Stop when the verdict is explicit, the next owner is clear, and the gate log matches the actual review basis."
+
+        stop_rule: "Hard Stop Rule"
+            "If a required review input is missing, stop and escalate."
+            "Do not approve from memory, stale notes, or old copies."
+
+    skills: "Skills"
+        can_run: "Can Run"
+            ReviewChecklistSkill
+                requirement: Advisory
+
+    runtime_tools: "Runtime Tools"
+        diff_tools: "Diff Tools"
+            "Use repo-owned diff tools when you need to isolate what changed in the current dossier."
+
+        validator_runner: "Validator Runner"
+            "Use the named dossier validator when the validation record depends on a rerun."
+            "Record the exact command and result in RUN_GATE_LOG.md."
+
+    your_job: "Your Job"
+        "Review the current dossier against the current issue plan."
+        "Return one explicit verdict."
+        "Write the gate log that supports that verdict."
+        "Route the issue to the honest next owner."
+        "Stop and escalate instead of guessing when required review inputs are missing."
+
+    standards_and_support: CriticStandardsAndSupport

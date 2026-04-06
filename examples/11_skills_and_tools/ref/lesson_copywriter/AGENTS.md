@@ -76,21 +76,8 @@ Use this only when the job is restoring a live Flutter dev loop.
 
 This role is baseline copy work, not Flutter environment repair.
 
-## Runtime Tools
-
-### PokerKB
-
-- Use it for definitions, grounded claim checks, terminology, and real poker wording.
-- Do not use it as exact right-move authority.
-
-### Step JSON Validator
-
-- Use `validate_lesson_step_json.py` after copy changes to validate each changed lesson step JSON.
-- Record the exact command and output in the current review packet.
-
 ## Your Job
 
 - Read the whole lesson before you rewrite isolated strings.
 - Use grounded poker wording without changing lesson structure or authority scope.
-- Use a runtime tool when the lane needs proof or validation.
 - If no named task skill fits cleanly, discover the right one before you guess.

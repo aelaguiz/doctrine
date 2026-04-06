@@ -210,6 +210,11 @@ The current examples are intentionally pushing on these rules so we can validate
   declarations under `output`, not competing output primitives.
 - richer output contract material should live directly on `output`; we do not
   currently need a separate top-level `artifact` concept.
+- `11_skills_and_tools` is intentionally skill-first.
+- reusable capabilities should be modeled as `skill` declarations.
+- telling an agent to run a raw script or Python file path is currently treated
+  as a workaround, not as a supported parallel authoring pattern.
+- we are not currently supporting a separate `runtime_tools` language surface.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -301,18 +306,26 @@ They include things like:
 
 This suggests we need to decide how shared doctrine is represented and reused across many roles.
 
-### 5. Skills, Runtime Tools, And Tool Boundaries
+### 5. Skills And Tool Boundaries
 
-The `99` examples do not just name tools.
+The `99` examples distinguish skills from named tools and helper surfaces.
 
-They distinguish:
-- skills you can run
-- runtime tools
-- what each tool may support
-- what a tool may not prove
+Current design decision:
+- the language intentionally supports `skill` first
+- repeated reusable capability should be modeled as a skill
+- a raw script path or ad hoc tool call is not a second supported authoring
+  pattern
+- tool-boundary and proof-boundary guidance may still appear in prose
+  sections while the language stays skill-first
+
+What is still real pressure from `99`:
+- what a capability may support
+- what it may not prove
 - proof-route selection
 
-This likely needs its own language surface rather than being hidden inside freeform workflow prose.
+What is not a current language goal:
+- a separate `runtime_tools` declaration surface
+- a language feature whose main job is to tell the agent where a script lives
 
 ### 6. Scope Roots And Path Variables
 
@@ -355,7 +368,7 @@ Before we spend much more effort on workflow micro-rules, the bigger buckets to 
 1. role home composition and shared doctrine
 2. role graph and handoff model
 3. packet and file contract model
-4. skills, runtime tools, and proof boundaries
+4. skills and proof boundaries
 5. attached checkouts and evidence surfaces
 
 Those buckets appear to be the real structure underneath the `99` examples.
@@ -365,7 +378,8 @@ Those buckets appear to be the real structure underneath the `99` examples.
 - Decide how role homes are composed from shared doctrine plus role-local sections.
 - Decide how to represent role graphs, handoff order, critic lanes, and next-owner rules.
 - Decide the packet and file contract model before adding more workflow detail.
-- Decide how skills, runtime tools, and proof boundaries should be represented.
+- Decide how skills and proof boundaries should be represented while keeping the
+  language skill-first.
 - Decide how attached checkouts and review/evidence files should be modeled.
 
 ## Current Bias
@@ -382,3 +396,16 @@ Right now the language is not trying to be:
 - a giant schema up front
 
 That bias is intentional. We want to earn complexity instead of assuming it.
+
+## Future Roadmap
+
+These are not current commitments. They are future directions we may support
+after the current skill-first surface is stable.
+
+- MCP-backed capabilities are a likely future extension point.
+- If we add MCP support, it should be explicit and first-class, not smuggled in
+  as raw command or script-path guidance.
+- We are not designing MCP syntax yet.
+- The current design stance is still: model reusable capability as a skill
+  today, and defer broader capability-surface expansion until the examples
+  force it cleanly.

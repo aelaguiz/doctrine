@@ -1,0 +1,5 @@
+agent ReorderedFields:
+    workflow: "Instruction"
+        "This fixture should fail during compile."
+
+    role: "You are a broken agent."

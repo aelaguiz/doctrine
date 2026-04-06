@@ -1,0 +1,55 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "hello world scalar role renders opening prose"
+status = "active"
+kind = "render_contract"
+agent = "HelloWorld"
+assertion = "exact_lines"
+approx_ref = "ref/AGENTS.md"
+expected_lines = [
+  "You are the hello world agent.",
+  "",
+  "## Instruction",
+  "",
+  "Say hello world.",
+]
+
+[[cases]]
+name = "hello world headed role renders headed opening section"
+status = "active"
+kind = "render_contract"
+agent = "HelloWorld2"
+assertion = "exact_lines"
+expected_lines = [
+  "## Role",
+  "",
+  "You are the hello world agent.",
+  "",
+  "## Instruction",
+  "",
+  "Say hello world.",
+]
+
+[[cases]]
+name = "missing agent colon fails in parse stage"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_PARSE_MISSING_COLON.prompt"
+exception_type = "UnexpectedToken"
+message_contains = [
+  "Expected one of",
+  "COLON",
+]
+
+[[cases]]
+name = "reordered fields fail in compile stage"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_COMPILE_REORDERED.prompt"
+agent = "ReorderedFields"
+exception_type = "CompileError"
+message_contains = [
+  "expected `role` followed by `workflow`",
+]

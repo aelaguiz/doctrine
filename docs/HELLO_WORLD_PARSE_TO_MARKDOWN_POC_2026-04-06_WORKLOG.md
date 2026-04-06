@@ -26,3 +26,13 @@ Plan doc: [docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md](/Users/aelaguiz
 - Updated the plan so the next recommended move is another deep-dive pass to lock the shared verifier UX and case-manifest schema before more code lands.
 - Tightened the shared-verifier seed set in the canonical plan: the first manifest-backed corpus should cover `HelloWorld`, `HelloWorld2`, and `examples/02_sections`.
 - Kept that seed-set decision honest in the plan: `02_sections` is part of the first output-manifest surface, but it is not being pretended green before the grammar grows to support it.
+- Re-entered `arch-step implement` for Phase 5 and marked the shared-verifier migration as in progress in the canonical plan before touching code.
+- Confirmed the current migration target is still exactly the planned one: replace `pyprompt/check_hello_world.py` with `pyprompt.verify_corpus`, move the Hello World contracts into adjacent `cases.toml`, keep `02_sections` planned-only, and make the verifier summary explicitly show active cases, planned cases, advisory ref diffs, and surfaced inconsistencies.
+- Implementation immediately exposed one verifier-schema bug in the plan: `compile_fail` cases were missing an explicit `agent` field even though the compiler boundary requires intentional target selection after parse succeeds.
+- Repaired that schema bug in the canonical plan instead of hiding it inside ad hoc verifier defaults.
+- Shipped `pyprompt/verify_corpus.py` as the shared verifier and deleted `pyprompt/check_hello_world.py` so the repo now has one compiler-verification owner path.
+- Added adjacent machine-readable manifests at `examples/01_hello_world/cases.toml` and `examples/02_sections/cases.toml`.
+- Added two checked-in local negative fixtures under `examples/01_hello_world/prompts/` to exercise parse-stage and compile-stage failure contracts through the same verifier.
+- Rewired `make hello-world` to the filtered manifest run and added `make verify-examples` for the active corpus plus planned-case reporting.
+- Verification passed with `./.venv/bin/python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`, `./.venv/bin/python -m pyprompt.verify_corpus`, `make hello-world PYTHON=./.venv/bin/python`, and `make verify-examples PYTHON=./.venv/bin/python`.
+- The first shipped shared-verifier run surfaced no unresolved language inconsistencies, no advisory ref diffs, and no need for new `.gitignore` rules because this phase only added checked-in manifests and prompt fixtures.
