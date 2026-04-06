@@ -1,4 +1,5 @@
-agent BaseBriefingAgent:
+# This base is abstract because concrete leaf agents inherit from it.
+abstract agent BaseBriefingAgent:
     role: "You are the base briefing agent."
 
     workflow: "Briefing"
@@ -18,6 +19,7 @@ agent BaseBriefingAgent:
             "Wrap up the briefing."
 
 # Inherited workflows are always explicit and exhaustive.
+# Concrete leaf agents inherit from this abstract base.
 # A child must account for every inherited section exactly once.
 # - `inherit key` keeps the inherited section and places it exactly here
 # - `override key:` replaces the inherited section and keeps the inherited title
@@ -63,6 +65,7 @@ agent RetitledBriefingAgent[BaseBriefingAgent]:
         inherit closing
 
 # This child demonstrates the compiler error rule for `override`.
+# It is still a concrete leaf agent, so it would render if compilation succeeded.
 # The inherited order is still accounted for explicitly.
 # `override key:` only works when the parent already defines that key.
 # If the intent is to add something new, drop `override` and define a new key with a title.

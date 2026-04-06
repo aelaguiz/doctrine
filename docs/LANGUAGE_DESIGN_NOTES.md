@@ -15,6 +15,7 @@ The goal is to capture the language decisions we have made so far, why we made t
 ## Core Declarations So Far
 
 - `agent` is a language primitive.
+- `abstract agent` is the current way to declare an inheritance-only agent that should not render directly.
 - `workflow` is also behaving like a language primitive.
 - Core declarations should not need imports.
 - `import` is for user-defined or shared definitions, not built-in language words.
@@ -30,9 +31,12 @@ The important fields we have actually used so far are:
 - `workflow`
 
 Current intent:
+- `agent` is the top-level authored thing in the language
+- one source package may define one agent or many agents
 - `role` is not hidden metadata. It is output-facing text.
 - `role` currently opens the rendered document directly.
 - The rendered output should read naturally, not look like a debug dump of the source tree.
+- output file-name mapping for rendered agents is a future concern, not a locked rule yet
 
 ## Workflow Shape
 
@@ -98,6 +102,7 @@ Inheritance has earned a place conceptually, and the current direction is now cl
 
 Current syntax direction:
 - `agent Child[Base]:` means the child extends the base agent
+- `abstract agent Base:` means the base exists for inheritance and should not render by itself
 
 Current intent:
 - inheritance should produce one merged final document
@@ -105,6 +110,8 @@ Current intent:
 - inherited output should feel natural, not expose internal implementation details unless we want that explicitly
 - scalar fields like `role` should override
 - workflow preamble strings should override as a group when the child provides them
+- shared doctrine should be modeled through inheritance rather than through a separate doctrine primitive
+- only concrete leaf agents should render as final outputs
 
 Current workflow inheritance direction:
 - inherited workflow order is always explicit
@@ -118,6 +125,12 @@ Current explicit-order syntax direction:
 - `override key:` means "replace the inherited workflow entry and place the replacement here"
 - `override key: "New Title"` means "replace the inherited workflow entry and also replace its rendered title"
 - `key: "Title"` means "create a new workflow entry here"
+
+Current inheritance pattern:
+- use `abstract agent` for any inheritance-only or non-leaf agent
+- use plain `agent` for concrete leaf agents
+- only concrete leaf agents emit rendered output
+- shared doctrine should live in abstract bases and be specialized by concrete children
 
 Why this direction currently looks better than implicit merge:
 - it makes placement explicit in the source
@@ -139,6 +152,12 @@ The current examples are intentionally pushing on these rules so we can validate
 
 ## Recently Settled
 
+- `agent` is the top-level authored thing in the language.
+- one source package may contain one agent or many agents.
+- shared doctrine should be modeled through inheritance.
+- non-leaf agents should be marked `abstract`.
+- concrete agents are written as plain `agent` declarations.
+- only concrete leaf agents should render.
 - `04_inheritance` should follow the same inheritance model as `05_workflow_merge`.
 - The inheritance model we are carrying forward is explicit ordered patching, not implicit key-merge magic.
 - Inherited workflows are now explicit-only. There is no second implicit merge mode.
@@ -154,6 +173,7 @@ The current examples are intentionally pushing on these rules so we can validate
 
 ## Pending Decisions
 
+- How should rendered output file names map from concrete agent names when one source package emits many concrete agents?
 - Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
 - When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
 - Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?

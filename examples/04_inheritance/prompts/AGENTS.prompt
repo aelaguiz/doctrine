@@ -1,8 +1,8 @@
-agent BaseAgent:
-    role: "You are the base agent."
+abstract agent BaseGreeter:
+    role: "You are the base greeter."
 
-    workflow: "Base Steps"
-        "Follow the base steps below."
+    workflow: "Shared Instructions"
+        "Use the shared greeting below."
 
         greeting: "Greeting"
             "Say hello."
@@ -11,18 +11,40 @@ agent BaseAgent:
             "Say world."
 
 
-# Inherited workflows are always explicit and exhaustive.
-# Every inherited section must be accounted for exactly once.
-# - `inherit greeting` keeps the inherited section and places it here
-# - `override object:` replaces the inherited section and keeps the inherited title
-agent InheritanceDemo[BaseAgent]:
+# This agent is still abstract because concrete leaf agents inherit from it.
+# It adds shared doctrine that both concrete agents reuse.
+abstract agent PoliteGreeter[BaseGreeter]:
+    role: "You are the polite greeter."
+
+    workflow: "Shared Instructions"
+        inherit greeting
+        inherit object
+
+        courtesy: "Courtesy"
+            "Keep the tone warm and direct."
+
+
+# This is a concrete leaf agent, so it should render.
+agent HelloWorldGreeter[PoliteGreeter]:
+    role: "You are the hello world greeter."
+
+    workflow: "Hello World Instructions"
+        inherit greeting
+        inherit courtesy
+        inherit object
+
+
+# This is also a concrete leaf agent, and it keeps the shared doctrine
+# while replacing the final inherited step.
+agent InheritanceDemo[PoliteGreeter]:
     role: "You are the inheritance demonstration agent."
 
     workflow: "Inherited Steps"
         "Follow the inherited steps below."
-        "This child keeps the greeting and replaces the final step."
+        "This child keeps the shared greeting and replaces the final step."
 
         inherit greeting
+        inherit courtesy
 
         override object:
             "Say inherited world."
