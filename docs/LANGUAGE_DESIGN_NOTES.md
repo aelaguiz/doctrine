@@ -201,6 +201,15 @@ The current examples are intentionally pushing on these rules so we can validate
 - Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
 - Invalid overrides should be real compiler errors, not silent fallbacks.
 - We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md).
+- `09_outputs` now treats `output` as the only produced-contract primitive.
+- `output target`, `output shape`, and `json schema` are reusable supporting
+  declarations under `output`, not competing output primitives.
+- richer output contract material should live directly on `output`; we do not
+  currently need a separate top-level `artifact` concept.
+- large schemas and large example payloads should prefer file-backed references
+  instead of inline JSON blocks.
+- paths like `section_root/...` and `lesson_root/...` are currently explained
+  path conventions, not separate root-binding declarations.
 
 ## Pending Decisions
 
@@ -216,11 +225,10 @@ These are concepts we expect to revisit, but they are not locked into the exampl
 
 - richer ordered workflow semantics
 - multi-agent output from one source package
-- typed artifacts
 - agent input and output signatures
 - skills
 - more explicit workflow declarations and reuse patterns
-- context variables and path interpolation
+- formal runtime-root declarations and path interpolation
 - packet contracts
 - policies and tool boundaries
 - role graphs and handoff structure
@@ -308,7 +316,14 @@ The `99` outputs rely heavily on named roots and path conventions such as:
 - `lesson_root`
 - `<owner_root>`
 
-That suggests a real need for language support around scope roots, path interpolation, and file references.
+Current read:
+- those examples clearly show a pressure area
+- but we have not yet earned prompt-level syntax for root binding
+- for now, paths like `section_root/...` may remain explained conventions on
+  file objects instead of separate declarations
+
+That means this bucket is still real, but it is not yet earned as a formal
+language primitive.
 
 ### 7. Evidence, Validation, And Review Runs
 
@@ -335,7 +350,7 @@ Before we spend much more effort on workflow micro-rules, the bigger buckets to 
 2. role graph and handoff model
 3. packet and file contract model
 4. skills, runtime tools, and proof boundaries
-5. scope roots, attached checkouts, and evidence surfaces
+5. attached checkouts and evidence surfaces
 
 Those buckets appear to be the real structure underneath the `99` examples.
 
@@ -345,7 +360,7 @@ Those buckets appear to be the real structure underneath the `99` examples.
 - Decide how to represent role graphs, handoff order, critic lanes, and next-owner rules.
 - Decide the packet and file contract model before adding more workflow detail.
 - Decide how skills, runtime tools, and proof boundaries should be represented.
-- Decide how scope roots, attached checkouts, and review/evidence files should be modeled.
+- Decide how attached checkouts and review/evidence files should be modeled.
 
 ## Current Bias
 

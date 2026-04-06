@@ -318,6 +318,29 @@ Current bias:
 - let `shape` describe form or structural type
 - let `output` carry the richer authored contract when needed
 
+## Current Output Decisions
+
+The current output model is now narrow enough to state plainly.
+
+Recently settled:
+- `output` is the only produced-contract primitive
+- `output target` is a reusable destination kind
+- `output shape` is a reusable structural kind
+- `json schema` is a reusable strict structural declaration that a shape can
+  reference
+- richer authored contract material such as required contents, support files,
+  ownership notes, standalone-read notes, and examples should live directly on
+  `output`
+- the language does not currently need a separate top-level `artifact`
+  primitive
+
+Current consequence:
+- small outputs can stay small
+- large outputs can become richer `output` declarations without changing the
+  primitive stack
+- reusable declarations stay subordinate to `output` rather than competing with
+  it
+
 ## JSON Schema Should Be First-Class
 
 Structured JSON output looks important enough that schema should not live as an
@@ -356,6 +379,27 @@ Current simplifying assumption:
   the schema during compilation
 - rendered output can still show the resolved schema if that is useful, but
   authored prompt source should stay file-backed for now
+- example payloads should also prefer file-backed references when they are
+  large enough to be noisy inline
+
+## Path Conventions Stay As Guidance For Now
+
+Some file paths in the examples use prefixes like `section_root/...` or
+`lesson_root/...`.
+
+Current decision:
+- those prefixes are not currently separate language primitives
+- those paths remain plain path strings
+- the surrounding turn guidance may explain how to interpret those prefixes
+- the language does not currently need separate runtime-root declarations just
+  to make those paths usable
+
+Current implication:
+- typed acquisition modes such as `EnvVar` still matter because they are
+  genuinely different runtime channels
+- context-bound path prefixes do not yet need the same level of formality
+- we should not promote path conventions into a new binding system until a real
+  prompt example requires more than explained guidance
 
 ### 6. Output Modalities Must Be Distinct
 
@@ -439,6 +483,8 @@ The next questions to answer are probably:
    supporting declaration?
 13. How should first-class schema declarations work, and how should profile-
    specific validation attach to them?
+14. When do explained path conventions stop being enough and force a more
+   formal binding model?
 
 ## What This Document Is Not Deciding Yet
 
@@ -448,6 +494,7 @@ This document is not yet deciding:
 - tool boundary syntax
 - evidence syntax
 - validation command syntax
+- formal runtime-root declarations or path interpolation primitives
 
 Those may attach to this model later, but they should not blur the more
 primitive question of agent turn inputs and outputs.
