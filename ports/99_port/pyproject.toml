@@ -18,5 +18,5 @@ pyprompt = { path = "../..", editable = true }
 
 [[tool.pyprompt.emit.targets]]
 name = "section"
-entrypoint = "prompts/section/AGENTS.prompt"
+entrypoint = "prompts/agents/dossier_engineer/AGENTS.prompt"
 output_dir = "build"
