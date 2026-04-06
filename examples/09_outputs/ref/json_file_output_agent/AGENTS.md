@@ -14,6 +14,7 @@ Core job: write the lesson manifest as structured JSON.
 - Schema: Lesson Manifest Schema
 - Schema Profile: `OpenAIStructuredOutput`
 - Schema File: `schemas/lesson_manifest.schema.json`
+- Example File: `examples/lesson_manifest.example.json`
 - Requirement: Required
 
 #### Must Include
@@ -41,20 +42,7 @@ Keep validator command details, validator output, and placeholder-copy status in
 
 #### JSON Schema
 
-```json
-{
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["title", "steps"],
-  "properties": {
-    "title": { "type": "string" },
-    "steps": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
-  }
-}
-```
+See `schemas/lesson_manifest.schema.json`.
 
 #### Field Notes
 
@@ -63,12 +51,7 @@ Keep validator command details, validator output, and placeholder-copy status in
 
 #### Example
 
-```json
-{
-  "title": "Intro To Pot Odds",
-  "steps": ["intro", "quiz", "review"]
-}
-```
+See `examples/lesson_manifest.example.json`.
 
 ## Your Job
 

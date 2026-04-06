@@ -35,16 +35,11 @@ output shape LessonManifestJson: "Lesson Manifest JSON"
     kind: JsonObject
 
     schema: LessonManifestSchema
+    example_file: "examples/lesson_manifest.example.json"
 
     explanation: "Field Notes"
         "`title` is the learner-facing title."
         "`steps` is the ordered list of step identifiers."
-
-    example: "Example"
-        "{"
-        "  \"title\": \"Intro To Pot Odds\","
-        "  \"steps\": [\"intro\", \"quiz\", \"review\"]"
-        "}"
 
 
 output shape OwnerUpdateComment: "Owner Update Comment"
