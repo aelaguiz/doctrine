@@ -1,0 +1,21 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `Copywriter`:
+# - runtime.CurrentIssuePlan
+# - concepts_terms_curator.ConceptsTermsCuratorArtifact
+# - lesson_architect.LessonArchitectArtifact
+# - situation_synthesizer.SituationSynthesizerArtifact
+# - playable_materializer.PlayableMaterializerArtifact
+# - live_surfaces.LessonManifest
+#
+# Shared runtime inputs live in `runtime.prompt`.
+# The live lesson surface lives in `live_surfaces.prompt`.
+
+# Artifact-backed input
+input CopywriterArtifact: "Copywriter Artifact"
+    source: File
+        path: "lesson_root/_authoring/copywriter.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Copywriter artifact as the learner-facing wording, grounding, anti-leak, and post-copy validation contract."

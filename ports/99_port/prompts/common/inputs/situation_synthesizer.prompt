@@ -1,0 +1,18 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `SituationSynthesizer`:
+# - runtime.CurrentIssuePlan
+# - lesson_architect.LessonArchitectArtifact
+# - playable_strategist.PlayableStrategistArtifact
+#
+# This module declares the artifact-backed input that later lesson lanes use
+# once concrete reps and sequencing truth have been earned.
+
+# Artifact-backed input
+input SituationSynthesizerArtifact: "Situation Synthesizer Artifact"
+    source: File
+        path: "lesson_root/_authoring/situation_synthesizer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Situation Synthesizer artifact as the kept-rep, rejected-rep, sequencing, solver-screening, and exact-move-authority contract."

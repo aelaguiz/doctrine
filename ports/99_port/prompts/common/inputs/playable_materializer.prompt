@@ -1,0 +1,19 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `PlayableMaterializer`:
+# - runtime.CurrentIssuePlan
+# - runtime.AttachedCheckoutRoot
+# - lesson_architect.LessonArchitectArtifact
+# - situation_synthesizer.SituationSynthesizerArtifact
+#
+# This module declares the artifact-backed input that later lanes use once the
+# lesson has been built and its validation truth is current.
+
+# Artifact-backed input
+input PlayableMaterializerArtifact: "Playable Materializer Artifact"
+    source: File
+        path: "lesson_root/_authoring/playable_materializer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Playable Materializer artifact as the build, route-choice, validation, and placeholder-status contract for the lesson."

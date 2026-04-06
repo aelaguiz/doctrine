@@ -1,0 +1,21 @@
+import ..artifacts.shared
+
+
+# V1 composition for `AcceptanceCritic` is intentionally not frozen as one
+# universal fixed bundle.
+#
+# It always starts from:
+# - runtime.CurrentIssuePlan
+# - the current artifact under review
+# - any additional upstream artifacts explicitly named by that artifact's
+#   contract
+#
+# This module only declares the review artifact that later lanes may consume.
+
+# Artifact-backed input
+input AcceptanceCriticArtifact: "Acceptance Critic Artifact"
+    source: File
+        path: "scope_root/_authoring/acceptance_critic.md"
+    shape: ReviewArtifactDocument
+    requirement: Required
+    "Use the current Acceptance Critic artifact as the review verdict, use-now truth, and reroute contract for the current reviewed scope."

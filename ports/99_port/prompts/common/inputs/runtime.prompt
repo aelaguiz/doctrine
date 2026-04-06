@@ -1,0 +1,28 @@
+# Shared runtime-channel inputs reused across the 99 port.
+#
+# These stay close to the examples:
+# - prompt-provided context uses `source: Prompt`
+# - file-backed current state uses `source: File`
+# - runtime checkout context uses `source: EnvVar`
+
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue plan to understand the intended lane, current scope, and honest next step."
+
+
+input CurrentIssueState: "Current Issue State"
+    source: File
+        path: "track_root/_authoring/CURRENT_ISSUE_STATE.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue state to understand the named current files, publish state, and other live coordination truth."
+
+
+input AttachedCheckoutRoot: "Attached Checkout Root"
+    source: EnvVar
+        env: "ATTACHED_CHECKOUT_ROOT"
+    shape: DirectoryPath
+    requirement: Required
+    "Use this environment variable to resolve the attached checkout when the lane needs current product truth or validator access."

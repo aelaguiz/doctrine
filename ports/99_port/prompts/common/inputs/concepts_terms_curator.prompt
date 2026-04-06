@@ -1,0 +1,45 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `ConceptsTermsCurator`:
+# - runtime.CurrentIssuePlan
+# - dossier_engineer.DossierEngineerArtifact
+# - concepts_terms_curator.TermRegistry
+# - concepts_terms_curator.ConceptSlugToTermIdMap
+# - concepts_terms_curator.VocabStringToTermIdMap
+#
+# Shared runtime inputs live in `runtime.prompt`.
+# Upstream section-boundary truth lives in `dossier_engineer.prompt`.
+
+# Artifact-backed input
+input ConceptsTermsCuratorArtifact: "Concepts Terms Curator Artifact"
+    source: File
+        path: "section_root/_authoring/concepts_terms_curator.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Concepts Terms Curator artifact as the locked concept and term contract for the section."
+
+
+# Stable external truth
+input TermRegistry: "Term Registry"
+    source: File
+        path: "packages/game_content/assets/terms/term_registry.v1.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the shipped term registry when concept or glossary decisions need current registry truth."
+
+
+input ConceptSlugToTermIdMap: "Concept Slug To Term Id Map"
+    source: File
+        path: "agents/terms/mappings/concept_slug_to_term_id.v1.json"
+    shape: JsonObject
+    requirement: Required
+    "Use this mapping when concept candidates must be checked against existing term ids."
+
+
+input VocabStringToTermIdMap: "Vocab String To Term Id Map"
+    source: File
+        path: "agents/terms/mappings/vocab_string_to_term_id.v1.json"
+    shape: JsonObject
+    requirement: Required
+    "Use this mapping when learner-facing vocabulary needs continuity checks against existing term ids."

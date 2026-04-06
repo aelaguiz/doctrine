@@ -1,0 +1,18 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `PlayableStrategist`:
+# - runtime.CurrentIssuePlan
+# - dossier_engineer.DossierEngineerArtifact
+# - section_architect.SectionArchitectArtifact
+#
+# This module declares the artifact-backed input that later lesson lanes use
+# when section-wide playable strategy has already been chosen.
+
+# Artifact-backed input
+input PlayableStrategistArtifact: "Playable Strategist Artifact"
+    source: File
+        path: "section_root/_authoring/playable_strategist.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Playable Strategist artifact as the accepted section strategy and downstream playable-constraint contract."

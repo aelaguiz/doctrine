@@ -1,0 +1,26 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `DossierEngineer`:
+# - runtime.CurrentIssuePlan
+# - dossier_engineer.TrackMetadata
+#
+# Shared runtime inputs live in `runtime.prompt`.
+# This module keeps the role-local stable inputs only.
+
+# Artifact-backed input
+input DossierEngineerArtifact: "Dossier Engineer Artifact"
+    source: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Dossier Engineer artifact as the section teaching-burden contract when a later lane needs the section boundary and why it exists now."
+
+
+# Stable external truth
+input TrackMetadata: "Track Metadata"
+    source: File
+        path: "track_root/track.meta.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the current track metadata when section grounding depends on track-level sequence or structural truth."

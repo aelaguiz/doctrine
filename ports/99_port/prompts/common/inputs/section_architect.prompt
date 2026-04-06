@@ -1,0 +1,18 @@
+import ..artifacts.shared
+
+
+# V1 input composition for `SectionArchitect`:
+# - runtime.CurrentIssuePlan
+# - dossier_engineer.DossierEngineerArtifact
+# - concepts_terms_curator.ConceptsTermsCuratorArtifact
+#
+# This module declares the artifact-backed input that downstream lanes can trust
+# after section architecture is settled.
+
+# Artifact-backed input
+input SectionArchitectArtifact: "Section Architect Artifact"
+    source: File
+        path: "section_root/_authoring/section_architect.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+    "Use the current Section Architect artifact as the section lesson-map contract and template corridor for later lanes."
