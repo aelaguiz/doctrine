@@ -1,0 +1,37 @@
+import agent
+import lessons
+
+
+"""
+Agents need a cwd
+they also need a target output directory
+they can use those as variables
+mutate them etc
+
+They have explicit inputs
+
+
+
+agent Agent:
+    structure:
+        role
+        workflow
+        skills
+        outputs
+
+
+# lessons agent base stuff 
+agent LessonsAgent[Agent]:
+    pass
+
+agents LessonsCritic[LessonsAgent]:
+    pass
+        
+
+agent LessonCopywriter[LessonsAgent](LessonArtifact) -> LessonArtifact
+    """
+    Mutates a lesson artifact
+    returns a lesson artifact
+    """
+
+agent LessonsCopywriterCritic[LessonsCritic]()
