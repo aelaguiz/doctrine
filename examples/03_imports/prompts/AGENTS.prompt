@@ -1,0 +1,12 @@
+import greeting
+import object
+
+
+agent ImportsDemo:
+    role: "You are the imports demonstration agent."
+
+    workflow:
+        "Follow the imported instructions below."
+
+        Greeting
+        Object
