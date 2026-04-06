@@ -21,3 +21,8 @@ Plan doc: [docs/HELLO_WORLD_PARSE_TO_MARKDOWN_POC_2026-04-06.md](/Users/aelaguiz
 - Phase 3 doc sync is complete: updated `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, and `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` to match the shipped bootstrap.
 - Re-opened the canonical plan for one explicit architecture correction: `check_hello_world` is acceptable bootstrap proof, but it must not become the long-term compiler testing pattern.
 - Added a new Phase 4 in the plan to research and re-cut a reusable compiler verification framework before more examples turn testing into a proliferation of hard-coded checker modules.
+- Completed `arch-step external-research` on compiler verification best practices and folded the results into the canonical plan.
+- External research converged on one shared corpus verifier, adjacent machine-readable case manifests under `examples/`, layered assertion styles, first-class negative cases, and deferred fuzzing as a later complement.
+- Updated the plan so the next recommended move is another deep-dive pass to lock the shared verifier UX and case-manifest schema before more code lands.
+- Tightened the shared-verifier seed set in the canonical plan: the first manifest-backed corpus should cover `HelloWorld`, `HelloWorld2`, and `examples/02_sections`.
+- Kept that seed-set decision honest in the plan: `02_sections` is part of the first output-manifest surface, but it is not being pretended green before the grammar grows to support it.

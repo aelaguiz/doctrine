@@ -24,15 +24,15 @@ related:
 - Outcome: Bootstrap the first real PyPrompt language grammar with `Lark`, prove it against the Hello World subset, and use that shipped slice to define the next requirement: a reusable compiler-verification framework rather than a growing pile of one-off example checkers.
 - Problem: The repo had no runnable grammar, no parse/compile loop, and no cheap way to rerun the language contract as examples evolve; now that the first loop exists, the next architecture risk is scaling verification by hard-coding more `hello world`-style checks one example at a time.
 - Approach: Lock the first grammar to the exact syntax pressure already present in `examples/01_hello_world/prompts/AGENTS.prompt`, author one checked-in `Lark` grammar for it, parse into a minimal typed AST, compile a selected agent into Markdown, and treat that bootstrap loop as proof of viability rather than the final compiler-test architecture.
-- Plan: Ground the first grammar in the current examples and design notes, keep the current `01_hello_world` source file parseable as-authored, wire one runner plus one `make` target, keep every unsupported construct fail-loud, and explicitly open the next phase to research and design a reusable compiler test framework before example growth turns verification into a maintenance mess.
-- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds; and the shipped `check_hello_world` path must remain a bootstrap proof, not the long-term pattern for full-compiler verification.
+- Plan: Ground the first grammar in the current examples and design notes, keep the current `01_hello_world` source file parseable as-authored, wire one runner plus one `make` target, keep every unsupported construct fail-loud, and then converge verification onto one shared `verify_corpus` path with adjacent `cases.toml` manifests, a filtered `make hello-world` alias, and a planned `02_sections` render contract instead of growing more one-off checker modules.
+- Non-negotiables: One parser front-end only; one checked-in grammar only; minimum custom wiring around `Lark`; `.prompt` files are the input-language SSOT; checked `AGENTS.md` files are approximate rendered examples, not pristine byte-level goldens, and may contain bugs; no hand-written fallback parser; no hidden "first agent wins" behavior; no source slicing or pre-processing to dodge unsupported syntax in the accepted fixture; if a source file contains multiple agents, the runner must select the target agent explicitly; if the language shape forces hacks, tighten or change the language instead of layering parser workarounds; the shared verifier must become the only durable compiler-test owner path; and the shipped `check_hello_world` logic must disappear as separate verifier logic once `verify_corpus` covers `01_hello_world`.
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
 deep_dive_pass_1: done 2026-04-06
-external_research_grounding: not started
-deep_dive_pass_2: not started
+external_research_grounding: done 2026-04-06
+deep_dive_pass_2: done 2026-04-06
 recommended_flow: deep dive -> external research grounding -> deep dive again -> phase plan -> implement
 note: This is a warn-first checklist only. It should not hard-block execution.
 -->
@@ -66,6 +66,14 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - Wiring one simple local command such as `make hello-world` to run the bootstrap parse/compile/verify loop
 - Using this loop to expose holes in the current example/spec story before extending the grammar to later examples
 - Making a reusable full-compiler verification framework an explicit next-step requirement, so the bootstrap checker does not silently become the testing architecture
+- Seeding the first shared verification corpus with three concrete rendered cases:
+  - `HelloWorld`
+  - `HelloWorld2`
+  - `examples/02_sections`
+- Locking the first shared-verifier contract and run surface:
+  - `examples/*/cases.toml` loaded through Python stdlib `tomllib`
+  - `make verify-examples` as the full active-corpus run
+  - `make hello-world` as a filtered alias over `examples/01_hello_world/cases.toml`
 - Preferring stock `Lark` facilities wherever they fit cleanly, including ordinary grammar rules, the built-in indentation machinery when needed, and standard tree/transform tooling
 
 ## 0.3 Out of scope
@@ -85,6 +93,7 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - General agent-field flexibility beyond the exact bootstrap subset, including reordered fields, repeated `role` / `workflow` fields, or additional agent fields
 - Any attempt to model `99_not_clean_but_useful` in this first grammar pass
 - Custom parser sidecars, bespoke recovery layers, or syntax-specific hacks whose main job is to rescue a language shape that does not fit cleanly in `Lark`
+- A custom manifest DSL, inline source-mutation mini-language, snapshot updater, or other verifier machinery beyond adjacent TOML manifests plus ordinary local prompt files
 
 ## 0.4 Definition of done (acceptance evidence)
 
@@ -109,7 +118,8 @@ A small `Lark`-based grammar and one repeatable local verification command can p
 - The renderer never invents visible headings or extra blank-line structure that are not implied by explicit authored titles and source ordering
 - Grammar growth follows the example sequence and design notes; unsupported features fail loudly instead of being guessed
 - If a proposed syntax feature requires non-idiomatic parser hacks, the default response is to change or defer the language feature instead of normalizing the hack
-- Example-specific hard-coded checks may prove the first slice, but they must not become the durable verification architecture for the full compiler
+- Shared compiler verification converges on `pyprompt.verify_corpus`; one-off checker modules are transitional only and must be deleted once migrated
+- `cases.toml` manifests are machine-checked verifier contracts distinct from approximate `AGENTS.md` refs
 
 # 1) Key Design Considerations (what matters most)
 
@@ -240,74 +250,227 @@ That means the project can keep inventing syntax faster than it can prove the la
 
 ## 3.3 Open questions (evidence-based)
 
-- When should the repo add either a second approximate rendered example for `HelloWorld2` or a stronger machine-checked output contract distinct from `AGENTS.md`, so the second `role` form present in `examples/01_hello_world/prompts/AGENTS.prompt` stops being parseable-but-lightly-verified bootstrap pressure? — settle when the first loop is running and `phase-plan` decides whether that is part of the next grammar step or a separate cleanup pass.
+- Whether the repo still wants a second approximate human-readable ref for `HelloWorld2` once the shared verifier owns a machine-checked render contract for it — settle after the shared harness lands and the remaining value of another manual ref is clearer.
 - If a future example requires syntax that breaks clean `LALR` + stock `Indenter` usage, do we widen parser mode or simplify the language? — settle by treating LALR collisions or required custom post-processing as evidence and defaulting to language simplification unless the feature is clearly worth the added complexity.
-- What is the best-practice verification architecture for a growing compiler like this: golden files, corpus-driven contract tests, AST snapshots, layered parser/compiler/render checks, or some blend? — settle with `arch-step external-research` before the repo adds more example-specific checker entrypoints.
 <!-- arch_skill:block:research_grounding:end -->
+
+<!-- arch_skill:block:external_research:start -->
+# External Research (best-in-class references; plan-adjacent)
+
+> Goal: anchor the plan in idiomatic compiler-test practices without importing brittle cargo cult. This section is intentionally about reusable verification architecture, not PyPrompt-specific syntax semantics.
+
+## Topics researched (and why)
+
+- Shared compiler-test harnesses and corpus organization — because the plan now explicitly rejects a future of `check_<example>` script proliferation.
+- Output assertion strategy for compiler tools — because the repo needs stronger test truth than approximate `AGENTS.md` refs without turning every rendered artifact into brittle byte-for-byte churn.
+- Negative corpus and diagnostics testing — because fail-loud unsupported syntax and compiler errors are part of the language contract, not incidental edge cases.
+- Fuzzing as an adjunct signal — because parser/compiler frontends benefit from robustness checks, but the plan needs to know whether fuzzing belongs in the first reusable framework or later.
+
+## Findings + how we apply them
+
+### Shared Harnesses And Corpus Design
+
+- Best practices (synthesized):
+  - Serious compiler projects centralize test execution in one harness with suites or modes rather than proliferating ad hoc scripts. Rust’s `compiletest` is the main harness for a large, multi-suite compiler test corpus, and Tree-sitter runs parser tests over a dedicated corpus folder rather than per-feature scripts.
+  - Test cases usually live near the domain inputs and carry local expectations, whether via inline directives/comments, specialized corpus files, or adjacent expected-output files.
+  - The “escape hatch” style test is explicitly treated as the fallback, not the default. Rust documents `run-make` as the general-purpose route only when the normal suites do not fit.
+- Recommended default for this plan:
+  - Adopt one shared corpus verifier under `pyprompt/`, not more example-specific checker modules.
+  - Keep `examples/` as the authoritative prompt corpus and place machine-readable verification manifests adjacent to each example directory instead of duplicating fixtures elsewhere.
+  - Use suite-like case categories inside that shared verifier, such as parse-pass, compile-pass, render-contract, and expected-failure cases.
+  - Start with a deliberately small seed corpus: `HelloWorld`, `HelloWorld2`, and `02_sections`.
+  - Inference from the sources plus repo constraints: adjacent sidecar manifests are a better fit than inline test directives because `.prompt` files are both input-language SSOT and human-facing examples, so the plan should avoid polluting them with compiler-test control syntax unless later evidence proves that is cleaner.
+- Pitfalls / footguns:
+  - `check_<example>` proliferation creates drift in control paths, duplicated harness logic, and inconsistent truth surfaces.
+  - General-purpose escape-hatch recipes become the default if the shared harness is not expressive enough early.
+  - Copying prompts into a separate fixture tree makes it harder to keep language examples and compiler tests in sync.
+- Sources:
+  - Compiletest - Rust Compiler Development Guide — https://rustc-dev-guide.rust-lang.org/tests/compiletest.html — authoritative because it documents the Rust compiler’s main harness, suite model, and when general-purpose recipe tests are appropriate.
+  - Writing Tests - Tree-sitter — https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html — authoritative because it documents an established parser project’s corpus-driven testing model.
+  - LLVM Testing Infrastructure Guide — https://llvm.org/docs/TestingGuide.html — authoritative because it documents LLVM’s shared regression harness and test organization norms.
+
+### Output Assertions Without Brittle Goldens
+
+- Best practices (synthesized):
+  - Shared harnesses support multiple assertion styles instead of forcing every test into full exact-output comparison. Rust UI tests normalize unstable output and can compare by lines when ordering is nondeterministic. LLVM recommends FileCheck-style textual assertions for the parts that matter and warns against fragile incidental output checks.
+  - Exact blessed outputs are still useful, but mainly for intentionally stable artifacts and only when normalization or generated check updates keep maintenance tolerable.
+  - Tests should be minimal and explicit about what behavior matters, rather than binding to unrelated path names, generated identifiers, or incidental formatting noise.
+- Recommended default for this plan:
+  - Split verification truth into layers:
+    - exact stabilized outputs only for surfaces the repo deliberately wants to lock
+    - normalized line-based or targeted excerpt/pattern checks for human-facing Markdown where only some semantics matter
+    - machine-readable semantic contracts in the case manifest for facts like selected agent, expected headings, required lines, and expected failure stage
+  - Keep approximate `AGENTS.md` refs advisory until they are deliberately re-earned as stable machine-checked outputs.
+  - Do not let the reusable verifier default to byte-for-byte Markdown golden files for every example.
+- Pitfalls / footguns:
+  - brittle whole-file goldens against approximate manual refs
+  - assertions that accidentally depend on filesystem paths, ordering noise, or nondeterministic output details
+  - snapshot churn that obscures real compiler regressions
+- Sources:
+  - UI tests - Rust Compiler Development Guide — https://rustc-dev-guide.rust-lang.org/tests/ui.html — authoritative because it documents normalized snapshot comparison, line-based comparison, and output-check controls in the Rust compiler suite.
+  - Compiletest directives - Rust Compiler Development Guide — https://rustc-dev-guide.rust-lang.org/tests/directives.html — authoritative because it documents per-test directive controls and normalization hooks in the Rust compiler harness.
+  - LLVM Testing Infrastructure Guide — https://llvm.org/docs/TestingGuide.html — authoritative because it documents FileCheck-oriented output verification and fragile-test avoidance in LLVM.
+
+### Negative Corpus And Diagnostics
+
+- Best practices (synthesized):
+  - Invalid inputs are first-class test cases, not leftovers. Rust has dedicated suites and directives for expected compile failure, and Tree-sitter has an `:error` attribute specifically for invalid parse cases.
+  - A good shared harness distinguishes expected-success and expected-failure modes clearly enough that test authors do not need bespoke scripts for error cases.
+  - Diagnostics assertions should focus on stable contract points, such as error class, failure stage, required message excerpts, or normalized output, rather than overfitting the entire raw stderr payload.
+- Recommended default for this plan:
+  - Add explicit invalid-case support to the shared verifier from the start.
+  - The case manifest should encode the failure stage (`parse`, `compile`, later maybe `render`) and the stable expectation (`error code`, exception class, required excerpt, or normalized diagnostic file).
+  - Existing human-authored error examples like `COMPILER_ERROR.md` can remain useful reference material, but the shared harness should rely on machine-readable failure contracts instead of raw prose files as primary truth.
+- Pitfalls / footguns:
+  - only testing happy paths
+  - exact stderr snapshots without normalization
+  - unclear separation between parse failures and semantic/compiler failures
+- Sources:
+  - Compiletest - Rust Compiler Development Guide — https://rustc-dev-guide.rust-lang.org/tests/compiletest.html — authoritative because it documents suite-level success and failure modes and when they should be used.
+  - UI tests - Rust Compiler Development Guide — https://rustc-dev-guide.rust-lang.org/tests/ui.html — authoritative because it documents compiler-output checking behavior.
+  - Writing Tests - Tree-sitter — https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html — authoritative because it documents explicit invalid-parse assertions in parser corpus tests.
+
+### Fuzzing As A Later Complement
+
+- Best practices (synthesized):
+  - Coverage-guided fuzzing is valuable for parser/frontend robustness, but it complements rather than replaces deterministic corpus tests.
+  - Fuzzers work best when they target a stable entrypoint and mutate a seed corpus, and saved failure inputs should flow back into the deterministic regression suite.
+- Recommended default for this plan:
+  - Defer fuzzing until after the shared deterministic verifier exists.
+  - When it arrives, target the narrow parser/compiler entrypoints and seed from the existing example corpus plus invalid cases.
+  - Treat fuzzing as robustness amplification, not as the primary verification architecture.
+- Pitfalls / footguns:
+  - adding fuzzing before deterministic contract tests exist
+  - treating fuzzing as a substitute for explicit parse/compile/render expectations
+- Sources:
+  - LibFuzzer - a library for coverage-guided fuzz testing — https://llvm.org/docs/LibFuzzer.html — authoritative because it documents corpus-based fuzzing, stable fuzz target entrypoints, and regression reuse of discovered inputs.
+
+## Adopt / Reject summary
+
+- Adopt:
+  - one shared corpus-driven verifier under `pyprompt/` as the canonical compiler-test owner path
+  - adjacent machine-readable case manifests under `examples/<example>/` so prompts stay authoritative and fixtures do not fork
+  - layered verification signals: parse/compile/render/end-to-end, with exact, normalized, or targeted assertions chosen per surface
+  - first-class negative corpus support with stable failure-stage expectations
+  - fuzzing only as a later complement once the deterministic corpus harness exists
+- Reject:
+  - more one-off `check_<example>` modules as the verification growth path
+  - treating approximate `examples/*/ref/AGENTS.md` files as default exact goldens
+  - broad recipe-style escape hatches as the default compiler-test architecture
+  - broad fuzzing before the deterministic verifier and example contracts exist
+
+## Open questions (ONLY if truly not answerable)
+
+- Whether later examples beyond `02_sections` will justify broader assertion modes than `exact_lines`, stable failure excerpts, and advisory ref diffs — evidence needed: the first grammar-expansion phases after the shared harness exists.
+<!-- arch_skill:block:external_research:end -->
 
 # 4) Current Architecture (as-is)
 <!-- arch_skill:block:current_architecture:start -->
 ## 4.1 On-disk structure
 
-Current repo structure is still docs-and-examples only:
+The repo now has a real but still narrow compiler slice:
 
-- `docs/` contains language direction, parser-fit research, and the current architecture plan
-- `examples/` contains the authoritative prompt corpus plus approximate rendered refs, including `examples/01_hello_world/prompts/AGENTS.prompt` and `examples/01_hello_world/ref/AGENTS.md`
-- `for_reference_only/lark/` contains a checked-out local Lark reference tree for design grounding only
-- `.gitignore` excludes `/for_reference_only/`, which reinforces that the reference clone is not the product code path
+- `pyproject.toml`
+  - declares `lark` and `interegular`
+  - already pins `requires-python = ">=3.11"`, which means stdlib `tomllib` is available for the shared verifier
+- `Makefile`
+  - exposes only `hello-world`
+- `pyprompt/`
+  - `grammars/pyprompt.lark`
+  - `indenter.py`
+  - `model.py`
+  - `parser.py`
+  - `compiler.py`
+  - `renderer.py`
+  - `check_hello_world.py`
+- `examples/`
+  - authoritative `.prompt` inputs
+  - approximate `ref/AGENTS.md` outputs
+  - no checked-in `cases.toml` manifests yet
+- `for_reference_only/lark/`
+  - local design/reference tree only
+  - not a runtime dependency surface
 
-There is no compiler-owned package, no `Makefile`, no build metadata, and no runtime verification entrypoint.
+The important missing pieces are now specific, not vague:
+
+- there is no `pyprompt/verify_corpus.py`
+- there is no checked-in machine-readable verifier contract under `examples/*/cases.toml`
+- there is no canonical home for negative prompt fixtures beyond ad hoc local testing
+- `examples/02_sections/` exists only as prompt plus approximate ref, not as executable or even machine-readable verifier truth
 
 ## 4.2 Control paths (runtime)
 
-There is no runtime control path yet. The current effective flow is human-only:
+The current shipped runtime flow is:
 
-1. Read example source under `examples/`
-2. Read approximate rendered refs under `examples/*/ref`
-3. Read language notes and research docs under `docs/`
-4. Infer the intended grammar and output behavior by hand
+1. `make hello-world`
+2. `python -m pyprompt.check_hello_world`
+3. `pyprompt.check_hello_world` calls `parse_file(PROMPT_PATH)`
+4. `_run_parse_smoke_check` asserts the parsed agent-name tuple is exactly `("HelloWorld", "HelloWorld2")`
+5. `compile_prompt(prompt_file, "HelloWorld")`
+6. `render_markdown(compiled)`
+7. `_run_render_smoke_check` exact-compares the rendered output against the hard-coded `EXPECTED_RENDERED_LINES` Python constant
+8. `_print_advisory_ref_diff` optionally diffs against `examples/01_hello_world/ref/AGENTS.md`
 
-For Hello World specifically, the source/ref relationship is manual:
+That path proves the bootstrap works, but it also shows the present architectural limit clearly:
 
-- `examples/01_hello_world/prompts/AGENTS.prompt` contains both `HelloWorld` and `HelloWorld2`
-- `examples/01_hello_world/ref/AGENTS.md` contains one approximate rendered output only
-- inline comments in `examples/01_hello_world/prompts/AGENTS.prompt` also carry render-contract pressure:
-  - scalar `role` should render as plain leading text
-  - titled `role` should render as a Markdown heading block
-- there is no code path that parses the file, selects an agent, or proves which behavior is actually implemented
+- render-contract truth for `HelloWorld` currently lives in Python constants, not in adjacent machine-readable example contracts
+- `HelloWorld2` is parsed by the shipped command but does not yet have a checked-in render contract in the verifier path
+- `02_sections` has no runtime path at all
+- the current command is not a reusable harness; it is one dedicated script for one example directory
 
 ## 4.3 Object model + key abstractions
 
-The repo currently implies a growing language surface without any implemented model behind it.
-
-Immediate bootstrap pressure from `examples/01_hello_world` is:
+The implemented compiler model is intentionally small:
 
 - `PromptFile`
+  - `agents: tuple[Agent, ...]`
 - `Agent`
-- `Role` in two shapes:
-  - scalar text
-  - titled block with ordered quoted lines
-- `Workflow` with explicit title and ordered quoted lines
+  - `name: str`
+  - `fields: tuple[RoleScalar | RoleBlock | Workflow, ...]`
+- `RoleScalar`
+  - plain opening prose
+- `RoleBlock`
+  - titled block with ordered lines
+- `Workflow`
+  - titled block with ordered lines
+- `CompiledAgent`
+  - explicit handoff from compiler to renderer after bootstrap validation
 
-Near-term extension pressure already exists in later examples:
+The important architectural gap is that the verifier does not yet have its own explicit contract model. Instead, the current verifier truth is embedded in `pyprompt/check_hello_world.py` constants:
+
+- `TARGET_AGENT`
+- `EXPECTED_AGENT_NAMES`
+- `EXPECTED_RENDERED_LINES`
+
+Near-term extension pressure remains unchanged:
 
 - keyed nested workflow entries in `examples/02_sections`
 - imports and symbol references in `examples/03_imports`
 - inheritance and ordered patching in `examples/04_inheritance` through `examples/06_nested_workflows`
 - additional declaration and contract pressure in `examples/08_inputs`, `examples/09_outputs`, `examples/10_turn_outcomes`, and `examples/11_skills_and_tools`
 
-None of those concepts has an implemented AST, parser tree transform, semantic validator, or renderer today.
+None of those concepts currently has:
+
+- an implemented AST extension
+- a checked-in machine-readable verifier contract
+- a shared case runner that can report pass/fail stage consistently across examples
 
 ## 4.4 Observability + failure behavior today
 
-There is no parser or compiler failure surface today because nothing runs.
+There is now an explicit parser/compiler failure surface for the shipped bootstrap:
 
-Current failure signals are indirect:
+- parser construction fails loudly on grammar collisions under `strict=True`
+- parsing fails loudly on unsupported syntax in the shipped subset
+- compiler validation fails loudly on missing targets, duplicate targets, and out-of-subset agent shapes
+- `make hello-world` exits nonzero when the semantic smoke check fails
 
-- docs and examples can drift without an executable proof
-- the `01_hello_world` mixed-fixture ambiguity is visible only through manual reading
-- grammar collisions, indentation mistakes, and unsupported syntax have no runtime error path yet
-- output mismatches can only be spotted by human comparison today, and those mismatches may indicate either a renderer bug or a bug in the approximate ref
+Current remaining observability gaps are:
+
+- `check_hello_world.py` catches every exception and collapses it into one human-readable failure line, so the current verifier does not report a stable case-by-case failure stage taxonomy
+- there is no checked-in negative corpus, only manually run negative checks
+- there is no shared summary surface across multiple cases or manifests
+- `HelloWorld2` and `02_sections` have no machine-checked render contract in the shipped runtime path
+- approximate refs can still drift without adjacent case manifests unless the verifier grows beyond the bootstrap slice
 
 ## 4.5 UI surfaces (ASCII mockups, if UI work)
 
@@ -318,50 +481,55 @@ Not applicable. This is a local compiler/bootstrap design.
 <!-- arch_skill:block:target_architecture:start -->
 ## 5.1 On-disk structure (future)
 
-The canonical implementation path will be a repo-root Python package plus one repo-root command surface:
+The canonical implementation path is still the repo-root Python package plus repo-root `Makefile`, but the durable verifier owner path is now fully specified:
 
 - `pyproject.toml`
-  - minimal Python metadata
-  - declares bootstrap dependencies `lark` and `interegular`
-- `pyprompt/__init__.py`
-  - package boundary only
+  - keeps the parser/runtime dependency boundary
+  - does not add a separate manifest-parsing dependency because Python 3.11 stdlib `tomllib` is sufficient
 - `pyprompt/grammars/pyprompt.lark`
-  - single syntax source of truth for the currently supported subset
+  - one syntax SSOT
 - `pyprompt/indenter.py`
-  - one tiny `Indenter` subclass and no custom indentation preprocessor
+  - one stock-`Lark` indentation boundary
 - `pyprompt/model.py`
-  - typed dataclasses for the supported syntax model
+  - compiler AST dataclasses only
 - `pyprompt/parser.py`
-  - grammar loading, `Lark` construction, and parse-tree -> AST transform
+  - parse owner path only
 - `pyprompt/compiler.py`
-  - explicit agent selection and fail-loud semantic validation
+  - compile/validate owner path only
 - `pyprompt/renderer.py`
-  - Markdown rendering for the supported subset
-- `pyprompt/check_hello_world.py`
-  - narrow verification entrypoint for the first loop
+  - render owner path only
+- `pyprompt/verify_corpus.py`
+  - the one durable compiler-verification runner
 - `Makefile`
-  - user-facing `hello-world` target
+  - user-facing convenience targets only
 
-The minimal relevant repo tree should look like this once the bootstrap exists:
+The minimal relevant repo tree should look like this after the shared verifier lands:
 
 ```text
 .
 ├── Makefile
 ├── pyproject.toml
 ├── examples/
-│   └── 01_hello_world/
+│   ├── 01_hello_world/
+│       ├── cases.toml
+│       ├── prompts/
+│       │   └── AGENTS.prompt
+│       └── ref/
+│           └── AGENTS.md
+│   └── 02_sections/
+│       ├── cases.toml
 │       ├── prompts/
 │       │   └── AGENTS.prompt
 │       └── ref/
 │           └── AGENTS.md
 └── pyprompt/
     ├── __init__.py
-    ├── check_hello_world.py
     ├── compiler.py
     ├── indenter.py
     ├── model.py
     ├── parser.py
     ├── renderer.py
+    ├── verify_corpus.py
     └── grammars/
         └── pyprompt.lark
 ```
@@ -369,10 +537,15 @@ The minimal relevant repo tree should look like this once the bootstrap exists:
 Reading the tree top-down should already explain ownership:
 
 - `examples/01_hello_world/prompts/AGENTS.prompt` is the authored source fixture
+- `examples/01_hello_world/cases.toml` is the machine-readable verifier contract for both Hello World renders plus any local negative cases that example earns
 - `examples/01_hello_world/ref/AGENTS.md` is the approximate rendered example, not a pristine contract
+- `examples/02_sections/cases.toml` is part of the initial shared-verifier seed set and begins life as a planned render contract, not a falsely green passing example
 - `pyprompt/grammars/pyprompt.lark` is the syntax SSOT
 - `pyprompt/*.py` owns parse -> validate -> render behavior
-- `Makefile` is the human-facing run surface
+- `pyprompt/verify_corpus.py` is the only long-term verification owner path
+- `Makefile` is the human-facing run surface only
+
+Any alternate prompt input needed for negative cases stays under the owning example directory, referenced by relative path from that example’s `cases.toml`. The target architecture explicitly rejects a second fixture tree and rejects inventing a mini patch DSL inside the manifest.
 
 Deliberately not in the first architecture:
 
@@ -381,106 +554,125 @@ Deliberately not in the first architecture:
 - multiple grammar files for the same supported language subset
 - stand-alone generated parsers
 - direct runtime imports from `for_reference_only/lark`
+- one verifier module per example as the long-term testing pattern
+- a retained `pyprompt/check_hello_world.py` once the shared verifier covers `01_hello_world`
+- a custom manifest language beyond TOML plus stdlib parsing
 
 ## 5.2 Control paths (future)
 
-The first canonical control path will be:
+The future full-corpus control path is:
+
+1. `make verify-examples`
+2. `python -m pyprompt.verify_corpus`
+3. `pyprompt.verify_corpus` discovers `examples/*/cases.toml`
+4. each manifest is loaded through stdlib `tomllib`
+5. the harness validates the manifest schema and example-relative paths
+6. the harness executes every `status = "active"` case through the same parse -> compile -> render owner path
+7. any `status = "planned"` case is reported as planned-but-not-executed and does not count green or red
+8. the harness emits one summary and exits nonzero if any active case fails or any manifest is structurally invalid
+
+The retained convenience path is:
 
 1. `make hello-world`
-2. `python -m pyprompt.check_hello_world`
-3. `pyprompt.check_hello_world` calls into `pyprompt.parser` and `pyprompt.compiler`
-4. `pyprompt.parser` loads `pyprompt/grammars/pyprompt.lark` via `Lark.open(..., rel_to=__file__)`
-5. `pyprompt.parser` constructs `Lark(parser='lalr', lexer='contextual', postlex=PyPromptIndenter(), strict=True, maybe_placeholders=False)`
-6. `pyprompt.parser` parses `examples/01_hello_world/prompts/AGENTS.prompt` as-authored and returns a typed AST for the whole file; the grammar declares `_INDENT` / `_DEDENT`, and `_NL` must own newline + trailing indentation whitespace + standalone `#` comment lines in the same stock pattern used by `for_reference_only/lark/examples/indented_tree.py`
-7. `pyprompt.compiler` selects `HelloWorld` explicitly, validates the supported subset for that selected agent, and hands the validated node to `pyprompt.renderer`
-8. `pyprompt.renderer` emits Markdown
-9. `pyprompt.check_hello_world` renders Markdown, runs a small semantic smoke check derived from the prompt/input contract, and may diff the result against `examples/01_hello_world/ref/AGENTS.md` as advisory output-shape evidence
+2. `python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`
+3. the shared verifier executes the active `01_hello_world` cases, which means both `HelloWorld` and `HelloWorld2`
 
-Dependency boundary:
+This resolves the prior command-surface ambiguity:
 
-- the active Python environment must provide `lark` and `interegular`
-- the bootstrap command does not silently downgrade from `strict=True`
-- missing dependencies, grammar collisions, parse errors, semantic validation errors, and semantic smoke-check failures all fail loudly
-- advisory diffs against approximate refs are reported explicitly and may indicate either renderer bugs or ref bugs
+- `make hello-world` stays because it is a useful filtered alias for the first example directory
+- it no longer owns separate verifier logic
+- `pyprompt/check_hello_world.py` is removed once this alias exists
 
-The intended developer UX from repo root is deliberately small:
+Dependency and failure boundary:
+
+- the active environment must still provide `lark` and `interegular`
+- parser construction remains `strict=True`; there is no downgrade path
+- missing dependencies, grammar collisions, parse errors, semantic validation errors, active-case assertion failures, and manifest-structure failures all exit nonzero
+- advisory diffs against approximate refs are reported explicitly and never decide pass/fail on their own
+
+The intended developer UX from repo root becomes:
 
 ```bash
 make hello-world
+make verify-examples
 ```
 
-That command is the default human entrypoint. It should do exactly one thing:
+There is intentionally still no first-pass UX for:
 
-```bash
-python -m pyprompt.check_hello_world
-```
-
-The direct module invocation remains valid for debugging, but it is not a second product surface. The first pass should not add a broader CLI, subcommands, or alternate runners.
-
-This bootstrap entrypoint is intentionally narrow. It is a proof slice, not permission to add `check_sections.py`, `check_imports.py`, and more one-off verifier modules as the compiler grows. The next verification phase must converge on one reusable compiler-test surface.
-
-Expected run behavior:
-
-- success path:
-  - parse `examples/01_hello_world/prompts/AGENTS.prompt`
-  - compile the explicitly selected `HelloWorld` agent
-  - render Markdown and pass the semantic smoke check derived from the input contract
-  - exit `0`
-- fail-loud path:
-  - missing `lark` or `interegular` exits nonzero
-  - grammar collisions or parser construction failures exit nonzero
-  - parse errors exit nonzero
-  - missing or duplicate target-agent names exit nonzero
-  - out-of-subset agent shapes exit nonzero
-  - semantic smoke-check failures exit nonzero
-- advisory path:
-  - diff against `examples/01_hello_world/ref/AGENTS.md` may be printed as a likely renderer bug or ref bug
-
-There is intentionally no first-pass UX for:
-
-- selecting a different target agent from the shell
+- selecting arbitrary case subsets beyond a narrow manifest filter needed by `Makefile`
 - generating new refs automatically
+- snapshot update modes
 - fallback parsing modes
 - partial-success or best-effort rendering
 
 ## 5.3 Object model + abstractions (future)
 
-The minimum supported model for the bootstrap will be:
+The compiler AST stays narrow and explicit:
 
 - `PromptFile`
-  - `agents: list[Agent]`
 - `Agent`
-  - `name: str`
-  - `role: RoleScalar | RoleBlock`
-  - `workflow: Workflow`
 - `RoleScalar`
-  - `text: str`
 - `RoleBlock`
-  - `title: str`
-  - `lines: list[str]`
 - `Workflow`
-  - `title: str`
-  - `lines: list[str]`
+- later, when `02_sections` is implemented, `Workflow` should gain ordered nested section/entry nodes through the same AST instead of through a verifier-only flattening layer
 
-Compiler responsibilities are explicit:
+The shared verifier adds one small contract model, kept deliberately minimal:
+
+- top-level manifest fields:
+  - `schema_version = 1`
+  - `default_prompt = "prompts/AGENTS.prompt"`
+- repeated `[[cases]]` entries
+- common case fields:
+  - `name`
+  - `status = "active" | "planned"`
+  - `kind = "render_contract" | "parse_fail" | "compile_fail"`
+  - optional `prompt` override, always relative to the owning example directory
+  - optional `approx_ref`
+- `render_contract` fields:
+  - `agent`
+  - `assertion = "exact_lines"`
+  - `expected_lines = [ ... ]`
+- `parse_fail` / `compile_fail` fields:
+  - `exception_type`
+  - `message_contains = [ ... ]`
+
+The first schema intentionally does not overbuild:
+
+- no inline source-mutation DSL
+- no regex assertion language
+- no snapshot updater
+- no separate verifier-only AST
+
+Initial manifests are now fully specified:
+
+- `examples/01_hello_world/cases.toml`
+  - one active `render_contract` for `HelloWorld`
+  - one active `render_contract` for `HelloWorld2`
+  - exact line contracts live in the manifest, not in Python constants
+  - `HelloWorld` may also carry an advisory `approx_ref = "ref/AGENTS.md"`
+- `examples/02_sections/cases.toml`
+  - one planned `render_contract` for `SectionsDemo`
+  - exact line contract is authored now as the first non-Hello-World output contract
+  - optional `approx_ref = "ref/AGENTS.md"` remains advisory only
+
+Compiler responsibilities stay explicit:
 
 - `parser.py` owns syntax parsing and AST construction
 - `compiler.py` owns agent selection and subset validation
 - `renderer.py` owns Markdown shape
+- `verify_corpus.py` owns case loading, stage dispatch, assertion evaluation, and final summary/exit behavior
 
-Bootstrap validation and render behavior are also explicit:
+Bootstrap validation and render behavior remain explicit:
 
 - the compile entrypoint requires an explicit target agent name; there is no implicit "first agent wins" mode
 - duplicate agent names in one parsed file are a compiler error
 - selecting a missing target agent is a compiler error
-- the bootstrap subset supports only agents whose field body is exactly one `role` followed by one `workflow`
+- the current bootstrap subset supports only agents whose field body is exactly one `role` followed by one `workflow`
 - reordered fields, duplicate fields, missing required fields, or extra fields are outside the first subset and fail before rendering
 - `RoleScalar` renders as opening body text with no heading
 - `RoleBlock` renders as `## <title>` followed by its ordered lines
 - `Workflow` renders as `## <title>` followed by its ordered lines
 - sibling quoted strings inside one block preserve order and render as consecutive lines; the renderer must not invent bullets or extra blank lines between them
-
-The first grammar will intentionally parse both `role` shapes already present in `examples/01_hello_world/prompts/AGENTS.prompt`, but the first bootstrap loop will treat the `HelloWorld` `AGENTS.md` file as an approximate rendered example only, not as an exact golden.
 
 ## 5.4 Invariants and boundaries
 
@@ -501,6 +693,17 @@ The first grammar will intentionally parse both `role` shapes already present in
 - `for_reference_only/lark` is design input only and never a runtime dependency surface
 - unsupported syntax fails before rendering
 - if a future syntax feature requires non-idiomatic parser rescue logic, the default answer is to change or defer that language feature
+- one shared corpus verifier, `pyprompt.verify_corpus`, must own full-compiler verification once the follow-on phase lands
+- `pyprompt/check_hello_world.py` is deleted once `verify_corpus` covers `examples/01_hello_world`
+- machine-readable case expectations live adjacent to `examples/`, not in a duplicate fixture tree
+- case manifests use plain TOML parsed by stdlib `tomllib`; no extra manifest parser and no custom mini-language
+- per-case `prompt` overrides may point only to files inside the owning example directory; the verifier rejects escaping paths
+- `status = "active"` cases execute and gate exit status; `status = "planned"` cases are schema-validated and reported but do not count as green compiler support
+- the first shared verifier supports only `render_contract`, `parse_fail`, and `compile_fail` cases, plus `exact_lines` success assertions
+- exact rendered-output contracts are stored only where the repo deliberately stabilizes them in machine-readable manifests, not by treating approximate refs as goldens
+- approximate refs remain advisory only, even when a case points at them with `approx_ref`
+- expected-failure cases are first-class and must encode stable failure-stage expectations
+- fuzzing is a later complement to deterministic corpus tests, not a substitute for them
 
 ## 5.5 UI surfaces (ASCII mockups, if UI work)
 
@@ -513,47 +716,56 @@ Not applicable.
 
 | Area | File | Symbol / Call site | Current behavior | Required change | Why | New API / contract | Tests impacted |
 |---|---|---|---|---|---|---|---|
-| Dependency owner | `pyproject.toml` | project metadata | Missing | Add minimal project metadata and declare `lark` + `interegular` | `make hello-world` needs a canonical dependency owner and must not silently downgrade from strict mode | Active env installs the exact parser deps for the bootstrap loop | `make hello-world` |
-| Package boundary | `pyprompt/__init__.py` | package root | Missing | Add one importable package boundary | Avoid scripts-first drift and create one canonical owner path | All bootstrap code imports through `pyprompt.*` | Indirect via module execution |
-| Grammar SSOT | `pyprompt/grammars/pyprompt.lark` | grammar file | Missing | Add the first checked grammar file covering the exact `01_hello_world` syntax pressure, including `%declare _INDENT _DEDENT` and an `_NL` token that absorbs indentation whitespace and standalone `#` comment lines | One grammar file must own the supported subset and stay compatible with the stock `Indenter` contract | Whole-file parse contract for `examples/01_hello_world/prompts/AGENTS.prompt` | `make hello-world` |
-| Indentation boundary | `pyprompt/indenter.py` | `PyPromptIndenter` | Missing | Add one minimal `Indenter` subclass using stock Lark behavior | Keep indentation handling idiomatic and fail-loud | `_NL`, `_INDENT`, `_DEDENT` are the only indentation contract | `make hello-world` |
-| Syntax model | `pyprompt/model.py` | `PromptFile`, `Agent`, `RoleScalar`, `RoleBlock`, `Workflow` | Missing | Add the minimal AST dataclasses for the first supported subset | Keep parse, validation, and render responsibilities separate | Typed AST boundary for the bootstrap subset, including the exact one-role-then-workflow agent shape | Optional focused unit checks later; end-to-end now |
-| Parser boundary | `pyprompt/parser.py` | grammar loader, `Lark` constructor, transformer | Missing | Add grammar loading via `Lark.open(..., rel_to=__file__)`, `parser='lalr'`, `lexer='contextual'`, `strict=True`, `maybe_placeholders=False`, and parse-tree -> AST transform | Canonical parse owner path must exist before implementation grows and the bootstrap AST should not be padded with placeholder `None` values | Parse current `01` source file as-authored and return AST for all agents in file | `make hello-world` |
-| Compiler boundary | `pyprompt/compiler.py` | explicit agent selection + semantic validation | Missing | Add fail-loud target-agent selection, duplicate-name checks, and subset validation | Avoid hidden first-agent behavior and keep unsupported constructs loud | `compile_prompt(..., agent_name)` or equivalent narrow boundary; missing or duplicate targets fail | `make hello-world` |
-| Markdown render | `pyprompt/renderer.py` | Markdown emitter | Missing | Add renderer for the first supported AST subset with explicit `RoleScalar` versus headed-block behavior | Renderer must own Markdown shape explicitly instead of leaving `HelloWorld2` semantics to guesswork | Selected agent -> Markdown string with scalar `role` as plain text and block forms as headed sections | Ref comparison in `make hello-world` |
-| Bootstrap entrypoint | `pyprompt/check_hello_world.py` | `main` | Missing | Add one narrow bootstrap verification module | One canonical runtime path should sit behind the Make target without pretending approximate refs are exact goldens | Parse current fixture, select `HelloWorld`, render, run semantic smoke checks, and optionally print advisory diff evidence | `make hello-world` |
-| User command | `Makefile` | `hello-world` | Missing | Add one simple rerun command | The user asked for a cheap verification loop as examples evolve | `make hello-world` is the human-facing bootstrap contract | `make hello-world` |
-| Source fixture | `examples/01_hello_world/prompts/AGENTS.prompt` | `HelloWorld`, `HelloWorld2` | Authoritative source contains both `role` shapes in one file, plus inline comments about render intent | Keep as the first authoritative source fixture and require the parser to accept it as-authored | Avoid source slicing, duplicate fixtures, or drift between examples and implementation | Whole-file parse plus explicit target-agent selection; source comments remain behavior evidence until a second checked ref exists | `make hello-world` |
-| Approximate output example | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Manually built approximate output example for `HelloWorld` only | Keep as advisory output-shape evidence, not as an authoritative exact golden | Prevents the plan from treating manual examples as pristine truth while still using them to find bugs | Rendered output may be diffed against it and any mismatch must be called out as a likely ref bug or renderer bug | `make hello-world` |
-| Verification architecture follow-on | `pyprompt/check_hello_world.py`, future compiler-test surface TBD | bootstrap checker versus reusable framework | Current shipped verifier is intentionally hard-coded to the Hello World slice | Use external research plus a follow-on design pass to choose one scalable compiler verification architecture before more examples land | Prevents the repo from normalizing a `check_<example>` proliferation pattern | Bootstrap checker is proof only; future compiler verification must converge on one reusable contract framework | Phase 4 planning, then future implementation |
+| Dependency owner | `pyproject.toml` | project metadata | Shipped bootstrap dependency owner | Retain as the canonical dependency owner and keep manifest loading on stdlib `tomllib` instead of adding a new parser dependency | The compiler and shared verifier need one real dependency boundary without unnecessary tooling sprawl | Python 3.11 stdlib TOML parsing plus the existing `lark` / `interegular` deps | `make hello-world`, future `make verify-examples` |
+| Package boundary | `pyprompt/__init__.py` | package root | Shipped package boundary | Retain as the canonical import path for compiler and verifier code | Avoid scripts-first drift and keep one canonical owner path | All compiler and verifier code imports through `pyprompt.*` | Indirect via module execution |
+| Grammar SSOT | `pyprompt/grammars/pyprompt.lark` | grammar file | Shipped bootstrap grammar SSOT | Retain and extend through the same grammar file as later examples land | One grammar file must keep owning the supported subset and stay compatible with the stock `Indenter` contract | Whole-file parse contract for `examples/01_hello_world/prompts/AGENTS.prompt` and later examples | `make hello-world`, future `make verify-examples` |
+| Indentation boundary | `pyprompt/indenter.py` | `PyPromptIndenter` | Shipped stock-Lark indentation boundary | Retain as the single indentation contract | Keep indentation handling idiomatic and fail-loud | `_NL`, `_INDENT`, `_DEDENT` remain the only indentation contract | `make hello-world`, future `make verify-examples` |
+| Syntax model | `pyprompt/model.py` | `PromptFile`, `Agent`, `RoleScalar`, `RoleBlock`, `Workflow` | Shipped bootstrap AST model | Retain and extend the typed AST instead of introducing parallel verification-only structures | Keep parse, validation, and render responsibilities separate | Typed AST boundary for the bootstrap subset and future grammar growth | `make hello-world`, future `make verify-examples` |
+| Parser boundary | `pyprompt/parser.py` | grammar loader, `Lark` constructor, transformer | Shipped bootstrap parser | Retain and extend the same parser boundary as the example corpus grows | Canonical parse owner path already exists and should stay singular | Parse current `01` source file as-authored and later shared-corpus cases through the same entrypoint | `make hello-world`, future `make verify-examples` |
+| Compiler boundary | `pyprompt/compiler.py` | explicit agent selection + semantic validation | Shipped bootstrap compiler boundary | Retain and extend the same compiler boundary under the shared verifier | Avoid hidden first-agent behavior and keep unsupported constructs loud | `compile_prompt(..., agent_name)` or equivalent narrow boundary; missing or duplicate targets fail | `make hello-world`, future `make verify-examples` |
+| Markdown render | `pyprompt/renderer.py` | Markdown emitter | Shipped bootstrap renderer | Retain and extend the same renderer boundary under shared verification | Renderer must keep owning Markdown shape explicitly instead of leaking expectations into test harness code | Selected agent -> Markdown string | `make hello-world`, future `make verify-examples` |
+| Shared verification harness | `pyprompt/verify_corpus.py` | shared corpus runner | Missing | Add one reusable compiler verifier that loads adjacent manifests, validates schema, executes active cases, reports planned cases, and owns final pass/fail summary | Prevents `check_<example>` proliferation and centralizes compiler-test truth | One canonical verifier surface for `render_contract`, `parse_fail`, and `compile_fail` cases | `make hello-world`, `make verify-examples` |
+| Retired bootstrap runner | `pyprompt/check_hello_world.py` | `main` | Shipped narrow bootstrap proof runner | Delete it once `verify_corpus` covers `examples/01_hello_world` | One canonical runtime path should own compiler verification | No separate checker logic remains for `01_hello_world` | `make hello-world`, `make verify-examples` |
+| User commands | `Makefile` | `hello-world`, `verify-examples` | Only `hello-world` exists and it owns dedicated logic via `check_hello_world.py` | Rewire `hello-world` to a filtered `verify_corpus` manifest run and add `verify-examples` for the full active corpus | Keep the UX small while eliminating parallel verifier logic | `make hello-world` -> `python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`; `make verify-examples` -> `python -m pyprompt.verify_corpus` | `make hello-world`, `make verify-examples` |
+| Source fixture | `examples/01_hello_world/prompts/AGENTS.prompt` | `HelloWorld`, `HelloWorld2` | Authoritative source contains both `role` shapes in one file | Keep as the first authoritative source fixture and require the parser to accept it as-authored | Avoid source slicing, duplicate fixtures, or drift between examples and implementation | Whole-file parse plus explicit target-agent selection | `make hello-world`, `make verify-examples` |
+| Hello World contract | `examples/01_hello_world/cases.toml` | active render contracts | Missing | Add two active `render_contract` cases, one for `HelloWorld` and one for `HelloWorld2`, with exact line expectations in TOML | Moves verifier truth out of Python constants and covers both shipped role shapes | `schema_version = 1`, `default_prompt`, and two active exact-line cases | `make hello-world`, `make verify-examples` |
+| Local negative fixtures | `examples/*/prompts/*.prompt` | per-case prompt override targets | No checked-in negative corpus owner path | Keep any future invalid inputs under the owning example directory and reference them by relative `prompt` override from `cases.toml` | Avoid a second fixture tree and avoid inventing an inline mutation DSL | Per-case `prompt` override stays example-local and path-bounded | Future `make verify-examples` |
+| Approximate Hello World ref | `examples/01_hello_world/ref/AGENTS.md` | rendered Markdown | Manually built approximate output example for `HelloWorld` only | Keep as advisory output-shape evidence, not as an authoritative exact golden | Prevents the plan from treating manual examples as pristine truth while still using them to find bugs | A case may optionally carry `approx_ref`, which never decides pass/fail | `make hello-world`, `make verify-examples` |
+| Sections contract | `examples/02_sections/cases.toml` | planned render contract | Missing | Add one planned `render_contract` for `SectionsDemo` with exact lines and optional advisory `approx_ref` | Seeds the first next-example output contract without pretending the current parser already supports it | `status = "planned"` until the grammar/renderer grow to support nested workflow entries | `make verify-examples` |
+| Approximate sections ref | `examples/02_sections/ref/AGENTS.md` | rendered Markdown | Approximate manual output example only | Keep as advisory output-shape evidence for the planned contract | Preserves the current example surface without falsely upgrading it into executable truth | Optional `approx_ref`, advisory only | `make verify-examples` |
 | Live doctrine docs | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md`, `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` | language rules and known gaps | Docs-only truth today | Review and update as implementation lands if shipped behavior or resolved ambiguities differ | Avoid stale truth after code exists | Docs must match the shipped subset and the actual fail-loud behavior | Manual review |
 
 ## 6.2 Migration notes
 
 - Canonical owner path / shared code path:
-  - repo-root package `pyprompt/` plus repo-root `Makefile`
+  - repo-root package `pyprompt/` plus repo-root `Makefile`, with `pyprompt.verify_corpus` as the durable verification owner
 - Deprecated APIs (if any):
-  - none; there is no live compiler yet
+  - direct use of `python -m pyprompt.check_hello_world` once the shared verifier covers `01_hello_world`
 - Delete list (what must be removed; include superseded shims/parallel paths if any):
+  - `pyprompt/check_hello_world.py` after migration to `verify_corpus`
   - no `scripts/`-first bootstrap path
   - no duplicate fixtures under `tests/fixtures/`
   - no second grammar file for the same supported subset
   - no stand-alone parser artifact in the first pass
+  - no inline source-mutation DSL inside `cases.toml`
 - Capability-replacing harnesses to delete or justify:
   - any hand-written lexer
   - any custom indentation preprocessor
   - any bespoke CST-to-AST walker outside ordinary `Transformer` / `ast_utils` usage
   - any source-slicing helper that extracts only `HelloWorld` from the mixed file
   - any direct runtime import from `for_reference_only/lark`
+  - any future per-example checker module once `verify_corpus` exists
 - Live docs/comments/instructions to update or delete:
   - `docs/LANGUAGE_DESIGN_NOTES.md` if the first shipped subset clarifies the supported `role` shapes
   - `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md` if the shipped bootstrap subset hardens the exact `01` agent shape or render contract beyond its earlier scalar-only summary
   - `docs/COMPILER_ERRORS.md` if the first implementation earns concrete parse/compile failures that should be numbered
-  - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` if the `01_hello_world` ambiguity is materially resolved by shipped architecture
+  - `docs/EXAMPLES_COLD_READ_AUDIT_2026-04-06.md` if the `01_hello_world` ambiguity is materially resolved by shipped architecture or the shared verifier changes how that ambiguity is described
 - Behavior-preservation signals for refactors:
   - whole-file parse of `examples/01_hello_world/prompts/AGENTS.prompt`
-  - semantic smoke checks derived from the prompt/input contract and current design notes
-  - advisory diff against `examples/01_hello_world/ref/AGENTS.md` when useful for finding renderer/ref bugs
+  - existing green `make hello-world` before migrating it onto `verify_corpus`
+  - post-migration green `make hello-world` running both active Hello World cases through the shared harness
+  - green `make verify-examples` with active cases passing and planned cases reported separately
+  - advisory diffs against approximate refs when useful for finding renderer/ref bugs
   - `strict=True` grammar construction with no silent fallback
 
 ## 6.3 Pattern Consolidation Sweep (anti-blinders; scoped by plan)
@@ -561,7 +773,10 @@ Not applicable.
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude) |
 |---|---|---|---|---|
 | Live doctrine | `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_AND_PARSER_FIT_ANALYSIS.md`, `docs/COMPILER_ERRORS.md` | Keep shipped subset and failure behavior aligned with the one canonical compiler path | Prevents docs from drifting ahead of the implemented grammar | include |
-| First runtime fixtures | `examples/01_hello_world/prompts/AGENTS.prompt`, `examples/01_hello_world/ref/AGENTS.md` | Treat `examples/` as the authoritative prompt corpus plus approximate rendered examples | Prevents source/ref truth from being silently inverted | include |
+| First runtime fixtures | `examples/01_hello_world/prompts/AGENTS.prompt`, `examples/01_hello_world/ref/AGENTS.md`, `examples/02_sections/ref/AGENTS.md` | Treat `examples/` as the authoritative prompt corpus plus approximate rendered examples | Prevents source/ref truth from being silently inverted | include |
+| Initial verifier seed | `examples/01_hello_world/cases.toml`, `examples/02_sections/cases.toml` | Start the shared harness with two active Hello World render contracts plus one planned headed-section contract | Gives the verifier a small but nontrivial starting corpus before later grammar pressure lands | include |
+| Local negative fixtures | `examples/*/prompts/*.prompt` | Keep future invalid inputs beside their owning example and reference them via manifest path | Prevents a second fixture tree and avoids a verifier-side mutation DSL | include |
+| Bootstrap verifier cleanup | `pyprompt/check_hello_world.py` | Delete the one-off checker once `verify_corpus` owns `01_hello_world` | Prevents legacy verifier drift and parallel logic | include |
 | Next grammar pressure | `examples/02_sections/prompts/AGENTS.prompt` | Extend the same `pyprompt/` package and the same `pyprompt.lark` grammar file for keyed workflow entries | Prevents a second parser path when grammar scope grows | defer |
 | Next grammar pressure | `examples/03_imports/prompts/AGENTS.prompt` and imported prompt files | Extend the same owner path for imports and symbol resolution | Prevents import behavior from being prototyped in side scripts | defer |
 | Semantic growth | `examples/04_inheritance` through `examples/07_handoffs` | Add inheritance and routing semantics through the same AST/compiler path, not parallel prototypes | Prevents semantic drift and duplicated merge logic | defer |
@@ -569,7 +784,7 @@ Not applicable.
 | Output-pressure corpus | `examples/99_not_clean_but_useful` | Keep as rendering pressure only, not bootstrap grammar ownership | Prevents overbuilding the grammar too early | exclude |
 | Alternative parser libs | `for_reference_only/LibCST`, `for_reference_only/pyparsing` | Do not reopen parser choice during bootstrap implementation | Prevents tool drift and parallel experiments | exclude |
 | Duplicate test truth | `tests/fixtures/` or similar duplicate corpora | Do not create copied first-pass fixtures outside `examples/` | Prevents source/ref drift | exclude |
-| Compiler verification growth | `pyprompt/check_hello_world.py`, future shared verification owner path | Converge future compiler testing onto one reusable framework instead of per-example scripts | Prevents verification drift and maintenance blow-up as examples multiply | include |
+| Compiler verification growth | `pyprompt/verify_corpus.py`, `examples/*/cases.toml`, retained `Makefile` aliases only | Converge future compiler testing onto one reusable framework instead of per-example scripts | Prevents verification drift and maintenance blow-up as examples multiply | include |
 <!-- arch_skill:block:call_site_audit:end -->
 
 # 7) Depth-First Phased Implementation Plan (authoritative)
@@ -579,8 +794,8 @@ Not applicable.
 
 Warn-first note:
 
-- `external_research_grounding` and `deep_dive_pass_2` are still not started.
-- This plan proceeds anyway because the current artifact already locks one narrow owner path, one parser mode, one fixture, one run command, and one fail-loud boundary set. No unresolved external dependency or broader product question is blocking the Hello World bootstrap.
+- `external_research_grounding` is now complete and `deep_dive_pass_2` is still not started.
+- External research materially sharpened the verification architecture, so another deep-dive pass is now the recommended next move before implementing the shared verifier.
 
 ## Phase 1 - Parser Foundation
 
@@ -678,7 +893,13 @@ Completed work:
 
 ## Phase 4 - Verification Framework Research And Re-cut
 
-Status: NOT STARTED
+Status: COMPLETE
+
+Completed work:
+- Researched compiler-test best practices from Rust `compiletest`, Rust UI/directive docs, LLVM’s testing guide, Tree-sitter’s parser corpus docs, and LLVM’s `LibFuzzer` guidance.
+- Adopted one shared corpus-driven verifier as the next default architecture instead of more example-specific checker modules.
+- Locked the follow-on verification shape to adjacent machine-readable case manifests, layered assertion styles, first-class negative cases, and deferred fuzzing as a complement rather than a substitute.
+- Re-cut Sections 4, 5, 6, 7, and 8 so the plan names a concrete shared verification owner path.
 
 * Goal:
   Turn the current bootstrap checker into an explicit stepping stone toward a reusable full-compiler verification architecture instead of letting example-by-example hard-coded checks become the default.
@@ -700,6 +921,34 @@ Status: NOT STARTED
   The artifact is explicit about which verification signals are semantic contracts, which are advisory refs, and which belong in negative-corpus testing.
 * Rollback:
   If external research does not sharpen the architecture materially, keep the bootstrap checker as-is but do not widen it by cloning the pattern across more examples.
+
+## Phase 5 - Implement Shared Verification Harness
+
+Status: NOT STARTED
+
+* Goal:
+  Replace the bootstrap-only Hello World checker as the primary testing pattern with one shared corpus-driven verification surface for the compiler.
+* Work:
+  Add `pyprompt/verify_corpus.py` as the canonical shared verifier.
+  Add adjacent case manifests such as `examples/01_hello_world/cases.toml` and `examples/02_sections/cases.toml`.
+  Migrate the shipped Hello World assertions into that shared case format and include both `HelloWorld` and `HelloWorld2` in the first `01_hello_world` manifest.
+  Add `02_sections` as the first non-Hello-World output manifest so the shared verifier starts with at least one headed-section example beyond the bootstrap file, even if its passing execution remains coupled to the later grammar-expansion phase for `02`.
+  Add a repo-root command such as `make verify-examples` that runs the shared verifier across the example corpus.
+  Decide whether `pyprompt/check_hello_world.py` becomes a thin filtered alias over the shared verifier or is removed once the shared harness covers the same slice.
+  Add first-class expected-failure cases for the shipped bootstrap boundaries without copying prompts into a second fixture tree.
+* Verification (smallest signal):
+  One shared verifier command runs the migrated `HelloWorld` and `HelloWorld2` cases through the new harness and exits `0`.
+  The shared manifest set also includes `examples/02_sections/cases.toml` as the first next-example render contract, ready to turn green when `02_sections` support lands.
+  Negative cases fail at the expected stage with machine-checked failure contracts.
+  No new example-specific checker module is introduced to cover the same behavior.
+* Docs/comments (propagation; only if needed):
+  Update the plan and any touched doctrine docs so the shared harness, case-manifest path, and truth surfaces are explicit.
+* Exit criteria:
+  The repo has one canonical reusable compiler verification owner path.
+  The example corpus can grow without cloning checker logic.
+  The Hello World bootstrap slice is either delegated into the shared verifier or deliberately retired as a redundant path.
+* Rollback:
+  Keep the shipped bootstrap checker if the shared harness design proves wrong, but do not let that fallback become a reason to add more example-specific verifier scripts.
 <!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
@@ -714,7 +963,7 @@ Prefer at most one or two tight checks around AST construction or Markdown rende
 
 The primary shipped signal today is one end-to-end local command, `make hello-world`, that parses the supported source, compiles `HelloWorld`, and runs semantic smoke checks derived from the prompt/input contract. Diffs against checked `AGENTS.md` refs are advisory bug-finding signals, not byte-level truth.
 
-That is bootstrap proof, not the final compiler-test architecture. Once the compiler grows beyond `01`, integration verification must converge on a reusable framework instead of multiplying example-specific checker modules.
+That is bootstrap proof, not the final compiler-test architecture. The research-backed default is now one shared corpus verifier with adjacent case manifests and layered assertions, not a growing pile of example-specific checker modules.
 
 ## 8.3 E2E / device tests (realistic)
 
@@ -722,12 +971,21 @@ Not applicable beyond the local compiler loop. Do not add bespoke harnesses, edi
 
 ## 8.4 Compiler Verification Framework (next)
 
-The next verification requirement is architectural, not cosmetic:
+The next verification requirement is now concrete:
 
-- the repo needs one scalable verification framework for the compiler as the example corpus grows
-- that framework should be researched before the repo adds more hard-coded example-specific checkers
-- the framework must keep `.prompt` as input SSOT, keep approximate `AGENTS.md` refs advisory unless explicitly re-earned, and preserve fail-loud negative testing for unsupported or invalid source shapes
-- the framework should separate parser, compiler, renderer, and end-to-end contract signals cleanly enough that later examples do not turn the suite into brittle golden churn
+- the repo should converge on one shared verifier, tentatively `pyprompt/verify_corpus.py`, rather than more `check_<example>` modules
+- machine-readable case manifests should live adjacent to the example corpus, tentatively `examples/*/cases.toml`, so `.prompt` inputs stay authoritative and fixtures do not fork
+- the first shared-verifier seed set should cover both current `01_hello_world` render shapes plus `02_sections`
+- the verifier should support layered case types:
+  - parse-pass and parse-fail
+  - compile-pass and compile-fail
+  - render-contract and end-to-end checks
+- assertion style should be chosen per surface:
+  - exact outputs only for explicitly stabilized artifacts
+  - normalized or targeted excerpt/pattern checks for unstable human-facing Markdown
+  - machine-readable semantic contracts for target selection, required headings, required lines, and expected failure stages
+- expected-failure cases are first-class and should assert stable failure-stage contracts rather than brittle raw stderr blobs
+- fuzzing should be added only after the deterministic corpus harness exists, using the example corpus as seeds and feeding discovered failures back into deterministic regression cases
 
 # 9) Rollout / Ops / Telemetry
 
@@ -1029,3 +1287,57 @@ Follow-ups
 
 - Run `arch-step external-research` focused on compiler-test best practices.
 - Re-cut the canonical plan after that research so the reusable verification owner path is explicit.
+
+## 2026-04-06 - Adopt one shared corpus verifier for full-compiler testing
+
+Context
+
+External research across Rust `compiletest`, Rust UI/directive docs, LLVM’s testing guide, Tree-sitter’s parser corpus docs, and `LibFuzzer` showed a consistent pattern: serious compiler and parser projects centralize test execution in one harness, keep case expectations adjacent to inputs, support first-class negative cases, and avoid forcing every assertion into brittle whole-file goldens.
+
+Options
+
+- keep growing PyPrompt verification through one checker module per example
+- adopt one shared corpus-driven verifier with adjacent machine-readable case manifests and layered assertion styles
+
+Decision
+
+Adopt one shared corpus-driven verifier as the canonical future compiler-test owner path, with adjacent case manifests under `examples/` and layered assertion modes for stable exact, normalized, targeted, and expected-failure checks.
+
+Consequences
+
+- `check_hello_world.py` is now explicitly a bootstrap slice, not the durable verification architecture.
+- The next implementation phase should build `pyprompt/verify_corpus.py` and adjacent example-case manifests instead of more bespoke checker code.
+- Approximate `AGENTS.md` refs remain advisory by default, while machine-readable case contracts become the primary future test truth.
+- Fuzzing is useful later, but only after the deterministic corpus verifier exists.
+
+Follow-ups
+
+- Run a deep-dive pass to lock the shared verifier UX, case-manifest schema, and whether `make hello-world` survives as a filtered alias.
+- Implement the shared verification harness in the next phase instead of widening the bootstrap checker pattern.
+
+## 2026-04-06 - Seed the shared verifier with both Hello World renders plus `02_sections`
+
+Context
+
+The reusable verification architecture now has a concrete first-corpus question: which examples should seed the first adjacent case manifests so the shared harness starts small but not trivial.
+
+Options
+
+- seed only `HelloWorld`
+- seed both `HelloWorld` render shapes from `01_hello_world`
+- seed both `HelloWorld` render shapes and also add `02_sections` as the first post-bootstrap output manifest
+
+Decision
+
+Seed the first shared-verifier manifest set with `HelloWorld`, `HelloWorld2`, and `02_sections`.
+
+Consequences
+
+- The first shared harness will cover both current `role` render shapes immediately.
+- The plan now has one concrete next-example manifest beyond Hello World instead of a vague future adopter.
+- `02_sections` can be authored into the manifest set before its passing execution is required, which keeps verifier design and grammar growth loosely coupled without inventing duplicate truth.
+
+Follow-ups
+
+- Lock in the case-manifest schema during the next deep-dive pass.
+- Decide in implementation whether `02_sections` turns green in the same phase as the shared verifier or remains the first queued adopter for the next grammar-expansion phase.
