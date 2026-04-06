@@ -15,14 +15,30 @@ They have explicit inputs
 agent Agent:
     structure:
         role
-        workflow
+        read_first
+        instructions
         skills
         outputs
 
 
+skill PaperclipSkill:
+    skill_name: "paperclip"
+
+    usage:
+        "Use the injected `paperclip` skill for coordination work in Paperclip. The skill owns the exact procedure."
+
+workflow PaperclipGlobal:
+    workflow:
+        "You are running inside Paperclip. Paperclip is the task tracker and coordination system for this run: it gives the run its coordination context, such as the current issue, plan, assignment, comments, approvals, and workspace when those are relevant."
+        Use(PaperclipSkill)
+        "All issue tracking happens in Paperclip"
+
+
 # lessons agent base stuff 
 agent LessonsAgent[Agent]:
-    pass
+    read_first:
+        PaperclipGlobal
+
 
 agents LessonsCritic[LessonsAgent]:
     pass
@@ -35,3 +51,4 @@ agent LessonCopywriter[LessonsAgent](LessonArtifact) -> LessonArtifact
     """
 
 agent LessonsCopywriterCritic[LessonsCritic]()
+    role: "Turn the approved manifest and upstream packets into grounded learner-facing copy without changing lesson structure or exact-move scope."
