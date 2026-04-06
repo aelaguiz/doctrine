@@ -49,10 +49,15 @@ Nested content inside a workflow currently means ordered substructure.
 Current intent:
 - nested workflow entries should preserve order
 - nested workflow entries should render as subsections
-- source names can be machine-friendly
-- rendered names can be humanized
+- source keys can be machine-friendly
+- rendered subsection titles should come from explicit authored strings instead of renderer guesswork
 
-For example, a source key like `step_one` is intended to render more like `Step One`.
+Current keyed-entry direction:
+- a keyed workflow entry looks like `main_point: "Main Point"`
+- the key is the stable compiler identity
+- the string is the rendered subsection title
+- new keyed workflow entries should provide a title string explicitly
+- inherited keyed workflow entries keep their existing title unless the child overrides it
 
 Current intent for adjacent workflow strings:
 - sibling strings should preserve order
@@ -82,7 +87,7 @@ We are deliberately avoiding looser reuse features until the examples prove that
 
 ## Inheritance
 
-Inheritance has earned a place conceptually, but the current direction is less "implicit merge" and more "ordered patching."
+Inheritance has earned a place conceptually, and the current direction is now clearly "ordered patching" rather than "implicit merge."
 
 Current syntax direction:
 - `agent Child[Base]:` means the child extends the base agent
@@ -95,13 +100,14 @@ Current intent:
 - workflow preamble strings should override as a group when the child provides them
 
 Current workflow inheritance direction:
-- default inheritance should stay simple
+- the language should avoid hidden merge heuristics when order matters
 - explicit order should be opt-in
-- when a child wants to control exact workflow order, it should say so in the source rather than relying on hidden merge rules
+- when a child wants to control exact workflow order, it should say so in the source
 
 Current explicit-order syntax direction:
 - `inherit key` means "place the inherited workflow entry here unchanged"
 - `override key:` means "replace the inherited workflow entry and place the replacement here"
+- `override key: "New Title"` means "replace the inherited workflow entry and also replace its rendered title"
 - a bare `key:` means "create a new workflow entry here"
 
 Why this direction currently looks better than implicit merge:
@@ -115,16 +121,27 @@ Current compiler validation direction:
 - `inherit key` should fail if the parent does not define that key
 - if the intent is to add something new, the author should define a new key directly instead of using `override`
 
-The current examples are intentionally pushing on these rules so we can decide where explicit ordering should begin and how strict it should be.
+The current examples are intentionally pushing on these rules so we can decide how strict explicit ordering should be.
+
+## Recently Settled
+
+- `04_inheritance` should follow the same inheritance model as `05_workflow_merge`.
+- The inheritance model we are carrying forward is explicit ordered patching, not implicit key-merge magic.
+- `inherit key` is the clearest syntax we have found so far for "keep this inherited workflow entry and place it here."
+- `override key:` is the clearest syntax we have found so far for "replace this inherited workflow entry and place the replacement here."
+- A bare `key:` inside an explicit-order child means "this is a new workflow entry and it belongs exactly here."
+- Keyed workflow entries now carry explicit rendered titles, which removes the need for heuristic heading humanization.
+- Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
+- Invalid overrides should be real compiler errors, not silent fallbacks.
+- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md).
 
 ## Pending Decisions
 
-- Should explicit-order mode only start when the child uses `inherit`, or should other syntax trigger it too?
+- Does explicit-order mode begin only when the child uses `inherit`, or can some other syntax trigger it too?
 - If a child starts explicit-order mode, must every inherited workflow entry that survives be named explicitly?
-- In non-explicit mode, should new workflow keys append automatically, or should new keys require explicit-order mode?
+- Outside explicit-order mode, are brand new workflow keys allowed at all, or should they require explicit placement?
 - Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
 - When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
-- How aggressively should source names be humanized during rendering?
 - Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?
 
 ## Pending Concepts
@@ -141,6 +158,13 @@ These are concepts we expect to revisit, but they are not locked into the exampl
 - packet contracts
 - policies and tool boundaries
 - role graphs and handoff structure
+
+## Top Candidates For Next Work
+
+- Finish the explicit-order contract. The main open question is whether using `inherit` means the child must account for every inherited workflow entry that survives.
+- Decide the non-explicit workflow rule. We still need to choose whether new workflow keys may appear without explicit placement, or whether explicit-order mode is required for all additions.
+- Decide whether workflows can contain anything besides strings and keyed entries. That decision affects the parser shape early.
+- Decide how far imports and top-level reuse should go beyond `workflow`. That will shape the next example after inheritance.
 
 ## Current Bias
 

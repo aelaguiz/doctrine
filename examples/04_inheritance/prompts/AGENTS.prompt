@@ -4,19 +4,24 @@ agent BaseAgent:
     workflow:
         "Follow the base steps below."
 
-        greeting:
+        greeting: "Greeting"
             "Say hello."
 
-        object:
+        object: "Object"
             "Say world."
 
 
+# This child shows the simplest explicit inheritance pattern.
+# - `inherit greeting` keeps the inherited section and places it here
+# - `override object:` replaces the inherited section and keeps the inherited title
 agent InheritanceDemo[BaseAgent]:
     role: "You are the inheritance demonstration agent."
 
     workflow:
-        "Follow the inherited base steps with the overridden final step below."
-        "Both workflow introduction lines should appear in the final output."
+        "Follow the inherited steps below."
+        "This child keeps the greeting and replaces the final step."
 
-        object:
+        inherit greeting
+
+        override object:
             "Say inherited world."

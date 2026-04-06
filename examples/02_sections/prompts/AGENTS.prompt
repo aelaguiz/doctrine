@@ -4,8 +4,8 @@ agent SectionsDemo:
     workflow:
         "Follow the steps below in order."
 
-        step_one:
+        step_one: "Step One"
             "Say hello."
 
-        step_two:
+        step_two: "Step Two"
             "Say world."

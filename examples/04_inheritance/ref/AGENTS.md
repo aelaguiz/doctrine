@@ -2,8 +2,8 @@ You are the inheritance demonstration agent.
 
 ## Workflow
 
-Follow the inherited base steps with the overridden final step below.
-Both workflow introduction lines should appear in the final output.
+Follow the inherited steps below.
+This child keeps the greeting and replaces the final step.
 
 ### Greeting
 
