@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: /Users/aelaguiz/workspace/pyprompt/docs/PORT_EXAMPLE_SYNTAX_THROUGH_PHASE_FOURTEEN_2026-04-06.md
+Plan doc: /Users/aelaguiz/workspace/doctrine/docs/PORT_EXAMPLE_SYNTAX_THROUGH_PHASE_FOURTEEN_2026-04-06.md
 
 ## Initial Entry
 - Run started.

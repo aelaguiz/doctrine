@@ -1,4 +1,5 @@
 /for_reference_only/
+.DS_Store
 .venv/
 __pycache__/
 *.egg-info/

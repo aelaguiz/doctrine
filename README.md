@@ -1,6 +1,6 @@
-# PyPrompt
+# Doctrine
 
-PyPrompt is a small Python bootstrap for an indentation-sensitive prompt language, its parser and compiler, and a verified example corpus.
+Doctrine is a small Python bootstrap for an indentation-sensitive prompt language, its parser and compiler, and a verified example corpus.
 
 ## Verify the repo
 
@@ -28,3 +28,10 @@ Install it in normal VS Code with either:
 - `code --install-extension /absolute/path/to/pyprompt-language-0.0.1.vsix`
 
 For extension-specific details, see `editors/vscode/README.md`.
+
+## Project files
+
+- License: [LICENSE](LICENSE)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Security policy: [SECURITY.md](SECURITY.md)
