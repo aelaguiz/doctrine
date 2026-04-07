@@ -1,7 +1,7 @@
 {
-  "name": "pyprompt-language",
-  "displayName": "PyPrompt Language Support",
-  "description": "Local VS Code syntax highlighting and editor behavior for PyPrompt prompt files.",
+  "name": "doctrine-language",
+  "displayName": "Doctrine Language Support",
+  "description": "Local VS Code syntax highlighting and editor behavior for Doctrine prompt files.",
   "version": "0.0.0",
   "publisher": "aelaguiz",
   "private": true,
@@ -30,22 +30,22 @@
   "contributes": {
     "languages": [
       {
-        "id": "pyprompt",
+        "id": "doctrine",
         "extensions": [
           ".prompt"
         ],
         "aliases": [
-          "PyPrompt",
-          "pyprompt"
+          "Doctrine",
+          "doctrine"
         ],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "pyprompt",
-        "scopeName": "source.pyprompt",
-        "path": "./syntaxes/pyprompt.tmLanguage.json"
+        "language": "doctrine",
+        "scopeName": "source.doctrine",
+        "path": "./syntaxes/doctrine.tmLanguage.json"
       }
     ]
   }

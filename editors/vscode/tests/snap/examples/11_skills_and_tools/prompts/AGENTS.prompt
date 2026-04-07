@@ -18,7 +18,7 @@
 # This file intentionally shows progressive disclosure:
 # - `FindSkills` uses only the required `purpose`
 # - `CopyRewriteSkill` adds one optional field
-# - `PokerGroundingSkill` shows a fuller optional contract
+# - `DomainGroundingSkill` shows a fuller optional contract
 # - agent-side skill references show `Required`, `Advisory`, and `reason`
 #
 # The agent then references skill objects by relationship:
@@ -31,7 +31,7 @@
 # is to build the skill, not to smuggle a raw script path into agent guidance.
 #
 # A `skills` block now gives each skill entry a stable local key:
-# - `skill grounding: PokerGroundingSkill`
+# - `skill grounding: DomainGroundingSkill`
 # - `skill copy_rewrite: CopyRewriteSkill`
 # The key is not for display. It exists so shared `skills` blocks can inherit
 # and override entries cleanly later.
@@ -50,53 +50,53 @@ skill FindSkills: "find-skills"
     purpose: "Find the best matching repo skill for the current job."
 
 
-skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
-    purpose: "Ground learner-facing poker wording against current poker truth."
+skill DomainGroundingSkill: "domain-grounding-kb"
+    purpose: "Ground reader-facing domain wording against current source truth."
 
     use_when: "Use When"
-        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
+        "Use this when the lane needs primary-source receipts for reader-facing copy."
 
     requires: "Requires"
-        "A wording surface or claim that needs poker grounding."
+        "A wording surface or claim that needs domain grounding."
 
     provides: "Provides"
-        "The normal repo workflow for grounding poker wording against current poker truth."
+        "The normal repo workflow for grounding domain wording against current source truth."
         "A clear route for collecting the receipts this lane needs."
 
     does_not: "Does Not"
-        "Does not change lesson structure."
-        "Does not establish exact right-move authority."
+        "Does not change the approved structure."
+        "Does not establish final expert authority."
 
 
-skill CopyRewriteSkill: "poker-native-copy"
-    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
+skill CopyRewriteSkill: "domain-copy-rewrite"
+    purpose: "Rewrite reader-facing domain copy in the repo's expected voice."
 
     use_when: "Use When"
-        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
+        "Use this when the job is reader-facing domain wording such as titles, hints, coach text, explanations, and feedback."
 
 
-skill MobileSimSkill: "mobile-sim"
+skill DeviceRuntimeCheckSkill: "device-runtime-check"
     purpose: "Drive a simulator or device for runtime investigation."
 
 
-skill FlutterDevReturnSkill: "flutter-dev-return"
-    purpose: "Restore a live Flutter development loop."
+skill DevLoopRestoreSkill: "dev-loop-restore"
+    purpose: "Restore a live development loop."
 
     use_when: "Use When"
-        "Use this only when the job is restoring a live Flutter dev loop."
+        "Use this only when the job is restoring a live development loop."
 
 
 agent LessonCopywriter:
-    role: "Core job: turn an approved lesson manifest into grounded learner copy without changing lesson structure or authority scope."
+    role: "Core job: turn an approved lesson manifest into grounded reader copy without changing lesson structure or authority scope."
 
     your_job: "Your Job"
         "Read the whole lesson before you rewrite isolated strings."
-        "Use grounded poker wording without changing lesson structure or authority scope."
+        "Use grounded domain wording without changing the approved structure or authority scope."
         "If no named task skill fits cleanly, discover the right one before you guess."
 
     skills: "Skills"
         can_run: "Can Run"
-            skill grounding: PokerGroundingSkill
+            skill grounding: DomainGroundingSkill
                 requirement: Required
 
             skill copy_rewrite: CopyRewriteSkill
@@ -107,8 +107,8 @@ agent LessonCopywriter:
                 requirement: Advisory
 
         not_for_this_role: "Not For This Role"
-            skill mobile_sim: MobileSimSkill
+            skill mobile_sim: DeviceRuntimeCheckSkill
                 reason: "This role is baseline copy work, not simulator or device investigation."
 
-            skill flutter_dev_return: FlutterDevReturnSkill
-                reason: "This role is baseline copy work, not Flutter environment repair."
+            skill dev_loop_restore: DevLoopRestoreSkill
+                reason: "This role is baseline copy work, not development environment repair."

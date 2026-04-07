@@ -127,7 +127,7 @@ expected_lines = [
   "",
   "### Can Run",
   "",
-  "#### paperclip-publish-followthrough",
+  "#### release-followthrough",
   "",
   "##### Purpose",
   "",

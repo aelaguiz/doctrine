@@ -21,7 +21,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pyprompt"
+name = "doctrine"
 version = "0.0.0"
 source = { editable = "." }
 dependencies = [

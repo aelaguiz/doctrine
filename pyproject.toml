@@ -3,9 +3,9 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyprompt"
+name = "doctrine"
 version = "0.0.0"
-description = "PyPrompt Hello World grammar bootstrap"
+description = "Doctrine is a Python-like DSL and compiler for reusable agent doctrine."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
@@ -15,19 +15,19 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["pyprompt"]
+packages = ["doctrine"]
 
 [tool.setuptools.package-data]
-pyprompt = ["grammars/*.lark"]
+doctrine = ["grammars/*.lark"]
 
-[tool.pyprompt.emit]
+[tool.doctrine.emit]
 
-[[tool.pyprompt.emit.targets]]
+[[tool.doctrine.emit.targets]]
 name = "example_07_handoffs"
 entrypoint = "examples/07_handoffs/prompts/AGENTS.prompt"
 output_dir = "examples/07_handoffs/build"
 
-[[tool.pyprompt.emit.targets]]
+[[tool.doctrine.emit.targets]]
 name = "example_14_handoff_truth"
 entrypoint = "examples/14_handoff_truth/prompts/AGENTS.prompt"
 output_dir = "examples/14_handoff_truth/build"

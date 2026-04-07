@@ -6,10 +6,10 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from pyprompt.compiler import compile_prompt
-from pyprompt.diagnostics import diagnostic_to_dict
-from pyprompt.emit_docs import main as emit_docs_main
-from pyprompt.parser import parse_file
+from doctrine.compiler import compile_prompt
+from doctrine.diagnostics import diagnostic_to_dict
+from doctrine.emit_docs import main as emit_docs_main
+from doctrine.parser import parse_file
 
 
 class SmokeFailure(RuntimeError):
@@ -71,7 +71,7 @@ def _check_emit_docs_handles_invalid_toml_without_traceback() -> None:
     with TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
         pyproject = root / "pyproject.toml"
-        pyproject.write_text("[tool.pyprompt.emit\n")
+        pyproject.write_text("[tool.doctrine.emit\n")
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr):
             exit_code = emit_docs_main(["--pyproject", str(pyproject), "--target", "x"])
@@ -86,8 +86,8 @@ def _check_emit_docs_uses_specific_code_for_missing_entrypoint() -> None:
         root = Path(tmp_dir)
         pyproject = root / "pyproject.toml"
         pyproject.write_text(
-            """[tool.pyprompt.emit]
-[[tool.pyprompt.emit.targets]]
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
 name = "bad"
 entrypoint = "prompts/OTHER.prompt"
 output_dir = "build"

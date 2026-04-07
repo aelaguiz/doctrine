@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pyprompt.compiler import CompiledAgent, CompiledSection
-from pyprompt.model import EmphasizedLine, RoleScalar
+from doctrine.compiler import CompiledAgent, CompiledSection
+from doctrine.model import EmphasizedLine, RoleScalar
 
 
 def render_markdown(agent: CompiledAgent) -> str:

@@ -1,17 +1,17 @@
-# SYNTAX TEST "source.pyprompt" "rich inputs and outputs buckets"
+# SYNTAX TEST "source.doctrine" "rich inputs and outputs buckets"
 
     inputs: "Inputs"
-#   ^^^^^^ keyword.other.field.pyprompt
+#   ^^^^^^ keyword.other.field.doctrine
 
         planning_truth: "Planning Truth"
-#       ^^^^^^^^^^^^^^ entity.name.section.pyprompt
+#       ^^^^^^^^^^^^^^ entity.name.section.doctrine
             CurrentSectionPlan
-#           ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
     outputs: "Outputs"
-#   ^^^^^^^ keyword.other.field.pyprompt
+#   ^^^^^^^ keyword.other.field.doctrine
 
         file_truth: "File Truth"
-#       ^^^^^^^^^^ entity.name.section.pyprompt
+#       ^^^^^^^^^^ entity.name.section.doctrine
             DossierFile
-#           ^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#           ^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine

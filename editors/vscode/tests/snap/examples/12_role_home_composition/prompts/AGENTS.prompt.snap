@@ -1,1589 +1,1589 @@
 ># This example pressure-tests role-home composition using only current primitives.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >#
-#^ source.pyprompt comment.line.number-sign.pyprompt
+#^ source.doctrine comment.line.number-sign.doctrine
 ># It does not introduce a new declaration kind.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># Shared rendered role-home sections are still `workflow` declarations assigned
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># to named agent fields such as `read_first` and `workflow_core`.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >#
-#^ source.pyprompt comment.line.number-sign.pyprompt
+#^ source.doctrine comment.line.number-sign.doctrine
 ># The role home then mixes those shared workflow slots with the typed agent
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># fields introduced in earlier examples:
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># - `inputs`
-#^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># - `outputs`
-#^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># - `skills`
-#^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >#
-#^ source.pyprompt comment.line.number-sign.pyprompt
+#^ source.doctrine comment.line.number-sign.doctrine
 ># Tool-specific helper guidance stays in support prose. It does not require a
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># separate tools field.
-#^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >#
-#^ source.pyprompt comment.line.number-sign.pyprompt
+#^ source.doctrine comment.line.number-sign.doctrine
 ># When an agent references a skill, point directly at the declared skill and
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># attach agent-local metadata there. Do not add an extra wrapper key unless it
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># carries real meaning the compiler or renderer actually needs.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >
 >
 >workflow LessonsReadFirst: "Read First"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                          ^ source.pyprompt
-#                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                            ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                            ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                      ^ source.doctrine punctuation.definition.string.end.doctrine
 >    read_order: "Read Order"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Read Your Job first."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Then read Workflow Core and How To Take A Turn."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Then read Inputs, Outputs, Routing, When To Stop, Skills, When To Use This Role, and Standards And Support."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow ProjectLeadReadFirst[LessonsReadFirst]: "Read First"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                             ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                              ^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                              ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                                ^ source.pyprompt
-#                                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                  ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                             ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                              ^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                              ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                ^ source.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                  ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >    inherit read_order
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    immediate_local_read: "Immediate Local Read"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                         ^ source.pyprompt
-#                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+#                         ^ source.doctrine
+#                          ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Read the active issue plan, the latest issue comment that names the current files, and any current PR or QR state before you route or publish."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow CopywriterReadFirst[LessonsReadFirst]: "Read First"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                            ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                             ^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                             ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                               ^ source.pyprompt
-#                                                ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                 ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                             ^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                             ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                               ^ source.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                 ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >    inherit read_order
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    immediate_local_read: "Immediate Local Read"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                         ^ source.pyprompt
-#                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        "Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch learner-facing text."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+#                         ^ source.doctrine
+#                          ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch reader-facing text."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow LessonsWorkflowCore: "Workflow Core"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                             ^ source.pyprompt
-#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                               ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.separator.key-value.doctrine
+#                             ^ source.doctrine
+#                              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                               ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >    read_current_work_state: "Read Current Work State"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                            ^ source.pyprompt
-#                             ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+#                            ^ source.doctrine
+#                             ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Start with the active issue, the current plan, and the named current files."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Use the attached checkout for product truth only."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    same_issue_workflow: "Same-Issue Workflow"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Keep normal Lessons work on one issue from routing through follow-up."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Keep one owner at a time on that issue."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    handoff_comment: "Handoff Comment"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                    ^ source.pyprompt
-#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Every handoff comment should say what changed, what the next owner should trust now, and who owns next."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow ProjectLeadWorkflowCore[LessonsWorkflowCore]: "Workflow Core"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                                ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                                 ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                    ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                                      ^ source.pyprompt
-#                                                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                        ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                    ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                      ^ source.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                        ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
 >    inherit read_current_work_state
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    override same_issue_workflow:
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                ^ source.doctrine punctuation.separator.key-value.doctrine
 >        "Keep normal Lessons work on one issue from routing through follow-up."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Keep one owner at a time on that issue."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Route work to the earliest honest specialist lane."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "When copy work is ready, route it to Lessons Copywriter."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    inherit handoff_comment
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    publish_return: "Publish Return"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Keep PR, QR, and follow-up state on the same issue."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Do not call the work done until the current publish state is explicit."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow CopywriterWorkflowCore[LessonsWorkflowCore]: "Workflow Core"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                               ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                                ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                                     ^ source.pyprompt
-#                                                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                       ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                               ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                   ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                     ^ source.doctrine
+#                                                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                       ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >    inherit read_current_work_state
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    override same_issue_workflow:
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                ^ source.doctrine punctuation.separator.key-value.doctrine
 >        "Keep normal Lessons work on one issue from routing through follow-up."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Keep one owner at a time on that issue."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "After the copy lane, return the same issue to Lessons Project Lead."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    inherit handoff_comment
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >
 >workflow LessonsHowToTakeATurn: "How To Take A Turn"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                               ^ source.pyprompt
-#                                ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                 ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >    turn_sequence: "Turn Sequence"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Read the active issue, the current files, and the upstream contracts your lane depends on."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Do only this lane's job."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Update the current outputs that now matter."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Leave one clear handoff and stop."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    guardrails: "Guardrails"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Do not let routing drift away from the active issue."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Do not hand off weak work."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow LessonsStandardsAndSupport: "Standards And Support"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                    ^ source.pyprompt
-#                                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                    ^ source.doctrine
+#                                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                      ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >    attached_checkout: "Attached Checkout"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                      ^ source.pyprompt
-#                       ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Use the attached checkout for product truth only. It does not decide workflow, ownership, or the next step."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow ProjectLeadStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                                       ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                                  ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                                                    ^ source.pyprompt
-#                                                                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                                      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                       ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                                  ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                                    ^ source.doctrine
+#                                                                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                                      ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >    publish_and_follow_up: "Publish And Follow-Up"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Keep the issue explicit about publish intent: ship or prototype."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Do not use publish as a shortcut around current output or review rules."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    github_helpers: "GitHub Helpers"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Use repo-owned GitHub helpers when the live job needs remote GitHub access."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    staging_qr_helpers: "Staging QR Helpers"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Use repo-owned QR helpers when publish proof depends on current QR state."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    inherit attached_checkout
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >
 >workflow CopywriterStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                                      ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                                 ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                                                   ^ source.pyprompt
-#                                                                    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                                     ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
->    poker_grounding: "Poker Grounding"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                    ^ source.pyprompt
-#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        "Use Books to ground meaning and Forums to ground real player wording."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                      ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                                 ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                                   ^ source.doctrine
+#                                                                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                                     ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>    domain_grounding: "Domain Grounding"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Use reference notes to ground meaning and reviewed examples to ground natural wording."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "If the grounding is missing, stop and say it is missing."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    copy_standards: "Copy Standards"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Keep locked concepts and terms intact."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                               ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Do not sharpen exact-action claims in copy."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >
->    pokerkb: "PokerKB"
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        "Use it for definitions, grounded claim checks, terminology, and real poker wording."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
->        "Do not use it as exact right-move authority."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    reference_kb: "Reference KB"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Use it for definitions, grounded claim checks, terminology, and domain wording."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "Do not use it as final expert authority."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    step_json_validator: "Step JSON Validator"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Use it after copy changes to validate the changed lesson manifest surfaces."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "Record the command and result in COPY_GROUNDING.md."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    inherit attached_checkout
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >
 >workflow ProjectLeadJob: "Your Job"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                          ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                  ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Keep one owner and one obvious next step on the same issue."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Keep the issue plan current on routing-only or process-repair turns."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Own publish and follow-up state when those are the live jobs."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow CopywriterJob: "Your Job"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                         ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                         ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Read the whole lesson before you rewrite isolated strings."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
->    "Use grounded poker wording without changing lesson structure or authority scope."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>    "Use grounded domain wording without changing the approved structure or authority scope."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Record post-copy validation in the current outputs."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow ProjectLeadWhenToUse: "When To Use This Role"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                              ^ source.pyprompt
-#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                             ^ source.doctrine punctuation.separator.key-value.doctrine
+#                              ^ source.doctrine
+#                               ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Use this role when new Lessons work needs routing."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Use this role when publish or follow-up is the live job."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >workflow CopywriterWhenToUse: "When To Use This Role"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                             ^ source.pyprompt
-#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                               ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
->    "Use this role when the manifest already exists and the next job is final learner-facing copy."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.separator.key-value.doctrine
+#                             ^ source.doctrine
+#                              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                               ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>    "Use this role when the manifest already exists and the next job is final reader-facing copy."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "Expect this lane to stop with current copy outputs ready for return to Project Lead."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >input CurrentIssuePlan: "Current Issue Plan"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                         ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >    source: Prompt
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    shape: MarkdownDocument
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    "Use the current issue plan to understand the intended owner and next step."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >input CurrentIssueState: "Current Issue State"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                          ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >    source: File
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        path: "track_root/_authoring/CURRENT_ISSUE_STATE.md"
-#^^^^^^^^ source.pyprompt
-#        ^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >    shape: MarkdownDocument
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    "Use the current issue state to understand the named current files and publish state."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >input SectionConceptsAndTerms: "Section Concepts And Terms"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                              ^ source.pyprompt
-#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                             ^ source.doctrine punctuation.separator.key-value.doctrine
+#                              ^ source.doctrine
+#                               ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >    source: File
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
-#^^^^^^^^ source.pyprompt
-#        ^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >    shape: MarkdownDocument
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
->    "Use the locked section language before rewriting learner-facing text."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    "Use the locked section language before rewriting reader-facing text."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >input LessonPlan: "Lesson Plan"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >    source: File
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        path: "lesson_root/_authoring/LESSON_PLAN.md"
-#^^^^^^^^ source.pyprompt
-#        ^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >    shape: MarkdownDocument
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    "Use the approved lesson plan to preserve the lesson's teaching job."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >input LessonSituations: "Lesson Situations"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                         ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >    source: File
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        path: "lesson_root/_authoring/LESSON_SITUATIONS.md"
-#^^^^^^^^ source.pyprompt
-#        ^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >    shape: MarkdownDocument
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    "Use the approved lesson situations to preserve concrete rep choices."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >input LessonManifest: "Lesson Manifest"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                     ^ source.pyprompt
-#                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                      ^ source.doctrine punctuation.definition.string.end.doctrine
 >    source: File
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        path: "lesson_root/_authoring/lesson_manifest.json"
-#^^^^^^^^ source.pyprompt
-#        ^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >    shape: JsonObject
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
->    "Use the current lesson manifest as the editable learner-facing surface."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    "Use the current lesson manifest as the editable reader-facing surface."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >output shape OwnerUpdateComment: "Owner Update Comment"
-#^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#      ^ source.pyprompt
-#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                ^ source.pyprompt
-#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^ source.doctrine keyword.declaration.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                ^ source.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                  ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
 >    kind: CommentText
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt entity.name.section.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine entity.name.section.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
 >output target TrackerComment: "Tracker Comment"
-#^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#      ^ source.pyprompt
-#       ^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                             ^ source.pyprompt
-#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                               ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.separator.key-value.doctrine
+#                             ^ source.doctrine
+#                              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                               ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >    required: "Required Target Keys"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        issue: "Issue"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^ source.pyprompt entity.name.section.pyprompt
-#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#              ^ source.pyprompt
-#               ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^ source.doctrine string.quoted.double.doctrine
 >
 >
 >output ProjectLeadUpdate: "Project Lead Update"
-#^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#      ^ source.pyprompt
-#       ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                         ^ source.pyprompt
-#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+#                         ^ source.doctrine
+#                          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >    target: TrackerComment
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        issue: "CURRENT_ISSUE"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^ source.pyprompt entity.name.section.pyprompt
-#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#              ^ source.pyprompt
-#               ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >    shape: OwnerUpdateComment
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    requirement: Required
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    must_include: "Must Include"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        what_changed: "What Changed"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "Say what changed on this routing or publish turn."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >        current_truth: "Current Source Of Truth"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                      ^ source.pyprompt
-#                       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "Name the current source of truth for the next owner."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >        next_owner: "Next Owner"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "Name the honest next owner."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >output CopyPassOutput: "Copy Pass Output"
-#^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#      ^ source.pyprompt
-#       ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                      ^ source.pyprompt
-#                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                        ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.end.doctrine
 >    files: "Files"
-#^^^^ source.pyprompt
-#    ^^^^^ source.pyprompt entity.name.section.pyprompt
-#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#          ^ source.pyprompt
-#           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        copy_grounding: "Copy Grounding"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            path: "lesson_root/_authoring/COPY_GROUNDING.md"
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            shape: MarkdownDocument
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >        updated_manifest: "Updated Manifest"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                         ^ source.pyprompt
-#                          ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+#                         ^ source.doctrine
+#                          ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            path: "lesson_root/_authoring/lesson_manifest.json"
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            shape: JsonObject
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    must_include: "Must Include"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        grounding: "Grounding"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "COPY_GROUNDING.md should show the grounding that shaped the final wording."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >        preserved_terms: "Preserved Terms"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "COPY_GROUNDING.md should name the locked terms that had to survive."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >        validation: "Validation"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "COPY_GROUNDING.md should record what validation ran after the copy pass."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    standalone_read: "Standalone Read"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                    ^ source.pyprompt
-#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "A downstream reader should be able to read COPY_GROUNDING.md and lesson_manifest.json and understand what changed and what was validated."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
->skill PublishFollowthroughSkill: "paperclip-publish-followthrough"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                ^ source.pyprompt
-#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>skill ReleaseFollowthroughSkill: "release-followthrough"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                ^ source.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                  ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >    purpose: "Handle PR follow-up, QR updates, publish proof, and same-issue closeout."
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    use_when: "Use When"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Use this when publish or follow-up is the live job."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
->skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                          ^ source.pyprompt
-#                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
->    purpose: "Ground learner-facing poker wording against current poker truth."
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>skill DomainGroundingSkill: "domain-grounding-kb"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                             ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>    purpose: "Ground reader-facing domain wording against current source truth."
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    use_when: "Use When"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Use this when the lane needs primary-source receipts for reader-facing copy."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    does_not: "Does Not"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        "Does not change lesson structure."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
->        "Does not establish exact right-move authority."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Does not change the approved structure."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "Does not establish final expert authority."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
->skill CopyRewriteSkill: "poker-native-copy"
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
->    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>skill CopyRewriteSkill: "domain-copy-rewrite"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    purpose: "Rewrite reader-facing domain copy in the repo's expected voice."
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    use_when: "Use When"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Use this when the job is reader-facing domain wording such as titles, hints, coach text, explanations, and feedback."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >abstract agent LessonsRoleHome:
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^ source.pyprompt keyword.declaration.pyprompt
-#              ^ source.pyprompt
-#               ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^ source.doctrine keyword.declaration.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
 >    read_first: LessonsReadFirst
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    workflow_core: LessonsWorkflowCore
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    how_to_take_a_turn: LessonsHowToTakeATurn
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    standards_and_support: LessonsStandardsAndSupport
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
 >agent LessonsProjectLead[LessonsRoleHome]:
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                        ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                         ^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                        ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                        ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                         ^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                        ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                         ^ source.doctrine punctuation.separator.key-value.doctrine
 >    role: "Core job: open, route, and finish Lessons issues while keeping publish and follow-up honest on the same issue."
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt keyword.other.field.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    your_job: ProjectLeadJob
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    override read_first: ProjectLeadReadFirst
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    override workflow_core: ProjectLeadWorkflowCore
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    inherit how_to_take_a_turn
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    inputs: "Inputs"
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        CurrentIssuePlan
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        CurrentIssueState
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    outputs: "Outputs"
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        ProjectLeadUpdate
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    routing: "Routing"
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        next_owner_if_accepted: "Next Owner If Accepted"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                               ^ source.pyprompt
-#                                ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            route "If the issue is ready for copy work" -> LessonsCopywriter
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
-#                                                       ^ source.pyprompt
-#                                                        ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
-#                                                          ^ source.pyprompt
-#                                                           ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                       ^ source.doctrine
+#                                                        ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                          ^ source.doctrine
+#                                                           ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >        if_the_work_is_not_ready: "If The Work Is Not Ready"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                 ^ source.pyprompt
-#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                 ^ source.doctrine
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            route "If the route is still unclear" -> LessonsProjectLead
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
-#                                                 ^ source.pyprompt
-#                                                  ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
-#                                                    ^ source.pyprompt
-#                                                     ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                 ^ source.doctrine
+#                                                  ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                    ^ source.doctrine
+#                                                     ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    when_to_stop: "When To Stop"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        stop_here_if: "Stop Here If"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            "Stop when one honest owner, one honest next step, and the current source of truth are explicit."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    skills: "Skills"
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        can_run: "Can Run"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            skill publish_followthrough: PublishFollowthroughSkill
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                        ^ source.pyprompt
-#                                         ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            skill release_followthrough: ReleaseFollowthroughSkill
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                        ^ source.doctrine
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >                requirement: Advisory
-#^^^^^^^^^^^^^^^^ source.pyprompt
-#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+#                            ^ source.doctrine
+#                             ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    when_to_use_this_role: ProjectLeadWhenToUse
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    override standards_and_support: ProjectLeadStandardsAndSupport
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                   ^ source.pyprompt
-#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
 >agent LessonsCopywriter[LessonsRoleHome]:
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                       ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                        ^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                       ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
->    role: "Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope."
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt keyword.other.field.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                        ^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                       ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                        ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Core job: turn the approved manifest into grounded reader-facing copy without changing lesson structure or authority scope."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    your_job: CopywriterJob
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    override read_first: CopywriterReadFirst
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    override workflow_core: CopywriterWorkflowCore
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    inherit how_to_take_a_turn
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    inputs: "Inputs"
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        SectionConceptsAndTerms
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        LessonPlan
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        LessonSituations
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        LessonManifest
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    outputs: "Outputs"
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        CopyPassOutput
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    routing: "Routing"
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        next_owner_if_accepted: "Next Owner If Accepted"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                               ^ source.pyprompt
-#                                ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            route "If copy and validation are ready" -> LessonsProjectLead
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
-#                                                    ^ source.pyprompt
-#                                                     ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
-#                                                       ^ source.pyprompt
-#                                                        ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                    ^ source.doctrine
+#                                                     ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                       ^ source.doctrine
+#                                                        ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >        if_the_work_is_not_ready: "If The Work Is Not Ready"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                 ^ source.pyprompt
-#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                 ^ source.doctrine
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >            route "If grounding is missing or routing is unclear" -> LessonsProjectLead
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
-#                                                                 ^ source.pyprompt
-#                                                                  ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
-#                                                                    ^ source.pyprompt
-#                                                                     ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                                 ^ source.doctrine
+#                                                                  ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                                    ^ source.doctrine
+#                                                                     ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    when_to_stop: "When To Stop"
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        stop_here_if: "Stop Here If"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            "Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Stop when reader-facing copy and post-copy validation are explicit enough for return to Project Lead."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    skills: "Skills"
-#^^^^ source.pyprompt
-#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        can_run: "Can Run"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            skill poker_grounding: PokerGroundingSkill
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                  ^ source.pyprompt
-#                                   ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            skill domain_grounding: DomainGroundingSkill
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >                requirement: Required
-#^^^^^^^^^^^^^^^^ source.pyprompt
-#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+#                            ^ source.doctrine
+#                             ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >            skill copy_rewrite: CopyRewriteSkill
-#^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^ source.pyprompt keyword.control.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                               ^ source.pyprompt
-#                                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >                requirement: Advisory
-#^^^^^^^^^^^^^^^^ source.pyprompt
-#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+#                            ^ source.doctrine
+#                             ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >    when_to_use_this_role: CopywriterWhenToUse
-#^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >    override standards_and_support: CopywriterStandardsAndSupport
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                   ^ source.pyprompt
-#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >

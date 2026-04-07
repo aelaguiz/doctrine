@@ -1,8 +1,11 @@
 # Language Design Notes
 
-This document is intentionally short and easy to rewrite.
+This repo exists to turn agent doctrine into structured source code instead of
+hand-maintained runtime Markdown.
 
-The goal is to capture the language decisions we have made so far, why we made them, and how we currently expect the parser to behave.
+This document is intentionally short and easy to rewrite. Its job is to record
+the language decisions we have made so far, why we made them, and how we
+currently expect the parser to behave.
 
 ## Design Approach
 
@@ -252,7 +255,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - Rendered section titles are explicit authored data. Keys are never used as visible headings.
 - Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
 - Invalid overrides should be real compiler errors, not silent fallbacks.
-- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md).
+- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](COMPILER_ERRORS.md).
 - `09_outputs` now treats `output` as the only produced-contract primitive.
 - `output target`, `output shape`, and `json schema` are reusable supporting
   declarations under `output`, not competing output primitives.

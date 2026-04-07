@@ -9,11 +9,11 @@ from difflib import unified_diff
 from pathlib import Path
 from typing import Any
 
-from pyprompt.compiler import compile_prompt
-from pyprompt.diagnostics import PyPromptError
-from pyprompt.emit_docs import EmitError, emit_target, load_emit_targets
-from pyprompt.parser import parse_file
-from pyprompt.renderer import render_markdown
+from doctrine.compiler import compile_prompt
+from doctrine.diagnostics import DoctrineError
+from doctrine.emit_docs import EmitError, emit_target, load_emit_targets
+from doctrine.parser import parse_file
+from doctrine.renderer import render_markdown
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BUILD_CONTRACT_REF_DIR = "build_ref"
@@ -83,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Verify PyPrompt example manifests.")
+    parser = argparse.ArgumentParser(description="Verify Doctrine example manifests.")
     parser.add_argument(
         "--manifest",
         action="append",
@@ -625,7 +625,7 @@ def _require_string_list(
 
 
 def _format_case_failure(exc: Exception) -> str:
-    if isinstance(exc, PyPromptError):
+    if isinstance(exc, DoctrineError):
         return f"{type(exc).__name__} [{exc.code}]:\n{exc}"
     return f"{type(exc).__name__}: {exc}"
 

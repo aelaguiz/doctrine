@@ -1,44 +1,44 @@
-# SYNTAX TEST "source.pyprompt" "declarations and references"
+# SYNTAX TEST "source.doctrine" "declarations and references"
 
 import ..shared.workflow
-# <----- keyword.declaration.pyprompt
-#        ^ support.type.reference.pyprompt
+# <----- keyword.declaration.doctrine
+#        ^ support.type.reference.doctrine
 
 workflow ReviewFlow[shared.workflow.BaseFlow]: "Workflow"
-# <------- keyword.declaration.pyprompt
-#         ^ entity.name.type.pyprompt
-#                    ^ entity.other.inherited-class.pyprompt
+# <------- keyword.declaration.doctrine
+#         ^ entity.name.type.doctrine
+#                    ^ entity.other.inherited-class.doctrine
 
 skills SharedSkills[shared.skills.BaseSkills]: "Skills"
-# <----- keyword.declaration.pyprompt
-#        ^ entity.name.type.pyprompt
-#                     ^ entity.other.inherited-class.pyprompt
+# <----- keyword.declaration.doctrine
+#        ^ entity.name.type.doctrine
+#                     ^ entity.other.inherited-class.doctrine
 
 input source FigmaDocument: "Figma Document"
-# <---- keyword.declaration.pyprompt
-#      ^ keyword.declaration.pyprompt
-#             ^ entity.name.type.pyprompt
+# <---- keyword.declaration.doctrine
+#      ^ keyword.declaration.doctrine
+#             ^ entity.name.type.doctrine
 
 output target TrackerComment: "Tracker Comment"
-# <----- keyword.declaration.pyprompt
-#       ^ keyword.declaration.pyprompt
-#              ^ entity.name.type.pyprompt
+# <----- keyword.declaration.doctrine
+#       ^ keyword.declaration.doctrine
+#              ^ entity.name.type.doctrine
 
 json schema LessonManifestSchema: "Lesson Manifest Schema"
-# <--- keyword.declaration.pyprompt
-#     ^ keyword.declaration.pyprompt
-#            ^ entity.name.type.pyprompt
+# <--- keyword.declaration.doctrine
+#     ^ keyword.declaration.doctrine
+#            ^ entity.name.type.doctrine
 
 abstract agent BaseRole:
-# <------ keyword.declaration.pyprompt
-#        ^ keyword.declaration.pyprompt
-#              ^ entity.name.type.pyprompt
+# <------ keyword.declaration.doctrine
+#        ^ keyword.declaration.doctrine
+#              ^ entity.name.type.doctrine
 
 agent Reviewer[shared.roles.BaseRole]:
-# <---- keyword.declaration.pyprompt
-#      ^ entity.name.type.pyprompt
-#               ^ entity.other.inherited-class.pyprompt
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine
+#               ^ entity.other.inherited-class.doctrine
 
 skill CopyRewriteSkill: "copy-rewrite"
-# <---- keyword.declaration.pyprompt
-#      ^ entity.name.type.pyprompt
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine

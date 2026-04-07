@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-from pyprompt import model
-from pyprompt.diagnostics import CompileError, DiagnosticLocation, PyPromptError
-from pyprompt.parser import parse_file
+from doctrine import model
+from doctrine.diagnostics import CompileError, DiagnosticLocation, DoctrineError
+from doctrine.parser import parse_file
 
 
 @dataclass(slots=True, frozen=True)
@@ -3030,7 +3030,7 @@ class CompilationContext:
             resolved_module_parts = _resolve_import_path(import_decl.path, module_parts=module_parts)
             try:
                 imported_units[resolved_module_parts] = self._load_module(resolved_module_parts)
-            except PyPromptError as exc:
+            except DoctrineError as exc:
                 importer_path = prompt_file.source_path
                 raise exc.prepend_trace(
                     f"resolve import `{'.'.join(resolved_module_parts)}`",
@@ -3083,7 +3083,7 @@ class CompilationContext:
             try:
                 prompt_file = parse_file(module_path)
                 indexed = self._index_unit(prompt_file, module_parts=module_parts)
-            except PyPromptError as exc:
+            except DoctrineError as exc:
                 raise exc.prepend_trace(
                     f"load import module `{'.'.join(module_parts)}`",
                     location=_path_location(module_path),
@@ -3097,7 +3097,7 @@ class CompilationContext:
 def compile_prompt(prompt_file: model.PromptFile, agent_name: str) -> CompiledAgent:
     try:
         return CompilationContext(prompt_file).compile_agent(agent_name)
-    except PyPromptError as exc:
+    except DoctrineError as exc:
         raise exc.prepend_trace(
             f"compile agent `{agent_name}`",
             location=_path_location(prompt_file.source_path),

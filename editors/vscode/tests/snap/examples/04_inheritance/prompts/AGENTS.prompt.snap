@@ -1,238 +1,238 @@
 >import shared.greeters
-#^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#      ^ source.pyprompt
-#       ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
 >import shared.workflows
-#^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#      ^ source.pyprompt
-#       ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
 >
 >
 ># This abstract agent lives in the root file so the compile-fail contract can
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># still prove that abstract agents do not render, even when the parent is
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># imported from another module.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >abstract agent ImportedBaseGreeter[shared.greeters.PoliteGreeter]:
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^ source.pyprompt keyword.declaration.pyprompt
-#              ^ source.pyprompt
-#               ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                                  ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                                ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^ source.doctrine keyword.declaration.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                  ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                                ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                                 ^ source.doctrine punctuation.separator.key-value.doctrine
 >    role: "You are the imported base greeter."
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt keyword.other.field.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    workflow: "Shared Instructions"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        inherit greeting
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >        inherit courtesy
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >        inherit object
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >
 ># These concrete agents inherit from abstract parents defined in imported
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># modules. The inheritance model is unchanged; the parent can now be a dotted
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># declaration ref instead of only a local name.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                       ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                     ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                     ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                      ^ source.doctrine punctuation.separator.key-value.doctrine
 >    role: "You are the hello world greeter."
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt keyword.other.field.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    workflow: "Hello World Instructions"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        inherit greeting
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >        inherit courtesy
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >        inherit object
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >
 ># This is also a concrete leaf agent, and it keeps the shared doctrine from the
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># imported parent while replacing the final inherited step.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent InheritanceDemo[shared.greeters.PoliteGreeter]:
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                     ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                   ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                    ^ source.doctrine punctuation.separator.key-value.doctrine
 >    role: "You are the inheritance demonstration agent."
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt keyword.other.field.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    workflow: "Inherited Steps"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Follow the inherited steps below."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >        "This child keeps the shared greeting and replaces the final step."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >        inherit greeting
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >        inherit courtesy
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >        override object:
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#                ^ source.pyprompt
-#                 ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine keyword.control.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
 >            "Say inherited world."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 ># Imported parents work for named workflow declarations too.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow ImportedWorkflowInstructions[shared.workflows.BaseGreeting]: "Imported Workflow Instructions"
-#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
-#        ^ source.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                                     ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
-#                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
-#                                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
-#                                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                                                                     ^ source.pyprompt
-#                                                                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                     ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                                   ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                                     ^ source.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
 >    "This workflow inherits its structure from an imported parent."
-#^^^^ source.pyprompt
-#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    inherit greeting
-#^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
-#           ^ source.pyprompt
-#            ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
 >    courtesy: "Courtesy"
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "Keep the tone warm and direct."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    override object:
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
 >        "Say imported world."
-#^^^^^^^^ source.pyprompt
-#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
 >agent ImportedWorkflowGreeter:
-#^^^^^ source.pyprompt keyword.declaration.pyprompt
-#     ^ source.pyprompt
-#      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
-#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                             ^ source.doctrine punctuation.separator.key-value.doctrine
 >    role: "You are the imported workflow greeter."
-#^^^^ source.pyprompt
-#    ^^^^ source.pyprompt keyword.other.field.pyprompt
-#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#         ^ source.pyprompt
-#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    workflow: ImportedWorkflowInstructions
-#^^^^ source.pyprompt
-#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >

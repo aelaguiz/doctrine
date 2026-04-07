@@ -8,9 +8,9 @@ from pathlib import Path
 from lark import Lark, Transformer, v_args
 from lark.exceptions import UnexpectedInput, VisitError
 
-from pyprompt import model
-from pyprompt.diagnostics import ParseError, TransformParseFailure
-from pyprompt.indenter import PyPromptIndenter
+from doctrine import model
+from doctrine.diagnostics import ParseError, TransformParseFailure
+from doctrine.indenter import DoctrineIndenter
 
 
 @dataclass(slots=True, frozen=True)
@@ -545,11 +545,11 @@ class ToAst(Transformer):
 @lru_cache(maxsize=1)
 def build_lark_parser() -> Lark:
     return Lark.open(
-        "grammars/pyprompt.lark",
+        "grammars/doctrine.lark",
         rel_to=__file__,
         parser="lalr",
         lexer="contextual",
-        postlex=PyPromptIndenter(),
+        postlex=DoctrineIndenter(),
         strict=True,
         maybe_placeholders=False,
     )

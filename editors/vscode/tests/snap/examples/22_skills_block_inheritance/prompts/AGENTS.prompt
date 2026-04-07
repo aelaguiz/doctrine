@@ -13,7 +13,7 @@ skill GroundingSkill: "Grounding Skill"
 
 
 skill CopyRewriteSkill: "Copy Rewrite Skill"
-    purpose: "Rewrite learner-facing text without changing the underlying lesson job."
+    purpose: "Rewrite reader-facing text without changing the underlying guide job."
 
 
 skill FindSkills: "Find Skills"

@@ -4,10 +4,10 @@ Repo-local VS Code language support for `.prompt` files.
 
 ## What this extension does
 
-- registers `*.prompt` as the `pyprompt` language
+- registers `*.prompt` as the `doctrine` language
 - adds TextMate syntax highlighting for the shipped Doctrine grammar
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
-- keeps keyword coverage aligned with `pyprompt/grammars/pyprompt.lark`
+- keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
 
 ## Install in VS Code or Cursor
 
@@ -18,7 +18,7 @@ cd editors/vscode
 make
 ```
 
-That writes `pyprompt-language-<generated-version>.vsix` into `editors/vscode/`.
+That writes `doctrine-language-<generated-version>.vsix` into `editors/vscode/`.
 
 `make` installs the extension's npm dependencies if needed, runs the grammar tests, runs the Lark-alignment validator, and packages the final VSIX.
 Each packaging run stamps a fresh semver version without editing `package.json`, so reinstalling the newest VSIX always upgrades the local editor copy cleanly.
@@ -26,7 +26,7 @@ Each packaging run stamps a fresh semver version without editing `package.json`,
 Install it with either:
 
 - `Extensions: Install from VSIX...`
-- `code --install-extension /absolute/path/to/pyprompt-language-<generated-version>.vsix`
+- `code --install-extension /absolute/path/to/doctrine-language-<generated-version>.vsix`
 
 The packaged extension declares `engines.vscode: ^1.105.0`, which admits Cursor builds that report VS Code `1.105.x`.
 
