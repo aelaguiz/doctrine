@@ -1,0 +1,61 @@
+>workflow SharedRead: "Shared Read"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                      ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    "Read this first."
+#^^^^ source.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>workflow InvalidWorkflowMention: "Invalid Workflow Mention"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                ^ source.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    owner_names: "Owner Names"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Do not use {{SharedRead}} as if a workflow were a materialized owner mention."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                    ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                      ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent InvalidWorkflowMentionDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "This prompt exists only to prove that workflow mentions stay rejected."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    read_first: InvalidWorkflowMention
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

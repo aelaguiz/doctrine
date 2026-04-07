@@ -1,0 +1,58 @@
+># Inline workflow interpolation should fail loud when the field path does not
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># resolve to a real scalar contract field.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>import shared.contracts
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow InvalidFieldPathInterpolation: "Invalid Field Path Interpolation"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                       ^ source.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    bad: "Bad"
+#^^^^ source.pyprompt
+#    ^^^ source.pyprompt entity.name.section.pyprompt
+#       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Read `{{shared.contracts.TrackMetadata:source.missing}}` before you continue."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#               ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                               ^ source.pyprompt string.quoted.double.pyprompt punctuation.separator.interpolation.pyprompt
+#                                                ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt variable.other.member.pyprompt
+#                                                              ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                                                ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent InvalidFieldPathInterpolationAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "This agent exists only to trigger the compile-fail contract."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    read_first: InvalidFieldPathInterpolation
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>

@@ -1,0 +1,22 @@
+# Inline workflow interpolation must resolve one allowed declaration family.
+# If a local bare ref matches more than one allowed declaration kind, fail loud.
+
+input SharedThing: "Shared Thing Input"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+
+skill SharedThing: "Shared Thing Skill"
+    purpose: "Prove that ambiguous workflow-string refs fail loud."
+
+
+workflow InvalidAmbiguousInterpolation: "Invalid Ambiguous Interpolation"
+    bad: "Bad"
+        "Read {{SharedThing:title}} before you continue."
+
+
+agent InvalidAmbiguousInterpolationAgent:
+    role: "This agent exists only to trigger the compile-fail contract."
+
+    read_first: InvalidAmbiguousInterpolation

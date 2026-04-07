@@ -1,0 +1,49 @@
+# This example adds one narrow workflow-string feature:
+# workflow strings can interpolate named declaration data inline with `{{...}}`.
+#
+# Use this when the workflow needs one natural sentence instead of a block list.
+# Keep `15_workflow_body_refs` for list-style mention sections.
+# The declaration still owns the full typed contract truth.
+#
+# `{{Ref}}` renders the declaration title.
+# `{{Ref:field.path}}` resolves one scalar field from the declaration contract.
+# The author still owns punctuation, filenames, and backticks around placeholders.
+
+import shared.contracts
+
+
+workflow ImmediateLocalRead: "Immediate Local Read"
+    read_now: "Read Now"
+        "Read the current issue, the current Issue Plan And Route, the latest issue comment that names the current files, track.meta.json at `{{shared.contracts.TrackMetadata:source.path}}`, any current CONCEPTS.md at `{{CurrentConcepts:source.path}}`, and nearby section context only as support evidence to re-earn."
+
+    handoff_shape: "Handoff Shape"
+        "When you stop, leave one {{FinalHandoffComment}} through {{FinalHandoffComment:target.title}}."
+
+
+input CurrentConcepts: "Current Concepts"
+    source: File
+        path: "section_root/_authoring/CONCEPTS.md"
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use this only when the section already has live concepts to preserve."
+
+
+output FinalHandoffComment: "Final Handoff Comment"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+    "Use this output contract when you leave the next owner one clear update."
+
+
+agent WorkflowStringInterpolationDemo:
+    role: "Keep one workflow sentence readable while still pulling the typed contract truth from named declarations."
+
+    read_first: ImmediateLocalRead
+
+    inputs: "Inputs"
+        shared.contracts.CurrentIssuePlan
+        shared.contracts.TrackMetadata
+        CurrentConcepts
+
+    outputs: "Outputs"
+        FinalHandoffComment

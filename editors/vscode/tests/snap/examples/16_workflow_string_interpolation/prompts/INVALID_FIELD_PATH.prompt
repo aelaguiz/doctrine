@@ -1,0 +1,15 @@
+# Inline workflow interpolation should fail loud when the field path does not
+# resolve to a real scalar contract field.
+
+import shared.contracts
+
+
+workflow InvalidFieldPathInterpolation: "Invalid Field Path Interpolation"
+    bad: "Bad"
+        "Read `{{shared.contracts.TrackMetadata:source.missing}}` before you continue."
+
+
+agent InvalidFieldPathInterpolationAgent:
+    role: "This agent exists only to trigger the compile-fail contract."
+
+    read_first: InvalidFieldPathInterpolation

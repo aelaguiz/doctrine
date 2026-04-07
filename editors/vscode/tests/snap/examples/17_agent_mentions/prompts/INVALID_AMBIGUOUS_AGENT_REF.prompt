@@ -1,0 +1,20 @@
+workflow InvalidAmbiguousAgentRef: "Invalid Ambiguous Agent Ref"
+    owner_names: "Owner Names"
+        SharedThing
+
+
+input SharedThing: "Shared Thing"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "This input creates a deliberate bare-name collision."
+
+
+agent SharedThing:
+    role: "This agent creates the other side of the deliberate bare-name collision."
+
+
+agent InvalidAmbiguousAgentMentionDemo:
+    role: "This prompt exists only to prove that ambiguous agent mentions fail loud."
+
+    read_first: InvalidAmbiguousAgentRef

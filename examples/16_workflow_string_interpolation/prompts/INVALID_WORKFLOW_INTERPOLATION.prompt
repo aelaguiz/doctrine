@@ -1,0 +1,17 @@
+# Workflow refs are intentionally not valid inside workflow-string interpolation.
+# Use `use` when a workflow needs to compose another workflow.
+
+workflow SharedRead: "Shared Read"
+    first: "First"
+        "Read this first."
+
+
+workflow InvalidWorkflowStringInterpolation: "Invalid Workflow String Interpolation"
+    bad: "Bad"
+        "Read {{SharedRead}} before you continue."
+
+
+agent InvalidWorkflowStringInterpolationAgent:
+    role: "This agent exists only to trigger the compile-fail contract."
+
+    read_first: InvalidWorkflowStringInterpolation
