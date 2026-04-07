@@ -42,9 +42,9 @@ Stability rules:
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited workflow or `skills` entry that does not exist. |
+| `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited workflow, `skills`, or named IO entry that does not exist. |
 | `E002` | Missing rendered section title | Reserved meaning: a rendered section needs an explicit visible title and the source does not provide one. |
-| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited workflow or `skills` entries. |
+| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited workflow, `skills`, or named IO entries. |
 
 ### Parse codes
 
@@ -73,6 +73,7 @@ Stability rules:
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
 | `E240`-`E243` | Workflow inheritance and patching errors | These codes cover cyclic workflow inheritance, inheriting undefined keys, kind mismatches, and `inherit` or `override` without an inherited workflow. |
+| `E244`-`E249` | IO block inheritance and typed-field ref errors | These codes cover cyclic `inputs` / `outputs` block inheritance, undefined inherited keys, patching without an inherited IO block, inherited IO blocks without stable keyed sections, and wrong-kind IO refs or patch bases. |
 | `E261` | Duplicate workflow item key | One workflow body repeats the same keyed entry. |
 | `E270` | Ambiguous declaration reference | A readable mention or interpolation ref matches more than one visible declaration kind. |
 | `E271` | Workflow ref is not allowed here | A workflow ref was used on a mention or interpolation surface that allows declarations but not workflows. |
@@ -122,5 +123,5 @@ Stability rules:
 ## Example
 
 The checked-in error reference under
-[examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](/Users/aelaguiz/workspace/pyprompt/examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
+[examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](/Users/aelaguiz/workspace/doctrine/examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
 shows the canonical formatted shape for one shipped compile error.

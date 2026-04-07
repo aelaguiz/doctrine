@@ -294,6 +294,14 @@ The current examples are intentionally pushing on these rules so we can validate
   embedded inside workflows.
 - `22_skills_block_inheritance` gives named `skills` blocks the same explicit
   patching model already used by workflows.
+- `23_first_class_io_blocks` promotes `inputs` and `outputs` from agent-only
+  typed fields into first-class blocks that can be declared at the top level
+  and referenced directly from agents.
+- `24_io_block_inheritance` gives named `inputs` and `outputs` blocks the same
+  explicit patching model already used by workflows and `skills`.
+- `25_abstract_agent_io_override` shows the intended abstract-parent pattern:
+  parent agents point at named IO blocks, and child agents either reuse or
+  patch those named blocks directly.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -301,14 +309,16 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 22
+## Shipped Through 25
 
-The shipped language subset now covers examples `01` through `22`.
+The shipped language subset now covers examples `01` through `25`.
 
 Current shipped declaration kinds:
 - `import`
 - `workflow`
 - `skills`
+- `inputs`
+- `outputs`
 - `agent`
 - `abstract agent`
 - `input`
@@ -324,8 +334,10 @@ Current shipped agent field families:
 - authored workflow slots such as `workflow`, `your_job`, `read_first`,
   `workflow_core`, `how_to_take_a_turn`, `standards_and_support`, and
   `when_to_use_this_role`
-- `inputs` as a rich authored bucket
-- `outputs` as a rich authored bucket
+- `inputs` as either a rich inline bucket, a direct ref to a named inputs
+  block, or an explicit patch of a named inputs block
+- `outputs` as either a rich inline bucket, a direct ref to a named outputs
+  block, or an explicit patch of a named outputs block
 - `outcome`
 - `skills`
 
@@ -337,6 +349,14 @@ Current shipped boundaries:
   - it can be referenced directly from an agent `skills:` field
   - it can appear inline or by reference inside a workflow body
   - named `skills` blocks patch through explicit `inherit` and `override`
+- `inputs` and `outputs` are now first-class block surfaces:
+  - they can be declared at the top level
+  - they can be referenced directly from an agent `inputs:` or `outputs:` field
+  - named IO blocks patch through explicit `inherit` and `override`
+  - abstract parent agents can centralize named IO blocks and child agents can
+    reuse or patch those named blocks directly
+  - anonymous parent-agent `inputs` and `outputs` fields are not themselves
+    inherited patch surfaces
 - `route "..." -> AgentName` is a narrow typed line item inside workflow and
   outcome sections, not a standalone role-graph DSL
 - output paths such as `section_root/...` stay plain path strings explained by

@@ -1,0 +1,124 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "concrete child can reuse abstract parent io blocks directly"
+status = "active"
+kind = "render_contract"
+agent = "ReuseSectionRole"
+assertion = "exact_lines"
+expected_lines = [
+  "Reuse the parent's shared section IO blocks directly.",
+  "",
+  "## Your Inputs",
+  "",
+  "Read these inputs in order.",
+  "",
+  "### Scoped Catalog Truth",
+  "",
+  "#### Scoped Catalog Truth",
+  "",
+  "- Source: File",
+  "- Path: `catalog/scoped_catalog_truth.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Required",
+  "",
+  "### Continuity Only",
+  "",
+  "Use continuity evidence to re-earn the section.",
+  "",
+  "#### Continuity Only Packet",
+  "",
+  "- Source: File",
+  "- Path: `catalog/continuity_only_packet.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Advisory",
+  "",
+  "## Your Outputs",
+  "",
+  "Always produce both outputs.",
+  "",
+  "### Durable Section Truth",
+  "",
+  "#### Durable Section Truth",
+  "",
+  "- Target: File",
+  "- Path: `section_root/_authoring/durable_section_truth.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "#### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "concrete child can override abstract parent io blocks directly"
+status = "active"
+kind = "render_contract"
+agent = "OverrideSectionRole"
+assertion = "exact_lines"
+expected_lines = [
+  "Override the parent's shared section IO blocks through named block patching.",
+  "",
+  "## Your Inputs",
+  "",
+  "### Scoped Catalog Truth",
+  "",
+  "#### Scoped Catalog Truth",
+  "",
+  "- Source: File",
+  "- Path: `catalog/scoped_catalog_truth.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Required",
+  "",
+  "### Continuity Only",
+  "",
+  "Use continuity evidence to re-earn the section.",
+  "Read one section ahead only when the issue says continuity matters.",
+  "",
+  "#### Forward Continuity Packet",
+  "",
+  "- Source: File",
+  "- Path: `catalog/forward_continuity_packet.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Advisory",
+  "",
+  "## Your Outputs",
+  "",
+  "### Durable Section Truth",
+  "",
+  "#### Durable Section Truth",
+  "",
+  "- Target: File",
+  "- Path: `section_root/_authoring/durable_section_truth.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "Tell the next owner what changed and where the dossier truth lives.",
+  "",
+  "#### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "wrong-kind abstract-parent io patch bases fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_WRONG_PATCH_BASE.prompt"
+agent = "InvalidWrongPatchBase"
+exception_type = "CompileError"
+error_code = "E249"
+message_contains = [
+  "Inputs patch fields must inherit from inputs blocks, not outputs blocks",
+  "BaseSectionOutputs",
+]

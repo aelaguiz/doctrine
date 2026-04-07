@@ -25,6 +25,12 @@ class SkillsBodyParts:
     items: tuple[model.SkillsItem, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class IoBodyParts:
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.IoItem, ...]
+
+
 class ToAst(Transformer):
     def CNAME(self, token):
         return str(token)
@@ -100,12 +106,36 @@ class ToAst(Transformer):
         return model.RoleBlock(title=title_or_text, lines=tuple(body))
 
     @v_args(inline=True)
-    def inputs_field(self, title, items):
-        return model.InputsField(title=title, items=tuple(items))
+    def inputs_inline_field(self, title, items):
+        return model.InputsField(title=title, value=tuple(items))
 
     @v_args(inline=True)
-    def outputs_field(self, title, items):
-        return model.OutputsField(title=title, items=tuple(items))
+    def inputs_ref_field(self, ref):
+        return model.InputsField(title=None, value=ref)
+
+    @v_args(inline=True)
+    def inputs_patch_field(self, parent_ref, title, body):
+        return model.InputsField(
+            title=title,
+            value=self._io_body(title, body),
+            parent_ref=parent_ref,
+        )
+
+    @v_args(inline=True)
+    def outputs_inline_field(self, title, items):
+        return model.OutputsField(title=title, value=tuple(items))
+
+    @v_args(inline=True)
+    def outputs_ref_field(self, ref):
+        return model.OutputsField(title=None, value=ref)
+
+    @v_args(inline=True)
+    def outputs_patch_field(self, parent_ref, title, body):
+        return model.OutputsField(
+            title=title,
+            value=self._io_body(title, body),
+            parent_ref=parent_ref,
+        )
 
     @v_args(inline=True)
     def outcome_field(self, title, items):
@@ -154,6 +184,9 @@ class ToAst(Transformer):
             raise ValueError("Skills references cannot also define an inline body.")
         return model.SkillsBody(title=value, preamble=body.preamble, items=body.items)
 
+    def _io_body(self, title: str, body: IoBodyParts) -> model.IoBody:
+        return model.IoBody(title=title, preamble=body.preamble, items=body.items)
+
     def slot_body(self, items):
         return items[0]
 
@@ -196,6 +229,21 @@ class ToAst(Transformer):
         )
 
     @v_args(inline=True)
+    def inputs_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        io_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            io_body = body
+        return model.InputsDecl(
+            name=name,
+            body=self._io_body(title, io_body),
+            parent_ref=parent_ref,
+        )
+
+    @v_args(inline=True)
     def input_decl(self, name, title, items):
         return model.InputDecl(name=name, title=title, items=tuple(items))
 
@@ -206,6 +254,21 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def output_decl(self, name, title, items):
         return model.OutputDecl(name=name, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def outputs_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        io_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            io_body = body
+        return model.OutputsDecl(
+            name=name,
+            body=self._io_body(title, io_body),
+            parent_ref=parent_ref,
+        )
 
     @v_args(inline=True)
     def output_target_decl(self, name, title, items):
@@ -370,6 +433,52 @@ class ToAst(Transformer):
             title = title_or_items
             section_items = items
         return model.OverrideSkillsSection(
+            key=key,
+            title=title,
+            items=tuple(section_items),
+        )
+
+    @v_args(inline=True)
+    def io_string(self, value):
+        return value
+
+    @v_args(inline=True)
+    def io_body_line(self, value):
+        return value
+
+    def io_body(self, items):
+        preamble: list[model.ProseLine] = []
+        io_items: list[model.IoItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if io_items:
+                    raise TransformParseFailure(
+                        "Inputs and outputs prose lines must appear before keyed entries.",
+                        hints=(
+                            "Move prose lines to the top of the inputs or outputs body or put them inside a titled section.",
+                        ),
+                    )
+                preamble.append(item)
+                continue
+            io_items.append(item)
+        return IoBodyParts(preamble=tuple(preamble), items=tuple(io_items))
+
+    @v_args(inline=True)
+    def io_section(self, key, title, items):
+        return model.RecordSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def io_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def io_override_section(self, key, title_or_items, items=None):
+        title: str | None = None
+        section_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            section_items = items
+        return model.OverrideIoSection(
             key=key,
             title=title,
             items=tuple(section_items),

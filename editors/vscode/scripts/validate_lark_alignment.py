@@ -171,8 +171,36 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "inputsDeclaration",
+        ['inputs SharedInputs[shared.io.BaseInputs]: "Inputs"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "outputsDeclaration",
+        ['outputs SharedOutputs[shared.io.BaseOutputs]: "Outputs"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "skillEntry",
         ["    skill grounding: shared.skills.GroundingSkill"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "ioFieldRef",
+        ["    inputs: shared.io.BaseInputs", "    outputs: SharedOutputs"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "ioPatchField",
+        ['    inputs[shared.io.BaseInputs]: "Inputs"', '    outputs[SharedOutputs]: "Outputs"'],
         should_match=True,
         errors=errors,
     )

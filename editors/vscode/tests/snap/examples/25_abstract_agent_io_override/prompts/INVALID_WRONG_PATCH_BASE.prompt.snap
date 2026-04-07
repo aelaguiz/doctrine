@@ -1,0 +1,171 @@
+>input ScopedCatalogTruth: "Scoped Catalog Truth"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        path: "catalog/scoped_catalog_truth.json"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: "JSON Document"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>output CoordinationHandoff: "Coordination Handoff"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                           ^ source.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    target: TurnResponse
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    shape: "Comment"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>inputs BaseSectionInputs: "Your Inputs"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                           ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    scoped_catalog_truth: "Scoped Catalog Truth"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        ScopedCatalogTruth
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>outputs BaseSectionOutputs: "Your Outputs"
+#^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#       ^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                           ^ source.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                             ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    coordination_handoff: "Coordination Handoff"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        CoordinationHandoff
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>abstract agent BaseSectionRole:
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Use the shared section role defaults."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    inputs: BaseSectionInputs
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    outputs: BaseSectionOutputs
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>agent InvalidWrongPatchBase[BaseSectionRole]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                            ^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                           ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Trigger a wrong-kind IO patch base."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    inputs[BaseSectionOutputs]: "Your Inputs"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt support.type.reference.pyprompt
+#                             ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                               ^ source.pyprompt
+#                                ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        override scoped_catalog_truth: "Scoped Catalog Truth"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                      ^ source.pyprompt
+#                                       ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            ScopedCatalogTruth
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

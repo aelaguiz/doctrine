@@ -14,8 +14,10 @@ prompt_file: _NL* declaration+ _NL*
 ?declaration: import_decl
             | workflow_decl
             | skills_decl
+            | inputs_decl
             | input_source_decl
             | input_decl
+            | outputs_decl
             | output_target_decl
             | output_shape_decl
             | output_decl
@@ -28,8 +30,10 @@ import_decl: "import" import_path _NL
 
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
 skills_decl: "skills" CNAME inheritance? ":" string _NL _INDENT skills_body _DEDENT
+inputs_decl: "inputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 input_source_decl: "input" "source" CNAME ":" string _NL _INDENT record_body _DEDENT
 input_decl: "input" CNAME ":" string _NL _INDENT record_body _DEDENT
+outputs_decl: "outputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_decl: "output" CNAME ":" string _NL _INDENT record_body _DEDENT
@@ -44,8 +48,12 @@ inheritance: "[" name_ref "]"
 // authored workflow slot, which keeps the grammar open without making typed
 // contract fields magical.
 ?agent_field: role_field
-            | inputs_field
-            | outputs_field
+            | inputs_patch_field
+            | inputs_inline_field
+            | inputs_ref_field
+            | outputs_patch_field
+            | outputs_inline_field
+            | outputs_ref_field
             | outcome_field
             | skills_field
             | agent_slot_inherit
@@ -57,8 +65,12 @@ role_body: _INDENT block_lines _DEDENT
 
 // Inputs and outputs reuse the record body so roles can mix prose, titled
 // groups, and typed declaration refs without growing a second mini-language.
-inputs_field: "inputs" ":" string _NL _INDENT record_body _DEDENT
-outputs_field: "outputs" ":" string _NL _INDENT record_body _DEDENT
+inputs_inline_field: "inputs" ":" string _NL _INDENT record_body _DEDENT
+inputs_ref_field: "inputs" ":" name_ref _NL?
+inputs_patch_field: "inputs" inheritance ":" string _NL _INDENT io_body _DEDENT
+outputs_inline_field: "outputs" ":" string _NL _INDENT record_body _DEDENT
+outputs_ref_field: "outputs" ":" name_ref _NL?
+outputs_patch_field: "outputs" inheritance ":" string _NL _INDENT io_body _DEDENT
 outcome_field: "outcome" ":" string _NL _INDENT record_body _DEDENT
 skills_field: "skills" ":" string _NL _INDENT skills_body _DEDENT
             | "skills" ":" name_ref _NL?
@@ -124,6 +136,21 @@ skill_entry_body: _INDENT record_body _DEDENT
 skills_section_body: skills_section_item+
 ?skills_section_item: prose_line _NL?
                     | skill_entry
+
+io_body: io_body_line+
+
+io_string: prose_line _NL?
+io_body_line: io_string
+            | io_item
+
+?io_item: io_section
+        | record_ref_item
+        | io_inherit
+        | io_override_section
+
+io_section: CNAME ":" string _NL _INDENT record_body _DEDENT
+io_inherit: "inherit" CNAME _NL?
+io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
 record_body: record_item+
 ?record_item: record_text

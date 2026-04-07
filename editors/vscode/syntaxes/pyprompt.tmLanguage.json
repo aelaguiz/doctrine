@@ -16,10 +16,16 @@
       "include": "#skillsDeclaration"
     },
     {
+      "include": "#inputsDeclaration"
+    },
+    {
       "include": "#inputSource"
     },
     {
       "include": "#input"
+    },
+    {
+      "include": "#outputsDeclaration"
     },
     {
       "include": "#outputTarget"
@@ -86,6 +92,12 @@
     },
     {
       "include": "#skillsField"
+    },
+    {
+      "include": "#ioPatchField"
+    },
+    {
+      "include": "#ioFieldRef"
     },
     {
       "include": "#typedField"
@@ -208,6 +220,29 @@
         }
       }
     },
+    "inputsDeclaration": {
+      "match": "^(\\s*)(inputs)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.pyprompt"
+        },
+        "4": {
+          "name": "entity.name.type.pyprompt"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.pyprompt"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.pyprompt"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.pyprompt"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        }
+      }
+    },
     "inputSource": {
       "match": "^(\\s*)(input)(\\s+)(source)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
@@ -235,6 +270,29 @@
           "name": "entity.name.type.pyprompt"
         },
         "6": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        }
+      }
+    },
+    "outputsDeclaration": {
+      "match": "^(\\s*)(outputs)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.pyprompt"
+        },
+        "4": {
+          "name": "entity.name.type.pyprompt"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.pyprompt"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.pyprompt"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.pyprompt"
+        },
+        "9": {
           "name": "punctuation.separator.key-value.pyprompt"
         }
       }
@@ -691,6 +749,43 @@
           "name": "string.quoted.double.pyprompt"
         },
         "7": {
+          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+        }
+      }
+    },
+    "ioPatchField": {
+      "match": "^(\\s*)(inputs|outputs)(\\s*)(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\])(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.section.inheritance.begin.pyprompt"
+        },
+        "5": {
+          "name": "entity.other.inherited-class.pyprompt support.type.reference.pyprompt"
+        },
+        "6": {
+          "name": "punctuation.section.inheritance.end.pyprompt"
+        },
+        "8": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        },
+        "10": {
+          "name": "string.quoted.double.pyprompt"
+        }
+      }
+    },
+    "ioFieldRef": {
+      "match": "^(\\s*)(inputs|outputs)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        },
+        "6": {
           "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
         }
       }

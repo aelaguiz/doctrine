@@ -1,0 +1,88 @@
+>input SharedCatalogPacket: "Shared Catalog Packet"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        path: "catalog/shared_catalog_packet.json"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: "JSON Document"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>inputs BareInputs: "Your Inputs"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    SharedCatalogPacket
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>inputs InvalidInheritedInputs[BareInputs]: "Your Inputs"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                              ^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                        ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                          ^ source.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                            ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    "This child should fail before it can inherit the parent block."
+#^^^^ source.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent InvalidUnkeyedParentIoDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Trigger inheritance from an IO block with an unkeyed top-level ref."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    inputs: InvalidInheritedInputs
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

@@ -756,6 +756,75 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Cyclic (?P<kind>inputs|outputs) inheritance: (?P<detail>.+)$"),
+        "E244",
+        "Cyclic IO block inheritance",
+        lambda match: (
+            f"{match.group('kind').title()} inheritance cycle: {match.group('detail')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Cannot inherit undefined (?P<kind>inputs|outputs) entry in (?P<owner>[^:]+): (?P<key>.+)$"
+        ),
+        "E245",
+        "Cannot inherit undefined IO block entry",
+        lambda match: (
+            f"{match.group('kind').title()} block `{match.group('owner')}` cannot inherit undefined key `{match.group('key')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^(?P<action>inherit|override) requires an inherited (?P<kind>inputs|outputs) block in (?P<owner>[^:]+): (?P<key>.+)$"
+        ),
+        "E246",
+        "IO block patch requires an inherited IO block",
+        lambda match: (
+            f"`{match.group('action')}` for key `{match.group('key')}` requires an inherited "
+            f"{match.group('kind')} block in `{match.group('owner')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Cannot inherit (?P<kind>inputs|outputs) block with unkeyed top-level refs in (?P<owner>[^:]+): (?P<detail>.+)$"
+        ),
+        "E247",
+        "Inherited IO block needs keyed top-level entries",
+        lambda match: (
+            f"{match.group('kind').title()} block `{match.group('owner')}` contains unkeyed top-level refs: {match.group('detail')}."
+        ),
+        (
+            "Give inherited inputs and outputs blocks stable keyed sections before patching them.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^(?P<field>Inputs|Outputs) fields must resolve to (?P<expected>inputs|outputs) blocks, not (?P<actual>inputs|outputs) blocks: (?P<ref>.+)$"
+        ),
+        "E248",
+        "IO field ref kind mismatch",
+        lambda match: (
+            f"`{match.group('field').lower()}` field ref `{match.group('ref')}` must resolve to "
+            f"a {match.group('expected')} block, not a {match.group('actual')} block."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^(?P<field>Inputs|Outputs) patch fields must inherit from (?P<expected>inputs|outputs) blocks, not (?P<actual>inputs|outputs) blocks: (?P<ref>.+)$"
+        ),
+        "E249",
+        "IO patch base kind mismatch",
+        lambda match: (
+            f"`{match.group('field').lower()}` patch base `{match.group('ref')}` must inherit from "
+            f"a {match.group('expected')} block, not a {match.group('actual')} block."
+        ),
+        (),
+    ),
+    (
         re.compile(r"^Ambiguous (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"),
         "E270",
         "Ambiguous declaration reference",

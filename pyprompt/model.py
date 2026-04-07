@@ -160,6 +160,26 @@ SkillsValue: TypeAlias = SkillsBody | NameRef
 
 
 @dataclass(slots=True, frozen=True)
+class OverrideIoSection:
+    key: str
+    title: str | None
+    items: tuple[RecordItem, ...]
+
+
+IoItem: TypeAlias = RecordSection | RecordRef | InheritItem | OverrideIoSection
+
+
+@dataclass(slots=True, frozen=True)
+class IoBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[IoItem, ...]
+
+
+IoFieldValue: TypeAlias = tuple[RecordItem, ...] | NameRef | IoBody
+
+
+@dataclass(slots=True, frozen=True)
 class WorkflowSkillsItem:
     key: str
     value: SkillsValue
@@ -225,14 +245,16 @@ class AuthoredSlotOverride:
 
 @dataclass(slots=True, frozen=True)
 class InputsField:
-    title: str
-    items: tuple[RecordItem, ...]
+    title: str | None
+    value: IoFieldValue
+    parent_ref: NameRef | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class OutputsField:
-    title: str
-    items: tuple[RecordItem, ...]
+    title: str | None
+    value: IoFieldValue
+    parent_ref: NameRef | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -275,6 +297,13 @@ class InputDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class InputsDecl:
+    name: str
+    body: IoBody
+    parent_ref: NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class InputSourceDecl:
     name: str
     title: str
@@ -286,6 +315,13 @@ class OutputDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutputsDecl:
+    name: str
+    body: IoBody
+    parent_ref: NameRef | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -321,8 +357,10 @@ Declaration: TypeAlias = (
     | WorkflowDecl
     | SkillsDecl
     | Agent
+    | InputsDecl
     | InputDecl
     | InputSourceDecl
+    | OutputsDecl
     | OutputDecl
     | OutputTargetDecl
     | OutputShapeDecl

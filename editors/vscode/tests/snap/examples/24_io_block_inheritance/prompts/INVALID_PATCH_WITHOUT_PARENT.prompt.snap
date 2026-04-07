@@ -1,0 +1,71 @@
+>input ScopedCatalogTruth: "Scoped Catalog Truth"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        path: "catalog/scoped_catalog_truth.json"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: "JSON Document"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>inputs InvalidStandalonePatch: "Your Inputs"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    inherit scoped_catalog_truth
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>agent InvalidPatchWithoutParentIoDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Trigger IO patch syntax without an inherited block."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    inputs: InvalidStandalonePatch
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

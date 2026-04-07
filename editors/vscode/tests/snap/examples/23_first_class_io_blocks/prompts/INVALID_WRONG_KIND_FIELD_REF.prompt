@@ -1,0 +1,26 @@
+inputs SharedSectionInputs: "Your Inputs"
+    packet: "Packet"
+        SharedCatalogPacket
+
+
+outputs SharedSectionOutputs: "Your Outputs"
+    handoff: "Handoff"
+        SharedHandoff
+
+
+input SharedCatalogPacket: "Shared Catalog Packet"
+    source: File
+        path: "catalog/shared_catalog_packet.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+output SharedHandoff: "Shared Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+agent InvalidWrongKindFieldRef:
+    role: "Trigger a wrong-kind first-class IO field ref."
+    inputs: SharedSectionOutputs

@@ -1,0 +1,70 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "agents can reference first-class inputs and outputs blocks directly"
+status = "active"
+kind = "render_contract"
+agent = "FirstClassIoBlocksDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use shared inputs and outputs blocks directly on the agent.",
+  "",
+  "## Your Inputs",
+  "",
+  "Read these inputs in order.",
+  "",
+  "### Scoped Catalog Truth",
+  "",
+  "#### Scoped Catalog Truth",
+  "",
+  "- Source: File",
+  "- Path: `catalog/scoped_catalog_truth.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Required",
+  "",
+  "### Broader Curriculum Context",
+  "",
+  "Use this as support evidence, not as section truth.",
+  "",
+  "#### Broader Curriculum Context",
+  "",
+  "- Source: File",
+  "- Path: `catalog/broader_curriculum_context.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Advisory",
+  "",
+  "## Your Outputs",
+  "",
+  "Always produce both outputs.",
+  "",
+  "### Durable Section Truth",
+  "",
+  "#### Durable Section Truth",
+  "",
+  "- Target: File",
+  "- Path: `section_root/_authoring/durable_section_truth.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "#### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "wrong-kind first-class io field refs fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_WRONG_KIND_FIELD_REF.prompt"
+agent = "InvalidWrongKindFieldRef"
+exception_type = "CompileError"
+error_code = "E248"
+message_contains = [
+  "Inputs fields must resolve to inputs blocks, not outputs blocks",
+  "SharedSectionOutputs",
+]

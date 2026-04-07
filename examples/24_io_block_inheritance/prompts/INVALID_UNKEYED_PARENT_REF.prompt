@@ -1,0 +1,18 @@
+input SharedCatalogPacket: "Shared Catalog Packet"
+    source: File
+        path: "catalog/shared_catalog_packet.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+inputs BareInputs: "Your Inputs"
+    SharedCatalogPacket
+
+
+inputs InvalidInheritedInputs[BareInputs]: "Your Inputs"
+    "This child should fail before it can inherit the parent block."
+
+
+agent InvalidUnkeyedParentIoDemo:
+    role: "Trigger inheritance from an IO block with an unkeyed top-level ref."
+    inputs: InvalidInheritedInputs

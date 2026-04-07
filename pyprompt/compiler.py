@@ -42,8 +42,10 @@ class IndexedUnit:
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
     workflows_by_name: dict[str, model.WorkflowDecl]
+    inputs_blocks_by_name: dict[str, model.InputsDecl]
     inputs_by_name: dict[str, model.InputDecl]
     input_sources_by_name: dict[str, model.InputSourceDecl]
+    outputs_blocks_by_name: dict[str, model.OutputsDecl]
     outputs_by_name: dict[str, model.OutputDecl]
     output_targets_by_name: dict[str, model.OutputTargetDecl]
     output_shapes_by_name: dict[str, model.OutputShapeDecl]
@@ -109,6 +111,27 @@ class ResolvedSkillsBody:
     title: str
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedSkillsItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedIoSection:
+    key: str
+    section: CompiledSection
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedIoRef:
+    section: CompiledSection
+
+
+ResolvedIoItem = ResolvedIoSection | ResolvedIoRef
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedIoBody:
+    title: str
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[ResolvedIoItem, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -185,9 +208,13 @@ class CompilationContext:
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._inputs_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._outputs_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._agent_slot_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._resolved_workflow_cache: dict[tuple[tuple[str, ...], str], ResolvedWorkflowBody] = {}
         self._resolved_skills_cache: dict[tuple[tuple[str, ...], str], ResolvedSkillsBody] = {}
+        self._resolved_inputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
+        self._resolved_outputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
         self._resolved_agent_slot_cache: dict[
             tuple[tuple[str, ...], str],
             tuple[ResolvedAgentSlot, ...],
@@ -260,16 +287,28 @@ class CompilationContext:
                 compiled_fields.append(self._compile_resolved_workflow(slot_body))
                 continue
 
-            field_key = type(field).__name__
+            field_key = self._typed_field_key(field)
             if field_key in seen_typed_fields:
                 raise CompileError(f"Duplicate typed field in agent {agent.name}: {field_key}")
             seen_typed_fields.add(field_key)
 
             if isinstance(field, model.InputsField):
-                compiled_fields.append(self._compile_inputs_field(field, unit=unit))
+                compiled_fields.append(
+                    self._compile_inputs_field(
+                        field,
+                        unit=unit,
+                        owner_label=f"agent {agent.name}",
+                    )
+                )
                 continue
             if isinstance(field, model.OutputsField):
-                compiled_fields.append(self._compile_outputs_field(field, unit=unit))
+                compiled_fields.append(
+                    self._compile_outputs_field(
+                        field,
+                        unit=unit,
+                        owner_label=f"agent {agent.name}",
+                    )
+                )
                 continue
             if isinstance(field, model.OutcomeField):
                 compiled_fields.append(self._compile_outcome_field(field, unit=unit))
@@ -286,6 +325,17 @@ class CompilationContext:
             raise CompileError(f"Concrete agent is missing role field: {agent.name}")
 
         return CompiledAgent(name=agent.name, fields=tuple(compiled_fields))
+
+    def _typed_field_key(self, field: model.Field) -> str:
+        if isinstance(field, model.InputsField):
+            return "inputs"
+        if isinstance(field, model.OutputsField):
+            return "outputs"
+        if isinstance(field, model.OutcomeField):
+            return "outcome"
+        if isinstance(field, model.SkillsField):
+            return "skills"
+        return type(field).__name__
 
     def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
         if len(agent.fields) != 2:
@@ -453,28 +503,167 @@ class CompilationContext:
         target_unit, workflow_decl = self._resolve_workflow_ref(value, unit=unit)
         return self._resolve_workflow_decl(workflow_decl, unit=target_unit)
 
-    def _compile_inputs_field(self, field: model.InputsField, *, unit: IndexedUnit) -> CompiledSection:
-        return CompiledSection(
-            title=field.title,
-            body=self._compile_contract_bucket_items(
-                field.items,
-                unit=unit,
-                field_kind="inputs",
-                owner_label=f"inputs field `{field.title}`",
-            ),
+    def _compile_inputs_field(
+        self,
+        field: model.InputsField,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> CompiledSection:
+        return self._compile_io_field(
+            field=field,
+            unit=unit,
+            field_kind="inputs",
+            owner_label=owner_label,
         )
 
     def _compile_outputs_field(
-        self, field: model.OutputsField, *, unit: IndexedUnit
+        self,
+        field: model.OutputsField,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
     ) -> CompiledSection:
-        return CompiledSection(
-            title=field.title,
-            body=self._compile_contract_bucket_items(
-                field.items,
+        return self._compile_io_field(
+            field=field,
+            unit=unit,
+            field_kind="outputs",
+            owner_label=owner_label,
+        )
+
+    def _compile_io_field(
+        self,
+        field: model.InputsField | model.OutputsField,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> CompiledSection:
+        if field.parent_ref is not None:
+            resolved = self._resolve_io_field_patch(
+                field,
                 unit=unit,
-                field_kind="outputs",
-                owner_label=f"outputs field `{field.title}`",
-            ),
+                field_kind=field_kind,
+                owner_label=owner_label,
+            )
+            return self._compile_resolved_io_body(resolved)
+
+        if isinstance(field.value, tuple):
+            if field.title is None:
+                raise CompileError(
+                    f"Internal compiler error: {field_kind} field is missing title in {owner_label}"
+                )
+            return CompiledSection(
+                title=field.title,
+                body=self._compile_contract_bucket_items(
+                    field.value,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=f"{field_kind} field `{field.title}`",
+                ),
+            )
+
+        if isinstance(field.value, model.NameRef):
+            resolved = self._resolve_io_field_ref(
+                field.value,
+                unit=unit,
+                field_kind=field_kind,
+            )
+            return self._compile_resolved_io_body(resolved)
+
+        raise CompileError(
+            f"Internal compiler error: unsupported {field_kind} field value in {owner_label}: "
+            f"{type(field.value).__name__}"
+        )
+
+    def _compile_resolved_io_body(self, io_body: ResolvedIoBody) -> CompiledSection:
+        body: list[CompiledBodyItem] = list(io_body.preamble)
+        for item in io_body.items:
+            body.append(item.section)
+        return CompiledSection(title=io_body.title, body=tuple(body))
+
+    def _resolve_io_field_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+    ) -> ResolvedIoBody:
+        if field_kind == "inputs":
+            if self._ref_exists_in_registry(
+                ref,
+                unit=unit,
+                registry_name="outputs_blocks_by_name",
+            ):
+                raise CompileError(
+                    "Inputs fields must resolve to inputs blocks, not outputs blocks: "
+                    f"{_dotted_ref_name(ref)}"
+                )
+            target_unit, inputs_decl = self._resolve_inputs_block_ref(ref, unit=unit)
+            return self._resolve_inputs_decl(inputs_decl, unit=target_unit)
+
+        if self._ref_exists_in_registry(
+            ref,
+            unit=unit,
+            registry_name="inputs_blocks_by_name",
+        ):
+            raise CompileError(
+                "Outputs fields must resolve to outputs blocks, not inputs blocks: "
+                f"{_dotted_ref_name(ref)}"
+            )
+        target_unit, outputs_decl = self._resolve_outputs_block_ref(ref, unit=unit)
+        return self._resolve_outputs_decl(outputs_decl, unit=target_unit)
+
+    def _resolve_io_field_patch(
+        self,
+        field: model.InputsField | model.OutputsField,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> ResolvedIoBody:
+        parent_ref = field.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: {field_kind} patch field is missing parent ref in {owner_label}"
+            )
+        if not isinstance(field.value, model.IoBody) or field.title is None:
+            raise CompileError(
+                f"Internal compiler error: {field_kind} patch field is missing body in {owner_label}"
+            )
+
+        if field_kind == "inputs":
+            if self._ref_exists_in_registry(
+                parent_ref,
+                unit=unit,
+                registry_name="outputs_blocks_by_name",
+            ):
+                raise CompileError(
+                    "Inputs patch fields must inherit from inputs blocks, not outputs blocks: "
+                    f"{_dotted_ref_name(parent_ref)}"
+                )
+            parent_unit, parent_decl = self._resolve_inputs_block_ref(parent_ref, unit=unit)
+            parent_body = self._resolve_inputs_decl(parent_decl, unit=parent_unit)
+        else:
+            if self._ref_exists_in_registry(
+                parent_ref,
+                unit=unit,
+                registry_name="inputs_blocks_by_name",
+            ):
+                raise CompileError(
+                    "Outputs patch fields must inherit from outputs blocks, not inputs blocks: "
+                    f"{_dotted_ref_name(parent_ref)}"
+                )
+            parent_unit, parent_decl = self._resolve_outputs_block_ref(parent_ref, unit=unit)
+            parent_body = self._resolve_outputs_decl(parent_decl, unit=parent_unit)
+
+        return self._resolve_io_body(
+            field.value,
+            unit=unit,
+            field_kind=field_kind,
+            owner_label=owner_label,
+            parent_io=parent_body,
+            parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
         )
 
     def _compile_outcome_field(
@@ -1191,6 +1380,90 @@ class CompilationContext:
         finally:
             self._skills_resolution_stack.pop()
 
+    def _resolve_inputs_decl(
+        self, inputs_decl: model.InputsDecl, *, unit: IndexedUnit
+    ) -> ResolvedIoBody:
+        inputs_key = (unit.module_parts, inputs_decl.name)
+        cached = self._resolved_inputs_cache.get(inputs_key)
+        if cached is not None:
+            return cached
+
+        if inputs_key in self._inputs_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._inputs_resolution_stack, inputs_key]
+            )
+            raise CompileError(f"Cyclic inputs inheritance: {cycle}")
+
+        self._inputs_resolution_stack.append(inputs_key)
+        try:
+            parent_io: ResolvedIoBody | None = None
+            parent_label: str | None = None
+            if inputs_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_inputs_decl(
+                    inputs_decl,
+                    unit=unit,
+                )
+                parent_io = self._resolve_inputs_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"inputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_io_body(
+                inputs_decl.body,
+                unit=unit,
+                field_kind="inputs",
+                owner_label=_dotted_decl_name(unit.module_parts, inputs_decl.name),
+                parent_io=parent_io,
+                parent_label=parent_label,
+            )
+            self._resolved_inputs_cache[inputs_key] = resolved
+            return resolved
+        finally:
+            self._inputs_resolution_stack.pop()
+
+    def _resolve_outputs_decl(
+        self, outputs_decl: model.OutputsDecl, *, unit: IndexedUnit
+    ) -> ResolvedIoBody:
+        outputs_key = (unit.module_parts, outputs_decl.name)
+        cached = self._resolved_outputs_cache.get(outputs_key)
+        if cached is not None:
+            return cached
+
+        if outputs_key in self._outputs_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._outputs_resolution_stack, outputs_key]
+            )
+            raise CompileError(f"Cyclic outputs inheritance: {cycle}")
+
+        self._outputs_resolution_stack.append(outputs_key)
+        try:
+            parent_io: ResolvedIoBody | None = None
+            parent_label: str | None = None
+            if outputs_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_outputs_decl(
+                    outputs_decl,
+                    unit=unit,
+                )
+                parent_io = self._resolve_outputs_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_io_body(
+                outputs_decl.body,
+                unit=unit,
+                field_kind="outputs",
+                owner_label=_dotted_decl_name(unit.module_parts, outputs_decl.name),
+                parent_io=parent_io,
+                parent_label=parent_label,
+            )
+            self._resolved_outputs_cache[outputs_key] = resolved
+            return resolved
+        finally:
+            self._outputs_resolution_stack.pop()
+
     def _resolve_skills_value(
         self,
         value: model.SkillsValue,
@@ -1205,6 +1478,133 @@ class CompilationContext:
             value,
             unit=unit,
             owner_label=owner_label,
+        )
+
+    def _resolve_io_body(
+        self,
+        io_body: model.IoBody,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+        parent_io: ResolvedIoBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedIoBody:
+        resolved_preamble = tuple(
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label=f"{field_kind} prose",
+                ambiguous_label=f"{field_kind} prose interpolation ref",
+            )
+            for line in io_body.preamble
+        )
+        if parent_io is None:
+            return ResolvedIoBody(
+                title=io_body.title,
+                preamble=resolved_preamble,
+                items=self._resolve_non_inherited_io_items(
+                    io_body.items,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=owner_label,
+                ),
+            )
+
+        unkeyed_parent_titles = [
+            item.section.title for item in parent_io.items if isinstance(item, ResolvedIoRef)
+        ]
+        if unkeyed_parent_titles:
+            details = ", ".join(unkeyed_parent_titles)
+            raise CompileError(
+                f"Cannot inherit {field_kind} block with unkeyed top-level refs in {parent_label}: {details}"
+            )
+
+        parent_items_by_key = {
+            item.key: item for item in parent_io.items if isinstance(item, ResolvedIoSection)
+        }
+        resolved_items: list[ResolvedIoItem] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in io_body.items:
+            if isinstance(item, model.RecordRef):
+                resolved_items.append(
+                    self._resolve_io_ref_item(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.RecordSection):
+                resolved_items.append(
+                    self._resolve_io_section_item(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                    )
+                )
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined {field_kind} entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined {field_kind} entry in {parent_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            if not isinstance(item, model.OverrideIoSection):
+                raise CompileError(
+                    f"Internal compiler error: unsupported {field_kind} override in {owner_label}: {type(item).__name__}"
+                )
+            resolved_items.append(
+                ResolvedIoSection(
+                    key=key,
+                    section=CompiledSection(
+                        title=item.title if item.title is not None else parent_item.section.title,
+                        body=self._compile_contract_bucket_items(
+                            item.items,
+                            unit=unit,
+                            field_kind=field_kind,
+                            owner_label=(
+                                f"{field_kind} section `{item.title if item.title is not None else parent_item.section.title}`"
+                            ),
+                        ),
+                    ),
+                )
+            )
+
+        missing_keys = [
+            item.key for item in parent_io.items if isinstance(item, ResolvedIoSection) and item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited {field_kind} entry in {owner_label}: {missing}"
+            )
+
+        return ResolvedIoBody(
+            title=io_body.title,
+            preamble=resolved_preamble,
+            items=tuple(resolved_items),
         )
 
     def _resolve_skills_body(
@@ -1594,6 +1994,88 @@ class CompilationContext:
             )
 
         return tuple(resolved_items)
+
+    def _resolve_non_inherited_io_items(
+        self,
+        io_items: tuple[model.IoItem, ...],
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> tuple[ResolvedIoItem, ...]:
+        resolved_items: list[ResolvedIoItem] = []
+        seen_keys: set[str] = set()
+
+        for item in io_items:
+            if isinstance(item, model.RecordRef):
+                resolved_items.append(
+                    self._resolve_io_ref_item(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
+            key = item.key
+            if key in seen_keys:
+                raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
+            seen_keys.add(key)
+
+            if isinstance(item, model.RecordSection):
+                resolved_items.append(
+                    self._resolve_io_section_item(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                    )
+                )
+                continue
+
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited {field_kind} block in {owner_label}: {key}"
+            )
+
+        return tuple(resolved_items)
+
+    def _resolve_io_section_item(
+        self,
+        item: model.RecordSection,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+    ) -> ResolvedIoSection:
+        return ResolvedIoSection(
+            key=item.key,
+            section=CompiledSection(
+                title=item.title,
+                body=self._compile_contract_bucket_items(
+                    item.items,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=f"{field_kind} section `{item.title}`",
+                ),
+            ),
+        )
+
+    def _resolve_io_ref_item(
+        self,
+        item: model.RecordRef,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> ResolvedIoRef:
+        return ResolvedIoRef(
+            section=self._compile_contract_bucket_ref(
+                item,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=owner_label,
+            )
+        )
 
     def _resolve_skills_section_body_items(
         self,
@@ -2197,6 +2679,26 @@ class CompilationContext:
             missing_label="skills declaration",
         )
 
+    def _resolve_inputs_block_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.InputsDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="inputs_blocks_by_name",
+            missing_label="inputs block",
+        )
+
+    def _resolve_outputs_block_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.OutputsDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="outputs_blocks_by_name",
+            missing_label="outputs block",
+        )
+
     def _resolve_parent_workflow_decl(
         self,
         workflow_decl: model.WorkflowDecl,
@@ -2236,6 +2738,46 @@ class CompilationContext:
                 )
             return unit, parent_decl
         return self._resolve_skills_ref(parent_ref, unit=unit)
+
+    def _resolve_parent_inputs_decl(
+        self,
+        inputs_decl: model.InputsDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.InputsDecl]:
+        parent_ref = inputs_decl.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: inputs block has no parent ref: {inputs_decl.name}"
+            )
+        if not parent_ref.module_parts:
+            parent_decl = unit.inputs_blocks_by_name.get(parent_ref.declaration_name)
+            if parent_decl is None:
+                raise CompileError(
+                    f"Missing parent inputs block for {inputs_decl.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_decl
+        return self._resolve_inputs_block_ref(parent_ref, unit=unit)
+
+    def _resolve_parent_outputs_decl(
+        self,
+        outputs_decl: model.OutputsDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputsDecl]:
+        parent_ref = outputs_decl.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: outputs block has no parent ref: {outputs_decl.name}"
+            )
+        if not parent_ref.module_parts:
+            parent_decl = unit.outputs_blocks_by_name.get(parent_ref.declaration_name)
+            if parent_decl is None:
+                raise CompileError(
+                    f"Missing parent outputs block for {outputs_decl.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_decl
+        return self._resolve_outputs_block_ref(parent_ref, unit=unit)
 
     def _resolve_input_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -2383,8 +2925,10 @@ class CompilationContext:
         imports: list[model.ImportDecl] = []
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
         skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
+        inputs_blocks_by_name: dict[str, model.InputsDecl] = {}
         inputs_by_name: dict[str, model.InputDecl] = {}
         input_sources_by_name: dict[str, model.InputSourceDecl] = {}
+        outputs_blocks_by_name: dict[str, model.OutputsDecl] = {}
         outputs_by_name: dict[str, model.OutputDecl] = {}
         output_targets_by_name: dict[str, model.OutputTargetDecl] = {}
         output_shapes_by_name: dict[str, model.OutputShapeDecl] = {}
@@ -2404,6 +2948,10 @@ class CompilationContext:
                 self._register_decl(skills_blocks_by_name, declaration.name, module_parts)
                 skills_blocks_by_name[declaration.name] = declaration
                 continue
+            if isinstance(declaration, model.InputsDecl):
+                self._register_decl(inputs_blocks_by_name, declaration.name, module_parts)
+                inputs_blocks_by_name[declaration.name] = declaration
+                continue
             if isinstance(declaration, model.InputDecl):
                 self._register_decl(inputs_by_name, declaration.name, module_parts)
                 inputs_by_name[declaration.name] = declaration
@@ -2411,6 +2959,10 @@ class CompilationContext:
             if isinstance(declaration, model.InputSourceDecl):
                 self._register_decl(input_sources_by_name, declaration.name, module_parts)
                 input_sources_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.OutputsDecl):
+                self._register_decl(outputs_blocks_by_name, declaration.name, module_parts)
+                outputs_blocks_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.OutputDecl):
                 self._register_decl(outputs_by_name, declaration.name, module_parts)
@@ -2455,14 +3007,16 @@ class CompilationContext:
             prompt_file=prompt_file,
             imports=tuple(imports),
             workflows_by_name=workflows_by_name,
-            skills_blocks_by_name=skills_blocks_by_name,
+            inputs_blocks_by_name=inputs_blocks_by_name,
             inputs_by_name=inputs_by_name,
             input_sources_by_name=input_sources_by_name,
+            outputs_blocks_by_name=outputs_blocks_by_name,
             outputs_by_name=outputs_by_name,
             output_targets_by_name=output_targets_by_name,
             output_shapes_by_name=output_shapes_by_name,
             json_schemas_by_name=json_schemas_by_name,
             skills_by_name=skills_by_name,
+            skills_blocks_by_name=skills_blocks_by_name,
             agents_by_name=agents_by_name,
             imported_units=imported_units,
         )
