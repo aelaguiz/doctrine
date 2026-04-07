@@ -1,0 +1,13 @@
+workflow ReadFirst: "Read First"
+    "Read Your Job first. Then read Workflow Core."
+
+
+abstract agent SameIssueRole:
+    read_first: ReadFirst
+
+
+agent BrokenRole[SameIssueRole]:
+    role: "Core job: exercise the invalid authored-slot parse path."
+
+    override read_first: ReadFirst
+        "This inline body is invalid because the slot already references a named workflow."

@@ -67,3 +67,23 @@ skill ParaMemoryFilesSkill: "para-memory-files"
 
     does_not: "Does Not"
         "Does not overrule the active issue, issue documents, comments, or repo-backed plans as coordination truth."
+
+
+skill MobileSimSkill: "mobile-sim"
+    purpose: "Drive simulator or device investigation when the job actually needs runtime mobile work."
+
+    use_when: "Use When"
+        "Use this only when the job is simulator or device work."
+
+    does_not: "Does Not"
+        "Does not belong in baseline Lessons authoring."
+
+
+skill FlutterDevReturnSkill: "flutter-dev-return"
+    purpose: "Restore a live Flutter development loop."
+
+    use_when: "Use When"
+        "Use this only when the job is restoring a live Flutter dev loop."
+
+    does_not: "Does Not"
+        "Does not belong in baseline Lessons authoring."

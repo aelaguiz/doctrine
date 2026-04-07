@@ -96,21 +96,50 @@ workflow LessonsHowToTakeATurn: "How To Take A Turn"
         "9. Leave one clear comment. If memory changed what you did on this turn, say which memories affected your behavior and why. If ownership is changing now, reassign the same issue to the next honest owner. Then stop"
 
     guardrails: "Guardrails"
-        "TODO: do not let routing drift away from the active issue or hand off weak work."
+        "Do not skip the critic lane between normal specialist lanes."
+        "Use `{{common.skills.ParaMemoryFilesSkill}}` as personal memory only. Do not let it overrule the active issue, issue documents, comments, or repo-backed plans as the live coordination truth."
+        "Do not treat chat, scratch notes, or local memory as the live handoff surface."
+        "Do not let dated plans, old route notes, or scratch history overrule the active issue and the named current files."
+        "If the next step is not honest yet, say why and keep the issue blocked instead of handing off weak work."
 
 
 workflow LessonsSkillsAndTools: "Skills And Tools"
     how_to_use_this_section: "How To Use This Section"
-        "Use this section to find the shared skill and runtime-tool stubs that this role may depend on."
+- Start with the tool that directly matches your job.
+- Some roles also name later helper sections in Read First. When they do, read those local helper sections too before you act.
+- Use setup and device tools only when the issue really needs them.
+- A doctrine package explains a recurring Lessons workflow.
+- A skill tells you how to do one recurring task in this repo.
+- A runtime tool gives proof or validation. It does not replace lane ownership.
 
     skills_you_can_run: "Skills You Can Run"
-        "See the typed Skills section for the role's actual skill references."
+- `para-memory-files`
+  - Use it for the self-rework memory loop: check `para-memory-files` before execution, note which past learnings affect how you do this job so you do not repeat mistakes you already learned from, and save a generalized lesson when you are fixing a mistake you previously caused.
+  - Treat it as personal memory. The active issue, issue documents, comments, and plans still own coordination truth.
+- `github-access`
+  - Use it whenever the job needs real GitHub truth, such as reading a pull request, review state, issue comments, checks, or remote branch state.
+  - For Lessons work, use `paperclip_home/project_homes/lessons/tools/lessons_github_app.env` from the `paperclip_agents` repo root.
+  - Start with its verification command if this run has not already proven GitHub access.
+  - If GitHub is required and the skill cannot reach GitHub, stop immediately. Do not infer GitHub state from local repo state, web search, or issue context.
+- `psmobile-lesson-poker-kb-interface`
+  - Use it when a lane needs Books receipts inside the attached checkout for section truth, concept meaning, glossary wording, or learner-facing copy.
+  - This is the normal PokerKB skill for Section Dossier Engineer, Section Concepts and Terms Curator, and Lessons Copywriter.
+- `fastcards`
+  - Use it for deterministic poker math, legality checks, classification, candidate-pool generation, and validation.
+  - Use it when the job is building a real candidate pool of lesson spots, recording rejects, or leaving deterministic spot receipts before the final proof route is chosen.
+  - When reps, fixed sets, correct answers, or distractors are changing, use it to build the candidate pool before selection. A validate-only pass on the chosen set is not enough.
+  - Do not use it as proof of the concrete move the learner should make.
+  - This is primarily for Lessons Situation Synthesizer, and for Lessons Playable Materializer when a packet still needs deterministic spot validation.
+- `poker-native-copy`
+  - Use it when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback.
+  - This is primarily for Lessons Copywriter after the lesson structure and authority scope are already locked enough to support rewriting.
 
     runtime_tools: "Runtime Tools"
         "TODO: add shared runtime-tool guidance here when those tools are modeled cleanly."
 
     not_for_normal_authoring: "Not For Normal Authoring"
-        "TODO: name the tools that do not belong in baseline authoring turns."
+- `{{common.skills.MobileSimSkill}}` is for simulator and device work, not for baseline Lessons authoring.
+- `{{common.skills.FlutterDevReturnSkill}}` is for restoring a live Flutter dev loop, not for baseline Lessons authoring.
 
 
 workflow LessonsStandardsAndSupport: "Standards And Support"

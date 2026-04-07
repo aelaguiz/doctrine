@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict, dataclass, replace
+import tomllib
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Callable
 
-from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedInput, UnexpectedToken
+from lark import Token, Tree
+from lark.exceptions import (
+    UnexpectedCharacters,
+    UnexpectedEOF,
+    UnexpectedInput,
+    UnexpectedToken,
+    VisitError,
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -43,7 +51,7 @@ class PyPromptDiagnostic:
 
 def diagnostic_to_dict(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> dict[str, Any]:
     diagnostic = _coerce_diagnostic(error_or_diagnostic)
-    return asdict(diagnostic)
+    return _json_safe_value(diagnostic)
 
 
 def format_diagnostic(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> str:
@@ -232,6 +240,31 @@ class ParseError(PyPromptError):
             cause=cause,
         )
 
+    @classmethod
+    def from_transform(
+        cls,
+        *,
+        source: str,
+        path: Path | None,
+        exc: VisitError,
+    ) -> ParseError:
+        line, column = _extract_tree_position(exc.obj)
+        location = DiagnosticLocation(path=path, line=line, column=column)
+        excerpt, caret_column = _build_excerpt(source, line=line, column=column)
+        detail = str(exc.orig_exc)
+        return cls.from_parts(
+            code="E105",
+            summary="Invalid authored slot body",
+            detail=detail,
+            location=location,
+            excerpt=excerpt,
+            caret_column=caret_column,
+            hints=(
+                "Do not attach an inline body to a referenced authored workflow slot.",
+            ),
+            cause=f"{type(exc.orig_exc).__name__}: {detail}",
+        )
+
 
 class CompileError(PyPromptError):
     stage = "compile"
@@ -250,11 +283,72 @@ class EmitError(PyPromptError):
     def _diagnostic_from_message(self, message: str) -> PyPromptDiagnostic:
         return _emit_diagnostic_from_message(message)
 
+    @classmethod
+    def from_toml_decode(
+        cls,
+        *,
+        path: Path,
+        exc: tomllib.TOMLDecodeError,
+    ) -> EmitError:
+        location = DiagnosticLocation(path=path.resolve(), line=exc.lineno, column=exc.colno)
+        excerpt, caret_column = _build_excerpt(exc.doc, line=exc.lineno, column=exc.colno)
+        return cls.from_parts(
+            code="E506",
+            summary="Invalid emit config TOML",
+            detail="The emit config file is not valid TOML.",
+            location=location,
+            excerpt=excerpt,
+            caret_column=caret_column,
+            hints=("Fix the TOML syntax before running `emit_docs` again.",),
+            cause=exc.msg,
+        )
+
 
 def _coerce_diagnostic(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> PyPromptDiagnostic:
     if isinstance(error_or_diagnostic, PyPromptError):
         return error_or_diagnostic.diagnostic
     return error_or_diagnostic
+
+
+def _json_safe_value(value: Any) -> Any:
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, tuple):
+        return [_json_safe_value(item) for item in value]
+    if isinstance(value, list):
+        return [_json_safe_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _json_safe_value(item) for key, item in value.items()}
+    if isinstance(value, DiagnosticLocation):
+        return {
+            "path": _json_safe_value(value.path),
+            "line": value.line,
+            "column": value.column,
+        }
+    if isinstance(value, DiagnosticExcerptLine):
+        return {
+            "number": value.number,
+            "text": value.text,
+        }
+    if isinstance(value, DiagnosticTraceFrame):
+        return {
+            "label": value.label,
+            "location": _json_safe_value(value.location),
+        }
+    if isinstance(value, PyPromptDiagnostic):
+        return {
+            "code": value.code,
+            "stage": value.stage,
+            "summary": value.summary,
+            "detail": value.detail,
+            "location": _json_safe_value(value.location),
+            "excerpt": _json_safe_value(value.excerpt),
+            "caret_column": value.caret_column,
+            "hints": _json_safe_value(value.hints),
+            "trace": _json_safe_value(value.trace),
+            "cause": value.cause,
+        }
+    return value
 
 
 def _format_location(location: DiagnosticLocation) -> str:
@@ -316,6 +410,17 @@ def _build_excerpt(
         for index in range(start, end + 1)
     )
     return excerpt, column
+
+
+def _extract_tree_position(obj: object) -> tuple[int | None, int | None]:
+    if isinstance(obj, Token):
+        return getattr(obj, "line", None), getattr(obj, "column", None)
+    if isinstance(obj, Tree):
+        for child in obj.children:
+            line, column = _extract_tree_position(child)
+            if line is not None:
+                return line, column
+    return None, None
 
 
 def _classify_unexpected_token(
@@ -442,6 +547,20 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Concrete agent is missing role field: (?P<agent>.+)$"),
+        "E205",
+        "Concrete agent is missing role field",
+        lambda match: f"Concrete agent `{match.group('agent')}` is missing its required `role` field.",
+        ("Add a `role` field before the rest of the authored workflow surface.",),
+    ),
+    (
+        re.compile(r"^Unsupported agent field in (?P<agent>[^:]+): (?P<field>.+)$"),
+        "E208",
+        "Unsupported agent field",
+        lambda match: f"Agent `{match.group('agent')}` uses unsupported field type `{match.group('field')}`.",
+        (),
+    ),
+    (
         re.compile(r"^Cyclic agent inheritance: (?P<detail>.+)$"),
         "E207",
         "Cyclic agent inheritance",
@@ -449,10 +568,145 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Skill is missing string purpose: (?P<name>.+)$"),
+        "E220",
+        "Skill is missing string purpose",
+        lambda match: f"Skill `{match.group('name')}` is missing a string `purpose` field.",
+        (),
+    ),
+    (
+        re.compile(r"^Input is missing typed source: (?P<name>.+)$"),
+        "E221",
+        "Input is missing typed source",
+        lambda match: f"Input `{match.group('name')}` is missing a typed `source` field.",
+        (),
+    ),
+    (
+        re.compile(r"^Input is missing shape: (?P<name>.+)$"),
+        "E222",
+        "Input is missing shape",
+        lambda match: f"Input `{match.group('name')}` is missing a `shape` field.",
+        (),
+    ),
+    (
+        re.compile(r"^Input is missing requirement: (?P<name>.+)$"),
+        "E223",
+        "Input is missing requirement",
+        lambda match: f"Input `{match.group('name')}` is missing a `requirement` field.",
+        (),
+    ),
+    (
+        re.compile(r"^Output mixes `files` with `target` or `shape`: (?P<name>.+)$"),
+        "E224",
+        "Output mixes files with target or shape",
+        lambda match: f"Output `{match.group('name')}` mixes `files` with `target` or `shape`.",
+        (),
+    ),
+    (
+        re.compile(r"^Output must define either `files` or both `target` and `shape`: (?P<name>.+)$"),
+        "E224",
+        "Output declaration is incomplete",
+        lambda match: f"Output `{match.group('name')}` must define either `files` or both `target` and `shape`.",
+        (),
+    ),
+    (
+        re.compile(r"^Output target must be typed: (?P<name>.+)$"),
+        "E225",
+        "Output target must be typed",
+        lambda match: f"Output `{match.group('name')}` must use a typed `target` reference.",
+        (),
+    ),
+    (
+        re.compile(r"^Unsupported record item: (?P<kind>.+)$"),
+        "E226",
+        "Unsupported record item",
+        lambda match: f"Unsupported record item `{match.group('kind')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Config entries must be scalar key/value lines in (?P<owner>.+)$"),
+        "E230",
+        "Config entries must be scalar key/value lines",
+        lambda match: f"Config entries must be scalar key/value lines in `{match.group('owner')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate config key in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E231",
+        "Duplicate config key",
+        lambda match: f"Config owner `{match.group('owner')}` repeats key `{match.group('key')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Unknown config key in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E232",
+        "Unknown config key",
+        lambda match: f"Config owner `{match.group('owner')}` uses unknown key `{match.group('key')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Missing required config key in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E233",
+        "Missing required config key",
+        lambda match: f"Config owner `{match.group('owner')}` is missing required key `{match.group('key')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Config key declarations must be simple titled scalars in (?P<owner>.+)$"),
+        "E234",
+        "Config key declarations must be simple titled scalars",
+        lambda match: f"Config key declarations must be simple titled scalars in `{match.group('owner')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Config key declarations must use string labels in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E234",
+        "Config key declarations must use string labels",
+        lambda match: f"Config key declaration `{match.group('key')}` in `{match.group('owner')}` must use a string label.",
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate config key declaration in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E235",
+        "Duplicate config key declaration",
+        lambda match: f"Config owner `{match.group('owner')}` repeats config key declaration `{match.group('key')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Cyclic workflow inheritance: (?P<detail>.+)$"),
+        "E240",
+        "Cyclic workflow inheritance",
+        lambda match: f"Workflow inheritance cycle: {match.group('detail')}.",
+        (),
+    ),
+    (
         re.compile(r"^Duplicate workflow item key in (?P<owner>[^:]+): (?P<key>.+)$"),
         "E261",
         "Duplicate workflow item key",
         lambda match: f"Workflow owner `{match.group('owner')}` repeats key `{match.group('key')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Cannot inherit undefined workflow entry in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E241",
+        "Cannot inherit undefined workflow entry",
+        lambda match: f"Workflow owner `{match.group('owner')}` cannot inherit undefined key `{match.group('key')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Override kind mismatch for workflow entry in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E242",
+        "Override kind mismatch",
+        lambda match: f"Workflow owner `{match.group('owner')}` overrides `{match.group('key')}` with the wrong kind.",
+        (),
+    ),
+    (
+        re.compile(r"^(?P<kind>inherit|override) requires an inherited workflow in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E243",
+        "Workflow patch requires an inherited workflow",
+        lambda match: (
+            f"`{match.group('kind')}` for key `{match.group('key')}` requires an inherited workflow in `{match.group('owner')}`."
+        ),
         (),
     ),
     (
@@ -488,6 +742,15 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         "E274",
         "Workflow interpolation field must resolve to a scalar",
         lambda match: f"In `{match.group('owner')}`, `{match.group('detail')}` resolves to a non-scalar surface.",
+        (),
+    ),
+    (
+        re.compile(r"^Missing local declaration ref in (?P<label>.+) (?P<owner>[^:]+): (?P<name>.+)$"),
+        "E276",
+        "Missing local declaration reference",
+        lambda match: (
+            f"Missing local declaration ref `{match.group('name')}` in {match.group('label')} `{match.group('owner')}`."
+        ),
         (),
     ),
     (
@@ -544,6 +807,34 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         "E290",
         "Relative import walks above prompts root",
         lambda match: f"Import `{match.group('detail')}` walks above the prompts root.",
+        (),
+    ),
+    (
+        re.compile(r"^Input source must stay typed in interpolation: (?P<name>.+)$"),
+        "E275",
+        "Input source must stay typed in interpolation",
+        lambda match: f"Input `{match.group('name')}` must keep a typed `source` in interpolation.",
+        (),
+    ),
+    (
+        re.compile(r"^Output target must stay typed in interpolation: (?P<name>.+)$"),
+        "E275",
+        "Output target must stay typed in interpolation",
+        lambda match: f"Output `{match.group('name')}` must keep a typed `target` in interpolation.",
+        (),
+    ),
+    (
+        re.compile(r"^Prompt source path is required for compilation\.$"),
+        "E291",
+        "Prompt source path is required for compilation",
+        lambda _match: "Prompt source path is required for compilation.",
+        (),
+    ),
+    (
+        re.compile(r"^Could not resolve prompts/ root for (?P<path>.+)\.$"),
+        "E292",
+        "Could not resolve prompts root",
+        lambda match: f"Could not resolve `prompts/` root for `{match.group('path')}`.",
         (),
     ),
     (
@@ -616,6 +907,71 @@ _EMIT_PATTERN_BUILDERS: tuple[
         lambda match: (
             f"Emit target `{match.group('target')}` maps `{match.group('a')}` and `{match.group('b')}` to the same path `{match.group('path')}`."
         ),
+        (),
+    ),
+    (
+        re.compile(r"^Emit config must point at pyproject\.toml: (?P<path>.+)$"),
+        "E507",
+        "Emit config path must point at pyproject.toml",
+        lambda match: f"Emit config path must point at `pyproject.toml`, got `{match.group('path')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Missing pyproject\.toml: (?P<path>.+)$"),
+        "E504",
+        "Missing pyproject.toml",
+        lambda match: f"Missing `pyproject.toml`: `{match.group('path')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^Emit target #(?P<index>.+) must be a TOML table\.$"),
+        "E508",
+        "Emit target must be a TOML table",
+        lambda match: f"Emit target #{match.group('index')} must be a TOML table.",
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate emit target name: (?P<name>.+)$"),
+        "E509",
+        "Duplicate emit target name",
+        lambda match: f"Emit target `{match.group('name')}` is defined more than once.",
+        (),
+    ),
+    (
+        re.compile(r"^Emit target (?P<name>.+) must point at an AGENTS\.prompt entrypoint, got (?P<entrypoint>.+)$"),
+        "E510",
+        "Emit target entrypoint must be AGENTS.prompt",
+        lambda match: (
+            f"Emit target `{match.group('name')}` must point at an `AGENTS.prompt` entrypoint, got `{match.group('entrypoint')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Emit target (?P<name>.+) output_dir is a file: (?P<path>.+)$"),
+        "E511",
+        "Emit target output_dir is a file",
+        lambda match: f"Emit target `{match.group('name')}` output_dir is a file: `{match.group('path')}`.",
+        (),
+    ),
+    (
+        re.compile(r"^(?P<label>.+) does not exist: (?P<value>.+)$"),
+        "E512",
+        "Emit config path does not exist",
+        lambda match: f"{match.group('label')} does not exist: {match.group('value')}",
+        (),
+    ),
+    (
+        re.compile(r"^(?P<label>.+)\.(?P<key>.+) must be a string\.$"),
+        "E513",
+        "Emit config value must be a string",
+        lambda match: f"{match.group('label')}.{match.group('key')} must be a string.",
+        (),
+    ),
+    (
+        re.compile(r"^Could not resolve prompts/ root for (?P<path>.+)$"),
+        "E514",
+        "Could not resolve prompts root",
+        lambda match: f"Could not resolve `prompts/` root for `{match.group('path')}`.",
         (),
     ),
 )

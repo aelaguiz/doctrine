@@ -54,3 +54,16 @@ name = "handoff routing builds the canonical agent-doc tree"
 status = "active"
 kind = "build_contract"
 build_target = "example_07_handoffs"
+
+[[cases]]
+name = "referenced authored slots reject inline bodies in parse stage"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_REFERENCED_SLOT_WITH_INLINE_BODY.prompt"
+exception_type = "ParseError"
+error_code = "E105"
+message_contains = [
+  "Invalid authored slot body",
+  "Authored workflow slot references cannot also define an inline body",
+  "override read_first",
+]
