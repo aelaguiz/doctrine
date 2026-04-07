@@ -213,7 +213,7 @@ def emit_target(
     emitted_paths: list[Path] = []
     seen_paths: dict[Path, str] = {}
     for agent_name in agent_names:
-        emit_path = emitted_dir / _agent_slug(agent_name) / "AGENTS.md"
+        emit_path = _emit_path_for_agent(emitted_dir, agent_name)
         prior_agent = seen_paths.get(emit_path)
         if prior_agent is not None:
             raise _emit_error(
@@ -236,6 +236,13 @@ def emit_target(
         emitted_paths.append(emit_path)
 
     return tuple(emitted_paths)
+
+
+def _emit_path_for_agent(emitted_dir: Path, agent_name: str) -> Path:
+    agent_slug = _agent_slug(agent_name)
+    if emitted_dir.parts and emitted_dir.parts[-1] == agent_slug:
+        return emitted_dir / "AGENTS.md"
+    return emitted_dir / agent_slug / "AGENTS.md"
 
 
 def _root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:

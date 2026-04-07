@@ -18,16 +18,28 @@ cd editors/vscode
 make
 ```
 
-That writes `pyprompt-language-0.0.1.vsix` into `editors/vscode/`.
+That writes `pyprompt-language-<generated-version>.vsix` into `editors/vscode/`.
 
 `make` installs the extension's npm dependencies if needed, runs the grammar tests, runs the Lark-alignment validator, and packages the final VSIX.
+Each packaging run stamps a fresh semver version without editing `package.json`, so reinstalling the newest VSIX always upgrades the local editor copy cleanly.
 
 Install it with either:
 
 - `Extensions: Install from VSIX...`
-- `code --install-extension /absolute/path/to/pyprompt-language-0.0.1.vsix`
+- `code --install-extension /absolute/path/to/pyprompt-language-<generated-version>.vsix`
 
 The packaged extension declares `engines.vscode: ^1.105.0`, which admits Cursor builds that report VS Code `1.105.x`.
+
+## Remote SSH and Cursor
+
+The syntax-highlighting extension is installed on the local editor side.
+If you are editing a remote checkout over SSH, rebuilding the remote repo does not update the extension that Cursor or VS Code is currently running on your laptop.
+
+After grammar changes:
+
+1. Re-run `make`.
+2. Reinstall the newest generated `.vsix` locally in VS Code or Cursor.
+3. Reload the editor window.
 
 ## Run the grammar checks directly
 
@@ -48,5 +60,5 @@ uv run --locked python scripts/validate_lark_alignment.py
 ## Refresh after grammar changes
 
 1. Re-run `make`.
-2. Reinstall the new `.vsix` in VS Code.
+2. Reinstall the newest generated `.vsix` in VS Code or Cursor.
 3. Reload your VS Code window if the old version is still active.

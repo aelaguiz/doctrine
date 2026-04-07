@@ -19,7 +19,9 @@
   - `pyprompt/compiler.py`
   - `pyprompt/renderer.py`
   - `pyprompt/verify_corpus.py`
-- If code, docs, and examples disagree, trust the shipped implementation in `pyprompt/` for what works today. Treat docs and later examples as design intent unless verification proves otherwise.
+- If code, docs, and examples disagree, trust the shipped implementation in `pyprompt/` for what works today.
+- Do not confuse shipped behavior with preferred language direction. When the user wants design feedback, judge the language on author clarity first, not on how expensive the compiler work would be.
+- Treat docs and later examples as design intent unless verification proves otherwise.
 
 ## Current Bootstrap Scope
 
@@ -30,7 +32,7 @@
   - keyed local workflow sections, authored agent slots, keyed `use` composition, explicit `inherit` / `override`, `route "..." -> Target` statements, titled workflow section bodies that mix prose with named declaration refs including concrete agents, and workflow strings that interpolate named declaration contract fields inline including concrete agent names
   - named workflow reuse, named workflow inheritance, dotted references, typed `inputs` / `outputs` / `outcome` / `skills` fields, and rich `inputs` / `outputs` buckets that may mix prose, titled groups, and typed declaration refs
   - indentation-sensitive blocks and standalone `#` comment lines
-- Do not claim anything outside the manifest-backed `01` through `18` corpus is implemented just because it appears under `examples/`.
+- Do not claim anything outside the manifest-backed `01` through `20` corpus is implemented just because it appears under `examples/`.
 
 ## Examples
 
@@ -41,7 +43,8 @@
 - Treat an example as verified only when the repo has a checked-in manifest and the compiler path can prove it.
 - Treat `examples/*/ref/**` as target or reference output, not as proof that the current compiler can produce it.
 - Keep the example sequence disciplined: one new idea at a time, with the smallest example that earns that idea cleanly.
-- Do not add a new language primitive just to paper over a bad example. First try to express the idea with the language that already exists. If that fails, name the exact clean gap.
+- Do not add a new language primitive just to paper over a bad example.
+- Do not force an awkward workaround just because the current compiler already supports it. If the cleanest answer is a language change, name that change directly.
 
 ## 99
 
@@ -58,6 +61,10 @@
 
 - Keep the language example-first.
 - Keep the parser growing in the same order as the examples.
+- This repo exists to build the best language for authoring agent prompts, not to defend the current compiler shape.
+- When the user asks for language or syntax feedback, bias toward the cleanest, simplest, most beautiful authoring surface.
+- Do not bias away from language changes because the grammar, compiler, or editor support would be harder to build.
+- Use the current language when it expresses the idea cleanly. If it does not, prefer the right language change over advice that hacks around today's support.
 - Prefer explicit typed declarations over magic.
 - Current capability modeling is intentionally skill-first.
 - If a reusable capability matters enough to name, model it as a skill.

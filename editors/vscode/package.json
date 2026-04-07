@@ -2,7 +2,7 @@
   "name": "pyprompt-language",
   "displayName": "PyPrompt Language Support",
   "description": "Local VS Code syntax highlighting and editor behavior for PyPrompt prompt files.",
-  "version": "0.0.5",
+  "version": "0.0.0",
   "publisher": "aelaguiz",
   "private": true,
   "license": "UNLICENSED",
@@ -21,7 +21,7 @@
     "test:unit": "vscode-tmgrammar-test --config ./package.json \"tests/unit/**/*.test.prompt\"",
     "test:snap": "vscode-tmgrammar-snap --config ./package.json \"tests/snap/examples/**/*.prompt\"",
     "test:snap:update": "vscode-tmgrammar-snap --updateSnapshot --config ./package.json \"tests/snap/examples/**/*.prompt\"",
-    "package:vsix": "npm test && uv run --locked python scripts/validate_lark_alignment.py && npx @vscode/vsce package"
+    "package:vsix": "npm test && uv run --locked python scripts/validate_lark_alignment.py && uv run --locked python scripts/package_vsix.py"
   },
   "devDependencies": {
     "@vscode/vsce": "3.7.1",
