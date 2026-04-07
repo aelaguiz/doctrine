@@ -6,8 +6,10 @@ from functools import lru_cache
 from pathlib import Path
 
 from lark import Lark, Transformer, v_args
+from lark.exceptions import UnexpectedInput
 
 from pyprompt import model
+from pyprompt.diagnostics import ParseError
 from pyprompt.indenter import PyPromptIndenter
 
 
@@ -285,12 +287,16 @@ def build_lark_parser() -> Lark:
     )
 
 
-def parse_text(source: str) -> model.PromptFile:
-    tree = build_lark_parser().parse(source)
+def parse_text(source: str, *, source_path: str | Path | None = None) -> model.PromptFile:
+    resolved_path = Path(source_path).resolve() if source_path is not None else None
+    try:
+        tree = build_lark_parser().parse(source)
+    except UnexpectedInput as exc:
+        raise ParseError.from_lark(source=source, path=resolved_path, exc=exc) from exc
     return ToAst().transform(tree)
 
 
 def parse_file(path: str | Path) -> model.PromptFile:
     resolved_path = Path(path).resolve()
-    prompt_file = parse_text(resolved_path.read_text())
+    prompt_file = parse_text(resolved_path.read_text(), source_path=resolved_path)
     return replace(prompt_file, source_path=resolved_path)

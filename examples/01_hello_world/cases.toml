@@ -37,7 +37,8 @@ name = "missing agent colon fails in parse stage"
 status = "active"
 kind = "parse_fail"
 prompt = "prompts/INVALID_PARSE_MISSING_COLON.prompt"
-exception_type = "UnexpectedToken"
+exception_type = "ParseError"
+error_code = "E101"
 message_contains = [
   "Expected one of",
   "COLON",
@@ -50,6 +51,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_COMPILE_REORDERED.prompt"
 agent = "ReorderedFields"
 exception_type = "CompileError"
+error_code = "E206"
 message_contains = [
   "expected `role` followed by `workflow`",
 ]

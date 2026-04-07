@@ -2,22 +2,20 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
 from pyprompt import model
 from pyprompt.compiler import compile_prompt
+from pyprompt.diagnostics import DiagnosticLocation, EmitError, PyPromptError
 from pyprompt.parser import parse_file
 from pyprompt.renderer import render_markdown
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT_FILE_NAME = "pyproject.toml"
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
-
-
-class EmitError(RuntimeError):
-    """Raised when build-target configuration or emission is invalid."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -28,18 +26,23 @@ class EmitTarget:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _build_arg_parser().parse_args(argv)
-    config_path = resolve_pyproject_path(args.pyproject)
-    targets = load_emit_targets(config_path)
+    try:
+        args = _build_arg_parser().parse_args(argv)
+        config_path = resolve_pyproject_path(args.pyproject)
+        targets = load_emit_targets(config_path)
 
-    for target_name in args.target:
-        target = targets.get(target_name)
-        if target is None:
-            raise EmitError(f"Unknown emit target: {target_name}")
-        emitted = emit_target(target)
-        print(f"{target.name}: emitted {len(emitted)} file(s) to {_display_path(target.output_dir)}")
-
-    return 0
+        for target_name in args.target:
+            target = targets.get(target_name)
+            if target is None:
+                raise EmitError(f"Unknown emit target: {target_name}")
+            emitted = emit_target(target)
+            print(
+                f"{target.name}: emitted {len(emitted)} file(s) to {_display_path(target.output_dir)}"
+            )
+        return 0
+    except PyPromptError as exc:
+        print(exc, file=sys.stderr)
+        return 1
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -144,7 +147,13 @@ def emit_target(
     *,
     output_dir_override: Path | None = None,
 ) -> tuple[Path, ...]:
-    prompt_file = parse_file(target.entrypoint)
+    try:
+        prompt_file = parse_file(target.entrypoint)
+    except PyPromptError as exc:
+        raise exc.prepend_trace(
+            f"emit target `{target.name}` entrypoint",
+            location=_path_location(target.entrypoint),
+        )
     agent_names = _root_concrete_agents(prompt_file)
     if not agent_names:
         raise EmitError(f"Emit target {target.name} has no concrete agents in {target.entrypoint}")
@@ -163,7 +172,13 @@ def emit_target(
             )
         seen_paths[emit_path] = agent_name
 
-        rendered = render_markdown(compile_prompt(prompt_file, agent_name))
+        try:
+            rendered = render_markdown(compile_prompt(prompt_file, agent_name))
+        except PyPromptError as exc:
+            raise exc.prepend_trace(
+                f"emit target `{target.name}`",
+                location=_path_location(target.entrypoint),
+            )
         emit_path.parent.mkdir(parents=True, exist_ok=True)
         emit_path.write_text(rendered)
         emitted_paths.append(emit_path)
@@ -219,6 +234,12 @@ def _display_path(path: Path) -> str:
         return str(path.relative_to(REPO_ROOT))
     except ValueError:
         return str(path)
+
+
+def _path_location(path: Path | None) -> DiagnosticLocation | None:
+    if path is None:
+        return None
+    return DiagnosticLocation(path=path.resolve())
 
 
 if __name__ == "__main__":

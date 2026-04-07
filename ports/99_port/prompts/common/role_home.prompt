@@ -12,6 +12,7 @@ import .artifacts.lesson_architect
 import .artifacts.situation_synthesizer
 import .artifacts.playable_materializer
 import .artifacts.copywriter
+import .skills
 
 workflow LessonsReadFirst: "Read First"
     start_here: "Start Here"
@@ -85,10 +86,10 @@ workflow LessonsWorkflowCore: "Workflow Core"
 workflow LessonsHowToTakeATurn: "How To Take A Turn"
     turn_sequence: "Turn Sequence"
         "1. Read the active issue. Then read the current Issue Plan And Route, or the parent plan only when the active issue points there and does not yet have its own current plan. Then read the latest issue comment that names the current files, any current review files named in the handoff, and the upstream packet files your lane depends on."
-        "2. Read this role home's local sections first, then the shared skills and support sections you actually need."
-        "3. Before you start execution, check `para-memory-files` for relevant memory and note what learnings from the past affect how you do this job so you do not repeat mistakes you already learned from."
+        "2. Read this role home's local sections first, then the shared skills and support sections you actually need. Use `{{common.skills.PaperclipSkill}}` for coordination work and `{{common.skills.GitHubAccessSkill}}` when GitHub truth matters."
+        "3. Before you start execution, check `{{common.skills.ParaMemoryFilesSkill}}` for relevant memory and note what learnings from the past affect how you do this job so you do not repeat mistakes you already learned from."
         "4. Do only this lane's job."
-        "5. When you are fixing a mistake you previously caused, analyze the root cause, generalize the lesson beyond this one incident, and save it through `para-memory-files`."
+        "5. When you are fixing a mistake you previously caused, analyze the root cause, generalize the lesson beyond this one incident, and save it through `{{common.skills.ParaMemoryFilesSkill}}`."
         "6. Update the packet and the supporting files that now matter."
         "7. When the work is ready for review, name the exact packet and the exact files in scope. When separate current review files apply, name those files explicitly. If the proof is inline instead, say plainly that the proof is inline or that no current review files apply."
         "8. If this turn changed files, commit before handoff. If it did not, say that plainly."

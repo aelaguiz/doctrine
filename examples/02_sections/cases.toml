@@ -31,6 +31,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_DUPLICATE_SECTION_KEY.prompt"
 agent = "DuplicateSectionKeysDemo"
 exception_type = "CompileError"
+error_code = "E261"
 message_contains = [
   "Duplicate workflow item key",
   "step_one",

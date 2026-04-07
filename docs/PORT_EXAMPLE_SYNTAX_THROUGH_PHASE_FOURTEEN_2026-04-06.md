@@ -293,10 +293,10 @@ typed contracts and open agent-local slots.
 ## 4.4 Observability + failure behavior today
 
 At planning time, failure behavior was already clean and mostly correct for the
-shipped subset:
+shipped subset. Today, the shipped path is more explicit:
 
-- parse failures come directly from Lark via [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py#L197)
-- compile failures come from explicit [CompileError](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L10)
+- parse failures surface as structured `ParseError` diagnostics via [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py#L289)
+- compile failures surface as structured [CompileError](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py#L1774) diagnostics
 - manifest proof classifies only `render_contract`, `parse_fail`, and `compile_fail` in [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py#L233)
 - `make verify-examples` was the behavior-preservation signal and passed for
   `01` through `06`

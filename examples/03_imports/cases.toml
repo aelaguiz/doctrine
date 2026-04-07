@@ -79,6 +79,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_MISSING_MODULE.prompt"
 agent = "MissingModuleDemo"
 exception_type = "CompileError"
+error_code = "E280"
 message_contains = [
   "Missing import module",
   "simple.missing",
@@ -91,6 +92,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_UNRESOLVED_SYMBOL.prompt"
 agent = "UnresolvedImportedSymbolDemo"
 exception_type = "CompileError"
+error_code = "E281"
 message_contains = [
   "Missing imported declaration",
   "simple.greeting.MissingGreeting",
@@ -103,7 +105,22 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_DUPLICATE_DECLARATION.prompt"
 agent = "DuplicateDeclarationDemo"
 exception_type = "CompileError"
+error_code = "E288"
 message_contains = [
   "Duplicate declaration name",
   "duplicate_names.DuplicateGreeting",
+]
+
+[[cases]]
+name = "imported parse failure shows the imported module trace"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_IMPORTED_PARSE.prompt"
+agent = "ImportedParseFailureDemo"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected newline",
+  "load import module `broken.syntax`",
+  "broken/syntax.prompt",
 ]

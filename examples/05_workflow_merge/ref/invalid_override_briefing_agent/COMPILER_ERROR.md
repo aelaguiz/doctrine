@@ -1,10 +1,25 @@
 `InvalidOverrideBriefingAgent` does not render an `AGENTS.md`.
 
-Compiler error:
+Canonical compiler error:
 
-- `E001`: `override context_note` is invalid because `BaseBriefingAgent` does not define `context_note` in `workflow`.
-- If the intent is to add a new section, drop `override` and define `context_note: "Context Note"` directly in the inherited order.
-- In inherited workflows, every parent section must still be accounted for explicitly.
+```text
+E001 compile error: Cannot override undefined inherited entry
+
+Location:
+- examples/05_workflow_merge/prompts/AGENTS.prompt
+
+Detail:
+- Cannot override undefined workflow entry in agent BaseBriefingAgent slot workflow: context_note
+
+Trace:
+- compile agent `InvalidOverrideBriefingAgent` (examples/05_workflow_merge/prompts/AGENTS.prompt)
+
+Hint:
+- If this entry is new, define it directly instead of using `override`.
+
+Cause:
+- E001 Cannot override undefined workflow entry in agent BaseBriefingAgent slot workflow: context_note
+```
 
 Canonical reference:
 

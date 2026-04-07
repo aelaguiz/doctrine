@@ -6,11 +6,8 @@ from pathlib import Path
 from typing import TypeAlias
 
 from pyprompt import model
+from pyprompt.diagnostics import CompileError, DiagnosticLocation, PyPromptError
 from pyprompt.parser import parse_file
-
-
-class CompileError(RuntimeError):
-    """Fail-loud compiler error for the shipped subset."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -1739,7 +1736,14 @@ class CompilationContext:
         imported_units: dict[tuple[str, ...], IndexedUnit] = {}
         for import_decl in imports:
             resolved_module_parts = _resolve_import_path(import_decl.path, module_parts=module_parts)
-            imported_units[resolved_module_parts] = self._load_module(resolved_module_parts)
+            try:
+                imported_units[resolved_module_parts] = self._load_module(resolved_module_parts)
+            except PyPromptError as exc:
+                importer_path = prompt_file.source_path
+                raise exc.prepend_trace(
+                    f"resolve import `{'.'.join(resolved_module_parts)}`",
+                    location=_path_location(importer_path),
+                )
 
         return IndexedUnit(
             module_parts=module_parts,
@@ -1781,7 +1785,14 @@ class CompilationContext:
 
         self._loading_modules.add(module_parts)
         try:
-            indexed = self._index_unit(parse_file(module_path), module_parts=module_parts)
+            try:
+                prompt_file = parse_file(module_path)
+                indexed = self._index_unit(prompt_file, module_parts=module_parts)
+            except PyPromptError as exc:
+                raise exc.prepend_trace(
+                    f"load import module `{'.'.join(module_parts)}`",
+                    location=_path_location(module_path),
+                ).ensure_location(path=module_path)
             self._module_cache[module_parts] = indexed
             return indexed
         finally:
@@ -1789,7 +1800,13 @@ class CompilationContext:
 
 
 def compile_prompt(prompt_file: model.PromptFile, agent_name: str) -> CompiledAgent:
-    return CompilationContext(prompt_file).compile_agent(agent_name)
+    try:
+        return CompilationContext(prompt_file).compile_agent(agent_name)
+    except PyPromptError as exc:
+        raise exc.prepend_trace(
+            f"compile agent `{agent_name}`",
+            location=_path_location(prompt_file.source_path),
+        ).ensure_location(path=prompt_file.source_path)
 
 
 def _resolve_prompt_root(source_path: Path | None) -> Path:
@@ -1833,6 +1850,12 @@ def _dotted_ref_name(ref: model.NameRef) -> str:
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
     parts = tuple(dotted_name.split("."))
     return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
+
+
+def _path_location(path: Path | None) -> DiagnosticLocation | None:
+    if path is None:
+        return None
+    return DiagnosticLocation(path=path.resolve())
 
 
 def _humanize_key(value: str) -> str:

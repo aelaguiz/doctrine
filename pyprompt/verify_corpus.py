@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from pyprompt.compiler import compile_prompt
+from pyprompt.diagnostics import PyPromptError
 from pyprompt.emit_docs import EmitError, emit_target, load_emit_targets
 from pyprompt.parser import parse_file
 from pyprompt.renderer import render_markdown
@@ -40,6 +41,7 @@ class CaseSpec:
     assertion: str | None = None
     expected_lines: tuple[str, ...] = ()
     exception_type: str | None = None
+    error_code: str | None = None
     message_contains: tuple[str, ...] = ()
 
 
@@ -298,6 +300,9 @@ def _load_case(
         )
 
     exception_type = _require_str(raw_case, "exception_type", case_index=case_index)
+    error_code = raw_case.get("error_code")
+    if error_code is not None and not isinstance(error_code, str):
+        raise ManifestError(f"cases[{case_index}].error_code must be a string when provided.")
     message_contains = _require_string_list(
         raw_case, "message_contains", case_index=case_index
     )
@@ -316,6 +321,7 @@ def _load_case(
         approx_ref_path=approx_ref_path,
         agent=agent,
         exception_type=exception_type,
+        error_code=error_code,
         message_contains=message_contains,
     )
 
@@ -431,6 +437,12 @@ def _assert_expected_exception(case: CaseSpec, exc: Exception) -> None:
     if actual_type != case.exception_type:
         raise VerificationError(
             f"Expected {case.exception_type}, got {actual_type}: {exc}"
+        )
+
+    actual_code = getattr(exc, "code", None)
+    if case.error_code is not None and actual_code != case.error_code:
+        raise VerificationError(
+            f"Expected error code {case.error_code}, got {actual_code}: {exc}"
         )
 
     message = str(exc)
@@ -613,6 +625,8 @@ def _require_string_list(
 
 
 def _format_case_failure(exc: Exception) -> str:
+    if isinstance(exc, PyPromptError):
+        return f"{type(exc).__name__} [{exc.code}]:\n{exc}"
     return f"{type(exc).__name__}: {exc}"
 
 

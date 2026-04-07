@@ -67,6 +67,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_WORKFLOW_INTERPOLATION.prompt"
 agent = "InvalidWorkflowStringInterpolationAgent"
 exception_type = "CompileError"
+error_code = "E271"
 message_contains = [
   "Workflow refs are not allowed in workflow strings",
   "use `use` for workflow composition",
@@ -80,6 +81,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_FIELD_PATH.prompt"
 agent = "InvalidFieldPathInterpolationAgent"
 exception_type = "CompileError"
+error_code = "E273"
 message_contains = [
   "Unknown workflow string interpolation field",
   "shared.contracts.TrackMetadata:source.missing",
@@ -92,6 +94,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_AMBIGUOUS_INTERPOLATION.prompt"
 agent = "InvalidAmbiguousInterpolationAgent"
 exception_type = "CompileError"
+error_code = "E270"
 message_contains = [
   "Ambiguous workflow string interpolation ref",
   "SharedThing",
