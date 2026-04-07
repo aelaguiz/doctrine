@@ -246,6 +246,11 @@ The current examples are intentionally pushing on these rules so we can validate
   declarations under `output`, not competing output primitives.
 - richer output contract material should live directly on `output`; we do not
   currently need a separate top-level `artifact` concept.
+- `18_rich_io_buckets` widens `inputs` and `outputs` from bare ref lists to
+  authored buckets that may mix prose, titled groups, and typed declaration
+  refs.
+- those bucket refs stay kind-specific: `inputs` refs must resolve to `input`
+  declarations and `outputs` refs must resolve to `output` declarations.
 - `11_skills_and_tools` is intentionally skill-first.
 - reusable capabilities should be modeled as `skill` declarations.
 - `12_role_home_composition` has already earned the basic role-home shell by
@@ -302,8 +307,8 @@ Current shipped agent field families:
 - authored workflow slots such as `workflow`, `your_job`, `read_first`,
   `workflow_core`, `how_to_take_a_turn`, `standards_and_support`, and
   `when_to_use_this_role`
-- `inputs`
-- `outputs`
+- `inputs` as a rich authored bucket
+- `outputs` as a rich authored bucket
 - `outcome`
 - `skills`
 

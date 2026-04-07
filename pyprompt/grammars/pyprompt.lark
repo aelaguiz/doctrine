@@ -53,8 +53,10 @@ inheritance: "[" name_ref "]"
 role_field: "role" ":" string _NL role_body?
 role_body: _INDENT block_lines _DEDENT
 
-inputs_field: "inputs" ":" string _NL _INDENT ref_list _DEDENT
-outputs_field: "outputs" ":" string _NL _INDENT ref_list _DEDENT
+// Inputs and outputs reuse the record body so roles can mix prose, titled
+// groups, and typed declaration refs without growing a second mini-language.
+inputs_field: "inputs" ":" string _NL _INDENT record_body _DEDENT
+outputs_field: "outputs" ":" string _NL _INDENT record_body _DEDENT
 outcome_field: "outcome" ":" string _NL _INDENT record_body _DEDENT
 skills_field: "skills" ":" string _NL _INDENT record_body _DEDENT
 

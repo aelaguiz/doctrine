@@ -1,0 +1,17 @@
+# SYNTAX TEST "source.pyprompt" "rich inputs and outputs buckets"
+
+    inputs: "Inputs"
+#   ^^^^^^ keyword.other.field.pyprompt
+
+        planning_truth: "Planning Truth"
+#       ^^^^^^^^^^^^^^ entity.name.section.pyprompt
+            CurrentSectionPlan
+#           ^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+
+    outputs: "Outputs"
+#   ^^^^^^^ keyword.other.field.pyprompt
+
+        file_truth: "File Truth"
+#       ^^^^^^^^^^ entity.name.section.pyprompt
+            DossierFile
+#           ^^^^^^^^^^^ support.type.reference.pyprompt

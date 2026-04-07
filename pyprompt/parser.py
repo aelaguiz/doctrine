@@ -94,12 +94,12 @@ class ToAst(Transformer):
         return model.RoleBlock(title=title_or_text, lines=tuple(body))
 
     @v_args(inline=True)
-    def inputs_field(self, title, refs):
-        return model.InputsField(title=title, refs=tuple(refs))
+    def inputs_field(self, title, items):
+        return model.InputsField(title=title, items=tuple(items))
 
     @v_args(inline=True)
-    def outputs_field(self, title, refs):
-        return model.OutputsField(title=title, refs=tuple(refs))
+    def outputs_field(self, title, items):
+        return model.OutputsField(title=title, items=tuple(items))
 
     @v_args(inline=True)
     def outcome_field(self, title, items):

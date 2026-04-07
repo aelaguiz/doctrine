@@ -146,13 +146,13 @@ class AuthoredSlotOverride:
 @dataclass(slots=True, frozen=True)
 class InputsField:
     title: str
-    refs: tuple[NameRef, ...]
+    items: tuple[RecordItem, ...]
 
 
 @dataclass(slots=True, frozen=True)
 class OutputsField:
     title: str
-    refs: tuple[NameRef, ...]
+    items: tuple[RecordItem, ...]
 
 
 @dataclass(slots=True, frozen=True)

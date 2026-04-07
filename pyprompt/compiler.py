@@ -396,20 +396,28 @@ class CompilationContext:
         return self._resolve_workflow_decl(workflow_decl, unit=target_unit)
 
     def _compile_inputs_field(self, field: model.InputsField, *, unit: IndexedUnit) -> CompiledSection:
-        children = []
-        for ref in field.refs:
-            target_unit, input_decl = self._resolve_input_decl(ref, unit=unit)
-            children.append(self._compile_input_decl(input_decl, unit=target_unit))
-        return CompiledSection(title=field.title, body=tuple(children))
+        return CompiledSection(
+            title=field.title,
+            body=self._compile_contract_bucket_items(
+                field.items,
+                unit=unit,
+                field_kind="inputs",
+                owner_label=f"inputs field `{field.title}`",
+            ),
+        )
 
     def _compile_outputs_field(
         self, field: model.OutputsField, *, unit: IndexedUnit
     ) -> CompiledSection:
-        children = []
-        for ref in field.refs:
-            target_unit, output_decl = self._resolve_output_decl(ref, unit=unit)
-            children.append(self._compile_output_decl(output_decl, unit=target_unit))
-        return CompiledSection(title=field.title, body=tuple(children))
+        return CompiledSection(
+            title=field.title,
+            body=self._compile_contract_bucket_items(
+                field.items,
+                unit=unit,
+                field_kind="outputs",
+                owner_label=f"outputs field `{field.title}`",
+            ),
+        )
 
     def _compile_outcome_field(
         self, field: model.OutcomeField, *, unit: IndexedUnit
@@ -430,6 +438,90 @@ class CompilationContext:
                 continue
             body.extend(self._compile_record_item(item, unit=unit))
         return CompiledSection(title=field.title, body=tuple(body))
+
+    def _compile_contract_bucket_items(
+        self,
+        items: tuple[model.RecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> tuple[CompiledBodyItem, ...]:
+        body: list[CompiledBodyItem] = []
+        for item in items:
+            if isinstance(item, str):
+                body.append(item)
+                continue
+
+            if isinstance(item, model.RecordSection):
+                body.append(
+                    CompiledSection(
+                        title=item.title,
+                        body=self._compile_contract_bucket_items(
+                            item.items,
+                            unit=unit,
+                            field_kind=field_kind,
+                            owner_label=f"{field_kind} section `{item.title}`",
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.RecordRef):
+                body.append(
+                    self._compile_contract_bucket_ref(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
+            if isinstance(item, model.RecordScalar):
+                raise CompileError(
+                    f"Scalar keyed items are not allowed in {owner_label}: {item.key}"
+                )
+
+            if isinstance(item, model.RouteLine):
+                raise CompileError(f"Route lines are not allowed in {owner_label}.")
+
+            raise CompileError(
+                f"Unsupported {field_kind} bucket item in {owner_label}: {type(item).__name__}"
+            )
+
+        return tuple(body)
+
+    def _compile_contract_bucket_ref(
+        self,
+        item: model.RecordRef,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> CompiledSection:
+        if item.body is not None:
+            raise CompileError(
+                f"Declaration refs cannot define inline bodies in {owner_label}: "
+                f"{_dotted_ref_name(item.ref)}"
+            )
+
+        if field_kind == "inputs":
+            if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
+                raise CompileError(
+                    "Inputs refs must resolve to input declarations, not output declarations: "
+                    f"{_dotted_ref_name(item.ref)}"
+                )
+            target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
+            return self._compile_input_decl(decl, unit=target_unit)
+
+        if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="inputs_by_name"):
+            raise CompileError(
+                "Outputs refs must resolve to output declarations, not input declarations: "
+                f"{_dotted_ref_name(item.ref)}"
+            )
+        target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+        return self._compile_output_decl(decl, unit=target_unit)
 
     def _compile_skill_bucket(
         self, section: model.RecordSection, *, unit: IndexedUnit
@@ -1676,6 +1768,24 @@ class CompilationContext:
             dotted_name = _dotted_ref_name(ref)
             raise CompileError(f"Missing imported declaration: {dotted_name}")
         return target_unit, decl
+
+    def _ref_exists_in_registry(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        registry_name: str,
+    ) -> bool:
+        if not ref.module_parts or ref.module_parts == unit.module_parts:
+            registry = getattr(unit, registry_name)
+            return registry.get(ref.declaration_name) is not None
+
+        target_unit = unit.imported_units.get(ref.module_parts)
+        if target_unit is None:
+            return False
+
+        registry = getattr(target_unit, registry_name)
+        return registry.get(ref.declaration_name) is not None
 
     def _index_unit(
         self, prompt_file: model.PromptFile, *, module_parts: tuple[str, ...]
