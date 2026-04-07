@@ -24,7 +24,7 @@ class ManifestError(RuntimeError):
 
 
 class VerificationError(RuntimeError):
-    """Raised when a case outcome does not match its contract."""
+    """Raised when a case result does not match its contract."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -48,7 +48,7 @@ class CaseSpec:
 @dataclass(slots=True, frozen=True)
 class CaseResult:
     case: CaseSpec
-    outcome: str
+    result: str
     detail: str
 
 
@@ -70,7 +70,7 @@ class VerificationReport:
     def failed(self) -> bool:
         return bool(
             self.manifest_errors
-            or any(result.outcome == "FAIL" for result in self.active_results)
+            or any(result.result == "FAIL" for result in self.active_results)
             or self.surfaced_inconsistencies
         )
 
@@ -142,7 +142,7 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
                 raise ManifestError(f"Unsupported case kind {case.kind!r}.")
         except Exception as exc:  # pragma: no cover - exercised by the command itself
             active_results.append(
-                CaseResult(case=case, outcome="FAIL", detail=_format_case_failure(exc))
+                CaseResult(case=case, result="FAIL", detail=_format_case_failure(exc))
             )
 
     return VerificationReport(
@@ -370,7 +370,7 @@ def _run_render_contract(
 
     return CaseResult(
         case=case,
-        outcome="PASS",
+        result="PASS",
         detail="render matched exact_lines contract",
     )
 
@@ -380,7 +380,7 @@ def _run_parse_fail(case: CaseSpec) -> CaseResult:
         parse_file(case.prompt_path)
     except Exception as exc:
         _assert_expected_exception(case, exc)
-        return CaseResult(case=case, outcome="PASS", detail="parse failed as expected")
+        return CaseResult(case=case, result="PASS", detail="parse failed as expected")
 
     raise VerificationError("Expected parse to fail, but it succeeded.")
 
@@ -416,7 +416,7 @@ def _run_build_contract(case: CaseSpec) -> CaseResult:
 
     return CaseResult(
         case=case,
-        outcome="PASS",
+        result="PASS",
         detail="build matched checked-in tree",
     )
 
@@ -427,7 +427,7 @@ def _run_compile_fail(case: CaseSpec) -> CaseResult:
         compile_prompt(prompt_file, case.agent or "")
     except Exception as exc:
         _assert_expected_exception(case, exc)
-        return CaseResult(case=case, outcome="PASS", detail="compile failed as expected")
+        return CaseResult(case=case, result="PASS", detail="compile failed as expected")
 
     raise VerificationError("Expected compile to fail, but it succeeded.")
 
@@ -556,7 +556,7 @@ def format_report(report: VerificationReport) -> str:
         for result in report.active_results:
             case_path = _display_path(result.case.manifest_path)
             lines.append(
-                f"- {result.outcome} {case_path} :: {result.case.name} :: {result.detail}"
+                f"- {result.result} {case_path} :: {result.case.name} :: {result.detail}"
             )
     else:
         lines.append("- None.")

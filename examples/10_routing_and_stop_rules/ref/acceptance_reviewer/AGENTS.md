@@ -54,29 +54,24 @@ A downstream reader should be able to read this response alone and understand th
 - reason: the dossier does not make the scope boundary explicit yet
 ```
 
-## Outcome
+## Routing
 
-### Acceptance Review Outcome
-
-#### This Role Produces
-
-- One explicit `accept` or `changes requested` verdict.
-- One honest next owner on the same issue.
-
-#### Next Owner If Accepted
+### Next Owner If Accepted
 
 - If accepted -> WritingSpecialist
 
-#### If The Work Is Not Ready
+### If The Work Is Not Ready
 
 - If changes are required -> SectionAuthor
 - If the right owner is unclear -> ProjectLead
 
-#### Stop Here If
+## When To Stop
+
+### Stop Here If
 
 Stop when the verdict is explicit and the next owner is clear.
 
-#### Hard Stop Rule
+### Hard Stop Rule
 
 - If the required dossier file is missing, stop and escalate.
 - Do not guess from stale notes or old packet copies.

@@ -8,7 +8,6 @@
 # fields introduced in earlier examples:
 # - `inputs`
 # - `outputs`
-# - `outcome`
 # - `skills`
 #
 # Tool-specific helper guidance stays in support prose. It does not require a
@@ -23,7 +22,7 @@ workflow LessonsReadFirst: "Read First"
     read_order: "Read Order"
         "Read Your Job first."
         "Then read Workflow Core and How To Take A Turn."
-        "Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support."
+        "Then read Inputs, Outputs, Routing, When To Stop, Skills, When To Use This Role, and Standards And Support."
 
 
 workflow ProjectLeadReadFirst[LessonsReadFirst]: "Read First"
@@ -297,17 +296,14 @@ agent LessonsProjectLead[LessonsRoleHome]:
     outputs: "Outputs"
         ProjectLeadUpdate
 
-    outcome: "Routing Outcome"
-        produces: "This Role Produces"
-            "One honest next owner."
-            "One current source of truth for that next owner."
-
+    routing: "Routing"
         next_owner_if_accepted: "Next Owner If Accepted"
             route "If the issue is ready for copy work" -> LessonsCopywriter
 
         if_the_work_is_not_ready: "If The Work Is Not Ready"
             route "If the route is still unclear" -> LessonsProjectLead
 
+    when_to_stop: "When To Stop"
         stop_here_if: "Stop Here If"
             "Stop when one honest owner, one honest next step, and the current source of truth are explicit."
 
@@ -337,17 +333,14 @@ agent LessonsCopywriter[LessonsRoleHome]:
     outputs: "Outputs"
         CopyPassOutput
 
-    outcome: "Copywriting Outcome"
-        produces: "This Role Produces"
-            "Updated learner-facing copy."
-            "A clear grounding and validation record."
-
+    routing: "Routing"
         next_owner_if_accepted: "Next Owner If Accepted"
             route "If copy and validation are ready" -> LessonsProjectLead
 
         if_the_work_is_not_ready: "If The Work Is Not Ready"
             route "If grounding is missing or routing is unclear" -> LessonsProjectLead
 
+    when_to_stop: "When To Stop"
         stop_here_if: "Stop Here If"
             "Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead."
 

@@ -110,7 +110,7 @@ class RecordRef:
     body: tuple["RecordItem", ...] | None = None
 
 
-RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | RouteLine
+RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef
 
 
 @dataclass(slots=True, frozen=True)
@@ -258,12 +258,6 @@ class OutputsField:
 
 
 @dataclass(slots=True, frozen=True)
-class OutcomeField:
-    title: str
-    items: tuple[RecordItem, ...]
-
-
-@dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
 
@@ -276,7 +270,6 @@ Field: TypeAlias = (
     | AuthoredSlotOverride
     | InputsField
     | OutputsField
-    | OutcomeField
     | SkillsField
 )
 

@@ -1,7 +1,7 @@
-# This example shows an agent-local `outcome` section in the shipped subset.
+# This example shows routing and stop rules through ordinary authored slots in
+# the shipped subset.
 # `output` says what the agent emits.
-# `outcome` says what the turn resolved:
-# - what decision the role produced
+# The routing and stop sections say:
 # - who owns next if the work is accepted
 # - what happens if the work is not ready
 # - when the turn is complete
@@ -11,8 +11,8 @@
 # It takes the repeated reviewer pattern from `99` and earns only:
 # - a separate accepted path and not-ready path
 # - explicit routes with `route "..." -> AgentName`
-# - a soft completion condition in `stop_here_if`
-# - a hard failure rule in `stop_rule`
+# - ordinary authored slots instead of a reserved turn-resolution field
+# - a soft completion condition and a hard failure rule
 #
 # It does not try to model packets, proof files, or a full critic DSL.
 
@@ -98,11 +98,7 @@ agent AcceptanceReviewer:
     outputs: "Outputs"
         ReviewVerdictResponse
 
-    outcome: "Acceptance Review Outcome"
-        produces: "This Role Produces"
-            "One explicit `accept` or `changes requested` verdict."
-            "One honest next owner on the same issue."
-
+    routing: "Routing"
         next_owner_if_accepted: "Next Owner If Accepted"
             route "If accepted" -> WritingSpecialist
 
@@ -110,9 +106,10 @@ agent AcceptanceReviewer:
             route "If changes are required" -> SectionAuthor
             route "If the right owner is unclear" -> ProjectLead
 
+    when_to_stop: "When To Stop"
         stop_here_if: "Stop Here If"
             "Stop when the verdict is explicit and the next owner is clear."
 
-        stop_rule: "Hard Stop Rule"
+        hard_stop_rule: "Hard Stop Rule"
             "If the required dossier file is missing, stop and escalate."
             "Do not guess from stale notes or old packet copies."

@@ -30,7 +30,7 @@
   - top-level `agent`, `abstract agent`, `workflow`, `skills`, `inputs`, `outputs`, `import`, `input source`, `input`, `output target`, `output shape`, `output`, `json schema`, and `skill`
   - `role` as either scalar opening text or a titled block with lines
   - keyed local workflow sections, authored agent slots, keyed `use` composition, explicit `inherit` / `override`, `route "..." -> Target` statements, titled workflow section bodies that mix prose with named declaration refs including concrete agents, and workflow strings that interpolate named declaration contract fields inline including concrete agent names
-  - named workflow reuse, named workflow inheritance, named `skills` block inheritance, named `inputs` / `outputs` block inheritance, dotted references, typed `outcome` / `skills` fields, direct `inputs:` / `outputs:` refs to named IO blocks, explicit `inputs[BaseInputs]: ...` / `outputs[BaseOutputs]: ...` field patching, and rich inline `inputs` / `outputs` buckets that may mix prose, titled groups, and typed declaration refs
+  - named workflow reuse, named workflow inheritance, named `skills` block inheritance, named `inputs` / `outputs` block inheritance, dotted references, typed `skills` fields, direct `inputs:` / `outputs:` refs to named IO blocks, explicit `inputs[BaseInputs]: ...` / `outputs[BaseOutputs]: ...` field patching, rich inline `inputs` / `outputs` buckets that may mix prose, titled groups, and typed declaration refs, and ordinary authored slots such as `routing`, `review_routing`, `handoff_routing`, and `when_to_stop`
   - indentation-sensitive blocks and standalone `#` comment lines
 - Do not claim anything outside the manifest-backed `01` through `25` corpus is implemented just because it appears under `examples/`.
 

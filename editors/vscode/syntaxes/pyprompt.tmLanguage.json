@@ -791,7 +791,7 @@
       }
     },
     "typedField": {
-      "match": "^(\\s*)(role|inputs|outputs|outcome)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
+      "match": "^(\\s*)(role|inputs|outputs)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.other.field.pyprompt"

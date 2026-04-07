@@ -138,10 +138,6 @@ class ToAst(Transformer):
         )
 
     @v_args(inline=True)
-    def outcome_field(self, title, items):
-        return model.OutcomeField(title=title, items=tuple(items))
-
-    @v_args(inline=True)
     def skills_field(self, title_or_ref, body=None):
         return model.SkillsField(value=self._skills_value(title_or_ref, body))
 

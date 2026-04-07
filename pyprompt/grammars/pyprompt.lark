@@ -54,7 +54,6 @@ inheritance: "[" name_ref "]"
             | outputs_patch_field
             | outputs_inline_field
             | outputs_ref_field
-            | outcome_field
             | skills_field
             | agent_slot_inherit
             | agent_slot_override
@@ -71,7 +70,6 @@ inputs_patch_field: "inputs" inheritance ":" string _NL _INDENT io_body _DEDENT
 outputs_inline_field: "outputs" ":" string _NL _INDENT record_body _DEDENT
 outputs_ref_field: "outputs" ":" name_ref _NL?
 outputs_patch_field: "outputs" inheritance ":" string _NL _INDENT io_body _DEDENT
-outcome_field: "outcome" ":" string _NL _INDENT record_body _DEDENT
 skills_field: "skills" ":" string _NL _INDENT skills_body _DEDENT
             | "skills" ":" name_ref _NL?
 
@@ -156,7 +154,6 @@ record_body: record_item+
 ?record_item: record_text
             | record_keyed_item
             | record_ref_item
-            | route_stmt
 
 record_text: prose_line _NL?
 record_keyed_item: CNAME ":" record_head _NL record_item_body?

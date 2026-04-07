@@ -275,7 +275,8 @@ The current examples are intentionally pushing on these rules so we can validate
   that no-`runtime_tools` rule.
 - packets are not a current language primitive direction.
 - the same authoring pressure should be handled through inputs, outputs,
-  outcomes, ownership, and readable file contracts instead.
+  authored routing and stop guidance, ownership, and readable file contracts
+  instead.
 - do not cargo-cult `99` output patterns such as redundant `owns` sections when
   the output contract already makes ownership obvious.
 - `14_handoff_truth` shows the basic "tell the next owner what to use now"
@@ -338,7 +339,6 @@ Current shipped agent field families:
   block, or an explicit patch of a named inputs block
 - `outputs` as either a rich inline bucket, a direct ref to a named outputs
   block, or an explicit patch of a named outputs block
-- `outcome`
 - `skills`
 
 Current shipped boundaries:
@@ -358,7 +358,7 @@ Current shipped boundaries:
   - anonymous parent-agent `inputs` and `outputs` fields are not themselves
     inherited patch surfaces
 - `route "..." -> AgentName` is a narrow typed line item inside workflow and
-  outcome sections, not a standalone role-graph DSL
+  authored-slot sections, not a standalone role-graph DSL
 - output paths such as `section_root/...` stay plain path strings explained by
   surrounding guidance
 - the language is skill-first; it does not ship a parallel `runtime_tools`
@@ -409,9 +409,9 @@ They repeatedly specify:
 - stop and escalate behavior
 
 This pressure is real, but the current shipped answer is intentionally narrow:
-- `route "..." -> AgentName` inside workflow or outcome sections
+- `route "..." -> AgentName` inside workflow or authored-slot sections
 - same-issue ownership truth carried by authored guidance plus typed
-  `inputs`, `outputs`, and `outcome`
+  `inputs`, `outputs`, and ordinary authored routing / stop slots
 - no standalone role-graph or packet primitive yet
 
 ### 3. I/O, File Ownership, And Review Truth
@@ -425,7 +425,7 @@ That pressure is real, but it should not become a packet primitive.
 We should handle it through:
 - inputs
 - outputs
-- outcomes
+- authored routing and stop guidance
 - file ownership and readability rules
 - next owner if accepted
 - stop rule

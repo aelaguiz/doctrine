@@ -16,7 +16,7 @@ Core job: review the current dossier, issue an explicit verdict, and route the s
 
 Read Your Job first.
 Then read Workflow Core and How To Take A Turn.
-Then read Inputs, Outputs, Outcome, Skills, and Standards And Support.
+Then read Inputs, Outputs, Review Routing, When To Stop, Skills, and Standards And Support.
 
 ### Current Review Scope
 
@@ -108,30 +108,24 @@ This output owns the current verdict, the honest next owner, and the gate-by-gat
 
 A downstream reader should be able to read `REVIEW_VERDICT.md` and `RUN_GATE_LOG.md` and understand the verdict, route, and review basis.
 
-## Outcome
+## Review Routing
 
-### Acceptance Critic Outcome
-
-#### This Role Produces
-
-- One explicit verdict.
-- One honest next owner on the same issue.
-- One gate-by-gate review record.
-
-#### Next Owner If Accepted
+### Next Owner If Accepted
 
 - If accepted -> ProjectLead
 
-#### If The Work Is Not Ready
+### If The Work Is Not Ready
 
 - If changes are required -> SectionAuthor
 - If the route is unclear -> ProjectLead
 
-#### Stop Here If
+## When To Stop
+
+### Stop Here If
 
 Stop when the verdict is explicit, the next owner is clear, and the gate log matches the actual review basis.
 
-#### Hard Stop Rule
+### Hard Stop Rule
 
 - If a required review input is missing, stop and escalate.
 - Do not approve from memory, stale notes, or old copies.

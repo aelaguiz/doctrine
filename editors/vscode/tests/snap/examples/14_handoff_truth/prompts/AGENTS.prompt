@@ -39,21 +39,17 @@ agent SectionAuthor:
         contracts.outputs.SectionDossierOutput
         contracts.outputs.SectionAuthorHandoff
 
-    outcome: "Section Author Outcome"
-        produces: "This Role Produces"
-            "One current dossier."
-            "One current validation record."
-            "One honest handoff comment."
-
+    handoff_routing: "Handoff Routing"
         next_owner_if_ready: "Next Owner If Ready"
             route "If the dossier is ready for review" -> AcceptanceCritic
 
         if_the_work_is_not_ready: "If The Work Is Not Ready"
             route "If the route is unclear or the current brief is missing" -> ProjectLead
 
+    when_to_stop: "When To Stop"
         stop_here_if: "Stop Here If"
             "Stop when the handoff comment names the exact files to use now and the next owner is clear."
 
-        stop_rule: "Hard Stop Rule"
+        hard_stop_rule: "Hard Stop Rule"
             "If the current brief is missing, stop and escalate."
             "Do not point the next owner at stale notes, old copies, or a folder name instead of exact files."

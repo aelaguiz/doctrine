@@ -14,7 +14,7 @@ Own publish and follow-up state when those are the live jobs.
 
 Read Your Job first.
 Then read Workflow Core and How To Take A Turn.
-Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support.
+Then read Inputs, Outputs, Routing, When To Stop, Skills, When To Use This Role, and Standards And Support.
 
 ### Immediate Local Read
 
@@ -91,24 +91,19 @@ Use the current issue state to understand the named current files and publish st
 - Current Source Of Truth: name the current source of truth for the next owner.
 - Next Owner: name the honest next owner.
 
-## Outcome
+## Routing
 
-### Routing Outcome
-
-#### This Role Produces
-
-- One honest next owner.
-- One current source of truth for that next owner.
-
-#### Next Owner If Accepted
+### Next Owner If Accepted
 
 - If the issue is ready for copy work -> LessonsCopywriter
 
-#### If The Work Is Not Ready
+### If The Work Is Not Ready
 
 - If the route is still unclear -> LessonsProjectLead
 
-#### Stop Here If
+## When To Stop
+
+### Stop Here If
 
 Stop when one honest owner, one honest next step, and the current source of truth are explicit.
 

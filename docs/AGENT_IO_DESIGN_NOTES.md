@@ -16,7 +16,7 @@ The shipped language can now say useful things about:
 - next-owner routing
 - typed inputs and typed input sources
 - typed outputs, output targets, output shapes, and JSON schemas
-- routed outcomes
+- authored routing and stop guidance
 - skill-first capability references
 
 The core turn-contract questions the shipped subset already answers are:

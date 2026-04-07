@@ -27,7 +27,7 @@ workflow LessonsReadFirst: "Read First"
 
     read_order: "Read Order"
         "Read Workflow Core and How To Take A Turn first."
-        "Then read Skills And Tools for shared skills and runtime tools, then read Your Job, Inputs, Outputs, Outcome, Skills, and When To Use This Role so the local job, stop rule, and file expectations are clear before you lean on later support sections."
+        "Then read Skills And Tools for shared skills and runtime tools, then read Your Job, Inputs, Outputs, Skills, and When To Use This Role so the local job, stop rule, and file expectations are clear before you lean on later support sections."
 
 
 workflow LessonsWorkflowCore: "Workflow Core"

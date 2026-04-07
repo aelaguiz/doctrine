@@ -175,7 +175,7 @@ _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 # authored workflow slot, with one legacy carve-out: the old `workflow` field
 # still preserves 01-06 body inheritance semantics instead of switching to a
 # second slot-patching dialect.
-_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "outcome", "skills"}
+_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "skills"}
 
 _BUILTIN_INPUT_SOURCES = {
     "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
@@ -310,9 +310,6 @@ class CompilationContext:
                     )
                 )
                 continue
-            if isinstance(field, model.OutcomeField):
-                compiled_fields.append(self._compile_outcome_field(field, unit=unit))
-                continue
             if isinstance(field, model.SkillsField):
                 compiled_fields.append(self._compile_skills_field(field, unit=unit))
                 continue
@@ -331,8 +328,6 @@ class CompilationContext:
             return "inputs"
         if isinstance(field, model.OutputsField):
             return "outputs"
-        if isinstance(field, model.OutcomeField):
-            return "outcome"
         if isinstance(field, model.SkillsField):
             return "skills"
         return type(field).__name__
@@ -666,20 +661,6 @@ class CompilationContext:
             parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
         )
 
-    def _compile_outcome_field(
-        self, field: model.OutcomeField, *, unit: IndexedUnit
-    ) -> CompiledSection:
-        inner = CompiledSection(
-            title=field.title,
-            body=self._compile_record_support_items(
-                field.items,
-                unit=unit,
-                owner_label=f"outcome field `{field.title}`",
-                surface_label="outcome prose",
-            ),
-        )
-        return CompiledSection(title="Outcome", body=(inner,))
-
     def _compile_skills_field(
         self, field: model.SkillsField, *, unit: IndexedUnit
     ) -> CompiledSection:
@@ -741,9 +722,6 @@ class CompilationContext:
                 raise CompileError(
                     f"Scalar keyed items are not allowed in {owner_label}: {item.key}"
                 )
-
-            if isinstance(item, model.RouteLine):
-                raise CompileError(f"Route lines are not allowed in {owner_label}.")
 
             raise CompileError(
                 f"Unsupported {field_kind} bucket item in {owner_label}: {type(item).__name__}"
@@ -1074,18 +1052,6 @@ class CompilationContext:
                     owner_label=owner_label,
                     surface_label=surface_label,
                 ),
-            )
-
-        if isinstance(item, model.RouteLine):
-            self._validate_route_target(item.target, unit=unit)
-            label = self._interpolate_authored_prose_string(
-                item.label,
-                unit=unit,
-                owner_label=owner_label,
-                surface_label="route labels",
-            )
-            return (
-                f"{label} -> {item.target.declaration_name}",
             )
 
         if isinstance(item, model.RecordSection):

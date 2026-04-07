@@ -6,7 +6,7 @@
 # It models the protocol with:
 # - required review inputs
 # - one review output that owns both the verdict and the gate log
-# - outcome routes for accepted, changes requested, and escalate
+# - explicit review routes for accepted, changes requested, and escalate
 # - optional skills and support guidance
 #
 # If this reads cleanly, then critic protocol is already expressible with the
@@ -17,7 +17,7 @@ workflow CriticReadFirst: "Read First"
     read_order: "Read Order"
         "Read Your Job first."
         "Then read Workflow Core and How To Take A Turn."
-        "Then read Inputs, Outputs, Outcome, Skills, and Standards And Support."
+        "Then read Inputs, Outputs, Review Routing, When To Stop, Skills, and Standards And Support."
 
     current_review_scope: "Current Review Scope"
         "Read the current issue plan, the current dossier, and the current validation record before you issue a verdict."
@@ -165,12 +165,7 @@ agent AcceptanceCritic:
     outputs: "Outputs"
         CriticReviewOutput
 
-    outcome: "Acceptance Critic Outcome"
-        produces: "This Role Produces"
-            "One explicit verdict."
-            "One honest next owner on the same issue."
-            "One gate-by-gate review record."
-
+    review_routing: "Review Routing"
         next_owner_if_accepted: "Next Owner If Accepted"
             route "If accepted" -> ProjectLead
 
@@ -178,10 +173,11 @@ agent AcceptanceCritic:
             route "If changes are required" -> SectionAuthor
             route "If the route is unclear" -> ProjectLead
 
+    when_to_stop: "When To Stop"
         stop_here_if: "Stop Here If"
             "Stop when the verdict is explicit, the next owner is clear, and the gate log matches the actual review basis."
 
-        stop_rule: "Hard Stop Rule"
+        hard_stop_rule: "Hard Stop Rule"
             "If a required review input is missing, stop and escalate."
             "Do not approve from memory, stale notes, or old copies."
 

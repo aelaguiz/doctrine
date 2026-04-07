@@ -13,7 +13,7 @@ related:
   - examples/07_handoffs/prompts/AGENTS.prompt
   - examples/08_inputs/prompts/AGENTS.prompt
   - examples/09_outputs/prompts/AGENTS.prompt
-  - examples/10_turn_outcomes/prompts/AGENTS.prompt
+  - examples/10_routing_and_stop_rules/prompts/AGENTS.prompt
   - examples/11_skills_and_tools/prompts/AGENTS.prompt
   - examples/12_role_home_composition/prompts/AGENTS.prompt
   - examples/13_critic_protocol/prompts/AGENTS.prompt
@@ -22,7 +22,7 @@ related:
 
 # TL;DR
 
-- Outcome: Extend the shipped `pyprompt` grammar, parser, model, compiler, renderer, and corpus verifier so the approved language surface through examples `07` to `14` is implemented cleanly, verified explicitly, and documented as shipped behavior.
+- Result: Extend the shipped `pyprompt` grammar, parser, model, compiler, renderer, and corpus verifier so the approved language surface through examples `07` to `14` is implemented cleanly, verified explicitly, and documented as shipped behavior.
 - Problem: The shipped subset had stopped at `06`, while examples `07` to `14` introduced new declaration families and agent-field patterns that were still partly draft pressure, partly real language intent, and not safe to encode blindly.
 - Approach: Treat examples `07` to `14` as design pressure rather than truth, extract the real syntax families they are testing, stop for explicit decisions when a draft is ambiguous or self-contradictory, and only then port the approved constructs into one clean fail-loud compiler path.
 - Plan: First inventory and lock the post-`06` syntax families, then generalize the agent/declaration model, then port new constructs in example order with manifest-backed verification, and finally expand the active corpus through `14` while syncing docs and error guidance.
@@ -68,7 +68,7 @@ We can extend the shipped language from the current `01` to `06` subset to a cle
 
 - Port the syntax pressure introduced by examples `07_handoffs` through `14_handoff_truth` into the shipped path under [pyprompt/grammars/pyprompt.lark](/Users/aelaguiz/workspace/pyprompt/pyprompt/grammars/pyprompt.lark), [pyprompt/parser.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/parser.py), [pyprompt/model.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/model.py), [pyprompt/compiler.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/compiler.py), [pyprompt/renderer.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/renderer.py), and [pyprompt/verify_corpus.py](/Users/aelaguiz/workspace/pyprompt/pyprompt/verify_corpus.py).
 - Generalize the agent shape beyond the current exact `role` then `workflow` subset so typed agent-local fields and named role-home composition can be expressed without inventing a second semantic model.
-- Port the new declaration families and field families that appear after `06`, including the draft surfaces around routes, inputs, outputs, outcomes, skills, and imported role-by-concern file splits, but only after deciding which parts are real language primitives versus draft noise.
+- Port the new declaration families and field families that appear after `06`, including the draft surfaces around routes, inputs, outputs, authored routing and stop guidance, skills, and imported role-by-concern file splits, but only after deciding which parts are real language primitives versus draft noise.
 - Add or revise manifests for the approved `07` to `14` examples so the active corpus proves the shipped subset instead of relying on handwritten `ref` output.
 - Update live docs when implementation and docs drift, especially [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md) and [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md).
 - Stop and surface explicit decision points whenever an example draft, comment, or handwritten ref implies a dubious or conflicting grammar rule.
@@ -138,7 +138,8 @@ We can extend the shipped language from the current `01` to `06` subset to a cle
 
 The shipped parser/compiler now proves examples `01` through `14`. The
 canonical path in `pyprompt/` supports the widened declaration set, authored
-workflow slots, typed I/O and skill contracts, routed outcomes, and split
+workflow slots, typed I/O and skill contracts, ordinary authored routing and
+stop guidance, and split
 imports, while preserving the legacy `01` to `06` behavior and fail-loud
 boundaries.
 
@@ -149,7 +150,7 @@ Before this port:
   the shipped AST and compiler could not represent
 - declaration families such as `input`, `input source`, `output`, `output target`,
   `output shape`, `json schema`, and `skill` did not exist in shipped code
-- route-bearing outcome structures appeared after `06`, but the grammar only
+- route-bearing authored routing and stop guidance appeared after `06`, but the grammar only
   knew workflow items and flat role/workflow agent fields
 - the draft examples mixed settled intent with exploratory wording, so a literal
   port would have encoded mistakes alongside real design decisions
@@ -185,10 +186,10 @@ Before this port:
   - [examples/07_handoffs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/07_handoffs/prompts/AGENTS.prompt#L1) — route-bearing workflow sections plus the first pressure for agent-local named slots.
   - [examples/08_inputs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/08_inputs/prompts/AGENTS.prompt#L1) — typed `input` and `input source` pressure with explicit `source`, `shape`, and `requirement`.
   - [examples/09_outputs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/09_outputs/prompts/AGENTS.prompt#L1) — `output`, `output target`, `output shape`, and `json schema` pressure.
-  - [examples/10_turn_outcomes/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/10_turn_outcomes/prompts/AGENTS.prompt#L1) — `outcome` as a turn-resolution layer distinct from `output`.
+  - [examples/10_routing_and_stop_rules/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/10_routing_and_stop_rules/prompts/AGENTS.prompt#L1) — ordinary authored `routing` and `when_to_stop` slots as the turn-resolution layer distinct from `output`.
   - [examples/11_skills_and_tools/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/11_skills_and_tools/prompts/AGENTS.prompt#L1) — `skill` declarations plus agent-side skill references and metadata.
   - [examples/12_role_home_composition/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/12_role_home_composition/prompts/AGENTS.prompt#L1) — role-home composition pressure using named agent slots without introducing a new primitive.
-  - [examples/13_critic_protocol/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/13_critic_protocol/prompts/AGENTS.prompt#L1) — critic protocol pressure expressed with inputs, outputs, outcomes, skills, and support prose instead of a critic-specific primitive.
+  - [examples/13_critic_protocol/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/13_critic_protocol/prompts/AGENTS.prompt#L1) — critic protocol pressure expressed with inputs, outputs, ordinary routing and stop slots, skills, and support prose instead of a critic-specific primitive.
   - [examples/14_handoff_truth/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/14_handoff_truth/prompts/AGENTS.prompt#L1) — split-by-concern file layout and handoff-truth pressure using the existing import model.
 - Native model or agent capabilities to lean on:
   - Not a runtime-model capability problem. This step is DSL/compiler design, so the right leverage is repo evidence plus manifest-backed verification, not new agent harnesses or wrappers.
@@ -215,9 +216,9 @@ Post-`06` syntax inventory grounded by repo evidence:
 - `07` introduces two real pressures: agent-local named slots beyond `role` plus `workflow`, and `route "..." -> AgentName` lines inside reusable workflow structure ([examples/07_handoffs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/07_handoffs/prompts/AGENTS.prompt#L42), [examples/07_handoffs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/07_handoffs/prompts/AGENTS.prompt#L106)).
 - `08` introduces `input`, `input source`, and agent `inputs:` fields, with source-specific nested configuration and explicit required-versus-advisory semantics ([examples/08_inputs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/08_inputs/prompts/AGENTS.prompt#L13), [examples/08_inputs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/08_inputs/prompts/AGENTS.prompt#L47)).
 - `09` introduces `output`, `output target`, `output shape`, `json schema`, and agent `outputs:` fields; docs already settle that `output` is the produced-contract primitive and that path roots stay plain strings ([examples/09_outputs/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/09_outputs/prompts/AGENTS.prompt#L15), [docs/AGENT_IO_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/AGENT_IO_DESIGN_NOTES.md#L323), [docs/AGENT_IO_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/AGENT_IO_DESIGN_NOTES.md#L385)).
-- `10` introduces agent-local `outcome` as a separate turn-resolution field layered on top of `inputs` and `outputs`, reusing `route` and adding explicit stop-condition structure ([examples/10_turn_outcomes/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/10_turn_outcomes/prompts/AGENTS.prompt#L101)).
+- `10` introduces ordinary authored `routing` and `when_to_stop` slots as the turn-resolution layer layered on top of `inputs` and `outputs`, reusing `route` and explicit stop-condition structure without reserving a new field family ([examples/10_routing_and_stop_rules/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/10_routing_and_stop_rules/prompts/AGENTS.prompt#L101)).
 - `11` introduces top-level `skill` and agent-local `skills`, with the repo explicitly favoring `skill` over any raw script or tool-path surface ([examples/11_skills_and_tools/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/pyprompt/examples/11_skills_and_tools/prompts/AGENTS.prompt#L47), [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md#L224)).
-- `12` through `14` confirm that the basic role-home shell, critic protocol, and handoff-truth direction should be expressed by composing named workflows plus inputs/outputs/outcomes/skills, not by introducing new top-level primitives for those ideas ([docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md#L226), [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md#L240)).
+- `12` through `14` confirm that the basic role-home shell, critic protocol, and handoff-truth direction should be expressed by composing named workflows plus inputs/outputs/ordinary routing and stop slots/skills, not by introducing new top-level primitives for those ideas ([docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md#L226), [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md#L240)).
 
 ## 3.3 Open questions from research
 
@@ -225,11 +226,11 @@ The research step surfaced the following forks. The deep-dive resolves them with
 
 - Agent-local named slots: are post-`06` agent fields an open ordered typed-field system, or a closed catalog of slot names like `read_first`, `workflow_core`, `your_job`, `how_to_take_a_turn`, `standards_and_support`, and `when_to_use_this_role`?
 - Agent-slot inheritance semantics: should agent-level `inherit` / `override` follow the same exhaustive explicit patch model as workflow-body inheritance, or do inherited slots carry through unless mentioned?
-- Route semantics: is `route "..." -> AgentName` the canonical primitive to ship now, and if so, is it just structured authored text inside workflows/outcomes or the first real role-graph primitive?
+- Route semantics: is `route "..." -> AgentName` the canonical primitive to ship now, and if so, is it just structured authored text inside workflows and authored routing/stop slots or the first real role-graph primitive?
 - Renderer contract for multi-agent packages: keep the current role-first opening used by shipped `01` to `06`, or switch to the H1 agent-name opening implied by some handwritten refs?
 - Input shape identity: are names like `MarkdownDocument`, `DirectoryPath`, `JsonObject`, and `DesignDocument` built-in type names, future declarations, or validated labels only?
 - Output multiplicity: should `files:` remain real `output` grammar, or should the language stay single-target and treat extra files as support surfaces?
-- Closed versus open child fields: which children under `input`, `input source`, `output`, `output shape`, `output target`, `skill`, `skills`, and `outcome` are real grammar keywords versus open authored sections?
+- Closed versus open child fields: which children under `input`, `input source`, `output`, `output shape`, `output target`, `skill`, and `skills` are real grammar keywords versus open authored sections?
 - Skill-reference buckets: are `can_run`, `discover_with`, and `not_for_this_role` fixed language buckets, or just the current example’s headings around a more general skill-reference surface?
 <!-- arch_skill:block:research_grounding:end -->
 
@@ -345,7 +346,7 @@ The important design choice is that there is still one compiler path and one ver
 The target model through `14` is:
 
 - a closed top-level declaration set: `import`, `workflow`, `agent`, `abstract agent`, `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and `skill`
-- an ordered typed agent-field union with reserved field families for `role`, `inputs`, `outputs`, `outcome`, and `skills`
+- an ordered typed agent-field union with reserved field families for `role`, `inputs`, `outputs`, and `skills`
 - open authored workflow-slot keys for reusable instruction sections such as `read_first`, `workflow_core`, `your_job`, `how_to_take_a_turn`, `standards_and_support`, and `when_to_use_this_role`
 - two internal body families:
   - workflow-composition bodies for named reusable instruction structure, plus a typed `route` leaf item
@@ -401,9 +402,9 @@ Not applicable as UI work. The visible markdown contract remains role-first. Aut
 | Compiler | `pyprompt/compiler.py` | `_resolve_agent_workflow()` | Resolves only inherited workflow field | Replace with authored workflow-slot resolution on agents | `07` and `12` need slot inheritance, not just one workflow | Explicit patching for authored slots | `make verify-examples`, targeted manifests |
 | Compiler | `pyprompt/compiler.py` | `_resolve_workflow_body()` | Strong explicit patching algorithm for workflows | Reuse for authored workflow slots; extend leaf set carefully | This is the best shipped merge model already | Shared explicit patch logic | `make verify-examples`, targeted manifests |
 | Compiler | `pyprompt/compiler.py` | `_resolve_workflow_target()`, `_load_module()`, `_resolve_import_path()` | Already resolve imports and workflow refs fail-loudly | Reuse, not replace; widen to other declaration references as needed | `14` wants split-by-concern files on the same import model | Common resolution spine across declaration kinds | `make verify-examples`, targeted manifests |
-| Compiler | `pyprompt/compiler.py` | new typed compilers | Does not exist | Add compilers for inputs, outputs, outcome, skills, and new declarations | Post-`06` semantics must live in code, not in rendering guesses | Kind-specific compile contracts | `make verify-examples`, targeted manifests |
+| Compiler | `pyprompt/compiler.py` | new typed compilers | Does not exist | Add compilers for inputs, outputs, skills, and new declarations, while keeping authored routing and stop guidance on the ordinary authored-slot path | Post-`06` semantics must live in code, not in rendering guesses | Kind-specific compile contracts plus authored-slot rendering | `make verify-examples`, targeted manifests |
 | Renderer | `pyprompt/renderer.py` | `render_markdown()` | Renders role plus one workflow tree | Render ordered field sequence while keeping current role-first opening | New agent shape must render without changing the visible contract casually | Stable role-first renderer through `14` | Manifest render contracts |
-| Renderer | `pyprompt/renderer.py` | `_render_section()` | Only titled section tree with prose preamble | Extend or add helpers for record sections and route lines | Inputs/outputs/skills/outcome need coherent rendering | Stable titled-section and route rendering | Manifest render contracts |
+| Renderer | `pyprompt/renderer.py` | `_render_section()` | Only titled section tree with prose preamble | Extend or add helpers for record sections and route lines | Inputs/outputs/skills and authored routing/stop slots need coherent rendering | Stable titled-section and route rendering | Manifest render contracts |
 | Corpus verification | `pyprompt/verify_corpus.py` | `verify_corpus()` and manifest loading | Already correct for manifest-backed proof | Prefer no code changes unless implementation proves a missing capability | Harness already matches repo doctrine | Existing manifest-backed oracle | `make verify-examples` |
 | Docs | `docs/LANGUAGE_DESIGN_NOTES.md` | shipped language notes | Mixed shipped notes and pending decisions | Update with the earned declaration/field families and renderer decision | Docs must stop implying unresolved alternatives after ship | Current language truth | Manual doc read, corpus run |
 | Docs | `docs/AGENT_IO_DESIGN_NOTES.md` | I/O direction notes | Working-note doctrine | Sync any locked I/O syntax that becomes shipped | Avoid design doc drift | Current I/O contract doctrine | Manual doc read |
@@ -474,7 +475,7 @@ Status: COMPLETE
 
 Completed work:
 - Activated `07_handoffs` with a checked `cases.toml` contract.
-- Shipped authored workflow slots on agents plus narrow `route "..." -> AgentName` lines inside workflow and outcome sections.
+- Shipped authored workflow slots on agents plus narrow `route "..." -> AgentName` lines inside workflow and authored routing/stop sections.
 - Narrowed both the prompt header and the agent-body `07` slot comments so the shipped example teaches authored workflow slots precisely.
 
 - Goal: Earn authored workflow-slot inheritance plus the narrow `route "..." -> AgentName` primitive using `07_handoffs`.
@@ -500,20 +501,20 @@ Completed work:
 - Exit criteria: `08` and `09` are active, verified, and the compiler rejects ambiguous output-contract mixes fail-loudly.
 - Rollback: Revert the `08` to `09` slice rather than silently demoting `files:` to support prose or weakening the built-in versus declared resolution rules.
 
-## Phase 4 - Ship `outcome` and `skill` semantics for `10` and `11`
+## Phase 4 - Ship ordinary routing and stop slots plus skill semantics for `10` and `11`
 
 Status: COMPLETE
 
 Completed work:
-- Activated `10_turn_outcomes` and `11_skills_and_tools` with checked `cases.toml` contracts.
-- Shipped routed `outcome` sections and skill-first capability modeling with required-versus-advisory rendering behavior.
+- Activated `10_routing_and_stop_rules` and `11_skills_and_tools` with checked `cases.toml` contracts.
+- Kept routing and stop guidance on ordinary authored slots while shipping skill-first capability modeling with required-versus-advisory rendering behavior.
 
-- Goal: Earn routed turn outcomes and skill-first capability modeling without inventing a role-graph DSL or `runtime_tools` surface.
-- Work: Implement the reserved `outcome` field with route-bearing branches, stop conditions, and stop rules; implement top-level `skill` declarations and reserved `skills` agent fields with open bucket names plus typed direct-reference metadata like `requirement` and `reason`; and make the renderer enforce the current policy that required skill references become fail-loud role guidance while advisory references do not render as schema-like noise.
-- Verification (smallest signal): add [examples/10_turn_outcomes/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/10_turn_outcomes) and [examples/11_skills_and_tools/cases.toml](/Users/aelaguiz/workspace/pyprompt/examples/11_skills_and_tools), run `uv run --locked python -m pyprompt.verify_corpus --manifest examples/10_turn_outcomes/cases.toml --manifest examples/11_skills_and_tools/cases.toml`, then run `make verify-examples`.
-- Docs/comments (propagation; only if needed): update [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/pyprompt/docs/LANGUAGE_DESIGN_NOTES.md) and [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md) for the shipped route, outcome, and skill semantics that land here.
-- Exit criteria: `10` and `11` are active, verified, and the shipped story remains route-narrow and skill-first.
-- Rollback: Defer any bucket-specific behavior or renderer flourish that cannot be defended cleanly, but keep the core skill and outcome surfaces explicit.
+- Goal: Earn ordinary routing and stop guidance plus skill-first capability modeling without inventing a role-graph DSL, another reserved turn-resolution field, or a `runtime_tools` surface.
+- Work: Keep `route` as a typed line inside workflow and authored-slot sections; teach `10` through ordinary `routing` and `when_to_stop` slots instead of reserving another field family; implement top-level `skill` declarations and reserved `skills` agent fields with open bucket names plus typed direct-reference metadata like `requirement` and `reason`; and make the renderer enforce the current policy that required skill references become fail-loud role guidance while advisory references do not render as schema-like noise.
+- Verification (smallest signal): add [examples/10_routing_and_stop_rules/cases.toml](/Users/aelaguiz/workspace/doctrine/examples/10_routing_and_stop_rules) and [examples/11_skills_and_tools/cases.toml](/Users/aelaguiz/workspace/doctrine/examples/11_skills_and_tools), run `uv run --locked python -m pyprompt.verify_corpus --manifest examples/10_routing_and_stop_rules/cases.toml --manifest examples/11_skills_and_tools/cases.toml`, then run `make verify-examples`.
+- Docs/comments (propagation; only if needed): update [docs/LANGUAGE_DESIGN_NOTES.md](/Users/aelaguiz/workspace/doctrine/docs/LANGUAGE_DESIGN_NOTES.md) and [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md) for the shipped route, ordinary routing/stop slot, and skill semantics that land here.
+- Exit criteria: `10` and `11` are active, verified, and the shipped story remains route-narrow, non-magical, and skill-first.
+- Rollback: Defer any bucket-specific behavior or renderer flourish that cannot be defended cleanly, but do not reintroduce a reserved turn-resolution field.
 
 ## Phase 5 - Ship role-home composition and imported handoff truth for `12` to `14`
 
@@ -618,7 +619,7 @@ Follow-ups
 
 Context
 
-The post-`06` examples need both reusable role-home sections such as `read_first` and `workflow_core`, and true turn-contract fields such as `inputs`, `outputs`, `outcome`, and `skills`. A literal reading of the drafts could either freeze every slot name into grammar or, in the other direction, collapse everything back into loose workflow prose.
+The post-`06` examples need both reusable role-home sections such as `read_first` and `workflow_core`, and true typed contract fields such as `inputs`, `outputs`, and `skills`. Routing and stop guidance also need to stay easy to author without turning every common heading into grammar. A literal reading of the drafts could either freeze every slot name into grammar or, in the other direction, collapse everything back into loose workflow prose.
 
 Options
 
@@ -628,7 +629,7 @@ Options
 
 Decision
 
-Use a mixed model: reserved typed agent fields for `role`, `inputs`, `outputs`, `outcome`, and `skills`; open authored workflow-slot keys for the reusable role-home and doctrine sections.
+Use a mixed model: reserved typed agent fields for `role`, `inputs`, `outputs`, and `skills`; open authored workflow-slot keys for the reusable role-home, routing/stop, and doctrine sections.
 
 Consequences
 
@@ -655,7 +656,7 @@ Options
 
 Decision
 
-Keep the current role-first renderer through this port. Ship `route` as a typed line item inside workflow and outcome sections, not as a standalone role-graph primitive.
+Keep the current role-first renderer through this port. Ship `route` as a typed line item inside workflow and authored-slot sections, not as a standalone role-graph primitive.
 
 Consequences
 

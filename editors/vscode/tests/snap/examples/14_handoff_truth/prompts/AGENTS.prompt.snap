@@ -130,34 +130,12 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
->    outcome: "Section Author Outcome"
+>    handoff_routing: "Handoff Routing"
 #^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
-#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        produces: "This Role Produces"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            "One current dossier."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
->            "One current validation record."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
->            "One honest handoff comment."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
->
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        next_owner_if_ready: "Next Owner If Ready"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -194,6 +172,12 @@
 #                                                                              ^ source.pyprompt
 #                                                                               ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
+>    when_to_stop: "When To Stop"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        stop_here_if: "Stop Here If"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -206,12 +190,12 @@
 #             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 #                                                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
->        stop_rule: "Hard Stop Rule"
+>        hard_stop_rule: "Hard Stop Rule"
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "If the current brief is missing, stop and escalate."
 #^^^^^^^^^^^^ source.pyprompt
 #            ^ source.pyprompt punctuation.definition.string.begin.pyprompt

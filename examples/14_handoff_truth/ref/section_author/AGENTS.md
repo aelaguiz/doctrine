@@ -86,29 +86,23 @@ A downstream reader should be able to read this comment alone and understand wha
 - next owner: AcceptanceCritic
 ```
 
-## Outcome
+## Handoff Routing
 
-### Section Author Outcome
-
-#### This Role Produces
-
-- One current dossier.
-- One current validation record.
-- One honest handoff comment.
-
-#### Next Owner If Ready
+### Next Owner If Ready
 
 - If the dossier is ready for review -> AcceptanceCritic
 
-#### If The Work Is Not Ready
+### If The Work Is Not Ready
 
 - If the route is unclear or the current brief is missing -> ProjectLead
 
-#### Stop Here If
+## When To Stop
+
+### Stop Here If
 
 Stop when the handoff comment names the exact files to use now and the next owner is clear.
 
-#### Hard Stop Rule
+### Hard Stop Rule
 
 - If the current brief is missing, stop and escalate.
 - Do not point the next owner at stale notes, old copies, or a folder name instead of exact files.

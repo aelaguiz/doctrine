@@ -16,7 +16,7 @@ related:
 
 # TL;DR
 
-- Outcome: Add a repo-local VS Code language extension so current `.prompt` files are no longer plain gray text, with usable syntax highlighting, comment/string treatment, and indentation-aware editor behavior for the shipped PyPrompt surface proved by the manifest-backed corpus in `examples/01_*` through `examples/14_*`.
+- Result: Add a repo-local VS Code language extension so current `.prompt` files are no longer plain gray text, with usable syntax highlighting, comment/string treatment, and indentation-aware editor behavior for the shipped PyPrompt surface proved by the manifest-backed corpus in `examples/01_*` through `examples/14_*`.
 - Problem: PyPrompt authoring is verified primarily through the Python parser/compiler path, so editor support has to stay tightly aligned with shipped grammar truth instead of drifting toward older draft notes, aspirational tooling, or unverified pressure surfaces.
 - Approach: Build a static, contribution-only VS Code extension under `editors/vscode/`, backed by `language-configuration.json` plus a hand-authored TextMate grammar, and validate its keyword surface directly against `pyprompt/grammars/pyprompt.lark`; keep any unavoidable TextMate-only regex shaping narrow, documented, and tested against the verified `01` through `14` corpus.
 - Plan: 1) scaffold the isolated `editors/vscode/` static extension and local debug loop, 2) implement the language configuration, TextMate grammar, and unit fixtures, 3) add Lark-alignment validation plus the mirrored snapshot corpus, and 4) finish local-use docs and cleanup.
@@ -257,7 +257,7 @@ PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a
 
 - The only shipped syntax truth is `pyprompt/grammars/pyprompt.lark`.
   - Top-level declarations: `import`, `workflow`, `input source`, `input`, `output target`, `output shape`, `output`, `json schema`, `skill`, `agent`, and `abstract agent`
-  - Agent fields: `role`, `inputs`, `outputs`, `outcome`, `skills`, authored slot fields, `inherit`, and `override`
+  - Agent fields: `role`, `inputs`, `outputs`, `skills`, authored slot fields, `inherit`, and `override`
   - Workflow and record items: local section keys, record keys, `use`, `inherit`, `override`, standalone references, and `route`
   - Lexical atoms: `CNAME`, `ESCAPED_STRING`, dotted names, relative-import dots, `:` and `[` / `]`
 - Indentation semantics are handled by `PyPromptIndenter` in `pyprompt/indenter.py`. There is no side preprocessor and no separate whitespace normalizer.
@@ -371,7 +371,7 @@ The verified prompt corpus remains where it already lives under `examples/01_*` 
   - no runtime JS or TS entrypoint
 - The editor grammar should explicitly cover the shipped lexical surfaces that actually appear in `01` through `14`:
   - declaration keywords such as `import`, `agent`, `abstract`, `workflow`, `input`, `output`, `json`, and `skill`
-  - field and workflow-item keywords such as `role`, `inputs`, `outputs`, `outcome`, `skills`, `use`, `inherit`, `override`, and `route`
+  - field and workflow-item keywords such as `role`, `inputs`, `outputs`, `skills`, `use`, `inherit`, `override`, and `route`
   - bracketed inheritance headers
   - dotted import and workflow-target paths
   - local workflow keys and record keys before `:`

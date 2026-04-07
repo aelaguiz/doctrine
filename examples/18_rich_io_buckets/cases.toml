@@ -95,13 +95,13 @@ message_contains = [
 [[cases]]
 name = "route lines fail loud inside outputs buckets"
 status = "active"
-kind = "compile_fail"
+kind = "parse_fail"
 prompt = "prompts/INVALID_OUTPUT_BUCKET_ROUTE.prompt"
-agent = "InvalidOutputBucketRoute"
-exception_type = "CompileError"
-error_code = "E299"
+exception_type = "ParseError"
+error_code = "E101"
 message_contains = [
-  "Route lines are not allowed in outputs field `Outputs`",
+  "Unexpected token",
+  "\"Send next\"",
 ]
 
 [[cases]]

@@ -1,11 +1,11 @@
-># This example sketches an agent-local `outcome` section.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># This example shows routing and stop rules through ordinary authored slots in
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># the shipped subset.
+#^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 ># `output` says what the agent emits.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
-># `outcome` says what the turn resolved:
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
-># - what decision the role produced
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># The routing and stop sections say:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 ># - who owns next if the work is accepted
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 ># - what happens if the work is not ready
@@ -24,10 +24,10 @@
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 ># - explicit routes with `route "..." -> AgentName`
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
-># - a soft completion condition in `stop_here_if`
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
-># - a hard failure rule in `stop_rule`
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - ordinary authored slots instead of a reserved turn-resolution field
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - a soft completion condition and a hard failure rule
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 >#
 #^ source.pyprompt comment.line.number-sign.pyprompt
 ># It does not try to model packets, proof files, or a full critic DSL.
@@ -388,29 +388,12 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
->    outcome: "Acceptance Review Outcome"
+>    routing: "Routing"
 #^^^^ source.pyprompt
-#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->        produces: "This Role Produces"
-#^^^^^^^^ source.pyprompt
-#        ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            "One explicit `accept` or `changes requested` verdict."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
->            "One honest next owner on the same issue."
-#^^^^^^^^^^^^ source.pyprompt
-#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
->
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        next_owner_if_accepted: "Next Owner If Accepted"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -458,6 +441,12 @@
 #                                                    ^ source.pyprompt
 #                                                     ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
+>    when_to_stop: "When To Stop"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        stop_here_if: "Stop Here If"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -470,12 +459,12 @@
 #             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 #                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
->        stop_rule: "Hard Stop Rule"
+>        hard_stop_rule: "Hard Stop Rule"
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
-#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
-#                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "If the required dossier file is missing, stop and escalate."
 #^^^^^^^^^^^^ source.pyprompt
 #            ^ source.pyprompt punctuation.definition.string.begin.pyprompt

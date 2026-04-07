@@ -21,12 +21,12 @@ should be read.
   It is not about the current shipped compiler being incomplete.
 - `12_role_home_composition` already earns the basic role-home shell.
 - `14_handoff_truth` now shows the clean way to name what the next owner should
-  use now with inputs, outputs, outcomes, and plain prose.
+  use now with inputs, outputs, authored routing / stop slots, and plain prose.
 - The open question is now what belongs inside that shell, not whether role
   homes need a new primitive.
 - Packets are not a language primitive direction.
 - The same authoring pressure should be handled through inputs, outputs,
-  outcomes, ownership, and readable file contracts.
+  authored routing / stop slots, ownership, and readable file contracts.
 - The language remains skill-first.
 - A separate `runtime_tools` surface is drift, not direction.
 - `99` remains requirement fodder, not a target design.
@@ -75,7 +75,7 @@ That pressure is real.
 
 It should not become a packet primitive.
 
-It should be expressed through inputs, outputs, outcomes, readable file
+It should be expressed through inputs, outputs, authored routing / stop slots, readable file
 contracts, and explicit review truth.
 
 `14_handoff_truth` now covers the narrow "tell the next owner what to use now"
@@ -137,8 +137,8 @@ The remaining work is about content discipline inside the shell.
 
 That direction is rejected.
 
-The same pressure should be handled through I/O, outcomes, ownership, and file
-contracts.
+The same pressure should be handled through I/O, authored routing and stop
+guidance, ownership, and file contracts.
 
 ### `runtime_tools` as a separate surface
 

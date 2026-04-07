@@ -14,7 +14,7 @@ Record post-copy validation in the current outputs.
 
 Read Your Job first.
 Then read Workflow Core and How To Take A Turn.
-Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support.
+Then read Inputs, Outputs, Routing, When To Stop, Skills, When To Use This Role, and Standards And Support.
 
 ### Immediate Local Read
 
@@ -108,24 +108,19 @@ Use the current lesson manifest as the editable learner-facing surface.
 
 A downstream reader should be able to read `COPY_GROUNDING.md` and `lesson_manifest.json` and understand what changed and what was validated.
 
-## Outcome
+## Routing
 
-### Copywriting Outcome
-
-#### This Role Produces
-
-- Updated learner-facing copy.
-- A clear grounding and validation record.
-
-#### Next Owner If Accepted
+### Next Owner If Accepted
 
 - If copy and validation are ready -> LessonsProjectLead
 
-#### If The Work Is Not Ready
+### If The Work Is Not Ready
 
 - If grounding is missing or routing is unclear -> LessonsProjectLead
 
-#### Stop Here If
+## When To Stop
+
+### Stop Here If
 
 Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead.
 
