@@ -43,7 +43,7 @@ agent DossierEngineer[common.role_home.LessonsRoleHome]:
     role: "Core job: establish the honest section teaching burden from current curriculum truth and poker grounding."
 
     override read_first: DossierEngineerReadFirst
-    override workflow_core: DossierEngineerWorkflowCore
+    inherit workflow_core
 
     override your_job: DossierEngineerJob
 

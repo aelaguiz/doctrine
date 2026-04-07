@@ -3,8 +3,6 @@
 # This keeps the old 99 top-level section order, but leaves the contents as
 # stubs so concrete roles can override only what is local.
 
-import common.handoffs.shared
-
 workflow LessonsReadFirst: "Read First"
     start_here: "Start Here"
         "Start in this role home."
@@ -43,13 +41,12 @@ workflow LessonsWorkflowCore: "Workflow Core"
         "- If a rendered comment mangles paths or owner links, trust the active issue, the current plan, and the named current files."
         "- If a named current support surface is missing, stop and route the same issue to `ProjectLead` to repair the missing repo-owned owner instead of reviving an old name or deleted setup path."
 
-    same_issue_workflow: "Same-Issue Workflow"
-        "In this workflow, `handoff` and `fresh comment` mean one {{common.handoffs.shared.GlobalHandoffComment}}."
+    same_issue_workflow: "Same Issue Workflow"
         "- Keep normal Lessons work on one issue from the first routing pass through publish and follow-up."
         "- Keep one owner at a time on that issue."
         "- Each owner does only the work their lane owns."
-        "- The normal new-content order stays: `ProjectLead` -> `DossierEngineer` -> `AcceptanceCritic` -> `ConceptsTermsCurator` -> `AcceptanceCritic` -> `SectionArchitect` -> `AcceptanceCritic` -> `PlayableStrategist` -> `AcceptanceCritic` -> `LessonArchitect` -> `AcceptanceCritic` -> `SituationSynthesizer` -> `AcceptanceCritic` -> `PlayableMaterializer` -> `AcceptanceCritic` -> `Copywriter` -> `AcceptanceCritic` -> `ProjectLead`."
         "- Section-level lanes settle the section output chain once unless a later blocker or accepted lesson proves the section map must be reopened."
+        "- The normal new-content order stays: `Lessons Project Lead` -> `Section Dossier Engineer` -> `Lessons Acceptance Critic` -> `Section Concepts and Terms Curator` -> `Lessons Acceptance Critic` -> `Lessons Section Architect` -> `Lessons Acceptance Critic` -> `Lessons Playable Strategist` -> `Lessons Acceptance Critic` -> `Lessons Lesson Architect` -> `Lessons Acceptance Critic` -> `Lessons Situation Synthesizer` -> `Lessons Acceptance Critic` -> `Lessons Playable Materializer` -> `Lessons Acceptance Critic` -> `Lessons Copywriter` -> `Lessons Acceptance Critic` -> `Lessons Project Lead`."
         "- After the section output chain is settled, lesson lanes run one current `lesson_root` at a time on that same issue."
         "- If more requested lessons remain after one accepted lesson, `ProjectLead` updates the current issue plan or leaves a fresh comment naming the next `lesson_root` and the approved section outputs the next lesson should trust, then restarts lesson work at `LessonArchitect`."
         "- If an accepted lesson proves lesson count, lesson order, or lesson-slot mapping is no longer honest, `ProjectLead` sends the same issue back to `SectionArchitect` before lesson work restarts."
@@ -59,19 +56,20 @@ workflow LessonsWorkflowCore: "Workflow Core"
 
     handoff_comment: "Handoff Comment"
         "Every handoff, verdict, or blocker comment should say what this turn changed."
-        "Say which decisions are now locked."
-        "Say which files the next owner should trust now."
-        "Say the exact failing gate if the work is blocked."
-        "Say the next owner clearly when ownership is changing now."
-        "Use plain current role names when formatting could blur the next owner."
-
-    packet_review_rules: "Packet Review Rules"
-        "Specialist handoff outputs should also name the exact current packet, the current review files, and where the proof lives."
-        "If no current review files apply yet, say that plainly."
-        "Do not point the next owner at stale notes, old copies, or a folder name instead of exact current files."
+        "- Say which decisions are now locked."
+        "- Say which files the next owner should trust now."
+        "- Say the exact failing gate if the work is blocked."
+        "- Say the next owner clearly when ownership is changing now."
+        "- Use plain current role names when formatting could blur the next owner."
 
     publish_return: "Publish Return"
-        "TODO: keep publish and follow-up on the same issue when that work is live."
+        "- After the final critic accept, the same issue returns to `Lessons Project Lead` for publish and follow-up."
+        "- Do not treat publish as the next step while requested lesson roots still remain on the same issue."
+        "- Keep PR, QR, publish work, and follow-up on that same issue until the work is honestly done or honestly blocked."
+        "- If this turn makes new files current, update or clearly retire older nearby files that still describe the old state before handoff or publish."
+        "- If stale lesson-writing files in the touched area would leave parallel truth behind, clear or update them before handoff."
+        "- `Lessons Project Lead` owns that final cleanup during publish and follow-up."
+        "- If maintenance work turns into redesign, stop and re-plan on the same issue."
 
 
 workflow LessonsHowToTakeATurn: "How To Take A Turn"
