@@ -12,7 +12,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    workflow: "Briefing"
 #^^^^ source.pyprompt
@@ -108,7 +110,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    workflow: "Ordered Briefing"
 #^^^^ source.pyprompt
@@ -197,7 +201,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    workflow: "Revised Briefing"
 #^^^^ source.pyprompt
@@ -270,7 +276,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    workflow: "Briefing"
 #^^^^ source.pyprompt

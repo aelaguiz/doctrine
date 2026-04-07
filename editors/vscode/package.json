@@ -2,7 +2,7 @@
   "name": "pyprompt-language",
   "displayName": "PyPrompt Language Support",
   "description": "Local VS Code syntax highlighting and editor behavior for PyPrompt prompt files.",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "publisher": "aelaguiz",
   "private": true,
   "license": "UNLICENSED",

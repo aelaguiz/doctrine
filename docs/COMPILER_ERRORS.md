@@ -77,8 +77,8 @@ Stability rules:
 | `E270` | Ambiguous declaration reference | A readable mention or interpolation ref matches more than one visible declaration kind. |
 | `E271` | Workflow ref is not allowed here | A workflow ref was used on a mention or interpolation surface that allows declarations but not workflows. |
 | `E272` | Abstract agent ref is not allowed here | A readable mention points at an abstract agent instead of a concrete owner. |
-| `E273` | Unknown workflow interpolation field | A workflow string interpolation asked for a field path that does not exist. |
-| `E274` | Workflow interpolation field must resolve to a scalar | The field path resolves to a section or other non-scalar surface. |
+| `E273` | Unknown interpolation field | An authored-prose interpolation asked for a field path that does not exist on that surface. |
+| `E274` | Interpolation field must resolve to a scalar | The field path resolves to a section or other non-scalar surface instead of a scalar value. |
 | `E275` | Typed declaration must stay typed in interpolation | An interpolation path tried to treat a typed declaration contract field as an untyped scalar. |
 | `E276` | Missing local declaration reference | A local readable mention or interpolation ref points at a declaration that does not exist. |
 | `E280` | Missing import module | An imported module could not be found under the current `prompts/` root. |

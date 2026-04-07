@@ -23,7 +23,9 @@
             route "If accepted" -> ProjectLead
 #           ^^^^^ keyword.control.pyprompt
 #                                ^ keyword.operator.route.pyprompt
-#                                   ^ support.type.reference.pyprompt
+#                                ^ keyword.operator.pyprompt
+#                                ^ punctuation.separator.route.pyprompt
+#                                   ^ entity.name.type.reference.route-target.pyprompt
 
     your_job: roles.project_lead.ProjectLeadJob
 #   ^^^^^^^^ entity.name.section.pyprompt

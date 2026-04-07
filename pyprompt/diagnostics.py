@@ -753,17 +753,27 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         ("Mention a concrete agent instead of an abstract base agent.",),
     ),
     (
-        re.compile(r"^Unknown workflow string interpolation field in (?P<owner>[^:]+): (?P<detail>.+)$"),
+        re.compile(
+            r"^Unknown interpolation field on (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"
+        ),
         "E273",
-        "Unknown workflow interpolation field",
-        lambda match: f"In `{match.group('owner')}`, `{match.group('detail')}` does not resolve to a known interpolation field.",
+        "Unknown interpolation field",
+        lambda match: (
+            f"In `{match.group('owner')}`, `{match.group('detail')}` does not resolve "
+            f"to a known interpolation field on the {match.group('surface')} surface."
+        ),
         (),
     ),
     (
-        re.compile(r"^Workflow string interpolation field must resolve to a scalar in (?P<owner>[^:]+): (?P<detail>.+)$"),
+        re.compile(
+            r"^Interpolation field must resolve to a scalar on (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"
+        ),
         "E274",
-        "Workflow interpolation field must resolve to a scalar",
-        lambda match: f"In `{match.group('owner')}`, `{match.group('detail')}` resolves to a non-scalar surface.",
+        "Interpolation field must resolve to a scalar",
+        lambda match: (
+            f"In `{match.group('owner')}`, `{match.group('detail')}` resolves "
+            f"to a non-scalar surface on the {match.group('surface')} surface."
+        ),
         (),
     ),
     (

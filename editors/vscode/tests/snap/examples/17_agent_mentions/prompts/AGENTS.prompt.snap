@@ -85,11 +85,13 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                               ^ source.pyprompt
-#                                                ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                                  ^ source.pyprompt
-#                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent ProjectLead:
@@ -102,7 +104,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >agent AgentMentionsDemo:
@@ -115,7 +119,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    read_first: HandoffMentions
 #^^^^ source.pyprompt

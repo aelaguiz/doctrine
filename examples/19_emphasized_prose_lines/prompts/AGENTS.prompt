@@ -2,8 +2,8 @@
 # fixed emphasis labels can lead certain prose lines without embedding raw markdown.
 #
 # The supported labels are `required`, `important`, `warning`, and `note`.
-# They work in workflow prose, role blocks, and record prose surfaces.
-# Workflow emphasis lines still support `{{...}}` interpolation.
+# They work in workflow prose, role prose, and record prose surfaces.
+# Emphasis lines on those prose surfaces still support `{{...}}` interpolation.
 
 input CurrentPlan: "Current Plan"
     source: File

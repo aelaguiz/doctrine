@@ -89,8 +89,8 @@ Current intent for emphasized prose lines:
 - the shipped labels are `required`, `important`, `warning`, and `note`
 - those labels render as `**LABEL**: ...` in final markdown
 - this is a prose-line feature, not a general inline-markup mini-language
-- it currently works on workflow prose, role block prose, and record prose surfaces
-- workflow emphasis lines keep the same `{{...}}` interpolation support as ordinary workflow strings
+- it currently works on workflow prose, role prose, and record prose surfaces
+- emphasis lines on authored prose surfaces keep the same `{{...}}` interpolation support as ordinary prose lines on those surfaces
 - role scalar values, titles, keyed scalar heads, config lines, routes, and refs do not get special emphasis syntax
 - if an author needs one-off emphasis inside a scalar string surface, raw markdown is still the escape hatch
 
@@ -103,15 +103,16 @@ Current intent for titled workflow section body refs:
 - actual owner transitions still belong to `route "..." -> AgentName`
 - abstract agent refs are rejected here; if an owner should be mentionable, name the concrete agent
 
-Current intent for workflow string interpolation:
-- workflow preamble strings and titled workflow section strings may interpolate named declaration data inline with `{{Ref}}` and `{{Ref:field.path}}`
+Current intent for authored prose interpolation:
+- authored prose surfaces may interpolate named declaration data inline with `{{Ref}}` and `{{Ref:field.path}}`
+- the shipped authored prose surfaces are workflow preamble strings, titled workflow section strings, role prose, record prose, skill purpose, skill reference reason, and route labels
 - `{{Ref}}` renders the declaration title for titled declarations and the raw declaration name for concrete `agent` refs
 - `{{Ref:field.path}}` resolves one scalar field from the declaration contract data or fails loud
 - `{{AgentRef:name}}` is the explicit agent form; broader agent field access is not currently part of this surface
 - interpolation is for authored prose, not renderer-generated sentence assembly
 - authors still own punctuation, filenames, conjunctions, and backticks around the placeholder
 - abstract agent refs are rejected here; if a sentence should name an owner, interpolate the concrete agent
-- this stays limited to workflow strings; it does not widen role text, record prose, or other string surfaces
+- titles, config labels, config values, keyed scalar metadata, and route targets stay literal
 
 ## Nested Workflow Direction
 

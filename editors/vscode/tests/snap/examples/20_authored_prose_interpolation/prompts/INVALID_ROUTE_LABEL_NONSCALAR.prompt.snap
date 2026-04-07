@@ -1,0 +1,105 @@
+>workflow InvalidRouteLabelInterpolation: "Invalid Route Label Interpolation"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                        ^ source.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    routing_rules: "Routing Rules"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        route "If {{CurrentPlan:source}} is missing" -> ProjectLead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                    ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                               ^ source.pyprompt string.quoted.double.pyprompt punctuation.separator.interpolation.pyprompt
+#                                ^^^^^^ source.pyprompt string.quoted.double.pyprompt variable.other.member.pyprompt
+#                                      ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                        ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#                                                    ^ source.pyprompt
+#                                                     ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
+#                                                       ^ source.pyprompt
+#                                                        ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>input CurrentPlan: "Current Plan"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        path: "track_root/current-plan.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>agent ProjectLead:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Project Lead"
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent InvalidRouteLabelInterpolationDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "This prompt exists only to trigger the compile-fail contract."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    ending_your_turn: InvalidRouteLabelInterpolation
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

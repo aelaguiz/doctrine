@@ -5,7 +5,7 @@
 - Sync the repo environment with `uv sync`.
 - Run the full active corpus with `make verify-examples`.
 - For a targeted manifest run, use `uv run --locked python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`.
-- Today, `make verify-examples` discovers active manifests for `examples/01_hello_world` through `examples/18_rich_io_buckets`.
+- Today, `make verify-examples` discovers active manifests for `examples/01_hello_world` through `examples/20_authored_prose_interpolation`.
 - `examples/99_not_clean_but_useful/` is still design pressure only and is not part of the shipped verification surface.
 - If a dependency is missing or a check could not run, say that plainly.
 
@@ -23,7 +23,7 @@
 
 ## Current Bootstrap Scope
 
-- The current shipped parser/compiler covers examples `01` through `18` in this worktree.
+- The current shipped parser/compiler covers examples `01` through `20` in this worktree.
 - It supports:
   - top-level `agent`, `abstract agent`, `workflow`, `import`, `input source`, `input`, `output target`, `output shape`, `output`, `json schema`, and `skill`
   - `role` as either scalar opening text or a titled block with lines

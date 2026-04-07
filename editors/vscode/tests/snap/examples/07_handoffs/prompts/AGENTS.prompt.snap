@@ -165,20 +165,24 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                          ^ source.pyprompt
-#                           ^^ source.pyprompt keyword.operator.route.pyprompt
+#                           ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                             ^ source.pyprompt
-#                              ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                              ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        route "If blocked or the route is unclear" -> ProjectLead
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                                  ^ source.pyprompt
-#                                                   ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                   ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                                     ^ source.pyprompt
-#                                                      ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                                      ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    inherit owner_change_comment
 #^^^^ source.pyprompt
@@ -215,20 +219,24 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                          ^ source.pyprompt
-#                           ^^ source.pyprompt keyword.operator.route.pyprompt
+#                           ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                             ^ source.pyprompt
-#                              ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                              ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        route "If blocked or the route is unclear" -> ProjectLead
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                                  ^ source.pyprompt
-#                                                   ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                   ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                                     ^ source.pyprompt
-#                                                      ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                                      ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    inherit owner_change_comment
 #^^^^ source.pyprompt
@@ -307,20 +315,24 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                            ^ source.pyprompt
-#                                             ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                             ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                               ^ source.pyprompt
-#                                                ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                                ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        route "If the route is broken or the work is blocked before specialist work begins" -> ProjectLead
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt keyword.control.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                                                                           ^ source.pyprompt
-#                                                                                            ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                                                            ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                                                                              ^ source.pyprompt
-#                                                                                               ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                                                                               ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    override owner_change_comment:
 #^^^^ source.pyprompt
@@ -479,7 +491,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: ProjectLeadJob
 #^^^^ source.pyprompt
@@ -516,7 +530,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: ResearchSpecialistJob
 #^^^^ source.pyprompt
@@ -550,7 +566,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: WritingSpecialistJob
 #^^^^ source.pyprompt

@@ -63,7 +63,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^ source.pyprompt string.quoted.double.pyprompt
+#               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        required "Read this file end to end before you act."
 #^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt
 #        ^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt keyword.control.emphasis.required.pyprompt

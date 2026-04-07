@@ -24,7 +24,7 @@ class CompiledAgent:
 
 CompiledBodyItem: TypeAlias = model.ProseLine | CompiledSection
 CompiledField: TypeAlias = model.RoleScalar | CompiledSection
-WorkflowMentionDecl: TypeAlias = (
+ReadableDecl: TypeAlias = (
     model.Agent
     | model.InputDecl
     | model.InputSourceDecl
@@ -105,13 +105,13 @@ class ConfigSpec:
 
 
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
-_WORKFLOW_INTERPOLATION_EXPR_RE = re.compile(
+_INTERPOLATION_EXPR_RE = re.compile(
     r"\s*"
     r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
     r"(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*))?"
     r"\s*"
 )
-_WORKFLOW_INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
+_INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 # Reserved typed fields get their own compiler paths. Every other key is an
 # authored workflow slot, with one legacy carve-out: the old `workflow` field
 # still preserves 01-06 body inheritance semantics instead of switching to a
@@ -177,7 +177,16 @@ class CompilationContext:
             if isinstance(field, model.RoleScalar):
                 if seen_role:
                     raise CompileError(f"Duplicate role field in agent {agent.name}")
-                compiled_fields.append(field)
+                compiled_fields.append(
+                    model.RoleScalar(
+                        text=self._interpolate_authored_prose_string(
+                            field.text,
+                            unit=unit,
+                            owner_label=f"agent {agent.name}",
+                            surface_label="role prose",
+                        )
+                    )
+                )
                 seen_role = True
                 continue
 
@@ -185,7 +194,18 @@ class CompilationContext:
                 if seen_role:
                     raise CompileError(f"Duplicate role field in agent {agent.name}")
                 compiled_fields.append(
-                    CompiledSection(title=field.title, body=tuple(field.lines))
+                    CompiledSection(
+                        title=field.title,
+                        body=tuple(
+                            self._interpolate_authored_prose_line(
+                                line,
+                                unit=unit,
+                                owner_label=f"agent {agent.name}",
+                                surface_label="role prose",
+                            )
+                            for line in field.lines
+                        ),
+                    )
                 )
                 seen_role = True
                 continue
@@ -424,7 +444,12 @@ class CompilationContext:
     ) -> CompiledSection:
         inner = CompiledSection(
             title=field.title,
-            body=self._compile_record_support_items(field.items, unit=unit),
+            body=self._compile_record_support_items(
+                field.items,
+                unit=unit,
+                owner_label=f"outcome field `{field.title}`",
+                surface_label="outcome prose",
+            ),
         )
         return CompiledSection(title="Outcome", body=(inner,))
 
@@ -434,9 +459,22 @@ class CompilationContext:
         body: list[CompiledBodyItem] = []
         for item in field.items:
             if isinstance(item, model.RecordSection):
-                body.append(self._compile_skill_bucket(item, unit=unit))
+                body.append(
+                    self._compile_skill_bucket(
+                        item,
+                        unit=unit,
+                        owner_label=f"skills field `{field.title}`",
+                    )
+                )
                 continue
-            body.extend(self._compile_record_item(item, unit=unit))
+            body.extend(
+                self._compile_record_item(
+                    item,
+                    unit=unit,
+                    owner_label=f"skills field `{field.title}`",
+                    surface_label="skills prose",
+                )
+            )
         return CompiledSection(title=field.title, body=tuple(body))
 
     def _compile_contract_bucket_items(
@@ -450,7 +488,14 @@ class CompilationContext:
         body: list[CompiledBodyItem] = []
         for item in items:
             if isinstance(item, (str, model.EmphasizedLine)):
-                body.append(item)
+                body.append(
+                    self._interpolate_authored_prose_line(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label=f"{field_kind} prose",
+                    )
+                )
                 continue
 
             if isinstance(item, model.RecordSection):
@@ -524,17 +569,40 @@ class CompilationContext:
         return self._compile_output_decl(decl, unit=target_unit)
 
     def _compile_skill_bucket(
-        self, section: model.RecordSection, *, unit: IndexedUnit
+        self,
+        section: model.RecordSection,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
     ) -> CompiledSection:
         body: list[CompiledBodyItem] = []
         for item in section.items:
             if isinstance(item, model.RecordRef):
-                body.append(self._compile_skill_ref(item, unit=unit))
+                body.append(
+                    self._compile_skill_ref(
+                        item,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{section.key}",
+                    )
+                )
                 continue
-            body.extend(self._compile_record_item(item, unit=unit))
+            body.extend(
+                self._compile_record_item(
+                    item,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{section.key}",
+                    surface_label="skills prose",
+                )
+            )
         return CompiledSection(title=section.title, body=tuple(body))
 
-    def _compile_skill_ref(self, item: model.RecordRef, *, unit: IndexedUnit) -> CompiledSection:
+    def _compile_skill_ref(
+        self,
+        item: model.RecordRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> CompiledSection:
         target_unit, skill_decl = self._resolve_skill_decl(item.ref, unit=unit)
         scalar_items, _section_items, extras = self._split_record_items(
             skill_decl.items,
@@ -552,7 +620,14 @@ class CompilationContext:
         )
 
         body: list[CompiledBodyItem] = []
-        purpose_body: list[CompiledBodyItem] = [purpose_item.value]
+        purpose_body: list[CompiledBodyItem] = [
+            self._interpolate_authored_prose_string(
+                purpose_item.value,
+                unit=target_unit,
+                owner_label=f"skill {skill_decl.name}",
+                surface_label="skill purpose",
+            )
+        ]
         requirement = metadata_scalars.get("requirement")
         if requirement is not None and _value_to_symbol(requirement.value) == "Required":
             purpose_body.extend(
@@ -564,7 +639,14 @@ class CompilationContext:
         body.append(CompiledSection(title="Purpose", body=tuple(purpose_body)))
 
         for extra in extras:
-            body.extend(self._compile_record_item(extra, unit=target_unit))
+            body.extend(
+                self._compile_record_item(
+                    extra,
+                    unit=target_unit,
+                    owner_label=f"skill {skill_decl.name}",
+                    surface_label="skill prose",
+                )
+            )
 
         reason = metadata_scalars.get("reason")
         if reason is not None:
@@ -572,10 +654,29 @@ class CompilationContext:
                 raise CompileError(
                     f"Skill reference reason must be a string in {skill_decl.name}"
                 )
-            body.append(CompiledSection(title="Reason", body=(reason.value,)))
+            body.append(
+                CompiledSection(
+                    title="Reason",
+                    body=(
+                        self._interpolate_authored_prose_string(
+                            reason.value,
+                            unit=unit,
+                            owner_label=f"skill reference {skill_decl.name}",
+                            surface_label="skill reason",
+                        ),
+                    ),
+                )
+            )
 
         for extra in metadata_extras:
-            body.extend(self._compile_record_item(extra, unit=unit))
+            body.extend(
+                self._compile_record_item(
+                    extra,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label="skill reference prose",
+                )
+            )
 
         return CompiledSection(title=skill_decl.title, body=tuple(body))
 
@@ -612,7 +713,14 @@ class CompilationContext:
 
         if extras:
             body.append("")
-            body.extend(self._compile_record_support_items(extras, unit=unit))
+            body.extend(
+                self._compile_record_support_items(
+                    extras,
+                    unit=unit,
+                    owner_label=f"input {decl.name}",
+                    surface_label="input prose",
+                )
+            )
 
         return CompiledSection(title=decl.title, body=tuple(body))
 
@@ -665,7 +773,14 @@ class CompilationContext:
 
         if extras:
             body.append("")
-            body.extend(self._compile_record_support_items(extras, unit=unit))
+            body.extend(
+                self._compile_record_support_items(
+                    extras,
+                    unit=unit,
+                    owner_label=f"output {decl.name}",
+                    surface_label="output prose",
+                )
+            )
 
         return CompiledSection(title=decl.title, body=tuple(body))
 
@@ -706,7 +821,12 @@ class CompilationContext:
                 body.append(
                     CompiledSection(
                         title=item.title,
-                        body=self._compile_record_support_items(extras, unit=unit),
+                        body=self._compile_record_support_items(
+                            extras,
+                            unit=unit,
+                            owner_label=f"output {output_name} file {item.key}",
+                            surface_label="output file prose",
+                        ),
                     )
                 )
         return tuple(body)
@@ -716,10 +836,19 @@ class CompilationContext:
         items: tuple[model.RecordItem, ...],
         *,
         unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
         for item in items:
-            body.extend(self._compile_record_item(item, unit=unit))
+            body.extend(
+                self._compile_record_item(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                )
+            )
         return tuple(body)
 
     def _compile_record_item(
@@ -727,28 +856,60 @@ class CompilationContext:
         item: model.RecordItem,
         *,
         unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
         if isinstance(item, (str, model.EmphasizedLine)):
-            return (item,)
+            return (
+                self._interpolate_authored_prose_line(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                ),
+            )
 
         if isinstance(item, model.RouteLine):
             self._validate_route_target(item.target, unit=unit)
-            return (f"{item.label} -> {item.target.declaration_name}",)
+            label = self._interpolate_authored_prose_string(
+                item.label,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="route labels",
+            )
+            return (
+                f"{label} -> {item.target.declaration_name}",
+            )
 
         if isinstance(item, model.RecordSection):
             return (
                 CompiledSection(
                     title=item.title,
-                    body=self._compile_record_support_items(item.items, unit=unit),
+                    body=self._compile_record_support_items(
+                        item.items,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        surface_label=surface_label,
+                    ),
                 ),
             )
 
         if isinstance(item, model.RecordScalar):
-            return self._compile_fallback_scalar(item, unit=unit)
+            return self._compile_fallback_scalar(
+                item,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
+            )
 
         if isinstance(item, model.RecordRef):
             body = (
-                self._compile_record_support_items(item.body, unit=unit)
+                self._compile_record_support_items(
+                    item.body,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
+                    surface_label=surface_label,
+                )
                 if item.body is not None
                 else ()
             )
@@ -766,6 +927,8 @@ class CompilationContext:
         item: model.RecordScalar,
         *,
         unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
         label = _humanize_key(item.key)
         value = self._format_scalar_value(item.value, unit=unit)
@@ -773,7 +936,14 @@ class CompilationContext:
             return (f"- {label}: {value}",)
 
         body: list[CompiledBodyItem] = [value]
-        body.extend(self._compile_record_support_items(item.body, unit=unit))
+        body.extend(
+            self._compile_record_support_items(
+                item.body,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+            )
+        )
         return (CompiledSection(title=label, body=tuple(body)),)
 
     def _compile_config_lines(
@@ -972,10 +1142,12 @@ class CompilationContext:
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
         resolved_preamble = tuple(
-            self._interpolate_workflow_prose_line(
+            self._interpolate_authored_prose_line(
                 line,
                 unit=unit,
                 owner_label=owner_label,
+                surface_label="workflow strings",
+                ambiguous_label="workflow string interpolation ref",
             )
             for line in workflow_body.preamble
         )
@@ -1149,22 +1321,23 @@ class CompilationContext:
         for item in items:
             if isinstance(item, str):
                 resolved.append(
-                    self._interpolate_workflow_string(
+                    self._interpolate_authored_prose_string(
                         item,
                         unit=unit,
                         owner_label=owner_label,
+                        surface_label="workflow strings",
+                        ambiguous_label="workflow string interpolation ref",
                     )
                 )
                 continue
             if isinstance(item, model.EmphasizedLine):
                 resolved.append(
-                    model.EmphasizedLine(
-                        kind=item.kind,
-                        text=self._interpolate_workflow_string(
-                            item.text,
-                            unit=unit,
-                            owner_label=owner_label,
-                        ),
+                    self._interpolate_authored_prose_line(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label="workflow strings",
+                        ambiguous_label="workflow string interpolation ref",
                     )
                 )
                 continue
@@ -1175,7 +1348,15 @@ class CompilationContext:
                 continue
             self._validate_route_target(item.target, unit=unit)
             resolved.append(
-                ResolvedRouteLine(label=item.label, target_name=item.target.declaration_name)
+                ResolvedRouteLine(
+                    label=self._interpolate_authored_prose_string(
+                        item.label,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label="route labels",
+                    ),
+                    target_name=item.target.declaration_name,
+                )
             )
         return tuple(resolved)
 
@@ -1186,7 +1367,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
     ) -> ResolvedSectionRef:
-        _target_unit, decl = self._resolve_workflow_interpolation_decl(
+        _target_unit, decl = self._resolve_readable_decl(
             ref,
             unit=unit,
             owner_label=owner_label,
@@ -1194,32 +1375,36 @@ class CompilationContext:
             ambiguous_label="workflow section declaration ref",
             missing_local_label="workflow section body",
         )
-        return ResolvedSectionRef(label=self._display_workflow_mention(decl))
+        return ResolvedSectionRef(label=self._display_readable_decl(decl))
 
-    def _interpolate_workflow_string(
+    def _interpolate_authored_prose_string(
         self,
         value: str,
         *,
         unit: IndexedUnit,
         owner_label: str,
+        surface_label: str,
+        ambiguous_label: str | None = None,
     ) -> str:
         if "{{" not in value and "}}" not in value:
             return value
 
         parts: list[str] = []
         cursor = 0
-        for match in _WORKFLOW_INTERPOLATION_RE.finditer(value):
+        for match in _INTERPOLATION_RE.finditer(value):
             between = value[cursor:match.start()]
             if "{{" in between or "}}" in between:
                 raise CompileError(
-                    f"Malformed workflow string interpolation in {owner_label}: {value}"
+                    f"Malformed interpolation in {owner_label}: {value}"
                 )
             parts.append(between)
             parts.append(
-                self._resolve_workflow_interpolation_expr(
+                self._resolve_authored_prose_interpolation_expr(
                     match.group(1),
                     unit=unit,
                     owner_label=owner_label,
+                    surface_label=surface_label,
+                    ambiguous_label=ambiguous_label,
                 )
             )
             cursor = match.end()
@@ -1227,65 +1412,74 @@ class CompilationContext:
         tail = value[cursor:]
         if "{{" in tail or "}}" in tail:
             raise CompileError(
-                f"Malformed workflow string interpolation in {owner_label}: {value}"
+                f"Malformed interpolation in {owner_label}: {value}"
             )
         parts.append(tail)
         return "".join(parts)
 
-    def _interpolate_workflow_prose_line(
+    def _interpolate_authored_prose_line(
         self,
         value: model.ProseLine,
         *,
         unit: IndexedUnit,
         owner_label: str,
+        surface_label: str,
+        ambiguous_label: str | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
-            return self._interpolate_workflow_string(
+            return self._interpolate_authored_prose_string(
                 value,
                 unit=unit,
                 owner_label=owner_label,
+                surface_label=surface_label,
+                ambiguous_label=ambiguous_label,
             )
         return model.EmphasizedLine(
             kind=value.kind,
-            text=self._interpolate_workflow_string(
+            text=self._interpolate_authored_prose_string(
                 value.text,
                 unit=unit,
                 owner_label=owner_label,
+                surface_label=surface_label,
+                ambiguous_label=ambiguous_label,
             ),
         )
 
-    def _resolve_workflow_interpolation_expr(
+    def _resolve_authored_prose_interpolation_expr(
         self,
         expression: str,
         *,
         unit: IndexedUnit,
         owner_label: str,
+        surface_label: str,
+        ambiguous_label: str | None = None,
     ) -> str:
-        match = _WORKFLOW_INTERPOLATION_EXPR_RE.fullmatch(expression)
+        match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
         if match is None:
             raise CompileError(
-                f"Invalid workflow string interpolation in {owner_label}: {{{{{expression}}}}}"
+                f"Invalid interpolation in {owner_label}: {{{{{expression}}}}}"
             )
 
         ref = _name_ref_from_dotted_name(match.group(1))
         field_path = tuple(match.group(2).split(".")) if match.group(2) is not None else None
-        target_unit, decl = self._resolve_workflow_interpolation_decl(
+        target_unit, decl = self._resolve_readable_decl(
             ref,
             unit=unit,
             owner_label=owner_label,
-            surface_label="workflow strings",
-            ambiguous_label="workflow string interpolation ref",
-            missing_local_label="workflow string",
+            surface_label=surface_label,
+            ambiguous_label=ambiguous_label or f"{surface_label} interpolation ref",
+            missing_local_label=surface_label,
         )
-        return self._resolve_workflow_interpolation_field(
+        return self._resolve_readable_decl_field(
             decl,
             field_path,
             unit=target_unit,
             owner_label=owner_label,
+            surface_label=surface_label,
             ref_label=_dotted_ref_name(ref) if ref.module_parts else ref.declaration_name,
         )
 
-    def _resolve_workflow_interpolation_decl(
+    def _resolve_readable_decl(
         self,
         ref: model.NameRef,
         *,
@@ -1294,9 +1488,9 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str,
         missing_local_label: str,
-    ) -> tuple[IndexedUnit, WorkflowMentionDecl]:
-        target_unit = self._resolve_section_body_lookup_unit(ref, unit=unit)
-        matches = self._find_workflow_section_ref_matches(
+    ) -> tuple[IndexedUnit, ReadableDecl]:
+        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        matches = self._find_readable_decl_matches(
             ref.declaration_name,
             unit=target_unit,
         )
@@ -1332,24 +1526,25 @@ class CompilationContext:
             f"{ref.declaration_name}"
         )
 
-    def _resolve_workflow_interpolation_field(
+    def _resolve_readable_decl_field(
         self,
-        decl: WorkflowMentionDecl,
+        decl: ReadableDecl,
         field_path: tuple[str, ...] | None,
         *,
         unit: IndexedUnit,
         owner_label: str,
+        surface_label: str,
         ref_label: str,
     ) -> str:
         if field_path is None:
-            return self._display_workflow_mention(decl)
+            return self._display_readable_decl(decl)
 
         if isinstance(decl, model.Agent):
             if field_path == ("name",):
                 return decl.name
             field_name = ".".join(field_path)
             raise CompileError(
-                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"Unknown interpolation field on {surface_label} in {owner_label}: "
                 f"{ref_label}:{field_name}"
             )
 
@@ -1362,6 +1557,7 @@ class CompilationContext:
             field_path,
             unit=unit,
             owner_label=owner_label,
+            surface_label=surface_label,
             ref_label=ref_label,
             decl=decl,
             full_field_name=field_name,
@@ -1374,8 +1570,9 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        surface_label: str,
         ref_label: str,
-        decl: WorkflowMentionDecl,
+        decl: ReadableDecl,
         full_field_name: str,
     ) -> str:
         first = field_path[0]
@@ -1393,11 +1590,11 @@ class CompilationContext:
         if record_scalar is None:
             if conflicting_item is not None:
                 raise CompileError(
-                    "Workflow string interpolation field must resolve to a scalar in "
-                    f"{owner_label}: {ref_label}:{full_field_name}"
+                    "Interpolation field must resolve to a scalar on "
+                    f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
                 )
             raise CompileError(
-                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"Unknown interpolation field on {surface_label} in {owner_label}: "
                 f"{ref_label}:{full_field_name}"
             )
 
@@ -1406,6 +1603,7 @@ class CompilationContext:
             field_path[1:],
             unit=unit,
             owner_label=owner_label,
+            surface_label=surface_label,
             ref_label=ref_label,
             decl=decl,
             full_field_name=full_field_name,
@@ -1418,15 +1616,16 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        surface_label: str,
         ref_label: str,
-        decl: WorkflowMentionDecl,
+        decl: ReadableDecl,
         full_field_name: str,
     ) -> str:
         if not field_path:
             if item.body is not None:
                 raise CompileError(
-                    "Workflow string interpolation field must resolve to a scalar in "
-                    f"{owner_label}: {ref_label}:{full_field_name}"
+                    "Interpolation field must resolve to a scalar on "
+                    f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
                 )
             return self._display_interpolation_scalar(
                 item,
@@ -1443,7 +1642,7 @@ class CompilationContext:
 
         if item.body is None:
             raise CompileError(
-                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"Unknown interpolation field on {surface_label} in {owner_label}: "
                 f"{ref_label}:{full_field_name}"
             )
 
@@ -1461,11 +1660,11 @@ class CompilationContext:
         if nested_scalar is None:
             if conflicting_item is not None:
                 raise CompileError(
-                    "Workflow string interpolation field must resolve to a scalar in "
-                    f"{owner_label}: {ref_label}:{full_field_name}"
+                    "Interpolation field must resolve to a scalar on "
+                    f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
                 )
             raise CompileError(
-                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"Unknown interpolation field on {surface_label} in {owner_label}: "
                 f"{ref_label}:{full_field_name}"
             )
 
@@ -1477,14 +1676,14 @@ class CompilationContext:
                     decl=decl,
                 )
             raise CompileError(
-                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"Unknown interpolation field on {surface_label} in {owner_label}: "
                 f"{ref_label}:{full_field_name}"
             )
 
         if nested_scalar.body is not None:
             raise CompileError(
-                "Workflow string interpolation field must resolve to a scalar in "
-                f"{owner_label}: {ref_label}:{full_field_name}"
+                "Interpolation field must resolve to a scalar on "
+                f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
             )
 
         return self._display_interpolation_scalar(
@@ -1498,7 +1697,7 @@ class CompilationContext:
         item: model.RecordScalar,
         *,
         unit: IndexedUnit,
-        decl: WorkflowMentionDecl,
+        decl: ReadableDecl,
     ) -> str:
         if item.body is not None:
             return self._display_interpolation_head_title(item, unit=unit, decl=decl)
@@ -1509,7 +1708,7 @@ class CompilationContext:
         item: model.RecordScalar,
         *,
         unit: IndexedUnit,
-        decl: WorkflowMentionDecl,
+        decl: ReadableDecl,
     ) -> str:
         if isinstance(decl, model.InputDecl) and item.key == "source":
             if not isinstance(item.value, model.NameRef):
@@ -1526,7 +1725,7 @@ class CompilationContext:
 
         return self._display_symbol_value(item.value, unit=unit)
 
-    def _resolve_section_body_lookup_unit(
+    def _resolve_readable_decl_lookup_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> IndexedUnit:
         if not ref.module_parts or ref.module_parts == unit.module_parts:
@@ -1537,20 +1736,20 @@ class CompilationContext:
             raise CompileError(f"Missing import module: {'.'.join(ref.module_parts)}")
         return target_unit
 
-    def _find_workflow_section_ref_matches(
+    def _find_readable_decl_matches(
         self,
         declaration_name: str,
         *,
         unit: IndexedUnit,
-    ) -> tuple[tuple[str, WorkflowMentionDecl], ...]:
-        matches: list[tuple[str, WorkflowMentionDecl]] = []
+    ) -> tuple[tuple[str, ReadableDecl], ...]:
+        matches: list[tuple[str, ReadableDecl]] = []
         for label, registry_name in _WORKFLOW_MENTION_REGISTRIES:
             decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
         return tuple(matches)
 
-    def _display_workflow_mention(self, decl: WorkflowMentionDecl) -> str:
+    def _display_readable_decl(self, decl: ReadableDecl) -> str:
         if isinstance(decl, model.Agent):
             return decl.name
         return decl.title

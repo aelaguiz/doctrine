@@ -219,7 +219,9 @@
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Give a short human-readable summary back in the turn."
 #^^^^^^^^ source.pyprompt
 #        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -687,7 +689,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -724,7 +728,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -761,7 +767,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -798,7 +806,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt

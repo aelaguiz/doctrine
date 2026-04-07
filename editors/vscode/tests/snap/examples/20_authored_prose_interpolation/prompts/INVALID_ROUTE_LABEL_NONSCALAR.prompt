@@ -1,0 +1,20 @@
+workflow InvalidRouteLabelInterpolation: "Invalid Route Label Interpolation"
+    routing_rules: "Routing Rules"
+        route "If {{CurrentPlan:source}} is missing" -> ProjectLead
+
+
+input CurrentPlan: "Current Plan"
+    source: File
+        path: "track_root/current-plan.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent ProjectLead:
+    role: "Project Lead"
+
+
+agent InvalidRouteLabelInterpolationDemo:
+    role: "This prompt exists only to trigger the compile-fail contract."
+
+    ending_your_turn: InvalidRouteLabelInterpolation

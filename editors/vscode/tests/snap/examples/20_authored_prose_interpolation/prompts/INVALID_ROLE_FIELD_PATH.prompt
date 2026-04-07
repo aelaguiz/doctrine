@@ -1,0 +1,9 @@
+input CurrentPlan: "Current Plan"
+    source: File
+        path: "track_root/current-plan.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidRoleFieldPathInterpolationDemo:
+    role: "Read `{{CurrentPlan:source.missing}}` before you continue."

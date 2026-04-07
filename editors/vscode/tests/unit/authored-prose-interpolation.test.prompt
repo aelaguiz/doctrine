@@ -1,0 +1,46 @@
+# SYNTAX TEST "source.pyprompt" "authored prose interpolation surfaces"
+
+agent Demo:
+    role: "Read {{CurrentPlan}} before you act."
+#   ^^^^ keyword.other.field.pyprompt
+#         ^ punctuation.definition.string.begin.pyprompt
+#               ^^ punctuation.definition.interpolation.begin.pyprompt
+#                 ^^^^^^^^^^^ support.type.reference.pyprompt
+#                            ^^ punctuation.definition.interpolation.end.pyprompt
+#                                              ^ punctuation.definition.string.end.pyprompt
+
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground {{CurrentPlan}} before you write."
+#   ^^^^^^^ entity.name.section.pyprompt
+#            ^ punctuation.definition.string.begin.pyprompt
+#                    ^^ punctuation.definition.interpolation.begin.pyprompt
+#                      ^^^^^^^^^^^ support.type.reference.pyprompt
+#                                 ^^ punctuation.definition.interpolation.end.pyprompt
+#                                                     ^ punctuation.definition.string.end.pyprompt
+
+agent SkillUser:
+    role: "Role"
+    skills: "Skills"
+        can_run: "Can Run"
+            GroundingSkill
+                reason: "Ask {{ProjectLead}} only when needed."
+#               ^^^^^^ entity.name.section.pyprompt
+#                       ^ punctuation.definition.string.begin.pyprompt
+#                            ^^ punctuation.definition.interpolation.begin.pyprompt
+#                              ^^^^^^^^^^^ support.type.reference.pyprompt
+#                                         ^^ punctuation.definition.interpolation.end.pyprompt
+#                                                             ^ punctuation.definition.string.end.pyprompt
+
+workflow RouteDemo: "Route Demo"
+    routing_rules: "Routing Rules"
+        route "If {{ProjectLead}} must step in" -> ProjectLead
+#       ^^^^^ keyword.control.pyprompt
+#             ^ punctuation.definition.string.begin.pyprompt
+#                 ^^ punctuation.definition.interpolation.begin.pyprompt
+#                   ^^^^^^^^^^^ support.type.reference.pyprompt
+#                              ^^ punctuation.definition.interpolation.end.pyprompt
+#                                             ^ punctuation.definition.string.end.pyprompt
+#                                               ^ keyword.operator.route.pyprompt
+#                                               ^ keyword.operator.pyprompt
+#                                               ^ punctuation.separator.route.pyprompt
+#                                                  ^^^^^^^^^^^ entity.name.type.reference.route-target.pyprompt

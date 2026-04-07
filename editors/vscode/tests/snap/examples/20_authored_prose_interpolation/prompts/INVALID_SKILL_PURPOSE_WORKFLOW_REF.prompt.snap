@@ -1,0 +1,75 @@
+>workflow SharedRead: "Shared Read"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                      ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    "Read this first."
+#^^^^ source.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>skill BrokenSkill: "Broken Skill"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    purpose: "Start with {{SharedRead}} before you act."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                         ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                           ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                     ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                       ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent InvalidSkillPurposeInterpolationDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "This prompt exists only to trigger the compile-fail contract."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    skills: "Skills"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        can_run: "Can Run"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            BrokenSkill
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>                requirement: Advisory
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

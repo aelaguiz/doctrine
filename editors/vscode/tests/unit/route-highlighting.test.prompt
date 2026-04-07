@@ -1,0 +1,15 @@
+# SYNTAX TEST "source.pyprompt" "route arrows and route targets read clearly"
+
+        route "When your turn is done" -> LessonsAcceptanceCritic
+#       ^^^^^ keyword.control.pyprompt
+#                                      ^ keyword.operator.route.pyprompt
+#                                      ^ keyword.operator.pyprompt
+#                                      ^ punctuation.separator.route.pyprompt
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.pyprompt
+
+        route "If you are blocked" -> LessonsProjectLead
+#       ^^^^^ keyword.control.pyprompt
+#                                  ^ keyword.operator.route.pyprompt
+#                                  ^ keyword.operator.pyprompt
+#                                  ^ punctuation.separator.route.pyprompt
+#                                     ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.pyprompt

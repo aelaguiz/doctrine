@@ -189,7 +189,9 @@
 #        ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #              ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                 ^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >            "Give the short reason for the verdict and route."
 #^^^^^^^^^^^^ source.pyprompt
 #            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -241,7 +243,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -271,7 +275,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -296,7 +302,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -326,7 +334,9 @@
 #    ^^^^ source.pyprompt keyword.other.field.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    your_job: "Your Job"
 #^^^^ source.pyprompt
@@ -411,11 +421,13 @@
 #^^^^^^^^^^^^ source.pyprompt
 #            ^^^^^ source.pyprompt keyword.control.pyprompt
 #                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                               ^ source.pyprompt
-#                                ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                  ^ source.pyprompt
-#                                   ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        if_the_work_is_not_ready: "If The Work Is Not Ready"
 #^^^^^^^^ source.pyprompt
@@ -427,20 +439,24 @@
 #^^^^^^^^^^^^ source.pyprompt
 #            ^^^^^ source.pyprompt keyword.control.pyprompt
 #                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                           ^ source.pyprompt
-#                                            ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                            ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                              ^ source.pyprompt
-#                                               ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                               ^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >            route "If the right owner is unclear" -> ProjectLead
 #^^^^^^^^^^^^ source.pyprompt
 #            ^^^^^ source.pyprompt keyword.control.pyprompt
 #                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 #                                                 ^ source.pyprompt
-#                                                  ^^ source.pyprompt keyword.operator.route.pyprompt
+#                                                  ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
 #                                                    ^ source.pyprompt
-#                                                     ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                                     ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        stop_here_if: "Stop Here If"
 #^^^^^^^^ source.pyprompt
