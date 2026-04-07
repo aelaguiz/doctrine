@@ -40,3 +40,6 @@
 
         shared.contracts.TrackMetadata
 #       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+
+        ProjectLead
+#       ^^^^^^^^^^^ support.type.reference.pyprompt

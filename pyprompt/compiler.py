@@ -27,8 +27,9 @@ class CompiledAgent:
 
 CompiledBodyItem: TypeAlias = str | CompiledSection
 CompiledField: TypeAlias = model.RoleScalar | CompiledSection
-WorkflowInterpolationDecl: TypeAlias = (
-    model.InputDecl
+WorkflowMentionDecl: TypeAlias = (
+    model.Agent
+    | model.InputDecl
     | model.InputSourceDecl
     | model.OutputDecl
     | model.OutputTargetDecl
@@ -63,7 +64,7 @@ class ResolvedRouteLine:
 
 @dataclass(slots=True, frozen=True)
 class ResolvedSectionRef:
-    title: str
+    label: str
 
 
 ResolvedSectionBodyItem: TypeAlias = str | ResolvedRouteLine | ResolvedSectionRef
@@ -131,7 +132,8 @@ _BUILTIN_OUTPUT_TARGETS = {
     "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
 }
 
-_WORKFLOW_SECTION_REF_REGISTRIES = (
+_WORKFLOW_MENTION_REGISTRIES = (
+    ("agent declaration", "agents_by_name"),
     ("input declaration", "inputs_by_name"),
     ("input source declaration", "input_sources_by_name"),
     ("output declaration", "outputs_by_name"),
@@ -1091,7 +1093,7 @@ class CompilationContext:
             ambiguous_label="workflow section declaration ref",
             missing_local_label="workflow section body",
         )
-        return ResolvedSectionRef(title=decl.title)
+        return ResolvedSectionRef(label=self._display_workflow_mention(decl))
 
     def _interpolate_workflow_string(
         self,
@@ -1143,9 +1145,7 @@ class CompilationContext:
             )
 
         ref = _name_ref_from_dotted_name(match.group(1))
-        field_path = (
-            tuple(match.group(2).split(".")) if match.group(2) is not None else ("title",)
-        )
+        field_path = tuple(match.group(2).split(".")) if match.group(2) is not None else None
         target_unit, decl = self._resolve_workflow_interpolation_decl(
             ref,
             unit=unit,
@@ -1171,7 +1171,7 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str,
         missing_local_label: str,
-    ) -> tuple[IndexedUnit, WorkflowInterpolationDecl]:
+    ) -> tuple[IndexedUnit, WorkflowMentionDecl]:
         target_unit = self._resolve_section_body_lookup_unit(ref, unit=unit)
         matches = self._find_workflow_section_ref_matches(
             ref.declaration_name,
@@ -1180,7 +1180,13 @@ class CompilationContext:
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
 
         if len(matches) == 1:
-            return target_unit, matches[0][1]
+            decl = matches[0][1]
+            if isinstance(decl, model.Agent) and decl.abstract:
+                raise CompileError(
+                    f"Abstract agent refs are not allowed in {surface_label}; "
+                    f"mention a concrete agent instead: {dotted_name}"
+                )
+            return target_unit, decl
 
         if len(matches) > 1:
             labels = ", ".join(label for label, _decl in matches)
@@ -1195,12 +1201,6 @@ class CompilationContext:
                 f"use `use` for workflow composition: {dotted_name}"
             )
 
-        if target_unit.agents_by_name.get(ref.declaration_name) is not None:
-            raise CompileError(
-                f"Agent refs are not allowed in {surface_label}; "
-                f'use `route "..." -> AgentName` for owner transitions: {dotted_name}'
-            )
-
         if ref.module_parts:
             raise CompileError(f"Missing imported declaration: {dotted_name}")
 
@@ -1211,13 +1211,25 @@ class CompilationContext:
 
     def _resolve_workflow_interpolation_field(
         self,
-        decl: WorkflowInterpolationDecl,
-        field_path: tuple[str, ...],
+        decl: WorkflowMentionDecl,
+        field_path: tuple[str, ...] | None,
         *,
         unit: IndexedUnit,
         owner_label: str,
         ref_label: str,
     ) -> str:
+        if field_path is None:
+            return self._display_workflow_mention(decl)
+
+        if isinstance(decl, model.Agent):
+            if field_path == ("name",):
+                return decl.name
+            field_name = ".".join(field_path)
+            raise CompileError(
+                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"{ref_label}:{field_name}"
+            )
+
         if field_path == ("title",):
             return decl.title
 
@@ -1240,7 +1252,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         ref_label: str,
-        decl: WorkflowInterpolationDecl,
+        decl: WorkflowMentionDecl,
         full_field_name: str,
     ) -> str:
         first = field_path[0]
@@ -1284,7 +1296,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         ref_label: str,
-        decl: WorkflowInterpolationDecl,
+        decl: WorkflowMentionDecl,
         full_field_name: str,
     ) -> str:
         if not field_path:
@@ -1363,7 +1375,7 @@ class CompilationContext:
         item: model.RecordScalar,
         *,
         unit: IndexedUnit,
-        decl: WorkflowInterpolationDecl,
+        decl: WorkflowMentionDecl,
     ) -> str:
         if item.body is not None:
             return self._display_interpolation_head_title(item, unit=unit, decl=decl)
@@ -1374,7 +1386,7 @@ class CompilationContext:
         item: model.RecordScalar,
         *,
         unit: IndexedUnit,
-        decl: WorkflowInterpolationDecl,
+        decl: WorkflowMentionDecl,
     ) -> str:
         if isinstance(decl, model.InputDecl) and item.key == "source":
             if not isinstance(item.value, model.NameRef):
@@ -1407,13 +1419,18 @@ class CompilationContext:
         declaration_name: str,
         *,
         unit: IndexedUnit,
-    ) -> tuple[tuple[str, WorkflowInterpolationDecl], ...]:
-        matches: list[tuple[str, WorkflowInterpolationDecl]] = []
-        for label, registry_name in _WORKFLOW_SECTION_REF_REGISTRIES:
+    ) -> tuple[tuple[str, WorkflowMentionDecl], ...]:
+        matches: list[tuple[str, WorkflowMentionDecl]] = []
+        for label, registry_name in _WORKFLOW_MENTION_REGISTRIES:
             decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
         return tuple(matches)
+
+    def _display_workflow_mention(self, decl: WorkflowMentionDecl) -> str:
+        if isinstance(decl, model.Agent):
+            return decl.name
+        return decl.title
 
     def _validate_route_target(self, ref: model.NameRef, *, unit: IndexedUnit) -> None:
         _target_unit, agent = self._resolve_agent_ref(ref, unit=unit)
@@ -1476,7 +1493,7 @@ class CompilationContext:
             elif isinstance(item, ResolvedRouteLine):
                 body.append(f"{item.label} -> {item.target_name}")
             else:
-                body.append(f"- {item.title}")
+                body.append(f"- {item.label}")
 
             previous_kind = current_kind
 

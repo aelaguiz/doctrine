@@ -87,17 +87,20 @@ Current intent for adjacent workflow strings:
 Current intent for titled workflow section body refs:
 - titled workflow section bodies may mix prose strings, route lines, and named declaration refs
 - those declaration refs are readable mentions, not inline expansion of the full typed contract
-- declaration refs in titled workflow section bodies render as bullet lines using the declaration title
-- those refs currently resolve only to titled non-agent, non-workflow declarations such as `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and `skill`
+- declaration refs in titled workflow section bodies render as bullet lines using the declaration title, except concrete `agent` refs which render as the raw agent declaration name
+- those refs currently resolve to titled declarations such as `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and `skill`, plus concrete `agent` declarations
 - workflow reuse still belongs to keyed `use` entries
-- agent transitions still belong to `route "..." -> AgentName`
+- actual owner transitions still belong to `route "..." -> AgentName`
+- abstract agent refs are rejected here; if an owner should be mentionable, name the concrete agent
 
 Current intent for workflow string interpolation:
 - workflow preamble strings and titled workflow section strings may interpolate named declaration data inline with `{{Ref}}` and `{{Ref:field.path}}`
-- `{{Ref}}` renders the declaration title
+- `{{Ref}}` renders the declaration title for titled declarations and the raw declaration name for concrete `agent` refs
 - `{{Ref:field.path}}` resolves one scalar field from the declaration contract data or fails loud
+- `{{AgentRef:name}}` is the explicit agent form; broader agent field access is not currently part of this surface
 - interpolation is for authored prose, not renderer-generated sentence assembly
 - authors still own punctuation, filenames, conjunctions, and backticks around the placeholder
+- abstract agent refs are rejected here; if a sentence should name an owner, interpolate the concrete agent
 - this stays limited to workflow strings; it does not widen role text, record prose, or other string surfaces
 
 ## Nested Workflow Direction
@@ -268,6 +271,8 @@ The current examples are intentionally pushing on these rules so we can validate
   contract surface.
 - `16_workflow_string_interpolation` earns the complementary inline-prose path
   for workflow strings that need one authored sentence instead of a block list.
+- `17_agent_mentions` extends those two mention surfaces to concrete agents so
+  workflow prose can name owners without pretending that a mention is a route.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -275,9 +280,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 16
+## Shipped Through 17
 
-The shipped language subset now covers examples `01` through `16`.
+The shipped language subset now covers examples `01` through `17`.
 
 Current shipped declaration kinds:
 - `import`
