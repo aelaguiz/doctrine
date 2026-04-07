@@ -46,6 +46,18 @@
       "include": "#incompleteAgent"
     },
     {
+      "include": "#requiredEmphasis"
+    },
+    {
+      "include": "#importantEmphasis"
+    },
+    {
+      "include": "#warningEmphasis"
+    },
+    {
+      "include": "#noteEmphasis"
+    },
+    {
       "include": "#route"
     },
     {
@@ -356,6 +368,102 @@
           "name": "punctuation.section.inheritance.end.pyprompt"
         }
       }
+    },
+    "requiredEmphasis": {
+      "name": "meta.emphasis.required.pyprompt",
+      "begin": "^(\\s*)(required)(\\s+)(\")",
+      "beginCaptures": {
+        "2": {
+          "name": "keyword.control.emphasis.required.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.definition.string.begin.pyprompt"
+        }
+      },
+      "end": "\"(?=\\s*$)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.pyprompt"
+        }
+      },
+      "contentName": "string.quoted.double.pyprompt",
+      "patterns": [
+        {
+          "include": "#stringInterpolation"
+        }
+      ]
+    },
+    "importantEmphasis": {
+      "name": "meta.emphasis.important.pyprompt",
+      "begin": "^(\\s*)(important)(\\s+)(\")",
+      "beginCaptures": {
+        "2": {
+          "name": "keyword.control.emphasis.important.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.definition.string.begin.pyprompt"
+        }
+      },
+      "end": "\"(?=\\s*$)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.pyprompt"
+        }
+      },
+      "contentName": "string.quoted.double.pyprompt",
+      "patterns": [
+        {
+          "include": "#stringInterpolation"
+        }
+      ]
+    },
+    "warningEmphasis": {
+      "name": "meta.emphasis.warning.pyprompt",
+      "begin": "^(\\s*)(warning)(\\s+)(\")",
+      "beginCaptures": {
+        "2": {
+          "name": "keyword.control.emphasis.warning.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.definition.string.begin.pyprompt"
+        }
+      },
+      "end": "\"(?=\\s*$)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.pyprompt"
+        }
+      },
+      "contentName": "string.quoted.double.pyprompt",
+      "patterns": [
+        {
+          "include": "#stringInterpolation"
+        }
+      ]
+    },
+    "noteEmphasis": {
+      "name": "meta.emphasis.note.pyprompt",
+      "begin": "^(\\s*)(note)(\\s+)(\")",
+      "beginCaptures": {
+        "2": {
+          "name": "keyword.control.emphasis.note.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.definition.string.begin.pyprompt"
+        }
+      },
+      "end": "\"(?=\\s*$)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.pyprompt"
+        }
+      },
+      "contentName": "string.quoted.double.pyprompt",
+      "patterns": [
+        {
+          "include": "#stringInterpolation"
+        }
+      ]
     },
     "route": {
       "match": "^(\\s*)(route)(\\s+)(\"(?:\\\\.|[^\"\\\\])*\")(\\s*)(->)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",

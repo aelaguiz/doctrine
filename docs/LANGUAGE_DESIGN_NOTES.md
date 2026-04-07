@@ -84,6 +84,16 @@ Current intent for adjacent workflow strings:
 - sibling strings should render as consecutive lines
 - the renderer should not automatically insert an extra blank line between those lines unless the source structure explicitly calls for it
 
+Current intent for emphasized prose lines:
+- certain prose lines may start with one fixed emphasis label instead of embedding raw markdown
+- the shipped labels are `required`, `important`, `warning`, and `note`
+- those labels render as `**LABEL**: ...` in final markdown
+- this is a prose-line feature, not a general inline-markup mini-language
+- it currently works on workflow prose, role block prose, and record prose surfaces
+- workflow emphasis lines keep the same `{{...}}` interpolation support as ordinary workflow strings
+- role scalar values, titles, keyed scalar heads, config lines, routes, and refs do not get special emphasis syntax
+- if an author needs one-off emphasis inside a scalar string surface, raw markdown is still the escape hatch
+
 Current intent for titled workflow section body refs:
 - titled workflow section bodies may mix prose strings, route lines, and named declaration refs
 - those declaration refs are readable mentions, not inline expansion of the full typed contract

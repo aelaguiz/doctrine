@@ -22,7 +22,7 @@ class CompiledAgent:
     fields: tuple[CompiledField, ...]
 
 
-CompiledBodyItem: TypeAlias = str | CompiledSection
+CompiledBodyItem: TypeAlias = model.ProseLine | CompiledSection
 CompiledField: TypeAlias = model.RoleScalar | CompiledSection
 WorkflowMentionDecl: TypeAlias = (
     model.Agent
@@ -64,7 +64,7 @@ class ResolvedSectionRef:
     label: str
 
 
-ResolvedSectionBodyItem: TypeAlias = str | ResolvedRouteLine | ResolvedSectionRef
+ResolvedSectionBodyItem: TypeAlias = model.ProseLine | ResolvedRouteLine | ResolvedSectionRef
 
 
 @dataclass(slots=True, frozen=True)
@@ -87,7 +87,7 @@ ResolvedWorkflowItem = ResolvedSectionItem | ResolvedUseItem
 @dataclass(slots=True, frozen=True)
 class ResolvedWorkflowBody:
     title: str
-    preamble: tuple[str, ...]
+    preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedWorkflowItem, ...]
 
 
@@ -449,7 +449,7 @@ class CompilationContext:
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
         for item in items:
-            if isinstance(item, str):
+            if isinstance(item, (str, model.EmphasizedLine)):
                 body.append(item)
                 continue
 
@@ -728,7 +728,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[CompiledBodyItem, ...]:
-        if isinstance(item, str):
+        if isinstance(item, (str, model.EmphasizedLine)):
             return (item,)
 
         if isinstance(item, model.RouteLine):
@@ -972,7 +972,7 @@ class CompilationContext:
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
         resolved_preamble = tuple(
-            self._interpolate_workflow_string(
+            self._interpolate_workflow_prose_line(
                 line,
                 unit=unit,
                 owner_label=owner_label,
@@ -1156,6 +1156,18 @@ class CompilationContext:
                     )
                 )
                 continue
+            if isinstance(item, model.EmphasizedLine):
+                resolved.append(
+                    model.EmphasizedLine(
+                        kind=item.kind,
+                        text=self._interpolate_workflow_string(
+                            item.text,
+                            unit=unit,
+                            owner_label=owner_label,
+                        ),
+                    )
+                )
+                continue
             if isinstance(item, model.SectionBodyRef):
                 resolved.append(
                     self._resolve_section_body_ref(item.ref, unit=unit, owner_label=owner_label)
@@ -1219,6 +1231,28 @@ class CompilationContext:
             )
         parts.append(tail)
         return "".join(parts)
+
+    def _interpolate_workflow_prose_line(
+        self,
+        value: model.ProseLine,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> model.ProseLine:
+        if isinstance(value, str):
+            return self._interpolate_workflow_string(
+                value,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        return model.EmphasizedLine(
+            kind=value.kind,
+            text=self._interpolate_workflow_string(
+                value.text,
+                unit=unit,
+                owner_label=owner_label,
+            ),
+        )
 
     def _resolve_workflow_interpolation_expr(
         self,
@@ -1567,8 +1601,8 @@ class CompilationContext:
     def _compile_section_body(
         self,
         items: tuple[ResolvedSectionBodyItem, ...],
-    ) -> tuple[str, ...]:
-        body: list[str] = []
+    ) -> tuple[model.ProseLine, ...]:
+        body: list[model.ProseLine] = []
         previous_kind: str | None = None
 
         for item in items:
@@ -1577,7 +1611,7 @@ class CompilationContext:
                 if body[-1] != "":
                     body.append("")
 
-            if isinstance(item, str):
+            if isinstance(item, (str, model.EmphasizedLine)):
                 body.append(item)
             elif isinstance(item, ResolvedRouteLine):
                 body.append(f"{item.label} -> {item.target_name}")

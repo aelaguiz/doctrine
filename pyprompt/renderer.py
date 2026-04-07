@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pyprompt.compiler import CompiledAgent, CompiledSection
-from pyprompt.model import RoleScalar
+from pyprompt.model import EmphasizedLine, RoleScalar
 
 
 def render_markdown(agent: CompiledAgent) -> str:
@@ -21,6 +21,9 @@ def _render_section(section: CompiledSection, *, depth: int) -> str:
     for item in section.body:
         if isinstance(item, str):
             body_lines.append(item)
+            continue
+        if isinstance(item, EmphasizedLine):
+            body_lines.append(f"**{item.kind.upper()}**: {item.text}")
             continue
 
         if body_lines and body_lines[-1] != "":

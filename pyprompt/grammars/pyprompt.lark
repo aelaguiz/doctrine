@@ -67,12 +67,11 @@ agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
 ?slot_value: string | name_ref
 slot_body: _INDENT workflow_body _DEDENT
 
-workflow_body: workflow_preamble workflow_items?
-             | workflow_items
+workflow_body: workflow_body_line+
 
-workflow_preamble: workflow_string+
-workflow_items: workflow_item+
-workflow_string: string _NL?
+workflow_string: prose_line _NL?
+workflow_body_line: workflow_string
+                  | workflow_item
 
 ?workflow_item: local_section
               | workflow_use
@@ -87,7 +86,7 @@ workflow_override_section: "override" CNAME ":" string? _NL _INDENT workflow_sec
 workflow_override_use: "override" CNAME ":" name_ref _NL?
 
 workflow_section_body: workflow_section_item+
-?workflow_section_item: string _NL?
+?workflow_section_item: prose_line _NL?
                       | route_stmt
                       | workflow_section_ref_item
 workflow_section_ref_item: name_ref _NL?
@@ -98,7 +97,7 @@ record_body: record_item+
             | record_ref_item
             | route_stmt
 
-record_text: string _NL?
+record_text: prose_line _NL?
 record_keyed_item: CNAME ":" record_head _NL record_item_body?
 record_ref_item: name_ref _NL record_item_body?
 record_item_body: _INDENT record_body _DEDENT
@@ -116,9 +115,22 @@ absolute_import_path: dotted_name
 relative_import_path: DOTS dotted_name
 dotted_name: CNAME ("." CNAME)*
 
-block_lines: string (_NL string)* _NL?
+block_lines: prose_line (_NL prose_line)* _NL?
+
+?prose_line: string
+           | emphasized_line
+
+emphasized_line: REQUIRED_KEYWORD string -> required_line
+               | IMPORTANT_KEYWORD string -> important_line
+               | WARNING_KEYWORD string -> warning_line
+               | NOTE_KEYWORD string -> note_line
 
 ?string: ESCAPED_STRING
+
+REQUIRED_KEYWORD.2: /required(?=[ \t]*")/
+IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
+WARNING_KEYWORD.2: /warning(?=[ \t]*")/
+NOTE_KEYWORD.2: /note(?=[ \t]*")/
 
 DOTS: /\.+/
 

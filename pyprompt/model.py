@@ -6,6 +6,15 @@ from typing import TypeAlias
 
 
 @dataclass(slots=True, frozen=True)
+class EmphasizedLine:
+    kind: str
+    text: str
+
+
+ProseLine: TypeAlias = str | EmphasizedLine
+
+
+@dataclass(slots=True, frozen=True)
 class RoleScalar:
     text: str
 
@@ -13,7 +22,7 @@ class RoleScalar:
 @dataclass(slots=True, frozen=True)
 class RoleBlock:
     title: str
-    lines: tuple[str, ...]
+    lines: tuple[ProseLine, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -44,7 +53,7 @@ class SectionBodyRef:
     ref: NameRef
 
 
-SectionBodyItem: TypeAlias = str | RouteLine | SectionBodyRef
+SectionBodyItem: TypeAlias = ProseLine | RouteLine | SectionBodyRef
 
 
 @dataclass(slots=True, frozen=True)
@@ -86,7 +95,7 @@ WorkflowItem: TypeAlias = (
 @dataclass(slots=True, frozen=True)
 class WorkflowBody:
     title: str
-    preamble: tuple[str, ...]
+    preamble: tuple[ProseLine, ...]
     items: tuple[WorkflowItem, ...]
 
 
@@ -120,7 +129,7 @@ class RecordRef:
     body: tuple["RecordItem", ...] | None = None
 
 
-RecordItem: TypeAlias = str | RecordScalar | RecordSection | RecordRef | RouteLine
+RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | RouteLine
 
 
 WorkflowSlotValue: TypeAlias = WorkflowBody | NameRef

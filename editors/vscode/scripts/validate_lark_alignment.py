@@ -15,15 +15,19 @@ TM_LANGUAGE_PATH = ROOT / "editors" / "vscode" / "syntaxes" / "pyprompt.tmLangua
 
 WORD_LITERAL_RE = re.compile(r'"([a-z]+)"')
 IDENTIFIER_LIKE_RE = re.compile(r"^[a-z]+$")
+EXTRA_GRAMMAR_KEYWORDS = {"important", "note", "required", "warning"}
 GENERIC_KEY_STRING_KEYS = (
     "abstract",
     "agent",
     "import",
+    "important",
     "inherit",
     "input",
     "json",
+    "note",
     "output",
     "override",
+    "required",
     "route",
     "schema",
     "shape",
@@ -31,23 +35,28 @@ GENERIC_KEY_STRING_KEYS = (
     "source",
     "target",
     "use",
+    "warning",
     "workflow",
 )
 GENERIC_STANDALONE_REFS = (
     "abstract",
     "agent",
     "import",
+    "important",
     "inherit",
     "input",
     "json",
+    "note",
     "output",
     "override",
+    "required",
     "schema",
     "shape",
     "skill",
     "source",
     "target",
     "use",
+    "warning",
     "workflow",
 )
 
@@ -74,7 +83,7 @@ def _grammar_keywords() -> set[str]:
         for literal in WORD_LITERAL_RE.findall(LARK_PATH.read_text())
         if IDENTIFIER_LIKE_RE.fullmatch(literal)
     }
-    return literals
+    return literals | EXTRA_GRAMMAR_KEYWORDS
 
 
 def _missing_keywords(expected: set[str], regexes: list[str]) -> list[str]:

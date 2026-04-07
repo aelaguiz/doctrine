@@ -22,9 +22,25 @@
 #   ^^^^^^ entity.name.section.pyprompt
 #         ^ punctuation.separator.key-value.pyprompt
 
+    important: "Important Slot"
+#   ^^^^^^^^^ entity.name.section.pyprompt
+#            ^ punctuation.separator.key-value.pyprompt
+
+    note: "Note Slot"
+#   ^^^^ entity.name.section.pyprompt
+#       ^ punctuation.separator.key-value.pyprompt
+
+    required: "Required Slot"
+#   ^^^^^^^^ entity.name.section.pyprompt
+#           ^ punctuation.separator.key-value.pyprompt
+
     use: "Use Slot"
 #   ^^^ entity.name.section.pyprompt
 #      ^ punctuation.separator.key-value.pyprompt
+
+    warning: "Warning Slot"
+#   ^^^^^^^ entity.name.section.pyprompt
+#          ^ punctuation.separator.key-value.pyprompt
 
     abstract: "Abstract Slot"
 #   ^^^^^^^^ entity.name.section.pyprompt
@@ -72,8 +88,20 @@
     import
 #   ^^^^^^ support.type.reference.pyprompt
 
+    important
+#   ^^^^^^^^^ support.type.reference.pyprompt
+
+    note
+#   ^^^^ support.type.reference.pyprompt
+
+    required
+#   ^^^^^^^^ support.type.reference.pyprompt
+
     use
 #   ^^^ support.type.reference.pyprompt
 
     skill
 #   ^^^^^ support.type.reference.pyprompt
+
+    warning
+#   ^^^^^^^ support.type.reference.pyprompt

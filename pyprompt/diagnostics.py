@@ -49,6 +49,21 @@ class PyPromptDiagnostic:
     cause: str | None = None
 
 
+class TransformParseFailure(ValueError):
+    def __init__(
+        self,
+        detail: str,
+        *,
+        code: str = "E199",
+        summary: str = "Parse failure",
+        hints: tuple[str, ...] = (),
+    ) -> None:
+        super().__init__(detail)
+        self.code = code
+        self.summary = summary
+        self.hints = hints
+
+
 def diagnostic_to_dict(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> dict[str, Any]:
     diagnostic = _coerce_diagnostic(error_or_diagnostic)
     return _json_safe_value(diagnostic)
@@ -252,16 +267,23 @@ class ParseError(PyPromptError):
         location = DiagnosticLocation(path=path, line=line, column=column)
         excerpt, caret_column = _build_excerpt(source, line=line, column=column)
         detail = str(exc.orig_exc)
+        code = "E105"
+        summary = "Invalid authored slot body"
+        hints = (
+            "Do not attach an inline body to a referenced authored workflow slot.",
+        )
+        if isinstance(exc.orig_exc, TransformParseFailure):
+            code = exc.orig_exc.code
+            summary = exc.orig_exc.summary
+            hints = exc.orig_exc.hints
         return cls.from_parts(
-            code="E105",
-            summary="Invalid authored slot body",
+            code=code,
+            summary=summary,
             detail=detail,
             location=location,
             excerpt=excerpt,
             caret_column=caret_column,
-            hints=(
-                "Do not attach an inline body to a referenced authored workflow slot.",
-            ),
+            hints=hints,
             cause=f"{type(exc.orig_exc).__name__}: {detail}",
         )
 

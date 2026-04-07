@@ -9,13 +9,13 @@ from lark import Lark, Transformer, v_args
 from lark.exceptions import UnexpectedInput, VisitError
 
 from pyprompt import model
-from pyprompt.diagnostics import ParseError
+from pyprompt.diagnostics import ParseError, TransformParseFailure
 from pyprompt.indenter import PyPromptIndenter
 
 
 @dataclass(slots=True, frozen=True)
 class WorkflowBodyParts:
-    preamble: tuple[str, ...]
+    preamble: tuple[model.ProseLine, ...]
     items: tuple[model.WorkflowItem, ...]
 
 
@@ -195,17 +195,42 @@ class ToAst(Transformer):
     def workflow_string(self, value):
         return value
 
+    @v_args(inline=True)
+    def workflow_body_line(self, value):
+        return value
+
+    @v_args(inline=True)
+    def required_line(self, _keyword, text):
+        return model.EmphasizedLine(kind="required", text=text)
+
+    @v_args(inline=True)
+    def important_line(self, _keyword, text):
+        return model.EmphasizedLine(kind="important", text=text)
+
+    @v_args(inline=True)
+    def warning_line(self, _keyword, text):
+        return model.EmphasizedLine(kind="warning", text=text)
+
+    @v_args(inline=True)
+    def note_line(self, _keyword, text):
+        return model.EmphasizedLine(kind="note", text=text)
+
     def workflow_body(self, items):
-        preamble: tuple[str, ...] = ()
-        workflow_items: tuple[model.WorkflowItem, ...] = ()
+        preamble: list[model.ProseLine] = []
+        workflow_items: list[model.WorkflowItem] = []
         for item in items:
-            if not item:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if workflow_items:
+                    raise TransformParseFailure(
+                        "Workflow prose lines must appear before keyed workflow entries.",
+                        hints=(
+                            "Move prose lines to the top of the workflow body or put them inside a titled section.",
+                        ),
+                    )
+                preamble.append(item)
                 continue
-            if isinstance(item[0], str):
-                preamble = tuple(item)
-            else:
-                workflow_items = tuple(item)
-        return WorkflowBodyParts(preamble=preamble, items=workflow_items)
+            workflow_items.append(item)
+        return WorkflowBodyParts(preamble=tuple(preamble), items=tuple(workflow_items))
 
     def workflow_section_body(self, items):
         return tuple(items)
