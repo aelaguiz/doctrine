@@ -87,3 +87,21 @@ skill FlutterDevReturnSkill: "flutter-dev-return"
 
     does_not: "Does Not"
         "Does not belong in baseline Lessons authoring."
+
+
+skill FastcardsSkill: "fastcards"
+    purpose: "Use deterministic poker math, legality checks, classification, candidate-pool generation, and validation."
+
+    use_when: "Use When"
+        "Use this when the job is building a real candidate pool of lesson spots, recording rejects, or leaving deterministic spot receipts before the final proof route is chosen."
+        "When reps, fixed sets, correct answers, or distractors are changing, use it to build the candidate pool before selection."
+
+    does_not: "Does Not"
+        "Does not prove the concrete move the learner should make."
+
+
+skill CopyRewriteSkill: "poker-native-copy"
+    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
+
+    use_when: "Use When"
+        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
