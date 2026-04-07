@@ -1,0 +1,29 @@
+# SYNTAX TEST "source.pyprompt" "emphasized prose lines"
+
+    required "Read this first."
+#   ^^^^^^^^ keyword.control.emphasis.required.pyprompt
+#            ^ punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^ string.quoted.double.pyprompt
+#                             ^ punctuation.definition.string.end.pyprompt
+
+    important "Keep the current plan as truth."
+#   ^^^^^^^^^ keyword.control.emphasis.important.pyprompt
+#             ^ punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ string.quoted.double.pyprompt
+#                                             ^ punctuation.definition.string.end.pyprompt
+
+    warning "{{CurrentPlan:source.path}}"
+#   ^^^^^^^ keyword.control.emphasis.warning.pyprompt
+#           ^ punctuation.definition.string.begin.pyprompt
+#            ^^ punctuation.definition.interpolation.begin.pyprompt
+#              ^^^^^^^^^^^ support.type.reference.pyprompt
+#                         ^ punctuation.separator.interpolation.pyprompt
+#                          ^^^^^^^^^^^ variable.other.member.pyprompt
+#                                     ^^ punctuation.definition.interpolation.end.pyprompt
+#                                       ^ punctuation.definition.string.end.pyprompt
+
+    note "Treat old notes as continuity help only."
+#   ^^^^ keyword.control.emphasis.note.pyprompt
+#        ^ punctuation.definition.string.begin.pyprompt
+#         ^ string.quoted.double.pyprompt
+#                                                 ^ punctuation.definition.string.end.pyprompt

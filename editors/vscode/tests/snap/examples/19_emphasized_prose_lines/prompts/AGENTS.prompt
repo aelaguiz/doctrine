@@ -1,0 +1,31 @@
+# This example adds one narrow prose-line feature:
+# fixed emphasis labels can lead certain prose lines without embedding raw markdown.
+#
+# The supported labels are `required`, `important`, `warning`, and `note`.
+# They work in workflow prose, role blocks, and record prose surfaces.
+# Workflow emphasis lines still support `{{...}}` interpolation.
+
+input CurrentPlan: "Current Plan"
+    source: File
+        path: "track_root/current-plan.md"
+    shape: MarkdownDocument
+    requirement: Required
+    note "Use this file as the current plan truth."
+
+
+agent EmphasizedProseLinesDemo:
+    role: "Role"
+        required "Read this file end to end before you act."
+        important "Keep the current plan as truth."
+
+    workflow: "Instructions"
+        warning "Start from {{CurrentPlan:title}}, not from memory."
+        note "Treat old notes as continuity help only."
+
+        final_check: "Final Check"
+            required "Confirm the path at `{{CurrentPlan:source.path}}` before you route."
+            note "Do not guess from stale notes or old copies."
+
+    inputs: "Inputs"
+        important "Read these inputs before you write anything."
+        CurrentPlan

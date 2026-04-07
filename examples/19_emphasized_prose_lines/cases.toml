@@ -1,0 +1,51 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "emphasized prose lines render fixed labels across shipped prose surfaces"
+status = "active"
+kind = "render_contract"
+agent = "EmphasizedProseLinesDemo"
+assertion = "exact_lines"
+approx_ref = "ref/AGENTS.md"
+expected_lines = [
+  "## Role",
+  "",
+  "**REQUIRED**: Read this file end to end before you act.",
+  "**IMPORTANT**: Keep the current plan as truth.",
+  "",
+  "## Instructions",
+  "",
+  "**WARNING**: Start from Current Plan, not from memory.",
+  "**NOTE**: Treat old notes as continuity help only.",
+  "",
+  "### Final Check",
+  "",
+  "**REQUIRED**: Confirm the path at `track_root/current-plan.md` before you route.",
+  "**NOTE**: Do not guess from stale notes or old copies.",
+  "",
+  "## Inputs",
+  "",
+  "**IMPORTANT**: Read these inputs before you write anything.",
+  "",
+  "### Current Plan",
+  "",
+  "- Source: File",
+  "- Path: `track_root/current-plan.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "**NOTE**: Use this file as the current plan truth.",
+]
+
+[[cases]]
+name = "unsupported emphasis labels fail in parse stage"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_PARSE_UNKNOWN_EMPHASIS.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "critical",
+  "Expected one of",
+]

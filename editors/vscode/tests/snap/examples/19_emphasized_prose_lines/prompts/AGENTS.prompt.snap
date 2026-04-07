@@ -1,0 +1,152 @@
+># This example adds one narrow prose-line feature:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># fixed emphasis labels can lead certain prose lines without embedding raw markdown.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># The supported labels are `required`, `important`, `warning`, and `note`.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># They work in workflow prose, role blocks, and record prose surfaces.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Workflow emphasis lines still support `{{...}}` interpolation.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>input CurrentPlan: "Current Plan"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    source: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt support.type.reference.pyprompt
+>        path: "track_root/current-plan.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>    note "Use this file as the current plan truth."
+#^^^^ source.pyprompt meta.emphasis.note.pyprompt
+#    ^^^^ source.pyprompt meta.emphasis.note.pyprompt keyword.control.emphasis.note.pyprompt
+#        ^ source.pyprompt meta.emphasis.note.pyprompt
+#         ^ source.pyprompt meta.emphasis.note.pyprompt punctuation.definition.string.begin.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.note.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt meta.emphasis.note.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent EmphasizedProseLinesDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Role"
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        required "Read this file end to end before you act."
+#^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt
+#        ^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt keyword.control.emphasis.required.pyprompt
+#                ^ source.pyprompt meta.emphasis.required.pyprompt
+#                 ^ source.pyprompt meta.emphasis.required.pyprompt punctuation.definition.string.begin.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt meta.emphasis.required.pyprompt punctuation.definition.string.end.pyprompt
+>        important "Keep the current plan as truth."
+#^^^^^^^^ source.pyprompt meta.emphasis.important.pyprompt
+#        ^^^^^^^^^ source.pyprompt meta.emphasis.important.pyprompt keyword.control.emphasis.important.pyprompt
+#                 ^ source.pyprompt meta.emphasis.important.pyprompt
+#                  ^ source.pyprompt meta.emphasis.important.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.important.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt meta.emphasis.important.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    workflow: "Instructions"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        warning "Start from {{CurrentPlan:title}}, not from memory."
+#^^^^^^^^ source.pyprompt meta.emphasis.warning.pyprompt
+#        ^^^^^^^ source.pyprompt meta.emphasis.warning.pyprompt keyword.control.emphasis.warning.pyprompt
+#               ^ source.pyprompt meta.emphasis.warning.pyprompt
+#                ^ source.pyprompt meta.emphasis.warning.pyprompt punctuation.definition.string.begin.pyprompt
+#                 ^^^^^^^^^^^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt
+#                            ^^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                              ^^^^^^^^^^^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                         ^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt punctuation.separator.interpolation.pyprompt
+#                                          ^^^^^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt variable.other.member.pyprompt
+#                                               ^^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                                 ^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.warning.pyprompt string.quoted.double.pyprompt
+#                                                                   ^ source.pyprompt meta.emphasis.warning.pyprompt punctuation.definition.string.end.pyprompt
+>        note "Treat old notes as continuity help only."
+#^^^^^^^^ source.pyprompt meta.emphasis.note.pyprompt
+#        ^^^^ source.pyprompt meta.emphasis.note.pyprompt keyword.control.emphasis.note.pyprompt
+#            ^ source.pyprompt meta.emphasis.note.pyprompt
+#             ^ source.pyprompt meta.emphasis.note.pyprompt punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.note.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt meta.emphasis.note.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        final_check: "Final Check"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            required "Confirm the path at `{{CurrentPlan:source.path}}` before you route."
+#^^^^^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt
+#            ^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt keyword.control.emphasis.required.pyprompt
+#                    ^ source.pyprompt meta.emphasis.required.pyprompt
+#                     ^ source.pyprompt meta.emphasis.required.pyprompt punctuation.definition.string.begin.pyprompt
+#                      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt
+#                                           ^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                                             ^^^^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                                        ^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt punctuation.separator.interpolation.pyprompt
+#                                                         ^^^^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt variable.other.member.pyprompt
+#                                                                    ^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                                                      ^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.required.pyprompt string.quoted.double.pyprompt
+#                                                                                         ^ source.pyprompt meta.emphasis.required.pyprompt punctuation.definition.string.end.pyprompt
+>            note "Do not guess from stale notes or old copies."
+#^^^^^^^^^^^^ source.pyprompt meta.emphasis.note.pyprompt
+#            ^^^^ source.pyprompt meta.emphasis.note.pyprompt keyword.control.emphasis.note.pyprompt
+#                ^ source.pyprompt meta.emphasis.note.pyprompt
+#                 ^ source.pyprompt meta.emphasis.note.pyprompt punctuation.definition.string.begin.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.note.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt meta.emphasis.note.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    inputs: "Inputs"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        important "Read these inputs before you write anything."
+#^^^^^^^^ source.pyprompt meta.emphasis.important.pyprompt
+#        ^^^^^^^^^ source.pyprompt meta.emphasis.important.pyprompt keyword.control.emphasis.important.pyprompt
+#                 ^ source.pyprompt meta.emphasis.important.pyprompt
+#                  ^ source.pyprompt meta.emphasis.important.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt meta.emphasis.important.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt meta.emphasis.important.pyprompt punctuation.definition.string.end.pyprompt
+>        CurrentPlan
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
