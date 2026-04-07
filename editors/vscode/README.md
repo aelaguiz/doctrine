@@ -9,7 +9,7 @@ Repo-local VS Code language support for `.prompt` files.
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `pyprompt/grammars/pyprompt.lark`
 
-## Install in normal VS Code
+## Install in VS Code or Cursor
 
 Build the installable VSIX:
 
@@ -26,6 +26,8 @@ Install it with either:
 
 - `Extensions: Install from VSIX...`
 - `code --install-extension /absolute/path/to/pyprompt-language-0.0.1.vsix`
+
+The packaged extension declares `engines.vscode: ^1.105.0`, which admits Cursor builds that report VS Code `1.105.x`.
 
 ## Run the grammar checks directly
 
