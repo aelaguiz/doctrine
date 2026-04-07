@@ -1,7 +1,0 @@
-# Shared support-section skeletons for the 99 port.
-# Poker guidance lives in shared skills, not support prose.
-
-
-workflow AttachedCheckoutSupport: "Attached Checkout"
-    boundary: "Boundary"
-        "Use the attached checkout for product truth: startup, validators, and live lesson behavior. Do not use it to decide workflow, ownership, or what happens next on the issue."

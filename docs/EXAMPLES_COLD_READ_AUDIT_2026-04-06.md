@@ -2,7 +2,6 @@
 
 Scope:
 - Reviewed `examples/01_hello_world` through `examples/07_handoffs`
-- Excluded `examples/99_not_clean_but_useful`
 - Read both the source-side `prompts/*.prompt` files and the checked-in `ref` outputs
 - Used a cold-read lens: "What would a first-time reader infer from the examples alone?"
 

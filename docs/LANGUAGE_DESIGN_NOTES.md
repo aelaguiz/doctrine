@@ -278,7 +278,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - the same authoring pressure should be handled through inputs, outputs,
   authored routing and stop guidance, ownership, and readable file contracts
   instead.
-- do not cargo-cult `99` output patterns such as redundant `owns` sections when
+- do not cargo-cult legacy draft output patterns such as redundant `owns` sections when
   the output contract already makes ownership obvious.
 - `14_handoff_truth` shows the basic "tell the next owner what to use now"
   pattern without adding a new primitive.
@@ -377,9 +377,9 @@ Current shipped boundaries:
 - emit config is discovered from the nearest `pyproject.toml` or an explicit
   CLI path; it does not live in prompt syntax
 
-## Top-Level Buckets From 99
+## Top-Level Buckets From Older Draft Role Docs
 
-The `99_not_clean_but_useful` examples suggest that the next language questions should not be tiny workflow details.
+The older draft role docs suggest that the next language questions should not be tiny workflow details.
 
 They suggest a handful of bigger buckets that will shape the workflow language anyway.
 
@@ -405,7 +405,7 @@ without turning them back into copied doctrine blobs.
 
 ### 2. Role Graph And Handoff Model
 
-The `99` outputs clearly encode a multi-role system, not isolated agents.
+Those older draft outputs clearly encode a multi-role system, not isolated agents.
 
 They repeatedly specify:
 - normal owner order
@@ -422,7 +422,7 @@ This pressure is real, but the current shipped answer is intentionally narrow:
 
 ### 3. I/O, File Ownership, And Review Truth
 
-The `99` outputs spend a lot of energy defining what a role reads, what it
+Those older draft outputs spend a lot of energy defining what a role reads, what it
 produces, which files are in scope now, what the next owner should trust, and
 what should happen when review truth is missing.
 
@@ -439,7 +439,7 @@ We should handle it through:
 
 ### 4. Shared Doctrine, Standards, And Support
 
-The repeated support sections in `99` are not just ordinary workflow steps.
+The repeated support sections in those older draft docs are not just ordinary workflow steps.
 
 They include things like:
 - quality bars
@@ -452,7 +452,7 @@ This suggests we need to decide how shared doctrine is represented and reused ac
 
 ### 5. Skills And Tool Boundaries
 
-The `99` examples distinguish skills from named tools and helper surfaces.
+Those older draft docs distinguish skills from named tools and helper surfaces.
 
 Current design decision:
 - the language intentionally supports `skill` first
@@ -462,7 +462,7 @@ Current design decision:
 - tool-boundary and proof-boundary guidance may still appear in prose
   sections while the language stays skill-first
 
-What is still real pressure from `99`:
+What is still real pressure from those older drafts:
 - what a capability may support
 - what it may not prove
 - proof-route selection
@@ -475,7 +475,7 @@ What is not a current language goal:
 
 ### 6. Scope Roots And Path Variables
 
-The `99` outputs rely heavily on named roots and path conventions such as:
+Those older draft outputs rely heavily on named roots and path conventions such as:
 - `track_root`
 - `section_root`
 - `lesson_root`
@@ -492,7 +492,7 @@ language primitive.
 
 ### 7. Evidence, Validation, And Review Runs
 
-The `99` outputs repeatedly talk about:
+Those older draft outputs repeatedly talk about:
 - current review files
 - receipt-backed proof
 - validation commands
@@ -503,7 +503,7 @@ This suggests that "proof and validation surfaces" are a top-level design bucket
 
 ### 8. Attached Checkouts And External Truth Sources
 
-Several `99` outputs distinguish repo workflow truth from product truth in an attached checkout.
+Several older draft outputs distinguish repo workflow truth from product truth in an attached checkout.
 
 That means the language may need a richer way to talk about attached repos,
 external artifacts, env files, and commands later without collapsing them into
@@ -521,7 +521,7 @@ resolve are:
 5. attached checkouts and evidence surfaces
 6. keep later examples aligned with the no-`runtime_tools` rule
 
-Those buckets appear to be the real structure underneath the `99` examples.
+Those buckets appear to be the real structure underneath those older draft role docs.
 
 ## Current Pressure Areas
 

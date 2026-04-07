@@ -1,11 +1,11 @@
-# PyPrompt VS Code Extension
+# Doctrine VS Code Extension
 
 Repo-local VS Code language support for `.prompt` files.
 
 ## What this extension does
 
 - registers `*.prompt` as the `pyprompt` language
-- adds TextMate syntax highlighting for the shipped PyPrompt grammar
+- adds TextMate syntax highlighting for the shipped Doctrine grammar
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `pyprompt/grammars/pyprompt.lark`
 

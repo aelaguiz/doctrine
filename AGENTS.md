@@ -6,7 +6,6 @@
 - Run the full active corpus with `make verify-examples`.
 - For a targeted manifest run, use `uv run --locked python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`.
 - Today, `make verify-examples` discovers active manifests for every `examples/*/cases.toml` file, including the shipped `examples/01_hello_world` through `examples/26_abstract_authored_slots` surface.
-- `examples/99_not_clean_but_useful/` is still design pressure only and is not part of the shipped verification surface.
 - If a dependency is missing or a check could not run, say that plainly.
 
 ## Shipped Truth
@@ -45,17 +44,6 @@
 - Keep the example sequence disciplined: one new idea at a time, with the smallest example that earns that idea cleanly.
 - Do not add a new language primitive just to paper over a bad example.
 - Do not force an awkward workaround just because the current compiler already supports it. If the cleanest answer is a language change, name that change directly.
-
-## 99
-
-- `examples/99_not_clean_but_useful/` is the bad web of Markdown that pushed this project into existence.
-- It is not a target design.
-- It is not a pattern library.
-- It is not good.
-- Use it as requirement fodder only.
-- Use it to find missing language support, missing structure, and places where the old authoring patterns break down.
-- The goal is to rebuild much better versions of things like `99`, with cleaner source patterns and fewer bugs.
-- Do not preserve `99`'s duplication, awkward structure, or mistakes just because they appear there.
 
 ## Current Design Direction
 

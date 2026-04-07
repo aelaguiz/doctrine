@@ -1,5 +1,5 @@
 ---
-title: "PyPrompt - VS Code Language Highlighting - Architecture Plan"
+title: "Doctrine - VS Code Language Highlighting - Architecture Plan"
 date: 2026-04-06
 status: complete
 fallback_policy: forbidden
@@ -16,8 +16,8 @@ related:
 
 # TL;DR
 
-- Result: Add a repo-local VS Code language extension so current `.prompt` files are no longer plain gray text, with usable syntax highlighting, comment/string treatment, and indentation-aware editor behavior for the shipped PyPrompt surface proved by the manifest-backed corpus in `examples/01_*` through `examples/14_*`.
-- Problem: PyPrompt authoring is verified primarily through the Python parser/compiler path, so editor support has to stay tightly aligned with shipped grammar truth instead of drifting toward older draft notes, aspirational tooling, or unverified pressure surfaces.
+- Result: Add a repo-local VS Code language extension so current `.prompt` files are no longer plain gray text, with usable syntax highlighting, comment/string treatment, and indentation-aware editor behavior for the shipped Doctrine surface proved by the manifest-backed corpus in `examples/01_*` through `examples/14_*`.
+- Problem: Doctrine authoring is verified primarily through the Python parser/compiler path, so editor support has to stay tightly aligned with shipped grammar truth instead of drifting toward older draft notes, aspirational tooling, or unverified pressure surfaces.
 - Approach: Build a static, contribution-only VS Code extension under `editors/vscode/`, backed by `language-configuration.json` plus a hand-authored TextMate grammar, and validate its keyword surface directly against `pyprompt/grammars/pyprompt.lark`; keep any unavoidable TextMate-only regex shaping narrow, documented, and tested against the verified `01` through `14` corpus.
 - Plan: 1) scaffold the isolated `editors/vscode/` static extension and local debug loop, 2) implement the language configuration, TextMate grammar, and unit fixtures, 3) add Lark-alignment validation plus the mirrored snapshot corpus, and 4) finish local-use docs and cleanup.
 - Non-negotiables: The shipped Lark grammar remains the language source of truth; the first shipped extension only covers the implemented manifest-backed `01` through `14` subset in this worktree; no parallel Langium or second parser stack is introduced for phase one; no fake indentation semantics are claimed beyond what TextMate and VS Code can actually support.
@@ -56,11 +56,11 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 
 ## 0.1 The claim (falsifiable)
 
-We can add a repo-local VS Code language extension that gives verified PyPrompt files meaningful, stable highlighting and editor behavior for the shipped `01` through `14` syntax in this worktree without creating a second grammar source of truth or widening the language beyond what `pyprompt/` currently implements.
+We can add a repo-local VS Code language extension that gives verified Doctrine files meaningful, stable highlighting and editor behavior for the shipped `01` through `14` syntax in this worktree without creating a second grammar source of truth or widening the language beyond what `pyprompt/` currently implements.
 
 ## 0.2 In scope
 
-- A local VS Code extension checked into this repo for PyPrompt authoring.
+- A local VS Code extension checked into this repo for Doctrine authoring.
 - Language registration for current prompt files such as `*.prompt`.
 - TextMate-based syntax highlighting for the shipped lexical surface:
   - declaration keywords such as `agent`, `abstract`, `workflow`, `import`
@@ -82,7 +82,7 @@ We can add a repo-local VS Code language extension that gives verified PyPrompt 
 
 ## 0.4 Definition of done (acceptance evidence)
 
-- Opening verified PyPrompt example files in local VS Code with the local extension enabled shows non-plaintext highlighting for the shipped syntax.
+- Opening verified Doctrine example files in local VS Code with the local extension enabled shows non-plaintext highlighting for the shipped syntax.
 - The extension cleanly recognizes the current prompt files used in the repo.
 - Automated scope or grammar tests cover representative `01` through `14` examples and catch drift in the highlighting surface.
 - The extension has a documented local install or debug flow that is cheap enough to use continuously while the grammar evolves.
@@ -130,7 +130,7 @@ We can add a repo-local VS Code language extension that gives verified PyPrompt 
 
 ## 2.1 What exists today
 
-PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a Lark grammar and verified example manifests through `14` in this worktree. The repo now also contains a repo-local VS Code extension under `editors/vscode/`, plus the supporting grammar tests and alignment validator that landed in this run.
+Doctrine has a shipped parser/compiler/rendering path in `pyprompt/` backed by a Lark grammar and verified example manifests through `14` in this worktree. The repo now also contains a repo-local VS Code extension under `editors/vscode/`, plus the supporting grammar tests and alignment validator that landed in this run.
 
 ## 2.2 What’s broken / missing (concrete)
 
@@ -228,7 +228,7 @@ PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a
   - `pyprompt/renderer.py`
   - `pyprompt/verify_corpus.py`
 - `examples/01_*` through `examples/14_*` are manifest-backed prompt inputs today. Each active example has `cases.toml`, prompt sources under `prompts/`, and reference output under `ref/`.
-- `examples/99_not_clean_but_useful/` remains design pressure only and does not define shipped syntax.
+- Unverified legacy draft surfaces outside the manifest-backed corpus do not define shipped syntax.
 - `docs/` already contains the plan and the syntax-highlighting research, and `for_reference_only/` now contains the checked-out upstream references.
 - The landed implementation adds one repo-local editor subtree at `editors/vscode/` with its own `package.json`, `package-lock.json`, grammar/config files, tests, and README.
 - The repo still has no root-level Node package surface. The new npm tooling remains isolated under `editors/vscode/`.
@@ -289,7 +289,7 @@ PyPrompt has a shipped parser/compiler/rendering path in `pyprompt/` backed by a
 ```text
 AGENTS.prompt
 --------------------------------
-PyPrompt language association active
+Doctrine language association active
 # comments dimmed as comments
 agent / workflow / route / output highlighted
 "titles" and prose strings distinguished
@@ -309,7 +309,7 @@ The phase-one editor surface lives in one new repo-local subtree: `editors/vscod
 That subtree should be a static, contribution-only VS Code extension with these owned files:
 
 - `editors/vscode/package.json`
-  - declares the PyPrompt language id, `.prompt` associations, grammar contribution, configuration path, and npm-based test scripts
+  - declares the Doctrine language id, `.prompt` associations, grammar contribution, configuration path, and npm-based test scripts
   - does not define a runtime `main` entry or `activationEvents` in phase one
 - `editors/vscode/package-lock.json`
   - locks the isolated npm dependency surface for the extension only
@@ -336,7 +336,7 @@ The verified prompt corpus remains where it already lives under `examples/01_*` 
 - `pyprompt/grammars/pyprompt.lark` remains the only syntax source of truth.
 - The VS Code extension remains static and declarative in phase one:
   - VS Code reads `editors/vscode/package.json`
-  - registers the PyPrompt language id for `*.prompt`
+  - registers the Doctrine language id for `*.prompt`
   - loads `language-configuration.json`
   - loads `syntaxes/pyprompt.tmLanguage.json`
   - applies TextMate tokenization and language-configuration behavior with no runtime extension code
@@ -470,7 +470,7 @@ Enter after a block header indents sensibly
 | Unit fixtures | `editors/vscode/tests/unit/` | keep lexical edge cases local to the extension package | avoids overloading canonical examples with inline test syntax | include |
 | Snapshot fixtures | `editors/vscode/tests/snap/examples/**` | mirror the verified prompt corpus into a test-owned tree | prevents `.snap` files from polluting `examples/` while preserving broad grammar coverage, including nested import files | include |
 | Snapshot sync helper | `editors/vscode/scripts/` | add only if mirror maintenance becomes annoying | avoids speculative tooling before the sync burden is real | defer |
-| Legacy pressure examples | `examples/99_not_clean_but_useful/` | keep out of phase-one snapshot and support claims | prevents the extension from inheriting old markdown sprawl as shipped syntax | exclude |
+| Legacy draft surfaces | outside the manifest-backed corpus | keep out of phase-one snapshot and support claims | prevents the extension from inheriting old markdown sprawl as shipped syntax | exclude |
 | Lark bridge | `editors/vscode/scripts/validate_lark_alignment.py` | validation-first direct grammar read | prevents codegen theater and keeps `pyprompt.lark` as SSOT | include |
 | Parser helper | `pyprompt/parser.py` | parser-adjacent lexical helper if direct validation proves too brittle | keeps a future escalation path without forcing runtime changes now | defer |
 | Runtime extension code | `extension.ts` / semantic-token provider / LSP client | add runtime code only if static TextMate proves insufficient | avoids parallel behavior stacks before the baseline works | exclude |
@@ -490,21 +490,21 @@ Status: COMPLETE
 * Goal:
   Establish the smallest valid `editors/vscode/` extension home so VS Code can recognize `.prompt` files without introducing runtime code or repo-root Node tooling.
 * Work:
-  - Create `editors/vscode/package.json` with the PyPrompt language id, `.prompt` file association, `contributes.languages`, `contributes.grammars`, configuration path, and grammar-test scripts.
+  - Create `editors/vscode/package.json` with the Doctrine language id, `.prompt` file association, `contributes.languages`, `contributes.grammars`, configuration path, and grammar-test scripts.
   - Keep the package contribution-only: no `main`, no `activationEvents`, no `extension.ts`, and no TypeScript build chain.
   - Create `editors/vscode/package-lock.json` by installing only the phase-one npm dependency surface inside the extension subtree.
   - Add `editors/vscode/.vscode/launch.json` for Extension Development Host.
   - Add seed `editors/vscode/language-configuration.json` and seed `editors/vscode/syntaxes/pyprompt.tmLanguage.json` so the extension loads cleanly even before the final grammar exists.
   - Start `editors/vscode/README.md` with the local debug-loop contract.
 * Verification (smallest signal):
-  - Open the extension in an Extension Development Host and confirm that `*.prompt` files associate to the PyPrompt language id.
+  - Open the extension in an Extension Development Host and confirm that `*.prompt` files associate to the Doctrine language id.
   - Confirm no repo-root `package.json`, lockfile, or TS build surface was introduced.
 * Docs/comments (propagation; only if needed):
   - Seed `editors/vscode/README.md` with the extension-host workflow so the subtree is self-describing from day one.
 * Exit criteria:
   - `editors/vscode/` exists as the canonical extension home.
   - VS Code can load the static extension package.
-  - `.prompt` files are recognized as PyPrompt in the development host.
+  - `.prompt` files are recognized as Doctrine in the development host.
 * Rollback:
   - Remove the entire `editors/vscode/` subtree and its isolated npm lockfile.
 Completed work:
@@ -769,7 +769,7 @@ Options
 
 Decision
 
-Correct the plan and implementation scope to the actual verified `01` through `14` corpus in this worktree, while still keeping `pyprompt/grammars/pyprompt.lark` as the only syntax truth and excluding unverified pressure surfaces such as `examples/99_not_clean_but_useful/`.
+Correct the plan and implementation scope to the actual verified `01` through `14` corpus in this worktree, while still keeping `pyprompt/grammars/pyprompt.lark` as the only syntax truth and excluding unverified legacy draft surfaces outside the manifest-backed corpus.
 
 Consequences
 

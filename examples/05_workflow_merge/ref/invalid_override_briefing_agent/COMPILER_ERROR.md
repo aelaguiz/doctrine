@@ -23,4 +23,4 @@ Cause:
 
 Canonical reference:
 
-- [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md)
+- [docs/COMPILER_ERRORS.md](/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md)

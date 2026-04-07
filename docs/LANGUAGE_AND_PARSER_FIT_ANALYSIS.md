@@ -5,7 +5,7 @@
 This document audits:
 
 - the current example sequence in `examples/01_hello_world` through `examples/05_workflow_merge`
-- the directional pressure implied by `examples/99_not_clean_but_useful`
+- the directional pressure implied by older draft role documents
 - the local reference libraries in `for_reference_only/`:
   - `lark`
   - `pyparsing`
@@ -120,9 +120,9 @@ Right now the example output is stronger than the written semantic contract. A h
 
 That means `05` is more a compiler-design problem than a parsing problem.
 
-## Important Directional Pressure From `99_not_clean_but_useful`
+## Important Directional Pressure From Older Draft Role Docs
 
-`examples/99_not_clean_but_useful` should not be treated as a source-language contract. It is an output-pressure corpus.
+Those older draft role docs should not be treated as a source-language contract. They are output-pressure material.
 
 That distinction matters.
 
@@ -141,12 +141,12 @@ What they do **not** prove yet:
 - that the source language needs to model every Markdown detail directly
 - that the source language needs all the future declaration kinds now
 
-The right lesson from `99` is:
+The right lesson from those older drafts is:
 
 - the compiler must eventually support rich structured output
 - the language should probably stay much simpler than the final Markdown surface
 
-If you try to back-solve the whole source language directly from `99`, you will overbuild.
+If you try to back-solve the whole source language directly from those older drafts, you will overbuild.
 
 ## Recommended Design Discipline From Here
 
@@ -155,7 +155,7 @@ The current sequence suggests a good design doctrine:
 - keep the source language small
 - push complexity into semantic compilation, not source notation
 - add only one new concept per example
-- treat `99` as a rendering target, not as a grammar blueprint
+- treat older draft role docs as a rendering target, not as a grammar blueprint
 
 That argues for:
 
@@ -455,7 +455,7 @@ Recommendation:
 - either write the exact ordering rule now
 - or simplify the merge model before more examples depend on it
 
-### `99_not_clean_but_useful` can overpressure the source language
+### Older draft role docs can overpressure the source language
 
 Those files are useful as output targets, but they are dangerous as direct source-language inspiration.
 
@@ -633,4 +633,4 @@ Until that decision changes, the best near-term design principle is:
 
 - keep the language smaller than the output
 - keep the parser smaller than the compiler
-- keep the semantics smaller than the ambitions implied by `99_not_clean_but_useful`
+- keep the semantics smaller than the ambitions implied by those older drafts
