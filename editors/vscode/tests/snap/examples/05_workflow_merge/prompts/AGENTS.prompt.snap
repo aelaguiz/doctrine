@@ -135,7 +135,7 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        context_note: "Context Note"
 #^^^^^^^^ source.pyprompt
@@ -165,12 +165,12 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit closing
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        follow_up: "Follow Up"
 #^^^^^^^^ source.pyprompt
@@ -226,7 +226,7 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        override main_point: "Revised Main Point"
 #^^^^^^^^ source.pyprompt
@@ -246,12 +246,12 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit closing
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 ># This child demonstrates the compiler error rule for `override`.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -296,7 +296,7 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        override context_note: "Context Note"
 #^^^^^^^^ source.pyprompt
@@ -330,10 +330,10 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit closing
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >

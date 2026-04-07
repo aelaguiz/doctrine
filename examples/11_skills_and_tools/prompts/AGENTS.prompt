@@ -50,7 +50,7 @@ skill FindSkills: "find-skills"
     purpose: "Find the best matching repo skill for the current job."
 
 
-skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+skill PokerGroundingSkill: "strategy-grounding-kb"
     purpose: "Ground learner-facing poker wording against current poker truth."
 
     use_when: "Use When"

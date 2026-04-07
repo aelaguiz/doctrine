@@ -84,7 +84,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    immediate_local_read: "Immediate Local Read"
 #^^^^ source.pyprompt
@@ -115,7 +115,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    immediate_local_read: "Immediate Local Read"
 #^^^^ source.pyprompt
@@ -202,7 +202,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    override same_issue_workflow:
 #^^^^ source.pyprompt
@@ -235,7 +235,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    publish_return: "Publish Return"
 #^^^^ source.pyprompt
@@ -271,7 +271,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    override same_issue_workflow:
 #^^^^ source.pyprompt
@@ -299,7 +299,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 >workflow LessonsHowToTakeATurn: "How To Take A Turn"
@@ -435,7 +435,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 >workflow CopywriterStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
@@ -522,7 +522,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 >workflow ProjectLeadJob: "Your Job"
@@ -1082,15 +1082,15 @@
 #                                                                                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
->skill PublishFollowthroughSkill: "paperclip-publish-followthrough"
+>skill PublishFollowthroughSkill: "publish-followthrough"
 #^^^^^ source.pyprompt keyword.declaration.pyprompt
 #     ^ source.pyprompt
 #      ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                ^ source.pyprompt
 #                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Handle PR follow-up, QR updates, publish proof, and same-issue closeout."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -1113,15 +1113,15 @@
 #                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
->skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+>skill PokerGroundingSkill: "strategy-grounding-kb"
 #^^^^^ source.pyprompt keyword.declaration.pyprompt
 #     ^ source.pyprompt
 #      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
 #                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
-#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Ground learner-facing poker wording against current poker truth."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -1268,7 +1268,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt
@@ -1439,7 +1439,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt

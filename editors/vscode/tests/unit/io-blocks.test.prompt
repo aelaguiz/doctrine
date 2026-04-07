@@ -23,4 +23,8 @@ agent Reviewer:
 
         inherit durable_section_truth
 #       ^^^^^^^ keyword.control.pyprompt
-#               ^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
+
+        inherit scoped_catalog_truth
+#       ^^^^^^^ keyword.control.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.pyprompt

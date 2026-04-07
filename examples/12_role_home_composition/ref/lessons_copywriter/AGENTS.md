@@ -128,7 +128,7 @@ Stop when learner-facing copy and post-copy validation are explicit enough for r
 
 ### Can Run
 
-#### psmobile-lesson-poker-kb-interface
+#### strategy-grounding-kb
 
 ##### Purpose
 

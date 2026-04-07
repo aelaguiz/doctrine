@@ -19,10 +19,10 @@
 
         can_run: "Can Run"
 #       ^^^^^^^ entity.name.section.pyprompt
-            skill paperclip: PaperclipSkill
+            skill coordination: CoordinationSkill
 #           ^^^^^ keyword.control.pyprompt
-#                 ^^^^^^^^^ entity.name.section.pyprompt
-#                            ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#                 ^^^^^^^^^^^^ entity.name.section.pyprompt
+#                               ^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
                 requirement: Required
 #               ^^^^^^^^^^^ entity.name.section.pyprompt
 #                            ^^^^^^^^ entity.name.type.reference.key-value.pyprompt

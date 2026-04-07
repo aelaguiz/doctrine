@@ -10,13 +10,17 @@
 #                  ^ punctuation.separator.key-value.pyprompt
 #                    ^ entity.name.type.reference.use-target.pyprompt
 
-        inherit preparation
+        inherit read_first
 #       ^^^^^^^ keyword.control.pyprompt
-#               ^ support.type.reference.pyprompt
+#               ^^^^^^^^^^ entity.name.section.reference.pyprompt
 
         abstract workflow_core
 #       ^^^^^^^^ keyword.control.pyprompt
-#                ^ support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
+
+        inherit how_to_take_a_turn
+#       ^^^^^^^ keyword.control.pyprompt
+#               ^^^^^^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
 
         override delivery: RevisedDelivery
 #       ^^^^^^^^ keyword.control.pyprompt

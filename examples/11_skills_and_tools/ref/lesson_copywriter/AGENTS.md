@@ -12,7 +12,7 @@ Core job: turn an approved lesson manifest into grounded learner copy without ch
 
 ### Can Run
 
-#### psmobile-lesson-poker-kb-interface
+#### strategy-grounding-kb
 
 ##### Purpose
 

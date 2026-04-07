@@ -208,7 +208,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    context_note: "Context Note"
 #^^^^ source.pyprompt
@@ -238,7 +238,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 ># These agent-level workflows are local composition surfaces.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -409,7 +409,7 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        override delivery: RevisedDelivery
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^ source.pyprompt keyword.control.pyprompt

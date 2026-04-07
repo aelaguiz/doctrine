@@ -125,5 +125,5 @@ Stability rules:
 ## Example
 
 The checked-in error reference under
-[examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](/Users/aelaguiz/workspace/doctrine/examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
+[examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](../examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
 shows the canonical formatted shape for one shipped compile error.

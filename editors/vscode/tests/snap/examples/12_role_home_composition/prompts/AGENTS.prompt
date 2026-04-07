@@ -249,14 +249,14 @@ output CopyPassOutput: "Copy Pass Output"
         "A downstream reader should be able to read COPY_GROUNDING.md and lesson_manifest.json and understand what changed and what was validated."
 
 
-skill PublishFollowthroughSkill: "paperclip-publish-followthrough"
+skill PublishFollowthroughSkill: "publish-followthrough"
     purpose: "Handle PR follow-up, QR updates, publish proof, and same-issue closeout."
 
     use_when: "Use When"
         "Use this when publish or follow-up is the live job."
 
 
-skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+skill PokerGroundingSkill: "strategy-grounding-kb"
     purpose: "Ground learner-facing poker wording against current poker truth."
 
     use_when: "Use When"

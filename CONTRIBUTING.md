@@ -32,7 +32,14 @@ make
 - Treat `examples/` as design and verification inputs, not as proof of shipped behavior on their own.
 - Keep new examples disciplined: one new idea at a time, with the smallest example that proves it cleanly.
 - Prefer fail-loud behavior over silent fallback when you change grammar or compiler behavior.
+- Keep public docs and examples generic. Do not import private product names, internal skill slugs, or company-specific workflow terms from other repos.
 - Update docs and instructions when behavior changes.
+
+## Docs
+
+- Start with `docs/README.md` for the live docs set.
+- Put durable public guidance in README or `docs/`.
+- Do not keep one-off plans, worklogs, or stale research notes in the live docs tree.
 
 ## Pull requests
 

@@ -43,17 +43,17 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit courtesy
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit object
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 ># These concrete agents inherit from abstract parents defined in imported
@@ -89,17 +89,17 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit courtesy
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit object
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 ># This is also a concrete leaf agent, and it keeps the shared doctrine from the
@@ -144,12 +144,12 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >        inherit courtesy
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        override object:
 #^^^^^^^^ source.pyprompt
@@ -188,7 +188,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >    courtesy: "Courtesy"
 #^^^^ source.pyprompt

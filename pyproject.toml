@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pyprompt"
 version = "0.0.0"
-description = "PyPrompt Hello World grammar bootstrap"
+description = "PyPrompt is a Python-like DSL and compiler for reusable agent doctrine."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"

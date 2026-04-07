@@ -698,7 +698,7 @@
           "name": "keyword.control.pyprompt"
         },
         "4": {
-          "name": "support.type.reference.pyprompt"
+          "name": "entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt"
         }
       }
     },
@@ -726,7 +726,7 @@
           "name": "keyword.control.pyprompt"
         },
         "4": {
-          "name": "support.type.reference.pyprompt"
+          "name": "entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt"
         }
       }
     },

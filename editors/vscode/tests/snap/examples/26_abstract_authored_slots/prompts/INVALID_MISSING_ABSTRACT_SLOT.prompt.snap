@@ -9,12 +9,12 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#             ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >    abstract workflow_core
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#             ^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 >agent InvalidConcreteMissingWorkflowCore[ReviewRoleBase]:

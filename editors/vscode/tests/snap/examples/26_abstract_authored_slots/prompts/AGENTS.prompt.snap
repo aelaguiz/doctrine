@@ -220,17 +220,17 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#             ^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >    abstract workflow_core
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#             ^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >    abstract routing
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#             ^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 >abstract agent DeferredReviewRole[ReviewRoleBase]:
@@ -247,12 +247,12 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >    inherit standards_and_support
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >
 >agent AcceptanceReviewer[DeferredReviewRole]:
@@ -282,7 +282,7 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >    workflow_core: AcceptanceReviewerWorkflowCore
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -299,5 +299,5 @@
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >

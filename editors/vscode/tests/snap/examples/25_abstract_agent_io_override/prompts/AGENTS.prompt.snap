@@ -337,7 +337,7 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        override continuity_only: "Continuity Only"
 #^^^^^^^^ source.pyprompt
@@ -374,7 +374,7 @@
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^ source.pyprompt keyword.control.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt
 >
 >        override coordination_handoff: "Coordination Handoff"
 #^^^^^^^^ source.pyprompt
