@@ -495,7 +495,7 @@
           "name": "punctuation.separator.key-value.pyprompt"
         },
         "8": {
-          "name": "support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
         }
       }
     },
@@ -526,7 +526,7 @@
           "name": "string.quoted.double.pyprompt"
         },
         "9": {
-          "name": "support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
         }
       }
     },
@@ -554,7 +554,7 @@
           "name": "punctuation.separator.key-value.pyprompt"
         },
         "6": {
-          "name": "support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
         }
       }
     },
@@ -584,10 +584,10 @@
       }
     },
     "standaloneReference": {
-      "match": "^(\\s*)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "match": "^(\\s+)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
         }
       }
     }

@@ -12,7 +12,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/SECTION_PLAN.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -30,7 +30,7 @@
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent InvalidOutputBucketWrongKindRef:
@@ -53,5 +53,5 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        CurrentSectionPlan
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

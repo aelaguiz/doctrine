@@ -287,7 +287,7 @@
 #            ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                        ^ source.pyprompt
-#                         ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                         ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        use delivery: Delivery
 #^^^^^^^^ source.pyprompt
 #        ^^^ source.pyprompt keyword.control.pyprompt
@@ -295,7 +295,7 @@
 #            ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                     ^ source.pyprompt
-#                      ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                      ^^^^^^^^ source.pyprompt entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 ># Same idea here: this is still local composition at the outer workflow level.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -343,7 +343,7 @@
 #            ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                        ^ source.pyprompt
-#                         ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                         ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        use delivery: RevisedDelivery
 #^^^^^^^^ source.pyprompt
 #        ^^^ source.pyprompt keyword.control.pyprompt
@@ -351,7 +351,7 @@
 #            ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 ># Model 4: once outer composition uses keyed `use` entries, a child agent can
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -409,5 +409,5 @@
 #                 ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                           ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

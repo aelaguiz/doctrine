@@ -8,7 +8,7 @@
 #       ^^^ keyword.control.pyprompt
 #           ^ entity.name.section.pyprompt
 #                  ^ punctuation.separator.key-value.pyprompt
-#                    ^ support.type.reference.pyprompt
+#                    ^ entity.name.type.reference.use-target.pyprompt
 
         inherit preparation
 #       ^^^^^^^ keyword.control.pyprompt
@@ -18,7 +18,7 @@
 #       ^^^^^^^^ keyword.control.pyprompt
 #                ^ entity.name.section.pyprompt
 #                        ^ punctuation.separator.key-value.pyprompt
-#                          ^ support.type.reference.pyprompt
+#                          ^ entity.name.type.reference.override.pyprompt
 
             route "If accepted" -> ProjectLead
 #           ^^^^^ keyword.control.pyprompt
@@ -28,7 +28,7 @@
     your_job: roles.project_lead.ProjectLeadJob
 #   ^^^^^^^^ entity.name.section.pyprompt
 #           ^ punctuation.separator.key-value.pyprompt
-#             ^ support.type.reference.pyprompt
+#             ^ entity.name.type.reference.key-value.pyprompt
 
         produced_output: "Produced Output"
 #       ^ entity.name.section.pyprompt
@@ -36,10 +36,10 @@
 #                        ^ string.quoted.double.pyprompt
 
         CurrentIssue
-#       ^^^^^^^^^^^^ support.type.reference.pyprompt
+#       ^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
 
         shared.contracts.TrackMetadata
-#       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
 
         ProjectLead
-#       ^^^^^^^^^^^ support.type.reference.pyprompt
+#       ^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt

@@ -17,19 +17,19 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    shape: MarkdownDocument
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >skill SharedThing: "Shared Thing Skill"
@@ -66,7 +66,7 @@
 #         ^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        SharedThing
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent InvalidAmbiguousBodyRefsAgent:
@@ -86,5 +86,5 @@
 #    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #              ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

@@ -39,7 +39,7 @@
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#          ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >output SectionDossierOutput: "Section Dossier Output"
@@ -74,7 +74,7 @@
 #            ^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        validation_record: "Validation Record"
 #^^^^^^^^ source.pyprompt
@@ -93,14 +93,14 @@
 #            ^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt
@@ -159,7 +159,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        issue: "CURRENT_ISSUE"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -171,13 +171,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt

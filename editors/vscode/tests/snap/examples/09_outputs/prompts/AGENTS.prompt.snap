@@ -41,7 +41,7 @@
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #            ^ source.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    file: "schemas/lesson_manifest.schema.json"
 #^^^^ source.pyprompt
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -65,7 +65,7 @@
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#          ^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >output shape SectionPlanDocument: "Section Plan Document"
@@ -84,7 +84,7 @@
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#          ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >output shape LessonManifestJson: "Lesson Manifest JSON"
@@ -103,14 +103,14 @@
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#          ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    schema: LessonManifestSchema
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    example_file: "examples/lesson_manifest.example.json"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -152,7 +152,7 @@
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#          ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># A custom target can define its own target-specific keys.
@@ -200,19 +200,19 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    shape: IssueSummaryText
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    purpose: "Purpose"
 #^^^^ source.pyprompt
@@ -258,7 +258,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/SECTION_PLAN.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -270,13 +270,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt
@@ -429,7 +429,7 @@
 #            ^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        validation: "Validation File"
 #^^^^^^^^ source.pyprompt
@@ -448,7 +448,7 @@
 #            ^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt
@@ -578,7 +578,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        issue: "CURRENT_ISSUE"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -590,13 +590,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt
@@ -709,7 +709,7 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        IssueSummaryResponse
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># Model 2: a built-in file target with a markdown document shape.
@@ -746,7 +746,7 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        SectionPlanOutput
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># Model 3: a built-in file target with a stricter JSON output shape.
@@ -783,7 +783,7 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        LessonManifestOutput
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># Model 4: a custom output target with target-specific configuration.
@@ -820,5 +820,5 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        ProjectTrackerUpdate
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

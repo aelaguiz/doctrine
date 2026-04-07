@@ -95,7 +95,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/CONCEPTS.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -107,13 +107,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Advisory
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use this only when the section already has live concepts to preserve."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -135,19 +135,19 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    shape: MarkdownDocument
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use this output contract when you leave the next owner one clear update."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -172,7 +172,7 @@
 #    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #              ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt
@@ -182,13 +182,13 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        shared.contracts.CurrentIssuePlan
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        shared.contracts.TrackMetadata
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        CurrentConcepts
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outputs: "Outputs"
 #^^^^ source.pyprompt
@@ -198,5 +198,5 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        FinalHandoffComment
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

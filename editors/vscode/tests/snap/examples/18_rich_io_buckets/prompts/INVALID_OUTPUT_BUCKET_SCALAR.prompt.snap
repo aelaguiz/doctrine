@@ -12,7 +12,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/dossier_engineer.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -30,7 +30,7 @@
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent InvalidOutputBucketScalar:
@@ -59,5 +59,5 @@
 #               ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        DossierFile
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

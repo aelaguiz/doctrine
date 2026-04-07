@@ -35,19 +35,19 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    shape: MarkdownDocument
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "This content is already present in the invocation prompt."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -69,7 +69,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/SECTION_PLAN.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -81,13 +81,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Read this file before changing section planning."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -109,7 +109,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/PREVIOUS_SUMMARY.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -121,13 +121,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Advisory
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use this only if continuity with earlier work matters for the current turn."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -149,7 +149,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        env: "TRACKER_ROOT"
 #^^^^^^^^ source.pyprompt
 #        ^^^ source.pyprompt entity.name.section.pyprompt
@@ -161,13 +161,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "This environment variable points to the tracker checkout root."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -233,7 +233,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        url: "https://figma.com/design/abc123/Example-Design"
 #^^^^^^^^ source.pyprompt
 #        ^^^ source.pyprompt entity.name.section.pyprompt
@@ -251,13 +251,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use this design document when the turn depends on a specific Figma source."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -304,7 +304,7 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        CurrentIssue
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># Model 2: input can be looked up from a named path.
@@ -355,10 +355,10 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        SectionPlan
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        PreviousSummary
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># Model 3: input can be looked up from an environment variable.
@@ -400,7 +400,7 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        TrackerRoot
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 ># Model 4: input can come from a declared custom source.
@@ -442,5 +442,5 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        DesignSpec
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

@@ -8,7 +8,7 @@
     input: shared.inputs.FigmaDocument
 #   ^^^^^ entity.name.section.pyprompt
 #        ^ punctuation.separator.key-value.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
 
     output:
 #   ^^^^^^ entity.name.section.pyprompt
@@ -83,25 +83,25 @@
 #        ^ punctuation.separator.key-value.pyprompt
 
     workflow
-#   ^^^^^^^^ support.type.reference.pyprompt
+#   ^^^^^^^^ entity.name.type.reference.standalone.pyprompt
 
     import
-#   ^^^^^^ support.type.reference.pyprompt
+#   ^^^^^^ entity.name.type.reference.standalone.pyprompt
 
     important
-#   ^^^^^^^^^ support.type.reference.pyprompt
+#   ^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
 
     note
-#   ^^^^ support.type.reference.pyprompt
+#   ^^^^ entity.name.type.reference.standalone.pyprompt
 
     required
-#   ^^^^^^^^ support.type.reference.pyprompt
+#   ^^^^^^^^ entity.name.type.reference.standalone.pyprompt
 
     use
-#   ^^^ support.type.reference.pyprompt
+#   ^^^ entity.name.type.reference.standalone.pyprompt
 
     skill
-#   ^^^^^ support.type.reference.pyprompt
+#   ^^^^^ entity.name.type.reference.standalone.pyprompt
 
     warning
-#   ^^^^^^^ support.type.reference.pyprompt
+#   ^^^^^^^ entity.name.type.reference.standalone.pyprompt

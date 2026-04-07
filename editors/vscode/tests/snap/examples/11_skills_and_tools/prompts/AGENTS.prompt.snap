@@ -304,23 +304,23 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            PokerGroundingSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Required
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >            CopyRewriteSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        discover_with: "Discover With"
 #^^^^^^^^ source.pyprompt
@@ -330,13 +330,13 @@
 #                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            FindSkills
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        not_for_this_role: "Not For This Role"
 #^^^^^^^^ source.pyprompt
@@ -346,7 +346,7 @@
 #                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            MobileSimSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                reason: "This role is baseline copy work, not simulator or device investigation."
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -356,7 +356,7 @@
 >
 >            FlutterDevReturnSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                reason: "This role is baseline copy work, not Flutter environment repair."
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^ source.pyprompt entity.name.section.pyprompt

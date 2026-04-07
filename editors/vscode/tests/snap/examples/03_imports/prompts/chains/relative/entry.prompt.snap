@@ -30,7 +30,7 @@
 #        ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    use shared_wrap_up: chains.shared.wrap_up.SharedWrapUp
 #^^^^ source.pyprompt
 #    ^^^ source.pyprompt keyword.control.pyprompt
@@ -38,5 +38,5 @@
 #        ^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

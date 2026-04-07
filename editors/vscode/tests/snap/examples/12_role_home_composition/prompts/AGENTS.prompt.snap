@@ -635,19 +635,19 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    shape: MarkdownDocument
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use the current issue plan to understand the intended owner and next step."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -669,7 +669,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "track_root/_authoring/CURRENT_ISSUE_STATE.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -681,13 +681,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use the current issue state to understand the named current files and publish state."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -709,7 +709,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -721,13 +721,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use the locked section language before rewriting learner-facing text."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -749,7 +749,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "lesson_root/_authoring/LESSON_PLAN.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -761,13 +761,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use the approved lesson plan to preserve the lesson's teaching job."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -789,7 +789,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "lesson_root/_authoring/LESSON_SITUATIONS.md"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -801,13 +801,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use the approved lesson situations to preserve concrete rep choices."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -829,7 +829,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        path: "lesson_root/_authoring/lesson_manifest.json"
 #^^^^^^^^ source.pyprompt
 #        ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -841,13 +841,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    "Use the current lesson manifest as the editable learner-facing surface."
 #^^^^ source.pyprompt
 #    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
@@ -871,7 +871,7 @@
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
 #        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #         ^ source.pyprompt
-#          ^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#          ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >output target TrackerComment: "Tracker Comment"
@@ -913,7 +913,7 @@
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
 #          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #           ^ source.pyprompt
-#            ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        issue: "CURRENT_ISSUE"
 #^^^^^^^^ source.pyprompt
 #        ^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -925,13 +925,13 @@
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
 #         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #          ^ source.pyprompt
-#           ^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    requirement: Required
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
-#                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt
@@ -1008,7 +1008,7 @@
 #            ^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >        updated_manifest: "Updated Manifest"
 #^^^^^^^^ source.pyprompt
@@ -1027,7 +1027,7 @@
 #            ^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    must_include: "Must Include"
 #^^^^ source.pyprompt
@@ -1200,25 +1200,25 @@
 #    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #              ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #               ^ source.pyprompt
-#                ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    workflow_core: LessonsWorkflowCore
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    how_to_take_a_turn: LessonsHowToTakeATurn
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    standards_and_support: LessonsStandardsAndSupport
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent LessonsProjectLead[LessonsRoleHome]:
@@ -1241,7 +1241,7 @@
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#              ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    override read_first: ProjectLeadReadFirst
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1249,7 +1249,7 @@
 #             ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    override workflow_core: ProjectLeadWorkflowCore
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1257,7 +1257,7 @@
 #             ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    inherit how_to_take_a_turn
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1272,10 +1272,10 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        CurrentIssuePlan
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        CurrentIssueState
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outputs: "Outputs"
 #^^^^ source.pyprompt
@@ -1285,7 +1285,7 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        ProjectLeadUpdate
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outcome: "Routing Outcome"
 #^^^^ source.pyprompt
@@ -1368,20 +1368,20 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            PublishFollowthroughSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    when_to_use_this_role: ProjectLeadWhenToUse
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    override standards_and_support: ProjectLeadStandardsAndSupport
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1389,7 +1389,7 @@
 #             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                   ^ source.pyprompt
-#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent LessonsCopywriter[LessonsRoleHome]:
@@ -1412,7 +1412,7 @@
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#              ^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    override read_first: CopywriterReadFirst
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1420,7 +1420,7 @@
 #             ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    override workflow_core: CopywriterWorkflowCore
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1428,7 +1428,7 @@
 #             ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    inherit how_to_take_a_turn
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1443,16 +1443,16 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        SectionConceptsAndTerms
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        LessonPlan
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        LessonSituations
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        LessonManifest
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outputs: "Outputs"
 #^^^^ source.pyprompt
@@ -1462,7 +1462,7 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        CopyPassOutput
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outcome: "Copywriting Outcome"
 #^^^^ source.pyprompt
@@ -1545,30 +1545,30 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            PokerGroundingSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Required
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >            CopyRewriteSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#            ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    when_to_use_this_role: CopywriterWhenToUse
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >    override standards_and_support: CopywriterStandardsAndSupport
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -1576,5 +1576,5 @@
 #             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                   ^ source.pyprompt
-#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >

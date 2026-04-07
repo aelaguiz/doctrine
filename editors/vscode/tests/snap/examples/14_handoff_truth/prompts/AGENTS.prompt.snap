@@ -53,7 +53,7 @@
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent AcceptanceCritic:
@@ -73,7 +73,7 @@
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >
 >agent SectionAuthor:
@@ -93,7 +93,7 @@
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
 #            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #             ^ source.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt
@@ -103,13 +103,13 @@
 #            ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        contracts.inputs.CurrentIssuePlan
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        contracts.inputs.SectionBrief
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        contracts.inputs.PriorReviewNotes
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outputs: "Outputs"
 #^^^^ source.pyprompt
@@ -119,10 +119,10 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        contracts.outputs.SectionDossierOutput
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >        contracts.outputs.SectionAuthorHandoff
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
 >    outcome: "Section Author Outcome"
 #^^^^ source.pyprompt
