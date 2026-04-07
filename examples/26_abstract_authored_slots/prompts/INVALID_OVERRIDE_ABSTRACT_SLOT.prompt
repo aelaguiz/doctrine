@@ -1,0 +1,12 @@
+workflow ReplacementWorkflowCore: "Workflow Core"
+    "Replacement workflow core."
+
+
+abstract agent ReviewRoleBase:
+    abstract workflow_core
+
+
+agent InvalidOverrideAbstractWorkflowCore[ReviewRoleBase]:
+    role: "Trigger invalid override against an abstract authored slot."
+
+    override workflow_core: ReplacementWorkflowCore

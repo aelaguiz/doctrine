@@ -164,6 +164,13 @@ def main() -> int:
 
     _require_pattern_match(
         repository,
+        "abstractField",
+        ["    abstract workflow_core", "    abstract routing"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "skillsDeclaration",
         ['skills SharedSkills[shared.skills.BaseSkills]: "Skills"'],
         should_match=True,

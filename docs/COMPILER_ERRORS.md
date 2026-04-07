@@ -1,6 +1,6 @@
 # Compiler Errors
 
-This document is the canonical error reference for the shipped PyPrompt parser,
+This document is the canonical error reference for the shipped Doctrine parser,
 compiler, and emit pipeline.
 
 The error surface is now structured first and formatted second.
@@ -42,9 +42,9 @@ Stability rules:
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited workflow, `skills`, or named IO entry that does not exist. |
+| `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited authored slot, workflow, `skills`, or named IO entry that does not exist. |
 | `E002` | Missing rendered section title | Reserved meaning: a rendered section needs an explicit visible title and the source does not provide one. |
-| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited workflow, `skills`, or named IO entries. |
+| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited authored-slot, workflow, `skills`, or named IO entries. |
 
 ### Parse codes
 
@@ -69,6 +69,8 @@ Stability rules:
 | `E206` | Unsupported agent field order | The authoring shape is outside the shipped subset, such as violating the bootstrap role/workflow order rule. |
 | `E207` | Cyclic agent inheritance | Agent inheritance forms a cycle. |
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
+| `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
+| `E210` | Abstract authored slot must be defined directly | An inherited abstract authored slot was handled with `inherit` or `override` instead of a direct `slot_key: ...` definition. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |

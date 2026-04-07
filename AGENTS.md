@@ -5,7 +5,7 @@
 - Sync the repo environment with `uv sync`.
 - Run the full active corpus with `make verify-examples`.
 - For a targeted manifest run, use `uv run --locked python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml`.
-- Today, `make verify-examples` discovers active manifests for every `examples/*/cases.toml` file, including the shipped `examples/01_hello_world` through `examples/25_abstract_agent_io_override` surface.
+- Today, `make verify-examples` discovers active manifests for every `examples/*/cases.toml` file, including the shipped `examples/01_hello_world` through `examples/26_abstract_authored_slots` surface.
 - `examples/99_not_clean_but_useful/` is still design pressure only and is not part of the shipped verification surface.
 - If a dependency is missing or a check could not run, say that plainly.
 
@@ -25,14 +25,14 @@
 
 ## Current Bootstrap Scope
 
-- The current shipped parser/compiler covers examples `01` through `25` in this worktree.
+- The current shipped parser/compiler covers examples `01` through `26` in this worktree.
 - It supports:
   - top-level `agent`, `abstract agent`, `workflow`, `skills`, `inputs`, `outputs`, `import`, `input source`, `input`, `output target`, `output shape`, `output`, `json schema`, and `skill`
   - `role` as either scalar opening text or a titled block with lines
-  - keyed local workflow sections, authored agent slots, keyed `use` composition, explicit `inherit` / `override`, `route "..." -> Target` statements, titled workflow section bodies that mix prose with named declaration refs including concrete agents, and workflow strings that interpolate named declaration contract fields inline including concrete agent names
+  - keyed local workflow sections, authored agent slots, authored-slot `abstract <key>` requirements, keyed `use` composition, explicit `inherit` / `override`, `route "..." -> Target` statements, titled workflow section bodies that mix prose with named declaration refs including concrete agents, and workflow strings that interpolate named declaration contract fields inline including concrete agent names
   - named workflow reuse, named workflow inheritance, named `skills` block inheritance, named `inputs` / `outputs` block inheritance, dotted references, typed `skills` fields, direct `inputs:` / `outputs:` refs to named IO blocks, explicit `inputs[BaseInputs]: ...` / `outputs[BaseOutputs]: ...` field patching, rich inline `inputs` / `outputs` buckets that may mix prose, titled groups, and typed declaration refs, and ordinary authored slots such as `routing`, `review_routing`, `handoff_routing`, and `when_to_stop`
   - indentation-sensitive blocks and standalone `#` comment lines
-- Do not claim anything outside the manifest-backed `01` through `25` corpus is implemented just because it appears under `examples/`.
+- Do not claim anything outside the manifest-backed `01` through `26` corpus is implemented just because it appears under `examples/`.
 
 ## Examples
 

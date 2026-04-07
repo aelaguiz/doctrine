@@ -243,6 +243,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - Dropping inherited workflow entries is not supported right now.
 - `inherit key` is the clearest syntax we have found so far for "keep this inherited workflow entry and place it here."
 - `override key:` is the clearest syntax we have found so far for "replace this inherited workflow entry and place the replacement here."
+- `abstract key` is the clearest syntax we have found so far for "this authored slot must be defined by a concrete descendant without placeholder content."
 - `key: "Title"` inside an inherited child means "this is a new workflow entry and it belongs exactly here."
 - simple local workflows may still live inline inside an agent.
 - named top-level workflows are the canonical home for nested, reusable, or inherited workflow structure.
@@ -251,7 +252,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - Rendered section titles are explicit authored data. Keys are never used as visible headings.
 - Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
 - Invalid overrides should be real compiler errors, not silent fallbacks.
-- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md).
+- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md).
 - `09_outputs` now treats `output` as the only produced-contract primitive.
 - `output target`, `output shape`, and `json schema` are reusable supporting
   declarations under `output`, not competing output primitives.
@@ -303,6 +304,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - `25_abstract_agent_io_override` shows the intended abstract-parent pattern:
   parent agents point at named IO blocks, and child agents either reuse or
   patch those named blocks directly.
+- `26_abstract_authored_slots` shows the authored-slot requirement pattern:
+  abstract parents can require concrete descendants to define named authored
+  slots directly with `abstract <slot_key>` and no placeholder prose.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -310,9 +314,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 25
+## Shipped Through 26
 
-The shipped language subset now covers examples `01` through `25`.
+The shipped language subset now covers examples `01` through `26`.
 
 Current shipped declaration kinds:
 - `import`
@@ -335,6 +339,8 @@ Current shipped agent field families:
 - authored workflow slots such as `workflow`, `your_job`, `read_first`,
   `workflow_core`, `how_to_take_a_turn`, `standards_and_support`, and
   `when_to_use_this_role`
+- authored-slot `abstract <slot_key>` requirements, which only concrete
+  descendants must satisfy
 - `inputs` as either a rich inline bucket, a direct ref to a named inputs
   block, or an explicit patch of a named inputs block
 - `outputs` as either a rich inline bucket, a direct ref to a named outputs

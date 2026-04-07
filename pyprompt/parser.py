@@ -146,6 +146,10 @@ class ToAst(Transformer):
         return model.AuthoredSlotField(key=key, value=self._workflow_slot_value(value, body))
 
     @v_args(inline=True)
+    def agent_slot_abstract(self, key):
+        return model.AuthoredSlotAbstract(key=key)
+
+    @v_args(inline=True)
     def agent_slot_inherit(self, key):
         return model.AuthoredSlotInherit(key=key)
 

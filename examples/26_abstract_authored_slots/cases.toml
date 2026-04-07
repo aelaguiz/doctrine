@@ -1,0 +1,95 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "abstract authored slots require concrete children to define required slots directly"
+status = "active"
+kind = "render_contract"
+agent = "AcceptanceReviewer"
+assertion = "exact_lines"
+approx_ref = "ref/acceptance_reviewer/AGENTS.md"
+expected_lines = [
+  "Review the section honestly and route it to the next owner only when it is ready.",
+  "",
+  "## Your Job",
+  "",
+  "Review the section against the current scope.",
+  "Accept only when the work is ready for the next owner.",
+  "Return weak or unclear work honestly.",
+  "",
+  "## Read First",
+  "",
+  "Read Your Job first.",
+  "Then read Workflow Core and Routing.",
+  "",
+  "## Workflow Core",
+  "",
+  "### Review Scope",
+  "",
+  "Check the current source of truth before you accept the work.",
+  "Do not invent new scope on a review turn.",
+  "",
+  "### Handoff Rule",
+  "",
+  "When you accept the work, route it to ProjectLead.",
+  "When the work is not ready, route it back to SectionAuthor.",
+  "",
+  "## Routing",
+  "",
+  "### Accepted",
+  "",
+  "If the work is accepted -> ProjectLead",
+  "",
+  "### Changes Requested",
+  "",
+  "If the work needs changes -> SectionAuthor",
+  "",
+  "## Standards And Support",
+  "",
+  "Keep the review tied to the current issue.",
+  "Leave one clear next owner.",
+]
+
+[[cases]]
+name = "concrete child missing one abstract authored slot fails with E209"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_ABSTRACT_SLOT.prompt"
+agent = "InvalidConcreteMissingWorkflowCore"
+exception_type = "CompileError"
+error_code = "E209"
+message_contains = [
+  "Concrete agent is missing abstract authored slots",
+  "must define abstract authored slots",
+  "`workflow_core`",
+]
+
+[[cases]]
+name = "concrete child missing multiple abstract authored slots groups them in one E209"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_MULTIPLE_ABSTRACT_SLOTS.prompt"
+agent = "InvalidConcreteMissingMultiple"
+exception_type = "CompileError"
+error_code = "E209"
+message_contains = [
+  "Concrete agent is missing abstract authored slots",
+  "must define abstract authored slots",
+  "`workflow_core`",
+  "`routing`",
+]
+
+[[cases]]
+name = "override does not satisfy an abstract authored slot requirement"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OVERRIDE_ABSTRACT_SLOT.prompt"
+agent = "InvalidOverrideAbstractWorkflowCore"
+exception_type = "CompileError"
+error_code = "E210"
+message_contains = [
+  "Abstract authored slot must be defined directly",
+  "cannot satisfy abstract authored slot",
+  "`workflow_core`",
+  "Define the slot directly with `slot_key: ...`.",
+]

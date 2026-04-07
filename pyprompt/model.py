@@ -233,6 +233,11 @@ class AuthoredSlotField:
 
 
 @dataclass(slots=True, frozen=True)
+class AuthoredSlotAbstract:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
 class AuthoredSlotInherit:
     key: str
 
@@ -266,6 +271,7 @@ Field: TypeAlias = (
     RoleScalar
     | RoleBlock
     | AuthoredSlotField
+    | AuthoredSlotAbstract
     | AuthoredSlotInherit
     | AuthoredSlotOverride
     | InputsField

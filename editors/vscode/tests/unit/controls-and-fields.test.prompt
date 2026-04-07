@@ -14,6 +14,10 @@
 #       ^^^^^^^ keyword.control.pyprompt
 #               ^ support.type.reference.pyprompt
 
+        abstract workflow_core
+#       ^^^^^^^^ keyword.control.pyprompt
+#                ^ support.type.reference.pyprompt
+
         override delivery: RevisedDelivery
 #       ^^^^^^^^ keyword.control.pyprompt
 #                ^ entity.name.section.pyprompt

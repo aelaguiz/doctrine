@@ -157,6 +157,14 @@ class ResolvedAgentSlot:
 
 
 @dataclass(slots=True, frozen=True)
+class ResolvedAbstractAgentSlot:
+    key: str
+
+
+ResolvedAgentSlotState = ResolvedAgentSlot | ResolvedAbstractAgentSlot
+
+
+@dataclass(slots=True, frozen=True)
 class ConfigSpec:
     title: str
     required_keys: dict[str, str]
@@ -217,7 +225,7 @@ class CompilationContext:
         self._resolved_outputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
         self._resolved_agent_slot_cache: dict[
             tuple[tuple[str, ...], str],
-            tuple[ResolvedAgentSlot, ...],
+            tuple[ResolvedAgentSlotState, ...],
         ] = {}
         self.root_unit = self._index_unit(prompt_file, module_parts=())
 
@@ -231,8 +239,21 @@ class CompilationContext:
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
         self._enforce_legacy_role_workflow_order(agent)
+        resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
+        unresolved_abstract_slots = [
+            slot.key
+            for slot in resolved_slot_states
+            if isinstance(slot, ResolvedAbstractAgentSlot)
+        ]
+        if unresolved_abstract_slots:
+            missing = ", ".join(unresolved_abstract_slots)
+            raise CompileError(
+                f"E209 Concrete agent is missing abstract authored slots in agent {agent.name}: {missing}"
+            )
         resolved_slots = {
-            slot.key: slot.body for slot in self._resolve_agent_slots(agent, unit=unit)
+            slot.key: slot.body
+            for slot in resolved_slot_states
+            if isinstance(slot, ResolvedAgentSlot)
         }
         compiled_fields: list[CompiledField] = []
         seen_role = False
@@ -277,7 +298,12 @@ class CompilationContext:
 
             if isinstance(
                 field,
-                (model.AuthoredSlotField, model.AuthoredSlotInherit, model.AuthoredSlotOverride),
+                (
+                    model.AuthoredSlotField,
+                    model.AuthoredSlotAbstract,
+                    model.AuthoredSlotInherit,
+                    model.AuthoredSlotOverride,
+                ),
             ):
                 slot_body = resolved_slots.get(field.key)
                 if slot_body is None:
@@ -350,7 +376,7 @@ class CompilationContext:
 
     def _resolve_agent_slots(
         self, agent: model.Agent, *, unit: IndexedUnit
-    ) -> tuple[ResolvedAgentSlot, ...]:
+    ) -> tuple[ResolvedAgentSlotState, ...]:
         agent_key = (unit.module_parts, agent.name)
         cached = self._resolved_agent_slot_cache.get(agent_key)
         if cached is not None:
@@ -365,7 +391,7 @@ class CompilationContext:
 
         self._agent_slot_resolution_stack.append(agent_key)
         try:
-            parent_slots: tuple[ResolvedAgentSlot, ...] = ()
+            parent_slots: tuple[ResolvedAgentSlotState, ...] = ()
             parent_label: str | None = None
             if agent.parent_ref is not None:
                 parent_unit, parent_agent = self._resolve_parent_agent_decl(agent, unit=unit)
@@ -373,9 +399,9 @@ class CompilationContext:
                 parent_label = f"agent {_dotted_decl_name(parent_unit.module_parts, parent_agent.name)}"
 
             parent_slots_by_key = {slot.key: slot for slot in parent_slots}
-            resolved_slots: list[ResolvedAgentSlot] = []
+            resolved_slots: list[ResolvedAgentSlotState] = []
             seen_slot_keys: set[str] = set()
-            accounted_parent_keys: set[str] = set()
+            accounted_parent_concrete_keys: set[str] = set()
 
             for field in agent.fields:
                 if isinstance(field, model.AuthoredSlotField):
@@ -387,7 +413,7 @@ class CompilationContext:
                     seen_slot_keys.add(field.key)
 
                     parent_slot = parent_slots_by_key.get(field.key)
-                    if parent_slot is not None:
+                    if isinstance(parent_slot, ResolvedAgentSlot):
                         if field.key == "workflow" and isinstance(field.value, model.WorkflowBody):
                             resolved_body = self._resolve_workflow_body(
                                 field.value,
@@ -396,7 +422,7 @@ class CompilationContext:
                                 parent_workflow=parent_slot.body,
                                 parent_label=f"{parent_label} slot workflow",
                             )
-                            accounted_parent_keys.add(field.key)
+                            accounted_parent_concrete_keys.add(field.key)
                             resolved_slots.append(
                                 ResolvedAgentSlot(key=field.key, body=resolved_body)
                             )
@@ -404,6 +430,18 @@ class CompilationContext:
                         raise CompileError(
                             f"Inherited authored slot requires `inherit {field.key}` or `override {field.key}` in agent {agent.name}"
                         )
+                    if isinstance(parent_slot, ResolvedAbstractAgentSlot):
+                        resolved_slots.append(
+                            ResolvedAgentSlot(
+                                key=field.key,
+                                body=self._resolve_slot_value(
+                                    field.value,
+                                    unit=unit,
+                                    owner_label=f"agent {agent.name} slot {field.key}",
+                                ),
+                            )
+                        )
+                        continue
 
                     resolved_slots.append(
                         ResolvedAgentSlot(
@@ -415,6 +453,19 @@ class CompilationContext:
                             ),
                         )
                     )
+                    continue
+
+                if isinstance(field, model.AuthoredSlotAbstract):
+                    self._ensure_valid_authored_slot_key(field.key, agent.name)
+                    if field.key in seen_slot_keys:
+                        raise CompileError(
+                            f"Duplicate authored slot key in agent {agent.name}: {field.key}"
+                        )
+                    seen_slot_keys.add(field.key)
+                    parent_slot = parent_slots_by_key.get(field.key)
+                    if isinstance(parent_slot, ResolvedAgentSlot):
+                        accounted_parent_concrete_keys.add(field.key)
+                    resolved_slots.append(ResolvedAbstractAgentSlot(key=field.key))
                     continue
 
                 if isinstance(field, model.AuthoredSlotInherit):
@@ -430,7 +481,12 @@ class CompilationContext:
                         raise CompileError(
                             f"Cannot inherit undefined authored slot in {label}: {field.key}"
                         )
-                    accounted_parent_keys.add(field.key)
+                    if isinstance(parent_slot, ResolvedAbstractAgentSlot):
+                        label = parent_label or f"agent {agent.name}"
+                        raise CompileError(
+                            f"E210 Abstract authored slot in {label} must be defined directly in agent {agent.name}: {field.key}"
+                        )
+                    accounted_parent_concrete_keys.add(field.key)
                     resolved_slots.append(parent_slot)
                     continue
 
@@ -447,7 +503,12 @@ class CompilationContext:
                         raise CompileError(
                             f"E001 Cannot override undefined authored slot in {label}: {field.key}"
                         )
-                    accounted_parent_keys.add(field.key)
+                    if isinstance(parent_slot, ResolvedAbstractAgentSlot):
+                        label = parent_label or f"agent {agent.name}"
+                        raise CompileError(
+                            f"E210 Abstract authored slot in {label} must be defined directly in agent {agent.name}: {field.key}"
+                        )
+                    accounted_parent_concrete_keys.add(field.key)
                     resolved_slots.append(
                         ResolvedAgentSlot(
                             key=field.key,
@@ -462,13 +523,21 @@ class CompilationContext:
             missing_parent_keys = [
                 parent_slot.key
                 for parent_slot in parent_slots
-                if parent_slot.key not in accounted_parent_keys
+                if isinstance(parent_slot, ResolvedAgentSlot)
+                and parent_slot.key not in accounted_parent_concrete_keys
             ]
             if missing_parent_keys:
                 missing = ", ".join(missing_parent_keys)
                 raise CompileError(
                     f"E003 Missing inherited authored slot in agent {agent.name}: {missing}"
                 )
+
+            for parent_slot in parent_slots:
+                if (
+                    isinstance(parent_slot, ResolvedAbstractAgentSlot)
+                    and parent_slot.key not in seen_slot_keys
+                ):
+                    resolved_slots.append(parent_slot)
 
             resolved = tuple(resolved_slots)
             self._resolved_agent_slot_cache[agent_key] = resolved

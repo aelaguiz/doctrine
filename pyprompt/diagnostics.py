@@ -607,6 +607,30 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(
+            r"^E209 Concrete agent is missing abstract authored slots in agent (?P<agent>[^:]+): (?P<slots>.+)$"
+        ),
+        "E209",
+        "Concrete agent is missing abstract authored slots",
+        lambda match: (
+            f"Concrete agent `{match.group('agent')}` must define abstract authored slots: "
+            f"{', '.join(f'`{slot.strip()}`' for slot in match.group('slots').split(','))}."
+        ),
+        ("Define each missing slot directly with `slot_key: ...`.",),
+    ),
+    (
+        re.compile(
+            r"^E210 Abstract authored slot in (?P<label>[^:]+) must be defined directly in agent (?P<agent>[^:]+): (?P<slot>.+)$"
+        ),
+        "E210",
+        "Abstract authored slot must be defined directly",
+        lambda match: (
+            f"Agent `{match.group('agent')}` cannot satisfy abstract authored slot "
+            f"`{match.group('slot')}` from {match.group('label')} with `inherit` or `override`."
+        ),
+        ("Define the slot directly with `slot_key: ...`.",),
+    ),
+    (
         re.compile(r"^Cyclic agent inheritance: (?P<detail>.+)$"),
         "E207",
         "Cyclic agent inheritance",

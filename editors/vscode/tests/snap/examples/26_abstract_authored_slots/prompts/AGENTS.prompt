@@ -1,0 +1,69 @@
+# This example introduces `abstract <slot_key>` for authored agent slots.
+# - it declares a required authored slot without placeholder prose
+# - abstract descendants may defer inherited abstract slots
+# - concrete children must define every remaining abstract slot directly
+# - `inherit` and `override` do not satisfy an abstract slot requirement
+
+workflow SharedReadFirst: "Read First"
+    "Read Your Job first."
+    "Then read Workflow Core and Routing."
+
+
+workflow SharedStandards: "Standards And Support"
+    "Keep the review tied to the current issue."
+    "Leave one clear next owner."
+
+
+workflow AcceptanceReviewerJob: "Your Job"
+    "Review the section against the current scope."
+    "Accept only when the work is ready for the next owner."
+    "Return weak or unclear work honestly."
+
+
+workflow AcceptanceReviewerWorkflowCore: "Workflow Core"
+    review_scope: "Review Scope"
+        "Check the current source of truth before you accept the work."
+        "Do not invent new scope on a review turn."
+
+    handoff_rule: "Handoff Rule"
+        "When you accept the work, route it to ProjectLead."
+        "When the work is not ready, route it back to SectionAuthor."
+
+
+workflow AcceptanceReviewerRouting: "Routing"
+    accepted: "Accepted"
+        route "If the work is accepted" -> ProjectLead
+
+    changes_requested: "Changes Requested"
+        route "If the work needs changes" -> SectionAuthor
+
+
+agent ProjectLead:
+    role: "Receive accepted review work."
+
+
+agent SectionAuthor:
+    role: "Receive review work that needs changes."
+
+
+abstract agent ReviewRoleBase:
+    read_first: SharedReadFirst
+    standards_and_support: SharedStandards
+    abstract your_job
+    abstract workflow_core
+    abstract routing
+
+
+abstract agent DeferredReviewRole[ReviewRoleBase]:
+    inherit read_first
+    inherit standards_and_support
+
+
+agent AcceptanceReviewer[DeferredReviewRole]:
+    role: "Review the section honestly and route it to the next owner only when it is ready."
+
+    your_job: AcceptanceReviewerJob
+    inherit read_first
+    workflow_core: AcceptanceReviewerWorkflowCore
+    routing: AcceptanceReviewerRouting
+    inherit standards_and_support

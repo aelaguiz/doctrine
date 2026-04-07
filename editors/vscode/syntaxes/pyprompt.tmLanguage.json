@@ -82,6 +82,9 @@
       "include": "#route"
     },
     {
+      "include": "#abstractField"
+    },
+    {
       "include": "#use"
     },
     {
@@ -687,6 +690,17 @@
           "include": "#stringInterpolation"
         }
       ]
+    },
+    "abstractField": {
+      "match": "^(\\s*)(abstract)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.control.pyprompt"
+        },
+        "4": {
+          "name": "support.type.reference.pyprompt"
+        }
+      }
     },
     "use": {
       "match": "^(\\s*)(use)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",

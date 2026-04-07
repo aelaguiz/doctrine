@@ -55,6 +55,7 @@ inheritance: "[" name_ref "]"
             | outputs_inline_field
             | outputs_ref_field
             | skills_field
+            | agent_slot_abstract
             | agent_slot_inherit
             | agent_slot_override
             | agent_slot_field
@@ -74,6 +75,7 @@ skills_field: "skills" ":" string _NL _INDENT skills_body _DEDENT
             | "skills" ":" name_ref _NL?
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
+agent_slot_abstract: "abstract" CNAME _NL?
 agent_slot_inherit: "inherit" CNAME _NL?
 agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
 
