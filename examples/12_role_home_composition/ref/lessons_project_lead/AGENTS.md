@@ -111,7 +111,7 @@ Stop when one honest owner, one honest next step, and the current source of trut
 
 ### Can Run
 
-#### publish-followthrough
+#### release-followthrough
 
 ##### Purpose
 

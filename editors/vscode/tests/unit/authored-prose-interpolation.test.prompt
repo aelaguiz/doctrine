@@ -1,49 +1,49 @@
-# SYNTAX TEST "source.pyprompt" "authored prose interpolation surfaces"
+# SYNTAX TEST "source.doctrine" "authored prose interpolation surfaces"
 
 agent Demo:
     role: "Read {{CurrentPlan}} before you act."
-#   ^^^^ keyword.other.field.pyprompt
-#         ^ punctuation.definition.string.begin.pyprompt
-#               ^^ punctuation.definition.interpolation.begin.pyprompt
-#                 ^^^^^^^^^^^ support.type.reference.pyprompt
-#                            ^^ punctuation.definition.interpolation.end.pyprompt
-#                                              ^ punctuation.definition.string.end.pyprompt
+#   ^^^^ keyword.other.field.doctrine
+#         ^ punctuation.definition.string.begin.doctrine
+#               ^^ punctuation.definition.interpolation.begin.doctrine
+#                 ^^^^^^^^^^^ support.type.reference.doctrine
+#                            ^^ punctuation.definition.interpolation.end.doctrine
+#                                              ^ punctuation.definition.string.end.doctrine
 
 skill GroundingSkill: "Grounding Skill"
     purpose: "Ground {{CurrentPlan}} before you write."
-#   ^^^^^^^ entity.name.section.pyprompt
-#            ^ punctuation.definition.string.begin.pyprompt
-#                    ^^ punctuation.definition.interpolation.begin.pyprompt
-#                      ^^^^^^^^^^^ support.type.reference.pyprompt
-#                                 ^^ punctuation.definition.interpolation.end.pyprompt
-#                                                     ^ punctuation.definition.string.end.pyprompt
+#   ^^^^^^^ entity.name.section.doctrine
+#            ^ punctuation.definition.string.begin.doctrine
+#                    ^^ punctuation.definition.interpolation.begin.doctrine
+#                      ^^^^^^^^^^^ support.type.reference.doctrine
+#                                 ^^ punctuation.definition.interpolation.end.doctrine
+#                                                     ^ punctuation.definition.string.end.doctrine
 
 agent SkillUser:
     role: "Role"
     skills: "Skills"
         can_run: "Can Run"
             skill grounding: GroundingSkill
-#           ^^^^^ keyword.control.pyprompt
-#                 ^^^^^^^^^ entity.name.section.pyprompt
-#                            ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#           ^^^^^ keyword.control.doctrine
+#                 ^^^^^^^^^ entity.name.section.doctrine
+#                            ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
                 reason: "Ask {{ProjectLead}} only when needed."
-#               ^^^^^^ entity.name.section.pyprompt
-#                       ^ punctuation.definition.string.begin.pyprompt
-#                            ^^ punctuation.definition.interpolation.begin.pyprompt
-#                              ^^^^^^^^^^^ support.type.reference.pyprompt
-#                                         ^^ punctuation.definition.interpolation.end.pyprompt
-#                                                             ^ punctuation.definition.string.end.pyprompt
+#               ^^^^^^ entity.name.section.doctrine
+#                       ^ punctuation.definition.string.begin.doctrine
+#                            ^^ punctuation.definition.interpolation.begin.doctrine
+#                              ^^^^^^^^^^^ support.type.reference.doctrine
+#                                         ^^ punctuation.definition.interpolation.end.doctrine
+#                                                             ^ punctuation.definition.string.end.doctrine
 
 workflow RouteDemo: "Route Demo"
     routing_rules: "Routing Rules"
         route "If {{ProjectLead}} must step in" -> ProjectLead
-#       ^^^^^ keyword.control.pyprompt
-#             ^ punctuation.definition.string.begin.pyprompt
-#                 ^^ punctuation.definition.interpolation.begin.pyprompt
-#                   ^^^^^^^^^^^ support.type.reference.pyprompt
-#                              ^^ punctuation.definition.interpolation.end.pyprompt
-#                                             ^ punctuation.definition.string.end.pyprompt
-#                                               ^ keyword.operator.route.pyprompt
-#                                               ^ keyword.operator.pyprompt
-#                                               ^ punctuation.separator.route.pyprompt
-#                                                  ^^^^^^^^^^^ entity.name.type.reference.route-target.pyprompt
+#       ^^^^^ keyword.control.doctrine
+#             ^ punctuation.definition.string.begin.doctrine
+#                 ^^ punctuation.definition.interpolation.begin.doctrine
+#                   ^^^^^^^^^^^ support.type.reference.doctrine
+#                              ^^ punctuation.definition.interpolation.end.doctrine
+#                                             ^ punctuation.definition.string.end.doctrine
+#                                               ^ keyword.operator.route.doctrine
+#                                               ^ keyword.operator.doctrine
+#                                               ^ punctuation.separator.route.doctrine
+#                                                  ^^^^^^^^^^^ entity.name.type.reference.route-target.doctrine

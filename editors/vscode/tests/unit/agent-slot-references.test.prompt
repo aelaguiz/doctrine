@@ -1,4 +1,4 @@
-# SYNTAX TEST "source.pyprompt" "agent slot references read like named declarations"
+# SYNTAX TEST "source.doctrine" "agent slot references read like named declarations"
 
 workflow ReadFirst: "Read First"
 
@@ -10,13 +10,13 @@ agent SectionDossierEngineer:
     role: "You are Section Dossier Engineer."
 
     read_first: ReadFirst
-#   ^^^^^^^^^^ entity.name.section.pyprompt
-#                ^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^^^^^^ entity.name.section.doctrine
+#                ^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
     your_job: DossierEngineerJob
-#   ^^^^^^^^ entity.name.section.pyprompt
-#             ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^^^^ entity.name.section.doctrine
+#             ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
     how_to_take_a_turn: HowToTakeATurn
-#   ^^^^^^^^^^^^^^^^^^ entity.name.section.pyprompt
-#                       ^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                       ^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine

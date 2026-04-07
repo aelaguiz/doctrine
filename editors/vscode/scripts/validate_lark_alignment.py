@@ -8,10 +8,10 @@ from typing import Iterator
 
 
 ROOT = Path(__file__).resolve().parents[3]
-LARK_PATH = ROOT / "pyprompt" / "grammars" / "pyprompt.lark"
+LARK_PATH = ROOT / "doctrine" / "grammars" / "doctrine.lark"
 PACKAGE_PATH = ROOT / "editors" / "vscode" / "package.json"
 LANGUAGE_CONFIG_PATH = ROOT / "editors" / "vscode" / "language-configuration.json"
-TM_LANGUAGE_PATH = ROOT / "editors" / "vscode" / "syntaxes" / "pyprompt.tmLanguage.json"
+TM_LANGUAGE_PATH = ROOT / "editors" / "vscode" / "syntaxes" / "doctrine.tmLanguage.json"
 
 WORD_LITERAL_RE = re.compile(r'"([a-z]+)"')
 IDENTIFIER_LIKE_RE = re.compile(r"^[a-z]+$")
@@ -127,14 +127,14 @@ def main() -> int:
 
     languages = package.get("contributes", {}).get("languages", [])
     grammars = package.get("contributes", {}).get("grammars", [])
-    if not languages or languages[0].get("id") != "pyprompt":
-        errors.append("package.json must contribute the `pyprompt` language id.")
+    if not languages or languages[0].get("id") != "doctrine":
+        errors.append("package.json must contribute the `doctrine` language id.")
     if not languages or ".prompt" not in languages[0].get("extensions", []):
         errors.append("package.json must associate the language with `.prompt` files.")
-    if not grammars or grammars[0].get("scopeName") != "source.pyprompt":
-        errors.append("package.json must contribute the `source.pyprompt` grammar scope.")
-    if tm_language.get("scopeName") != "source.pyprompt":
-        errors.append("tmLanguage scopeName must stay `source.pyprompt`.")
+    if not grammars or grammars[0].get("scopeName") != "source.doctrine":
+        errors.append("package.json must contribute the `source.doctrine` grammar scope.")
+    if tm_language.get("scopeName") != "source.doctrine":
+        errors.append("tmLanguage scopeName must stay `source.doctrine`.")
     if language_config.get("comments", {}).get("lineComment") != "#":
         errors.append("language-configuration.json must keep `#` as the line comment token.")
     if language_config.get("folding", {}).get("offSide") is not True:
@@ -255,13 +255,13 @@ def main() -> int:
     )
 
     if errors:
-        print("PyPrompt VS Code alignment check failed:", file=sys.stderr)
+        print("Doctrine VS Code alignment check failed:", file=sys.stderr)
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return 1
 
     print(
-        "PyPrompt VS Code alignment check passed for "
+        "Doctrine VS Code alignment check passed for "
         f"{len(expected_keywords)} shipped keywords."
     )
     return 0

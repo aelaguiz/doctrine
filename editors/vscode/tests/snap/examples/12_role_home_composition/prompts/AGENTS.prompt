@@ -36,7 +36,7 @@ workflow CopywriterReadFirst[LessonsReadFirst]: "Read First"
     inherit read_order
 
     immediate_local_read: "Immediate Local Read"
-        "Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch learner-facing text."
+        "Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch reader-facing text."
 
 
 workflow LessonsWorkflowCore: "Workflow Core"
@@ -111,17 +111,17 @@ workflow ProjectLeadStandardsAndSupport[LessonsStandardsAndSupport]: "Standards 
 
 
 workflow CopywriterStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
-    poker_grounding: "Poker Grounding"
-        "Use Books to ground meaning and Forums to ground real player wording."
+    domain_grounding: "Domain Grounding"
+        "Use reference notes to ground meaning and reviewed examples to ground natural wording."
         "If the grounding is missing, stop and say it is missing."
 
     copy_standards: "Copy Standards"
         "Keep locked concepts and terms intact."
         "Do not sharpen exact-action claims in copy."
 
-    pokerkb: "PokerKB"
-        "Use it for definitions, grounded claim checks, terminology, and real poker wording."
-        "Do not use it as exact right-move authority."
+    reference_kb: "Reference KB"
+        "Use it for definitions, grounded claim checks, terminology, and domain wording."
+        "Do not use it as final expert authority."
 
     step_json_validator: "Step JSON Validator"
         "Use it after copy changes to validate the changed lesson manifest surfaces."
@@ -138,7 +138,7 @@ workflow ProjectLeadJob: "Your Job"
 
 workflow CopywriterJob: "Your Job"
     "Read the whole lesson before you rewrite isolated strings."
-    "Use grounded poker wording without changing lesson structure or authority scope."
+    "Use grounded domain wording without changing the approved structure or authority scope."
     "Record post-copy validation in the current outputs."
 
 
@@ -148,7 +148,7 @@ workflow ProjectLeadWhenToUse: "When To Use This Role"
 
 
 workflow CopywriterWhenToUse: "When To Use This Role"
-    "Use this role when the manifest already exists and the next job is final learner-facing copy."
+    "Use this role when the manifest already exists and the next job is final reader-facing copy."
     "Expect this lane to stop with current copy outputs ready for return to Project Lead."
 
 
@@ -172,7 +172,7 @@ input SectionConceptsAndTerms: "Section Concepts And Terms"
         path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
     shape: MarkdownDocument
     requirement: Required
-    "Use the locked section language before rewriting learner-facing text."
+    "Use the locked section language before rewriting reader-facing text."
 
 
 input LessonPlan: "Lesson Plan"
@@ -196,7 +196,7 @@ input LessonManifest: "Lesson Manifest"
         path: "lesson_root/_authoring/lesson_manifest.json"
     shape: JsonObject
     requirement: Required
-    "Use the current lesson manifest as the editable learner-facing surface."
+    "Use the current lesson manifest as the editable reader-facing surface."
 
 
 output shape OwnerUpdateComment: "Owner Update Comment"
@@ -249,29 +249,29 @@ output CopyPassOutput: "Copy Pass Output"
         "A downstream reader should be able to read COPY_GROUNDING.md and lesson_manifest.json and understand what changed and what was validated."
 
 
-skill PublishFollowthroughSkill: "publish-followthrough"
+skill ReleaseFollowthroughSkill: "release-followthrough"
     purpose: "Handle PR follow-up, QR updates, publish proof, and same-issue closeout."
 
     use_when: "Use When"
         "Use this when publish or follow-up is the live job."
 
 
-skill PokerGroundingSkill: "strategy-grounding-kb"
-    purpose: "Ground learner-facing poker wording against current poker truth."
+skill DomainGroundingSkill: "domain-grounding-kb"
+    purpose: "Ground reader-facing domain wording against current source truth."
 
     use_when: "Use When"
-        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
+        "Use this when the lane needs primary-source receipts for reader-facing copy."
 
     does_not: "Does Not"
-        "Does not change lesson structure."
-        "Does not establish exact right-move authority."
+        "Does not change the approved structure."
+        "Does not establish final expert authority."
 
 
-skill CopyRewriteSkill: "poker-native-copy"
-    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
+skill CopyRewriteSkill: "domain-copy-rewrite"
+    purpose: "Rewrite reader-facing domain copy in the repo's expected voice."
 
     use_when: "Use When"
-        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
+        "Use this when the job is reader-facing domain wording such as titles, hints, coach text, explanations, and feedback."
 
 
 abstract agent LessonsRoleHome:
@@ -309,7 +309,7 @@ agent LessonsProjectLead[LessonsRoleHome]:
 
     skills: "Skills"
         can_run: "Can Run"
-            skill publish_followthrough: PublishFollowthroughSkill
+            skill release_followthrough: ReleaseFollowthroughSkill
                 requirement: Advisory
 
     when_to_use_this_role: ProjectLeadWhenToUse
@@ -317,7 +317,7 @@ agent LessonsProjectLead[LessonsRoleHome]:
 
 
 agent LessonsCopywriter[LessonsRoleHome]:
-    role: "Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope."
+    role: "Core job: turn the approved manifest into grounded reader-facing copy without changing lesson structure or authority scope."
 
     your_job: CopywriterJob
     override read_first: CopywriterReadFirst
@@ -342,11 +342,11 @@ agent LessonsCopywriter[LessonsRoleHome]:
 
     when_to_stop: "When To Stop"
         stop_here_if: "Stop Here If"
-            "Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead."
+            "Stop when reader-facing copy and post-copy validation are explicit enough for return to Project Lead."
 
     skills: "Skills"
         can_run: "Can Run"
-            skill poker_grounding: PokerGroundingSkill
+            skill domain_grounding: DomainGroundingSkill
                 requirement: Required
 
             skill copy_rewrite: CopyRewriteSkill

@@ -1,11 +1,11 @@
 # Lessons Copywriter
 
-Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope.
+Core job: turn the approved manifest into grounded reader-facing copy without changing lesson structure or authority scope.
 
 ## Your Job
 
 Read the whole lesson before you rewrite isolated strings.
-Use grounded poker wording without changing lesson structure or authority scope.
+Use grounded domain wording without changing the approved structure or authority scope.
 Record post-copy validation in the current outputs.
 
 ## Read First
@@ -18,7 +18,7 @@ Then read Inputs, Outputs, Routing, When To Stop, Skills, When To Use This Role,
 
 ### Immediate Local Read
 
-Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch learner-facing text.
+Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch reader-facing text.
 
 ## Workflow Core
 
@@ -60,7 +60,7 @@ Do not hand off weak work.
 - Shape: Markdown document
 - Requirement: Required
 
-Use the locked section language before rewriting learner-facing text.
+Use the locked section language before rewriting reader-facing text.
 
 ### Lesson Plan
 
@@ -87,7 +87,7 @@ Use the approved lesson situations to preserve concrete rep choices.
 - Shape: JsonObject
 - Requirement: Required
 
-Use the current lesson manifest as the editable learner-facing surface.
+Use the current lesson manifest as the editable reader-facing surface.
 
 ## Outputs
 
@@ -122,49 +122,49 @@ A downstream reader should be able to read `COPY_GROUNDING.md` and `lesson_manif
 
 ### Stop Here If
 
-Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead.
+Stop when reader-facing copy and post-copy validation are explicit enough for return to Project Lead.
 
 ## Skills
 
 ### Can Run
 
-#### strategy-grounding-kb
+#### domain-grounding-kb
 
 ##### Purpose
 
-Ground learner-facing poker wording against current poker truth.
+Ground reader-facing domain wording against current source truth.
 
 This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.
 
 ##### Use When
 
-Use this when the lane needs Books or Forums receipts for learner-facing copy.
+Use this when the lane needs primary-source receipts for reader-facing copy.
 
 ##### Does Not
 
-- Does not change lesson structure.
-- Does not establish exact right-move authority.
+- Does not change the approved structure.
+- Does not establish final expert authority.
 
-#### poker-native-copy
+#### domain-copy-rewrite
 
 ##### Purpose
 
-Rewrite learner-facing poker copy in the repo's expected voice.
+Rewrite reader-facing domain copy in the repo's expected voice.
 
 ##### Use When
 
-Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback.
+Use this when the job is reader-facing domain wording such as titles, hints, coach text, explanations, and feedback.
 
 ## When To Use This Role
 
-Use this role when the manifest already exists and the next job is final learner-facing copy.
+Use this role when the manifest already exists and the next job is final reader-facing copy.
 Expect this lane to stop with current copy outputs ready for return to Project Lead.
 
 ## Standards And Support
 
-### Poker Grounding
+### Domain Grounding
 
-Use Books to ground meaning and Forums to ground real player wording.
+Use reference notes to ground meaning and reviewed examples to ground natural wording.
 If the grounding is missing, stop and say it is missing.
 
 ### Copy Standards
@@ -172,10 +172,10 @@ If the grounding is missing, stop and say it is missing.
 Keep locked concepts and terms intact.
 Do not sharpen exact-action claims in copy.
 
-### PokerKB
+### Reference KB
 
-Use it for definitions, grounded claim checks, terminology, and real poker wording.
-Do not use it as exact right-move authority.
+Use it for definitions, grounded claim checks, terminology, and domain wording.
+Do not use it as final expert authority.
 
 ### Step JSON Validator
 

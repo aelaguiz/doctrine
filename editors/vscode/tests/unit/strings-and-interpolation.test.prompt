@@ -1,33 +1,33 @@
-# SYNTAX TEST "source.pyprompt" "strings and interpolation"
+# SYNTAX TEST "source.doctrine" "strings and interpolation"
 
     "{{TrackMetadata:source.path}}"
-#   ^ punctuation.definition.string.begin.pyprompt
-#    ^^ punctuation.definition.interpolation.begin.pyprompt
-#      ^^^^^^^^^^^^^ support.type.reference.pyprompt
-#                   ^ punctuation.separator.interpolation.pyprompt
-#                    ^^^^^^^^^^^ variable.other.member.pyprompt
-#                               ^^ punctuation.definition.interpolation.end.pyprompt
-#                                 ^ punctuation.definition.string.end.pyprompt
+#   ^ punctuation.definition.string.begin.doctrine
+#    ^^ punctuation.definition.interpolation.begin.doctrine
+#      ^^^^^^^^^^^^^ support.type.reference.doctrine
+#                   ^ punctuation.separator.interpolation.doctrine
+#                    ^^^^^^^^^^^ variable.other.member.doctrine
+#                               ^^ punctuation.definition.interpolation.end.doctrine
+#                                 ^ punctuation.definition.string.end.doctrine
 
     "{{CurrentConcepts}}"
-#   ^ punctuation.definition.string.begin.pyprompt
-#    ^^ punctuation.definition.interpolation.begin.pyprompt
-#      ^^^^^^^^^^^^^^^ support.type.reference.pyprompt
-#                     ^^ punctuation.definition.interpolation.end.pyprompt
-#                       ^ punctuation.definition.string.end.pyprompt
+#   ^ punctuation.definition.string.begin.doctrine
+#    ^^ punctuation.definition.interpolation.begin.doctrine
+#      ^^^^^^^^^^^^^^^ support.type.reference.doctrine
+#                     ^^ punctuation.definition.interpolation.end.doctrine
+#                       ^ punctuation.definition.string.end.doctrine
 
     "{{ProjectLead}}"
-#   ^ punctuation.definition.string.begin.pyprompt
-#    ^^ punctuation.definition.interpolation.begin.pyprompt
-#      ^^^^^^^^^^^ support.type.reference.pyprompt
-#                 ^^ punctuation.definition.interpolation.end.pyprompt
-#                   ^ punctuation.definition.string.end.pyprompt
+#   ^ punctuation.definition.string.begin.doctrine
+#    ^^ punctuation.definition.interpolation.begin.doctrine
+#      ^^^^^^^^^^^ support.type.reference.doctrine
+#                 ^^ punctuation.definition.interpolation.end.doctrine
+#                   ^ punctuation.definition.string.end.doctrine
 
     "{{shared.roles.AcceptanceCritic:name}}"
-#   ^ punctuation.definition.string.begin.pyprompt
-#    ^^ punctuation.definition.interpolation.begin.pyprompt
-#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
-#                                   ^ punctuation.separator.interpolation.pyprompt
-#                                    ^^^^ variable.other.member.pyprompt
-#                                        ^^ punctuation.definition.interpolation.end.pyprompt
-#                                          ^ punctuation.definition.string.end.pyprompt
+#   ^ punctuation.definition.string.begin.doctrine
+#    ^^ punctuation.definition.interpolation.begin.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine
+#                                   ^ punctuation.separator.interpolation.doctrine
+#                                    ^^^^ variable.other.member.doctrine
+#                                        ^^ punctuation.definition.interpolation.end.doctrine
+#                                          ^ punctuation.definition.string.end.doctrine

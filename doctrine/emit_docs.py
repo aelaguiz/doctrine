@@ -7,11 +7,11 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from pyprompt import model
-from pyprompt.compiler import compile_prompt
-from pyprompt.diagnostics import DiagnosticLocation, EmitError, PyPromptError
-from pyprompt.parser import parse_file
-from pyprompt.renderer import render_markdown
+from doctrine import model
+from doctrine.compiler import compile_prompt
+from doctrine.diagnostics import DiagnosticLocation, EmitError, DoctrineError
+from doctrine.parser import parse_file
+from doctrine.renderer import render_markdown
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT_FILE_NAME = "pyproject.toml"
@@ -45,19 +45,19 @@ def main(argv: list[str] | None = None) -> int:
                 f"{target.name}: emitted {len(emitted)} file(s) to {_display_path(target.output_dir)}"
             )
         return 0
-    except PyPromptError as exc:
+    except DoctrineError as exc:
         print(exc, file=sys.stderr)
         return 1
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Emit compiled AGENTS.md trees for configured PyPrompt targets."
+        description="Emit compiled AGENTS.md trees for configured Doctrine targets."
     )
     parser.add_argument(
         "--pyproject",
         help=(
-            "Path to the pyproject.toml that defines [tool.pyprompt.emit]. "
+            "Path to the pyproject.toml that defines [tool.doctrine.emit]. "
             "Defaults to the nearest parent pyproject.toml from the current working directory."
         ),
     )
@@ -65,7 +65,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--target",
         action="append",
         required=True,
-        help="Configured target name from [tool.pyprompt.emit.targets]. Repeat to emit multiple targets.",
+        help="Configured target name from [tool.doctrine.emit.targets]. Repeat to emit multiple targets.",
     )
     return parser
 
@@ -124,7 +124,7 @@ def load_emit_targets(
         raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
     emit = (
         raw.get("tool", {})
-        .get("pyprompt", {})
+        .get("doctrine", {})
         .get("emit", {})
     )
     raw_targets = emit.get("targets")
@@ -132,7 +132,7 @@ def load_emit_targets(
         raise _emit_error(
             "E503",
             "Missing emit targets",
-            "The current `pyproject.toml` does not define any `[tool.pyprompt.emit.targets]`.",
+            "The current `pyproject.toml` does not define any `[tool.doctrine.emit.targets]`.",
             location=_path_location(config_path),
         )
 
@@ -193,7 +193,7 @@ def emit_target(
 ) -> tuple[Path, ...]:
     try:
         prompt_file = parse_file(target.entrypoint)
-    except PyPromptError as exc:
+    except DoctrineError as exc:
         raise exc.prepend_trace(
             f"emit target `{target.name}` entrypoint",
             location=_path_location(target.entrypoint),
@@ -226,7 +226,7 @@ def emit_target(
 
         try:
             rendered = render_markdown(compile_prompt(prompt_file, agent_name))
-        except PyPromptError as exc:
+        except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"emit target `{target.name}`",
                 location=_path_location(target.entrypoint),

@@ -1,30 +1,30 @@
-# SYNTAX TEST "source.pyprompt" "first-class io blocks and agent io patching"
+# SYNTAX TEST "source.doctrine" "first-class io blocks and agent io patching"
 
 inputs SharedInputs[shared.io.BaseInputs]: "Your Inputs"
-# <---- keyword.declaration.pyprompt
-#      ^ entity.name.type.pyprompt
-#                   ^ entity.other.inherited-class.pyprompt
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine
+#                   ^ entity.other.inherited-class.doctrine
 
 outputs SharedOutputs: "Your Outputs"
-# <----- keyword.declaration.pyprompt
-#       ^ entity.name.type.pyprompt
+# <----- keyword.declaration.doctrine
+#       ^ entity.name.type.doctrine
 
 agent Reviewer:
     inputs: SharedInputs
-#   ^^^^^^ keyword.other.field.pyprompt
-#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^^ keyword.other.field.doctrine
+#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
     outputs[SharedOutputs]: "Your Outputs"
-#   ^^^^^^^ keyword.other.field.pyprompt
-#          ^ punctuation.section.inheritance.begin.pyprompt
-#           ^^^^^^^^^^^^^ entity.other.inherited-class.pyprompt
-#                        ^ punctuation.section.inheritance.end.pyprompt
-#                         ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^ keyword.other.field.doctrine
+#          ^ punctuation.section.inheritance.begin.doctrine
+#           ^^^^^^^^^^^^^ entity.other.inherited-class.doctrine
+#                        ^ punctuation.section.inheritance.end.doctrine
+#                         ^ punctuation.separator.key-value.doctrine
 
         inherit durable_section_truth
-#       ^^^^^^^ keyword.control.pyprompt
-#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
+#       ^^^^^^^ keyword.control.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
 
         inherit scoped_catalog_truth
-#       ^^^^^^^ keyword.control.pyprompt
-#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
+#       ^^^^^^^ keyword.control.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine

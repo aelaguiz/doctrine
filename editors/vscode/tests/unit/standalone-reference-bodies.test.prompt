@@ -1,36 +1,36 @@
-# SYNTAX TEST "source.pyprompt" "standalone references in bodies read like named declarations"
+# SYNTAX TEST "source.doctrine" "standalone references in bodies read like named declarations"
 
     inputs: "Your Inputs"
-#   ^^^^^^ keyword.other.field.pyprompt
+#   ^^^^^^ keyword.other.field.doctrine
 
         scoped_catalog_truth: "Scoped Catalog Truth"
-#       ^^^^^^^^^^^^^^^^^^^^ entity.name.section.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
             TrackCatalogMeta
-#           ^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#           ^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
             SectionCatalogMeta
-#           ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
     skills: SharedSkills
-#   ^^^^^^ keyword.other.field.pyprompt
-#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^^ keyword.other.field.doctrine
+#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
     skills: "You Use These Skills"
-#   ^^^^^^ keyword.other.field.pyprompt
+#   ^^^^^^ keyword.other.field.doctrine
 
         can_run: "Can Run"
-#       ^^^^^^^ entity.name.section.pyprompt
+#       ^^^^^^^ entity.name.section.doctrine
             skill coordination: CoordinationSkill
-#           ^^^^^ keyword.control.pyprompt
-#                 ^^^^^^^^^^^^ entity.name.section.pyprompt
-#                               ^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#           ^^^^^ keyword.control.doctrine
+#                 ^^^^^^^^^^^^ entity.name.section.doctrine
+#                               ^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
                 requirement: Required
-#               ^^^^^^^^^^^ entity.name.section.pyprompt
-#                            ^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#               ^^^^^^^^^^^ entity.name.section.doctrine
+#                            ^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
-            skill poker_grounding: PokerGroundingSkill
+            skill domain_grounding: DomainGroundingSkill
                 requirement: Required
 
-            skill poker_kb: PokerKBSkill
+            skill reference_kb: ReferenceKBSkill
                 requirement: Required
 
             skill github_access: GitHubAccessSkill

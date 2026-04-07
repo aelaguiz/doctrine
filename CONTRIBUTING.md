@@ -28,7 +28,7 @@ make
 
 ## Repo rules
 
-- Treat `pyprompt/` as the shipped source of truth for parser, compiler, and renderer behavior.
+- Treat `doctrine/` as the shipped source of truth for parser, compiler, and renderer behavior.
 - Treat `examples/` as design and verification inputs, not as proof of shipped behavior on their own.
 - Keep new examples disciplined: one new idea at a time, with the smallest example that proves it cleanly.
 - Prefer fail-loud behavior over silent fallback when you change grammar or compiler behavior.

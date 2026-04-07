@@ -1,29 +1,29 @@
-# SYNTAX TEST "source.pyprompt" "emphasized prose lines"
+# SYNTAX TEST "source.doctrine" "emphasized prose lines"
 
     required "Read this first."
-#   ^^^^^^^^ keyword.control.emphasis.required.pyprompt
-#            ^ punctuation.definition.string.begin.pyprompt
-#             ^^^^^^^^^^^^^^^^ string.quoted.double.pyprompt
-#                             ^ punctuation.definition.string.end.pyprompt
+#   ^^^^^^^^ keyword.control.emphasis.required.doctrine
+#            ^ punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^ string.quoted.double.doctrine
+#                             ^ punctuation.definition.string.end.doctrine
 
     important "Keep the current plan as truth."
-#   ^^^^^^^^^ keyword.control.emphasis.important.pyprompt
-#             ^ punctuation.definition.string.begin.pyprompt
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ string.quoted.double.pyprompt
-#                                             ^ punctuation.definition.string.end.pyprompt
+#   ^^^^^^^^^ keyword.control.emphasis.important.doctrine
+#             ^ punctuation.definition.string.begin.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ string.quoted.double.doctrine
+#                                             ^ punctuation.definition.string.end.doctrine
 
     warning "{{CurrentPlan:source.path}}"
-#   ^^^^^^^ keyword.control.emphasis.warning.pyprompt
-#           ^ punctuation.definition.string.begin.pyprompt
-#            ^^ punctuation.definition.interpolation.begin.pyprompt
-#              ^^^^^^^^^^^ support.type.reference.pyprompt
-#                         ^ punctuation.separator.interpolation.pyprompt
-#                          ^^^^^^^^^^^ variable.other.member.pyprompt
-#                                     ^^ punctuation.definition.interpolation.end.pyprompt
-#                                       ^ punctuation.definition.string.end.pyprompt
+#   ^^^^^^^ keyword.control.emphasis.warning.doctrine
+#           ^ punctuation.definition.string.begin.doctrine
+#            ^^ punctuation.definition.interpolation.begin.doctrine
+#              ^^^^^^^^^^^ support.type.reference.doctrine
+#                         ^ punctuation.separator.interpolation.doctrine
+#                          ^^^^^^^^^^^ variable.other.member.doctrine
+#                                     ^^ punctuation.definition.interpolation.end.doctrine
+#                                       ^ punctuation.definition.string.end.doctrine
 
     note "Treat old notes as continuity help only."
-#   ^^^^ keyword.control.emphasis.note.pyprompt
-#        ^ punctuation.definition.string.begin.pyprompt
-#         ^ string.quoted.double.pyprompt
-#                                                 ^ punctuation.definition.string.end.pyprompt
+#   ^^^^ keyword.control.emphasis.note.doctrine
+#        ^ punctuation.definition.string.begin.doctrine
+#         ^ string.quoted.double.doctrine
+#                                                 ^ punctuation.definition.string.end.doctrine

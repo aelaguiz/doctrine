@@ -1,9 +1,9 @@
-"""Indentation handling for the PyPrompt bootstrap grammar."""
+"""Indentation handling for the Doctrine bootstrap grammar."""
 
 from lark.indenter import Indenter
 
 
-class PyPromptIndenter(Indenter):
+class DoctrineIndenter(Indenter):
     """Minimal stock-Lark indenter for the bootstrap grammar."""
 
     NL_type = "_NL"

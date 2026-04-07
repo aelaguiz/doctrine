@@ -1,15 +1,15 @@
-# SYNTAX TEST "source.pyprompt" "route arrows and route targets read clearly"
+# SYNTAX TEST "source.doctrine" "route arrows and route targets read clearly"
 
         route "When your turn is done" -> LessonsAcceptanceCritic
-#       ^^^^^ keyword.control.pyprompt
-#                                      ^ keyword.operator.route.pyprompt
-#                                      ^ keyword.operator.pyprompt
-#                                      ^ punctuation.separator.route.pyprompt
-#                                         ^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.pyprompt
+#       ^^^^^ keyword.control.doctrine
+#                                      ^ keyword.operator.route.doctrine
+#                                      ^ keyword.operator.doctrine
+#                                      ^ punctuation.separator.route.doctrine
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.doctrine
 
         route "If you are blocked" -> LessonsProjectLead
-#       ^^^^^ keyword.control.pyprompt
-#                                  ^ keyword.operator.route.pyprompt
-#                                  ^ keyword.operator.pyprompt
-#                                  ^ punctuation.separator.route.pyprompt
-#                                     ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.pyprompt
+#       ^^^^^ keyword.control.doctrine
+#                                  ^ keyword.operator.route.doctrine
+#                                  ^ keyword.operator.doctrine
+#                                  ^ punctuation.separator.route.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.doctrine

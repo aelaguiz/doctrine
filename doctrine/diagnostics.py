@@ -36,7 +36,7 @@ class DiagnosticTraceFrame:
 
 
 @dataclass(slots=True, frozen=True)
-class PyPromptDiagnostic:
+class DoctrineDiagnostic:
     code: str
     stage: str
     summary: str
@@ -64,12 +64,12 @@ class TransformParseFailure(ValueError):
         self.hints = hints
 
 
-def diagnostic_to_dict(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> dict[str, Any]:
+def diagnostic_to_dict(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -> dict[str, Any]:
     diagnostic = _coerce_diagnostic(error_or_diagnostic)
     return _json_safe_value(diagnostic)
 
 
-def format_diagnostic(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> str:
+def format_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -> str:
     diagnostic = _coerce_diagnostic(error_or_diagnostic)
     lines = [f"{diagnostic.code} {diagnostic.stage} error: {diagnostic.summary}"]
 
@@ -111,16 +111,16 @@ def format_diagnostic(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -
     return "\n".join(lines)
 
 
-class PyPromptError(RuntimeError):
+class DoctrineError(RuntimeError):
     stage = "runtime"
     fallback_code = "E999"
-    fallback_summary = "Unexpected PyPrompt error"
+    fallback_summary = "Unexpected Doctrine error"
 
     def __init__(
         self,
         message: str | None = None,
         *,
-        diagnostic: PyPromptDiagnostic | None = None,
+        diagnostic: DoctrineDiagnostic | None = None,
     ) -> None:
         if diagnostic is None:
             diagnostic = self._diagnostic_from_message(message or self.fallback_summary)
@@ -151,9 +151,9 @@ class PyPromptError(RuntimeError):
         hints: tuple[str, ...] = (),
         trace: tuple[DiagnosticTraceFrame, ...] = (),
         cause: str | None = None,
-    ) -> PyPromptError:
+    ) -> DoctrineError:
         return cls(
-            diagnostic=PyPromptDiagnostic(
+            diagnostic=DoctrineDiagnostic(
                 code=code,
                 stage=cls.stage,
                 summary=summary,
@@ -172,7 +172,7 @@ class PyPromptError(RuntimeError):
         label: str,
         *,
         location: DiagnosticLocation | None = None,
-    ) -> PyPromptError:
+    ) -> DoctrineError:
         self.diagnostic = replace(
             self.diagnostic,
             trace=(DiagnosticTraceFrame(label=label, location=location), *self.diagnostic.trace),
@@ -186,7 +186,7 @@ class PyPromptError(RuntimeError):
         path: Path | None = None,
         line: int | None = None,
         column: int | None = None,
-    ) -> PyPromptError:
+    ) -> DoctrineError:
         if self.diagnostic.location is not None:
             return self
         self.diagnostic = replace(
@@ -196,8 +196,8 @@ class PyPromptError(RuntimeError):
         self.args = (format_diagnostic(self.diagnostic),)
         return self
 
-    def _diagnostic_from_message(self, message: str) -> PyPromptDiagnostic:
-        return PyPromptDiagnostic(
+    def _diagnostic_from_message(self, message: str) -> DoctrineDiagnostic:
+        return DoctrineDiagnostic(
             code=self.fallback_code,
             stage=self.stage,
             summary=self.fallback_summary,
@@ -205,7 +205,7 @@ class PyPromptError(RuntimeError):
         )
 
 
-class ParseError(PyPromptError):
+class ParseError(DoctrineError):
     stage = "parse"
     fallback_code = "E199"
     fallback_summary = "Parse failure"
@@ -288,21 +288,21 @@ class ParseError(PyPromptError):
         )
 
 
-class CompileError(PyPromptError):
+class CompileError(DoctrineError):
     stage = "compile"
     fallback_code = "E299"
     fallback_summary = "Compile failure"
 
-    def _diagnostic_from_message(self, message: str) -> PyPromptDiagnostic:
+    def _diagnostic_from_message(self, message: str) -> DoctrineDiagnostic:
         return _compile_diagnostic_from_message(message)
 
 
-class EmitError(PyPromptError):
+class EmitError(DoctrineError):
     stage = "emit"
     fallback_code = "E599"
     fallback_summary = "Emit failure"
 
-    def _diagnostic_from_message(self, message: str) -> PyPromptDiagnostic:
+    def _diagnostic_from_message(self, message: str) -> DoctrineDiagnostic:
         return _emit_diagnostic_from_message(message)
 
     @classmethod
@@ -333,8 +333,8 @@ class EmitError(PyPromptError):
         )
 
 
-def _coerce_diagnostic(error_or_diagnostic: PyPromptError | PyPromptDiagnostic) -> PyPromptDiagnostic:
-    if isinstance(error_or_diagnostic, PyPromptError):
+def _coerce_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -> DoctrineDiagnostic:
+    if isinstance(error_or_diagnostic, DoctrineError):
         return error_or_diagnostic.diagnostic
     return error_or_diagnostic
 
@@ -364,7 +364,7 @@ def _json_safe_value(value: Any) -> Any:
             "label": value.label,
             "location": _json_safe_value(value.location),
         }
-    if isinstance(value, PyPromptDiagnostic):
+    if isinstance(value, DoctrineDiagnostic):
         return {
             "code": value.code,
             "stage": value.stage,
@@ -996,12 +996,12 @@ _COMPILE_PATTERN_BUILDERS: tuple[
 )
 
 
-def _compile_diagnostic_from_message(message: str) -> PyPromptDiagnostic:
+def _compile_diagnostic_from_message(message: str) -> DoctrineDiagnostic:
     for pattern, code, summary, detail_builder, hints in _COMPILE_PATTERN_BUILDERS:
         match = pattern.match(message)
         if match is None:
             continue
-        return PyPromptDiagnostic(
+        return DoctrineDiagnostic(
             code=code,
             stage="compile",
             summary=summary,
@@ -1009,7 +1009,7 @@ def _compile_diagnostic_from_message(message: str) -> PyPromptDiagnostic:
             hints=hints,
             cause=message if message != detail_builder(match) else None,
         )
-    return PyPromptDiagnostic(
+    return DoctrineDiagnostic(
         code="E299",
         stage="compile",
         summary="Compile failure",
@@ -1036,7 +1036,7 @@ _EMIT_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
-        re.compile(r"^pyproject\.toml does not define any \[tool\.pyprompt\.emit\.targets\]\.$"),
+        re.compile(r"^pyproject\.toml does not define any \[tool\.doctrine\.emit\.targets\]\.$"),
         "E503",
         "Missing emit targets",
         lambda _match: "The current `pyproject.toml` does not define any emit targets.",
@@ -1126,12 +1126,12 @@ _EMIT_PATTERN_BUILDERS: tuple[
 )
 
 
-def _emit_diagnostic_from_message(message: str) -> PyPromptDiagnostic:
+def _emit_diagnostic_from_message(message: str) -> DoctrineDiagnostic:
     for pattern, code, summary, detail_builder, hints in _EMIT_PATTERN_BUILDERS:
         match = pattern.match(message)
         if match is None:
             continue
-        return PyPromptDiagnostic(
+        return DoctrineDiagnostic(
             code=code,
             stage="emit",
             summary=summary,
@@ -1139,7 +1139,7 @@ def _emit_diagnostic_from_message(message: str) -> PyPromptDiagnostic:
             hints=hints,
             cause=message if message != detail_builder(match) else None,
         )
-    return PyPromptDiagnostic(
+    return DoctrineDiagnostic(
         code="E599",
         stage="emit",
         summary="Emit failure",

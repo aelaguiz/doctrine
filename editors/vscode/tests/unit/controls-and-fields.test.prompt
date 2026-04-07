@@ -1,55 +1,55 @@
-# SYNTAX TEST "source.pyprompt" "controls, fields, keys, and routes"
+# SYNTAX TEST "source.doctrine" "controls, fields, keys, and routes"
 
     role: "Role"
-#   ^^^^ keyword.other.field.pyprompt
-#       ^ punctuation.separator.key-value.pyprompt
+#   ^^^^ keyword.other.field.doctrine
+#       ^ punctuation.separator.key-value.doctrine
 
         use opening: shared.workflow.Opening
-#       ^^^ keyword.control.pyprompt
-#           ^ entity.name.section.pyprompt
-#                  ^ punctuation.separator.key-value.pyprompt
-#                    ^ entity.name.type.reference.use-target.pyprompt
+#       ^^^ keyword.control.doctrine
+#           ^ entity.name.section.doctrine
+#                  ^ punctuation.separator.key-value.doctrine
+#                    ^ entity.name.type.reference.use-target.doctrine
 
         inherit read_first
-#       ^^^^^^^ keyword.control.pyprompt
-#               ^^^^^^^^^^ entity.name.section.reference.pyprompt
+#       ^^^^^^^ keyword.control.doctrine
+#               ^^^^^^^^^^ entity.name.section.reference.doctrine
 
         abstract workflow_core
-#       ^^^^^^^^ keyword.control.pyprompt
-#                ^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
+#       ^^^^^^^^ keyword.control.doctrine
+#                ^^^^^^^^^^^^^ entity.name.section.reference.doctrine
 
         inherit how_to_take_a_turn
-#       ^^^^^^^ keyword.control.pyprompt
-#               ^^^^^^^^^^^^^^^^^^ entity.name.section.reference.pyprompt
+#       ^^^^^^^ keyword.control.doctrine
+#               ^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
 
         override delivery: RevisedDelivery
-#       ^^^^^^^^ keyword.control.pyprompt
-#                ^ entity.name.section.pyprompt
-#                        ^ punctuation.separator.key-value.pyprompt
-#                          ^ entity.name.type.reference.override.pyprompt
+#       ^^^^^^^^ keyword.control.doctrine
+#                ^ entity.name.section.doctrine
+#                        ^ punctuation.separator.key-value.doctrine
+#                          ^ entity.name.type.reference.override.doctrine
 
             route "If accepted" -> ProjectLead
-#           ^^^^^ keyword.control.pyprompt
-#                                ^ keyword.operator.route.pyprompt
-#                                ^ keyword.operator.pyprompt
-#                                ^ punctuation.separator.route.pyprompt
-#                                   ^ entity.name.type.reference.route-target.pyprompt
+#           ^^^^^ keyword.control.doctrine
+#                                ^ keyword.operator.route.doctrine
+#                                ^ keyword.operator.doctrine
+#                                ^ punctuation.separator.route.doctrine
+#                                   ^ entity.name.type.reference.route-target.doctrine
 
     your_job: roles.project_lead.ProjectLeadJob
-#   ^^^^^^^^ entity.name.section.pyprompt
-#           ^ punctuation.separator.key-value.pyprompt
-#             ^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^^^^ entity.name.section.doctrine
+#           ^ punctuation.separator.key-value.doctrine
+#             ^ entity.name.type.reference.key-value.doctrine
 
         produced_output: "Produced Output"
-#       ^ entity.name.section.pyprompt
-#                      ^ punctuation.separator.key-value.pyprompt
-#                        ^ string.quoted.double.pyprompt
+#       ^ entity.name.section.doctrine
+#                      ^ punctuation.separator.key-value.doctrine
+#                        ^ string.quoted.double.doctrine
 
         CurrentIssue
-#       ^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#       ^^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
         shared.contracts.TrackMetadata
-#       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
         ProjectLead
-#       ^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#       ^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine

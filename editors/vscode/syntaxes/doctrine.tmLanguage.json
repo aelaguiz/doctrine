@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "PyPrompt",
-  "scopeName": "source.pyprompt",
+  "name": "Doctrine",
+  "scopeName": "source.doctrine",
   "patterns": [
     {
       "include": "#comments"
@@ -123,23 +123,23 @@
   ],
   "repository": {
     "comments": {
-      "name": "comment.line.number-sign.pyprompt",
+      "name": "comment.line.number-sign.doctrine",
       "match": "^\\s*#.*$"
     },
     "strings": {
       "begin": "\"",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -150,19 +150,19 @@
       "match": "(\\{\\{)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
       "captures": {
         "1": {
-          "name": "punctuation.definition.interpolation.begin.pyprompt"
+          "name": "punctuation.definition.interpolation.begin.doctrine"
         },
         "2": {
-          "name": "support.type.reference.pyprompt"
+          "name": "support.type.reference.doctrine"
         },
         "3": {
-          "name": "punctuation.separator.interpolation.pyprompt"
+          "name": "punctuation.separator.interpolation.doctrine"
         },
         "4": {
-          "name": "variable.other.member.pyprompt"
+          "name": "variable.other.member.doctrine"
         },
         "5": {
-          "name": "punctuation.definition.interpolation.end.pyprompt"
+          "name": "punctuation.definition.interpolation.end.doctrine"
         }
       }
     },
@@ -170,10 +170,10 @@
       "match": "^(\\s*)(import)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "support.type.reference.pyprompt"
+          "name": "support.type.reference.doctrine"
         }
       }
     },
@@ -181,22 +181,22 @@
       "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "5": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "6": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -204,22 +204,22 @@
       "match": "^(\\s*)(skills)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "5": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "6": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -227,22 +227,22 @@
       "match": "^(\\s*)(inputs)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "5": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "6": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -250,16 +250,16 @@
       "match": "^(\\s*)(input)(\\s+)(source)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "6": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "8": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -267,13 +267,13 @@
       "match": "^(\\s*)(input)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "6": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -281,22 +281,22 @@
       "match": "^(\\s*)(outputs)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "5": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "6": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -304,16 +304,16 @@
       "match": "^(\\s*)(output)(\\s+)(target)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "6": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "8": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -321,16 +321,16 @@
       "match": "^(\\s*)(output)(\\s+)(shape)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "6": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "8": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -338,13 +338,13 @@
       "match": "^(\\s*)(output)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "6": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -352,16 +352,16 @@
       "match": "^(\\s*)(json)(\\s+)(schema)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "6": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "8": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -369,13 +369,13 @@
       "match": "^(\\s*)(skill)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "6": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -383,16 +383,16 @@
       "match": "^(\\s*)(skill)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.control.pyprompt"
+          "name": "keyword.control.doctrine"
         },
         "4": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "6": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "8": {
-          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -400,25 +400,25 @@
       "match": "^(\\s*)(abstract)(\\s+)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "6": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "8": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "9": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "11": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -426,22 +426,22 @@
       "match": "^(\\s*)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "5": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "6": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -449,22 +449,22 @@
       "match": "^(\\s*)(abstract)(\\s+)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "6": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "8": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "9": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         }
       }
     },
@@ -472,40 +472,40 @@
       "match": "^(\\s*)(agent)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.declaration.pyprompt"
+          "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "entity.name.type.pyprompt"
+          "name": "entity.name.type.doctrine"
         },
         "5": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "6": {
-          "name": "entity.other.inherited-class.pyprompt"
+          "name": "entity.other.inherited-class.doctrine"
         },
         "7": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         }
       }
     },
     "requiredEmphasis": {
-      "name": "meta.emphasis.required.pyprompt",
+      "name": "meta.emphasis.required.doctrine",
       "begin": "^(\\s*)(required)(\\s+)(\")",
       "beginCaptures": {
         "2": {
-          "name": "keyword.control.emphasis.required.pyprompt"
+          "name": "keyword.control.emphasis.required.doctrine"
         },
         "4": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -513,23 +513,23 @@
       ]
     },
     "importantEmphasis": {
-      "name": "meta.emphasis.important.pyprompt",
+      "name": "meta.emphasis.important.doctrine",
       "begin": "^(\\s*)(important)(\\s+)(\")",
       "beginCaptures": {
         "2": {
-          "name": "keyword.control.emphasis.important.pyprompt"
+          "name": "keyword.control.emphasis.important.doctrine"
         },
         "4": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -537,23 +537,23 @@
       ]
     },
     "warningEmphasis": {
-      "name": "meta.emphasis.warning.pyprompt",
+      "name": "meta.emphasis.warning.doctrine",
       "begin": "^(\\s*)(warning)(\\s+)(\")",
       "beginCaptures": {
         "2": {
-          "name": "keyword.control.emphasis.warning.pyprompt"
+          "name": "keyword.control.emphasis.warning.doctrine"
         },
         "4": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -561,23 +561,23 @@
       ]
     },
     "noteEmphasis": {
-      "name": "meta.emphasis.note.pyprompt",
+      "name": "meta.emphasis.note.doctrine",
       "begin": "^(\\s*)(note)(\\s+)(\")",
       "beginCaptures": {
         "2": {
-          "name": "keyword.control.emphasis.note.pyprompt"
+          "name": "keyword.control.emphasis.note.doctrine"
         },
         "4": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -588,22 +588,22 @@
       "begin": "^(\\s*)(role)(\\s*)(:)(\\s*)(\")(?!(?:[^\\n]*\"\\s*\\n\\1[ \\t]+\\S))",
       "beginCaptures": {
         "2": {
-          "name": "keyword.other.field.pyprompt"
+          "name": "keyword.other.field.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -614,22 +614,22 @@
       "begin": "^(\\s*)(purpose)(\\s*)(:)(\\s*)(\")(?!(?:[^\\n]*\"\\s*\\n\\1[ \\t]+\\S))",
       "beginCaptures": {
         "2": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -640,22 +640,22 @@
       "begin": "^(\\s*)(reason)(\\s*)(:)(\\s*)(\")(?!(?:[^\\n]*\"\\s*\\n\\1[ \\t]+\\S))",
       "beginCaptures": {
         "2": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "\"(?=\\s*$)",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -666,25 +666,25 @@
       "begin": "^(\\s*)(route)(\\s+)(\")",
       "beginCaptures": {
         "2": {
-          "name": "keyword.control.pyprompt"
+          "name": "keyword.control.doctrine"
         },
         "4": {
-          "name": "punctuation.definition.string.begin.pyprompt"
+          "name": "punctuation.definition.string.begin.doctrine"
         }
       },
       "end": "(\")(\\s*)(->)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "endCaptures": {
         "1": {
-          "name": "punctuation.definition.string.end.pyprompt"
+          "name": "punctuation.definition.string.end.doctrine"
         },
         "3": {
-          "name": "keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt"
+          "name": "keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine"
         },
         "5": {
-          "name": "entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       },
-      "contentName": "string.quoted.double.pyprompt",
+      "contentName": "string.quoted.double.doctrine",
       "patterns": [
         {
           "include": "#stringInterpolation"
@@ -695,10 +695,10 @@
       "match": "^(\\s*)(abstract)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.control.pyprompt"
+          "name": "keyword.control.doctrine"
         },
         "4": {
-          "name": "entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -706,16 +706,16 @@
       "match": "^(\\s*)(use)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.control.pyprompt"
+          "name": "keyword.control.doctrine"
         },
         "4": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "6": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "8": {
-          "name": "entity.name.type.reference.use-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.use-target.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -723,10 +723,10 @@
       "match": "^(\\s*)(inherit)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.control.pyprompt"
+          "name": "keyword.control.doctrine"
         },
         "4": {
-          "name": "entity.name.section.reference.pyprompt entity.name.section.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -734,19 +734,19 @@
       "match": "^(\\s*)(override)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(?:(\"(?:\\\\.|[^\"\\\\])*\")|([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.control.pyprompt"
+          "name": "keyword.control.doctrine"
         },
         "4": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "6": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "8": {
-          "name": "string.quoted.double.pyprompt"
+          "name": "string.quoted.double.doctrine"
         },
         "9": {
-          "name": "entity.name.type.reference.override.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -754,16 +754,16 @@
       "match": "^(\\s*)(skills)(\\s*)(:)(\\s*)(?:(\"(?:\\\\.|[^\"\\\\])*\")|([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.other.field.pyprompt"
+          "name": "keyword.other.field.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "string.quoted.double.pyprompt"
+          "name": "string.quoted.double.doctrine"
         },
         "7": {
-          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -771,22 +771,22 @@
       "match": "^(\\s*)(inputs|outputs)(\\s*)(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\])(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.other.field.pyprompt"
+          "name": "keyword.other.field.doctrine"
         },
         "4": {
-          "name": "punctuation.section.inheritance.begin.pyprompt"
+          "name": "punctuation.section.inheritance.begin.doctrine"
         },
         "5": {
-          "name": "entity.other.inherited-class.pyprompt support.type.reference.pyprompt"
+          "name": "entity.other.inherited-class.doctrine support.type.reference.doctrine"
         },
         "6": {
-          "name": "punctuation.section.inheritance.end.pyprompt"
+          "name": "punctuation.section.inheritance.end.doctrine"
         },
         "8": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "10": {
-          "name": "string.quoted.double.pyprompt"
+          "name": "string.quoted.double.doctrine"
         }
       }
     },
@@ -794,13 +794,13 @@
       "match": "^(\\s*)(inputs|outputs)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.other.field.pyprompt"
+          "name": "keyword.other.field.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -808,13 +808,13 @@
       "match": "^(\\s*)(role|inputs|outputs)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
       "captures": {
         "2": {
-          "name": "keyword.other.field.pyprompt"
+          "name": "keyword.other.field.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "string.quoted.double.pyprompt"
+          "name": "string.quoted.double.doctrine"
         }
       }
     },
@@ -822,13 +822,13 @@
       "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -836,13 +836,13 @@
       "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
       "captures": {
         "2": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         },
         "6": {
-          "name": "string.quoted.double.pyprompt"
+          "name": "string.quoted.double.doctrine"
         }
       }
     },
@@ -850,10 +850,10 @@
       "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
-          "name": "entity.name.section.pyprompt"
+          "name": "entity.name.section.doctrine"
         },
         "4": {
-          "name": "punctuation.separator.key-value.pyprompt"
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -861,7 +861,7 @@
       "match": "^(\\s+)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
-          "name": "entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+          "name": "entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     }

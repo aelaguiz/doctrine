@@ -1,107 +1,107 @@
-# SYNTAX TEST "source.pyprompt" "keyword-shaped identifiers still highlight as keys and refs"
+# SYNTAX TEST "source.doctrine" "keyword-shaped identifiers still highlight as keys and refs"
 
     workflow: "Workflow Slot"
-#   ^^^^^^^^ entity.name.section.pyprompt
-#           ^ punctuation.separator.key-value.pyprompt
-#             ^^^^^^^^^^^^^^^ string.quoted.double.pyprompt
+#   ^^^^^^^^ entity.name.section.doctrine
+#           ^ punctuation.separator.key-value.doctrine
+#             ^^^^^^^^^^^^^^^ string.quoted.double.doctrine
 
     input: shared.inputs.FigmaDocument
-#   ^^^^^ entity.name.section.pyprompt
-#        ^ punctuation.separator.key-value.pyprompt
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
     output:
-#   ^^^^^^ entity.name.section.pyprompt
-#         ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^ entity.name.section.doctrine
+#         ^ punctuation.separator.key-value.doctrine
 
     skill: "Skill Slot"
-#   ^^^^^ entity.name.section.pyprompt
-#        ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
 
     import: "Import Slot"
-#   ^^^^^^ entity.name.section.pyprompt
-#         ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^ entity.name.section.doctrine
+#         ^ punctuation.separator.key-value.doctrine
 
     important: "Important Slot"
-#   ^^^^^^^^^ entity.name.section.pyprompt
-#            ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^^^ entity.name.section.doctrine
+#            ^ punctuation.separator.key-value.doctrine
 
     note: "Note Slot"
-#   ^^^^ entity.name.section.pyprompt
-#       ^ punctuation.separator.key-value.pyprompt
+#   ^^^^ entity.name.section.doctrine
+#       ^ punctuation.separator.key-value.doctrine
 
     required: "Required Slot"
-#   ^^^^^^^^ entity.name.section.pyprompt
-#           ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^^ entity.name.section.doctrine
+#           ^ punctuation.separator.key-value.doctrine
 
     use: "Use Slot"
-#   ^^^ entity.name.section.pyprompt
-#      ^ punctuation.separator.key-value.pyprompt
+#   ^^^ entity.name.section.doctrine
+#      ^ punctuation.separator.key-value.doctrine
 
     warning: "Warning Slot"
-#   ^^^^^^^ entity.name.section.pyprompt
-#          ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^ entity.name.section.doctrine
+#          ^ punctuation.separator.key-value.doctrine
 
     abstract: "Abstract Slot"
-#   ^^^^^^^^ entity.name.section.pyprompt
-#           ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^^ entity.name.section.doctrine
+#           ^ punctuation.separator.key-value.doctrine
 
     agent: "Agent Slot"
-#   ^^^^^ entity.name.section.pyprompt
-#        ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
 
     json: "JSON Slot"
-#   ^^^^ entity.name.section.pyprompt
-#       ^ punctuation.separator.key-value.pyprompt
+#   ^^^^ entity.name.section.doctrine
+#       ^ punctuation.separator.key-value.doctrine
 
     inherit: "Inherited Slot"
-#   ^^^^^^^ entity.name.section.pyprompt
-#          ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^ entity.name.section.doctrine
+#          ^ punctuation.separator.key-value.doctrine
 
     override: "Override Slot"
-#   ^^^^^^^^ entity.name.section.pyprompt
-#           ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^^^ entity.name.section.doctrine
+#           ^ punctuation.separator.key-value.doctrine
 
     route: "Route Slot"
-#   ^^^^^ entity.name.section.pyprompt
-#        ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
 
     source: "Source Slot"
-#   ^^^^^^ entity.name.section.pyprompt
-#         ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^ entity.name.section.doctrine
+#         ^ punctuation.separator.key-value.doctrine
 
     target: "Target Slot"
-#   ^^^^^^ entity.name.section.pyprompt
-#         ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^ entity.name.section.doctrine
+#         ^ punctuation.separator.key-value.doctrine
 
     schema: "Schema Slot"
-#   ^^^^^^ entity.name.section.pyprompt
-#         ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^^ entity.name.section.doctrine
+#         ^ punctuation.separator.key-value.doctrine
 
     shape: "Shape Slot"
-#   ^^^^^ entity.name.section.pyprompt
-#        ^ punctuation.separator.key-value.pyprompt
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
 
     workflow
-#   ^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
     import
-#   ^^^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^^^ entity.name.type.reference.standalone.doctrine
 
     important
-#   ^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
     note
-#   ^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^ entity.name.type.reference.standalone.doctrine
 
     required
-#   ^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^^^^^ entity.name.type.reference.standalone.doctrine
 
     use
-#   ^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^ entity.name.type.reference.standalone.doctrine
 
     skill
-#   ^^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^^ entity.name.type.reference.standalone.doctrine
 
     warning
-#   ^^^^^^^ entity.name.type.reference.standalone.pyprompt
+#   ^^^^^^^ entity.name.type.reference.standalone.doctrine

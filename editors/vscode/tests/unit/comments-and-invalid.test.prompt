@@ -1,13 +1,13 @@
-# SYNTAX TEST "source.pyprompt" "comments and invalid-but-lexical lines"
+# SYNTAX TEST "source.doctrine" "comments and invalid-but-lexical lines"
 
 # This is a comment
-# ^^^^^^^^^^^^^^^^^^^ comment.line.number-sign.pyprompt
+# ^^^^^^^^^^^^^^^^^^^ comment.line.number-sign.doctrine
 
 agent MissingColon
-# <---- keyword.declaration.pyprompt
-#      ^ entity.name.type.pyprompt
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine
 
 workflow BrokenFlow: "Still Highlighted"
-# <------- keyword.declaration.pyprompt
-#         ^ entity.name.type.pyprompt
-#                      ^ string.quoted.double.pyprompt
+# <------- keyword.declaration.doctrine
+#         ^ entity.name.type.doctrine
+#                      ^ string.quoted.double.doctrine

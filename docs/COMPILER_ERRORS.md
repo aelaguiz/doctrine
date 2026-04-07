@@ -102,7 +102,7 @@ Stability rules:
 | --- | --- | --- |
 | `E501` | Unknown emit target | The requested emit target is not defined in `pyproject.toml`. |
 | `E502` | Emit target has no concrete agents | The emit entrypoint parses, but it does not contain any concrete agents to render. |
-| `E503` | Missing emit targets | `pyproject.toml` does not define any `[tool.pyprompt.emit.targets]`. |
+| `E503` | Missing emit targets | `pyproject.toml` does not define any `[tool.doctrine.emit.targets]`. |
 | `E504` | Missing `pyproject.toml` | The emit command could not find a config file to load. |
 | `E505` | Emit target path collision | Two rendered agents map to the same output path. |
 | `E506` | Invalid emit config TOML | The emit config file exists, but it is not valid TOML. |

@@ -1,7 +1,7 @@
 # Doctrine
 
-Doctrine is the repo for PyPrompt, a Python-like DSL and compiler for building
-agent doctrine as code instead of hand-maintained Markdown.
+Doctrine is a Python-like DSL and compiler for building agent doctrine as code
+instead of hand-maintained Markdown.
 
 It keeps `AGENTS.md` as the runtime artifact because coding agents can consume
 that today, but it moves the source of truth into reusable declarations,
@@ -19,7 +19,7 @@ Large agent systems drift fast when the source of truth is copied Markdown:
 - the runtime surface is Markdown, but the authoring problem is structured
   programming
 
-PyPrompt turns that maintenance problem into a programming problem.
+Doctrine turns that maintenance problem into a programming problem.
 
 Read [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md) for the motivating use case
 and anonymized drift examples.
@@ -35,7 +35,7 @@ and anonymized drift examples.
 - imports, dotted refs, agent mentions, and authored-prose interpolation
 - manifest-backed verification for examples `01` through `26`
 
-The shipped implementation lives in `pyprompt/`. The examples are design
+The shipped implementation lives in `doctrine/`. The examples are design
 pressure plus proof, not the source of truth by themselves.
 
 ## Quick Example
@@ -95,7 +95,7 @@ make verify-diagnostics
 For one manifest-backed example run:
 
 ```bash
-uv run --locked python -m pyprompt.verify_corpus --manifest examples/01_hello_world/cases.toml
+uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml
 ```
 
 ## Emit Compiled `AGENTS.md`
@@ -104,8 +104,8 @@ The emit pipeline reads configured targets from `pyproject.toml` and writes a
 compiled `AGENTS.md` tree for each concrete agent in the entrypoint.
 
 ```bash
-uv run --locked python -m pyprompt.emit_docs --target example_07_handoffs
-uv run --locked python -m pyprompt.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
+uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 ```
 
 ## VS Code Extension
@@ -126,7 +126,7 @@ For extension-specific details, see
 
 - Start here: [docs/README.md](docs/README.md)
 - Language examples: [examples/README.md](examples/README.md)
-- Language and compiler truth: `pyprompt/`
+- Language and compiler truth: `doctrine/`
 - VS Code extension: [editors/vscode/README.md](editors/vscode/README.md)
 
 ## Project Files
