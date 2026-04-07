@@ -42,9 +42,9 @@ Stability rules:
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited entry that does not exist. |
+| `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited workflow or `skills` entry that does not exist. |
 | `E002` | Missing rendered section title | Reserved meaning: a rendered section needs an explicit visible title and the source does not provide one. |
-| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited entries. |
+| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited workflow or `skills` entries. |
 
 ### Parse codes
 

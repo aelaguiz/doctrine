@@ -19,6 +19,12 @@ class WorkflowBodyParts:
     items: tuple[model.WorkflowItem, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class SkillsBodyParts:
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.SkillsItem, ...]
+
+
 class ToAst(Transformer):
     def CNAME(self, token):
         return str(token)
@@ -106,8 +112,8 @@ class ToAst(Transformer):
         return model.OutcomeField(title=title, items=tuple(items))
 
     @v_args(inline=True)
-    def skills_field(self, title, items):
-        return model.SkillsField(title=title, items=tuple(items))
+    def skills_field(self, title_or_ref, body=None):
+        return model.SkillsField(value=self._skills_value(title_or_ref, body))
 
     @v_args(inline=True)
     def agent_slot_field(self, key, value, body=None):
@@ -135,6 +141,19 @@ class ToAst(Transformer):
             raise ValueError("Authored workflow slot references cannot also define an inline body.")
         return model.WorkflowBody(title=value, preamble=body.preamble, items=body.items)
 
+    def _skills_value(
+        self,
+        value: str | model.NameRef,
+        body: SkillsBodyParts | None,
+    ) -> model.SkillsValue:
+        if body is None:
+            if isinstance(value, str):
+                raise ValueError("Inline skills blocks must define an indented body.")
+            return value
+        if isinstance(value, model.NameRef):
+            raise ValueError("Skills references cannot also define an inline body.")
+        return model.SkillsBody(title=value, preamble=body.preamble, items=body.items)
+
     def slot_body(self, items):
         return items[0]
 
@@ -153,6 +172,25 @@ class ToAst(Transformer):
                 title=title,
                 preamble=workflow_body.preamble,
                 items=workflow_body.items,
+            ),
+            parent_ref=parent_ref,
+        )
+
+    @v_args(inline=True)
+    def skills_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        skills_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            skills_body = body
+        return model.SkillsDecl(
+            name=name,
+            body=model.SkillsBody(
+                title=title,
+                preamble=skills_body.preamble,
+                items=skills_body.items,
             ),
             parent_ref=parent_ref,
         )
@@ -197,6 +235,14 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def workflow_body_line(self, value):
+        return value
+
+    @v_args(inline=True)
+    def skills_string(self, value):
+        return value
+
+    @v_args(inline=True)
+    def skills_body_line(self, value):
         return value
 
     @v_args(inline=True)
@@ -252,6 +298,34 @@ class ToAst(Transformer):
         return model.InheritItem(key=key)
 
     @v_args(inline=True)
+    def workflow_skills_inline(self, title, body):
+        return model.WorkflowSkillsItem(
+            key="skills",
+            value=self._skills_value(title, body),
+        )
+
+    @v_args(inline=True)
+    def workflow_skills_ref(self, ref):
+        return model.WorkflowSkillsItem(
+            key="skills",
+            value=self._skills_value(ref, None),
+        )
+
+    @v_args(inline=True)
+    def workflow_override_skills_inline(self, title, body):
+        return model.OverrideWorkflowSkillsItem(
+            key="skills",
+            value=self._skills_value(title, body),
+        )
+
+    @v_args(inline=True)
+    def workflow_override_skills_ref(self, ref):
+        return model.OverrideWorkflowSkillsItem(
+            key="skills",
+            value=self._skills_value(ref, None),
+        )
+
+    @v_args(inline=True)
     def workflow_override_section(self, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
@@ -263,6 +337,43 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def workflow_override_use(self, key, target):
         return model.OverrideUse(key=key, target=target)
+
+    @v_args(inline=True)
+    def skill_entry(self, key, target, body=None):
+        return model.SkillEntry(
+            key=key,
+            target=target,
+            items=tuple(body or ()),
+        )
+
+    @v_args(inline=True)
+    def skills_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def skills_override_entry(self, key, target, body=None):
+        return model.OverrideSkillEntry(
+            key=key,
+            target=target,
+            items=tuple(body or ()),
+        )
+
+    @v_args(inline=True)
+    def skills_section(self, key, title, items):
+        return model.SkillsSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def skills_override_section(self, key, title_or_items, items=None):
+        title: str | None = None
+        section_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            section_items = items
+        return model.OverrideSkillsSection(
+            key=key,
+            title=title,
+            items=tuple(section_items),
+        )
 
     def record_body(self, items):
         return tuple(items)
@@ -283,6 +394,29 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def record_ref_item(self, ref, body=None):
         return model.RecordRef(ref=ref, body=None if body is None else tuple(body))
+
+    def skills_body(self, items):
+        preamble: list[model.ProseLine] = []
+        skills_items: list[model.SkillsItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if skills_items:
+                    raise TransformParseFailure(
+                        "Skills prose lines must appear before keyed skills entries.",
+                        hints=(
+                            "Move prose lines to the top of the skills body or put them inside a titled skills section.",
+                        ),
+                    )
+                preamble.append(item)
+                continue
+            skills_items.append(item)
+        return SkillsBodyParts(preamble=tuple(preamble), items=tuple(skills_items))
+
+    def skills_section_body(self, items):
+        return tuple(items)
+
+    def skill_entry_body(self, items):
+        return tuple(items[0])
 
     def ref_list(self, items):
         return tuple(items)

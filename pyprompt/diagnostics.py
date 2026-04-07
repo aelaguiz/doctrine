@@ -312,8 +312,15 @@ class EmitError(PyPromptError):
         path: Path,
         exc: tomllib.TOMLDecodeError,
     ) -> EmitError:
-        location = DiagnosticLocation(path=path.resolve(), line=exc.lineno, column=exc.colno)
-        excerpt, caret_column = _build_excerpt(exc.doc, line=exc.lineno, column=exc.colno)
+        line = getattr(exc, "lineno", None)
+        column = getattr(exc, "colno", None)
+        if line is None or column is None:
+            line, column = _extract_toml_decode_position(
+                getattr(exc, "doc", ""),
+                getattr(exc, "pos", None),
+            )
+        location = DiagnosticLocation(path=path.resolve(), line=line, column=column)
+        excerpt, caret_column = _build_excerpt(getattr(exc, "doc", ""), line=line, column=column)
         return cls.from_parts(
             code="E506",
             summary="Invalid emit config TOML",
@@ -322,7 +329,7 @@ class EmitError(PyPromptError):
             excerpt=excerpt,
             caret_column=caret_column,
             hints=("Fix the TOML syntax before running `emit_docs` again.",),
-            cause=exc.msg,
+            cause=getattr(exc, "msg", str(exc)),
         )
 
 
@@ -443,6 +450,23 @@ def _extract_tree_position(obj: object) -> tuple[int | None, int | None]:
             if line is not None:
                 return line, column
     return None, None
+
+
+def _extract_toml_decode_position(
+    source: str,
+    pos: int | None,
+) -> tuple[int | None, int | None]:
+    if pos is None:
+        return None, None
+    bounded_pos = max(0, min(pos, len(source)))
+    prefix = source[:bounded_pos]
+    line = prefix.count("\n") + 1
+    last_newline = prefix.rfind("\n")
+    if last_newline == -1:
+        column = bounded_pos + 1
+    else:
+        column = bounded_pos - last_newline
+    return line, column
 
 
 def _classify_unexpected_token(

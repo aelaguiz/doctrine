@@ -292,9 +292,14 @@
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            GroundingSkill
+>            skill grounding: GroundingSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                reason: "Ask {{ProjectLead}} for an owner decision only when the plan truly needs one."
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^ source.pyprompt entity.name.section.pyprompt

@@ -60,7 +60,7 @@ agent AuthoredProseInterpolationDemo:
 
     skills: "Skills"
         can_run: "Can Run"
-            GroundingSkill
+            skill grounding: GroundingSkill
                 reason: "Ask {{ProjectLead}} for an owner decision only when the plan truly needs one."
 
     outputs: "Outputs"

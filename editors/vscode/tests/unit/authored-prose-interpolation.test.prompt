@@ -22,7 +22,10 @@ agent SkillUser:
     role: "Role"
     skills: "Skills"
         can_run: "Can Run"
-            GroundingSkill
+            skill grounding: GroundingSkill
+#           ^^^^^ keyword.control.pyprompt
+#                 ^^^^^^^^^ entity.name.section.pyprompt
+#                            ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
                 reason: "Ask {{ProjectLead}} only when needed."
 #               ^^^^^^ entity.name.section.pyprompt
 #                       ^ punctuation.definition.string.begin.pyprompt

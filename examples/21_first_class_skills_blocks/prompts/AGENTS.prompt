@@ -1,0 +1,64 @@
+# This example promotes `skills` into a first-class block.
+#
+# A `skills` block can now be:
+# - a top-level reusable declaration
+# - referenced directly from an agent
+# - referenced from a workflow
+# - authored inline inside a workflow
+#
+# The rendered result should stay one clear skills section wherever it appears.
+
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground the current claim before you write."
+
+
+skill FindSkills: "Find Skills"
+    purpose: "Find the right repo skill before you guess."
+
+
+skills SharedSkills: "Skills And Tools"
+    how_to_use: "How To Use"
+        "Start with the skill that directly matches the current job."
+
+    can_run: "Can Run"
+        skill grounding: GroundingSkill
+            requirement: Required
+
+    discover_with: "Discover With"
+        skill find_skills: FindSkills
+            requirement: Advisory
+
+
+workflow SharedRoleHome: "Role Home"
+    start_here: "Start Here"
+        "Read the current packet before you act."
+
+    skills: SharedSkills
+
+
+workflow InlineSkillsRoleHome: "Role Home"
+    start_here: "Start Here"
+        "Read the current packet before you act."
+
+    skills: "Skills And Tools"
+        setup: "Setup"
+            "Use this inline skills block when the workflow itself owns the guidance."
+
+        can_run: "Can Run"
+            skill find_skills: FindSkills
+                reason: "Use this when the job needs skill discovery before execution."
+
+
+agent AgentSkillsBlockDemo:
+    role: "Use the shared skills block directly on the agent."
+    skills: SharedSkills
+
+
+agent WorkflowReferencedSkillsBlockDemo:
+    role: "Use the shared skills block through a workflow."
+    role_home: SharedRoleHome
+
+
+agent WorkflowInlineSkillsBlockDemo:
+    role: "Use an inline workflow-owned skills block."
+    role_home: InlineSkillsRoleHome

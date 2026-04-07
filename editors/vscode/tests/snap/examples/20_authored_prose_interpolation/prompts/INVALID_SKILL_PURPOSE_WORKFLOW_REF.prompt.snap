@@ -63,9 +63,14 @@
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            BrokenSkill
+>            skill broken: BrokenSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt

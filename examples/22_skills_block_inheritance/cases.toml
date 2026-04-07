@@ -1,0 +1,44 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "named skills blocks inherit and patch explicitly"
+status = "active"
+kind = "render_contract"
+agent = "SkillsInheritanceDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use the inherited skills block for this role.",
+  "",
+  "## Skills",
+  "",
+  "### How To Use",
+  "",
+  "Start with the skill that directly matches the current job.",
+  "",
+  "### Copy Rewrite Skill",
+  "",
+  "#### Purpose",
+  "",
+  "Rewrite learner-facing text without changing the underlying lesson job.",
+  "",
+  "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
+  "",
+  "#### Reason",
+  "",
+  "For this role, rewriting is the lead capability.",
+  "",
+  "### Support",
+  "",
+  "#### Find Skills",
+  "",
+  "##### Purpose",
+  "",
+  "Find the right repo skill before you guess.",
+  "",
+  "#### Grounding Skill",
+  "",
+  "##### Purpose",
+  "",
+  "Ground the current claim before you write.",
+]

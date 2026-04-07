@@ -10,29 +10,31 @@
             SectionCatalogMeta
 #           ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
 
+    skills: SharedSkills
+#   ^^^^^^ keyword.other.field.pyprompt
+#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+
     skills: "You Use These Skills"
 #   ^^^^^^ keyword.other.field.pyprompt
 
         can_run: "Can Run"
 #       ^^^^^^^ entity.name.section.pyprompt
-            PaperclipSkill
-#           ^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+            skill paperclip: PaperclipSkill
+#           ^^^^^ keyword.control.pyprompt
+#                 ^^^^^^^^^ entity.name.section.pyprompt
+#                            ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
                 requirement: Required
 #               ^^^^^^^^^^^ entity.name.section.pyprompt
 #                            ^^^^^^^^ entity.name.type.reference.key-value.pyprompt
 
-            PokerGroundingSkill
-#           ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+            skill poker_grounding: PokerGroundingSkill
                 requirement: Required
 
-            PokerKBSkill
-#           ^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+            skill poker_kb: PokerKBSkill
                 requirement: Required
 
-            GitHubAccessSkill
-#           ^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+            skill github_access: GitHubAccessSkill
                 requirement: Advisory
 
-            ParaMemoryFilesSkill
-#           ^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+            skill para_memory_files: ParaMemoryFilesSkill
                 requirement: Advisory

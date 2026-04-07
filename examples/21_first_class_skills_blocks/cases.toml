@@ -1,0 +1,110 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "agents can reference top-level skills blocks directly"
+status = "active"
+kind = "render_contract"
+agent = "AgentSkillsBlockDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use the shared skills block directly on the agent.",
+  "",
+  "## Skills And Tools",
+  "",
+  "### How To Use",
+  "",
+  "Start with the skill that directly matches the current job.",
+  "",
+  "### Can Run",
+  "",
+  "#### Grounding Skill",
+  "",
+  "##### Purpose",
+  "",
+  "Ground the current claim before you write.",
+  "",
+  "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
+  "",
+  "### Discover With",
+  "",
+  "#### Find Skills",
+  "",
+  "##### Purpose",
+  "",
+  "Find the right repo skill before you guess.",
+]
+
+[[cases]]
+name = "workflows can reference top-level skills blocks"
+status = "active"
+kind = "render_contract"
+agent = "WorkflowReferencedSkillsBlockDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use the shared skills block through a workflow.",
+  "",
+  "## Role Home",
+  "",
+  "### Start Here",
+  "",
+  "Read the current packet before you act.",
+  "",
+  "### Skills And Tools",
+  "",
+  "#### How To Use",
+  "",
+  "Start with the skill that directly matches the current job.",
+  "",
+  "#### Can Run",
+  "",
+  "##### Grounding Skill",
+  "",
+  "###### Purpose",
+  "",
+  "Ground the current claim before you write.",
+  "",
+  "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
+  "",
+  "#### Discover With",
+  "",
+  "##### Find Skills",
+  "",
+  "###### Purpose",
+  "",
+  "Find the right repo skill before you guess.",
+]
+
+[[cases]]
+name = "workflows can author inline skills blocks"
+status = "active"
+kind = "render_contract"
+agent = "WorkflowInlineSkillsBlockDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use an inline workflow-owned skills block.",
+  "",
+  "## Role Home",
+  "",
+  "### Start Here",
+  "",
+  "Read the current packet before you act.",
+  "",
+  "### Skills And Tools",
+  "",
+  "#### Setup",
+  "",
+  "Use this inline skills block when the workflow itself owns the guidance.",
+  "",
+  "#### Can Run",
+  "",
+  "##### Find Skills",
+  "",
+  "###### Purpose",
+  "",
+  "Find the right repo skill before you guess.",
+  "",
+  "###### Reason",
+  "",
+  "Use this when the job needs skill discovery before execution.",
+]

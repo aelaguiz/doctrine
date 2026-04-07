@@ -11,5 +11,5 @@ agent InvalidSkillPurposeInterpolationDemo:
 
     skills: "Skills"
         can_run: "Can Run"
-            BrokenSkill
+            skill broken: BrokenSkill
                 requirement: Advisory

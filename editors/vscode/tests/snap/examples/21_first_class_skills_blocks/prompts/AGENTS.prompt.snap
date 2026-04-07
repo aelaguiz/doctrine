@@ -1,0 +1,275 @@
+># This example promotes `skills` into a first-class block.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># A `skills` block can now be:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - a top-level reusable declaration
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - referenced directly from an agent
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - referenced from a workflow
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - authored inline inside a workflow
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># The rendered result should stay one clear skills section wherever it appears.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>skill GroundingSkill: "Grounding Skill"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    purpose: "Ground the current claim before you write."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>skill FindSkills: "Find Skills"
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    purpose: "Find the right repo skill before you guess."
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>skills SharedSkills: "Skills And Tools"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                      ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    how_to_use: "How To Use"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Start with the skill that directly matches the current job."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    can_run: "Can Run"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        skill grounding: GroundingSkill
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>            requirement: Required
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    discover_with: "Discover With"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        skill find_skills: FindSkills
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>            requirement: Advisory
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow SharedRoleHome: "Role Home"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                        ^ source.pyprompt
+#                         ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                          ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    start_here: "Start Here"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Read the current packet before you act."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    skills: SharedSkills
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow InlineSkillsRoleHome: "Role Home"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    start_here: "Start Here"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Read the current packet before you act."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    skills: "Skills And Tools"
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        setup: "Setup"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Use this inline skills block when the workflow itself owns the guidance."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        can_run: "Can Run"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            skill find_skills: FindSkills
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>                reason: "Use this when the job needs skill discovery before execution."
+#^^^^^^^^^^^^^^^^ source.pyprompt
+#                ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                       ^ source.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent AgentSkillsBlockDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Use the shared skills block directly on the agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    skills: SharedSkills
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>agent WorkflowReferencedSkillsBlockDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Use the shared skills block through a workflow."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    role_home: SharedRoleHome
+#^^^^ source.pyprompt
+#    ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>agent WorkflowInlineSkillsBlockDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Use an inline workflow-owned skills block."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    role_home: InlineSkillsRoleHome
+#^^^^ source.pyprompt
+#    ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

@@ -1,4 +1,4 @@
-# This example sketches top-level `skill` declarations with a small required
+# This example shows top-level `skill` declarations with a small required
 # contract.
 #
 # This direction is intentionally skill-first.
@@ -30,9 +30,11 @@
 # If the role needs a reusable helper and no skill exists yet, the intended move
 # is to build the skill, not to smuggle a raw script path into agent guidance.
 #
-# A skill reference should point directly at the declared skill.
-# Do not add an extra wrapper key unless it carries real meaning the renderer or
-# compiler actually needs.
+# A `skills` block now gives each skill entry a stable local key:
+# - `skill grounding: PokerGroundingSkill`
+# - `skill copy_rewrite: CopyRewriteSkill`
+# The key is not for display. It exists so shared `skills` blocks can inherit
+# and override entries cleanly later.
 #
 # Requirement belongs on the agent-side reference, not on the skill object.
 # - `Required` means the skill must resolve and the turn should fail if the
@@ -94,19 +96,19 @@ agent LessonCopywriter:
 
     skills: "Skills"
         can_run: "Can Run"
-            PokerGroundingSkill
+            skill grounding: PokerGroundingSkill
                 requirement: Required
 
-            CopyRewriteSkill
+            skill copy_rewrite: CopyRewriteSkill
                 requirement: Advisory
 
         discover_with: "Discover With"
-            FindSkills
+            skill find_skills: FindSkills
                 requirement: Advisory
 
         not_for_this_role: "Not For This Role"
-            MobileSimSkill
+            skill mobile_sim: MobileSimSkill
                 reason: "This role is baseline copy work, not simulator or device investigation."
 
-            FlutterDevReturnSkill
+            skill flutter_dev_return: FlutterDevReturnSkill
                 reason: "This role is baseline copy work, not Flutter environment repair."

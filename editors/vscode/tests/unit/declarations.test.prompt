@@ -9,6 +9,11 @@ workflow ReviewFlow[shared.workflow.BaseFlow]: "Workflow"
 #         ^ entity.name.type.pyprompt
 #                    ^ entity.other.inherited-class.pyprompt
 
+skills SharedSkills[shared.skills.BaseSkills]: "Skills"
+# <----- keyword.declaration.pyprompt
+#        ^ entity.name.type.pyprompt
+#                     ^ entity.other.inherited-class.pyprompt
+
 input source FigmaDocument: "Figma Document"
 # <---- keyword.declaration.pyprompt
 #      ^ keyword.declaration.pyprompt

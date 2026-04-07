@@ -1,5 +1,5 @@
-># This example sketches top-level `skill` declarations with a small required
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># This example shows top-level `skill` declarations with a small required
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 ># contract.
 #^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 >#
@@ -62,12 +62,16 @@
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 >#
 #^ source.pyprompt comment.line.number-sign.pyprompt
-># A skill reference should point directly at the declared skill.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
-># Do not add an extra wrapper key unless it carries real meaning the renderer or
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
-># compiler actually needs.
-#^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># A `skills` block now gives each skill entry a stable local key:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `skill grounding: PokerGroundingSkill`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `skill copy_rewrite: CopyRewriteSkill`
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># The key is not for display. It exists so shared `skills` blocks can inherit
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># and override entries cleanly later.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
 >#
 #^ source.pyprompt comment.line.number-sign.pyprompt
 ># Requirement belongs on the agent-side reference, not on the skill object.
@@ -314,9 +318,14 @@
 #               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                ^ source.pyprompt
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            PokerGroundingSkill
+>            skill grounding: PokerGroundingSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Required
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -324,9 +333,14 @@
 #                            ^ source.pyprompt
 #                             ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >
->            CopyRewriteSkill
+>            skill copy_rewrite: CopyRewriteSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                               ^ source.pyprompt
+#                                ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -340,9 +354,14 @@
 #                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                      ^ source.pyprompt
 #                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            FindSkills
+>            skill find_skills: FindSkills
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                requirement: Advisory
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -356,9 +375,14 @@
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
 #                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
->            MobileSimSkill
+>            skill mobile_sim: MobileSimSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                             ^ source.pyprompt
+#                              ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                reason: "This role is baseline copy work, not simulator or device investigation."
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -368,9 +392,14 @@
 #                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 #                                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
->            FlutterDevReturnSkill
+>            skill flutter_dev_return: FlutterDevReturnSkill
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+#            ^^^^^ source.pyprompt keyword.control.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                     ^ source.pyprompt
+#                                      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
 >                reason: "This role is baseline copy work, not Flutter environment repair."
 #^^^^^^^^^^^^^^^^ source.pyprompt
 #                ^^^^^^ source.pyprompt entity.name.section.pyprompt

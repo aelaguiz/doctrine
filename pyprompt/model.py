@@ -87,25 +87,6 @@ class OverrideUse:
     target: NameRef
 
 
-WorkflowItem: TypeAlias = (
-    LocalSection | WorkflowUse | InheritItem | OverrideSection | OverrideUse
-)
-
-
-@dataclass(slots=True, frozen=True)
-class WorkflowBody:
-    title: str
-    preamble: tuple[ProseLine, ...]
-    items: tuple[WorkflowItem, ...]
-
-
-@dataclass(slots=True, frozen=True)
-class WorkflowDecl:
-    name: str
-    body: WorkflowBody
-    parent_ref: NameRef | None = None
-
-
 RecordScalarValue: TypeAlias = str | NameRef
 
 
@@ -130,6 +111,96 @@ class RecordRef:
 
 
 RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | RouteLine
+
+
+@dataclass(slots=True, frozen=True)
+class SkillEntry:
+    key: str
+    target: NameRef
+    items: tuple[RecordItem, ...] = ()
+
+
+SkillsSectionItem: TypeAlias = ProseLine | SkillEntry
+
+
+@dataclass(slots=True, frozen=True)
+class SkillsSection:
+    key: str
+    title: str
+    items: tuple[SkillsSectionItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OverrideSkillEntry:
+    key: str
+    target: NameRef
+    items: tuple[RecordItem, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class OverrideSkillsSection:
+    key: str
+    title: str | None
+    items: tuple[SkillsSectionItem, ...]
+
+
+SkillsItem: TypeAlias = (
+    SkillsSection | SkillEntry | InheritItem | OverrideSkillsSection | OverrideSkillEntry
+)
+
+
+@dataclass(slots=True, frozen=True)
+class SkillsBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[SkillsItem, ...]
+
+
+SkillsValue: TypeAlias = SkillsBody | NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowSkillsItem:
+    key: str
+    value: SkillsValue
+
+
+@dataclass(slots=True, frozen=True)
+class OverrideWorkflowSkillsItem:
+    key: str
+    value: SkillsValue
+
+
+WorkflowItem: TypeAlias = (
+    LocalSection
+    | WorkflowUse
+    | InheritItem
+    | OverrideSection
+    | OverrideUse
+    | WorkflowSkillsItem
+    | OverrideWorkflowSkillsItem
+)
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[WorkflowItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowDecl:
+    name: str
+    body: WorkflowBody
+    parent_ref: NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillsDecl:
+    name: str
+    body: SkillsBody
+    parent_ref: NameRef | None = None
 
 
 WorkflowSlotValue: TypeAlias = WorkflowBody | NameRef
@@ -172,8 +243,7 @@ class OutcomeField:
 
 @dataclass(slots=True, frozen=True)
 class SkillsField:
-    title: str
-    items: tuple[RecordItem, ...]
+    value: SkillsValue
 
 
 Field: TypeAlias = (
@@ -249,6 +319,7 @@ class SkillDecl:
 Declaration: TypeAlias = (
     ImportDecl
     | WorkflowDecl
+    | SkillsDecl
     | Agent
     | InputDecl
     | InputSourceDecl

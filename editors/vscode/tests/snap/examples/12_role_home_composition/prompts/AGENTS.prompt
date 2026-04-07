@@ -313,7 +313,7 @@ agent LessonsProjectLead[LessonsRoleHome]:
 
     skills: "Skills"
         can_run: "Can Run"
-            PublishFollowthroughSkill
+            skill publish_followthrough: PublishFollowthroughSkill
                 requirement: Advisory
 
     when_to_use_this_role: ProjectLeadWhenToUse
@@ -353,10 +353,10 @@ agent LessonsCopywriter[LessonsRoleHome]:
 
     skills: "Skills"
         can_run: "Can Run"
-            PokerGroundingSkill
+            skill poker_grounding: PokerGroundingSkill
                 requirement: Required
 
-            CopyRewriteSkill
+            skill copy_rewrite: CopyRewriteSkill
                 requirement: Advisory
 
     when_to_use_this_role: CopywriterWhenToUse

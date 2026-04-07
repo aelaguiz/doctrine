@@ -13,6 +13,9 @@
       "include": "#workflow"
     },
     {
+      "include": "#skillsDeclaration"
+    },
+    {
       "include": "#inputSource"
     },
     {
@@ -29,6 +32,9 @@
     },
     {
       "include": "#jsonSchema"
+    },
+    {
+      "include": "#skillEntry"
     },
     {
       "include": "#skill"
@@ -77,6 +83,9 @@
     },
     {
       "include": "#override"
+    },
+    {
+      "include": "#skillsField"
     },
     {
       "include": "#typedField"
@@ -155,6 +164,29 @@
     },
     "workflow": {
       "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.pyprompt"
+        },
+        "4": {
+          "name": "entity.name.type.pyprompt"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.pyprompt"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.pyprompt"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.pyprompt"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        }
+      }
+    },
+    "skillsDeclaration": {
+      "match": "^(\\s*)(skills)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.pyprompt"
@@ -283,6 +315,23 @@
         },
         "6": {
           "name": "punctuation.separator.key-value.pyprompt"
+        }
+      }
+    },
+    "skillEntry": {
+      "match": "^(\\s*)(skill)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.control.pyprompt"
+        },
+        "4": {
+          "name": "entity.name.section.pyprompt"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        },
+        "8": {
+          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
         }
       }
     },
@@ -629,8 +678,25 @@
         }
       }
     },
+    "skillsField": {
+      "match": "^(\\s*)(skills)(\\s*)(:)(\\s*)(?:(\"(?:\\\\.|[^\"\\\\])*\")|([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.pyprompt"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.pyprompt"
+        },
+        "6": {
+          "name": "string.quoted.double.pyprompt"
+        },
+        "7": {
+          "name": "entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt"
+        }
+      }
+    },
     "typedField": {
-      "match": "^(\\s*)(role|inputs|outputs|outcome|skills)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
+      "match": "^(\\s*)(role|inputs|outputs|outcome)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.other.field.pyprompt"

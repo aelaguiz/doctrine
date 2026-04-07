@@ -289,6 +289,11 @@ The current examples are intentionally pushing on these rules so we can validate
   for workflow strings that need one authored sentence instead of a block list.
 - `17_agent_mentions` extends those two mention surfaces to concrete agents so
   workflow prose can name owners without pretending that a mention is a route.
+- `21_first_class_skills_blocks` promotes `skills` from an agent-only typed
+  field into a first-class block that can be declared at the top level and
+  embedded inside workflows.
+- `22_skills_block_inheritance` gives named `skills` blocks the same explicit
+  patching model already used by workflows.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -296,13 +301,14 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 17
+## Shipped Through 22
 
-The shipped language subset now covers examples `01` through `17`.
+The shipped language subset now covers examples `01` through `22`.
 
 Current shipped declaration kinds:
 - `import`
 - `workflow`
+- `skills`
 - `agent`
 - `abstract agent`
 - `input`
@@ -326,6 +332,11 @@ Current shipped agent field families:
 Current shipped boundaries:
 - the renderer stays role-first; there is no H1 agent-name mode in the shipped
   subset
+- `skills` is now a first-class block surface:
+  - it can be declared at the top level
+  - it can be referenced directly from an agent `skills:` field
+  - it can appear inline or by reference inside a workflow body
+  - named `skills` blocks patch through explicit `inherit` and `override`
 - `route "..." -> AgentName` is a narrow typed line item inside workflow and
   outcome sections, not a standalone role-graph DSL
 - output paths such as `section_root/...` stay plain path strings explained by

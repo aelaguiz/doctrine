@@ -32,6 +32,7 @@ GENERIC_KEY_STRING_KEYS = (
     "schema",
     "shape",
     "skill",
+    "skills",
     "source",
     "target",
     "use",
@@ -161,6 +162,27 @@ def main() -> int:
     generic_key_only_samples = [f"    {keyword}:" for keyword in GENERIC_KEY_STRING_KEYS]
     generic_standalone_ref_samples = [f"    {keyword}" for keyword in GENERIC_STANDALONE_REFS]
 
+    _require_pattern_match(
+        repository,
+        "skillsDeclaration",
+        ['skills SharedSkills[shared.skills.BaseSkills]: "Skills"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "skillEntry",
+        ["    skill grounding: shared.skills.GroundingSkill"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "skillsField",
+        ['    skills: "Skills"', "    skills: shared.skills.SharedSkills"],
+        should_match=True,
+        errors=errors,
+    )
     _require_pattern_match(
         repository,
         "keyValueString",
