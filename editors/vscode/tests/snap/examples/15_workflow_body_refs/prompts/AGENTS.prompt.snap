@@ -33,7 +33,9 @@
 #         ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    read_now: "Read Now"
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -42,7 +44,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Start with the current routing truth."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        shared.contracts.CurrentIssuePlan
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
@@ -54,7 +58,9 @@
 #        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >        "If current concepts exist for this section, read them before nearby context."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        CurrentConcepts
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
@@ -67,7 +73,9 @@
 #                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Leave the next owner one current output contract instead of a vague note."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        FinalHandoffComment
 #^^^^^^^^ source.pyprompt
 #        ^^^^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
@@ -79,7 +87,9 @@
 #      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                              ^ source.pyprompt
-#                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -106,7 +116,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use this comment to confirm which files are current now."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input CurrentConcepts: "Current Concepts"
@@ -115,7 +127,9 @@
 #      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                      ^ source.pyprompt
-#                       ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -142,7 +156,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use this only when the section already has live concepts to preserve."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >output FinalHandoffComment: "Final Handoff Comment"
@@ -151,7 +167,9 @@
 #       ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    target: TurnResponse
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -172,7 +190,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use this output contract when you leave the next owner one clear update."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >agent WorkflowSectionRefsDemo:

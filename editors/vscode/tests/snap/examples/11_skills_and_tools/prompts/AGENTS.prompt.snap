@@ -95,7 +95,9 @@
 #      ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Find the best matching repo skill for the current job."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -110,7 +112,9 @@
 #      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Ground learner-facing poker wording against current poker truth."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -126,7 +130,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    requires: "Requires"
 #^^^^ source.pyprompt
@@ -136,7 +142,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "A wording surface or claim that needs poker grounding."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    provides: "Provides"
 #^^^^ source.pyprompt
@@ -146,10 +154,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "The normal repo workflow for grounding poker wording against current poker truth."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "A clear route for collecting the receipts this lane needs."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    does_not: "Does Not"
 #^^^^ source.pyprompt
@@ -159,10 +171,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Does not change lesson structure."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Does not establish exact right-move authority."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >skill CopyRewriteSkill: "poker-native-copy"
@@ -171,7 +187,9 @@
 #      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -187,7 +205,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >skill MobileSimSkill: "mobile-sim"
@@ -196,7 +216,9 @@
 #      ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                       ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Drive a simulator or device for runtime investigation."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -211,7 +233,9 @@
 #      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Restore a live Flutter development loop."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -227,7 +251,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use this only when the job is restoring a live Flutter dev loop."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >agent LessonCopywriter:
@@ -250,13 +276,19 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read the whole lesson before you rewrite isolated strings."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Use grounded poker wording without changing lesson structure or authority scope."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "If no named task skill fits cleanly, discover the right one before you guess."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    skills: "Skills"
 #^^^^ source.pyprompt

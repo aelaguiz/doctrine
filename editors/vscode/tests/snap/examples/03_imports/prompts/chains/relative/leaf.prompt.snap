@@ -10,10 +10,14 @@
 #         ^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "This module reaches back to its parent package before following the path forward again."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    use shared_context: chains.shared.context.SharedContext
 #^^^^ source.pyprompt

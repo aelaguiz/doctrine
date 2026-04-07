@@ -92,6 +92,14 @@ Current intent for titled workflow section body refs:
 - workflow reuse still belongs to keyed `use` entries
 - agent transitions still belong to `route "..." -> AgentName`
 
+Current intent for workflow string interpolation:
+- workflow preamble strings and titled workflow section strings may interpolate named declaration data inline with `{{Ref}}` and `{{Ref:field.path}}`
+- `{{Ref}}` renders the declaration title
+- `{{Ref:field.path}}` resolves one scalar field from the declaration contract data or fails loud
+- interpolation is for authored prose, not renderer-generated sentence assembly
+- authors still own punctuation, filenames, conjunctions, and backticks around the placeholder
+- this stays limited to workflow strings; it does not widen role text, record prose, or other string surfaces
+
 ## Nested Workflow Direction
 
 The `06_nested_workflows` examples forced a clearer boundary between "small local workflow" and "real nested workflow structure."
@@ -258,6 +266,8 @@ The current examples are intentionally pushing on these rules so we can validate
 - `15_workflow_body_refs` earns a narrow readable-mention path for named typed
   declarations inside titled workflow sections without creating a second
   contract surface.
+- `16_workflow_string_interpolation` earns the complementary inline-prose path
+  for workflow strings that need one authored sentence instead of a block list.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -265,9 +275,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 15
+## Shipped Through 16
 
-The shipped language subset now covers examples `01` through `15`.
+The shipped language subset now covers examples `01` through `16`.
 
 Current shipped declaration kinds:
 - `import`
@@ -457,7 +467,7 @@ Those buckets appear to be the real structure underneath the `99` examples.
 
 ## Current Pressure Areas
 
-Now that `01` through `15` are shipped, the next real design pressure is not
+Now that `01` through `16` are shipped, the next real design pressure is not
 whether these primitives exist. The pressure is where to stop widening them.
 
 Current live questions:

@@ -14,10 +14,14 @@
 #         ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                             ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "This file uses both a sibling-relative import and a multi-level parent-relative import."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    use deep_detail: chains.deep.levels.one.detail.DeepDetail
 #^^^^ source.pyprompt

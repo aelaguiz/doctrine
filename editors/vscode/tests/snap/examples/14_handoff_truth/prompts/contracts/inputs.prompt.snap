@@ -4,7 +4,9 @@
 #      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: Prompt
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -25,7 +27,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the current issue plan to understand the intended lane and current scope."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input SectionBrief: "Section Brief"
@@ -34,7 +38,9 @@
 #      ^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                     ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -61,7 +67,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the current brief as the upstream scope for this turn."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input PriorReviewNotes: "Prior Review Notes"
@@ -70,7 +78,9 @@
 #      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -97,8 +107,12 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use this only for continuity when it exists."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Do not treat it as proof of the current turn."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >

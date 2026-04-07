@@ -6,7 +6,9 @@
 #              ^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                             ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    required: "Required Target Keys"
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -29,7 +31,9 @@
 #             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                ^ source.pyprompt
-#                                 ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    kind: CommentText
 #^^^^ source.pyprompt
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -44,7 +48,9 @@
 #       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    files: "Files"
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -110,7 +116,9 @@
 #                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "SECTION_DOSSIER.md must reflect the current section proposal for this turn."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        validation_record: "Validation Record"
 #^^^^^^^^ source.pyprompt
@@ -120,7 +128,9 @@
 #                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "DOSSIER_VALIDATION.md must say what checks ran, what passed or failed, or what did not run yet."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    standalone_read: "Standalone Read"
 #^^^^ source.pyprompt
@@ -130,7 +140,9 @@
 #                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "A downstream reader should be able to read SECTION_DOSSIER.md and DOSSIER_VALIDATION.md and understand the current proposal and its validation basis."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >output SectionAuthorHandoff: "Section Author Handoff"
@@ -139,7 +151,9 @@
 #       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                            ^ source.pyprompt
-#                             ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    target: IssueComment
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -179,7 +193,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Say what changed in this turn."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        use_now: "Use Now"
 #^^^^^^^^ source.pyprompt
@@ -189,7 +205,9 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Name the exact current files the next owner should read now."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        review_files: "Review Files"
 #^^^^^^^^ source.pyprompt
@@ -199,7 +217,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Either name the current review files explicitly or say plainly that no current review files apply yet."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        next_owner: "Next Owner"
 #^^^^^^^^ source.pyprompt
@@ -209,7 +229,9 @@
 #                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Name the honest next owner."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    standalone_read: "Standalone Read"
 #^^^^ source.pyprompt
@@ -219,7 +241,9 @@
 #                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "A downstream reader should be able to read this comment alone and understand what changed, which files are current now, whether review files apply, and who owns next."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    example: "Example"
 #^^^^ source.pyprompt
@@ -229,14 +253,22 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "- changed: rewrote the dossier scope and added the validation record"
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "- use now: SECTION_DOSSIER.md and DOSSIER_VALIDATION.md"
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "- review files: no current review files apply yet"
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "- next owner: AcceptanceCritic"
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >

@@ -26,7 +26,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the briefing in the order below."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        opening: "Opening"
 #^^^^^^^^ source.pyprompt
@@ -36,7 +38,9 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "State the topic."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        main_point: "Main Point"
 #^^^^^^^^ source.pyprompt
@@ -46,7 +50,9 @@
 #                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Give the main point directly."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        closing: "Closing"
 #^^^^^^^^ source.pyprompt
@@ -56,7 +62,9 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "End with the next step."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 ># Model 2: nested or reusable structure should live in named workflows.
@@ -73,10 +81,14 @@
 #         ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                       ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Start with the topic and the audience before you deliver the briefing."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    topic: "Topic"
 #^^^^ source.pyprompt
@@ -86,7 +98,9 @@
 #           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "State the topic in one line."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    audience: "Audience"
 #^^^^ source.pyprompt
@@ -96,7 +110,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Name who the briefing is for."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow Delivery: "Delivery"
@@ -105,10 +121,14 @@
 #         ^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Move through the briefing in a fixed sequence."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    opening: "Opening"
 #^^^^ source.pyprompt
@@ -118,7 +138,9 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "State the situation."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    main_point: "Main Point"
 #^^^^ source.pyprompt
@@ -128,7 +150,9 @@
 #                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Give the main point directly."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    closing: "Closing"
 #^^^^ source.pyprompt
@@ -138,7 +162,9 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "End with the next step."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 ># This is the inherited case.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -167,10 +193,14 @@
 #                                 ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                   ^ source.pyprompt
-#                                    ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                     ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Move through the briefing in the revised sequence."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit opening
 #^^^^ source.pyprompt
@@ -186,7 +216,9 @@
 #                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Add one sentence of missing context before the main point."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    override main_point:
 #^^^^ source.pyprompt
@@ -196,7 +228,9 @@
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 >        "Give the revised main point directly."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit closing
 #^^^^ source.pyprompt
@@ -242,7 +276,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This file is the runtime guide for a structured briefing."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        use preparation: Preparation
 #^^^^^^^^ source.pyprompt
@@ -291,10 +327,14 @@
 #              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This file is the runtime guide for a structured briefing."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "This version keeps preparation and revises delivery through workflow reuse."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        use preparation: Preparation
 #^^^^^^^^ source.pyprompt
@@ -348,10 +388,14 @@
 #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This file inherits the outer briefing structure."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "It keeps preparation and replaces delivery through outer workflow inheritance."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit preparation
 #^^^^^^^^ source.pyprompt

@@ -11,7 +11,9 @@
 #              ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This fixture should fail during compile."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    role: "You are a broken agent."
 #^^^^ source.pyprompt

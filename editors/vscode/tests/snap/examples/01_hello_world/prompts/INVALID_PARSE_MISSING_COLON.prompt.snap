@@ -17,5 +17,7 @@
 #              ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This fixture should fail during parse."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >

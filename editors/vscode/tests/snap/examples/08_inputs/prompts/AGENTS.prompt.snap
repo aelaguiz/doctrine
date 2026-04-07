@@ -27,7 +27,9 @@
 #      ^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                   ^ source.pyprompt
-#                    ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                     ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: Prompt
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -48,7 +50,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "This content is already present in the invocation prompt."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input SectionPlan: "Section Plan"
@@ -57,7 +61,9 @@
 #      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -84,7 +90,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Read this file before changing section planning."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input PreviousSummary: "Previous Summary"
@@ -93,7 +101,9 @@
 #      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                      ^ source.pyprompt
-#                       ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -120,7 +130,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use this only if continuity with earlier work matters for the current turn."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input TrackerRoot: "Tracker Root"
@@ -129,7 +141,9 @@
 #      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                  ^ source.pyprompt
-#                   ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: EnvVar
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -156,7 +170,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "This environment variable points to the tracker checkout root."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 ># A custom source can define its own source-specific keys.
@@ -173,7 +189,9 @@
 #             ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                           ^ source.pyprompt
-#                            ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                             ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    required: "Required Source Keys"
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -207,7 +225,9 @@
 #      ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: FigmaDocument
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -240,7 +260,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use this design document when the turn depends on a specific Figma source."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 ># Model 1: input can be provided directly in the invocation prompt.
@@ -265,10 +287,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read the current issue from the prompt."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Summarize it clearly and briefly."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt
@@ -307,13 +333,19 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read the required section plan from the named path."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Use the previous summary only if continuity matters for the current turn."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Fail if the required section plan is missing."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt
@@ -351,10 +383,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Look up the tracker root from the environment variable."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Fail if the environment variable is missing."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt
@@ -389,10 +425,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use the custom source configuration to find the design document."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Fail if the required design source data is missing."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inputs: "Inputs"
 #^^^^ source.pyprompt

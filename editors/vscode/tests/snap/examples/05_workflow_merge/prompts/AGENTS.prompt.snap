@@ -22,10 +22,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the briefing in the base order."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Keep the framing brief and direct."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        opening: "Opening"
 #^^^^^^^^ source.pyprompt
@@ -35,7 +39,9 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "State the topic."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        main_point: "Main Point"
 #^^^^^^^^ source.pyprompt
@@ -45,7 +51,9 @@
 #                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Give the original main point."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        supporting_point: "Supporting Point"
 #^^^^^^^^ source.pyprompt
@@ -55,7 +63,9 @@
 #                          ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Add one supporting detail."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        closing: "Closing"
 #^^^^^^^^ source.pyprompt
@@ -65,7 +75,9 @@
 #                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Wrap up the briefing."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 ># Inherited workflows are always explicit and exhaustive.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -106,10 +118,14 @@
 #              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the revised briefing in the explicit order below."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "This child places inherited, overridden, and new sections on purpose."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit opening
 #^^^^^^^^ source.pyprompt
@@ -125,7 +141,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Add the missing context before the main point."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        override main_point:
 #^^^^^^^^ source.pyprompt
@@ -135,7 +153,9 @@
 #                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
 >            "Give the revised main point."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit supporting_point
 #^^^^^^^^ source.pyprompt
@@ -156,7 +176,9 @@
 #                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Invite one follow-up question."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 ># This child demonstrates a valid title override on an inherited section.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
@@ -185,10 +207,14 @@
 #              ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Deliver the revised briefing below."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "This child keeps the structure but changes one section title on purpose."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit opening
 #^^^^^^^^ source.pyprompt
@@ -206,7 +232,9 @@
 #                             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Give the revised main point."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit supporting_point
 #^^^^^^^^ source.pyprompt
@@ -252,7 +280,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This example should fail before rendering."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit opening
 #^^^^^^^^ source.pyprompt
@@ -270,7 +300,9 @@
 #                               ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Add the missing context before the main point."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        override main_point: "Overridden Main Point Title"
 #^^^^^^^^ source.pyprompt
@@ -282,7 +314,9 @@
 #                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Give the revised main point."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit supporting_point
 #^^^^^^^^ source.pyprompt

@@ -44,7 +44,9 @@
 #         ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                            ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    read_order: "Read Order"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -53,13 +55,19 @@
 #                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read Your Job first."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Then read Workflow Core and How To Take A Turn."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Then read Inputs, Outputs, Outcome, Skills, When To Use This Role, and Standards And Support."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow ProjectLeadReadFirst[LessonsReadFirst]: "Read First"
@@ -71,7 +79,9 @@
 #                                              ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                                ^ source.pyprompt
-#                                                 ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                  ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    inherit read_order
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -86,7 +96,9 @@
 #                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read the active issue plan, the latest issue comment that names the current files, and any current PR or QR state before you route or publish."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow CopywriterReadFirst[LessonsReadFirst]: "Read First"
@@ -98,7 +110,9 @@
 #                                             ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                               ^ source.pyprompt
-#                                                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                 ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    inherit read_order
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -113,7 +127,9 @@
 #                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch learner-facing text."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow LessonsWorkflowCore: "Workflow Core"
@@ -122,7 +138,9 @@
 #         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                             ^ source.pyprompt
-#                              ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                               ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    read_current_work_state: "Read Current Work State"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -131,10 +149,14 @@
 #                             ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Start with the active issue, the current plan, and the named current files."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Use the attached checkout for product truth only."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    same_issue_workflow: "Same-Issue Workflow"
 #^^^^ source.pyprompt
@@ -144,10 +166,14 @@
 #                         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Keep normal Lessons work on one issue from routing through follow-up."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Keep one owner at a time on that issue."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    handoff_comment: "Handoff Comment"
 #^^^^ source.pyprompt
@@ -157,7 +183,9 @@
 #                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Every handoff comment should say what changed, what the next owner should trust now, and who owns next."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow ProjectLeadWorkflowCore[LessonsWorkflowCore]: "Workflow Core"
@@ -169,7 +197,9 @@
 #                                                    ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                                      ^ source.pyprompt
-#                                                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                        ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    inherit read_current_work_state
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -184,16 +214,24 @@
 #                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
 >        "Keep normal Lessons work on one issue from routing through follow-up."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Keep one owner at a time on that issue."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Route work to the earliest honest specialist lane."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "When copy work is ready, route it to Lessons Copywriter."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit handoff_comment
 #^^^^ source.pyprompt
@@ -209,10 +247,14 @@
 #                    ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Keep PR, QR, and follow-up state on the same issue."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Do not call the work done until the current publish state is explicit."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow CopywriterWorkflowCore[LessonsWorkflowCore]: "Workflow Core"
@@ -224,7 +266,9 @@
 #                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                                     ^ source.pyprompt
-#                                                      ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                       ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    inherit read_current_work_state
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt keyword.control.pyprompt
@@ -239,13 +283,19 @@
 #                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
 >        "Keep normal Lessons work on one issue from routing through follow-up."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Keep one owner at a time on that issue."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "After the copy lane, return the same issue to Lessons Project Lead."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit handoff_comment
 #^^^^ source.pyprompt
@@ -260,7 +310,9 @@
 #         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                              ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                               ^ source.pyprompt
-#                                ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                 ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    turn_sequence: "Turn Sequence"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -269,16 +321,24 @@
 #                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read the active issue, the current files, and the upstream contracts your lane depends on."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Do only this lane's job."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Update the current outputs that now matter."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Leave one clear handoff and stop."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    guardrails: "Guardrails"
 #^^^^ source.pyprompt
@@ -288,10 +348,14 @@
 #                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Do not let routing drift away from the active issue."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Do not hand off weak work."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow LessonsStandardsAndSupport: "Standards And Support"
@@ -300,7 +364,9 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                    ^ source.pyprompt
-#                                     ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    attached_checkout: "Attached Checkout"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -309,7 +375,9 @@
 #                       ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use the attached checkout for product truth only. It does not decide workflow, ownership, or the next step."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow ProjectLeadStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
@@ -321,7 +389,9 @@
 #                                                                  ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                                                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                                                    ^ source.pyprompt
-#                                                                     ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                                      ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    publish_and_follow_up: "Publish And Follow-Up"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -330,10 +400,14 @@
 #                           ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Keep the issue explicit about publish intent: ship or prototype."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Do not use publish as a shortcut around current output or review rules."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    github_helpers: "GitHub Helpers"
 #^^^^ source.pyprompt
@@ -343,7 +417,9 @@
 #                    ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use repo-owned GitHub helpers when the live job needs remote GitHub access."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    staging_qr_helpers: "Staging QR Helpers"
 #^^^^ source.pyprompt
@@ -353,7 +429,9 @@
 #                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use repo-owned QR helpers when publish proof depends on current QR state."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit attached_checkout
 #^^^^ source.pyprompt
@@ -371,7 +449,9 @@
 #                                                                 ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                                                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                                                   ^ source.pyprompt
-#                                                                    ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                                     ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    poker_grounding: "Poker Grounding"
 #^^^^ source.pyprompt
 #    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -380,10 +460,14 @@
 #                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use Books to ground meaning and Forums to ground real player wording."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "If the grounding is missing, stop and say it is missing."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    copy_standards: "Copy Standards"
 #^^^^ source.pyprompt
@@ -393,10 +477,14 @@
 #                    ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Keep locked concepts and terms intact."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Do not sharpen exact-action claims in copy."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    pokerkb: "PokerKB"
 #^^^^ source.pyprompt
@@ -406,10 +494,14 @@
 #             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use it for definitions, grounded claim checks, terminology, and real poker wording."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Do not use it as exact right-move authority."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    step_json_validator: "Step JSON Validator"
 #^^^^ source.pyprompt
@@ -419,10 +511,14 @@
 #                         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use it after copy changes to validate the changed lesson manifest surfaces."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Record the command and result in COPY_GROUNDING.md."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit attached_checkout
 #^^^^ source.pyprompt
@@ -437,16 +533,24 @@
 #         ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                        ^ source.pyprompt
-#                         ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                         ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                          ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Keep one owner and one obvious next step on the same issue."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Keep the issue plan current on routing-only or process-repair turns."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Own publish and follow-up state when those are the live jobs."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow CopywriterJob: "Your Job"
@@ -455,16 +559,24 @@
 #         ^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Read the whole lesson before you rewrite isolated strings."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Use grounded poker wording without changing lesson structure or authority scope."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Record post-copy validation in the current outputs."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow ProjectLeadWhenToUse: "When To Use This Role"
@@ -473,13 +585,19 @@
 #         ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                              ^ source.pyprompt
-#                               ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Use this role when new Lessons work needs routing."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Use this role when publish or follow-up is the live job."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow CopywriterWhenToUse: "When To Use This Role"
@@ -488,13 +606,19 @@
 #         ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                             ^ source.pyprompt
-#                              ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                               ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Use this role when the manifest already exists and the next job is final learner-facing copy."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "Expect this lane to stop with current copy outputs ready for return to Project Lead."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input CurrentIssuePlan: "Current Issue Plan"
@@ -503,7 +627,9 @@
 #      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: Prompt
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -524,7 +650,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the current issue plan to understand the intended owner and next step."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input CurrentIssueState: "Current Issue State"
@@ -533,7 +661,9 @@
 #      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                        ^ source.pyprompt
-#                         ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                         ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -560,7 +690,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the current issue state to understand the named current files and publish state."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input SectionConceptsAndTerms: "Section Concepts And Terms"
@@ -569,7 +701,9 @@
 #      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                              ^ source.pyprompt
-#                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -596,7 +730,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the locked section language before rewriting learner-facing text."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input LessonPlan: "Lesson Plan"
@@ -605,7 +741,9 @@
 #      ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                 ^ source.pyprompt
-#                  ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -632,7 +770,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the approved lesson plan to preserve the lesson's teaching job."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input LessonSituations: "Lesson Situations"
@@ -641,7 +781,9 @@
 #      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -668,7 +810,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the approved lesson situations to preserve concrete rep choices."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >input LessonManifest: "Lesson Manifest"
@@ -677,7 +821,9 @@
 #      ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                     ^ source.pyprompt
-#                      ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                       ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    source: File
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -704,7 +850,9 @@
 #                 ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
 >    "Use the current lesson manifest as the editable learner-facing surface."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >output shape OwnerUpdateComment: "Owner Update Comment"
@@ -715,7 +863,9 @@
 #             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                ^ source.pyprompt
-#                                 ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    kind: CommentText
 #^^^^ source.pyprompt
 #    ^^^^ source.pyprompt entity.name.section.pyprompt
@@ -732,7 +882,9 @@
 #              ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                             ^ source.pyprompt
-#                              ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                               ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    required: "Required Target Keys"
 #^^^^ source.pyprompt
 #    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -753,7 +905,9 @@
 #       ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                         ^ source.pyprompt
-#                          ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    target: TrackerComment
 #^^^^ source.pyprompt
 #    ^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -793,7 +947,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Say what changed on this routing or publish turn."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        current_truth: "Current Source Of Truth"
 #^^^^^^^^ source.pyprompt
@@ -803,7 +959,9 @@
 #                       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Name the current source of truth for the next owner."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        next_owner: "Next Owner"
 #^^^^^^^^ source.pyprompt
@@ -813,7 +971,9 @@
 #                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Name the honest next owner."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >output CopyPassOutput: "Copy Pass Output"
@@ -822,7 +982,9 @@
 #       ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                      ^ source.pyprompt
-#                       ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                        ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    files: "Files"
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -881,7 +1043,9 @@
 #                   ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "COPY_GROUNDING.md should show the grounding that shaped the final wording."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        preserved_terms: "Preserved Terms"
 #^^^^^^^^ source.pyprompt
@@ -891,7 +1055,9 @@
 #                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "COPY_GROUNDING.md should name the locked terms that had to survive."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        validation: "Validation"
 #^^^^^^^^ source.pyprompt
@@ -901,7 +1067,9 @@
 #                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "COPY_GROUNDING.md should record what validation ran after the copy pass."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    standalone_read: "Standalone Read"
 #^^^^ source.pyprompt
@@ -911,7 +1079,9 @@
 #                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "A downstream reader should be able to read COPY_GROUNDING.md and lesson_manifest.json and understand what changed and what was validated."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >skill PublishFollowthroughSkill: "paperclip-publish-followthrough"
@@ -920,7 +1090,9 @@
 #      ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                ^ source.pyprompt
-#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Handle PR follow-up, QR updates, publish proof, and same-issue closeout."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -936,7 +1108,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use this when publish or follow-up is the live job."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
@@ -945,7 +1119,9 @@
 #      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                          ^ source.pyprompt
-#                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                           ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Ground learner-facing poker wording against current poker truth."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -961,7 +1137,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    does_not: "Does Not"
 #^^^^ source.pyprompt
@@ -971,10 +1149,14 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Does not change lesson structure."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "Does not establish exact right-move authority."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >skill CopyRewriteSkill: "poker-native-copy"
@@ -983,7 +1165,9 @@
 #      ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                       ^ source.pyprompt
-#                        ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                         ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
 #^^^^ source.pyprompt
 #    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -999,7 +1183,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >abstract agent LessonsRoleHome:
@@ -1115,10 +1301,14 @@
 #                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "One honest next owner."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >            "One current source of truth for that next owner."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        next_owner_if_accepted: "Next Owner If Accepted"
 #^^^^^^^^ source.pyprompt
@@ -1160,7 +1350,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Stop when one honest owner, one honest next step, and the current source of truth are explicit."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    skills: "Skills"
 #^^^^ source.pyprompt
@@ -1286,10 +1478,14 @@
 #                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Updated learner-facing copy."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >            "A clear grounding and validation record."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        next_owner_if_accepted: "Next Owner If Accepted"
 #^^^^^^^^ source.pyprompt
@@ -1331,7 +1527,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    skills: "Skills"
 #^^^^ source.pyprompt

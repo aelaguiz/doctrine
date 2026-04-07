@@ -138,13 +138,19 @@
 #                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "One current dossier."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >            "One current validation record."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >            "One honest handoff comment."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        next_owner_if_ready: "Next Owner If Ready"
 #^^^^^^^^ source.pyprompt
@@ -186,7 +192,9 @@
 #                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "Stop when the handoff comment names the exact files to use now and the next owner is clear."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        stop_rule: "Hard Stop Rule"
 #^^^^^^^^ source.pyprompt
@@ -196,8 +204,12 @@
 #                   ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >            "If the current brief is missing, stop and escalate."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >            "Do not point the next owner at stale notes, old copies, or a folder name instead of exact files."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >

@@ -27,6 +27,15 @@ class CompiledAgent:
 
 CompiledBodyItem: TypeAlias = str | CompiledSection
 CompiledField: TypeAlias = model.RoleScalar | CompiledSection
+WorkflowInterpolationDecl: TypeAlias = (
+    model.InputDecl
+    | model.InputSourceDecl
+    | model.OutputDecl
+    | model.OutputTargetDecl
+    | model.OutputShapeDecl
+    | model.JsonSchemaDecl
+    | model.SkillDecl
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -98,6 +107,13 @@ class ConfigSpec:
 
 
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
+_WORKFLOW_INTERPOLATION_EXPR_RE = re.compile(
+    r"\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r"(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*))?"
+    r"\s*"
+)
+_WORKFLOW_INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 # Reserved typed fields get their own compiler paths. Every other key is an
 # authored workflow slot, with one legacy carve-out: the old `workflow` field
 # still preserves 01-06 body inheritance semantics instead of switching to a
@@ -864,10 +880,18 @@ class CompilationContext:
         parent_workflow: ResolvedWorkflowBody | None = None,
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
+        resolved_preamble = tuple(
+            self._interpolate_workflow_string(
+                line,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            for line in workflow_body.preamble
+        )
         if parent_workflow is None:
             return ResolvedWorkflowBody(
                 title=workflow_body.title,
-                preamble=workflow_body.preamble,
+                preamble=resolved_preamble,
                 items=self._resolve_non_inherited_items(
                     workflow_body.items,
                     unit=unit,
@@ -971,7 +995,7 @@ class CompilationContext:
 
         return ResolvedWorkflowBody(
             title=workflow_body.title,
-            preamble=workflow_body.preamble,
+            preamble=resolved_preamble,
             items=tuple(resolved_items),
         )
 
@@ -1033,7 +1057,13 @@ class CompilationContext:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
             if isinstance(item, str):
-                resolved.append(item)
+                resolved.append(
+                    self._interpolate_workflow_string(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                )
                 continue
             if isinstance(item, model.SectionBodyRef):
                 resolved.append(
@@ -1053,6 +1083,95 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
     ) -> ResolvedSectionRef:
+        _target_unit, decl = self._resolve_workflow_interpolation_decl(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="workflow section bodies",
+            ambiguous_label="workflow section declaration ref",
+            missing_local_label="workflow section body",
+        )
+        return ResolvedSectionRef(title=decl.title)
+
+    def _interpolate_workflow_string(
+        self,
+        value: str,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> str:
+        if "{{" not in value and "}}" not in value:
+            return value
+
+        parts: list[str] = []
+        cursor = 0
+        for match in _WORKFLOW_INTERPOLATION_RE.finditer(value):
+            between = value[cursor:match.start()]
+            if "{{" in between or "}}" in between:
+                raise CompileError(
+                    f"Malformed workflow string interpolation in {owner_label}: {value}"
+                )
+            parts.append(between)
+            parts.append(
+                self._resolve_workflow_interpolation_expr(
+                    match.group(1),
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            )
+            cursor = match.end()
+
+        tail = value[cursor:]
+        if "{{" in tail or "}}" in tail:
+            raise CompileError(
+                f"Malformed workflow string interpolation in {owner_label}: {value}"
+            )
+        parts.append(tail)
+        return "".join(parts)
+
+    def _resolve_workflow_interpolation_expr(
+        self,
+        expression: str,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> str:
+        match = _WORKFLOW_INTERPOLATION_EXPR_RE.fullmatch(expression)
+        if match is None:
+            raise CompileError(
+                f"Invalid workflow string interpolation in {owner_label}: {{{{{expression}}}}}"
+            )
+
+        ref = _name_ref_from_dotted_name(match.group(1))
+        field_path = (
+            tuple(match.group(2).split(".")) if match.group(2) is not None else ("title",)
+        )
+        target_unit, decl = self._resolve_workflow_interpolation_decl(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="workflow strings",
+            ambiguous_label="workflow string interpolation ref",
+            missing_local_label="workflow string",
+        )
+        return self._resolve_workflow_interpolation_field(
+            decl,
+            field_path,
+            unit=target_unit,
+            owner_label=owner_label,
+            ref_label=_dotted_ref_name(ref) if ref.module_parts else ref.declaration_name,
+        )
+
+    def _resolve_workflow_interpolation_decl(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        ambiguous_label: str,
+        missing_local_label: str,
+    ) -> tuple[IndexedUnit, WorkflowInterpolationDecl]:
         target_unit = self._resolve_section_body_lookup_unit(ref, unit=unit)
         matches = self._find_workflow_section_ref_matches(
             ref.declaration_name,
@@ -1061,24 +1180,24 @@ class CompilationContext:
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
 
         if len(matches) == 1:
-            return ResolvedSectionRef(title=matches[0][1])
+            return target_unit, matches[0][1]
 
         if len(matches) > 1:
-            labels = ", ".join(label for label, _title in matches)
+            labels = ", ".join(label for label, _decl in matches)
             raise CompileError(
-                f"Ambiguous workflow section declaration ref in {owner_label}: "
+                f"Ambiguous {ambiguous_label} in {owner_label}: "
                 f"{dotted_name} matches {labels}"
             )
 
         if target_unit.workflows_by_name.get(ref.declaration_name) is not None:
             raise CompileError(
-                "Workflow refs are not allowed in workflow section bodies; "
+                f"Workflow refs are not allowed in {surface_label}; "
                 f"use `use` for workflow composition: {dotted_name}"
             )
 
         if target_unit.agents_by_name.get(ref.declaration_name) is not None:
             raise CompileError(
-                "Agent refs are not allowed in workflow section bodies; "
+                f"Agent refs are not allowed in {surface_label}; "
                 f'use `route "..." -> AgentName` for owner transitions: {dotted_name}'
             )
 
@@ -1086,9 +1205,191 @@ class CompilationContext:
             raise CompileError(f"Missing imported declaration: {dotted_name}")
 
         raise CompileError(
-            f"Missing local declaration ref in workflow section body {owner_label}: "
+            f"Missing local declaration ref in {missing_local_label} {owner_label}: "
             f"{ref.declaration_name}"
         )
+
+    def _resolve_workflow_interpolation_field(
+        self,
+        decl: WorkflowInterpolationDecl,
+        field_path: tuple[str, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        ref_label: str,
+    ) -> str:
+        if field_path == ("title",):
+            return decl.title
+
+        field_name = ".".join(field_path)
+        return self._resolve_record_items_interpolation_field(
+            decl.items,
+            field_path,
+            unit=unit,
+            owner_label=owner_label,
+            ref_label=ref_label,
+            decl=decl,
+            full_field_name=field_name,
+        )
+
+    def _resolve_record_items_interpolation_field(
+        self,
+        items: tuple[model.RecordItem, ...],
+        field_path: tuple[str, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        ref_label: str,
+        decl: WorkflowInterpolationDecl,
+        full_field_name: str,
+    ) -> str:
+        first = field_path[0]
+        record_scalar: model.RecordScalar | None = None
+        conflicting_item: model.RecordItem | None = None
+
+        for item in items:
+            if isinstance(item, model.RecordScalar) and item.key == first:
+                record_scalar = item
+                break
+            if isinstance(item, model.RecordSection) and item.key == first:
+                conflicting_item = item
+                break
+
+        if record_scalar is None:
+            if conflicting_item is not None:
+                raise CompileError(
+                    "Workflow string interpolation field must resolve to a scalar in "
+                    f"{owner_label}: {ref_label}:{full_field_name}"
+                )
+            raise CompileError(
+                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"{ref_label}:{full_field_name}"
+            )
+
+        return self._resolve_record_scalar_interpolation_field(
+            record_scalar,
+            field_path[1:],
+            unit=unit,
+            owner_label=owner_label,
+            ref_label=ref_label,
+            decl=decl,
+            full_field_name=full_field_name,
+        )
+
+    def _resolve_record_scalar_interpolation_field(
+        self,
+        item: model.RecordScalar,
+        field_path: tuple[str, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        ref_label: str,
+        decl: WorkflowInterpolationDecl,
+        full_field_name: str,
+    ) -> str:
+        if not field_path:
+            if item.body is not None:
+                raise CompileError(
+                    "Workflow string interpolation field must resolve to a scalar in "
+                    f"{owner_label}: {ref_label}:{full_field_name}"
+                )
+            return self._display_interpolation_scalar(
+                item,
+                unit=unit,
+                decl=decl,
+            )
+
+        if field_path == ("title",):
+            return self._display_interpolation_head_title(
+                item,
+                unit=unit,
+                decl=decl,
+            )
+
+        if item.body is None:
+            raise CompileError(
+                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"{ref_label}:{full_field_name}"
+            )
+
+        nested_key = field_path[0]
+        nested_scalar: model.RecordScalar | None = None
+        conflicting_item: model.RecordItem | None = None
+        for nested_item in item.body:
+            if isinstance(nested_item, model.RecordScalar) and nested_item.key == nested_key:
+                nested_scalar = nested_item
+                break
+            if isinstance(nested_item, model.RecordSection) and nested_item.key == nested_key:
+                conflicting_item = nested_item
+                break
+
+        if nested_scalar is None:
+            if conflicting_item is not None:
+                raise CompileError(
+                    "Workflow string interpolation field must resolve to a scalar in "
+                    f"{owner_label}: {ref_label}:{full_field_name}"
+                )
+            raise CompileError(
+                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"{ref_label}:{full_field_name}"
+            )
+
+        if len(field_path) > 1:
+            if field_path[1:] == ("title",):
+                return self._display_interpolation_scalar(
+                    nested_scalar,
+                    unit=unit,
+                    decl=decl,
+                )
+            raise CompileError(
+                f"Unknown workflow string interpolation field in {owner_label}: "
+                f"{ref_label}:{full_field_name}"
+            )
+
+        if nested_scalar.body is not None:
+            raise CompileError(
+                "Workflow string interpolation field must resolve to a scalar in "
+                f"{owner_label}: {ref_label}:{full_field_name}"
+            )
+
+        return self._display_interpolation_scalar(
+            nested_scalar,
+            unit=unit,
+            decl=decl,
+        )
+
+    def _display_interpolation_scalar(
+        self,
+        item: model.RecordScalar,
+        *,
+        unit: IndexedUnit,
+        decl: WorkflowInterpolationDecl,
+    ) -> str:
+        if item.body is not None:
+            return self._display_interpolation_head_title(item, unit=unit, decl=decl)
+        return self._display_symbol_value(item.value, unit=unit)
+
+    def _display_interpolation_head_title(
+        self,
+        item: model.RecordScalar,
+        *,
+        unit: IndexedUnit,
+        decl: WorkflowInterpolationDecl,
+    ) -> str:
+        if isinstance(decl, model.InputDecl) and item.key == "source":
+            if not isinstance(item.value, model.NameRef):
+                raise CompileError(f"Input source must stay typed in interpolation: {decl.name}")
+            return self._resolve_input_source_spec(item.value, unit=unit).title
+
+        if isinstance(decl, model.OutputDecl) and item.key == "target":
+            if not isinstance(item.value, model.NameRef):
+                raise CompileError(f"Output target must stay typed in interpolation: {decl.name}")
+            return self._resolve_output_target_spec(item.value, unit=unit).title
+
+        if isinstance(decl, model.OutputDecl) and item.key == "shape":
+            return self._display_output_shape(item.value, unit=unit)
+
+        return self._display_symbol_value(item.value, unit=unit)
 
     def _resolve_section_body_lookup_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -1106,12 +1407,12 @@ class CompilationContext:
         declaration_name: str,
         *,
         unit: IndexedUnit,
-    ) -> tuple[tuple[str, str], ...]:
-        matches: list[tuple[str, str]] = []
+    ) -> tuple[tuple[str, WorkflowInterpolationDecl], ...]:
+        matches: list[tuple[str, WorkflowInterpolationDecl]] = []
         for label, registry_name in _WORKFLOW_SECTION_REF_REGISTRIES:
             decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
-                matches.append((label, decl.title))
+                matches.append((label, decl))
         return tuple(matches)
 
     def _validate_route_target(self, ref: model.NameRef, *, unit: IndexedUnit) -> None:
@@ -1510,6 +1811,11 @@ def _dotted_decl_name(module_parts: tuple[str, ...], name: str) -> str:
 
 def _dotted_ref_name(ref: model.NameRef) -> str:
     return ".".join((*ref.module_parts, ref.declaration_name))
+
+
+def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
+    parts = tuple(dotted_name.split("."))
+    return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
 
 
 def _humanize_key(value: str) -> str:

@@ -125,10 +125,14 @@
 #              ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Follow the inherited steps below."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >        "This child keeps the shared greeting and replaces the final step."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        inherit greeting
 #^^^^^^^^ source.pyprompt
@@ -149,7 +153,9 @@
 #                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
 >            "Say inherited world."
 #^^^^^^^^^^^^ source.pyprompt
-#            ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 ># Imported parents work for named workflow declarations too.
@@ -163,10 +169,14 @@
 #                                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
 #                                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                                                     ^ source.pyprompt
-#                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    "This workflow inherits its structure from an imported parent."
 #^^^^ source.pyprompt
-#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    inherit greeting
 #^^^^ source.pyprompt
@@ -182,7 +192,9 @@
 #              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Keep the tone warm and direct."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >    override object:
 #^^^^ source.pyprompt
@@ -192,7 +204,9 @@
 #                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
 >        "Say imported world."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >agent ImportedWorkflowGreeter:

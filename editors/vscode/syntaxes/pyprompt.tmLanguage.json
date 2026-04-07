@@ -82,8 +82,44 @@
       "match": "^\\s*#.*$"
     },
     "strings": {
-      "name": "string.quoted.double.pyprompt",
-      "match": "\"(?:\\\\.|[^\"\\\\])*\""
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.pyprompt"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.pyprompt"
+        }
+      },
+      "contentName": "string.quoted.double.pyprompt",
+      "patterns": [
+        {
+          "include": "#stringInterpolation"
+        }
+      ]
+    },
+    "stringInterpolation": {
+      "match": "(\\{\\{)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.interpolation.begin.pyprompt"
+        },
+        "2": {
+          "name": "support.type.reference.pyprompt"
+        },
+        "3": {
+          "name": "punctuation.separator.interpolation.pyprompt"
+        },
+        "4": {
+          "name": "variable.other.member.pyprompt"
+        },
+        "5": {
+          "name": "punctuation.definition.interpolation.end.pyprompt"
+        }
+      }
     },
     "import": {
       "match": "^(\\s*)(import)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",

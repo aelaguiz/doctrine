@@ -9,7 +9,9 @@
 #         ^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                    ^ source.pyprompt
-#                     ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                      ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    first: "First"
 #^^^^ source.pyprompt
 #    ^^^^^ source.pyprompt entity.name.section.pyprompt
@@ -18,7 +20,9 @@
 #           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "Read this first."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >
 >workflow InvalidWorkflowBodyRefs: "Invalid Workflow Body Refs"
@@ -27,7 +31,9 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
 #                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
 #                                 ^ source.pyprompt
-#                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >    bad: "Bad"
 #^^^^ source.pyprompt
 #    ^^^ source.pyprompt entity.name.section.pyprompt

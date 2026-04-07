@@ -24,7 +24,9 @@
 #              ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
 >        "This example should fail before rendering."
 #^^^^^^^^ source.pyprompt
-#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
 >
 >        use duplicate_greeting: invalid_duplicates.duplicate_names.DuplicateGreeting
 #^^^^^^^^ source.pyprompt
