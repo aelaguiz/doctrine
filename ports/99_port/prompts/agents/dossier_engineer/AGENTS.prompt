@@ -31,11 +31,19 @@ workflow DossierEngineerWhenToUse: "When To Use This Role"
     "Stop before concept lock, lesson architecture, or copy work."
 
 
+workflow DossierEngineerWorkflowCore[common.role_home.LessonsWorkflowCore]: "Workflow Core"
+    inherit read_current_work_state
+    inherit same_issue_workflow
+    inherit handoff_comment
+    inherit packet_review_rules
+    inherit publish_return
+
+
 agent DossierEngineer[common.role_home.LessonsRoleHome]:
     role: "Core job: establish the honest section teaching burden from current curriculum truth and poker grounding."
 
     override read_first: DossierEngineerReadFirst
-    inherit workflow_core
+    override workflow_core: DossierEngineerWorkflowCore
 
     override your_job: DossierEngineerJob
 
