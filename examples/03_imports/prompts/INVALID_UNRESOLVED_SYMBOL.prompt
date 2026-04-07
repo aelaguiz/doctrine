@@ -1,0 +1,10 @@
+import simple.greeting
+
+
+agent UnresolvedImportedSymbolDemo:
+    role: "You are the unresolved symbol demonstration agent."
+
+    workflow: "Imported Steps"
+        "This example should fail before rendering."
+
+        use missing_greeting: simple.greeting.MissingGreeting

@@ -1,0 +1,47 @@
+{
+  "comments": {
+    "lineComment": "#"
+  },
+  "brackets": [
+    ["[", "]"],
+    ["{", "}"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    ["[", "]"],
+    ["{", "}"],
+    ["(", ")"],
+    {
+      "open": "\"",
+      "close": "\"",
+      "notIn": ["string", "comment"]
+    }
+  ],
+  "surroundingPairs": [
+    ["[", "]"],
+    ["{", "}"],
+    ["(", ")"],
+    ["\"", "\""]
+  ],
+  "folding": {
+    "offSide": true,
+    "markers": {
+      "start": "^\\s*#\\s*region\\b",
+      "end": "^\\s*#\\s*endregion\\b"
+    }
+  },
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*(?:(?:abstract\\s+agent|agent|workflow|skills|input\\s+source|input|output\\s+target|output\\s+shape|output|json\\s+schema|skill)\\b.*:\\s*|(?:role|inputs|outputs|skills)\\s*:\\s*(?:\"(?:\\\\.|[^\"\\\\])*\"\\s*)?|(?:skill\\s+[A-Za-z_][A-Za-z0-9_]*|override\\s+[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s*|skill\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*)$",
+      "action": {
+        "indent": "indent"
+      }
+    },
+    {
+      "beforeText": "^\\s*(?!use\\b)(?!route\\b)(?!inherit\\b)(?!skills\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*$)(?!override\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*$)[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*$",
+      "action": {
+        "indent": "indent"
+      }
+    }
+  ]
+}

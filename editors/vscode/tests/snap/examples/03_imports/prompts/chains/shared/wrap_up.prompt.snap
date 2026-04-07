@@ -1,0 +1,15 @@
+>workflow SharedWrapUp: "Shared Wrap-Up"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                      ^ source.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                        ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    "Finish with a shared wrap-up."
+#^^^^ source.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>

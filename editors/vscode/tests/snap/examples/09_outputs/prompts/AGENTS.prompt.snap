@@ -1,0 +1,834 @@
+># This example sketches one output primitive with reusable supporting
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># declarations:
+#^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `output` is the produced-contract primitive
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `output target` is the destination kind
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `output shape` is the structural form
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># - `json schema` is the strict machine-readable structure when needed
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># Simple outputs can stay small.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Richer outputs can add more contract detail directly on `output`.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Paths like `section_root/...` and `lesson_root/...` stay plain path strings
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># in this example. The model assumes the surrounding turn guidance explains how
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># to interpret those prefixes; they are not promoted to separate root
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># declarations here.
+#^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>json schema LessonManifestSchema: "Lesson Manifest Schema"
+#^^^^ source.pyprompt keyword.declaration.pyprompt
+#    ^ source.pyprompt
+#     ^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                 ^ source.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    profile: OpenAIStructuredOutput
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    file: "schemas/lesson_manifest.schema.json"
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>output shape IssueSummaryText: "Issue Summary Text"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                              ^ source.pyprompt
+#                               ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    kind: PlainText
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>output shape SectionPlanDocument: "Section Plan Document"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                 ^ source.pyprompt
+#                                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    kind: MarkdownDocument
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>output shape LessonManifestJson: "Lesson Manifest JSON"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                ^ source.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    kind: JsonObject
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    schema: LessonManifestSchema
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    example_file: "examples/lesson_manifest.example.json"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    explanation: "Field Notes"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "`title` is the learner-facing title."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "`steps` is the ordered list of step identifiers."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>output shape OwnerUpdateComment: "Owner Update Comment"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                ^ source.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                  ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    kind: CommentText
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt entity.name.section.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+># A custom target can define its own target-specific keys.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># This keeps the built-in set small while still letting projects define
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># destinations like tracker comments.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>output target TrackerComment: "Tracker Comment"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                             ^ source.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                               ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    required: "Required Target Keys"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        issue: "Issue"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>
+>output IssueSummaryResponse: "Issue Summary Response"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    target: TurnResponse
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    shape: IssueSummaryText
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    purpose: "Purpose"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#              ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "Give a short human-readable summary back in the turn."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    structure: "Expected Structure"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "State the issue in one or two sentences."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "End with the main blocker or next step if one matters."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>output SectionPlanOutput: "Section Plan Output"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    target: File
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        path: "section_root/_authoring/SECTION_PLAN.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: SectionPlanDocument
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    must_include: "Must Include"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        summary: "Summary"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Start with a short summary."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        planned_sections: "Planned Sections"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "List the planned sections in order."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        unresolved_risks: "Unresolved Risks Or Decisions"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "List unresolved risks or decisions."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    support_files: "Support Files"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        section_flow_audit: "SECTION_FLOW_AUDIT.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                           ^ source.pyprompt
+#                            ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            path: "section_root/_authoring/SECTION_FLOW_AUDIT.md"
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            when: "Use when section sizing or ordering constraints matter."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "The next role should be able to read SECTION_PLAN.md alone and understand the current plan."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    path_notes: "Path Notes"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Interpret `section_root/...` from the current work context and surrounding instructions."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "This example keeps that interpretation as explained guidance, not as a separate root primitive."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    example: "Example"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "# Section Plan"
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "## Summary"
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "..."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^ source.pyprompt string.quoted.double.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>output LessonManifestOutput: "Lesson Manifest Output"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    files: "Files"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        manifest: "Built Lesson"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            path: "lesson_root/_authoring/lesson_manifest.json"
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            shape: LessonManifestJson
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>        validation: "Validation File"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            path: "lesson_root/_authoring/MANIFEST_VALIDATION.md"
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            shape: MarkdownDocument
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    must_include: "Must Include"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        built_lesson: "Built Lesson"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "The built lesson in lesson_manifest.json."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        route_choice: "Route Choice"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "In MANIFEST_VALIDATION.md, name the route chosen for each step."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        validation_record: "Validation Record"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                          ^ source.pyprompt
+#                           ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "In MANIFEST_VALIDATION.md, name the exact validation command or commands that ran and what passed or failed."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        placeholder_copy_status: "Placeholder Copy Status"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                ^ source.pyprompt
+#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "In MANIFEST_VALIDATION.md, say whether placeholder copy is still present."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                      ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    support_files: "Support Files"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                  ^ source.pyprompt
+#                   ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        guided_walkthrough_length_report: "GUIDED_WALKTHROUGH_LENGTH_REPORT.md"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                         ^ source.pyprompt
+#                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            path: "lesson_root/GUIDED_WALKTHROUGH_LENGTH_REPORT.md"
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            when: "Guided-walkthrough pacing is in scope."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    notes: "Notes"
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Interpret `lesson_root/...` from the current work context and surrounding instructions."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "This example keeps that interpretation as explained guidance, not as a separate root primitive."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "Keep validator command details, validator output, and placeholder-copy status in MANIFEST_VALIDATION.md unless a modeled support file truly owns them."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>output ProjectTrackerUpdate: "Project Tracker Update"
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                            ^ source.pyprompt
+#                             ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                              ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    target: TrackerComment
+#^^^^ source.pyprompt
+#    ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#          ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        issue: "CURRENT_ISSUE"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt entity.name.section.pyprompt
+#             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>    shape: OwnerUpdateComment
+#^^^^ source.pyprompt
+#    ^^^^^ source.pyprompt entity.name.section.pyprompt
+#         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#          ^ source.pyprompt
+#           ^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>    requirement: Required
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#               ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    must_include: "Must Include"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        what_changed: "What Changed"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                     ^ source.pyprompt
+#                      ^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Say what changed."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        current_truth: "Current Source Of Truth"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                      ^ source.pyprompt
+#                       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Name the current source of truth."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        next_owner: "Next Owner"
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                  ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                   ^ source.pyprompt
+#                    ^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>            "Name the next owner."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                    ^ source.pyprompt
+#                     ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "A downstream reader should be able to read this comment alone and understand what changed, what to trust now, and who owns next."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    example: "Example"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "- changed: updated the section plan"
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "- use now: SECTION_PLAN.md"
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                   ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "- next owner: Writing Specialist"
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                         ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+># Model 1: a built-in turn response target.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent TurnResponseOutputAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: return a short issue summary in the turn response."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Return the issue summary in the turn response."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    outputs: "Outputs"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        IssueSummaryResponse
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+># Model 2: a built-in file target with a markdown document shape.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent FileOutputAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: write the section plan to a markdown file."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                               ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Write the section plan to the required file."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    outputs: "Outputs"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        SectionPlanOutput
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+># Model 3: a built-in file target with a stricter JSON output shape.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent JsonFileOutputAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                         ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: write the lesson manifest as structured JSON."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Write the lesson manifest JSON to the required file."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    outputs: "Outputs"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        LessonManifestOutput
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+># Model 4: a custom output target with target-specific configuration.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent CustomTargetOutputAgent:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Core job: leave an owner update on the project tracker."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    your_job: "Your Job"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Write the owner update using the custom tracker comment target."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                        ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    outputs: "Outputs"
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.other.field.pyprompt
+#           ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        ProjectTrackerUpdate
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

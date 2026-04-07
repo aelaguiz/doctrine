@@ -2,9 +2,16 @@
 
 Core job: do the research lane's work and route it to Writing Specialist.
 
+## Your Job
+
+- Take the work only when `Project Lead` routes it to you.
+- Do the research lane's work.
+- Keep the work ready for the next lane.
+- Do not route the work anywhere except `Writing Specialist` or `Project Lead`.
+
 ## Read First
 
-Read Workflow Core first. Then read Your Job.
+Read Your Job first. Then read Workflow Core.
 
 ## Workflow Core
 
@@ -27,10 +34,3 @@ Every owner-change comment should say:
 - what changed
 - what the next owner should use now
 - the next owner when ownership is changing now
-
-## Your Job
-
-- Take the work only when `Project Lead` routes it to you.
-- Do the research lane's work.
-- Keep the work ready for the next lane.
-- Do not route the work anywhere except `Writing Specialist` or `Project Lead`.

@@ -1,0 +1,132 @@
+># This example extends the existing workflow-mention surfaces one narrow step:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># concrete agents can now be mentioned in workflow prose and as block refs.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>#
+#^ source.pyprompt comment.line.number-sign.pyprompt
+># Use this when the workflow needs to name a current owner without turning
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># that sentence into a route line.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># `route` still owns actual owner transitions.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># `{{AgentRef}}` and `{{AgentRef:name}}` render the raw agent declaration name.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># Bare agent refs in titled workflow sections also render as raw-name bullets.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>
+>import shared.roles
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+>workflow HandoffMentions: "Handoff Mentions"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                           ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    owner_names_in_prose: "Owner Names In Prose"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                         ^ source.pyprompt
+#                          ^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "If the route is unclear, return the same issue to {{ProjectLead}}."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                                                             ^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                                                        ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                                                          ^ source.pyprompt string.quoted.double.pyprompt
+#                                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "If the work is ready for review, hand it to {{shared.roles.AcceptanceCritic:name}}."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                     ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.begin.pyprompt
+#                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt support.type.reference.pyprompt
+#                                                                                    ^ source.pyprompt string.quoted.double.pyprompt punctuation.separator.interpolation.pyprompt
+#                                                                                     ^^^^ source.pyprompt string.quoted.double.pyprompt variable.other.member.pyprompt
+#                                                                                         ^^ source.pyprompt string.quoted.double.pyprompt punctuation.definition.interpolation.end.pyprompt
+#                                                                                           ^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    owner_names_as_block_mentions: "Owner Names As Block Mentions"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                  ^ source.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        ProjectLead
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>        shared.roles.AcceptanceCritic
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.standalone.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>    actual_transition: "Actual Transition"
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                     ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                      ^ source.pyprompt
+#                       ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Naming an owner is not a route by itself."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        route "If the work is ready for review" -> shared.roles.AcceptanceCritic
+#^^^^^^^^ source.pyprompt
+#        ^^^^^ source.pyprompt keyword.control.pyprompt
+#             ^ source.pyprompt
+#              ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                              ^ source.pyprompt punctuation.definition.string.end.pyprompt
+#                                               ^ source.pyprompt
+#                                                ^^ source.pyprompt keyword.operator.route.pyprompt keyword.operator.pyprompt punctuation.separator.route.pyprompt
+#                                                  ^ source.pyprompt
+#                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.route-target.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>
+>
+>agent ProjectLead:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Own route repair when the next owner is unclear."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent AgentMentionsDemo:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "Keep owner names readable in workflow prose without pretending that a mention is a route."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                    ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    read_first: HandoffMentions
+#^^^^ source.pyprompt
+#    ^^^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#              ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

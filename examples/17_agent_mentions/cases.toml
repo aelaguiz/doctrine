@@ -1,0 +1,73 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "workflow mentions render local and imported concrete agent names"
+status = "active"
+kind = "render_contract"
+agent = "AgentMentionsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/agent_mentions_demo/AGENTS.md"
+expected_lines = [
+  "Keep owner names readable in workflow prose without pretending that a mention is a route.",
+  "",
+  "## Handoff Mentions",
+  "",
+  "### Owner Names In Prose",
+  "",
+  "If the route is unclear, return the same issue to ProjectLead.",
+  "If the work is ready for review, hand it to AcceptanceCritic.",
+  "",
+  "### Owner Names As Block Mentions",
+  "",
+  "- ProjectLead",
+  "- AcceptanceCritic",
+  "",
+  "### Actual Transition",
+  "",
+  "Naming an owner is not a route by itself.",
+  "If the work is ready for review -> AcceptanceCritic",
+]
+
+[[cases]]
+name = "abstract agent mentions are rejected"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_ABSTRACT_AGENT_MENTION.prompt"
+agent = "InvalidAbstractAgentMentionDemo"
+exception_type = "CompileError"
+error_code = "E272"
+message_contains = [
+  "Abstract agent refs are not allowed",
+  "workflow strings",
+  "shared.roles.AbstractEscalationOwner",
+]
+
+[[cases]]
+name = "workflow mentions are still rejected"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_WORKFLOW_MENTION.prompt"
+agent = "InvalidWorkflowMentionDemo"
+exception_type = "CompileError"
+error_code = "E271"
+message_contains = [
+  "Workflow refs are not allowed in workflow strings",
+  "use `use` for workflow composition",
+  "SharedRead",
+]
+
+[[cases]]
+name = "ambiguous agent mention refs fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_AMBIGUOUS_AGENT_REF.prompt"
+agent = "InvalidAmbiguousAgentMentionDemo"
+exception_type = "CompileError"
+error_code = "E270"
+message_contains = [
+  "Ambiguous workflow section declaration ref",
+  "SharedThing",
+  "agent declaration",
+  "input declaration",
+]

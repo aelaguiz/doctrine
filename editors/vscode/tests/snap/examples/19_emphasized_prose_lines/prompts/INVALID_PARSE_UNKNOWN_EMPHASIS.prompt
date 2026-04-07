@@ -1,0 +1,6 @@
+agent InvalidUnknownEmphasis:
+    role: "Role"
+        critical "This line should fail during parse."
+
+    workflow: "Instructions"
+        "This agent exists only to trigger the parse-fail contract."

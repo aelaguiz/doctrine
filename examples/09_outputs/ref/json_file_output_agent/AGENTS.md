@@ -2,6 +2,10 @@
 
 Core job: write the lesson manifest as structured JSON.
 
+## Your Job
+
+- Write the lesson manifest JSON to the required file.
+
 ## Outputs
 
 ### Lesson Manifest Output
@@ -54,7 +58,3 @@ See `schemas/lesson_manifest.schema.json`.
 #### Example
 
 See `examples/lesson_manifest.example.json`.
-
-## Your Job
-
-- Write the lesson manifest JSON to the required file.

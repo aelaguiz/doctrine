@@ -1,0 +1,200 @@
+# This example sketches one output primitive with reusable supporting
+# declarations:
+# - `output` is the produced-contract primitive
+# - `output target` is the destination kind
+# - `output shape` is the structural form
+# - `json schema` is the strict machine-readable structure when needed
+#
+# Simple outputs can stay small.
+# Richer outputs can add more contract detail directly on `output`.
+# Paths like `section_root/...` and `lesson_root/...` stay plain path strings
+# in this example. The model assumes the surrounding turn guidance explains how
+# to interpret those prefixes; they are not promoted to separate root
+# declarations here.
+
+json schema LessonManifestSchema: "Lesson Manifest Schema"
+    profile: OpenAIStructuredOutput
+    file: "schemas/lesson_manifest.schema.json"
+
+output shape IssueSummaryText: "Issue Summary Text"
+    kind: PlainText
+
+
+output shape SectionPlanDocument: "Section Plan Document"
+    kind: MarkdownDocument
+
+
+output shape LessonManifestJson: "Lesson Manifest JSON"
+    kind: JsonObject
+
+    schema: LessonManifestSchema
+    example_file: "examples/lesson_manifest.example.json"
+
+    explanation: "Field Notes"
+        "`title` is the learner-facing title."
+        "`steps` is the ordered list of step identifiers."
+
+
+output shape OwnerUpdateComment: "Owner Update Comment"
+    kind: CommentText
+
+
+# A custom target can define its own target-specific keys.
+# This keeps the built-in set small while still letting projects define
+# destinations like tracker comments.
+output target TrackerComment: "Tracker Comment"
+    required: "Required Target Keys"
+        issue: "Issue"
+
+
+output IssueSummaryResponse: "Issue Summary Response"
+    target: TurnResponse
+    shape: IssueSummaryText
+    requirement: Required
+
+    purpose: "Purpose"
+        "Give a short human-readable summary back in the turn."
+
+    structure: "Expected Structure"
+        "State the issue in one or two sentences."
+        "End with the main blocker or next step if one matters."
+
+
+output SectionPlanOutput: "Section Plan Output"
+    target: File
+        path: "section_root/_authoring/SECTION_PLAN.md"
+    shape: SectionPlanDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        summary: "Summary"
+            "Start with a short summary."
+
+        planned_sections: "Planned Sections"
+            "List the planned sections in order."
+
+        unresolved_risks: "Unresolved Risks Or Decisions"
+            "List unresolved risks or decisions."
+
+    support_files: "Support Files"
+        section_flow_audit: "SECTION_FLOW_AUDIT.md"
+            path: "section_root/_authoring/SECTION_FLOW_AUDIT.md"
+            when: "Use when section sizing or ordering constraints matter."
+
+    standalone_read: "Standalone Read"
+        "The next role should be able to read SECTION_PLAN.md alone and understand the current plan."
+
+    path_notes: "Path Notes"
+        "Interpret `section_root/...` from the current work context and surrounding instructions."
+        "This example keeps that interpretation as explained guidance, not as a separate root primitive."
+
+    example: "Example"
+        "# Section Plan"
+        "## Summary"
+        "..."
+
+
+output LessonManifestOutput: "Lesson Manifest Output"
+    files: "Files"
+        manifest: "Built Lesson"
+            path: "lesson_root/_authoring/lesson_manifest.json"
+            shape: LessonManifestJson
+
+        validation: "Validation File"
+            path: "lesson_root/_authoring/MANIFEST_VALIDATION.md"
+            shape: MarkdownDocument
+
+    must_include: "Must Include"
+        built_lesson: "Built Lesson"
+            "The built lesson in lesson_manifest.json."
+
+        route_choice: "Route Choice"
+            "In MANIFEST_VALIDATION.md, name the route chosen for each step."
+
+        validation_record: "Validation Record"
+            "In MANIFEST_VALIDATION.md, name the exact validation command or commands that ran and what passed or failed."
+
+        placeholder_copy_status: "Placeholder Copy Status"
+            "In MANIFEST_VALIDATION.md, say whether placeholder copy is still present."
+
+    support_files: "Support Files"
+        guided_walkthrough_length_report: "GUIDED_WALKTHROUGH_LENGTH_REPORT.md"
+            path: "lesson_root/GUIDED_WALKTHROUGH_LENGTH_REPORT.md"
+            when: "Guided-walkthrough pacing is in scope."
+
+    standalone_read: "Standalone Read"
+        "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
+
+    notes: "Notes"
+        "Interpret `lesson_root/...` from the current work context and surrounding instructions."
+        "This example keeps that interpretation as explained guidance, not as a separate root primitive."
+        "Keep validator command details, validator output, and placeholder-copy status in MANIFEST_VALIDATION.md unless a modeled support file truly owns them."
+
+
+output ProjectTrackerUpdate: "Project Tracker Update"
+    target: TrackerComment
+        issue: "CURRENT_ISSUE"
+    shape: OwnerUpdateComment
+    requirement: Required
+
+    must_include: "Must Include"
+        what_changed: "What Changed"
+            "Say what changed."
+
+        current_truth: "Current Source Of Truth"
+            "Name the current source of truth."
+
+        next_owner: "Next Owner"
+            "Name the next owner."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read this comment alone and understand what changed, what to trust now, and who owns next."
+
+    example: "Example"
+        "- changed: updated the section plan"
+        "- use now: SECTION_PLAN.md"
+        "- next owner: Writing Specialist"
+
+
+# Model 1: a built-in turn response target.
+agent TurnResponseOutputAgent:
+    role: "Core job: return a short issue summary in the turn response."
+
+    your_job: "Your Job"
+        "Return the issue summary in the turn response."
+
+    outputs: "Outputs"
+        IssueSummaryResponse
+
+
+# Model 2: a built-in file target with a markdown document shape.
+agent FileOutputAgent:
+    role: "Core job: write the section plan to a markdown file."
+
+    your_job: "Your Job"
+        "Write the section plan to the required file."
+
+    outputs: "Outputs"
+        SectionPlanOutput
+
+
+# Model 3: a built-in file target with a stricter JSON output shape.
+agent JsonFileOutputAgent:
+    role: "Core job: write the lesson manifest as structured JSON."
+
+    your_job: "Your Job"
+        "Write the lesson manifest JSON to the required file."
+
+    outputs: "Outputs"
+        LessonManifestOutput
+
+
+# Model 4: a custom output target with target-specific configuration.
+agent CustomTargetOutputAgent:
+    role: "Core job: leave an owner update on the project tracker."
+
+    your_job: "Your Job"
+        "Write the owner update using the custom tracker comment target."
+
+    outputs: "Outputs"
+        ProjectTrackerUpdate

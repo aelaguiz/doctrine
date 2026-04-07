@@ -1,0 +1,7 @@
+import ...base.topic
+
+
+workflow DeepDetail: "Deep Detail"
+    "This file walks back up the package tree with `...` before following the path forward again."
+
+    use root_topic: chains.deep.base.topic.RootTopic

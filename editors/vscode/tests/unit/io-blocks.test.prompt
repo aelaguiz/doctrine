@@ -1,0 +1,26 @@
+# SYNTAX TEST "source.pyprompt" "first-class io blocks and agent io patching"
+
+inputs SharedInputs[shared.io.BaseInputs]: "Your Inputs"
+# <---- keyword.declaration.pyprompt
+#      ^ entity.name.type.pyprompt
+#                   ^ entity.other.inherited-class.pyprompt
+
+outputs SharedOutputs: "Your Outputs"
+# <----- keyword.declaration.pyprompt
+#       ^ entity.name.type.pyprompt
+
+agent Reviewer:
+    inputs: SharedInputs
+#   ^^^^^^ keyword.other.field.pyprompt
+#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+
+    outputs[SharedOutputs]: "Your Outputs"
+#   ^^^^^^^ keyword.other.field.pyprompt
+#          ^ punctuation.section.inheritance.begin.pyprompt
+#           ^^^^^^^^^^^^^ entity.other.inherited-class.pyprompt
+#                        ^ punctuation.section.inheritance.end.pyprompt
+#                         ^ punctuation.separator.key-value.pyprompt
+
+        inherit durable_section_truth
+#       ^^^^^^^ keyword.control.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt

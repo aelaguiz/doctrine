@@ -2,6 +2,10 @@
 
 Core job: return a short issue summary in the turn response.
 
+## Your Job
+
+- Return the issue summary in the turn response.
+
 ## Outputs
 
 ### Issue Summary Response
@@ -18,7 +22,3 @@ Give a short human-readable summary back in the turn.
 
 - State the issue in one or two sentences.
 - End with the main blocker or next step if one matters.
-
-## Your Job
-
-- Return the issue summary in the turn response.

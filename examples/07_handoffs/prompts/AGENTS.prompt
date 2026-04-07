@@ -1,5 +1,11 @@
-# Best-guess syntax sketch for next-owner routing.
-# This example is intentionally narrower than the earlier draft:
+# Handoff example for next-owner routing.
+# This example stays aligned with `05_workflow_merge`:
+# - inherited named structure uses explicit patching
+# - `inherit key` keeps inherited content in place
+# - `override key:` replaces inherited content in place
+# - authored workflow slots on agents follow the same explicit patching rule
+#
+# This shipped example is intentionally narrower than the earlier draft:
 # - no critic lane
 # - no review-specific routing
 # - no routing DSL keywords like `review`, `when_ready`, or `on_reject`
@@ -11,15 +17,15 @@
 # - agent inheritance should carry named section slots, not anonymous deep trees
 
 workflow ReadFirst: "Read First"
-    "Read Workflow Core first. Then read Your Job."
+    "Read Your Job first. Then read Workflow Core."
 
 
-workflow ProjectLeadReadFirst: "Read First"
-    "Start here."
-    "Read Workflow Core first. Then read Your Job."
+workflow ProjectLeadReadFirst[ReadFirst]: "Read First"
+    "Start by reading Your Job."
+    "Then read Workflow Core."
 
 
-workflow SpecialistWorkflowCoreBase: "Workflow Core"
+workflow SameIssueWorkflowCoreBase: "Workflow Core"
     same_issue_workflow: "Same-Issue Workflow"
         "Keep the work on the same issue."
         "Do only this lane's job."
@@ -33,7 +39,7 @@ workflow SpecialistWorkflowCoreBase: "Workflow Core"
         "- the next owner when ownership is changing now"
 
 
-workflow ResearchSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
+workflow ResearchSpecialistWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
     inherit same_issue_workflow
 
     next_owner: "Next Owner"
@@ -43,7 +49,7 @@ workflow ResearchSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow C
     inherit owner_change_comment
 
 
-workflow WritingSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Core"
+workflow WritingSpecialistWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
     inherit same_issue_workflow
 
     next_owner: "Next Owner"
@@ -53,10 +59,10 @@ workflow WritingSpecialistWorkflowCore[SpecialistWorkflowCoreBase]: "Workflow Co
     inherit owner_change_comment
 
 
-workflow ProjectLeadWorkflowCore: "Workflow Core"
+workflow ProjectLeadWorkflowCore[SameIssueWorkflowCoreBase]: "Workflow Core"
     "This file is the runtime guide for a simple multi-agent routing pattern."
 
-    same_issue_workflow: "Same-Issue Workflow"
+    override same_issue_workflow:
         "Keep the whole job on one issue from setup through final return."
         "Keep one owner at a time on that issue."
         "The normal order is Project Lead -> Research Specialist -> Writing Specialist -> Project Lead."
@@ -69,7 +75,7 @@ workflow ProjectLeadWorkflowCore: "Workflow Core"
         route "When ready to start the work" -> ResearchSpecialist
         route "If the route is broken or the work is blocked before specialist work begins" -> ProjectLead
 
-    owner_change_comment: "Owner Change Comment"
+    override owner_change_comment:
         "Every owner-change comment should say:"
         "- what this turn changed"
         "- the next owner when ownership is changing now"
@@ -101,28 +107,29 @@ abstract agent SameIssueRole:
     read_first: ReadFirst
 
 
+# Agent-level authored workflow slots stay explicit.
+# - `inherit read_first` keeps the inherited slot unchanged
+# - `override read_first: ...` replaces the inherited slot
+# - new slots such as `workflow_core` and `your_job` are introduced directly
 agent ProjectLead[SameIssueRole]:
-    read_first: ProjectLeadReadFirst
-
     role: "Core job: start the work, route it to Research Specialist, and take it back after Writing Specialist finishes."
 
-    workflow_core: ProjectLeadWorkflowCore
     your_job: ProjectLeadJob
+    override read_first: ProjectLeadReadFirst
+    workflow_core: ProjectLeadWorkflowCore
 
 
 agent ResearchSpecialist[SameIssueRole]:
-    inherit read_first
-
     role: "Core job: do the research lane's work and route it to Writing Specialist."
 
-    workflow_core: ResearchSpecialistWorkflowCore
     your_job: ResearchSpecialistJob
+    inherit read_first
+    workflow_core: ResearchSpecialistWorkflowCore
 
 
 agent WritingSpecialist[SameIssueRole]:
-    inherit read_first
-
     role: "Core job: do the writing lane's work and route it back to Project Lead."
 
-    workflow_core: WritingSpecialistWorkflowCore
     your_job: WritingSpecialistJob
+    inherit read_first
+    workflow_core: WritingSpecialistWorkflowCore

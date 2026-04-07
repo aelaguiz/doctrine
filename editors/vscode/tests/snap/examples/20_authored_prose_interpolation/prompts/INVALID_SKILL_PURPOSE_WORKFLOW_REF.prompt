@@ -1,0 +1,15 @@
+workflow SharedRead: "Shared Read"
+    "Read this first."
+
+
+skill BrokenSkill: "Broken Skill"
+    purpose: "Start with {{SharedRead}} before you act."
+
+
+agent InvalidSkillPurposeInterpolationDemo:
+    role: "This prompt exists only to trigger the compile-fail contract."
+
+    skills: "Skills"
+        can_run: "Can Run"
+            skill broken: BrokenSkill
+                requirement: Advisory

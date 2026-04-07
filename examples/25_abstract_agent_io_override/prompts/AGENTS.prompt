@@ -1,0 +1,86 @@
+input ScopedCatalogTruth: "Scoped Catalog Truth"
+    source: File
+        path: "catalog/scoped_catalog_truth.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+input ContinuityOnlyPacket: "Continuity Only Packet"
+    source: File
+        path: "catalog/continuity_only_packet.json"
+    shape: "JSON Document"
+    requirement: Advisory
+
+
+input ForwardContinuityPacket: "Forward Continuity Packet"
+    source: File
+        path: "catalog/forward_continuity_packet.json"
+    shape: "JSON Document"
+    requirement: Advisory
+
+
+output DurableSectionTruth: "Durable Section Truth"
+    target: File
+        path: "section_root/_authoring/durable_section_truth.md"
+    shape: "Markdown Document"
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+inputs BaseSectionInputs: "Your Inputs"
+    "Read these inputs in order."
+
+    scoped_catalog_truth: "Scoped Catalog Truth"
+        ScopedCatalogTruth
+
+    continuity_only: "Continuity Only"
+        "Use continuity evidence to re-earn the section."
+        ContinuityOnlyPacket
+
+
+outputs BaseSectionOutputs: "Your Outputs"
+    "Always produce both outputs."
+
+    durable_section_truth: "Durable Section Truth"
+        DurableSectionTruth
+
+    coordination_handoff: "Coordination Handoff"
+        CoordinationHandoff
+
+
+# This abstract parent shares named IO defaults. The child patches the named
+# blocks directly; the parent agent fields are not themselves the patch surface.
+abstract agent BaseSectionRole:
+    role: "Use the shared section role defaults."
+    inputs: BaseSectionInputs
+    outputs: BaseSectionOutputs
+
+
+agent ReuseSectionRole[BaseSectionRole]:
+    role: "Reuse the parent's shared section IO blocks directly."
+    inputs: BaseSectionInputs
+    outputs: BaseSectionOutputs
+
+
+agent OverrideSectionRole[BaseSectionRole]:
+    role: "Override the parent's shared section IO blocks through named block patching."
+
+    inputs[BaseSectionInputs]: "Your Inputs"
+        inherit scoped_catalog_truth
+
+        override continuity_only: "Continuity Only"
+            "Use continuity evidence to re-earn the section."
+            "Read one section ahead only when the issue says continuity matters."
+            ForwardContinuityPacket
+
+    outputs[BaseSectionOutputs]: "Your Outputs"
+        inherit durable_section_truth
+
+        override coordination_handoff: "Coordination Handoff"
+            "Tell the next owner what changed and where the dossier truth lives."
+            CoordinationHandoff

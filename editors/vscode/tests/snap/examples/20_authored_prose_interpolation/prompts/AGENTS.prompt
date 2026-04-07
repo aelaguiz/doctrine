@@ -1,0 +1,69 @@
+# This example widens `{{...}}` from workflow-only prose to authored prose surfaces.
+#
+# Titles and config metadata stay literal.
+# Authored prose interpolation now works in:
+# - role prose
+# - workflow prose
+# - record prose
+# - skill purpose
+# - skill reference reason
+# - route labels
+
+workflow ReadFirst: "Read First"
+    start_here: "Start Here"
+        "Read {{CurrentPlan}} before you act."
+
+
+workflow HowToRoute: "How To Route"
+    routing_rules: "Routing Rules"
+        "Leave the next owner one {{TurnResponse}}."
+        route "If {{ProjectLead}} must step in" -> ProjectLead
+
+
+input CurrentPlan: "Current Plan"
+    source: File
+        path: "track_root/current-plan.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use this as the current plan truth."
+
+
+output TurnResponse: "Turn Response"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+    "Use this output when you leave the next owner one clear update."
+
+
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground new claims against {{CurrentPlan}} before you write."
+
+    provides: "Provides"
+        "Keep `{{CurrentPlan:source.path}}` in scope when you cite current plan truth."
+
+
+agent ProjectLead:
+    role: "Project Lead"
+
+
+agent AuthoredProseInterpolationDemo:
+    role: "Use `{{CurrentPlan:source.path}}` as the current plan truth before you act."
+
+    read_first: ReadFirst
+
+    inputs: "Inputs"
+        "Read {{CurrentPlan}} before you write."
+
+        planning_truth: "Planning Truth"
+            "Keep the current plan at `{{CurrentPlan:source.path}}` in scope."
+            CurrentPlan
+
+    skills: "Skills"
+        can_run: "Can Run"
+            skill grounding: GroundingSkill
+                reason: "Ask {{ProjectLead}} for an owner decision only when the plan truly needs one."
+
+    outputs: "Outputs"
+        TurnResponse
+
+    ending_your_turn: HowToRoute

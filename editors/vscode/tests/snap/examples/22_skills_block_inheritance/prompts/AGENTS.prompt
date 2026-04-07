@@ -1,0 +1,52 @@
+# This example adds inheritance and explicit patching for named `skills` blocks.
+#
+# The rules match workflow-style patching:
+# - inherited entries must be accounted for exactly once
+# - `inherit` keeps a parent entry as-is
+# - `override` replaces a parent entry by key
+#
+# Individual skill entries now carry stable keys so top-level skills blocks can
+# patch them cleanly.
+
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground the current claim before you write."
+
+
+skill CopyRewriteSkill: "Copy Rewrite Skill"
+    purpose: "Rewrite learner-facing text without changing the underlying lesson job."
+
+
+skill FindSkills: "Find Skills"
+    purpose: "Find the right repo skill before you guess."
+
+
+skills BaseLessonSkills: "Skills"
+    how_to_use: "How To Use"
+        "Start with the skill that directly matches the current job."
+
+    skill primary: GroundingSkill
+        requirement: Required
+
+    support: "Support"
+        skill find_skills: FindSkills
+            requirement: Advisory
+
+
+skills CopywriterSkills[BaseLessonSkills]: "Skills"
+    inherit how_to_use
+
+    override primary: CopyRewriteSkill
+        requirement: Required
+        reason: "For this role, rewriting is the lead capability."
+
+    override support: "Support"
+        skill find_skills: FindSkills
+            requirement: Advisory
+
+        skill grounding: GroundingSkill
+            requirement: Advisory
+
+
+agent SkillsInheritanceDemo:
+    role: "Use the inherited skills block for this role."
+    skills: CopywriterSkills

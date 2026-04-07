@@ -1,0 +1,33 @@
+output target IssueComment: "Issue Comment"
+    required: "Required Target Keys"
+        issue: "Issue"
+
+
+output shape HandoffCommentText: "Handoff Comment Text"
+    kind: CommentText
+
+
+output GlobalHandoffComment: "Global Handoff Comment"
+    target: IssueComment
+        issue: "CURRENT_ISSUE"
+    shape: HandoffCommentText
+    requirement: Required
+
+    must_include: "Must Include"
+        what_changed: "What Changed"
+            "Say what this turn changed."
+
+        decisions_now_locked: "Decisions Now Locked"
+            "Say which decisions are now locked."
+
+        use_now: "Use Now"
+            "Name the exact current files the next owner should trust now."
+
+        failing_gate_if_blocked: "Failing Gate If Blocked"
+            "If the work is blocked, name the exact failing gate. Otherwise say plainly that no blocking gate applies."
+
+        next_owner: "Next Owner"
+            "Name the honest next owner when ownership is changing now."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read this comment alone and understand what changed, what is current now, whether the work is blocked, and who owns next."

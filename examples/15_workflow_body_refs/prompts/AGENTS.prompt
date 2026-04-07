@@ -1,0 +1,65 @@
+# This example adds one narrow workflow-body feature:
+# titled workflow sections can mix prose strings with named declaration refs.
+#
+# Use this when the workflow needs to point at typed declarations without
+# restating their path, shape, or requirement inline.
+#
+# The workflow section keeps read order and usage guidance readable.
+# The declaration itself still owns the full contract truth.
+# Bare refs in workflow sections render as bullets using the declaration title.
+# Imported dotted refs work here too.
+# Workflow reuse still belongs to `use`, not to bare workflow refs.
+
+import shared.contracts
+
+
+workflow ImmediateLocalRead: "Immediate Local Read"
+    read_now: "Read Now"
+        "Start with the current routing truth."
+        shared.contracts.CurrentIssuePlan
+        LatestNamedFilesComment
+        shared.contracts.TrackMetadata
+        "If current concepts exist for this section, read them before nearby context."
+        CurrentConcepts
+
+    when_you_finish: "When You Finish"
+        "Leave the next owner one current output contract instead of a vague note."
+        FinalHandoffComment
+
+
+input LatestNamedFilesComment: "Latest Named Files Comment"
+    source: File
+        path: "track_root/_authoring/LATEST_NAMED_FILES_COMMENT.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use this comment to confirm which files are current now."
+
+
+input CurrentConcepts: "Current Concepts"
+    source: File
+        path: "section_root/_authoring/CONCEPTS.md"
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use this only when the section already has live concepts to preserve."
+
+
+output FinalHandoffComment: "Final Handoff Comment"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+    "Use this output contract when you leave the next owner one clear update."
+
+
+agent WorkflowSectionRefsDemo:
+    role: "Keep workflow guidance readable while still pointing directly at the typed contracts it depends on."
+
+    read_first: ImmediateLocalRead
+
+    inputs: "Inputs"
+        shared.contracts.CurrentIssuePlan
+        LatestNamedFilesComment
+        shared.contracts.TrackMetadata
+        CurrentConcepts
+
+    outputs: "Outputs"
+        FinalHandoffComment

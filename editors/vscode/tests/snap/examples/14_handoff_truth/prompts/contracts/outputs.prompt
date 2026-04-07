@@ -1,0 +1,59 @@
+output target IssueComment: "Issue Comment"
+    required: "Required Target Keys"
+        issue: "Issue"
+
+
+output shape HandoffCommentText: "Handoff Comment Text"
+    kind: CommentText
+
+
+output SectionDossierOutput: "Section Dossier Output"
+    files: "Files"
+        current_dossier: "Current Dossier"
+            path: "section_root/_authoring/SECTION_DOSSIER.md"
+            shape: MarkdownDocument
+
+        validation_record: "Validation Record"
+            path: "section_root/_authoring/DOSSIER_VALIDATION.md"
+            shape: MarkdownDocument
+
+    requirement: Required
+
+    must_include: "Must Include"
+        current_dossier: "Current Dossier"
+            "SECTION_DOSSIER.md must reflect the current section proposal for this turn."
+
+        validation_record: "Validation Record"
+            "DOSSIER_VALIDATION.md must say what checks ran, what passed or failed, or what did not run yet."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read SECTION_DOSSIER.md and DOSSIER_VALIDATION.md and understand the current proposal and its validation basis."
+
+
+output SectionAuthorHandoff: "Section Author Handoff"
+    target: IssueComment
+        issue: "CURRENT_ISSUE"
+    shape: HandoffCommentText
+    requirement: Required
+
+    must_include: "Must Include"
+        what_changed: "What Changed"
+            "Say what changed in this turn."
+
+        use_now: "Use Now"
+            "Name the exact current files the next owner should read now."
+
+        review_files: "Review Files"
+            "Either name the current review files explicitly or say plainly that no current review files apply yet."
+
+        next_owner: "Next Owner"
+            "Name the honest next owner."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read this comment alone and understand what changed, which files are current now, whether review files apply, and who owns next."
+
+    example: "Example"
+        "- changed: rewrote the dossier scope and added the validation record"
+        "- use now: SECTION_DOSSIER.md and DOSSIER_VALIDATION.md"
+        "- review files: no current review files apply yet"
+        "- next owner: AcceptanceCritic"

@@ -1,21 +1,25 @@
 # Agent I/O Design Notes
 
-This document is a working note for the next foundational language layer after
-workflow composition and next-owner routing.
+This document now records the shipped I/O subset through examples `08` to `14`.
 
-The goal is to describe the turn-level contract of an agent before we jump to
-higher-level conventions like packets.
+The goal is to describe the turn-level contract the language already supports,
+and the explicit non-goals that keep it from drifting into packet or
+root-binding machinery too early.
 
 ## Why This Exists
 
-Right now the language can say useful things about:
+The shipped language can now say useful things about:
 - agent shape
 - workflow shape
 - workflow reuse
 - inheritance
 - next-owner routing
+- typed inputs and typed input sources
+- typed outputs, output targets, output shapes, and JSON schemas
+- authored routing and stop guidance
+- skill-first capability references
 
-But it still does not have a clear model for the more primitive question:
+The core turn-contract questions the shipped subset already answers are:
 
 - what an agent turn consumes
 - what an agent turn must have before it can run
@@ -23,9 +27,31 @@ But it still does not have a clear model for the more primitive question:
 - what an agent turn produces
 - what should happen when required inputs are missing
 
-Packets may still become important later, but they look more like a convention
-built on top of these lower-level primitives than like the next primitive
-itself.
+Packets may still become important later, but they are still a convention built
+on top of these lower-level primitives, not a shipped primitive themselves.
+
+## Shipped Boundaries
+
+Current shipped boundaries:
+- `input` separates `source`, `shape`, and `requirement`
+- `source` resolves to built-ins such as `Prompt`, `File`, and `EnvVar`, or to
+  a declared `input source`
+- input `shape` stays a symbolic label in this subset
+- `output` is the one produced-contract primitive
+- `output` supports either `target + shape` or `files`
+- `target` resolves to built-ins such as `TurnResponse` and `File`, or to a
+  declared `output target`
+- `shape` resolves to a declared `output shape` first, then to a symbolic label
+- `json schema` is subordinate to `output shape`, not a competing output
+  primitive
+- richer authored support sections such as `must_include`,
+  `standalone_read`, and `notes` stay authored prose
+- path conventions such as `section_root/...` stay plain strings explained by
+  surrounding guidance
+- compiled `AGENTS.md` emission is a separate build layer configured outside the
+  prompt language; it is not an `output target`
+- there is still no packet primitive, no root-binding declaration, and no
+  `runtime_tools` surface
 
 ## Current Framing
 
@@ -464,31 +490,32 @@ Current requirement:
 - advisory behavior should be explicit
 - the language should not collapse into a giant schema too early
 
-## Concrete Capability Areas To Define
+## Post-14 Pressure Areas
 
-The next questions to answer are probably:
+The shipped subset now answers the minimum questions needed for `08` through
+`14`. The remaining pressure is not whether the current primitives exist. The
+pressure is where to stop widening them.
 
-1. What are the minimum input source modes we need to name explicitly?
-2. What are the minimum input shapes or types we need to name explicitly?
-3. How should required versus advisory inputs be represented?
-4. How should fail-if-missing semantics be represented?
-5. How much contract strength do we need before full schema becomes necessary?
-6. What are the minimum output modalities we need to name explicitly?
-7. Should outputs be single or multiple per turn?
-8. What are the minimum built-in output targets we actually want to ship?
-9. How should custom output targets be declared?
-10. How should output shape differ from output destination?
-11. How much richer than input shape should the output contract surface be?
-12. How much of this belongs directly on `output` versus inside a reusable
-   supporting declaration?
-13. How should first-class schema declarations work, and how should profile-
-   specific validation attach to them?
-14. When do explained path conventions stop being enough and force a more
+The next honest questions are:
+
+1. How much validation should input `shape` labels get before they stop being
+   lightweight symbolic names?
+2. How much normalization should `files` output mode get before authoring
+   becomes brittle?
+3. Which additional built-in `input source` or `output target` kinds, if any,
+   would earn their way into the language beyond `Prompt`, `File`, `EnvVar`,
+   `TurnResponse`, and `File`?
+4. How should richer schema validation or profile-specific validation attach to
+   `json schema` and `output shape` without turning the language into a giant
+   schema surface too early?
+5. When do explained path conventions stop being enough and force a more
    formal binding model?
+6. If packet-like bundles matter later, what sits cleanly on top of the
+   shipped I/O layer instead of replacing it?
 
-## What This Document Is Not Deciding Yet
+## Explicit Non-Goals For This Subset
 
-This document is not yet deciding:
+This shipped subset still does not define:
 - packet syntax
 - packet review syntax
 - tool boundary syntax
@@ -496,8 +523,8 @@ This document is not yet deciding:
 - validation command syntax
 - formal runtime-root declarations or path interpolation primitives
 
-Those may attach to this model later, but they should not blur the more
-primitive question of agent turn inputs and outputs.
+Those may become future layers, but they should not blur the more primitive
+question of agent turn inputs and outputs that is now already shipped.
 
 ## Current Bias
 

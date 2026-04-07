@@ -1,0 +1,7 @@
+abstract agent ReviewRoleBase:
+    abstract workflow_core
+    abstract routing
+
+
+agent InvalidConcreteMissingMultiple[ReviewRoleBase]:
+    role: "Trigger multiple missing abstract authored slots."

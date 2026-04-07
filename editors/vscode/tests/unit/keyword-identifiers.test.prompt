@@ -1,0 +1,107 @@
+# SYNTAX TEST "source.pyprompt" "keyword-shaped identifiers still highlight as keys and refs"
+
+    workflow: "Workflow Slot"
+#   ^^^^^^^^ entity.name.section.pyprompt
+#           ^ punctuation.separator.key-value.pyprompt
+#             ^^^^^^^^^^^^^^^ string.quoted.double.pyprompt
+
+    input: shared.inputs.FigmaDocument
+#   ^^^^^ entity.name.section.pyprompt
+#        ^ punctuation.separator.key-value.pyprompt
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+
+    output:
+#   ^^^^^^ entity.name.section.pyprompt
+#         ^ punctuation.separator.key-value.pyprompt
+
+    skill: "Skill Slot"
+#   ^^^^^ entity.name.section.pyprompt
+#        ^ punctuation.separator.key-value.pyprompt
+
+    import: "Import Slot"
+#   ^^^^^^ entity.name.section.pyprompt
+#         ^ punctuation.separator.key-value.pyprompt
+
+    important: "Important Slot"
+#   ^^^^^^^^^ entity.name.section.pyprompt
+#            ^ punctuation.separator.key-value.pyprompt
+
+    note: "Note Slot"
+#   ^^^^ entity.name.section.pyprompt
+#       ^ punctuation.separator.key-value.pyprompt
+
+    required: "Required Slot"
+#   ^^^^^^^^ entity.name.section.pyprompt
+#           ^ punctuation.separator.key-value.pyprompt
+
+    use: "Use Slot"
+#   ^^^ entity.name.section.pyprompt
+#      ^ punctuation.separator.key-value.pyprompt
+
+    warning: "Warning Slot"
+#   ^^^^^^^ entity.name.section.pyprompt
+#          ^ punctuation.separator.key-value.pyprompt
+
+    abstract: "Abstract Slot"
+#   ^^^^^^^^ entity.name.section.pyprompt
+#           ^ punctuation.separator.key-value.pyprompt
+
+    agent: "Agent Slot"
+#   ^^^^^ entity.name.section.pyprompt
+#        ^ punctuation.separator.key-value.pyprompt
+
+    json: "JSON Slot"
+#   ^^^^ entity.name.section.pyprompt
+#       ^ punctuation.separator.key-value.pyprompt
+
+    inherit: "Inherited Slot"
+#   ^^^^^^^ entity.name.section.pyprompt
+#          ^ punctuation.separator.key-value.pyprompt
+
+    override: "Override Slot"
+#   ^^^^^^^^ entity.name.section.pyprompt
+#           ^ punctuation.separator.key-value.pyprompt
+
+    route: "Route Slot"
+#   ^^^^^ entity.name.section.pyprompt
+#        ^ punctuation.separator.key-value.pyprompt
+
+    source: "Source Slot"
+#   ^^^^^^ entity.name.section.pyprompt
+#         ^ punctuation.separator.key-value.pyprompt
+
+    target: "Target Slot"
+#   ^^^^^^ entity.name.section.pyprompt
+#         ^ punctuation.separator.key-value.pyprompt
+
+    schema: "Schema Slot"
+#   ^^^^^^ entity.name.section.pyprompt
+#         ^ punctuation.separator.key-value.pyprompt
+
+    shape: "Shape Slot"
+#   ^^^^^ entity.name.section.pyprompt
+#        ^ punctuation.separator.key-value.pyprompt
+
+    workflow
+#   ^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+
+    import
+#   ^^^^^^ entity.name.type.reference.standalone.pyprompt
+
+    important
+#   ^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+
+    note
+#   ^^^^ entity.name.type.reference.standalone.pyprompt
+
+    required
+#   ^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+
+    use
+#   ^^^ entity.name.type.reference.standalone.pyprompt
+
+    skill
+#   ^^^^^ entity.name.type.reference.standalone.pyprompt
+
+    warning
+#   ^^^^^^^ entity.name.type.reference.standalone.pyprompt

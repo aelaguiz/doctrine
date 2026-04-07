@@ -1,0 +1,40 @@
+# SYNTAX TEST "source.pyprompt" "standalone references in bodies read like named declarations"
+
+    inputs: "Your Inputs"
+#   ^^^^^^ keyword.other.field.pyprompt
+
+        scoped_catalog_truth: "Scoped Catalog Truth"
+#       ^^^^^^^^^^^^^^^^^^^^ entity.name.section.pyprompt
+            TrackCatalogMeta
+#           ^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+            SectionCatalogMeta
+#           ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.standalone.pyprompt
+
+    skills: SharedSkills
+#   ^^^^^^ keyword.other.field.pyprompt
+#           ^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+
+    skills: "You Use These Skills"
+#   ^^^^^^ keyword.other.field.pyprompt
+
+        can_run: "Can Run"
+#       ^^^^^^^ entity.name.section.pyprompt
+            skill paperclip: PaperclipSkill
+#           ^^^^^ keyword.control.pyprompt
+#                 ^^^^^^^^^ entity.name.section.pyprompt
+#                            ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+                requirement: Required
+#               ^^^^^^^^^^^ entity.name.section.pyprompt
+#                            ^^^^^^^^ entity.name.type.reference.key-value.pyprompt
+
+            skill poker_grounding: PokerGroundingSkill
+                requirement: Required
+
+            skill poker_kb: PokerKBSkill
+                requirement: Required
+
+            skill github_access: GitHubAccessSkill
+                requirement: Advisory
+
+            skill para_memory_files: ParaMemoryFilesSkill
+                requirement: Advisory

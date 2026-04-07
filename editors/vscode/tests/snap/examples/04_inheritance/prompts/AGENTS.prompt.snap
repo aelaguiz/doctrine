@@ -1,0 +1,238 @@
+>import shared.greeters
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>import shared.workflows
+#^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#      ^ source.pyprompt
+#       ^^^^^^^^^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+># This abstract agent lives in the root file so the compile-fail contract can
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># still prove that abstract agents do not render, even when the parent is
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># imported from another module.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>abstract agent ImportedBaseGreeter[shared.greeters.PoliteGreeter]:
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^ source.pyprompt keyword.declaration.pyprompt
+#              ^ source.pyprompt
+#               ^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                  ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                                ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                                 ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the imported base greeter."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                             ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    workflow: "Shared Instructions"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        inherit greeting
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit courtesy
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit object
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+># These concrete agents inherit from abstract parents defined in imported
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># modules. The inheritance model is unchanged; the parent can now be a dotted
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># declaration ref instead of only a local name.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                       ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                     ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                      ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the hello world greeter."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                           ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    workflow: "Hello World Instructions"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        inherit greeting
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit courtesy
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit object
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>
+># This is also a concrete leaf agent, and it keeps the shared doctrine from the
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+># imported parent while replacing the final inherited step.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>agent InheritanceDemo[shared.greeters.PoliteGreeter]:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                     ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the inheritance demonstration agent."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    workflow: "Inherited Steps"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Follow the inherited steps below."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>        "This child keeps the shared greeting and replaces the final step."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>        inherit greeting
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>        inherit courtesy
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#               ^ source.pyprompt
+#                ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>        override object:
+#^^^^^^^^ source.pyprompt
+#        ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#                ^ source.pyprompt
+#                 ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                       ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>            "Say inherited world."
+#^^^^^^^^^^^^ source.pyprompt
+#            ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#             ^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+># Imported parents work for named workflow declarations too.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt comment.line.number-sign.pyprompt
+>workflow ImportedWorkflowInstructions[shared.workflows.BaseGreeting]: "Imported Workflow Instructions"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                                     ^ source.pyprompt punctuation.section.inheritance.begin.pyprompt
+#                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.other.inherited-class.pyprompt
+#                                                                   ^ source.pyprompt punctuation.section.inheritance.end.pyprompt
+#                                                                    ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                                                                     ^ source.pyprompt
+#                                                                      ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                                                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    "This workflow inherits its structure from an imported parent."
+#^^^^ source.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                                  ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    inherit greeting
+#^^^^ source.pyprompt
+#    ^^^^^^^ source.pyprompt keyword.control.pyprompt
+#           ^ source.pyprompt
+#            ^^^^^^^^ source.pyprompt support.type.reference.pyprompt
+>
+>    courtesy: "Courtesy"
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+>        "Keep the tone warm and direct."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                       ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    override object:
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt keyword.control.pyprompt
+#            ^ source.pyprompt
+#             ^^^^^^ source.pyprompt entity.name.section.pyprompt
+#                   ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>        "Say imported world."
+#^^^^^^^^ source.pyprompt
+#        ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#         ^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                            ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>
+>agent ImportedWorkflowGreeter:
+#^^^^^ source.pyprompt keyword.declaration.pyprompt
+#     ^ source.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                             ^ source.pyprompt punctuation.separator.key-value.pyprompt
+>    role: "You are the imported workflow greeter."
+#^^^^ source.pyprompt
+#    ^^^^ source.pyprompt keyword.other.field.pyprompt
+#        ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#         ^ source.pyprompt
+#          ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                                                 ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>
+>    workflow: ImportedWorkflowInstructions
+#^^^^ source.pyprompt
+#    ^^^^^^^^ source.pyprompt entity.name.section.pyprompt
+#            ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#             ^ source.pyprompt
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.pyprompt entity.name.type.reference.key-value.pyprompt entity.name.type.pyprompt support.type.reference.pyprompt
+>

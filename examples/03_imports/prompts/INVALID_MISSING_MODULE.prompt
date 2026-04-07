@@ -1,0 +1,11 @@
+import simple.greeting
+import simple.missing
+
+
+agent MissingModuleDemo:
+    role: "You are the missing module demonstration agent."
+
+    workflow: "Imported Steps"
+        "This example should fail before rendering."
+
+        use greeting: simple.greeting.Greeting

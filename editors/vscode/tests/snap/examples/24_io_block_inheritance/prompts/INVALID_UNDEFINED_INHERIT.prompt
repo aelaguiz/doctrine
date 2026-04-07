@@ -1,0 +1,19 @@
+input ScopedCatalogTruth: "Scoped Catalog Truth"
+    source: File
+        path: "catalog/scoped_catalog_truth.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+inputs BaseSectionInputs: "Your Inputs"
+    scoped_catalog_truth: "Scoped Catalog Truth"
+        ScopedCatalogTruth
+
+
+inputs InvalidUndefinedInheritInputs[BaseSectionInputs]: "Your Inputs"
+    inherit continuity_only
+
+
+agent InvalidUndefinedInheritIoDemo:
+    role: "Trigger inheritance of an undefined IO block entry."
+    inputs: InvalidUndefinedInheritInputs

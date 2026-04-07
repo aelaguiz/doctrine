@@ -1,0 +1,15 @@
+>workflow Opening: "Opening"
+#^^^^^^^^ source.pyprompt keyword.declaration.pyprompt
+#        ^ source.pyprompt
+#         ^^^^^^^ source.pyprompt entity.name.type.pyprompt
+#                ^ source.pyprompt punctuation.separator.key-value.pyprompt
+#                 ^ source.pyprompt
+#                  ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#                   ^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                          ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>    "State the topic."
+#^^^^ source.pyprompt
+#    ^ source.pyprompt punctuation.definition.string.begin.pyprompt
+#     ^^^^^^^^^^^^^^^^ source.pyprompt string.quoted.double.pyprompt
+#                     ^ source.pyprompt punctuation.definition.string.end.pyprompt
+>

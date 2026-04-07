@@ -1,0 +1,9 @@
+import ..detail
+import ....base.final_note
+
+
+workflow DeepRelativeChain: "Deep Relative Chain"
+    "This file uses both a sibling-relative import and a multi-level parent-relative import."
+
+    use deep_detail: chains.deep.levels.one.detail.DeepDetail
+    use final_note: chains.deep.base.final_note.FinalNote

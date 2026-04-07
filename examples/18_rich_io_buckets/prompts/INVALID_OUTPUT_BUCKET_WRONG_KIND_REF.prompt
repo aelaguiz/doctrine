@@ -1,0 +1,12 @@
+input CurrentSectionPlan: "Current Section Plan"
+    source: File
+        path: "section_root/_authoring/SECTION_PLAN.md"
+    shape: "Markdown Document"
+    requirement: Required
+
+
+agent InvalidOutputBucketWrongKindRef:
+    role: "Core job: trigger an input ref inside outputs."
+
+    outputs: "Outputs"
+        CurrentSectionPlan

@@ -1,0 +1,36 @@
+import .shared
+
+
+# This keeps lesson-situation truth in one file and folds exact-move proof into
+# the same artifact by default.
+output SituationSynthesizer: "Situation Synthesizer"
+    target: File
+        path: "lesson_root/_authoring/situation_synthesizer.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        candidate_pool: "Candidate Pool"
+            "List the candidate pool for each step, not just the winners."
+
+        kept_and_rejected_reps: "Kept And Rejected Reps"
+            "State the kept reps, the rejected reps that were serious enough to matter, and why the kept reps won."
+
+        sequencing_ledger: "Sequencing Ledger"
+            "Record the sequencing ledger for the kept reps and the dumb-strategy playtest results for the final order."
+
+        repetition_and_solver_screening: "Repetition And Solver Screening"
+            "Record repetition control across the lesson and the solver-screening notes for graded decision lessons."
+
+        exact_move_authority: "Exact Move Authority"
+            "When the lesson teaches a concrete move in a concrete spot, include the exact-move proof that 99 previously split into ACTION_AUTHORITY.md."
+
+    owns: "Owns"
+        "This artifact owns the kept reps for each step, the rejected reps, the reason the kept reps won, the sequencing proof, the solver-screening notes, and any exact-move authority still required."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read situation_synthesizer.md alone and understand why the kept reps won, how the order was checked, and any exact-move proof the critic still needs."
+
+    notes: "Notes"
+        "Fold the old ACTION_AUTHORITY.md into this artifact by default instead of treating it as a second output."
+        "Do not move candidate-pool, sequencing, or solver-screening truth out into a sidecar just because exact-move proof is also in scope."

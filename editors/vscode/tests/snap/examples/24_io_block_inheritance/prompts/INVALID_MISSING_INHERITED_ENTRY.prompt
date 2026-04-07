@@ -1,0 +1,28 @@
+output DurableSectionTruth: "Durable Section Truth"
+    target: File
+        path: "section_root/_authoring/durable_section_truth.md"
+    shape: "Markdown Document"
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+outputs BaseSectionOutputs: "Your Outputs"
+    durable_section_truth: "Durable Section Truth"
+        DurableSectionTruth
+
+    coordination_handoff: "Coordination Handoff"
+        CoordinationHandoff
+
+
+outputs InvalidMissingOutputs[BaseSectionOutputs]: "Your Outputs"
+    inherit durable_section_truth
+
+
+agent InvalidMissingInheritedIoEntryDemo:
+    role: "Trigger a missing inherited IO block entry."
+    outputs: InvalidMissingOutputs

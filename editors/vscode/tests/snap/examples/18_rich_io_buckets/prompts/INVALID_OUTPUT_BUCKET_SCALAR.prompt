@@ -1,0 +1,13 @@
+output DossierFile: "Dossier File"
+    target: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: "Dossier Document"
+    requirement: Required
+
+
+agent InvalidOutputBucketScalar:
+    role: "Core job: trigger an invalid scalar keyed item in outputs."
+
+    outputs: "Outputs"
+        notes: "Notes"
+        DossierFile

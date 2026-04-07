@@ -1,0 +1,13 @@
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue plan to confirm the intended owner and next step."
+
+
+input TrackMetadata: "Track Metadata"
+    source: File
+        path: "track_root/track.meta.json"
+    shape: JsonObject
+    requirement: Required
+    "Use this file as the current track metadata truth."

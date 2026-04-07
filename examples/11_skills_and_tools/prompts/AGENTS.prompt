@@ -1,0 +1,114 @@
+# This example shows top-level `skill` declarations with a small required
+# contract.
+#
+# This direction is intentionally skill-first.
+# Do not treat "tell the agent to run this Python script" as a parallel authoring
+# pattern. That is a hack around the language, not the intended design.
+# If a repeated capability matters enough to name, model it as a skill.
+#
+# In this direction, every skill must say:
+# - `purpose`: the job it helps with
+#
+# Everything else is optional typed structure layered on top, such as:
+# - `use_when`
+# - `requires`
+# - `provides`
+# - `does_not`
+#
+# This file intentionally shows progressive disclosure:
+# - `FindSkills` uses only the required `purpose`
+# - `CopyRewriteSkill` adds one optional field
+# - `PokerGroundingSkill` shows a fuller optional contract
+# - agent-side skill references show `Required`, `Advisory`, and `reason`
+#
+# The agent then references skill objects by relationship:
+# - `can_run`
+# - `discover_with`
+# - `not_for_this_role`
+#
+# This example does not model a separate `runtime_tools` section.
+# If the role needs a reusable helper and no skill exists yet, the intended move
+# is to build the skill, not to smuggle a raw script path into agent guidance.
+#
+# A `skills` block now gives each skill entry a stable local key:
+# - `skill grounding: PokerGroundingSkill`
+# - `skill copy_rewrite: CopyRewriteSkill`
+# The key is not for display. It exists so shared `skills` blocks can inherit
+# and override entries cleanly later.
+#
+# Requirement belongs on the agent-side reference, not on the skill object.
+# - `Required` means the skill must resolve and the turn should fail if the
+#   role cannot use it honestly here.
+# - `Advisory` means use it when needed if it is available; absence alone is
+#   not a turn failure.
+# In rendered `AGENTS.md`, do not print schema-like lines such as
+# `Requirement: Advisory`.
+# - required references should render as fail-loud role guidance
+# - advisory references should just render the skill normally
+
+skill FindSkills: "find-skills"
+    purpose: "Find the best matching repo skill for the current job."
+
+
+skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+    purpose: "Ground learner-facing poker wording against current poker truth."
+
+    use_when: "Use When"
+        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
+
+    requires: "Requires"
+        "A wording surface or claim that needs poker grounding."
+
+    provides: "Provides"
+        "The normal repo workflow for grounding poker wording against current poker truth."
+        "A clear route for collecting the receipts this lane needs."
+
+    does_not: "Does Not"
+        "Does not change lesson structure."
+        "Does not establish exact right-move authority."
+
+
+skill CopyRewriteSkill: "poker-native-copy"
+    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
+
+    use_when: "Use When"
+        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
+
+
+skill MobileSimSkill: "mobile-sim"
+    purpose: "Drive a simulator or device for runtime investigation."
+
+
+skill FlutterDevReturnSkill: "flutter-dev-return"
+    purpose: "Restore a live Flutter development loop."
+
+    use_when: "Use When"
+        "Use this only when the job is restoring a live Flutter dev loop."
+
+
+agent LessonCopywriter:
+    role: "Core job: turn an approved lesson manifest into grounded learner copy without changing lesson structure or authority scope."
+
+    your_job: "Your Job"
+        "Read the whole lesson before you rewrite isolated strings."
+        "Use grounded poker wording without changing lesson structure or authority scope."
+        "If no named task skill fits cleanly, discover the right one before you guess."
+
+    skills: "Skills"
+        can_run: "Can Run"
+            skill grounding: PokerGroundingSkill
+                requirement: Required
+
+            skill copy_rewrite: CopyRewriteSkill
+                requirement: Advisory
+
+        discover_with: "Discover With"
+            skill find_skills: FindSkills
+                requirement: Advisory
+
+        not_for_this_role: "Not For This Role"
+            skill mobile_sim: MobileSimSkill
+                reason: "This role is baseline copy work, not simulator or device investigation."
+
+            skill flutter_dev_return: FlutterDevReturnSkill
+                reason: "This role is baseline copy work, not Flutter environment repair."

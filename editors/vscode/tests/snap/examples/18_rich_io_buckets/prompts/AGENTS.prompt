@@ -1,0 +1,69 @@
+# This example shows rich `inputs` and `outputs` buckets.
+# - They can mix plain prose, titled groups, and typed declaration refs.
+# - Existing bare ref lists still work.
+# - The typed refs stay kind-specific.
+
+input CurrentSectionPlan: "Current Section Plan"
+    source: File
+        path: "section_root/_authoring/SECTION_PLAN.md"
+    shape: "Markdown Document"
+    requirement: Required
+
+    notes: "Notes"
+        "Treat the current plan as the live section baseline."
+
+
+input PriorReviewNotes: "Prior Review Notes"
+    source: File
+        path: "section_root/_authoring/PRIOR_REVIEW_NOTES.md"
+    shape: "Markdown Document"
+    requirement: Advisory
+
+
+output DossierFile: "Dossier File"
+    target: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: "Dossier Document"
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read dossier_engineer.md alone and understand the current dossier truth."
+
+
+output DossierSummary: "Dossier Summary"
+    target: TurnResponse
+    shape: "Turn Summary Text"
+    requirement: Required
+
+    purpose: "Purpose"
+        "Summarize what changed and point the reader at dossier_engineer.md."
+
+
+agent RichIoBucketAgent:
+    role: "Core job: gather the section inputs and publish the current dossier truth."
+
+    your_job: "Your Job"
+        "Use the current plan as truth and keep prior review notes as continuity help only."
+        "Always write the dossier file before you summarize the turn."
+
+    inputs: "Inputs"
+        "Read these inputs in order."
+
+        planning_truth: "Planning Truth"
+            CurrentSectionPlan
+
+        continuity_only: "Continuity Only"
+            "Use prior review notes only as continuity help, not as proof."
+            PriorReviewNotes
+
+    outputs: "Outputs"
+        "Always produce these outputs when you own dossier work."
+        "The file artifact is the durable truth. The turn summary points at that truth."
+
+        file_truth: "File Truth"
+            "Write this to disk before you summarize the turn."
+            DossierFile
+
+        turn_summary: "Turn Summary"
+            "Use the turn response to say what changed and where the durable file lives."
+            DossierSummary

@@ -1,0 +1,11 @@
+agent DuplicateSectionKeysDemo:
+    role: "You are the duplicate section key demonstration agent."
+
+    workflow: "Steps"
+        "This example should fail before rendering."
+
+        step_one: "Step One"
+            "Say hello."
+
+        step_one: "Step One Again"
+            "Say world."

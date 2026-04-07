@@ -52,15 +52,15 @@ Based on the current examples and `docs/LANGUAGE_DESIGN_NOTES.md`, the language 
 - workflow body statement kinds used so far:
   - bare strings
   - keyed nested entries like `step_one:`
-  - bare symbol references like `Greeting`
+  - keyed composition entries like `use greeting: Greeting`
 
 That is a very manageable grammar.
 
 The current examples progressively add complexity:
 
-- `01_hello_world`: one declaration, one scalar field, one workflow string
+- `01_hello_world`: one source file, two agents, two current `role` forms, and one titled workflow block per agent
 - `02_sections`: keyed nested workflow entries
-- `03_imports`: top-level reusable workflow declarations plus symbol references
+- `03_imports`: top-level reusable workflow declarations plus keyed composition references
 - `04_inheritance`: single inheritance, scalar override, keyed workflow override, inherited workflow entries, replacement of workflow string preamble
 - `05_workflow_merge`: multi-level inheritance with ordering-sensitive merged workflow entries
 
@@ -83,24 +83,23 @@ These parts are structurally friendly for almost any parser strategy:
 
 These are the first places where design decisions will materially affect implementation difficulty:
 
-- bare symbol references inside workflows
+- keyed composition syntax inside workflows
 - exact ordering semantics for merged workflow entries
 - exact replacement versus append behavior for workflow preamble strings
 - import resolution model
 - comment syntax and comment placement rules
 - whether future reusable declarations are only `workflow` or many other top-level declaration kinds
 
-### Why Bare Symbol References Matter
+### Why Keyed Composition Matters
 
-Inside a workflow, a bare line like `Greeting` is currently a reusable workflow reference.
+Inside a workflow, a line like `use greeting: Greeting` is more explicit than a bare `Greeting` reference.
 
-That works, but it is the first place where the language becomes less explicit than the semantics:
+That is a better long-term fit because:
 
-- it is not syntactically obvious whether `Greeting` is a reference, a new statement kind, or a future literal form
-- the parser can still handle it, but validation and error messages become less direct
-- future features will compete for the same visual slot
-
-If you keep custom syntax, an explicit keyword such as `use Greeting` or `include Greeting` would make the language easier to read, easier to validate, and easier to evolve.
+- the `use` keyword makes the statement kind explicit
+- the local key gives outer composition a stable patch identity
+- the referenced workflow stays visible without overloading the local key
+- future inheritance and composition rules do not have to guess whether identity comes from symbol name or position
 
 ### Why `05_workflow_merge` Is The Real Pressure Test
 
@@ -229,6 +228,12 @@ The sharp edge to watch is indentation tokenization:
 - the newline token must include the trailing spaces that determine indentation
 - if comments are legal in indentation-sensitive positions, the newline token must account for them correctly
 
+The first shipped Hello World bootstrap made that comment rule concrete:
+
+- standalone `#` comment lines are easiest to support by folding them into `_NL`
+- using `%ignore SH_COMMENT` alongside `_NL` in `strict=True` mode creates a regex-collision failure instead of a clean bootstrap
+- that is good language feedback, because it pushes the bootstrap toward one clear comment rule instead of parser rescue logic
+
 That is manageable, but it is a real implementation detail, not magic.
 
 ### Design changes that help Lark
@@ -322,7 +327,7 @@ Your current examples are not Python:
 - `agent Name:`
 - `workflow:`
 - `role: "..."` as field syntax inside custom declarations
-- bare symbol references inside workflow bodies
+- keyed `use` composition entries inside workflow bodies
 
 To use LibCST, you would need one of these:
 
@@ -433,13 +438,13 @@ That is another reason to keep the source language small.
 
 ## What is risky
 
-### Bare workflow references are too implicit
+### Keyed composition is the safer default
 
-`Greeting` as a workflow body line is compact, but it is a soft spot for future ambiguity.
+`use greeting: Greeting` is slightly longer than a bare `Greeting`, but it avoids future ambiguity.
 
 Recommendation:
 
-- prefer an explicit form such as `use Greeting`
+- prefer an explicit keyed form such as `use greeting: Greeting`
 
 ### `05_workflow_merge` is ahead of the written rulebook
 
@@ -476,7 +481,7 @@ These changes would materially improve implementation ease without harming the s
 Change:
 
 - from bare references like `Greeting`
-- to something like `use Greeting`
+- to keyed composition entries like `use greeting: Greeting`
 
 Why:
 
@@ -530,6 +535,12 @@ If you keep the richer behavior, add syntax or explicit rules for it. Do not lea
 Comment syntax is not glamorous, but indentation-sensitive grammars care about it.
 
 Pick one comment form early and keep it stable.
+
+The first bootstrap already earned a narrow answer:
+
+- standalone `#` comment lines are in
+- they ride through the `_NL` token for the stock `Indenter`
+- free-floating ignored `SH_COMMENT` trivia is not part of the bootstrap contract
 
 ### 6. Reserve keywords early
 

@@ -1,0 +1,9 @@
+import .opening
+import .closing
+
+
+workflow AbsoluteBriefing: "Absolute Briefing"
+    "This file composes sibling imports through dotted package paths."
+
+    use opening: chains.absolute.opening.Opening
+    use closing: chains.absolute.closing.Closing

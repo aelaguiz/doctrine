@@ -1,0 +1,11 @@
+import simple.greeting
+import broken.syntax
+
+
+agent ImportedParseFailureDemo:
+    role: "You are the imported parse failure demonstration agent."
+
+    workflow: "Imported Steps"
+        "This example should fail while loading an imported module."
+
+        use greeting: simple.greeting.Greeting

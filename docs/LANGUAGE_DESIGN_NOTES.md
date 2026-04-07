@@ -36,7 +36,14 @@ Current intent:
 - `role` is not hidden metadata. It is output-facing text.
 - `role` currently opens the rendered document directly.
 - The rendered output should read naturally, not look like a debug dump of the source tree.
-- output file-name mapping for rendered agents is a future concern, not a locked rule yet
+- compiled agent-doc emission is now a separate build concern configured outside
+  the prompt language rather than part of `output`
+- explicit package-local build targets in `pyproject.toml` emit concrete root agents to canonical
+  `module/agent/AGENTS.md` paths
+- the first shipped bootstrap supports both current `role` shapes from `01_hello_world`:
+  - scalar `role: "..."` as opening prose
+  - titled `role: "Title"` with indented lines as a rendered section
+- the first shipped bootstrap subset accepts exactly one `role` followed by exactly one `workflow` per agent
 
 ## Workflow Shape
 
@@ -49,6 +56,7 @@ Current intent:
 - A workflow is not just arbitrary text. It is a typed instruction surface.
 - A workflow can contain more than one string in a row before named nested entries begin.
 - the agent-level workflow block should also carry its rendered title explicitly, for example `workflow: "Instructions"`
+- named workflow composition should use keyed `use` entries such as `use greeting: Greeting`
 
 Nested content inside a workflow currently means ordered substructure.
 
@@ -76,6 +84,36 @@ Current intent for adjacent workflow strings:
 - sibling strings should render as consecutive lines
 - the renderer should not automatically insert an extra blank line between those lines unless the source structure explicitly calls for it
 
+Current intent for emphasized prose lines:
+- certain prose lines may start with one fixed emphasis label instead of embedding raw markdown
+- the shipped labels are `required`, `important`, `warning`, and `note`
+- those labels render as `**LABEL**: ...` in final markdown
+- this is a prose-line feature, not a general inline-markup mini-language
+- it currently works on workflow prose, role prose, and record prose surfaces
+- emphasis lines on authored prose surfaces keep the same `{{...}}` interpolation support as ordinary prose lines on those surfaces
+- role scalar values, titles, keyed scalar heads, config lines, routes, and refs do not get special emphasis syntax
+- if an author needs one-off emphasis inside a scalar string surface, raw markdown is still the escape hatch
+
+Current intent for titled workflow section body refs:
+- titled workflow section bodies may mix prose strings, route lines, and named declaration refs
+- those declaration refs are readable mentions, not inline expansion of the full typed contract
+- declaration refs in titled workflow section bodies render as bullet lines using the declaration title, except concrete `agent` refs which render as the raw agent declaration name
+- those refs currently resolve to titled declarations such as `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and `skill`, plus concrete `agent` declarations
+- workflow reuse still belongs to keyed `use` entries
+- actual owner transitions still belong to `route "..." -> AgentName`
+- abstract agent refs are rejected here; if an owner should be mentionable, name the concrete agent
+
+Current intent for authored prose interpolation:
+- authored prose surfaces may interpolate named declaration data inline with `{{Ref}}` and `{{Ref:field.path}}`
+- the shipped authored prose surfaces are workflow preamble strings, titled workflow section strings, role prose, record prose, skill purpose, skill reference reason, and route labels
+- `{{Ref}}` renders the declaration title for titled declarations and the raw declaration name for concrete `agent` refs
+- `{{Ref:field.path}}` resolves one scalar field from the declaration contract data or fails loud
+- `{{AgentRef:name}}` is the explicit agent form; broader agent field access is not currently part of this surface
+- interpolation is for authored prose, not renderer-generated sentence assembly
+- authors still own punctuation, filenames, conjunctions, and backticks around the placeholder
+- abstract agent refs are rejected here; if a sentence should name an owner, interpolate the concrete agent
+- titles, config labels, config values, keyed scalar metadata, and route targets stay literal
+
 ## Nested Workflow Direction
 
 The `06_nested_workflows` examples forced a clearer boundary between "small local workflow" and "real nested workflow structure."
@@ -94,7 +132,7 @@ Current choices:
 - inline agent workflows are still allowed for simple local cases
 - inline agent workflows are convenience authoring, not a separate semantic model
 - nested, reusable, or inherited structure should be promoted to named top-level `workflow` declarations
-- agents should compose named workflows when the structure is deeper than a simple local workflow
+- agents should compose named workflows through keyed `use` entries when the structure is deeper than a simple local workflow
 - workflow inheritance should use the same explicit ordered patching model we already use for inherited agent workflows
 
 ## Imports
@@ -103,19 +141,28 @@ Imports exist to compose user-defined pieces.
 
 Current intent:
 - imported definitions should be typed declarations
-- importing a file should bring in real named language objects, not raw text snippets
-- a workflow declared in another file should be referenceable by name inside an agent workflow
+- importing a module should bring in real named language objects, not raw text snippets
+- the current `03_imports` direction is Python-like module resolution:
+  - `import package.module` resolves from the example or package root
+  - `import .sibling.module` resolves from the current package
+  - `import ..shared.module` walks to the parent package first
+  - any number of leading dots is allowed and walks up one package level fewer than the dot count before following the remaining module path
+- an imported workflow should be composed through a keyed `use` entry such as `use greeting: simple.greeting.Greeting`
+- imported declaration refs also work in inheritance headers such as `agent Child[simple.roles.BaseRole]:`
+- imported symbol identity should not depend on case guesswork or fallback lookup
+- the first negative `03` contracts should cover missing modules, unresolved qualified symbols, and duplicate declaration names within one imported module
 
-This is why the imported examples are typed as `workflow Greeting: "Greeting"` and `workflow Object: "Object"` instead of just using untyped labels.
+This is why the imported examples are typed as `workflow Greeting: "Greeting"` and composed through explicit keyed `use` entries instead of as untyped text labels.
 
 ## Composition
 
 We currently want composition to stay explicit and understandable.
 
 Current intent:
-- when one workflow references another named workflow, the final rendered output should read like one coherent document
+- when one workflow composes another named workflow, the final rendered output should read like one coherent document
 - composition should feel like assembling semantic pieces, not pasting arbitrary text
 - simple inline workflows and composed named workflows should not behave like two different languages
+- composition should use keyed `use local_key: WorkflowName` entries so outer structure has a stable patch identity
 
 We are deliberately avoiding looser reuse features until the examples prove that we need them.
 
@@ -124,9 +171,11 @@ We are deliberately avoiding looser reuse features until the examples prove that
 Inheritance has earned a place conceptually, and the current direction is now clearly "explicit ordered patching" rather than any kind of implicit merge.
 
 Current syntax direction:
-- `agent Child[Base]:` means the child extends the base agent
+- `agent Child[Base]:` means the child extends a local base agent
+- `agent Child[shared.roles.Base]:` means the child extends an imported base agent through a normal dotted declaration ref
 - `abstract agent Base:` means the base exists for inheritance and should not render by itself
-- `workflow Child[Base]: "Title"` means the child extends a named base workflow and keeps the same explicit patching model
+- `workflow Child[Base]: "Title"` means the child extends a local named base workflow and keeps the same explicit patching model
+- `workflow Child[shared.flows.Base]: "Title"` means the child extends an imported named base workflow through the same dotted ref model
 
 Current intent:
 - inheritance should produce one merged final document
@@ -151,6 +200,8 @@ Current explicit-order syntax direction:
 - `override key:` means "replace the inherited workflow entry and place the replacement here"
 - `override key: "New Title"` means "replace the inherited workflow entry and also replace its rendered title"
 - `key: "Title"` means "create a new workflow entry here"
+- `use local_key: WorkflowName` means "compose this named workflow here with `local_key` as the outer patch identity"
+- `override local_key: WorkflowName` is also valid for an inherited keyed `use` entry and means "keep the outer key, but retarget that composed piece to a different named workflow here"
 
 Current inheritance pattern:
 - use `abstract agent` for any inheritance-only or non-leaf agent
@@ -192,6 +243,7 @@ The current examples are intentionally pushing on these rules so we can validate
 - Dropping inherited workflow entries is not supported right now.
 - `inherit key` is the clearest syntax we have found so far for "keep this inherited workflow entry and place it here."
 - `override key:` is the clearest syntax we have found so far for "replace this inherited workflow entry and place the replacement here."
+- `abstract key` is the clearest syntax we have found so far for "this authored slot must be defined by a concrete descendant without placeholder content."
 - `key: "Title"` inside an inherited child means "this is a new workflow entry and it belongs exactly here."
 - simple local workflows may still live inline inside an agent.
 - named top-level workflows are the canonical home for nested, reusable, or inherited workflow structure.
@@ -200,38 +252,130 @@ The current examples are intentionally pushing on these rules so we can validate
 - Rendered section titles are explicit authored data. Keys are never used as visible headings.
 - Adjacent workflow strings should stay adjacent in the rendered output. The renderer should not invent an extra blank line between them.
 - Invalid overrides should be real compiler errors, not silent fallbacks.
-- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/pyprompt/docs/COMPILER_ERRORS.md).
+- We now have a canonical numbered compiler error reference in [COMPILER_ERRORS.md](/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md).
 - `09_outputs` now treats `output` as the only produced-contract primitive.
 - `output target`, `output shape`, and `json schema` are reusable supporting
   declarations under `output`, not competing output primitives.
 - richer output contract material should live directly on `output`; we do not
   currently need a separate top-level `artifact` concept.
+- `18_rich_io_buckets` widens `inputs` and `outputs` from bare ref lists to
+  authored buckets that may mix prose, titled groups, and typed declaration
+  refs.
+- those bucket refs stay kind-specific: `inputs` refs must resolve to `input`
+  declarations and `outputs` refs must resolve to `output` declarations.
+- `11_skills_and_tools` is intentionally skill-first.
+- reusable capabilities should be modeled as `skill` declarations.
+- `12_role_home_composition` has already earned the basic role-home shell by
+  composing shared `workflow` sections into named agent fields.
+- that means the open question is what belongs inside those composed sections,
+  not whether role homes need a new primitive.
+- telling an agent to run a raw script or Python file path is currently treated
+  as a workaround, not as a supported parallel authoring pattern.
+- we are not currently supporting a separate `runtime_tools` language surface.
+- `12_role_home_composition` and `13_critic_protocol` should stay aligned with
+  that no-`runtime_tools` rule.
+- packets are not a current language primitive direction.
+- the same authoring pressure should be handled through inputs, outputs,
+  authored routing and stop guidance, ownership, and readable file contracts
+  instead.
+- do not cargo-cult `99` output patterns such as redundant `owns` sections when
+  the output contract already makes ownership obvious.
+- `14_handoff_truth` shows the basic "tell the next owner what to use now"
+  pattern without adding a new primitive.
+- do not treat that handoff-truth pattern as an open language gap unless we
+  later decide we need machine-readable freshness semantics.
+- `15_workflow_body_refs` earns a narrow readable-mention path for named typed
+  declarations inside titled workflow sections without creating a second
+  contract surface.
+- `16_workflow_string_interpolation` earns the complementary inline-prose path
+  for workflow strings that need one authored sentence instead of a block list.
+- `17_agent_mentions` extends those two mention surfaces to concrete agents so
+  workflow prose can name owners without pretending that a mention is a route.
+- `21_first_class_skills_blocks` promotes `skills` from an agent-only typed
+  field into a first-class block that can be declared at the top level and
+  embedded inside workflows.
+- `22_skills_block_inheritance` gives named `skills` blocks the same explicit
+  patching model already used by workflows.
+- `23_first_class_io_blocks` promotes `inputs` and `outputs` from agent-only
+  typed fields into first-class blocks that can be declared at the top level
+  and referenced directly from agents.
+- `24_io_block_inheritance` gives named `inputs` and `outputs` blocks the same
+  explicit patching model already used by workflows and `skills`.
+- `25_abstract_agent_io_override` shows the intended abstract-parent pattern:
+  parent agents point at named IO blocks, and child agents either reuse or
+  patch those named blocks directly.
+- `26_abstract_authored_slots` shows the authored-slot requirement pattern:
+  abstract parents can require concrete descendants to define named authored
+  slots directly with `abstract <slot_key>` and no placeholder prose.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
   path conventions, not separate root-binding declarations.
+- the indentation-sensitive bootstrap grammar supports standalone `#` comment
+  lines through the newline token rather than as separately ignored trivia
 
-## Pending Decisions
+## Shipped Through 26
 
-- How should rendered output file names map from concrete agent names when one source package emits many concrete agents?
-- Should workflow children always be keyed, or do we also want anonymous ordered items beyond strings?
-- When a child overrides a workflow, should the string preamble always replace the parent preamble, or do we eventually want append behavior too?
-- Do we want top-level reusable declarations besides `workflow`, or should we keep reuse narrow for as long as possible?
-- should named workflow composition stay as a bare reference line, or do we want a more explicit `use`-style syntax later?
+The shipped language subset now covers examples `01` through `26`.
 
-## Pending Concepts
+Current shipped declaration kinds:
+- `import`
+- `workflow`
+- `skills`
+- `inputs`
+- `outputs`
+- `agent`
+- `abstract agent`
+- `input`
+- `input source`
+- `output`
+- `output target`
+- `output shape`
+- `json schema`
+- `skill`
 
-These are concepts we expect to revisit, but they are not locked into the example sequence yet.
+Current shipped agent field families:
+- `role`
+- authored workflow slots such as `workflow`, `your_job`, `read_first`,
+  `workflow_core`, `how_to_take_a_turn`, `standards_and_support`, and
+  `when_to_use_this_role`
+- authored-slot `abstract <slot_key>` requirements, which only concrete
+  descendants must satisfy
+- `inputs` as either a rich inline bucket, a direct ref to a named inputs
+  block, or an explicit patch of a named inputs block
+- `outputs` as either a rich inline bucket, a direct ref to a named outputs
+  block, or an explicit patch of a named outputs block
+- `skills`
 
-- richer ordered workflow semantics
-- multi-agent output from one source package
-- agent input and output signatures
-- skills
-- more explicit workflow declarations and reuse patterns
-- formal runtime-root declarations and path interpolation
-- packet contracts
-- policies and tool boundaries
-- role graphs and handoff structure
+Current shipped boundaries:
+- the renderer stays role-first; there is no H1 agent-name mode in the shipped
+  subset
+- `skills` is now a first-class block surface:
+  - it can be declared at the top level
+  - it can be referenced directly from an agent `skills:` field
+  - it can appear inline or by reference inside a workflow body
+  - named `skills` blocks patch through explicit `inherit` and `override`
+- `inputs` and `outputs` are now first-class block surfaces:
+  - they can be declared at the top level
+  - they can be referenced directly from an agent `inputs:` or `outputs:` field
+  - named IO blocks patch through explicit `inherit` and `override`
+  - abstract parent agents can centralize named IO blocks and child agents can
+    reuse or patch those named blocks directly
+  - anonymous parent-agent `inputs` and `outputs` fields are not themselves
+    inherited patch surfaces
+- `route "..." -> AgentName` is a narrow typed line item inside workflow and
+  authored-slot sections, not a standalone role-graph DSL
+- output paths such as `section_root/...` stay plain path strings explained by
+  surrounding guidance
+- the language is skill-first; it does not ship a parallel `runtime_tools`
+  surface
+- `14_handoff_truth` is satisfied through imports plus existing primitives, not
+  through a new freshness or packet primitive
+- package build emission is configured separately from turn-level `output`
+  contracts and currently emits only compiled `AGENTS.md` trees for explicit
+  entrypoints
+- emit config is discovered from the nearest `pyproject.toml` or an explicit
+  CLI path; it does not live in prompt syntax
 
 ## Top-Level Buckets From 99
 
@@ -240,8 +384,6 @@ The `99_not_clean_but_useful` examples suggest that the next language questions 
 They suggest a handful of bigger buckets that will shape the workflow language anyway.
 
 ### 1. Role Home Composition
-
-The `99` outputs are not just one workflow plus one role.
 
 They are large role homes built from repeated sections such as:
 - `Read First`
@@ -253,7 +395,13 @@ They are large role homes built from repeated sections such as:
 - `When To Use This Role`
 - `Standards And Support`
 
-This means we likely need to decide how a role home is composed from shared doctrine plus role-local sections before we keep refining low-level workflow syntax.
+`12_role_home_composition` already earned the basic shell for this.
+
+That means the remaining question is not whether role homes need a new
+primitive.
+
+The remaining question is what guidance belongs inside those composed sections
+without turning them back into copied doctrine blobs.
 
 ### 2. Role Graph And Handoff Model
 
@@ -266,21 +414,28 @@ They repeatedly specify:
 - handoff comment rules
 - stop and escalate behavior
 
-This suggests the language needs a first-class way to express role-to-role routing and ownership flow.
+This pressure is real, but the current shipped answer is intentionally narrow:
+- `route "..." -> AgentName` inside workflow or authored-slot sections
+- same-issue ownership truth carried by authored guidance plus typed
+  `inputs`, `outputs`, and ordinary authored routing / stop slots
+- no standalone role-graph or packet primitive yet
 
-### 3. Packet And File Contract Model
+### 3. I/O, File Ownership, And Review Truth
 
-The `99` outputs spend a lot of energy defining packets, support files, inputs, produced outputs, and stop conditions.
+The `99` outputs spend a lot of energy defining what a role reads, what it
+produces, which files are in scope now, what the next owner should trust, and
+what should happen when review truth is missing.
 
-This looks like a bigger bucket than workflow detail.
+That pressure is real, but it should not become a packet primitive.
 
-We likely need a real model for:
-- main packet vs support files
+We should handle it through:
 - inputs
 - outputs
+- authored routing and stop guidance
+- file ownership and readability rules
 - next owner if accepted
 - stop rule
-- review packet shape
+- review truth that can be named explicitly without creating a packet surface
 
 ### 4. Shared Doctrine, Standards, And Support
 
@@ -295,18 +450,28 @@ They include things like:
 
 This suggests we need to decide how shared doctrine is represented and reused across many roles.
 
-### 5. Skills, Runtime Tools, And Tool Boundaries
+### 5. Skills And Tool Boundaries
 
-The `99` examples do not just name tools.
+The `99` examples distinguish skills from named tools and helper surfaces.
 
-They distinguish:
-- skills you can run
-- runtime tools
-- what each tool may support
-- what a tool may not prove
+Current design decision:
+- the language intentionally supports `skill` first
+- repeated reusable capability should be modeled as a skill
+- a raw script path or ad hoc tool call is not a second supported authoring
+  pattern
+- tool-boundary and proof-boundary guidance may still appear in prose
+  sections while the language stays skill-first
+
+What is still real pressure from `99`:
+- what a capability may support
+- what it may not prove
 - proof-route selection
 
-This likely needs its own language surface rather than being hidden inside freeform workflow prose.
+What is not a current language goal:
+- a separate `runtime_tools` declaration surface
+- a language feature whose main job is to tell the agent where a script lives
+- examples should not drift into a `runtime_tools` field when the design
+  decision above already rejects that surface
 
 ### 6. Scope Roots And Path Variables
 
@@ -340,27 +505,37 @@ This suggests that "proof and validation surfaces" are a top-level design bucket
 
 Several `99` outputs distinguish repo workflow truth from product truth in an attached checkout.
 
-That means the language may need a way to talk about attached repos, external artifacts, env files, and commands without collapsing them into ordinary workflow text.
+That means the language may need a richer way to talk about attached repos,
+external artifacts, env files, and commands later without collapsing them into
+ordinary workflow text.
 
 ## Current Priorities
 
-Before we spend much more effort on workflow micro-rules, the bigger buckets to resolve are:
+Before we spend much more effort on workflow micro-rules, the bigger buckets to
+resolve are:
 
-1. role home composition and shared doctrine
+1. clean up what belongs inside already-earned role-home shells
 2. role graph and handoff model
-3. packet and file contract model
-4. skills, runtime tools, and proof boundaries
+3. I/O, ownership, and review truth without adding packets
+4. skills and proof boundaries
 5. attached checkouts and evidence surfaces
+6. keep later examples aligned with the no-`runtime_tools` rule
 
 Those buckets appear to be the real structure underneath the `99` examples.
 
-## Top Candidates For Next Work
+## Current Pressure Areas
 
-- Decide how role homes are composed from shared doctrine plus role-local sections.
-- Decide how to represent role graphs, handoff order, critic lanes, and next-owner rules.
-- Decide the packet and file contract model before adding more workflow detail.
-- Decide how skills, runtime tools, and proof boundaries should be represented.
-- Decide how attached checkouts and review/evidence files should be modeled.
+Now that `01` through `16` are shipped, the next real design pressure is not
+whether these primitives exist. The pressure is where to stop widening them.
+
+Current live questions:
+- what belongs in shared doctrine sections versus typed field families
+- whether route semantics ever need to grow past the current narrow line-item
+  form
+- whether attached checkout and evidence surfaces need first-class declarations
+- whether path-root conventions ever need more than explained string guidance
+- how much extra validation or normalization the compiler should enforce on the
+  richer contract surfaces without making authoring brittle
 
 ## Current Bias
 
@@ -376,3 +551,16 @@ Right now the language is not trying to be:
 - a giant schema up front
 
 That bias is intentional. We want to earn complexity instead of assuming it.
+
+## Future Roadmap
+
+These are not current commitments. They are future directions we may support
+after the current skill-first surface is stable.
+
+- MCP-backed capabilities are a likely future extension point.
+- If we add MCP support, it should be explicit and first-class, not smuggled in
+  as raw command or script-path guidance.
+- We are not designing MCP syntax yet.
+- The current design stance is still: model reusable capability as a skill
+  today, and defer broader capability-surface expansion until the examples
+  force it cleanly.

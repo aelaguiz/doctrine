@@ -1,0 +1,15 @@
+input SharedThing: "Shared Thing Input"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+
+skill SharedThing: "Shared Thing Skill"
+    purpose: "Prove that ambiguous record-prose refs fail loud."
+
+
+agent InvalidAmbiguousRecordProseDemo:
+    role: "This prompt exists only to trigger the compile-fail contract."
+
+    inputs: "Inputs"
+        "Read {{SharedThing:title}} before you continue."

@@ -1,0 +1,10 @@
+import invalid_duplicates.duplicate_names
+
+
+agent DuplicateDeclarationDemo:
+    role: "You are the duplicate declaration demonstration agent."
+
+    workflow: "Imported Steps"
+        "This example should fail before rendering."
+
+        use duplicate_greeting: invalid_duplicates.duplicate_names.DuplicateGreeting

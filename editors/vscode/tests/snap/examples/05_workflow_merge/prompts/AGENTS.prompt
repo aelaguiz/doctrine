@@ -1,0 +1,87 @@
+# This base is abstract because concrete leaf agents inherit from it.
+abstract agent BaseBriefingAgent:
+    role: "You are the base briefing agent."
+
+    workflow: "Briefing"
+        "Deliver the briefing in the base order."
+        "Keep the framing brief and direct."
+
+        opening: "Opening"
+            "State the topic."
+
+        main_point: "Main Point"
+            "Give the original main point."
+
+        supporting_point: "Supporting Point"
+            "Add one supporting detail."
+
+        closing: "Closing"
+            "Wrap up the briefing."
+
+# Inherited workflows are always explicit and exhaustive.
+# Concrete leaf agents inherit from this abstract base.
+# A child must account for every inherited section exactly once.
+# - `inherit key` keeps the inherited section and places it exactly here
+# - `override key:` replaces the inherited section and keeps the inherited title
+# - `override key: "New Title"` replaces the inherited section and its title
+# - `key: "Title"` creates a new section exactly where it is written
+# There is no implicit merge or append behavior.
+agent OrderedBriefingAgent[BaseBriefingAgent]:
+    role: "You are the ordered briefing agent."
+
+    workflow: "Ordered Briefing"
+        "Deliver the revised briefing in the explicit order below."
+        "This child places inherited, overridden, and new sections on purpose."
+
+        inherit opening
+
+        context_note: "Context Note"
+            "Add the missing context before the main point."
+
+        override main_point:
+            "Give the revised main point."
+
+        inherit supporting_point
+        inherit closing
+
+        follow_up: "Follow Up"
+            "Invite one follow-up question."
+
+# This child demonstrates a valid title override on an inherited section.
+# The key identity stays the same, but the rendered section title changes.
+agent RetitledBriefingAgent[BaseBriefingAgent]:
+    role: "You are the retitled briefing agent."
+
+    workflow: "Revised Briefing"
+        "Deliver the revised briefing below."
+        "This child keeps the structure but changes one section title on purpose."
+
+        inherit opening
+
+        override main_point: "Revised Main Point"
+            "Give the revised main point."
+
+        inherit supporting_point
+        inherit closing
+
+# This child demonstrates the compiler error rule for `override`.
+# It is still a concrete leaf agent, so it would render if compilation succeeded.
+# The inherited order is still accounted for explicitly.
+# `override key:` only works when the parent already defines that key.
+# If the intent is to add something new, drop `override` and define a new key with a title.
+agent InvalidOverrideBriefingAgent[BaseBriefingAgent]:
+    role: "You are the invalid override briefing agent."
+
+    workflow: "Briefing"
+        "This example should fail before rendering."
+
+        inherit opening
+
+        override context_note: "Context Note"
+            "Add the missing context before the main point."
+
+        override main_point: "Overridden Main Point Title"
+            "Give the revised main point."
+
+        inherit supporting_point
+        inherit closing

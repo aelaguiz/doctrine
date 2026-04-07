@@ -1,0 +1,34 @@
+# This example extends the existing workflow-mention surfaces one narrow step:
+# concrete agents can now be mentioned in workflow prose and as block refs.
+#
+# Use this when the workflow needs to name a current owner without turning
+# that sentence into a route line.
+# `route` still owns actual owner transitions.
+# `{{AgentRef}}` and `{{AgentRef:name}}` render the raw agent declaration name.
+# Bare agent refs in titled workflow sections also render as raw-name bullets.
+
+import shared.roles
+
+
+workflow HandoffMentions: "Handoff Mentions"
+    owner_names_in_prose: "Owner Names In Prose"
+        "If the route is unclear, return the same issue to {{ProjectLead}}."
+        "If the work is ready for review, hand it to {{shared.roles.AcceptanceCritic:name}}."
+
+    owner_names_as_block_mentions: "Owner Names As Block Mentions"
+        ProjectLead
+        shared.roles.AcceptanceCritic
+
+    actual_transition: "Actual Transition"
+        "Naming an owner is not a route by itself."
+        route "If the work is ready for review" -> shared.roles.AcceptanceCritic
+
+
+agent ProjectLead:
+    role: "Own route repair when the next owner is unclear."
+
+
+agent AgentMentionsDemo:
+    role: "Keep owner names readable in workflow prose without pretending that a mention is a route."
+
+    read_first: HandoffMentions

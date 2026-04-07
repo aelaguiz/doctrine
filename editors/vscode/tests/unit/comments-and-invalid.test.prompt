@@ -1,0 +1,13 @@
+# SYNTAX TEST "source.pyprompt" "comments and invalid-but-lexical lines"
+
+# This is a comment
+# ^^^^^^^^^^^^^^^^^^^ comment.line.number-sign.pyprompt
+
+agent MissingColon
+# <---- keyword.declaration.pyprompt
+#      ^ entity.name.type.pyprompt
+
+workflow BrokenFlow: "Still Highlighted"
+# <------- keyword.declaration.pyprompt
+#         ^ entity.name.type.pyprompt
+#                      ^ string.quoted.double.pyprompt

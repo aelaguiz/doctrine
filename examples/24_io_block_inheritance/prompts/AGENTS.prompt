@@ -1,0 +1,76 @@
+input ScopedCatalogTruth: "Scoped Catalog Truth"
+    source: File
+        path: "catalog/scoped_catalog_truth.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+input ContinuityOnlyPacket: "Continuity Only Packet"
+    source: File
+        path: "catalog/continuity_only_packet.json"
+    shape: "JSON Document"
+    requirement: Advisory
+
+
+input ForwardContinuityPacket: "Forward Continuity Packet"
+    source: File
+        path: "catalog/forward_continuity_packet.json"
+    shape: "JSON Document"
+    requirement: Advisory
+
+
+output DurableSectionTruth: "Durable Section Truth"
+    target: File
+        path: "section_root/_authoring/durable_section_truth.md"
+    shape: "Markdown Document"
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+inputs BaseSectionInputs: "Your Inputs"
+    "Read these inputs in order."
+
+    scoped_catalog_truth: "Scoped Catalog Truth"
+        ScopedCatalogTruth
+
+    continuity_only: "Continuity Only"
+        "Use continuity evidence to re-earn the section."
+        ContinuityOnlyPacket
+
+
+inputs ReviewSectionInputs[BaseSectionInputs]: "Your Inputs"
+    inherit scoped_catalog_truth
+
+    override continuity_only: "Continuity Only"
+        "Use continuity evidence to re-earn the section."
+        "Read one section ahead when the review calls for it."
+        ForwardContinuityPacket
+
+
+outputs BaseSectionOutputs: "Your Outputs"
+    "Always produce both outputs."
+
+    durable_section_truth: "Durable Section Truth"
+        DurableSectionTruth
+
+    coordination_handoff: "Coordination Handoff"
+        CoordinationHandoff
+
+
+outputs ReviewSectionOutputs[BaseSectionOutputs]: "Your Outputs"
+    inherit durable_section_truth
+
+    override coordination_handoff: "Coordination Handoff"
+        "Point the next owner at the reviewed dossier truth."
+        CoordinationHandoff
+
+
+agent IoBlockInheritanceDemo:
+    role: "Use inherited inputs and outputs blocks for review work."
+    inputs: ReviewSectionInputs
+    outputs: ReviewSectionOutputs

@@ -1,0 +1,120 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "named inputs and outputs blocks inherit and patch explicitly"
+status = "active"
+kind = "render_contract"
+agent = "IoBlockInheritanceDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use inherited inputs and outputs blocks for review work.",
+  "",
+  "## Your Inputs",
+  "",
+  "### Scoped Catalog Truth",
+  "",
+  "#### Scoped Catalog Truth",
+  "",
+  "- Source: File",
+  "- Path: `catalog/scoped_catalog_truth.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Required",
+  "",
+  "### Continuity Only",
+  "",
+  "Use continuity evidence to re-earn the section.",
+  "Read one section ahead when the review calls for it.",
+  "",
+  "#### Forward Continuity Packet",
+  "",
+  "- Source: File",
+  "- Path: `catalog/forward_continuity_packet.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Advisory",
+  "",
+  "## Your Outputs",
+  "",
+  "### Durable Section Truth",
+  "",
+  "#### Durable Section Truth",
+  "",
+  "- Target: File",
+  "- Path: `section_root/_authoring/durable_section_truth.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "Point the next owner at the reviewed dossier truth.",
+  "",
+  "#### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "invalid io block override fails with E001"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OVERRIDE.prompt"
+agent = "InvalidOverrideIoBlockDemo"
+exception_type = "CompileError"
+error_code = "E001"
+message_contains = [
+  "Cannot override undefined inputs entry in inputs BaseSectionInputs",
+  "continuity_only",
+]
+
+[[cases]]
+name = "missing inherited io block entry fails with E003"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_INHERITED_ENTRY.prompt"
+agent = "InvalidMissingInheritedIoEntryDemo"
+exception_type = "CompileError"
+error_code = "E003"
+message_contains = [
+  "Missing inherited outputs entry in InvalidMissingOutputs",
+  "coordination_handoff",
+]
+
+[[cases]]
+name = "undefined io block inherit fails with E245"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNDEFINED_INHERIT.prompt"
+agent = "InvalidUndefinedInheritIoDemo"
+exception_type = "CompileError"
+error_code = "E245"
+message_contains = [
+  "cannot inherit undefined key `continuity_only`",
+]
+
+[[cases]]
+name = "io patch syntax without inherited block fails with E246"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_PATCH_WITHOUT_PARENT.prompt"
+agent = "InvalidPatchWithoutParentIoDemo"
+exception_type = "CompileError"
+error_code = "E246"
+message_contains = [
+  "requires an inherited inputs block in `InvalidStandalonePatch`",
+  "scoped_catalog_truth",
+]
+
+[[cases]]
+name = "inherited io blocks fail loud when parent has unkeyed top-level refs"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKEYED_PARENT_REF.prompt"
+agent = "InvalidUnkeyedParentIoDemo"
+exception_type = "CompileError"
+error_code = "E247"
+message_contains = [
+  "contains unkeyed top-level refs",
+  "Shared Catalog Packet",
+]

@@ -1,0 +1,10 @@
+abstract agent ReviewRoleBase:
+    abstract your_job
+    abstract workflow_core
+
+
+agent InvalidConcreteMissingWorkflowCore[ReviewRoleBase]:
+    role: "Trigger one missing abstract authored slot."
+
+    your_job: "Your Job"
+        "Do the current review job honestly."

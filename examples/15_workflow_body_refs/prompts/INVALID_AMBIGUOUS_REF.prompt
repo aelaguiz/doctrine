@@ -1,0 +1,22 @@
+# Bare workflow section refs must resolve to exactly one allowed declaration
+# family. If a name matches more than one allowed declaration kind, fail loud.
+
+input SharedThing: "Shared Thing Input"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+
+skill SharedThing: "Shared Thing Skill"
+    purpose: "Prove that ambiguous bare workflow section refs fail loud."
+
+
+workflow InvalidAmbiguousBodyRefs: "Invalid Ambiguous Body Refs"
+    bad: "Bad"
+        SharedThing
+
+
+agent InvalidAmbiguousBodyRefsAgent:
+    role: "This agent exists only to trigger the compile-fail contract."
+
+    read_first: InvalidAmbiguousBodyRefs

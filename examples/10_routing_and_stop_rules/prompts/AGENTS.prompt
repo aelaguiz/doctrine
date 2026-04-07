@@ -1,0 +1,115 @@
+# This example shows routing and stop rules through ordinary authored slots in
+# the shipped subset.
+# `output` says what the agent emits.
+# The routing and stop sections say:
+# - who owns next if the work is accepted
+# - what happens if the work is not ready
+# - when the turn is complete
+# - when to stop and escalate instead of guessing
+#
+# This example stays intentionally narrow.
+# It takes the repeated reviewer pattern from `99` and earns only:
+# - a separate accepted path and not-ready path
+# - explicit routes with `route "..." -> AgentName`
+# - ordinary authored slots instead of a reserved turn-resolution field
+# - a soft completion condition and a hard failure rule
+#
+# It does not try to model packets, proof files, or a full critic DSL.
+
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue plan to understand the intended lane order."
+
+
+input SectionDossier: "Section Dossier"
+    source: File
+        path: "section_root/_authoring/SECTION_DOSSIER.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Review the current dossier before issuing a verdict."
+
+
+output shape ReviewVerdictText: "Review Verdict Text"
+    kind: PlainText
+
+
+output ReviewVerdictResponse: "Review Verdict Response"
+    target: TurnResponse
+    shape: ReviewVerdictText
+    requirement: Required
+
+    must_include: "Must Include"
+        verdict: "Verdict"
+            "State `accept` or `changes requested` explicitly."
+
+        next_owner: "Next Owner"
+            "Name the honest next owner."
+
+        reason: "Reason"
+            "Give the short reason for the verdict and route."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read this response alone and understand the verdict and reroute."
+
+    example: "Example"
+        "- verdict: changes requested"
+        "- next owner: SectionAuthor"
+        "- reason: the dossier does not make the scope boundary explicit yet"
+
+
+agent ProjectLead:
+    role: "Core job: take the issue back when routing is unclear and keep the same-issue route honest."
+
+    your_job: "Your Job"
+        "Take the issue back when the right owner is unclear."
+        "Repair the route honestly."
+
+
+agent SectionAuthor:
+    role: "Core job: revise the section dossier when review sends the work back."
+
+    your_job: "Your Job"
+        "Revise the dossier when review requests changes."
+
+
+agent WritingSpecialist:
+    role: "Core job: continue the next normal lane after the review is accepted."
+
+    your_job: "Your Job"
+        "Take the issue only after the review is accepted."
+        "Continue the next normal lane."
+
+
+agent AcceptanceReviewer:
+    role: "Core job: review the current section dossier, return an explicit verdict, and route it honestly."
+
+    your_job: "Your Job"
+        "Review the section dossier against the current issue plan."
+        "Return one explicit verdict."
+        "Route the issue to the honest next owner."
+        "Stop and escalate instead of guessing when required review inputs are missing."
+
+    inputs: "Inputs"
+        CurrentIssuePlan
+        SectionDossier
+
+    outputs: "Outputs"
+        ReviewVerdictResponse
+
+    routing: "Routing"
+        next_owner_if_accepted: "Next Owner If Accepted"
+            route "If accepted" -> WritingSpecialist
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            route "If changes are required" -> SectionAuthor
+            route "If the right owner is unclear" -> ProjectLead
+
+    when_to_stop: "When To Stop"
+        stop_here_if: "Stop Here If"
+            "Stop when the verdict is explicit and the next owner is clear."
+
+        hard_stop_rule: "Hard Stop Rule"
+            "If the required dossier file is missing, stop and escalate."
+            "Do not guess from stale notes or old packet copies."

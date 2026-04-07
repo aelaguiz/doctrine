@@ -1,0 +1,90 @@
+import common.role_home
+import common.support
+import common.skills
+import common.inputs.psmobile.catalog
+import common.artifacts.dossier_engineer
+import agents.dossier_engineer.dossier_engineer_comment
+
+
+workflow DossierEngineerReadFirst[common.role_home.LessonsReadFirst]: "Read First"
+    inherit start_here
+    inherit paperclip_context
+    inherit shared_skills
+    inherit read_order
+
+    immediate_local_read: "Immediate Local Read"
+        "Read the current issue, the current Issue Plan And Route, the latest issue comment that names the current files, track.meta.json at `{{common.inputs.psmobile.catalog.TrackCatalogMeta:source.catalog_root}}/tracks/{{common.inputs.psmobile.catalog.TrackCatalogMeta:source.track_dir}}/track.meta.json`, and nearby section context only as support evidence to re-earn."
+
+
+workflow DossierEngineerJob: "Your Job"
+    "Define learner baseline."
+    "Define section advancement."
+    "Define stop line."
+    "Define candidate concept burden."
+    "Record grounding and open questions."
+    "Leave one honest handoff comment that names the current dossier truth for the next owner."
+    "Protect the smallest honest section burden."
+
+
+workflow DossierEngineerWhenToUse: "When To Use This Role"
+    "Use this role when a section dossier must be created or rebuilt."
+    "Stop before concept lock, lesson architecture, or copy work."
+
+
+workflow DossierEngineerWorkflowCore[common.role_home.LessonsWorkflowCore]: "Workflow Core"
+    inherit read_current_work_state
+    inherit same_issue_workflow
+    inherit handoff_comment
+    inherit packet_review_rules
+    inherit publish_return
+
+
+agent DossierEngineer[common.role_home.LessonsRoleHome]:
+    role: "Core job: establish the honest section teaching burden from current curriculum truth and poker grounding."
+
+    override read_first: DossierEngineerReadFirst
+    inherit workflow_core
+
+    override your_job: DossierEngineerJob
+
+    inherit how_to_take_a_turn
+    inherit skills_and_tools
+
+    inputs: "Inputs"
+        common.inputs.psmobile.catalog.FullLessonCatalog
+        common.inputs.psmobile.catalog.TrackCatalogMeta
+        common.inputs.psmobile.catalog.SectionCatalogMeta
+
+    outputs: "Outputs"
+        common.artifacts.dossier_engineer.DossierEngineer
+        agents.dossier_engineer.dossier_engineer_comment.DossierEngineerHandoff
+
+    handoff_routing: "Handoff Routing"
+        next_owner_if_accepted: "Next Owner If Accepted"
+            "TODO: route accepted work to AcceptanceCritic."
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            "TODO: return unclear or blocked work to ProjectLead."
+
+    when_to_stop: "When To Stop"
+        stop_here_if: "Stop Here If"
+            "Stop when the dossier is explicit enough for review and the handoff names the exact current packet and files the next owner should trust now."
+
+    skills: "Skills"
+        can_run: "Can Run"
+            common.skills.PaperclipSkill
+                requirement: Required
+
+            common.skills.PokerGroundingSkill
+                requirement: Required
+
+            common.skills.PokerKBSkill
+                requirement: Required
+
+            common.skills.GitHubAccessSkill
+                requirement: Advisory
+
+            common.skills.ParaMemoryFilesSkill
+                requirement: Advisory
+
+    inherit standards_and_support

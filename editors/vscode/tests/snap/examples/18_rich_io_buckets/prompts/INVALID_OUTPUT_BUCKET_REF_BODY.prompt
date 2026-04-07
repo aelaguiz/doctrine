@@ -1,0 +1,13 @@
+output DossierFile: "Dossier File"
+    target: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: "Dossier Document"
+    requirement: Required
+
+
+agent InvalidOutputBucketRefBody:
+    role: "Core job: trigger an invalid inline body on an output ref."
+
+    outputs: "Outputs"
+        DossierFile
+            "This explanation belongs in prose or a titled group, not on the ref itself."

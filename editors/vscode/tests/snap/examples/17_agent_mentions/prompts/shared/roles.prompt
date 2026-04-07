@@ -1,0 +1,8 @@
+# Shared owner roles for imported agent-mention examples.
+
+abstract agent AbstractEscalationOwner:
+    role: "This abstract owner exists only to prove that abstract agent mentions fail loud."
+
+
+agent AcceptanceCritic:
+    role: "Review the exact current files and return one honest verdict."

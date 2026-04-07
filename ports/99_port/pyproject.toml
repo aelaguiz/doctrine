@@ -1,0 +1,22 @@
+[project]
+name = "psmobile-port"
+version = "0.1.0"
+description = "Standalone prompt package for the 99 port."
+requires-python = ">=3.11"
+dependencies = ["pyprompt"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+# While this port still lives inside the monorepo, use the local checkout.
+# When the port is extracted, replace this source with the standalone Git or
+# package-index source for `pyprompt`.
+pyprompt = { path = "../..", editable = true }
+
+[tool.pyprompt.emit]
+
+[[tool.pyprompt.emit.targets]]
+name = "section"
+entrypoint = "prompts/agents/dossier_engineer/AGENTS.prompt"
+output_dir = "build"

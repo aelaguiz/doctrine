@@ -1,0 +1,29 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "custom input source renders typed source config"
+status = "active"
+kind = "render_contract"
+agent = "CustomSourceInputAgent"
+assertion = "exact_lines"
+expected_lines = [
+  "Core job: use a design spec from a custom typed input source.",
+  "",
+  "## Your Job",
+  "",
+  "Use the custom source configuration to find the design document.",
+  "Fail if the required design source data is missing.",
+  "",
+  "## Inputs",
+  "",
+  "### Design Spec",
+  "",
+  "- Source: Figma Document",
+  "- URL: `https://figma.com/design/abc123/Example-Design`",
+  "- Node: `12:34`",
+  "- Shape: Design Document",
+  "- Requirement: Required",
+  "",
+  "Use this design document when the turn depends on a specific Figma source.",
+]

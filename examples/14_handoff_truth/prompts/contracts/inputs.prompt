@@ -1,0 +1,22 @@
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue plan to understand the intended lane and current scope."
+
+
+input SectionBrief: "Section Brief"
+    source: File
+        path: "section_root/_authoring/BRIEF.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current brief as the upstream scope for this turn."
+
+
+input PriorReviewNotes: "Prior Review Notes"
+    source: File
+        path: "section_root/_authoring/PRIOR_REVIEW_NOTES.md"
+    shape: MarkdownDocument
+    requirement: Advisory
+    "Use this only for continuity when it exists."
+    "Do not treat it as proof of the current turn."

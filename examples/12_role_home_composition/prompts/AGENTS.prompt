@@ -1,0 +1,356 @@
+# This example pressure-tests role-home composition using only current primitives.
+#
+# It does not introduce a new declaration kind.
+# Shared rendered role-home sections are still `workflow` declarations assigned
+# to named agent fields such as `read_first` and `workflow_core`.
+#
+# The role home then mixes those shared workflow slots with the typed agent
+# fields introduced in earlier examples:
+# - `inputs`
+# - `outputs`
+# - `skills`
+#
+# Tool-specific helper guidance stays in support prose. It does not require a
+# separate tools field.
+#
+# When an agent references a skill, point directly at the declared skill and
+# attach agent-local metadata there. Do not add an extra wrapper key unless it
+# carries real meaning the compiler or renderer actually needs.
+
+
+workflow LessonsReadFirst: "Read First"
+    read_order: "Read Order"
+        "Read Your Job first."
+        "Then read Workflow Core and How To Take A Turn."
+        "Then read Inputs, Outputs, Routing, When To Stop, Skills, When To Use This Role, and Standards And Support."
+
+
+workflow ProjectLeadReadFirst[LessonsReadFirst]: "Read First"
+    inherit read_order
+
+    immediate_local_read: "Immediate Local Read"
+        "Read the active issue plan, the latest issue comment that names the current files, and any current PR or QR state before you route or publish."
+
+
+workflow CopywriterReadFirst[LessonsReadFirst]: "Read First"
+    inherit read_order
+
+    immediate_local_read: "Immediate Local Read"
+        "Read SECTION_CONCEPTS_AND_TERMS.md, LESSON_PLAN.md, LESSON_SITUATIONS.md, and lesson_manifest.json before you touch learner-facing text."
+
+
+workflow LessonsWorkflowCore: "Workflow Core"
+    read_current_work_state: "Read Current Work State"
+        "Start with the active issue, the current plan, and the named current files."
+        "Use the attached checkout for product truth only."
+
+    same_issue_workflow: "Same-Issue Workflow"
+        "Keep normal Lessons work on one issue from routing through follow-up."
+        "Keep one owner at a time on that issue."
+
+    handoff_comment: "Handoff Comment"
+        "Every handoff comment should say what changed, what the next owner should trust now, and who owns next."
+
+
+workflow ProjectLeadWorkflowCore[LessonsWorkflowCore]: "Workflow Core"
+    inherit read_current_work_state
+
+    override same_issue_workflow:
+        "Keep normal Lessons work on one issue from routing through follow-up."
+        "Keep one owner at a time on that issue."
+        "Route work to the earliest honest specialist lane."
+        "When copy work is ready, route it to Lessons Copywriter."
+
+    inherit handoff_comment
+
+    publish_return: "Publish Return"
+        "Keep PR, QR, and follow-up state on the same issue."
+        "Do not call the work done until the current publish state is explicit."
+
+
+workflow CopywriterWorkflowCore[LessonsWorkflowCore]: "Workflow Core"
+    inherit read_current_work_state
+
+    override same_issue_workflow:
+        "Keep normal Lessons work on one issue from routing through follow-up."
+        "Keep one owner at a time on that issue."
+        "After the copy lane, return the same issue to Lessons Project Lead."
+
+    inherit handoff_comment
+
+
+workflow LessonsHowToTakeATurn: "How To Take A Turn"
+    turn_sequence: "Turn Sequence"
+        "Read the active issue, the current files, and the upstream contracts your lane depends on."
+        "Do only this lane's job."
+        "Update the current outputs that now matter."
+        "Leave one clear handoff and stop."
+
+    guardrails: "Guardrails"
+        "Do not let routing drift away from the active issue."
+        "Do not hand off weak work."
+
+
+workflow LessonsStandardsAndSupport: "Standards And Support"
+    attached_checkout: "Attached Checkout"
+        "Use the attached checkout for product truth only. It does not decide workflow, ownership, or the next step."
+
+
+workflow ProjectLeadStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
+    publish_and_follow_up: "Publish And Follow-Up"
+        "Keep the issue explicit about publish intent: ship or prototype."
+        "Do not use publish as a shortcut around current output or review rules."
+
+    github_helpers: "GitHub Helpers"
+        "Use repo-owned GitHub helpers when the live job needs remote GitHub access."
+
+    staging_qr_helpers: "Staging QR Helpers"
+        "Use repo-owned QR helpers when publish proof depends on current QR state."
+
+    inherit attached_checkout
+
+
+workflow CopywriterStandardsAndSupport[LessonsStandardsAndSupport]: "Standards And Support"
+    poker_grounding: "Poker Grounding"
+        "Use Books to ground meaning and Forums to ground real player wording."
+        "If the grounding is missing, stop and say it is missing."
+
+    copy_standards: "Copy Standards"
+        "Keep locked concepts and terms intact."
+        "Do not sharpen exact-action claims in copy."
+
+    pokerkb: "PokerKB"
+        "Use it for definitions, grounded claim checks, terminology, and real poker wording."
+        "Do not use it as exact right-move authority."
+
+    step_json_validator: "Step JSON Validator"
+        "Use it after copy changes to validate the changed lesson manifest surfaces."
+        "Record the command and result in COPY_GROUNDING.md."
+
+    inherit attached_checkout
+
+
+workflow ProjectLeadJob: "Your Job"
+    "Keep one owner and one obvious next step on the same issue."
+    "Keep the issue plan current on routing-only or process-repair turns."
+    "Own publish and follow-up state when those are the live jobs."
+
+
+workflow CopywriterJob: "Your Job"
+    "Read the whole lesson before you rewrite isolated strings."
+    "Use grounded poker wording without changing lesson structure or authority scope."
+    "Record post-copy validation in the current outputs."
+
+
+workflow ProjectLeadWhenToUse: "When To Use This Role"
+    "Use this role when new Lessons work needs routing."
+    "Use this role when publish or follow-up is the live job."
+
+
+workflow CopywriterWhenToUse: "When To Use This Role"
+    "Use this role when the manifest already exists and the next job is final learner-facing copy."
+    "Expect this lane to stop with current copy outputs ready for return to Project Lead."
+
+
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue plan to understand the intended owner and next step."
+
+
+input CurrentIssueState: "Current Issue State"
+    source: File
+        path: "track_root/_authoring/CURRENT_ISSUE_STATE.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current issue state to understand the named current files and publish state."
+
+
+input SectionConceptsAndTerms: "Section Concepts And Terms"
+    source: File
+        path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the locked section language before rewriting learner-facing text."
+
+
+input LessonPlan: "Lesson Plan"
+    source: File
+        path: "lesson_root/_authoring/LESSON_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the approved lesson plan to preserve the lesson's teaching job."
+
+
+input LessonSituations: "Lesson Situations"
+    source: File
+        path: "lesson_root/_authoring/LESSON_SITUATIONS.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the approved lesson situations to preserve concrete rep choices."
+
+
+input LessonManifest: "Lesson Manifest"
+    source: File
+        path: "lesson_root/_authoring/lesson_manifest.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the current lesson manifest as the editable learner-facing surface."
+
+
+output shape OwnerUpdateComment: "Owner Update Comment"
+    kind: CommentText
+
+
+output target TrackerComment: "Tracker Comment"
+    required: "Required Target Keys"
+        issue: "Issue"
+
+
+output ProjectLeadUpdate: "Project Lead Update"
+    target: TrackerComment
+        issue: "CURRENT_ISSUE"
+    shape: OwnerUpdateComment
+    requirement: Required
+
+    must_include: "Must Include"
+        what_changed: "What Changed"
+            "Say what changed on this routing or publish turn."
+
+        current_truth: "Current Source Of Truth"
+            "Name the current source of truth for the next owner."
+
+        next_owner: "Next Owner"
+            "Name the honest next owner."
+
+
+output CopyPassOutput: "Copy Pass Output"
+    files: "Files"
+        copy_grounding: "Copy Grounding"
+            path: "lesson_root/_authoring/COPY_GROUNDING.md"
+            shape: MarkdownDocument
+
+        updated_manifest: "Updated Manifest"
+            path: "lesson_root/_authoring/lesson_manifest.json"
+            shape: JsonObject
+
+    must_include: "Must Include"
+        grounding: "Grounding"
+            "COPY_GROUNDING.md should show the grounding that shaped the final wording."
+
+        preserved_terms: "Preserved Terms"
+            "COPY_GROUNDING.md should name the locked terms that had to survive."
+
+        validation: "Validation"
+            "COPY_GROUNDING.md should record what validation ran after the copy pass."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read COPY_GROUNDING.md and lesson_manifest.json and understand what changed and what was validated."
+
+
+skill PublishFollowthroughSkill: "paperclip-publish-followthrough"
+    purpose: "Handle PR follow-up, QR updates, publish proof, and same-issue closeout."
+
+    use_when: "Use When"
+        "Use this when publish or follow-up is the live job."
+
+
+skill PokerGroundingSkill: "psmobile-lesson-poker-kb-interface"
+    purpose: "Ground learner-facing poker wording against current poker truth."
+
+    use_when: "Use When"
+        "Use this when the lane needs Books or Forums receipts for learner-facing copy."
+
+    does_not: "Does Not"
+        "Does not change lesson structure."
+        "Does not establish exact right-move authority."
+
+
+skill CopyRewriteSkill: "poker-native-copy"
+    purpose: "Rewrite learner-facing poker copy in the repo's expected voice."
+
+    use_when: "Use When"
+        "Use this when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback."
+
+
+abstract agent LessonsRoleHome:
+    read_first: LessonsReadFirst
+    workflow_core: LessonsWorkflowCore
+    how_to_take_a_turn: LessonsHowToTakeATurn
+    standards_and_support: LessonsStandardsAndSupport
+
+
+agent LessonsProjectLead[LessonsRoleHome]:
+    role: "Core job: open, route, and finish Lessons issues while keeping publish and follow-up honest on the same issue."
+
+    your_job: ProjectLeadJob
+    override read_first: ProjectLeadReadFirst
+    override workflow_core: ProjectLeadWorkflowCore
+    inherit how_to_take_a_turn
+
+    inputs: "Inputs"
+        CurrentIssuePlan
+        CurrentIssueState
+
+    outputs: "Outputs"
+        ProjectLeadUpdate
+
+    routing: "Routing"
+        next_owner_if_accepted: "Next Owner If Accepted"
+            route "If the issue is ready for copy work" -> LessonsCopywriter
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            route "If the route is still unclear" -> LessonsProjectLead
+
+    when_to_stop: "When To Stop"
+        stop_here_if: "Stop Here If"
+            "Stop when one honest owner, one honest next step, and the current source of truth are explicit."
+
+    skills: "Skills"
+        can_run: "Can Run"
+            skill publish_followthrough: PublishFollowthroughSkill
+                requirement: Advisory
+
+    when_to_use_this_role: ProjectLeadWhenToUse
+    override standards_and_support: ProjectLeadStandardsAndSupport
+
+
+agent LessonsCopywriter[LessonsRoleHome]:
+    role: "Core job: turn the approved manifest into grounded learner-facing copy without changing lesson structure or authority scope."
+
+    your_job: CopywriterJob
+    override read_first: CopywriterReadFirst
+    override workflow_core: CopywriterWorkflowCore
+    inherit how_to_take_a_turn
+
+    inputs: "Inputs"
+        SectionConceptsAndTerms
+        LessonPlan
+        LessonSituations
+        LessonManifest
+
+    outputs: "Outputs"
+        CopyPassOutput
+
+    routing: "Routing"
+        next_owner_if_accepted: "Next Owner If Accepted"
+            route "If copy and validation are ready" -> LessonsProjectLead
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            route "If grounding is missing or routing is unclear" -> LessonsProjectLead
+
+    when_to_stop: "When To Stop"
+        stop_here_if: "Stop Here If"
+            "Stop when learner-facing copy and post-copy validation are explicit enough for return to Project Lead."
+
+    skills: "Skills"
+        can_run: "Can Run"
+            skill poker_grounding: PokerGroundingSkill
+                requirement: Required
+
+            skill copy_rewrite: CopyRewriteSkill
+                requirement: Advisory
+
+    when_to_use_this_role: CopywriterWhenToUse
+    override standards_and_support: CopywriterStandardsAndSupport

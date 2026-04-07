@@ -1,0 +1,5 @@
+agent MissingColon
+    role: "You are a broken agent."
+
+    workflow: "Instruction"
+        "This fixture should fail during parse."

@@ -2,6 +2,11 @@
 
 Core job: summarize the current issue from prompt-provided input.
 
+## Your Job
+
+- Read the current issue from the prompt.
+- Summarize it clearly and briefly.
+
 ## Inputs
 
 ### Current Issue
@@ -11,8 +16,3 @@ Core job: summarize the current issue from prompt-provided input.
 - Requirement: Required
 
 This content is already present in the invocation prompt.
-
-## Your Job
-
-- Read the current issue from the prompt.
-- Summarize it clearly and briefly.

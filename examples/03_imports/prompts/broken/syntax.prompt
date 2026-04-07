@@ -1,0 +1,3 @@
+workflow BrokenWorkflow: "Broken Workflow"
+    broken_section:
+        "This imported module is intentionally invalid."

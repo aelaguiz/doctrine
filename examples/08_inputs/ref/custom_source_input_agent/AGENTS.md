@@ -2,6 +2,11 @@
 
 Core job: use a design spec from a custom typed input source.
 
+## Your Job
+
+- Use the custom source configuration to find the design document.
+- Fail if the required design source data is missing.
+
 ## Inputs
 
 ### Design Spec
@@ -13,8 +18,3 @@ Core job: use a design spec from a custom typed input source.
 - Requirement: Required
 
 Use this design document when the turn depends on a specific Figma source.
-
-## Your Job
-
-- Use the custom source configuration to find the design document.
-- Fail if the required design source data is missing.

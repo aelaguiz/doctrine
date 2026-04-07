@@ -1,0 +1,3 @@
+workflow AcceptanceCriticJob: "Your Job"
+    "Read the exact files named in the handoff."
+    "Review only the current dossier and validation record for this turn."

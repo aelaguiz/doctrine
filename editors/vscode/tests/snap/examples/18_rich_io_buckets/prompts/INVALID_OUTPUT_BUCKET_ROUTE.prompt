@@ -1,0 +1,13 @@
+output DossierFile: "Dossier File"
+    target: File
+        path: "section_root/_authoring/dossier_engineer.md"
+    shape: "Dossier Document"
+    requirement: Required
+
+
+agent InvalidOutputBucketRoute:
+    role: "Core job: trigger an invalid route line in outputs."
+
+    outputs: "Outputs"
+        route "Send next" -> ProjectLead
+        DossierFile

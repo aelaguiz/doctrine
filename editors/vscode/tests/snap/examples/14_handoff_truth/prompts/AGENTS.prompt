@@ -1,0 +1,55 @@
+# This example keeps the same handoff-truth idea but uses the `03_imports`
+# pattern so the source reads by concern instead of as one long file.
+# - `contracts.inputs` holds the turn inputs
+# - `contracts.outputs` holds the produced contracts
+# - `roles.*` holds the role-local job text
+#
+# This still does not add a new primitive.
+# It is the same example, just split into files that are easier to scan.
+import contracts.inputs
+import contracts.outputs
+import roles.project_lead
+import roles.acceptance_critic
+import roles.section_author
+
+
+agent ProjectLead:
+    role: "Core job: take the issue back when the route is unclear or the current brief is missing."
+
+    your_job: roles.project_lead.ProjectLeadJob
+
+
+agent AcceptanceCritic:
+    role: "Core job: review the exact current dossier and validation record named in the handoff."
+
+    your_job: roles.acceptance_critic.AcceptanceCriticJob
+
+
+agent SectionAuthor:
+    role: "Core job: turn the current brief into the current dossier, leave one honest handoff, and route the same issue truthfully."
+
+    your_job: roles.section_author.SectionAuthorJob
+
+    inputs: "Inputs"
+        contracts.inputs.CurrentIssuePlan
+        contracts.inputs.SectionBrief
+        contracts.inputs.PriorReviewNotes
+
+    outputs: "Outputs"
+        contracts.outputs.SectionDossierOutput
+        contracts.outputs.SectionAuthorHandoff
+
+    handoff_routing: "Handoff Routing"
+        next_owner_if_ready: "Next Owner If Ready"
+            route "If the dossier is ready for review" -> AcceptanceCritic
+
+        if_the_work_is_not_ready: "If The Work Is Not Ready"
+            route "If the route is unclear or the current brief is missing" -> ProjectLead
+
+    when_to_stop: "When To Stop"
+        stop_here_if: "Stop Here If"
+            "Stop when the handoff comment names the exact files to use now and the next owner is clear."
+
+        hard_stop_rule: "Hard Stop Rule"
+            "If the current brief is missing, stop and escalate."
+            "Do not point the next owner at stale notes, old copies, or a folder name instead of exact files."

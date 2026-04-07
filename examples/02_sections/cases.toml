@@ -1,0 +1,38 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "sections demo renders headed steps and substeps"
+status = "active"
+kind = "render_contract"
+agent = "SectionsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/AGENTS.md"
+expected_lines = [
+  "You are the sections demonstration agent.",
+  "",
+  "## Steps",
+  "",
+  "Follow the steps below in order.",
+  "",
+  "### Step One",
+  "",
+  "Say hello.",
+  "",
+  "### Step Two",
+  "",
+  "Say world.",
+]
+
+[[cases]]
+name = "duplicate local section keys fail in compile stage"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_SECTION_KEY.prompt"
+agent = "DuplicateSectionKeysDemo"
+exception_type = "CompileError"
+error_code = "E261"
+message_contains = [
+  "Duplicate workflow item key",
+  "step_one",
+]

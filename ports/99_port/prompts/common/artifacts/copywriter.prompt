@@ -1,0 +1,42 @@
+import .shared
+
+
+# This keeps COPY_GROUNDING truth, but moves the one-output contract onto the
+# agent-owned file and treats lesson_manifest.json as the live product surface.
+output Copywriter: "Copywriter"
+    target: File
+        path: "lesson_root/_authoring/copywriter.md"
+    shape: ProductionArtifactDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        surfaces_reviewed: "Surfaces Reviewed"
+            "Name the learner-facing surfaces reviewed on each step in scope, and say which fields changed versus stayed reviewed unchanged."
+
+        final_wording_and_alternates: "Final Wording And Alternates"
+            "Record the final wording for changed learner-facing text, plus useful alternates when the call was close."
+
+        preserved_terms_and_grounding: "Preserved Terms And Grounding"
+            "Name the locked terms that had to survive, the Books result that grounded the meaning, and the exact returned language that shaped the final wording when wording mattered."
+
+        answer_leak_proof: "Answer Leak Proof"
+            "Explain why the final wording does not leak the answer, especially for graded or pre-choice coach surfaces and `coachCommentary` when those surfaces are in scope."
+
+        validation_record: "Validation Record"
+            "Record what validation ran after the copy pass and what it proved."
+
+    support_files: "Support Files"
+        lesson_manifest: "Current Lesson Manifest"
+            path: "lesson_root/_authoring/lesson_manifest.json"
+            shape: JsonObject
+            when: "Use as the current live product surface for learner-facing copy updated by this lane."
+
+    owns: "Owns"
+        "This artifact owns learner-facing copy decisions, preserved terms, grounding receipts, answer-leak proof, and post-copy validation truth."
+
+    standalone_read: "Standalone Read"
+        "A downstream reader should be able to read copywriter.md alone and understand what learner-facing text changed or stayed reviewed unchanged, what grounded the final wording, and what live manifest surface now reflects that copy."
+
+    notes: "Notes"
+        "The live lesson_manifest.json is a support surface behind this artifact, not a second output."
+        "If final learner-facing copy still contains `PLACEHOLDER:` text, this artifact is not ready."

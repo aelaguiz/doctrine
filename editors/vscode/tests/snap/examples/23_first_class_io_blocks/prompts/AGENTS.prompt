@@ -1,0 +1,52 @@
+input ScopedCatalogTruth: "Scoped Catalog Truth"
+    source: File
+        path: "catalog/scoped_catalog_truth.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+input BroaderCurriculumContext: "Broader Curriculum Context"
+    source: File
+        path: "catalog/broader_curriculum_context.json"
+    shape: "JSON Document"
+    requirement: Advisory
+
+
+output DurableSectionTruth: "Durable Section Truth"
+    target: File
+        path: "section_root/_authoring/durable_section_truth.md"
+    shape: "Markdown Document"
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+inputs SharedSectionInputs: "Your Inputs"
+    "Read these inputs in order."
+
+    scoped_catalog_truth: "Scoped Catalog Truth"
+        ScopedCatalogTruth
+
+    broader_curriculum_context: "Broader Curriculum Context"
+        "Use this as support evidence, not as section truth."
+        BroaderCurriculumContext
+
+
+outputs SharedSectionOutputs: "Your Outputs"
+    "Always produce both outputs."
+
+    durable_section_truth: "Durable Section Truth"
+        DurableSectionTruth
+
+    coordination_handoff: "Coordination Handoff"
+        CoordinationHandoff
+
+
+agent FirstClassIoBlocksDemo:
+    role: "Use shared inputs and outputs blocks directly on the agent."
+    inputs: SharedSectionInputs
+    outputs: SharedSectionOutputs

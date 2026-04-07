@@ -1,0 +1,13 @@
+workflow SharedRead: "Shared Read"
+    "Read this first."
+
+
+workflow InvalidWorkflowMention: "Invalid Workflow Mention"
+    owner_names: "Owner Names"
+        "Do not use {{SharedRead}} as if a workflow were a materialized owner mention."
+
+
+agent InvalidWorkflowMentionDemo:
+    role: "This prompt exists only to prove that workflow mentions stay rejected."
+
+    read_first: InvalidWorkflowMention

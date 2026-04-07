@@ -1,4 +1,4 @@
-# This example sketches one output primitive with reusable supporting
+# This example shows the shipped output contract surface with reusable supporting
 # declarations:
 # - `output` is the produced-contract primitive
 # - `output target` is the destination kind
@@ -81,9 +81,6 @@ output SectionPlanOutput: "Section Plan Output"
             path: "section_root/_authoring/SECTION_FLOW_AUDIT.md"
             when: "Use when section sizing or ordering constraints matter."
 
-    owns: "Owns"
-        "This output owns the current section plan and the unresolved decisions that still matter."
-
     standalone_read: "Standalone Read"
         "The next role should be able to read SECTION_PLAN.md alone and understand the current plan."
 
@@ -125,9 +122,6 @@ output LessonManifestOutput: "Lesson Manifest Output"
             path: "lesson_root/GUIDED_WALKTHROUGH_LENGTH_REPORT.md"
             when: "Guided-walkthrough pacing is in scope."
 
-    owns: "Owns"
-        "This output owns the built learner-facing lesson structure, the chosen route for each step, and the validation proof."
-
     standalone_read: "Standalone Read"
         "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
 
@@ -153,9 +147,6 @@ output ProjectTrackerUpdate: "Project Tracker Update"
         next_owner: "Next Owner"
             "Name the next owner."
 
-    owns: "Owns"
-        "This output owns the owner-change summary and the current source of truth for the next owner."
-
     standalone_read: "Standalone Read"
         "A downstream reader should be able to read this comment alone and understand what changed, what to trust now, and who owns next."
 
@@ -169,41 +160,41 @@ output ProjectTrackerUpdate: "Project Tracker Update"
 agent TurnResponseOutputAgent:
     role: "Core job: return a short issue summary in the turn response."
 
-    outputs: "Outputs"
-        IssueSummaryResponse
-
     your_job: "Your Job"
         "Return the issue summary in the turn response."
+
+    outputs: "Outputs"
+        IssueSummaryResponse
 
 
 # Model 2: a built-in file target with a markdown document shape.
 agent FileOutputAgent:
     role: "Core job: write the section plan to a markdown file."
 
-    outputs: "Outputs"
-        SectionPlanOutput
-
     your_job: "Your Job"
         "Write the section plan to the required file."
+
+    outputs: "Outputs"
+        SectionPlanOutput
 
 
 # Model 3: a built-in file target with a stricter JSON output shape.
 agent JsonFileOutputAgent:
     role: "Core job: write the lesson manifest as structured JSON."
 
-    outputs: "Outputs"
-        LessonManifestOutput
-
     your_job: "Your Job"
         "Write the lesson manifest JSON to the required file."
+
+    outputs: "Outputs"
+        LessonManifestOutput
 
 
 # Model 4: a custom output target with target-specific configuration.
 agent CustomTargetOutputAgent:
     role: "Core job: leave an owner update on the project tracker."
 
-    outputs: "Outputs"
-        ProjectTrackerUpdate
-
     your_job: "Your Job"
         "Write the owner update using the custom tracker comment target."
+
+    outputs: "Outputs"
+        ProjectTrackerUpdate

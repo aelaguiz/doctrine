@@ -1,0 +1,157 @@
+# Shared ordered role-home skeleton for the 99 port.
+#
+# This keeps the old 99 top-level section order, but leaves the contents as
+# stubs so concrete roles can override only what is local.
+import .artifacts.project_lead
+import .artifacts.dossier_engineer
+import .artifacts.acceptance_critic
+import .artifacts.concepts_terms_curator
+import .artifacts.section_architect
+import .artifacts.playable_strategist
+import .artifacts.lesson_architect
+import .artifacts.situation_synthesizer
+import .artifacts.playable_materializer
+import .artifacts.copywriter
+import .skills
+
+workflow LessonsReadFirst: "Read First"
+    start_here: "Start Here"
+        "Start in this role home."
+
+    paperclip_context: "Paperclip Context"
+        "You are running inside Paperclip. Paperclip is the task tracker and coordination system for this run: it gives the run its coordination context, such as the current issue, plan, assignment, comments, approvals, and workspace when those are relevant."
+
+    shared_skills: "Shared Skills"
+        "Use the injected `paperclip` skill for coordination work in Paperclip. The skill owns the exact procedure."
+        "Use the injected `github-access` skill when GitHub access is required."
+
+    read_order: "Read Order"
+        "Read Workflow Core and How To Take A Turn first."
+        "Then read Skills And Tools for shared skills and runtime tools, then read Your Job, Inputs, Outputs, Skills, and When To Use This Role so the local job, stop rule, and file expectations are clear before you lean on later support sections."
+
+
+workflow LessonsWorkflowCore: "Workflow Core"
+    read_current_work_state: "Read Current Work State"
+        "Path and root convention: symbolic paths such as `section_root/_authoring/...` are file locations named by the current issue work. They are not shell cwd-relative commands."
+        "- `track_root`, `section_root`, and `lesson_root` mean the current track, section, and lesson named by the current issue plan or current handoff comment."
+        "- `<owner_root>` means the current owner root named by that same source."
+        "- Use `attached checkout` for the product repo as a truth surface. Use `attached checkout root` only when a command must run there."
+        "- Use `paperclip_agents` repo root when a repo-owned helper command or helper file lives in this repo."
+        "- When the current work relies on separate review files, name those files explicitly. If the proof is inline instead, say that plainly."
+        "- Start with the active issue."
+        "- Use the current issue's Issue Plan And Route when it exists. If the active issue points to a parent plan and does not have its own current plan yet, use that parent plan."
+        "- Then use the latest issue comment that names the current files."
+        "- When a request spans multiple lessons, the current issue plan or the latest restart comment must name which `lesson_root` is current now and which approved section files still govern that lesson."
+        "- Ignore legacy material unless the current issue or current files explicitly name one legacy file that still matters."
+        "- Here, legacy means `_authoring/_legacy/**` and anything clearly carried over from the old system, even if it was filed badly."
+        "- Before specialist work starts, the current plan or handoff comment must make the current roots, the current files, and any current review files clear enough for this lane to work honestly."
+        "- The current truth is this role home, the active issue, that current plan, the named current files, and any current review files named in the handoff."
+        "- If the current plan or comment does not make those roots, the current files, or the current review files clear enough to work honestly, stop specialist work and route the same issue to {{common.artifacts.project_lead.ProjectLead}} to repair the setup before specialist work continues."
+        "- Then read the local sections in this role home that your turn depends on."
+        "- Use the attached checkout for product truth only. It does not decide workflow, ownership, or the next step."
+        "- If a rendered comment mangles paths or owner links, trust the active issue, the current plan, and the named current files."
+        "- If a named current support surface is missing, stop and route the same issue to {{common.artifacts.project_lead.ProjectLead}} to repair the missing repo-owned owner instead of reviving an old name or deleted setup path."
+
+    same_issue_workflow: "Same Issue Workflow"
+        "- Keep normal Lessons work on one issue from the first routing pass through publish and follow-up."
+        "- Keep one owner at a time on that issue."
+        "- Each owner does only the work their lane owns."
+        "- Section-level lanes settle the section output chain once unless a later blocker or accepted lesson proves the section map must be reopened."
+        "- The normal new-content order stays: {{common.artifacts.project_lead.ProjectLead}} -> {{common.artifacts.dossier_engineer.DossierEngineer}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.concepts_terms_curator.ConceptsTermsCurator}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.section_architect.SectionArchitect}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.playable_strategist.PlayableStrategist}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.lesson_architect.LessonArchitect}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.situation_synthesizer.SituationSynthesizer}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.playable_materializer.PlayableMaterializer}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.copywriter.Copywriter}} -> {{common.artifacts.acceptance_critic.AcceptanceCritic}} -> {{common.artifacts.project_lead.ProjectLead}}."
+        "- After the section output chain is settled, lesson lanes run one current `lesson_root` at a time on that same issue."
+        "- If more requested lessons remain after one accepted lesson, {{common.artifacts.project_lead.ProjectLead}} updates the current issue plan or leaves a fresh comment naming the next `lesson_root` and the approved section outputs the next lesson should trust, then restarts lesson work at {{common.artifacts.lesson_architect.LessonArchitect}}."
+        "- If an accepted lesson proves lesson count, lesson order, or lesson-slot mapping is no longer honest, {{common.artifacts.project_lead.ProjectLead}} sends the same issue back to {{common.artifacts.section_architect.SectionArchitect}} before lesson work restarts."
+        "- After every normal specialist lane, the next owner is {{common.artifacts.acceptance_critic.AcceptanceCritic}}."
+        "- Use assignment for handoff. Do not rely on comment-only routing."
+        "- {{common.artifacts.project_lead.ProjectLead}} owns owner gaps, publish, and follow-up by default."
+
+    handoff_comment: "Handoff Comment"
+        "Every handoff, verdict, or blocker comment should say what this turn changed."
+        "- Say which decisions are now locked."
+        "- Say which files the next owner should trust now."
+        "- Say the exact failing gate if the work is blocked."
+        "- Say the next owner clearly when ownership is changing now."
+        "- Use plain current role names when formatting could blur the next owner."
+
+    publish_return: "Publish Return"
+        "- After the final critic accept, the same issue returns to {{common.artifacts.project_lead.ProjectLead}} for publish and follow-up."
+        "- Do not treat publish as the next step while requested lesson roots still remain on the same issue."
+        "- Keep PR, QR, publish work, and follow-up on that same issue until the work is honestly done or honestly blocked."
+        "- If this turn makes new files current, update or clearly retire older nearby files that still describe the old state before handoff or publish."
+        "- If stale lesson-writing files in the touched area would leave parallel truth behind, clear or update them before handoff."
+        "- {{common.artifacts.project_lead.ProjectLead}} owns that final cleanup during publish and follow-up."
+        "- If maintenance work turns into redesign, stop and re-plan on the same issue."
+
+
+workflow LessonsHowToTakeATurn: "How To Take A Turn"
+    turn_sequence: "Turn Sequence"
+        "1. Read the active issue. Then read the current Issue Plan And Route, or the parent plan only when the active issue points there and does not yet have its own current plan. Then read the latest issue comment that names the current files, any current review files named in the handoff, and the upstream packet files your lane depends on."
+        "2. Read this role home's local sections first, then the shared skills and support sections you actually need. Use `{{common.skills.PaperclipSkill}}` for coordination work and `{{common.skills.GitHubAccessSkill}}` when GitHub truth matters."
+        "3. Before you start execution, check `{{common.skills.ParaMemoryFilesSkill}}` for relevant memory and note what learnings from the past affect how you do this job so you do not repeat mistakes you already learned from."
+        "4. Do only this lane's job."
+        "5. When you are fixing a mistake you previously caused, analyze the root cause, generalize the lesson beyond this one incident, and save it through `{{common.skills.ParaMemoryFilesSkill}}`."
+        "6. Update the packet and the supporting files that now matter."
+        "7. When the work is ready for review, name the exact packet and the exact files in scope. When separate current review files apply, name those files explicitly. If the proof is inline instead, say plainly that the proof is inline or that no current review files apply."
+        "8. If this turn changed files, commit before handoff. If it did not, say that plainly."
+        "9. Leave one clear comment. If memory changed what you did on this turn, say which memories affected your behavior and why. If ownership is changing now, reassign the same issue to the next honest owner. Then stop"
+
+    guardrails: "Guardrails"
+        "Do not skip the critic lane between normal specialist lanes."
+        "Use `{{common.skills.ParaMemoryFilesSkill}}` as personal memory only. Do not let it overrule the active issue, issue documents, comments, or repo-backed plans as the live coordination truth."
+        "Do not treat chat, scratch notes, or local memory as the live handoff surface."
+        "Do not let dated plans, old route notes, or scratch history overrule the active issue and the named current files."
+        "If the next step is not honest yet, say why and keep the issue blocked instead of handing off weak work."
+
+
+workflow LessonsSkillsAndTools: "Skills And Tools"
+    how_to_use_this_section: "How To Use This Section"
+- Start with the tool that directly matches your job.
+- Some roles also name later helper sections in Read First. When they do, read those local helper sections too before you act.
+- Use setup and device tools only when the issue really needs them.
+- A doctrine package explains a recurring Lessons workflow.
+- A skill tells you how to do one recurring task in this repo.
+- A runtime tool gives proof or validation. It does not replace lane ownership.
+
+    skills_you_can_run: "Skills You Can Run"
+- `para-memory-files`
+  - Use it for the self-rework memory loop: check `para-memory-files` before execution, note which past learnings affect how you do this job so you do not repeat mistakes you already learned from, and save a generalized lesson when you are fixing a mistake you previously caused.
+  - Treat it as personal memory. The active issue, issue documents, comments, and plans still own coordination truth.
+- `github-access`
+  - Use it whenever the job needs real GitHub truth, such as reading a pull request, review state, issue comments, checks, or remote branch state.
+  - For Lessons work, use `paperclip_home/project_homes/lessons/tools/lessons_github_app.env` from the `paperclip_agents` repo root.
+  - Start with its verification command if this run has not already proven GitHub access.
+  - If GitHub is required and the skill cannot reach GitHub, stop immediately. Do not infer GitHub state from local repo state, web search, or issue context.
+- `psmobile-lesson-poker-kb-interface`
+  - Use it when a lane needs Books receipts inside the attached checkout for section truth, concept meaning, glossary wording, or learner-facing copy.
+  - This is the normal PokerKB skill for Section Dossier Engineer, Section Concepts and Terms Curator, and Lessons Copywriter.
+- `fastcards`
+  - Use it for deterministic poker math, legality checks, classification, candidate-pool generation, and validation.
+  - Use it when the job is building a real candidate pool of lesson spots, recording rejects, or leaving deterministic spot receipts before the final proof route is chosen.
+  - When reps, fixed sets, correct answers, or distractors are changing, use it to build the candidate pool before selection. A validate-only pass on the chosen set is not enough.
+  - Do not use it as proof of the concrete move the learner should make.
+  - This is primarily for Lessons Situation Synthesizer, and for Lessons Playable Materializer when a packet still needs deterministic spot validation.
+- `poker-native-copy`
+  - Use it when the job is learner-facing poker wording such as titles, hints, coach text, explanations, and feedback.
+  - This is primarily for Lessons Copywriter after the lesson structure and authority scope are already locked enough to support rewriting.
+
+    runtime_tools: "Runtime Tools"
+        "TODO: add shared runtime-tool guidance here when those tools are modeled cleanly."
+
+    not_for_normal_authoring: "Not For Normal Authoring"
+- `{{common.skills.MobileSimSkill}}` is for simulator and device work, not for baseline Lessons authoring.
+- `{{common.skills.FlutterDevReturnSkill}}` is for restoring a live Flutter dev loop, not for baseline Lessons authoring.
+
+
+workflow LessonsStandardsAndSupport: "Standards And Support"
+    "Use the support sections below only when the local job needs them."
+
+workflow LessonsYourJob: "Your Job"
+    "This is a stub for the role's your_job section, which should be overridden by concrete roles with a clear statement of the core job to do on each turn."
+
+abstract agent LessonsRoleHome:
+    read_first: LessonsReadFirst
+    workflow_core: LessonsWorkflowCore
+    your_job: LessonsYourJob
+    how_to_take_a_turn: LessonsHowToTakeATurn
+    skills_and_tools: LessonsSkillsAndTools
+    standards_and_support: LessonsStandardsAndSupport

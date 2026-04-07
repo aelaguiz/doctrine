@@ -1,0 +1,33 @@
+# SYNTAX TEST "source.pyprompt" "strings and interpolation"
+
+    "{{TrackMetadata:source.path}}"
+#   ^ punctuation.definition.string.begin.pyprompt
+#    ^^ punctuation.definition.interpolation.begin.pyprompt
+#      ^^^^^^^^^^^^^ support.type.reference.pyprompt
+#                   ^ punctuation.separator.interpolation.pyprompt
+#                    ^^^^^^^^^^^ variable.other.member.pyprompt
+#                               ^^ punctuation.definition.interpolation.end.pyprompt
+#                                 ^ punctuation.definition.string.end.pyprompt
+
+    "{{CurrentConcepts}}"
+#   ^ punctuation.definition.string.begin.pyprompt
+#    ^^ punctuation.definition.interpolation.begin.pyprompt
+#      ^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+#                     ^^ punctuation.definition.interpolation.end.pyprompt
+#                       ^ punctuation.definition.string.end.pyprompt
+
+    "{{ProjectLead}}"
+#   ^ punctuation.definition.string.begin.pyprompt
+#    ^^ punctuation.definition.interpolation.begin.pyprompt
+#      ^^^^^^^^^^^ support.type.reference.pyprompt
+#                 ^^ punctuation.definition.interpolation.end.pyprompt
+#                   ^ punctuation.definition.string.end.pyprompt
+
+    "{{shared.roles.AcceptanceCritic:name}}"
+#   ^ punctuation.definition.string.begin.pyprompt
+#    ^^ punctuation.definition.interpolation.begin.pyprompt
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.pyprompt
+#                                   ^ punctuation.separator.interpolation.pyprompt
+#                                    ^^^^ variable.other.member.pyprompt
+#                                        ^^ punctuation.definition.interpolation.end.pyprompt
+#                                          ^ punctuation.definition.string.end.pyprompt

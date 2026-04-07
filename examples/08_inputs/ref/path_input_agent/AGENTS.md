@@ -2,6 +2,12 @@
 
 Core job: revise a section plan using path-based file input.
 
+## Your Job
+
+- Read the required section plan from the named path.
+- Use the previous summary only if continuity matters for the current turn.
+- Fail if the required section plan is missing.
+
 ## Inputs
 
 ### Section Plan
@@ -21,9 +27,3 @@ Read this file before changing section planning.
 - Requirement: Advisory
 
 Use this only if continuity with earlier work matters for the current turn.
-
-## Your Job
-
-- Read the required section plan from the named path.
-- Use the previous summary only if continuity matters for the current turn.
-- Fail if the required section plan is missing.

@@ -1,0 +1,17 @@
+# Bare workflow refs are intentionally not allowed inside titled workflow
+# sections. Use `use` when a workflow needs to compose another workflow.
+
+workflow SharedRead: "Shared Read"
+    first: "First"
+        "Read this first."
+
+
+workflow InvalidWorkflowBodyRefs: "Invalid Workflow Body Refs"
+    bad: "Bad"
+        SharedRead
+
+
+agent InvalidWorkflowBodyRefsAgent:
+    role: "This agent exists only to trigger the compile-fail contract."
+
+    read_first: InvalidWorkflowBodyRefs
