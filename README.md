@@ -8,6 +8,27 @@ that today, but it moves the source of truth into reusable declarations,
 inheritance, typed inputs and outputs, skill contracts, and fail-loud
 compilation.
 
+## A Real Agent Example
+
+<p align="center">
+  <img src="docs/assets/readme-doctrine-agent-example.png" alt="Side-by-side view of a Doctrine source file for an agent and the compiled AGENTS.md runtime artifact it produces." width="1200">
+</p>
+
+This is a real Doctrine authoring flow from an agent repo. The left pane is
+the structured source of truth: reusable workflows, typed inputs, inherited
+sections, and skill declarations in one reviewable `.prompt` file. The right
+pane is the compiled `AGENTS.md` runtime artifact that existing coding-agent
+tools actually read.
+
+That split improves working on agents in concrete ways:
+
+- humans and coding agents edit one narrow source file instead of
+  hand-maintaining a giant runtime Markdown file
+- shared turn rules and handoff policy land once, then compile consistently
+  into the emitted `AGENTS.md`
+- reviewers can inspect intent in the source and verify the exact downstream
+  runtime artifact beside it
+
 ## Why this exists
 
 Large agent systems drift fast when the source of truth is copied Markdown:
