@@ -1,11 +1,11 @@
 >import ..detail
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import ....base.final_note
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >
 >
 >workflow DeepRelativeChain: "Deep Relative Chain"

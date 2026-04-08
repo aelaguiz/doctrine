@@ -1,11 +1,11 @@
 >import shared.greeters
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import shared.workflows
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >
 >
 ># This abstract agent lives in the root file so the compile-fail contract can
