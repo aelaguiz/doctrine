@@ -5,5 +5,6 @@ __pycache__/
 *.egg-info/
 *.swp
 /editors/vscode/node_modules/
+/editors/vscode/.vscode-test/
 /examples/*/build/
 /editors/vscode/*.vsix

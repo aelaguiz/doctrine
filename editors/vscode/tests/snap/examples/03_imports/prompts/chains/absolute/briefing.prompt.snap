@@ -1,11 +1,11 @@
 >import .opening
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import .closing
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >
 >
 >workflow AbsoluteBriefing: "Absolute Briefing"

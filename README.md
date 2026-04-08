@@ -110,7 +110,10 @@ uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 
 ## VS Code Extension
 
-The repo-local VS Code extension lives in `editors/vscode/`.
+The repo-local VS Code extension lives in `editors/vscode/` and provides
+syntax highlighting plus full clickable follow-definition behavior for shipped
+Doctrine refs in `.prompt` files: imports, declaration refs, readable refs,
+interpolation roots, and structural inheritance keys.
 
 Build the installable VSIX:
 

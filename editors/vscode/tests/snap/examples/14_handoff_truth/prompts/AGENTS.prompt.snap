@@ -17,23 +17,23 @@
 >import contracts.inputs
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import contracts.outputs
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import roles.project_lead
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import roles.acceptance_critic
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >import roles.section_author
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
-#       ^^^^^^^^^^^^^^^^^^^^ source.doctrine support.type.reference.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.namespace.doctrine support.type.reference.doctrine
 >
 >
 >agent ProjectLead:

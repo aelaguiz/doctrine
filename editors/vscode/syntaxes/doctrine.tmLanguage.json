@@ -173,7 +173,7 @@
           "name": "keyword.declaration.doctrine"
         },
         "4": {
-          "name": "support.type.reference.doctrine"
+          "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
         }
       }
     },

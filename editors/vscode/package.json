@@ -16,14 +16,20 @@
   "categories": [
     "Programming Languages"
   ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:doctrine"
+  ],
   "scripts": {
-    "test": "npm run test:unit && npm run test:snap",
+    "test": "npm run test:unit && npm run test:snap && npm run test:integration",
     "test:unit": "vscode-tmgrammar-test --config ./package.json \"tests/unit/**/*.test.prompt\"",
     "test:snap": "vscode-tmgrammar-snap --config ./package.json \"tests/snap/examples/**/*.prompt\"",
     "test:snap:update": "vscode-tmgrammar-snap --updateSnapshot --config ./package.json \"tests/snap/examples/**/*.prompt\"",
+    "test:integration": "node ./tests/integration/run.js",
     "package:vsix": "npm test && uv run --locked python scripts/validate_lark_alignment.py && uv run --locked python scripts/package_vsix.py"
   },
   "devDependencies": {
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "3.7.1",
     "vscode-tmgrammar-test": "^0.1.3"
   },
