@@ -1087,11 +1087,13 @@ _EMIT_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
-        re.compile(r"^Emit target (?P<name>.+) must point at an AGENTS\.prompt entrypoint, got (?P<entrypoint>.+)$"),
+        re.compile(
+            r"^Emit target (?P<name>.+) must point at an AGENTS\.prompt or SOUL\.prompt entrypoint, got (?P<entrypoint>.+)$"
+        ),
         "E510",
-        "Emit target entrypoint must be AGENTS.prompt",
+        "Emit target entrypoint must be AGENTS.prompt or SOUL.prompt",
         lambda match: (
-            f"Emit target `{match.group('name')}` must point at an `AGENTS.prompt` entrypoint, got `{match.group('entrypoint')}`."
+            f"Emit target `{match.group('name')}` must point at an `AGENTS.prompt` or `SOUL.prompt` entrypoint, got `{match.group('entrypoint')}`."
         ),
         (),
     ),

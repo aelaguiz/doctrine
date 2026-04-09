@@ -21,6 +21,7 @@ def main() -> int:
     _check_compile_missing_role_has_specific_code()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
+    _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_diagnostic_to_dict_is_json_safe()
     print("diagnostic smoke checks passed")
     return 0
@@ -100,6 +101,54 @@ output_dir = "build"
         _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
         _expect("E512 emit error" in output, output)
         _expect("entrypoint does not exist" in output, output)
+
+
+def _check_emit_docs_uses_entrypoint_stem_for_output_name() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "demo" / "agents" / "demo_agent"
+        prompts.mkdir(parents=True)
+        agents_prompt = prompts / "AGENTS.prompt"
+        soul_prompt = prompts / "SOUL.prompt"
+        agents_prompt.write_text(
+            """agent DemoAgent:
+    role: "You are Demo Agent."
+"""
+        )
+        soul_prompt.write_text(
+            """agent DemoAgent:
+    role: "You are Demo Agent. Let this background shape your tone."
+"""
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo_agents"
+entrypoint = "prompts/demo/agents/demo_agent/AGENTS.prompt"
+output_dir = "build"
+
+[[tool.doctrine.emit.targets]]
+name = "demo_soul"
+entrypoint = "prompts/demo/agents/demo_agent/SOUL.prompt"
+output_dir = "build"
+"""
+        )
+        exit_code = emit_docs_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "demo_agents",
+                "--target",
+                "demo_soul",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        agents_path = root / "build" / "demo" / "agents" / "demo_agent" / "AGENTS.md"
+        soul_path = root / "build" / "demo" / "agents" / "demo_agent" / "SOUL.md"
+        _expect(agents_path.is_file(), f"missing emitted AGENTS.md: {agents_path}")
+        _expect(soul_path.is_file(), f"missing emitted SOUL.md: {soul_path}")
 
 
 def _check_diagnostic_to_dict_is_json_safe() -> None:

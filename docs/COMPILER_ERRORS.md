@@ -109,7 +109,7 @@ Stability rules:
 | `E507` | Emit config path must point at `pyproject.toml` | The CLI was given a config path that does not end in `pyproject.toml`. |
 | `E508` | Emit target must be a TOML table | One `targets` entry has the wrong TOML type. |
 | `E509` | Duplicate emit target name | Two emit targets use the same configured name. |
-| `E510` | Emit target entrypoint must be `AGENTS.prompt` | An emit target points at the wrong prompt filename. |
+| `E510` | Emit target entrypoint must be `AGENTS.prompt` or `SOUL.prompt` | An emit target points at an unsupported prompt filename. |
 | `E511` | Emit target output_dir is a file | The configured output directory path is already a file. |
 | `E512` | Emit config path does not exist | A configured emit entrypoint or referenced path does not exist. |
 | `E513` | Emit config value must be a string | A required emit config field has the wrong TOML type. |

@@ -16,6 +16,7 @@ from doctrine.renderer import render_markdown
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT_FILE_NAME = "pyproject.toml"
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
+SUPPORTED_ENTRYPOINTS = ("AGENTS.prompt", "SOUL.prompt")
 
 
 @dataclass(slots=True, frozen=True)
@@ -52,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Emit compiled AGENTS.md trees for configured Doctrine targets."
+        description="Emit compiled Markdown trees for configured Doctrine targets."
     )
     parser.add_argument(
         "--pyproject",
@@ -161,11 +162,11 @@ def load_emit_targets(
             _require_str(raw_target, "entrypoint", label=f"emit target {name}"),
             label=f"emit target {name} entrypoint",
         )
-        if entrypoint.name != "AGENTS.prompt":
+        if entrypoint.name not in SUPPORTED_ENTRYPOINTS:
             raise _emit_error(
                 "E510",
-                "Emit target entrypoint must be AGENTS.prompt",
-                f"Emit target `{name}` must point at an `AGENTS.prompt` entrypoint, got `{entrypoint.name}`.",
+                "Emit target entrypoint must be AGENTS.prompt or SOUL.prompt",
+                f"Emit target `{name}` must point at an `AGENTS.prompt` or `SOUL.prompt` entrypoint, got `{entrypoint.name}`.",
                 location=_path_location(entrypoint),
             )
 
@@ -213,7 +214,11 @@ def emit_target(
     emitted_paths: list[Path] = []
     seen_paths: dict[Path, str] = {}
     for agent_name in agent_names:
-        emit_path = _emit_path_for_agent(emitted_dir, agent_name)
+        emit_path = _emit_path_for_agent(
+            emitted_dir,
+            agent_name,
+            output_name=_entrypoint_output_name(target.entrypoint),
+        )
         prior_agent = seen_paths.get(emit_path)
         if prior_agent is not None:
             raise _emit_error(
@@ -238,11 +243,11 @@ def emit_target(
     return tuple(emitted_paths)
 
 
-def _emit_path_for_agent(emitted_dir: Path, agent_name: str) -> Path:
+def _emit_path_for_agent(emitted_dir: Path, agent_name: str, *, output_name: str) -> Path:
     agent_slug = _agent_slug(agent_name)
     if emitted_dir.parts and emitted_dir.parts[-1] == agent_slug:
-        return emitted_dir / "AGENTS.md"
-    return emitted_dir / agent_slug / "AGENTS.md"
+        return emitted_dir / output_name
+    return emitted_dir / agent_slug / output_name
 
 
 def _root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:
@@ -266,6 +271,10 @@ def _entrypoint_relative_dir(entrypoint: Path) -> Path:
         f"Could not resolve `prompts/` root for `{resolved}`.",
         location=_path_location(resolved),
     )
+
+
+def _entrypoint_output_name(entrypoint: Path) -> str:
+    return f"{entrypoint.stem}.md"
 
 
 def _agent_slug(name: str) -> str:

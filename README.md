@@ -3,7 +3,7 @@
 Doctrine is a Python-like DSL and compiler for building agent doctrine as code
 instead of hand-maintained Markdown.
 
-It keeps `AGENTS.md` as the runtime artifact because coding agents can consume
+It keeps Markdown as the runtime artifact because coding agents can consume
 that today, but it moves the source of truth into reusable declarations,
 inheritance, typed inputs and outputs, skill contracts, and fail-loud
 compilation.
@@ -119,10 +119,12 @@ For one manifest-backed example run:
 uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml
 ```
 
-## Emit Compiled `AGENTS.md`
+## Emit Compiled Markdown
 
 The emit pipeline reads configured targets from `pyproject.toml` and writes a
-compiled `AGENTS.md` tree for each concrete agent in the entrypoint.
+compiled Markdown tree for each concrete agent in the entrypoint. Today the
+entrypoint may be either `AGENTS.prompt` or `SOUL.prompt`, and the emitted
+basename follows the entrypoint stem.
 
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
