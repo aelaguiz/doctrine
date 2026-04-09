@@ -46,6 +46,9 @@
       "include": "#skill"
     },
     {
+      "include": "#enumDeclaration"
+    },
+    {
       "include": "#abstractAgent"
     },
     {
@@ -367,6 +370,20 @@
     },
     "skill": {
       "match": "^(\\s*)(skill)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "enumDeclaration": {
+      "match": "^(\\s*)(enum)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -819,7 +836,7 @@
       }
     },
     "keyValueRef": {
-      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.section.doctrine"
@@ -829,6 +846,12 @@
         },
         "6": {
           "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        },
+        "7": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "8": {
+          "name": "variable.other.member.doctrine"
         }
       }
     },
@@ -858,10 +881,16 @@
       }
     },
     "standaloneReference": {
-      "match": "^(\\s+)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "match": "^(\\s+)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        },
+        "3": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "4": {
+          "name": "variable.other.member.doctrine"
         }
       }
     }

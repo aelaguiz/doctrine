@@ -1,6 +1,6 @@
 workflow InvalidRouteLabelInterpolation: "Invalid Route Label Interpolation"
     routing_rules: "Routing Rules"
-        route "If {{CurrentPlan:source}} is missing" -> ProjectLead
+        route "If {{CurrentPlan:source.path.file_name}} is missing" -> ProjectLead
 
 
 input CurrentPlan: "Current Plan"

@@ -1,0 +1,106 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "workflow paths resolve child sets and deep nested workflow items"
+status = "active"
+kind = "render_contract"
+agent = "WorkflowPathRefsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/workflow_path_refs_demo/AGENTS.md"
+expected_lines = [
+  "Keep workflow-owned review gates addressable without flattening the workflow.",
+  "",
+  "## Read First",
+  "",
+  "### Review Sequence",
+  "",
+  "- Gates",
+  "- Check Build Honesty",
+  "",
+  "Run Check Build Honesty before you route the work.",
+  "",
+  "## Outputs",
+  "",
+  "### Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "- Gate Family: Gates",
+  "- Honest Gate: Check Build Honesty",
+]
+
+[[cases]]
+name = "bare workflow roots still fail on readable surfaces"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_BARE_WORKFLOW_ROOT.prompt"
+agent = "InvalidBareWorkflowRootDemo"
+exception_type = "CompileError"
+error_code = "E271"
+message_contains = [
+  "Workflow refs are not allowed in workflow section bodies",
+  "use `use` for workflow composition",
+  "ReviewRules",
+]
+
+[[cases]]
+name = "unknown workflow path segments fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_WORKFLOW_PATH.prompt"
+agent = "InvalidUnknownWorkflowPathDemo"
+exception_type = "CompileError"
+error_code = "E273"
+message_contains = [
+  "Unknown addressable path on workflow strings",
+  "ReviewRules:gates.build.missing_gate",
+]
+
+[[cases]]
+name = "self-addressed workflow and skills roots resolve without false cycles"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/SELF_AND_DESCENT.prompt"
+agent = "SelfAddressableRootsDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep self-addressed and workflow-owned nested paths stable.",
+  "",
+  "## Workflow Root",
+  "",
+  "### Review Rules",
+  "",
+  "Run Check Build Honesty before you review anything else.",
+  "",
+  "#### Gates",
+  "",
+  "##### Build",
+  "",
+  "###### Check Build Honesty",
+  "",
+  "Compare the current build to the plan before you accept it.",
+  "",
+  "### Shared Skills",
+  "",
+  "Keep Grounding Skill available before you act.",
+  "",
+  "#### Can Run",
+  "",
+  "##### Grounding Skill",
+  "",
+  "###### Purpose",
+  "",
+  "Ground the current claim before you write.",
+  "",
+  "### Review Sequence",
+  "",
+  "- Review Rules",
+  "- Shared Skills",
+  "- Check Build Honesty",
+  "- Grounding Skill",
+  "",
+  "Run Check Build Honesty with Grounding Skill.",
+]

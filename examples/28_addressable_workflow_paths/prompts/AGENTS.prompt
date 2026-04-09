@@ -1,0 +1,41 @@
+# This example makes nested workflow sections addressable through path-bearing
+# refs.
+# - workflow section bodies may nest titled sections recursively
+# - path refs can point at child sets or deep nested workflow items
+# - generic scalar values can reuse workflow paths without flattening the
+#   workflow declaration
+
+workflow ReviewRules: "Review Rules"
+    gates: "Gates"
+        build: "Build"
+            check_build_honesty: "Check Build Honesty"
+                "Compare the current build to the plan before you accept it."
+
+        copy: "Copy"
+            check_copy_scope: "Check Copy Scope"
+                "Reject copy that invents scope beyond the current issue."
+
+
+workflow ReadFirst: "Read First"
+    review_sequence: "Review Sequence"
+        ReviewRules:gates
+        ReviewRules:gates.build.check_build_honesty
+        "Run {{ReviewRules:gates.build.check_build_honesty}} before you route the work."
+
+
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+    gate_family: ReviewRules:gates
+    honest_gate: ReviewRules:gates.build.check_build_honesty
+
+
+agent WorkflowPathRefsDemo:
+    role: "Keep workflow-owned review gates addressable without flattening the workflow."
+
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        ReviewComment

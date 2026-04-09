@@ -102,6 +102,9 @@ Current intent for titled workflow section body refs:
 - those declaration refs are readable mentions, not inline expansion of the full typed contract
 - declaration refs in titled workflow section bodies render as bullet lines using the declaration title, except concrete `agent` refs which render as the raw agent declaration name
 - those refs currently resolve to titled declarations such as `input`, `input source`, `output`, `output target`, `output shape`, `json schema`, and `skill`, plus concrete `agent` declarations
+- path-bearing refs such as `Decl:path.to.child` are the explicit widening surface for named nested contract items; bare workflow roots still stay rejected here
+- path traversal follows explicitly keyed nested items only; anonymous prose lines are not addressable
+- stopping on a structured nested item renders that item's title, while trying to keep walking past a scalar leaf fails loud
 - workflow reuse still belongs to keyed `use` entries
 - actual owner transitions still belong to `route "..." -> AgentName`
 - abstract agent refs are rejected here; if an owner should be mentionable, name the concrete agent
@@ -110,12 +113,19 @@ Current intent for authored prose interpolation:
 - authored prose surfaces may interpolate named declaration data inline with `{{Ref}}` and `{{Ref:field.path}}`
 - the shipped authored prose surfaces are workflow preamble strings, titled workflow section strings, role prose, record prose, skill purpose, skill reference reason, and route labels
 - `{{Ref}}` renders the declaration title for titled declarations and the raw declaration name for concrete `agent` refs
-- `{{Ref:field.path}}` resolves one scalar field from the declaration contract data or fails loud
+- `{{Ref:field.path}}` resolves explicitly keyed nested items through arbitrary depth across shipped record bodies, recursive workflow sections, and enum members
 - `{{AgentRef:name}}` is the explicit agent form; broader agent field access is not currently part of this surface
 - interpolation is for authored prose, not renderer-generated sentence assembly
 - authors still own punctuation, filenames, conjunctions, and backticks around the placeholder
 - abstract agent refs are rejected here; if a sentence should name an owner, interpolate the concrete agent
 - titles, config labels, config values, keyed scalar metadata, and route targets stay literal
+
+Current intent for enums:
+- closed vocabularies may be declared once with top-level `enum`
+- enum roots carry a title and flat keyed string members
+- `{{EnumRef}}` renders the enum title
+- `{{EnumRef:member_key}}` renders the concrete member literal
+- duplicate enum member keys fail loud during compilation
 
 ## Nested Workflow Direction
 
@@ -310,6 +320,12 @@ The current examples are intentionally pushing on these rules so we can validate
 - `26_abstract_authored_slots` shows the authored-slot requirement pattern:
   abstract parents can require concrete descendants to define named authored
   slots directly with `abstract <slot_key>` and no placeholder prose.
+- `27_addressable_record_paths` earns addressable nested record items instead
+  of forcing reusable headings and scalar leaves into bare strings.
+- `28_addressable_workflow_paths` extends that path surface to recursive local
+  workflow sections without widening bare workflow mentions.
+- `29_enums` earns a first-class closed-vocabulary surface for repeated
+  literals that should stop drifting as copied prose.
 - large schemas and large example payloads should prefer file-backed references
   instead of inline JSON blocks.
 - paths like `section_root/...` and `lesson_root/...` are currently explained
@@ -317,9 +333,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 26
+## Shipped Through 29
 
-The shipped language subset now covers examples `01` through `26`.
+The shipped language subset now covers examples `01` through `29`.
 
 Current shipped declaration kinds:
 - `import`
@@ -336,6 +352,7 @@ Current shipped declaration kinds:
 - `output shape`
 - `json schema`
 - `skill`
+- `enum`
 
 Current shipped agent field families:
 - `role`

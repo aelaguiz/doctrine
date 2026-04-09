@@ -42,3 +42,16 @@ expected_lines = [
   "",
   "Ground the current claim before you write.",
 ]
+
+[[cases]]
+name = "cyclic skills inheritance fails with a dedicated skills code"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CYCLIC_SKILLS_INHERITANCE.prompt"
+agent = "InvalidSkillsCycleDemo"
+exception_type = "CompileError"
+error_code = "E250"
+message_contains = [
+  "Skills inheritance cycle",
+  "CycleA -> CycleB -> CycleA",
+]

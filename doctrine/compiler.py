@@ -33,6 +33,19 @@ ReadableDecl: TypeAlias = (
     | model.OutputShapeDecl
     | model.JsonSchemaDecl
     | model.SkillDecl
+    | model.EnumDecl
+)
+AddressableRootDecl: TypeAlias = ReadableDecl | model.WorkflowDecl | model.SkillsDecl
+AddressableTarget: TypeAlias = (
+    AddressableRootDecl
+    | model.RecordScalar
+    | model.RecordSection
+    | model.EnumMember
+    | "ResolvedSectionItem"
+    | "ResolvedUseItem"
+    | "ResolvedWorkflowSkillsItem"
+    | "ResolvedSkillsSection"
+    | "ResolvedSkillEntry"
 )
 
 
@@ -52,6 +65,7 @@ class IndexedUnit:
     json_schemas_by_name: dict[str, model.JsonSchemaDecl]
     skills_by_name: dict[str, model.SkillDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
+    enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
     imported_units: dict[tuple[str, ...], "IndexedUnit"]
 
@@ -67,7 +81,9 @@ class ResolvedSectionRef:
     label: str
 
 
-ResolvedSectionBodyItem: TypeAlias = model.ProseLine | ResolvedRouteLine | ResolvedSectionRef
+ResolvedSectionBodyItem: TypeAlias = (
+    model.ProseLine | ResolvedRouteLine | ResolvedSectionRef | "ResolvedSectionItem"
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -171,6 +187,19 @@ class ConfigSpec:
     optional_keys: dict[str, str]
 
 
+@dataclass(slots=True, frozen=True)
+class DisplayValue:
+    text: str
+    kind: str
+
+
+@dataclass(slots=True, frozen=True)
+class AddressableNode:
+    unit: IndexedUnit
+    root_decl: AddressableRootDecl
+    target: AddressableTarget
+
+
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
 _INTERPOLATION_EXPR_RE = re.compile(
     r"\s*"
@@ -196,7 +225,7 @@ _BUILTIN_OUTPUT_TARGETS = {
     "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
 }
 
-_WORKFLOW_MENTION_REGISTRIES = (
+_READABLE_DECL_REGISTRIES = (
     ("agent declaration", "agents_by_name"),
     ("input declaration", "inputs_by_name"),
     ("input source declaration", "input_sources_by_name"),
@@ -205,6 +234,13 @@ _WORKFLOW_MENTION_REGISTRIES = (
     ("output shape declaration", "output_shapes_by_name"),
     ("json schema declaration", "json_schemas_by_name"),
     ("skill declaration", "skills_by_name"),
+    ("enum declaration", "enums_by_name"),
+)
+
+_ADDRESSABLE_ROOT_REGISTRIES = (
+    *_READABLE_DECL_REGISTRIES,
+    ("workflow declaration", "workflows_by_name"),
+    ("skills block", "skills_blocks_by_name"),
 )
 
 
@@ -215,12 +251,20 @@ class CompilationContext:
         self._loading_modules: set[tuple[str, ...]] = set()
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._skills_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._inputs_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._outputs_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._agent_slot_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._resolved_workflow_cache: dict[tuple[tuple[str, ...], str], ResolvedWorkflowBody] = {}
+        self._addressable_workflow_cache: dict[
+            tuple[tuple[str, ...], str], ResolvedWorkflowBody
+        ] = {}
         self._resolved_skills_cache: dict[tuple[tuple[str, ...], str], ResolvedSkillsBody] = {}
+        self._addressable_skills_cache: dict[
+            tuple[tuple[str, ...], str], ResolvedSkillsBody
+        ] = {}
         self._resolved_inputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
         self._resolved_outputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
         self._resolved_agent_slot_cache: dict[
@@ -883,7 +927,16 @@ class CompilationContext:
             )
         ]
         requirement = metadata_scalars.get("requirement")
-        if requirement is not None and _value_to_symbol(requirement.value) == "Required":
+        if (
+            requirement is not None
+            and self._value_to_symbol(
+                requirement.value,
+                unit=entry.metadata_unit,
+                owner_label=f"skill reference {skill_decl.name}",
+                surface_label="skill reference metadata",
+            )
+            == "Required"
+        ):
             purpose_body.extend(
                 [
                     "",
@@ -943,8 +996,10 @@ class CompilationContext:
         source_item = scalar_items.get("source")
         shape_item = scalar_items.get("shape")
         requirement_item = scalar_items.get("requirement")
-        if source_item is None or not isinstance(source_item.value, model.NameRef):
+        if source_item is None:
             raise CompileError(f"Input is missing typed source: {decl.name}")
+        if not isinstance(source_item.value, model.NameRef):
+            raise CompileError(f"Input source must stay typed: {decl.name}")
         if shape_item is None:
             raise CompileError(f"Input is missing shape: {decl.name}")
         if requirement_item is None:
@@ -960,9 +1015,11 @@ class CompilationContext:
                 owner_label=f"input {decl.name} source",
             )
         )
-        body.append(f"- Shape: {self._display_symbol_value(shape_item.value, unit=unit)}")
         body.append(
-            f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit)}"
+            f"- Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+        )
+        body.append(
+            f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
         )
 
         if extras:
@@ -1007,7 +1064,7 @@ class CompilationContext:
             body.extend(self._compile_output_files(files_section, unit=unit, output_name=decl.name))
         else:
             if not isinstance(target_item.value, model.NameRef):
-                raise CompileError(f"Output target must be typed: {decl.name}")
+                raise CompileError(f"Output target must stay typed: {decl.name}")
             target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
             body.append(f"- Target: {target_spec.title}")
             body.extend(
@@ -1018,11 +1075,13 @@ class CompilationContext:
                     owner_label=f"output {decl.name} target",
                 )
             )
-            body.append(f"- Shape: {self._display_output_shape(shape_item.value, unit=unit)}")
+            body.append(
+                f"- Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=decl.name, surface_label='output fields')}"
+            )
 
         if requirement_item is not None:
             body.append(
-                f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit)}"
+                f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
             )
 
         if extras:
@@ -1068,7 +1127,7 @@ class CompilationContext:
                 )
             body.append(f"- {item.title}: `{path_item.value}`")
             body.append(
-                f"- {item.title} Shape: {self._display_output_shape(shape_item.value, unit=unit)}"
+                f"- {item.title} Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=f'output {output_name} file {item.key}', surface_label='output file fields')}"
             )
             if extras:
                 body.append("")
@@ -1173,7 +1232,12 @@ class CompilationContext:
         surface_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
         label = _humanize_key(item.key)
-        value = self._format_scalar_value(item.value, unit=unit)
+        value = self._format_scalar_value(
+            item.value,
+            unit=unit,
+            owner_label=f"{owner_label}.{item.key}",
+            surface_label=surface_label,
+        )
         if item.body is None:
             return (f"- {label}: {value}",)
 
@@ -1209,7 +1273,7 @@ class CompilationContext:
             if item.key not in allowed_keys:
                 raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
             body.append(
-                f"- {allowed_keys[item.key]}: {self._format_scalar_value(item.value, unit=unit)}"
+                f"- {allowed_keys[item.key]}: {self._format_scalar_value(item.value, unit=unit, owner_label=f'{owner_label}.{item.key}', surface_label='config values')}"
             )
 
         missing_required = [
@@ -1302,10 +1366,19 @@ class CompilationContext:
         return labels
 
     def _display_output_shape(
-        self, value: model.RecordScalarValue, *, unit: IndexedUnit
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+        owner_label: str | None = None,
+        surface_label: str | None = None,
     ) -> str:
         if isinstance(value, str):
             return value
+        if isinstance(value, model.AddressableRef):
+            raise CompileError(
+                f"Output shape must stay typed: {owner_label or surface_label or 'output'}"
+            )
         if value.module_parts:
             _target_unit, decl = self._resolve_output_shape_decl(value, unit=unit)
             return decl.title
@@ -1315,23 +1388,98 @@ class CompilationContext:
         return _humanize_key(value.declaration_name)
 
     def _display_symbol_value(
-        self, value: model.RecordScalarValue, *, unit: IndexedUnit
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+        owner_label: str | None = None,
+        surface_label: str | None = None,
     ) -> str:
-        if isinstance(value, str):
-            return value
-        return self._display_ref(value)
+        return self._display_scalar_value(
+            value,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        ).text
 
     def _format_scalar_value(
-        self, value: model.RecordScalarValue, *, unit: IndexedUnit
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+        owner_label: str | None = None,
+        surface_label: str | None = None,
     ) -> str:
+        display = self._display_scalar_value(
+            value,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
+        if display.kind == "string_literal":
+            return f"`{display.text}`"
+        return display.text
+
+    def _display_scalar_value(
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+        owner_label: str | None = None,
+        surface_label: str | None = None,
+    ) -> DisplayValue:
         if isinstance(value, str):
-            return f"`{value}`"
-        return self._display_ref(value)
+            return DisplayValue(text=value, kind="string_literal")
+        if isinstance(value, model.NameRef):
+            enum_decl = self._try_resolve_enum_decl(value, unit=unit)
+            if enum_decl is not None:
+                return DisplayValue(text=enum_decl.title, kind="title")
+            return DisplayValue(text=self._display_ref(value), kind="symbol")
+        if owner_label is None or surface_label is None:
+            raise CompileError(
+                "Internal compiler error: addressable refs require an owner label and surface label"
+            )
+        return self._resolve_addressable_ref_value(
+            value,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            ambiguous_label=f"{surface_label} addressable ref",
+            missing_local_label=surface_label,
+        )
+
+    def _value_to_symbol(
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> str:
+        display = self._display_scalar_value(
+            value,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
+        return display.text
 
     def _display_ref(self, ref: model.NameRef) -> str:
         if ref.module_parts:
             return ".".join((*ref.module_parts, ref.declaration_name))
         return _humanize_key(ref.declaration_name)
+
+    def _try_resolve_enum_decl(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> model.EnumDecl | None:
+        try:
+            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        except CompileError:
+            return None
+        return lookup_unit.enums_by_name.get(ref.declaration_name)
 
     def _resolve_workflow_decl(
         self, workflow_decl: model.WorkflowDecl, *, unit: IndexedUnit
@@ -1414,6 +1562,128 @@ class CompilationContext:
             return resolved
         finally:
             self._skills_resolution_stack.pop()
+
+    def _resolve_workflow_for_addressable_paths(
+        self,
+        workflow_decl: model.WorkflowDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> ResolvedWorkflowBody:
+        workflow_key = (unit.module_parts, workflow_decl.name)
+        if (
+            workflow_key in self._workflow_resolution_stack
+            or workflow_key in self._workflow_addressable_resolution_stack
+        ):
+            return self._resolve_workflow_addressable_decl(workflow_decl, unit=unit)
+        return self._resolve_workflow_decl(workflow_decl, unit=unit)
+
+    def _resolve_skills_for_addressable_paths(
+        self,
+        skills_decl: model.SkillsDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> ResolvedSkillsBody:
+        skills_key = (unit.module_parts, skills_decl.name)
+        if (
+            skills_key in self._skills_resolution_stack
+            or skills_key in self._skills_addressable_resolution_stack
+        ):
+            return self._resolve_skills_addressable_decl(skills_decl, unit=unit)
+        return self._resolve_skills_decl(skills_decl, unit=unit)
+
+    def _resolve_workflow_addressable_decl(
+        self, workflow_decl: model.WorkflowDecl, *, unit: IndexedUnit
+    ) -> ResolvedWorkflowBody:
+        workflow_key = (unit.module_parts, workflow_decl.name)
+        cached = self._addressable_workflow_cache.get(workflow_key)
+        if cached is not None:
+            return cached
+
+        if workflow_key in self._workflow_addressable_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [
+                    *self._workflow_addressable_resolution_stack,
+                    workflow_key,
+                ]
+            )
+            raise CompileError(f"Cyclic workflow inheritance: {cycle}")
+
+        self._workflow_addressable_resolution_stack.append(workflow_key)
+        try:
+            parent_workflow: ResolvedWorkflowBody | None = None
+            parent_label: str | None = None
+            if workflow_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_workflow_decl(
+                    workflow_decl,
+                    unit=unit,
+                )
+                parent_workflow = self._resolve_workflow_for_addressable_paths(
+                    parent_decl,
+                    unit=parent_unit,
+                )
+                parent_label = (
+                    f"workflow {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_workflow_addressable_body(
+                workflow_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
+                parent_workflow=parent_workflow,
+                parent_label=parent_label,
+            )
+            self._addressable_workflow_cache[workflow_key] = resolved
+            return resolved
+        finally:
+            self._workflow_addressable_resolution_stack.pop()
+
+    def _resolve_skills_addressable_decl(
+        self, skills_decl: model.SkillsDecl, *, unit: IndexedUnit
+    ) -> ResolvedSkillsBody:
+        skills_key = (unit.module_parts, skills_decl.name)
+        cached = self._addressable_skills_cache.get(skills_key)
+        if cached is not None:
+            return cached
+
+        if skills_key in self._skills_addressable_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [
+                    *self._skills_addressable_resolution_stack,
+                    skills_key,
+                ]
+            )
+            raise CompileError(f"Cyclic skills inheritance: {cycle}")
+
+        self._skills_addressable_resolution_stack.append(skills_key)
+        try:
+            parent_skills: ResolvedSkillsBody | None = None
+            parent_label: str | None = None
+            if skills_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_skills_decl(
+                    skills_decl,
+                    unit=unit,
+                )
+                parent_skills = self._resolve_skills_for_addressable_paths(
+                    parent_decl,
+                    unit=parent_unit,
+                )
+                parent_label = (
+                    f"skills {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_skills_addressable_body(
+                skills_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, skills_decl.name),
+                parent_skills=parent_skills,
+                parent_label=parent_label,
+            )
+            self._addressable_skills_cache[skills_key] = resolved
+            return resolved
+        finally:
+            self._skills_addressable_resolution_stack.pop()
 
     def _resolve_inputs_decl(
         self, inputs_decl: model.InputsDecl, *, unit: IndexedUnit
@@ -1510,6 +1780,22 @@ class CompilationContext:
             target_unit, skills_decl = self._resolve_skills_ref(value, unit=unit)
             return self._resolve_skills_decl(skills_decl, unit=target_unit)
         return self._resolve_skills_body(
+            value,
+            unit=unit,
+            owner_label=owner_label,
+        )
+
+    def _resolve_skills_value_for_addressable_paths(
+        self,
+        value: model.SkillsValue,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ResolvedSkillsBody:
+        if isinstance(value, model.NameRef):
+            target_unit, skills_decl = self._resolve_skills_ref(value, unit=unit)
+            return self._resolve_skills_for_addressable_paths(skills_decl, unit=target_unit)
+        return self._resolve_skills_addressable_body(
             value,
             unit=unit,
             owner_label=owner_label,
@@ -1928,6 +2214,258 @@ class CompilationContext:
             items=tuple(resolved_items),
         )
 
+    def _resolve_skills_addressable_body(
+        self,
+        skills_body: model.SkillsBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_skills: ResolvedSkillsBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedSkillsBody:
+        if parent_skills is None:
+            return ResolvedSkillsBody(
+                title=skills_body.title,
+                preamble=(),
+                items=self._resolve_non_inherited_addressable_skills_items(
+                    skills_body.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                ),
+            )
+
+        parent_items_by_key = {item.key: item for item in parent_skills.items}
+        resolved_items: list[ResolvedSkillsItem] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in skills_body.items:
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate skills item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.SkillsSection):
+                resolved_items.append(
+                    ResolvedSkillsSection(
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_addressable_skills_section_body_items(
+                            item.items,
+                            unit=unit,
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.SkillEntry):
+                resolved_items.append(self._resolve_skill_entry(item, unit=unit))
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined skills entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined skills entry in {parent_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            if isinstance(item, model.OverrideSkillsSection):
+                if not isinstance(parent_item, ResolvedSkillsSection):
+                    raise CompileError(
+                        f"Override kind mismatch for skills entry in {owner_label}: {key}"
+                    )
+                resolved_items.append(
+                    ResolvedSkillsSection(
+                        key=key,
+                        title=item.title if item.title is not None else parent_item.title,
+                        items=self._resolve_addressable_skills_section_body_items(
+                            item.items,
+                            unit=unit,
+                        ),
+                    )
+                )
+                continue
+
+            if not isinstance(parent_item, ResolvedSkillEntry):
+                raise CompileError(
+                    f"Override kind mismatch for skills entry in {owner_label}: {key}"
+                )
+            resolved_items.append(self._resolve_skill_entry(item, unit=unit))
+
+        missing_keys = [
+            parent_item.key
+            for parent_item in parent_skills.items
+            if parent_item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited skills entry in {owner_label}: {missing}"
+            )
+
+        return ResolvedSkillsBody(
+            title=skills_body.title,
+            preamble=(),
+            items=tuple(resolved_items),
+        )
+
+    def _resolve_workflow_addressable_body(
+        self,
+        workflow_body: model.WorkflowBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_workflow: ResolvedWorkflowBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedWorkflowBody:
+        if parent_workflow is None:
+            return ResolvedWorkflowBody(
+                title=workflow_body.title,
+                preamble=(),
+                items=self._resolve_non_inherited_addressable_workflow_items(
+                    workflow_body.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                ),
+            )
+
+        parent_items_by_key = {item.key: item for item in parent_workflow.items}
+        resolved_items: list[ResolvedWorkflowItem] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in workflow_body.items:
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.LocalSection):
+                resolved_items.append(
+                    ResolvedSectionItem(
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_addressable_section_body_items(
+                            item.items,
+                            unit=unit,
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.WorkflowUse):
+                target_unit, workflow_decl = self._resolve_workflow_ref(item.target, unit=unit)
+                resolved_items.append(
+                    ResolvedUseItem(
+                        key=key,
+                        target_unit=target_unit,
+                        workflow_decl=workflow_decl,
+                    )
+                )
+                continue
+
+            if isinstance(item, model.WorkflowSkillsItem):
+                resolved_items.append(
+                    ResolvedWorkflowSkillsItem(
+                        key=key,
+                        body=self._resolve_skills_value_for_addressable_paths(
+                            item.value,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined workflow entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined workflow entry in {parent_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            if isinstance(item, model.OverrideSection):
+                if not isinstance(parent_item, ResolvedSectionItem):
+                    raise CompileError(
+                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    )
+                resolved_items.append(
+                    ResolvedSectionItem(
+                        key=key,
+                        title=item.title if item.title is not None else parent_item.title,
+                        items=self._resolve_addressable_section_body_items(
+                            item.items,
+                            unit=unit,
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.OverrideWorkflowSkillsItem):
+                if not isinstance(parent_item, ResolvedWorkflowSkillsItem):
+                    raise CompileError(
+                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    )
+                resolved_items.append(
+                    ResolvedWorkflowSkillsItem(
+                        key=key,
+                        body=self._resolve_skills_value_for_addressable_paths(
+                            item.value,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            if not isinstance(parent_item, ResolvedUseItem):
+                raise CompileError(
+                    f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                )
+            target_unit, workflow_decl = self._resolve_workflow_ref(item.target, unit=unit)
+            resolved_items.append(
+                ResolvedUseItem(
+                    key=key,
+                    target_unit=target_unit,
+                    workflow_decl=workflow_decl,
+                )
+            )
+
+        missing_keys = [
+            parent_item.key
+            for parent_item in parent_workflow.items
+            if parent_item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited workflow entry in {owner_label}: {missing}"
+            )
+
+        return ResolvedWorkflowBody(
+            title=workflow_body.title,
+            preamble=(),
+            items=tuple(resolved_items),
+        )
+
     def _resolve_non_inherited_items(
         self,
         workflow_items: tuple[model.WorkflowItem, ...],
@@ -1989,6 +2527,66 @@ class CompilationContext:
 
         return tuple(resolved_items)
 
+    def _resolve_non_inherited_addressable_workflow_items(
+        self,
+        workflow_items: tuple[model.WorkflowItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ResolvedWorkflowItem, ...]:
+        resolved_items: list[ResolvedWorkflowItem] = []
+        seen_keys: set[str] = set()
+
+        for item in workflow_items:
+            key = item.key
+            if key in seen_keys:
+                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
+            seen_keys.add(key)
+
+            if isinstance(item, model.LocalSection):
+                resolved_items.append(
+                    ResolvedSectionItem(
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_addressable_section_body_items(
+                            item.items,
+                            unit=unit,
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.WorkflowUse):
+                target_unit, workflow_decl = self._resolve_workflow_ref(item.target, unit=unit)
+                resolved_items.append(
+                    ResolvedUseItem(
+                        key=key,
+                        target_unit=target_unit,
+                        workflow_decl=workflow_decl,
+                    )
+                )
+                continue
+
+            if isinstance(item, model.WorkflowSkillsItem):
+                resolved_items.append(
+                    ResolvedWorkflowSkillsItem(
+                        key=key,
+                        body=self._resolve_skills_value_for_addressable_paths(
+                            item.value,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited workflow in {owner_label}: {key}"
+            )
+
+        return tuple(resolved_items)
+
     def _resolve_non_inherited_skills_items(
         self,
         skills_items: tuple[model.SkillsItem, ...],
@@ -2014,6 +2612,46 @@ class CompilationContext:
                             item.items,
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.SkillEntry):
+                resolved_items.append(self._resolve_skill_entry(item, unit=unit))
+                continue
+
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited skills block in {owner_label}: {key}"
+            )
+
+        return tuple(resolved_items)
+
+    def _resolve_non_inherited_addressable_skills_items(
+        self,
+        skills_items: tuple[model.SkillsItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ResolvedSkillsItem, ...]:
+        resolved_items: list[ResolvedSkillsItem] = []
+        seen_keys: set[str] = set()
+
+        for item in skills_items:
+            key = item.key
+            if key in seen_keys:
+                raise CompileError(f"Duplicate skills item key in {owner_label}: {key}")
+            seen_keys.add(key)
+
+            if isinstance(item, model.SkillsSection):
+                resolved_items.append(
+                    ResolvedSkillsSection(
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_addressable_skills_section_body_items(
+                            item.items,
+                            unit=unit,
                         ),
                     )
                 )
@@ -2135,6 +2773,19 @@ class CompilationContext:
             resolved.append(self._resolve_skill_entry(item, unit=unit))
         return tuple(resolved)
 
+    def _resolve_addressable_skills_section_body_items(
+        self,
+        items: tuple[model.SkillsSectionItem, ...],
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[ResolvedSkillsSectionBodyItem, ...]:
+        resolved: list[ResolvedSkillsSectionBodyItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                continue
+            resolved.append(self._resolve_skill_entry(item, unit=unit))
+        return tuple(resolved)
+
     def _resolve_skill_entry(
         self,
         entry: model.SkillEntry | model.OverrideSkillEntry,
@@ -2181,6 +2832,19 @@ class CompilationContext:
                     )
                 )
                 continue
+            if isinstance(item, model.LocalSection):
+                resolved.append(
+                    ResolvedSectionItem(
+                        key=item.key,
+                        title=item.title,
+                        items=self._resolve_section_body_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{item.key}",
+                        ),
+                    )
+                )
+                continue
             if isinstance(item, model.SectionBodyRef):
                 resolved.append(
                     self._resolve_section_body_ref(item.ref, unit=unit, owner_label=owner_label)
@@ -2200,14 +2864,36 @@ class CompilationContext:
             )
         return tuple(resolved)
 
+    def _resolve_addressable_section_body_items(
+        self,
+        items: tuple[model.SectionBodyItem, ...],
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[ResolvedSectionBodyItem, ...]:
+        resolved: list[ResolvedSectionBodyItem] = []
+        for item in items:
+            if not isinstance(item, model.LocalSection):
+                continue
+            resolved.append(
+                ResolvedSectionItem(
+                    key=item.key,
+                    title=item.title,
+                    items=self._resolve_addressable_section_body_items(
+                        item.items,
+                        unit=unit,
+                    ),
+                )
+            )
+        return tuple(resolved)
+
     def _resolve_section_body_ref(
         self,
-        ref: model.NameRef,
+        ref: model.AddressableRef,
         *,
         unit: IndexedUnit,
         owner_label: str,
     ) -> ResolvedSectionRef:
-        _target_unit, decl = self._resolve_readable_decl(
+        value = self._resolve_addressable_ref_value(
             ref,
             unit=unit,
             owner_label=owner_label,
@@ -2215,7 +2901,7 @@ class CompilationContext:
             ambiguous_label="workflow section declaration ref",
             missing_local_label="workflow section body",
         )
-        return ResolvedSectionRef(label=self._display_readable_decl(decl))
+        return ResolvedSectionRef(label=value.text)
 
     def _interpolate_authored_prose_string(
         self,
@@ -2300,24 +2986,18 @@ class CompilationContext:
                 f"Invalid interpolation in {owner_label}: {{{{{expression}}}}}"
             )
 
-        ref = _name_ref_from_dotted_name(match.group(1))
-        field_path = tuple(match.group(2).split(".")) if match.group(2) is not None else None
-        target_unit, decl = self._resolve_readable_decl(
+        ref = model.AddressableRef(
+            root=_name_ref_from_dotted_name(match.group(1)),
+            path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
+        )
+        return self._resolve_addressable_ref_value(
             ref,
             unit=unit,
             owner_label=owner_label,
             surface_label=surface_label,
             ambiguous_label=ambiguous_label or f"{surface_label} interpolation ref",
             missing_local_label=surface_label,
-        )
-        return self._resolve_readable_decl_field(
-            decl,
-            field_path,
-            unit=target_unit,
-            owner_label=owner_label,
-            surface_label=surface_label,
-            ref_label=_dotted_ref_name(ref) if ref.module_parts else ref.declaration_name,
-        )
+        ).text
 
     def _resolve_readable_decl(
         self,
@@ -2366,204 +3046,434 @@ class CompilationContext:
             f"{ref.declaration_name}"
         )
 
-    def _resolve_readable_decl_field(
+    def _resolve_addressable_ref_value(
         self,
-        decl: ReadableDecl,
-        field_path: tuple[str, ...] | None,
+        ref: model.AddressableRef,
         *,
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
-        ref_label: str,
-    ) -> str:
-        if field_path is None:
-            return self._display_readable_decl(decl)
-
-        if isinstance(decl, model.Agent):
-            if field_path == ("name",):
-                return decl.name
-            field_name = ".".join(field_path)
-            raise CompileError(
-                f"Unknown interpolation field on {surface_label} in {owner_label}: "
-                f"{ref_label}:{field_name}"
+        ambiguous_label: str,
+        missing_local_label: str,
+    ) -> DisplayValue:
+        ref_label = _display_addressable_ref(ref)
+        if not ref.path:
+            target_unit, decl = self._resolve_readable_decl(
+                ref.root,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
+                ambiguous_label=ambiguous_label,
+                missing_local_label=missing_local_label,
+            )
+            return self._display_addressable_target_value(
+                AddressableNode(unit=target_unit, root_decl=decl, target=decl),
+                owner_label=owner_label,
+                surface_label=surface_label,
             )
 
-        if field_path == ("title",):
-            return decl.title
-
-        field_name = ".".join(field_path)
-        return self._resolve_record_items_interpolation_field(
-            decl.items,
-            field_path,
+        target_unit, decl = self._resolve_addressable_root_decl(
+            ref.root,
             unit=unit,
+            owner_label=owner_label,
+            ambiguous_label=ambiguous_label,
+            missing_local_label=missing_local_label,
+        )
+        return self._resolve_addressable_path_value(
+            AddressableNode(unit=target_unit, root_decl=decl, target=decl),
+            ref.path,
             owner_label=owner_label,
             surface_label=surface_label,
             ref_label=ref_label,
-            decl=decl,
-            full_field_name=field_name,
         )
 
-    def _resolve_record_items_interpolation_field(
+    def _resolve_addressable_root_decl(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        ambiguous_label: str,
+        missing_local_label: str,
+    ) -> tuple[IndexedUnit, AddressableRootDecl]:
+        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        matches = self._find_addressable_root_matches(
+            ref.declaration_name,
+            unit=target_unit,
+        )
+        dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
+
+        if len(matches) == 1:
+            decl = matches[0][1]
+            if isinstance(decl, model.Agent) and decl.abstract:
+                raise CompileError(
+                    "Abstract agent refs are not allowed in addressable paths; "
+                    f"mention a concrete agent instead: {dotted_name}"
+                )
+            return target_unit, decl
+
+        if len(matches) > 1:
+            labels = ", ".join(label for label, _decl in matches)
+            raise CompileError(
+                f"Ambiguous {ambiguous_label} in {owner_label}: "
+                f"{dotted_name} matches {labels}"
+            )
+
+        if ref.module_parts:
+            raise CompileError(f"Missing imported declaration: {dotted_name}")
+
+        raise CompileError(
+            f"Missing local declaration ref in {missing_local_label} {owner_label}: "
+            f"{ref.declaration_name}"
+        )
+
+    def _resolve_addressable_path_value(
+        self,
+        start: AddressableNode,
+        path: tuple[str, ...],
+        *,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+    ) -> DisplayValue:
+        current = start
+
+        for index, segment in enumerate(path):
+            is_last = index == len(path) - 1
+            if is_last and isinstance(current.target, model.Agent) and segment == "name":
+                return DisplayValue(text=current.target.name, kind="symbol")
+            if is_last and segment == "title":
+                title = self._display_addressable_title(
+                    current,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                )
+                if title is not None:
+                    return DisplayValue(text=title, kind="title")
+            if is_last and segment in {"name", "title"}:
+                raise CompileError(
+                    f"Unknown addressable path on {surface_label} in {owner_label}: "
+                    f"{ref_label}"
+                )
+
+            children = self._get_addressable_children(current)
+            if children is None:
+                raise CompileError(
+                    "Addressable path must stay addressable on "
+                    f"{surface_label} in {owner_label}: {ref_label}"
+                )
+            next_node = children.get(segment)
+            if next_node is None:
+                raise CompileError(
+                    f"Unknown addressable path on {surface_label} in {owner_label}: "
+                    f"{ref_label}"
+                )
+            current = next_node
+
+        return self._display_addressable_target_value(
+            current,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
+
+    def _get_addressable_children(
+        self,
+        node: AddressableNode,
+    ) -> dict[str, AddressableNode] | None:
+        target = node.target
+        if isinstance(
+            target,
+            (
+                model.InputDecl,
+                model.InputSourceDecl,
+                model.OutputDecl,
+                model.OutputTargetDecl,
+                model.OutputShapeDecl,
+                model.JsonSchemaDecl,
+                model.SkillDecl,
+            ),
+        ):
+            return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.RecordScalar):
+            if target.body is None:
+                return None
+            return self._record_items_to_addressable_children(
+                target.body,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.RecordSection):
+            return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.WorkflowDecl):
+            workflow_body = self._resolve_workflow_for_addressable_paths(
+                target,
+                unit=node.unit,
+            )
+            return self._workflow_items_to_addressable_children(
+                workflow_body.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, ResolvedSectionItem):
+            return self._workflow_section_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, ResolvedUseItem):
+            workflow_body = self._resolve_workflow_for_addressable_paths(
+                target.workflow_decl,
+                unit=target.target_unit,
+            )
+            return self._workflow_items_to_addressable_children(
+                workflow_body.items,
+                unit=target.target_unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, ResolvedWorkflowSkillsItem):
+            return self._skills_items_to_addressable_children(
+                target.body.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.SkillsDecl):
+            skills_body = self._resolve_skills_for_addressable_paths(
+                target,
+                unit=node.unit,
+            )
+            return self._skills_items_to_addressable_children(
+                skills_body.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, ResolvedSkillsSection):
+            return self._skills_section_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, ResolvedSkillEntry):
+            if not target.items:
+                return None
+            return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.EnumDecl):
+            return {
+                member.key: AddressableNode(
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                    target=member,
+                )
+                for member in target.members
+            }
+        return None
+
+    def _record_items_to_addressable_children(
         self,
         items: tuple[model.RecordItem, ...],
-        field_path: tuple[str, ...],
         *,
         unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            if isinstance(item, (model.RecordScalar, model.RecordSection)):
+                children[item.key] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=item,
+                )
+        return children
+
+    def _workflow_items_to_addressable_children(
+        self,
+        items: tuple[ResolvedWorkflowItem, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            children[item.key] = AddressableNode(unit=unit, root_decl=root_decl, target=item)
+        return children
+
+    def _workflow_section_items_to_addressable_children(
+        self,
+        items: tuple[ResolvedSectionBodyItem, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            if isinstance(item, ResolvedSectionItem):
+                children[item.key] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=item,
+                )
+        return children
+
+    def _skills_items_to_addressable_children(
+        self,
+        items: tuple[ResolvedSkillsItem, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            children[item.key] = AddressableNode(unit=unit, root_decl=root_decl, target=item)
+        return children
+
+    def _skills_section_items_to_addressable_children(
+        self,
+        items: tuple[ResolvedSkillsSectionBodyItem, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            if isinstance(item, ResolvedSkillEntry):
+                children[item.key] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=item,
+                )
+        return children
+
+    def _display_addressable_target_value(
+        self,
+        node: AddressableNode,
+        *,
         owner_label: str,
         surface_label: str,
-        ref_label: str,
-        decl: ReadableDecl,
-        full_field_name: str,
-    ) -> str:
-        first = field_path[0]
-        record_scalar: model.RecordScalar | None = None
-        conflicting_item: model.RecordItem | None = None
-
-        for item in items:
-            if isinstance(item, model.RecordScalar) and item.key == first:
-                record_scalar = item
-                break
-            if isinstance(item, model.RecordSection) and item.key == first:
-                conflicting_item = item
-                break
-
-        if record_scalar is None:
-            if conflicting_item is not None:
-                raise CompileError(
-                    "Interpolation field must resolve to a scalar on "
-                    f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
+    ) -> DisplayValue:
+        target = node.target
+        if isinstance(target, model.Agent):
+            return DisplayValue(text=target.name, kind="symbol")
+        if isinstance(target, model.WorkflowDecl):
+            return DisplayValue(text=target.body.title, kind="title")
+        if isinstance(target, model.SkillsDecl):
+            return DisplayValue(text=target.body.title, kind="title")
+        if isinstance(target, model.EnumDecl):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(
+            target,
+            (
+                model.InputDecl,
+                model.InputSourceDecl,
+                model.OutputDecl,
+                model.OutputTargetDecl,
+                model.OutputShapeDecl,
+                model.JsonSchemaDecl,
+                model.SkillDecl,
+            ),
+        ):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.RecordSection):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.RecordScalar):
+            if target.body is not None:
+                return DisplayValue(
+                    text=self._display_record_scalar_title(
+                        target,
+                        node=node,
+                        owner_label=owner_label,
+                        surface_label=surface_label,
+                    ),
+                    kind="title",
                 )
-            raise CompileError(
-                f"Unknown interpolation field on {surface_label} in {owner_label}: "
-                f"{ref_label}:{full_field_name}"
+            return self._display_scalar_value(
+                target.value,
+                unit=node.unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
             )
+        if isinstance(target, model.EnumMember):
+            return DisplayValue(text=target.value, kind="symbol")
+        if isinstance(target, ResolvedSectionItem):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, ResolvedUseItem):
+            return DisplayValue(text=target.workflow_decl.body.title, kind="title")
+        if isinstance(target, ResolvedWorkflowSkillsItem):
+            return DisplayValue(text=target.body.title, kind="title")
+        if isinstance(target, ResolvedSkillsSection):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, ResolvedSkillEntry):
+            return DisplayValue(text=target.skill_decl.title, kind="title")
+        raise CompileError(
+            f"Internal compiler error: unsupported addressable target {type(target).__name__}"
+        )
 
-        return self._resolve_record_scalar_interpolation_field(
-            record_scalar,
-            field_path[1:],
-            unit=unit,
+    def _display_addressable_title(
+        self,
+        node: AddressableNode,
+        *,
+        owner_label: str,
+        surface_label: str,
+    ) -> str | None:
+        target = node.target
+        if isinstance(target, model.Agent):
+            return None
+        if isinstance(target, model.RecordScalar):
+            return self._display_record_scalar_title(
+                target,
+                node=node,
+                owner_label=owner_label,
+                surface_label=surface_label,
+            )
+        return self._display_addressable_target_value(
+            node,
             owner_label=owner_label,
             surface_label=surface_label,
-            ref_label=ref_label,
-            decl=decl,
-            full_field_name=full_field_name,
-        )
+        ).text
 
-    def _resolve_record_scalar_interpolation_field(
+    def _display_record_scalar_title(
         self,
         item: model.RecordScalar,
-        field_path: tuple[str, ...],
         *,
-        unit: IndexedUnit,
+        node: AddressableNode,
         owner_label: str,
         surface_label: str,
-        ref_label: str,
-        decl: ReadableDecl,
-        full_field_name: str,
     ) -> str:
-        if not field_path:
-            if item.body is not None:
-                raise CompileError(
-                    "Interpolation field must resolve to a scalar on "
-                    f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
-                )
-            return self._display_interpolation_scalar(
-                item,
-                unit=unit,
-                decl=decl,
+        root_decl = node.root_decl
+        if isinstance(root_decl, model.InputDecl) and item.key == "source":
+            if not isinstance(item.value, model.NameRef):
+                raise CompileError(f"Input source must stay typed: {root_decl.name}")
+            return self._resolve_input_source_spec(item.value, unit=node.unit).title
+
+        if isinstance(root_decl, model.OutputDecl) and item.key == "target":
+            if not isinstance(item.value, model.NameRef):
+                raise CompileError(f"Output target must stay typed: {root_decl.name}")
+            return self._resolve_output_target_spec(item.value, unit=node.unit).title
+
+        if isinstance(root_decl, model.OutputDecl) and item.key == "shape":
+            return self._display_output_shape(
+                item.value,
+                unit=node.unit,
+                owner_label=root_decl.name,
+                surface_label=surface_label,
             )
 
-        if field_path == ("title",):
-            return self._display_interpolation_head_title(
-                item,
-                unit=unit,
-                decl=decl,
-            )
-
-        if item.body is None:
-            raise CompileError(
-                f"Unknown interpolation field on {surface_label} in {owner_label}: "
-                f"{ref_label}:{full_field_name}"
-            )
-
-        nested_key = field_path[0]
-        nested_scalar: model.RecordScalar | None = None
-        conflicting_item: model.RecordItem | None = None
-        for nested_item in item.body:
-            if isinstance(nested_item, model.RecordScalar) and nested_item.key == nested_key:
-                nested_scalar = nested_item
-                break
-            if isinstance(nested_item, model.RecordSection) and nested_item.key == nested_key:
-                conflicting_item = nested_item
-                break
-
-        if nested_scalar is None:
-            if conflicting_item is not None:
-                raise CompileError(
-                    "Interpolation field must resolve to a scalar on "
-                    f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
-                )
-            raise CompileError(
-                f"Unknown interpolation field on {surface_label} in {owner_label}: "
-                f"{ref_label}:{full_field_name}"
-            )
-
-        if len(field_path) > 1:
-            if field_path[1:] == ("title",):
-                return self._display_interpolation_scalar(
-                    nested_scalar,
-                    unit=unit,
-                    decl=decl,
-                )
-            raise CompileError(
-                f"Unknown interpolation field on {surface_label} in {owner_label}: "
-                f"{ref_label}:{full_field_name}"
-            )
-
-        if nested_scalar.body is not None:
-            raise CompileError(
-                "Interpolation field must resolve to a scalar on "
-                f"{surface_label} in {owner_label}: {ref_label}:{full_field_name}"
-            )
-
-        return self._display_interpolation_scalar(
-            nested_scalar,
-            unit=unit,
-            decl=decl,
+        return self._display_symbol_value(
+            item.value,
+            unit=node.unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
         )
-
-    def _display_interpolation_scalar(
-        self,
-        item: model.RecordScalar,
-        *,
-        unit: IndexedUnit,
-        decl: ReadableDecl,
-    ) -> str:
-        if item.body is not None:
-            return self._display_interpolation_head_title(item, unit=unit, decl=decl)
-        return self._display_symbol_value(item.value, unit=unit)
-
-    def _display_interpolation_head_title(
-        self,
-        item: model.RecordScalar,
-        *,
-        unit: IndexedUnit,
-        decl: ReadableDecl,
-    ) -> str:
-        if isinstance(decl, model.InputDecl) and item.key == "source":
-            if not isinstance(item.value, model.NameRef):
-                raise CompileError(f"Input source must stay typed in interpolation: {decl.name}")
-            return self._resolve_input_source_spec(item.value, unit=unit).title
-
-        if isinstance(decl, model.OutputDecl) and item.key == "target":
-            if not isinstance(item.value, model.NameRef):
-                raise CompileError(f"Output target must stay typed in interpolation: {decl.name}")
-            return self._resolve_output_target_spec(item.value, unit=unit).title
-
-        if isinstance(decl, model.OutputDecl) and item.key == "shape":
-            return self._display_output_shape(item.value, unit=unit)
-
-        return self._display_symbol_value(item.value, unit=unit)
 
     def _resolve_readable_decl_lookup_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -2583,7 +3493,20 @@ class CompilationContext:
         unit: IndexedUnit,
     ) -> tuple[tuple[str, ReadableDecl], ...]:
         matches: list[tuple[str, ReadableDecl]] = []
-        for label, registry_name in _WORKFLOW_MENTION_REGISTRIES:
+        for label, registry_name in _READABLE_DECL_REGISTRIES:
+            decl = getattr(unit, registry_name).get(declaration_name)
+            if decl is not None:
+                matches.append((label, decl))
+        return tuple(matches)
+
+    def _find_addressable_root_matches(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[tuple[str, AddressableRootDecl], ...]:
+        matches: list[tuple[str, AddressableRootDecl]] = []
+        for label, registry_name in _ADDRESSABLE_ROOT_REGISTRIES:
             decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
@@ -2644,8 +3567,8 @@ class CompilationContext:
     def _compile_section_body(
         self,
         items: tuple[ResolvedSectionBodyItem, ...],
-    ) -> tuple[model.ProseLine, ...]:
-        body: list[model.ProseLine] = []
+    ) -> tuple[CompiledBodyItem, ...]:
+        body: list[CompiledBodyItem] = []
         previous_kind: str | None = None
 
         for item in items:
@@ -2656,6 +3579,13 @@ class CompilationContext:
 
             if isinstance(item, (str, model.EmphasizedLine)):
                 body.append(item)
+            elif isinstance(item, ResolvedSectionItem):
+                body.append(
+                    CompiledSection(
+                        title=item.title,
+                        body=self._compile_section_body(item.items),
+                    )
+                )
             elif isinstance(item, ResolvedRouteLine):
                 body.append(f"{item.label} -> {item.target_name}")
             else:
@@ -2970,6 +3900,7 @@ class CompilationContext:
         json_schemas_by_name: dict[str, model.JsonSchemaDecl] = {}
         skills_by_name: dict[str, model.SkillDecl] = {}
         agents_by_name: dict[str, model.Agent] = {}
+        enums_by_name: dict[str, model.EnumDecl] = {}
 
         for declaration in prompt_file.declarations:
             if isinstance(declaration, model.ImportDecl):
@@ -3019,6 +3950,14 @@ class CompilationContext:
                 self._register_decl(skills_by_name, declaration.name, module_parts)
                 skills_by_name[declaration.name] = declaration
                 continue
+            if isinstance(declaration, model.EnumDecl):
+                self._register_decl(enums_by_name, declaration.name, module_parts)
+                self._validate_enum_decl(
+                    declaration,
+                    owner_label=f"enum {_dotted_decl_name(module_parts, declaration.name)}",
+                )
+                enums_by_name[declaration.name] = declaration
+                continue
             if isinstance(declaration, model.Agent):
                 self._register_decl(agents_by_name, declaration.name, module_parts)
                 agents_by_name[declaration.name] = declaration
@@ -3052,6 +3991,7 @@ class CompilationContext:
             json_schemas_by_name=json_schemas_by_name,
             skills_by_name=skills_by_name,
             skills_blocks_by_name=skills_blocks_by_name,
+            enums_by_name=enums_by_name,
             agents_by_name=agents_by_name,
             imported_units=imported_units,
         )
@@ -3065,6 +4005,13 @@ class CompilationContext:
         if name in registry:
             dotted_name = ".".join((*module_parts, name)) or name
             raise CompileError(f"Duplicate declaration name: {dotted_name}")
+
+    def _validate_enum_decl(self, decl: model.EnumDecl, *, owner_label: str) -> None:
+        seen_keys: set[str] = set()
+        for member in decl.members:
+            if member.key in seen_keys:
+                raise CompileError(f"Duplicate enum member key in {owner_label}: {member.key}")
+            seen_keys.add(member.key)
 
     def _load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
         cached = self._module_cache.get(module_parts)
@@ -3160,7 +4107,8 @@ def _humanize_key(value: str) -> str:
     return " ".join(word if word.isupper() else word.capitalize() for word in words)
 
 
-def _value_to_symbol(value: model.RecordScalarValue) -> str:
-    if isinstance(value, str):
-        return value
-    return value.declaration_name
+def _display_addressable_ref(ref: model.AddressableRef) -> str:
+    root = _dotted_ref_name(ref.root)
+    if not ref.path:
+        return root
+    return f"{root}:{'.'.join(ref.path)}"
