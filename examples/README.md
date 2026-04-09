@@ -21,6 +21,8 @@ Read the examples in numeric order. The sequence is intentional.
   surfaces
 - `21` through `26`: first-class block reuse, inheritance, and abstract
   authored-slot requirements
+- `27` through `29`: addressable nested items, recursive workflow paths, and
+  enums for closed vocabularies
 
 ## Important Rules
 

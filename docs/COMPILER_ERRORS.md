@@ -76,14 +76,15 @@ Stability rules:
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
 | `E240`-`E243` | Workflow inheritance and patching errors | These codes cover cyclic workflow inheritance, inheriting undefined keys, kind mismatches, and `inherit` or `override` without an inherited workflow. |
 | `E244`-`E249` | IO block inheritance and typed-field ref errors | These codes cover cyclic `inputs` / `outputs` block inheritance, undefined inherited keys, patching without an inherited IO block, inherited IO blocks without stable keyed sections, and wrong-kind IO refs or patch bases. |
+| `E250` | Cyclic skills inheritance | Top-level `skills` block inheritance forms a cycle. |
 | `E261` | Duplicate workflow item key | One workflow body repeats the same keyed entry. |
-| `E270` | Ambiguous declaration reference | A readable mention or interpolation ref matches more than one visible declaration kind. |
-| `E271` | Workflow ref is not allowed here | A workflow ref was used on a mention or interpolation surface that allows declarations but not workflows. |
+| `E270` | Ambiguous declaration reference | A readable or addressable ref matches more than one visible declaration kind. |
+| `E271` | Workflow ref is not allowed here | A bare workflow ref was used on a readable surface that allows declarations but not workflow roots. |
 | `E272` | Abstract agent ref is not allowed here | A readable mention points at an abstract agent instead of a concrete owner. |
-| `E273` | Unknown interpolation field | An authored-prose interpolation asked for a field path that does not exist on that surface. |
-| `E274` | Interpolation field must resolve to a scalar | The field path resolves to a section or other non-scalar surface instead of a scalar value. |
-| `E275` | Typed declaration must stay typed in interpolation | An interpolation path tried to treat a typed declaration contract field as an untyped scalar. |
-| `E276` | Missing local declaration reference | A local readable mention or interpolation ref points at a declaration that does not exist. |
+| `E273` | Unknown addressable path | An interpolation or addressable ref asked for a nested path that does not exist on that surface. |
+| `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
+| `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
+| `E276` | Missing local declaration reference | A local readable or addressable ref points at a declaration that does not exist. |
 | `E280` | Missing import module | An imported module could not be found under the current `prompts/` root. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
@@ -94,6 +95,7 @@ Stability rules:
 | `E290` | Relative import walks above prompts root | A relative import escapes above the current `prompts/` root. |
 | `E291` | Prompt source path is required for compilation | The compiler was asked to compile a prompt object without a source path. |
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
+| `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
 | `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. |
 
 ### Emit codes

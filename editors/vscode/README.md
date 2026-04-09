@@ -12,7 +12,10 @@ Repo-local VS Code language support for `.prompt` files.
   refs, workflow `skills` refs and override refs, route targets, `skills`,
   `inputs`, `outputs`, patch-parent refs, `source`, `target`, `shape`,
   `schema`, standalone input/output refs in typed I/O bodies, standalone
-  readable refs in workflow bodies, interpolation roots, and structural
+  readable refs in workflow bodies, interpolation roots, addressable path
+  roots and path segments in interpolation / workflow section / generic record
+  value surfaces, including trailing `title` segments when they resolve to a
+  real definition site, enum roots and enum members, and structural
   `abstract` / `inherit` / local-key `override` sites
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
@@ -22,9 +25,10 @@ the same absolute and relative module rules the compiler ships.
 
 ## What it does not do yet
 
-- interpolation field-path segments after the declaration root
 - synthetic destinations for built-in `source:` or `target:` names such as
   `File`, `Prompt`, `EnvVar`, or `TurnResponse`
+- synthetic destinations for compiler-derived built-in `...:title` hops that
+  do not resolve to a declaration or authored keyed line
 - completion, hover, rename, symbol search, or a full language server
 
 ## Install in VS Code or Cursor
@@ -83,7 +87,8 @@ local editor is actually running the newest VSIX before changing the grammar.
 5. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
    the emitted scopes and the theme rule that matched.
 6. Try Cmd-click on a raw import path and Go to Definition on one supported
-   import path, one readable ref, one interpolation root, and one structural
+   import path, one readable ref, one addressable path segment, one
+   addressable `title` segment, one enum member, and one structural
    inheritance key.
 
 ## Development only: Extension Development Host

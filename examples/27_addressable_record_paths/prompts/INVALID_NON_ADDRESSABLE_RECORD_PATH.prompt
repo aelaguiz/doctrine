@@ -1,0 +1,18 @@
+workflow ReadFirst: "Read First"
+    read_now: "Read Now"
+        "Build {{SectionConceptsTermsFileOutput:target.path.file_name}} before you finalize the file."
+
+
+output SectionConceptsTermsFileOutput: "Section Concepts Terms File"
+    target: File
+        path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidNonAddressableRecordPathDemo:
+    role: "Trigger a deep record path that walks past a scalar leaf."
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        SectionConceptsTermsFileOutput

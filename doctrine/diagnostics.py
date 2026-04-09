@@ -750,6 +750,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Cyclic skills inheritance: (?P<detail>.+)$"),
+        "E250",
+        "Cyclic skills inheritance",
+        lambda match: f"Skills inheritance cycle: {match.group('detail')}.",
+        (),
+    ),
+    (
         re.compile(r"^Duplicate workflow item key in (?P<owner>[^:]+): (?P<key>.+)$"),
         "E261",
         "Duplicate workflow item key",
@@ -871,25 +878,25 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^Unknown interpolation field on (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"
+            r"^Unknown (?:interpolation field|addressable path) on (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"
         ),
         "E273",
-        "Unknown interpolation field",
+        "Unknown addressable path",
         lambda match: (
             f"In `{match.group('owner')}`, `{match.group('detail')}` does not resolve "
-            f"to a known interpolation field on the {match.group('surface')} surface."
+            f"to a known addressable item on the {match.group('surface')} surface."
         ),
         (),
     ),
     (
         re.compile(
-            r"^Interpolation field must resolve to a scalar on (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"
+            r"^(?:Interpolation field must resolve to a scalar|Addressable path must stay addressable) on (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"
         ),
         "E274",
-        "Interpolation field must resolve to a scalar",
+        "Addressable path must stay addressable",
         lambda match: (
             f"In `{match.group('owner')}`, `{match.group('detail')}` resolves "
-            f"to a non-scalar surface on the {match.group('surface')} surface."
+            f"through a non-addressable surface on the {match.group('surface')} surface."
         ),
         (),
     ),
@@ -945,6 +952,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Duplicate enum member key in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E293",
+        "Duplicate enum member key",
+        lambda match: f"Enum `{match.group('owner')}` repeats member key `{match.group('key')}`.",
+        (),
+    ),
+    (
         re.compile(r"^Cyclic import module: (?P<detail>.+)$"),
         "E289",
         "Cyclic import module",
@@ -959,17 +973,24 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
-        re.compile(r"^Input source must stay typed in interpolation: (?P<name>.+)$"),
+        re.compile(r"^Input source must stay typed(?:(?: in interpolation))?: (?P<name>.+)$"),
         "E275",
-        "Input source must stay typed in interpolation",
-        lambda match: f"Input `{match.group('name')}` must keep a typed `source` in interpolation.",
+        "Input source must stay typed",
+        lambda match: f"Input `{match.group('name')}` must keep a typed `source`.",
         (),
     ),
     (
-        re.compile(r"^Output target must stay typed in interpolation: (?P<name>.+)$"),
+        re.compile(r"^Output target must stay typed(?:(?: in interpolation))?: (?P<name>.+)$"),
         "E275",
-        "Output target must stay typed in interpolation",
-        lambda match: f"Output `{match.group('name')}` must keep a typed `target` in interpolation.",
+        "Output target must stay typed",
+        lambda match: f"Output `{match.group('name')}` must keep a typed `target`.",
+        (),
+    ),
+    (
+        re.compile(r"^Output shape must stay typed: (?P<name>.+)$"),
+        "E275",
+        "Output shape must stay typed",
+        lambda match: f"Output `{match.group('name')}` must keep a typed `shape`.",
         (),
     ),
     (

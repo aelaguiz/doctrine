@@ -9,6 +9,7 @@ async function run() {
   await activateDoctrineExtension();
   await testImportLinks();
   await testDefinitionProvider();
+  await testAddressableDefinitionProvider();
   await testFullClickableSurface();
 }
 
@@ -110,6 +111,265 @@ async function testDefinitionProvider() {
     relativePath: "examples/09_outputs/prompts/AGENTS.prompt",
     sourceLineFragment: "shape: IssueSummaryText",
     sourceText: "IssueSummaryText",
+  });
+}
+
+async function testAddressableDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: "output SectionConceptsTermsFileOutput",
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table",
+    sourceText: "SectionConceptsTermsFileOutput",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'must_include: "Must Include"',
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table",
+    sourceText: "must_include",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'analysis: "Analysis"',
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table",
+    sourceText: "analysis",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'tables: "Tables"',
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table",
+    sourceText: "tables",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'concept_ladder_table: "Concept Ladder Table"',
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table",
+    sourceText: "concept_ladder_table",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "output SectionConceptsTermsFileOutput",
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment: "SectionConceptsTermsFileOutput:title",
+    sourceText: "title",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'concept_ladder_table: "Concept Ladder Table"',
+    expectedRelativeTargetPath:
+      "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/27_addressable_record_paths/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table.title",
+    sourceText: "title",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "workflow ReviewRules",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    sourceLineFragment: "ReviewRules:gates.build.check_build_honesty",
+    sourceText: "ReviewRules",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'gates: "Gates"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    sourceLineFragment: "ReviewRules:gates.build.check_build_honesty",
+    sourceText: "gates",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'build: "Build"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    sourceLineFragment: "ReviewRules:gates.build.check_build_honesty",
+    sourceText: "build",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'check_build_honesty: "Check Build Honesty"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    relativePath: "examples/28_addressable_workflow_paths/prompts/AGENTS.prompt",
+    sourceLineFragment: "ReviewRules:gates.build.check_build_honesty",
+    sourceText: "check_build_honesty",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "enum CriticVerdict",
+    expectedRelativeTargetPath: "examples/29_enums/prompts/AGENTS.prompt",
+    relativePath: "examples/29_enums/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "Use the {{CriticVerdict}} vocabulary and return {{CriticVerdict:accept}} or {{CriticVerdict:changes_requested}}.",
+    sourceText: "CriticVerdict",
+    occurrence: 2,
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'accept: "accept"',
+    expectedRelativeTargetPath: "examples/29_enums/prompts/AGENTS.prompt",
+    relativePath: "examples/29_enums/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "Use the {{CriticVerdict}} vocabulary and return {{CriticVerdict:accept}} or {{CriticVerdict:changes_requested}}.",
+    sourceText: "accept",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "skills SharedSkills",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment:
+      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+    sourceText: "SharedSkills",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'can_run: "Can Run"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment:
+      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+    sourceText: "can_run",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "skill grounding: GroundingSkill",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment:
+      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+    sourceText: "grounding",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "workflow ReviewRules",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:shared.title",
+    sourceText: "title",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "skills SharedSkills",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:skills.title",
+    sourceText: "title",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "workflow WorkflowRoot",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceText: "WorkflowRoot",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "use shared: ReviewRules",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceText: "shared",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'gates: "Gates"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceText: "gates",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'build: "Build"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceText: "build",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'check_build_honesty: "Check Build Honesty"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceText: "check_build_honesty",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "skills: SharedSkills",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceText: "skills",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'can_run: "Can Run"',
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceText: "can_run",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "skill grounding: GroundingSkill",
+    expectedRelativeTargetPath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    relativePath:
+      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceText: "grounding",
   });
 }
 

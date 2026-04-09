@@ -1,0 +1,15 @@
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground the current claim before you write."
+
+
+skills CycleA[CycleB]: "Skills"
+    inherit primary
+
+
+skills CycleB[CycleA]: "Skills"
+    inherit primary
+
+
+agent InvalidSkillsCycleDemo:
+    role: "Use the cyclic skills block to prove fail-loud cycle diagnostics."
+    skills: CycleA

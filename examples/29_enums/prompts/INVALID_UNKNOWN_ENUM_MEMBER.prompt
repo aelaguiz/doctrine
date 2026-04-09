@@ -1,0 +1,22 @@
+enum CriticVerdict: "Critic Verdict"
+    accept: "accept"
+    changes_requested: "changes requested"
+
+
+workflow ReadFirst: "Read First"
+    verdict_rules: "Verdict Rules"
+        "Return {{CriticVerdict:missing_member}} only when the work is ready."
+
+
+output ReviewDecision: "Review Decision"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidUnknownEnumMemberDemo:
+    role: "Trigger an unknown enum member ref."
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        ReviewDecision

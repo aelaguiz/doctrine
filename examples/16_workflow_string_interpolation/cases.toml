@@ -83,7 +83,7 @@ agent = "InvalidFieldPathInterpolationAgent"
 exception_type = "CompileError"
 error_code = "E273"
 message_contains = [
-  "Unknown interpolation field on workflow strings",
+  "Unknown addressable path on workflow strings",
   "shared.contracts.TrackMetadata:source.missing",
 ]
 

@@ -1,0 +1,22 @@
+enum CriticVerdict: "Critic Verdict"
+    accept: "accept"
+    accept: "accept again"
+
+
+workflow ReadFirst: "Read First"
+    verdict_rules: "Verdict Rules"
+        "Use {{CriticVerdict}} when you review."
+
+
+output ReviewDecision: "Review Decision"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidDuplicateEnumMemberDemo:
+    role: "Trigger duplicate enum member validation."
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        ReviewDecision

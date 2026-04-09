@@ -43,6 +43,12 @@ class NameRef:
 
 
 @dataclass(slots=True, frozen=True)
+class AddressableRef:
+    root: NameRef
+    path: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
 class RouteLine:
     label: str
     target: NameRef
@@ -50,10 +56,10 @@ class RouteLine:
 
 @dataclass(slots=True, frozen=True)
 class SectionBodyRef:
-    ref: NameRef
+    ref: AddressableRef
 
 
-SectionBodyItem: TypeAlias = ProseLine | RouteLine | SectionBodyRef
+SectionBodyItem: TypeAlias = ProseLine | RouteLine | SectionBodyRef | "LocalSection"
 
 
 @dataclass(slots=True, frozen=True)
@@ -87,7 +93,7 @@ class OverrideUse:
     target: NameRef
 
 
-RecordScalarValue: TypeAlias = str | NameRef
+RecordScalarValue: TypeAlias = str | NameRef | AddressableRef
 
 
 @dataclass(slots=True, frozen=True)
@@ -351,6 +357,19 @@ class SkillDecl:
     items: tuple[RecordItem, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class EnumMember:
+    key: str
+    value: str
+
+
+@dataclass(slots=True, frozen=True)
+class EnumDecl:
+    name: str
+    title: str
+    members: tuple[EnumMember, ...]
+
+
 Declaration: TypeAlias = (
     ImportDecl
     | WorkflowDecl
@@ -365,6 +384,7 @@ Declaration: TypeAlias = (
     | OutputShapeDecl
     | JsonSchemaDecl
     | SkillDecl
+    | EnumDecl
 )
 
 

@@ -93,12 +93,12 @@ agent = "InvalidRoleFieldPathInterpolationDemo"
 exception_type = "CompileError"
 error_code = "E273"
 message_contains = [
-  "Unknown interpolation field on role prose",
+  "Unknown addressable path on role prose",
   "CurrentPlan:source.missing",
 ]
 
 [[cases]]
-name = "route label interpolation fields must resolve to scalars"
+name = "route label interpolation paths must stay addressable"
 status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_ROUTE_LABEL_NONSCALAR.prompt"
@@ -106,8 +106,8 @@ agent = "InvalidRouteLabelInterpolationDemo"
 exception_type = "CompileError"
 error_code = "E274"
 message_contains = [
-  "Interpolation field must resolve to a scalar on route labels",
-  "CurrentPlan:source",
+  "Addressable path must stay addressable on route labels",
+  "CurrentPlan:source.path.file_name",
 ]
 
 [[cases]]

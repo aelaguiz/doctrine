@@ -23,6 +23,7 @@ prompt_file: _NL* declaration+ _NL*
             | output_decl
             | json_schema_decl
             | skill_decl
+            | enum_decl
             | abstract_agent
             | agent
 
@@ -39,6 +40,7 @@ output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DE
 output_decl: "output" CNAME ":" string _NL _INDENT record_body _DEDENT
 json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
+enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
 agent: "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
@@ -111,8 +113,10 @@ workflow_override_use: "override" CNAME ":" name_ref _NL?
 workflow_section_body: workflow_section_item+
 ?workflow_section_item: prose_line _NL?
                       | route_stmt
+                      | local_section
                       | workflow_section_ref_item
-workflow_section_ref_item: name_ref _NL?
+workflow_section_ref_item: path_ref _NL?
+                         | name_ref _NL?
 
 skills_body: skills_body_line+
 
@@ -162,13 +166,17 @@ record_keyed_item: CNAME ":" record_head _NL record_item_body?
 record_ref_item: name_ref _NL record_item_body?
 record_item_body: _INDENT record_body _DEDENT
 
-?record_head: string | name_ref
+?record_head: string | path_ref | name_ref
+
+enum_body: enum_member+
+enum_member: CNAME ":" string _NL?
 
 ref_list: ref_item+
 ref_item: name_ref _NL?
 
 route_stmt: "route" string "->" name_ref _NL?
 
+path_ref: PATH_REF
 name_ref: dotted_name
 import_path: absolute_import_path | relative_import_path
 absolute_import_path: dotted_name
@@ -191,6 +199,7 @@ REQUIRED_KEYWORD.2: /required(?=[ \t]*")/
 IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
 WARNING_KEYWORD.2: /warning(?=[ \t]*")/
 NOTE_KEYWORD.2: /note(?=[ \t]*")/
+PATH_REF: /[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
 
 DOTS: /\.+/
 

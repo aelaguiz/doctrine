@@ -38,6 +38,9 @@ class ToAst(Transformer):
     def DOTS(self, token):
         return str(token)
 
+    def PATH_REF(self, token):
+        return str(token)
+
     def ESCAPED_STRING(self, token):
         return ast.literal_eval(str(token))
 
@@ -95,6 +98,14 @@ class ToAst(Transformer):
     def name_ref(self, dotted_name):
         parts = tuple(dotted_name)
         return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
+
+    @v_args(inline=True)
+    def path_ref(self, raw_ref):
+        root_name, path_name = raw_ref.split(":", 1)
+        return model.AddressableRef(
+            root=_name_ref_from_dotted_name(root_name),
+            path=tuple(path_name.split(".")),
+        )
 
     def role_body(self, items):
         return items[0]
@@ -286,6 +297,17 @@ class ToAst(Transformer):
     def skill_decl(self, name, title, items):
         return model.SkillDecl(name=name, title=title, items=tuple(items))
 
+    @v_args(inline=True)
+    def enum_decl(self, name, title, members):
+        return model.EnumDecl(name=name, title=title, members=tuple(members))
+
+    def enum_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def enum_member(self, key, value):
+        return model.EnumMember(key=key, value=value)
+
     def workflow_preamble(self, items):
         return tuple(items)
 
@@ -346,6 +368,8 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def workflow_section_ref_item(self, ref):
+        if isinstance(ref, model.NameRef):
+            ref = model.AddressableRef(root=ref)
         return model.SectionBodyRef(ref=ref)
 
     @v_args(inline=True)
@@ -573,3 +597,8 @@ def parse_file(path: str | Path) -> model.PromptFile:
     resolved_path = Path(path).resolve()
     prompt_file = parse_text(resolved_path.read_text(), source_path=resolved_path)
     return replace(prompt_file, source_path=resolved_path)
+
+
+def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
+    parts = tuple(dotted_name.split("."))
+    return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
