@@ -1,3 +1,10 @@
+># This file is intentionally invalid.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># An active branch stops and routes work, but it never says what is current for that branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input CurrentHandoff: "Current Handoff"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -27,6 +34,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent RoutingOwner:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -53,6 +62,8 @@
 #                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow InvalidRouteOnlyTurns: "Route-Only Triage"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -62,10 +73,14 @@
 #                                ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                 ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line turns the workflow on only when the condition is true.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        active when CurrentHandoff.missing
 #^^^^^^^^ source.doctrine
 #        ^^^^^^ source.doctrine keyword.control.doctrine
@@ -73,10 +88,16 @@
 #               ^^^^ source.doctrine keyword.control.doctrine
 #                   ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
+>        # This block applies only when the condition is true inside the surrounding law context.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        when CurrentHandoff.missing:
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
 #            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>            # This line ends the turn with an explicit reason.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>            # This stop line is fine on its own, but this active branch never declares any current subject before stopping.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            stop "Current handoff is missing."
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^ source.doctrine keyword.control.doctrine
@@ -84,6 +105,8 @@
 #                 ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>            # This line sends the same work to a named owner with an explicit message.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            route "Route the same issue back to RoutingOwner." -> RoutingOwner
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^^ source.doctrine keyword.control.doctrine
@@ -97,6 +120,8 @@
 #                                                                  ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent InvalidActiveBranchWithoutCurrent:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine

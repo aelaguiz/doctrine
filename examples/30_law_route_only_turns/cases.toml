@@ -2,14 +2,14 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
-name = "law can express route-only turns with no current artifact"
+name = "route-only setup can express current none stop and explicit reroute"
 status = "active"
 kind = "render_contract"
-agent = "RouteOnlyTurnsDemo"
+agent = "RouteOnlyTriageDemo"
 assertion = "exact_lines"
-approx_ref = "ref/route_only_turns_demo/AGENTS.md"
+approx_ref = "ref/route_only_triage_demo/AGENTS.md"
 expected_lines = [
-  "Keep route-only work explicit when no durable artifact is current.",
+  "Set up route-only law before the richer handoff examples.",
   "",
   "## Route-Only Triage",
   "",

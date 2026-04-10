@@ -1,3 +1,10 @@
+># This file shows how one typed mode selects one active branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># The `match` arms say what is current in each mode and what must stay true for that branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># Define a closed set of allowed values so later law can branch on names instead of free-form strings.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >enum EditMode: "Edit Mode"
 #^^^^ source.doctrine keyword.declaration.doctrine
 #    ^ source.doctrine
@@ -21,6 +28,8 @@
 #                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >
 >
+># Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input CurrentHandoff: "Current Handoff"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -55,6 +64,8 @@
 #                                                                                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input ApprovedPlan: "Approved Plan"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -90,6 +101,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input ApprovedStructure: "Approved Structure"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -125,6 +138,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output CoordinationHandoff: "Coordination Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -153,6 +168,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -165,6 +182,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This field carries the one mode that was active for this pass.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    active_mode: "Active Mode"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -177,6 +196,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -188,6 +209,8 @@
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This block says what a downstream owner should understand just from reading this output.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    standalone_read: "Standalone Read"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -201,6 +224,8 @@
 #                                                                                                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow ModeAwareEdit: "Mode-Aware Edit"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -216,16 +241,22 @@
 #     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line turns the workflow on only when the condition is true.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        active when CurrentHandoff.owes_edit
 #^^^^^^^^ source.doctrine
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^ source.doctrine
 #               ^^^^ source.doctrine keyword.control.doctrine
 #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line binds one typed mode value that later rules can branch on.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        mode edit_mode = CurrentHandoff.active_mode as EditMode
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
@@ -233,12 +264,16 @@
 #                                                    ^^ source.doctrine keyword.control.doctrine
 #                                                      ^^^^^^^^^^ source.doctrine
 >
+>        # This block splits the law by the chosen mode. Only one arm is active at a time.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        match edit_mode:
 #^^^^^^^^ source.doctrine
 #        ^^^^^ source.doctrine keyword.control.doctrine
 #             ^^^^^^^^^^^^ source.doctrine
 >            EditMode.manifest_title:
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                current artifact ApprovedPlan via CoordinationHandoff.current_artifact
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -247,6 +282,8 @@
 #                                ^^^^^^^^^^^^^^ source.doctrine
 #                                              ^^^ source.doctrine keyword.control.doctrine
 #                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line states an invariant that has to hold in the active branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                must CurrentHandoff.preserve_basis == ApprovedPlan
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^ source.doctrine keyword.control.doctrine
@@ -254,6 +291,8 @@
 >
 >            EditMode.section_summary:
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                current artifact ApprovedStructure via CoordinationHandoff.current_artifact
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -262,12 +301,16 @@
 #                                ^^^^^^^^^^^^^^^^^^^ source.doctrine
 #                                                   ^^^ source.doctrine keyword.control.doctrine
 #                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line states an invariant that has to hold in the active branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                must CurrentHandoff.preserve_basis == ApprovedStructure
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^ source.doctrine keyword.control.doctrine
 #                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent ModeAwareEditDemo:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine

@@ -1,6 +1,6 @@
 # Agent I/O Design Notes
 
-This document now records the shipped I/O model through examples `08` to `38`.
+This document now records the shipped I/O model through examples `08` to `42`.
 
 The goal is to describe the turn-level contract the language already supports,
 and the explicit non-goals that keep it from drifting into packet or
@@ -50,6 +50,8 @@ Current shipped boundaries:
 - `output` supports either `target + shape` or `files`
 - `output` may also declare typed authored child fields plus reserved
   `trust_surface`
+- `output` record bodies may also declare keyed guarded sections for
+  conditional readback that still belongs to the emitted output contract
 - `target` resolves to built-ins such as `TurnResponse` and `File`, or to a
   declared `output target`
 - `shape` resolves to a declared `output shape` first, then to a symbolic label
@@ -59,6 +61,12 @@ Current shipped boundaries:
   `standalone_read`, and `notes` stay authored prose
 - `trust_surface` is the explicit portable-truth contract for an output
 - `trust_surface` items may be unconditional or guarded with `when`
+- guarded output sections render as conditional shells in compiled `AGENTS.md`
+  but stay ordinary output fields rather than portable-truth carriers
+- guarded output sections may read declared inputs, enum members, and
+  compiler-owned host facts rooted there
+- guarded output sections may not read workflow-local bindings, emitted
+  output fields, or undeclared runtime names
 - workflow law may bind `current artifact ... via ...` and `invalidate ... via ...`
   only through declared output fields
 - trusted carrier fields must actually be emitted by the concrete turn
@@ -82,6 +90,9 @@ Current shipped rules:
 - `trust_surface` is where downstream owners learn which output fields carry
   current truth, comparison-only basis, rewrite exclusions, invalidations, or
   other shipped workflow-law facts
+- route-only conditional readback such as `rewrite_mode` or
+  `repeated_problem` stays on the output contract unless the compiler
+  explicitly promotes that field into `trust_surface`
 - carrier semantics are compiler-owned and fail loud; they are not inferred
   from prose labels such as `current_artifact` or `invalidations`
 - `standalone_read` stays human-facing companion prose; it does not act as a

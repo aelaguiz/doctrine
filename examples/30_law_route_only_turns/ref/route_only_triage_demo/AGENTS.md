@@ -1,4 +1,4 @@
-Keep route-only work explicit when no durable artifact is current.
+Set up route-only law before the richer handoff examples.
 
 ## Route-Only Triage
 

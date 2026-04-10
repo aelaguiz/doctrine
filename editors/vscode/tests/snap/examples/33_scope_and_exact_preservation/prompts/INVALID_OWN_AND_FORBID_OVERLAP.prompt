@@ -1,3 +1,7 @@
+# This file is intentionally invalid.
+# The workflow claims ownership of a field and forbids editing that same field.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -5,25 +9,35 @@ output SectionMetadata: "Section Metadata"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidNarrowMetadataEdit: "Narrow Metadata Edit"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        # This line limits the edit authority to exactly the named fields.
         own only SectionMetadata.name
+        # This line names fields this branch is not allowed to modify.
+        # This forbids editing the same field the workflow already claimed as owned.
         forbid SectionMetadata.name
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidOwnAndForbidOverlap:
     role: "Trigger overlap between owned and forbidden scope."
     workflow: InvalidNarrowMetadataEdit

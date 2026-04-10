@@ -1,3 +1,10 @@
+># This file is intentionally invalid.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># A route needs a quoted human-readable message before the arrow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent RoutingOwner:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -24,6 +31,8 @@
 #                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow InvalidRouteOnlyTurns: "Route-Only Triage"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -33,15 +42,23 @@
 #                                ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                 ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line says the branch carries no durable artifact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        current none
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine keyword.control.doctrine
 #               ^ source.doctrine
 #                ^^^^ source.doctrine keyword.control.doctrine
+>        # This line sends the same work to a named owner with an explicit message.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>        # This route is missing the quoted message that explains the reroute in plain language.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        route -> RoutingOwner
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >

@@ -26,5 +26,7 @@ The live docs set is intentionally small. The shipped language truth stays
 anchored in `doctrine/`, the manifest-backed examples, and this docs index.
 Historical proposal, planning, and worklog material lives under
 [archive/](archive/README.md) and is not part of the live docs path. The
-shipped numbered corpus now runs through `examples/38_metadata_polish_capstone`,
-including the workflow-law cutover.
+shipped numbered corpus now runs through
+`examples/42_route_only_handoff_capstone`, including the workflow-law cutover,
+the staged route-only setup ladder, and the guarded route-only handoff
+capstone.

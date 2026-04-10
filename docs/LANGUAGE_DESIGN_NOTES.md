@@ -8,7 +8,7 @@ the language decisions we have made so far, why we made them, and how we
 currently expect the parser to behave.
 
 The shipped surface now runs through the workflow-law family in
-`examples/30_*` through `examples/38_*`, not only through `29_enums`.
+`examples/30_*` through `examples/42_*`, not only through `29_enums`.
 
 ## Design Approach
 
@@ -141,6 +141,11 @@ reference. For the canonical shipped workflow-law guide, use
 Current decision:
 - `law` lives only inside `workflow`
 - `trust_surface` lives only inside `output`
+- `output` may use keyed guarded sections for conditional readback without
+  promoting that readback into `trust_surface`
+- guarded output-section expressions read declared inputs, enum members, and
+  compiler-owned host facts rooted there; they do not read workflow-local mode
+  bindings, emitted output fields, or undeclared runtime names
 - every active law leaf branch must resolve exactly one current-subject form:
   either `current artifact ... via ...` or `current none`
 - currentness and invalidation move only through emitted output fields listed

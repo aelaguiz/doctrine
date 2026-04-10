@@ -1,8 +1,13 @@
+# This file shows that named law sections can be reused instead of copied by hand.
+# Child workflows must inherit or override those sections explicitly, so the rules stay visible.
+
+# Define a closed set of allowed values so later law can branch on names instead of free-form strings.
 enum RewriteRegime: "Rewrite Regime"
     carry_forward: "carry-forward"
     rewrite: "rewrite"
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
@@ -10,6 +15,7 @@ input CurrentHandoff: "Current Handoff"
     "Use the host-provided handoff facts that say whether the preserve basis remains clear, whether this pass is a rewrite, and whether structure changed."
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input AcceptedPeerSet: "Accepted Peer Set"
     source: File
         path: "catalog/accepted_peers.json"
@@ -17,6 +23,7 @@ input AcceptedPeerSet: "Accepted Peer Set"
     requirement: Advisory
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -24,6 +31,7 @@ output SectionMetadata: "Section Metadata"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output SectionReview: "Section Review"
     target: File
         path: "unit_root/_authoring/SECTION_REVIEW.md"
@@ -31,90 +39,127 @@ output SectionReview: "Section Review"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output BaseCoordinationHandoff: "Base Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # This field lists read-only comparison help that informed the pass without becoming truth.
     comparison_basis: "Comparison Basis"
         "Name any comparison-only artifacts used in this pass."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
         comparison_basis
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is current now and what was comparison-only."
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # This field lists read-only comparison help that informed the pass without becoming truth.
     comparison_basis: "Comparison Basis"
         "Name any comparison-only artifacts used in this pass."
 
+    # This field lists old values that stop counting as evidence on rewrite passes.
     rewrite_exclusions: "Rewrite Evidence Exclusions"
         "Name any fields whose old values do not count as rewrite evidence."
 
+    # This field lists artifacts that used to be current but no longer are.
     invalidations: "Invalidations"
         "Name any artifacts that are no longer current."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
         comparison_basis
         rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
         invalidations when CurrentHandoff.structure_changed
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed."
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RoutingOwner:
     role: "Own explicit reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when workflow law requires a reroute."
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow BaseMetadataPolish: "Base Metadata Polish"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This named law section says what artifact is authoritative in each active branch.
         currentness:
+            # This line says what artifact is current now and which output field must carry that fact forward.
             current artifact SectionMetadata via BaseCoordinationHandoff.current_artifact
 
+        # This named law section separates comparison help from truth-bearing evidence.
         evidence:
+            # This line allows the input to help with comparison without letting it become current truth.
             support_only AcceptedPeerSet for comparison
 
+        # This named law section holds the shared reroute logic for unclear state.
         reroute_on_unclear:
+            # This block applies only when the condition is true inside the surrounding law context.
             when unclear(CurrentHandoff.preserve_basis):
+                # This line ends the turn with an explicit reason.
                 stop "Preserve basis is unclear."
+                # This line sends the same work to a named owner with an explicit message.
                 route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Rewrite-Aware Metadata Polish"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line explicitly carries a named law section forward from the parent workflow.
         inherit reroute_on_unclear
 
+        # This line replaces or patches a named law section from the parent workflow.
         override currentness:
+            # This line says what artifact is current now and which output field must carry that fact forward.
             current artifact SectionMetadata via RewriteAwareCoordinationHandoff.current_artifact
 
+        # This line replaces or patches a named law section from the parent workflow.
         override evidence:
+            # This line allows the input to help with comparison without letting it become current truth.
             support_only AcceptedPeerSet for comparison
+            # This line says those old values stop counting as proof on rewrite passes.
             ignore SectionMetadata.description for rewrite_evidence when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
 
+        # This named law section handles artifacts that are no longer current.
         invalidation:
+            # This block applies only when the condition is true inside the surrounding law context.
             when CurrentHandoff.structure_changed:
+                # This line explicitly says an artifact is no longer current downstream.
                 invalidate SectionReview via RewriteAwareCoordinationHandoff.invalidations
+                # This line ends the turn with an explicit reason.
                 stop "Structure changed; downstream review is no longer current."
+                # This line sends the same work to a named owner with an explicit message.
                 route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent BaseMetadataPolishDemo:
     role: "Keep reusable law subsections explicit in the base workflow."
     workflow: BaseMetadataPolish
@@ -126,6 +171,7 @@ agent BaseMetadataPolishDemo:
         BaseCoordinationHandoff
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RewriteAwareMetadataPolishDemo:
     role: "Patch inherited law explicitly and add rewrite-only evidence rules."
     workflow: RewriteAwareMetadataPolish

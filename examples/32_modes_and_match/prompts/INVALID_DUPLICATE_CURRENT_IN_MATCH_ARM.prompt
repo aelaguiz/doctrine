@@ -1,14 +1,20 @@
+# This file is intentionally invalid.
+# One active branch tries to bind two current artifacts instead of one.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 enum EditMode: "Edit Mode"
     manifest_title: "manifest-title"
     section_summary: "section-summary"
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 input ApprovedPlan: "Approved Plan"
     source: File
         path: "unit_root/_authoring/APPROVED_PLAN.md"
@@ -16,6 +22,7 @@ input ApprovedPlan: "Approved Plan"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 input ApprovedStructure: "Approved Structure"
     source: File
         path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
@@ -23,31 +30,44 @@ input ApprovedStructure: "Approved Structure"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line binds one typed mode value that later rules can branch on.
         mode edit_mode = CurrentHandoff.active_mode as EditMode
 
+        # This block splits the law by the chosen mode. Only one arm is active at a time.
         match edit_mode:
             EditMode.manifest_title:
+                # This line says what artifact is current now and which output field must carry that fact forward.
                 current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+                # This line says what artifact is current now and which output field must carry that fact forward.
+                # This second currentness line makes the same active arm carry two current artifacts.
                 current artifact ApprovedStructure via CoordinationHandoff.current_artifact
 
             EditMode.section_summary:
+                # This line says what artifact is current now and which output field must carry that fact forward.
+                # This second currentness line makes the same active arm carry two current artifacts.
                 current artifact ApprovedStructure via CoordinationHandoff.current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidDuplicateCurrentInMatchArm:
     role: "Trigger duplicate current bindings in one match arm."
     workflow: InvalidModeAwareEdit

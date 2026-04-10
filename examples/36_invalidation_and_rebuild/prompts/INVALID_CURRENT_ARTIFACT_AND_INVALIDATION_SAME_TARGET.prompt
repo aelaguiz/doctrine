@@ -1,3 +1,7 @@
+# This file is intentionally invalid.
+# One branch makes an artifact current and invalidates that same artifact at once.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output SectionReview: "Section Review"
     target: File
         path: "unit_root/_authoring/SECTION_REVIEW.md"
@@ -5,28 +9,38 @@ output SectionReview: "Section Review"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # This field lists artifacts that used to be current but no longer are.
     invalidations: "Invalidations"
         "Name any artifacts that are no longer current."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
         invalidations
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidStructureChange: "Structure Change"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact SectionReview via CoordinationHandoff.current_artifact
+        # This line explicitly says an artifact is no longer current downstream.
+        # This line invalidates the same artifact the branch just marked current.
         invalidate SectionReview via CoordinationHandoff.invalidations
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidCurrentArtifactAndInvalidationSameTarget:
     role: "Trigger invalidation of the current artifact."
     workflow: InvalidStructureChange

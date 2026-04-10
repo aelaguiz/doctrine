@@ -107,6 +107,7 @@ Stability rules:
 | `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
 | `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
+| `E338` | Output guard reads disallowed source | A guarded output section reads a workflow-local binding, emitted output field, or other disallowed expression source. |
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
 | `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
 | `E351` | Owned scope is outside the current artifact | `own only` points at a path that is not rooted in the current artifact. |

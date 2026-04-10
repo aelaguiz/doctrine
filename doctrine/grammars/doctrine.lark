@@ -159,10 +159,19 @@ io_inherit: "inherit" CNAME _NL?
 io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
 output_body: output_body_line+
-output_body_line: record_text
-                | record_keyed_item
-                | record_ref_item
+output_body_line: output_record_item
                 | trust_surface_block
+
+?output_record_item: record_text
+                   | guarded_output_section
+                   | output_record_keyed_item
+                   | output_record_ref_item
+
+guarded_output_section: CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
+output_record_body: output_record_item+
+output_record_keyed_item: CNAME ":" record_head _NL output_record_item_body?
+output_record_ref_item: name_ref _NL output_record_item_body?
+output_record_item_body: _INDENT output_record_body _DEDENT
 
 trust_surface_block: "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
 trust_surface_item: field_path trust_surface_when? _NL?
@@ -278,9 +287,11 @@ field_path: CNAME ("." CNAME)*
           | "true"                -> expr_true
           | "false"               -> expr_false
           | expr_call
+          | expr_set
           | "(" expr ")"
 
 expr_call: CNAME "(" expr ("," expr)* ")"
+expr_set: "{" expr ("," expr)* "}"
 
 path_ref: PATH_REF
 name_ref: dotted_name

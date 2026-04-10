@@ -1105,6 +1105,21 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(
+            r"^Output guard reads disallowed source in (?P<owner>.+): (?P<source>.+)$"
+        ),
+        "E338",
+        "Output guard reads disallowed source",
+        lambda match: (
+            f"Output guard in {match.group('owner')} reads disallowed source "
+            f"`{match.group('source')}`."
+        ),
+        (
+            "Read only declared inputs, enum members, and compiler-owned host facts in output guards.",
+            "Do not read workflow-local bindings or emitted output fields inside guarded output sections.",
+        ),
+    ),
+    (
         re.compile(r"^Mode value is outside enum (?P<enum>.+) in (?P<owner>.+): (?P<value>.+)$"),
         "E341",
         "Mode value outside enum",

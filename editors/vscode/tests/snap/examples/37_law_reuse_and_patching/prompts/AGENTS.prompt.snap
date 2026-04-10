@@ -1,3 +1,10 @@
+># This file shows that named law sections can be reused instead of copied by hand.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># Child workflows must inherit or override those sections explicitly, so the rules stay visible.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># Define a closed set of allowed values so later law can branch on names instead of free-form strings.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >enum RewriteRegime: "Rewrite Regime"
 #^^^^ source.doctrine keyword.declaration.doctrine
 #    ^ source.doctrine
@@ -21,6 +28,8 @@
 #             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >
 >
+># Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input CurrentHandoff: "Current Handoff"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -55,6 +64,8 @@
 #                                                                                                                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input AcceptedPeerSet: "Accepted Peer Set"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -90,6 +101,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output SectionMetadata: "Section Metadata"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -125,6 +138,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output SectionReview: "Section Review"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -160,6 +175,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output BaseCoordinationHandoff: "Base Coordination Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -188,6 +205,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -200,6 +219,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This field lists read-only comparison help that informed the pass without becoming truth.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    comparison_basis: "Comparison Basis"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -212,6 +233,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -223,6 +246,8 @@
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This block says what a downstream owner should understand just from reading this output.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    standalone_read: "Standalone Read"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -236,6 +261,8 @@
 #                                                                                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -264,6 +291,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -276,6 +305,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This field lists read-only comparison help that informed the pass without becoming truth.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    comparison_basis: "Comparison Basis"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -288,6 +319,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This field lists old values that stop counting as evidence on rewrite passes.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    rewrite_exclusions: "Rewrite Evidence Exclusions"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -300,6 +333,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This field lists artifacts that used to be current but no longer are.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    invalidations: "Invalidations"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -312,6 +347,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -331,6 +368,8 @@
 #                      ^^^^ source.doctrine keyword.control.doctrine
 #                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
+>    # This block says what a downstream owner should understand just from reading this output.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    standalone_read: "Standalone Read"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -344,6 +383,8 @@
 #                                                                                                                                                                                                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent RoutingOwner:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -370,6 +411,8 @@
 #                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow BaseMetadataPolish: "Base Metadata Polish"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -379,14 +422,20 @@
 #                             ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                              ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This named law section says what artifact is authoritative in each active branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        currentness:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
 #                   ^ source.doctrine punctuation.separator.key-value.doctrine
+>            # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            current artifact SectionMetadata via BaseCoordinationHandoff.current_artifact
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -396,10 +445,14 @@
 #                                             ^^^ source.doctrine keyword.control.doctrine
 #                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
+>        # This named law section separates comparison help from truth-bearing evidence.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        evidence:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^ source.doctrine entity.name.section.doctrine
 #                ^ source.doctrine punctuation.separator.key-value.doctrine
+>            # This line allows the input to help with comparison without letting it become current truth.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            support_only AcceptedPeerSet for comparison
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^^^^^^^^^ source.doctrine keyword.control.doctrine
@@ -408,14 +461,20 @@
 #                                            ^ source.doctrine
 #                                             ^^^^^^^^^^ source.doctrine keyword.control.doctrine
 >
+>        # This named law section holds the shared reroute logic for unclear state.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        reroute_on_unclear:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
 #                          ^ source.doctrine punctuation.separator.key-value.doctrine
+>            # This block applies only when the condition is true inside the surrounding law context.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            when unclear(CurrentHandoff.preserve_basis):
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^ source.doctrine keyword.control.doctrine
 #                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line ends the turn with an explicit reason.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                stop "Preserve basis is unclear."
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^ source.doctrine keyword.control.doctrine
@@ -423,6 +482,8 @@
 #                     ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>                # This line sends the same work to a named owner with an explicit message.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                route "Route the same issue back to RoutingOwner." -> RoutingOwner
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^^ source.doctrine keyword.control.doctrine
@@ -436,6 +497,8 @@
 #                                                                      ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Rewrite-Aware Metadata Polish"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -448,22 +511,30 @@
 #                                                         ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line explicitly carries a named law section forward from the parent workflow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        inherit reroute_on_unclear
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine keyword.control.doctrine
 #               ^ source.doctrine
 #                ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
 >
+>        # This line replaces or patches a named law section from the parent workflow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        override currentness:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^ source.doctrine keyword.control.doctrine
 #                ^ source.doctrine
 #                 ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
 #                            ^ source.doctrine punctuation.separator.key-value.doctrine
+>            # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            current artifact SectionMetadata via RewriteAwareCoordinationHandoff.current_artifact
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -473,12 +544,16 @@
 #                                             ^^^ source.doctrine keyword.control.doctrine
 #                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
+>        # This line replaces or patches a named law section from the parent workflow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        override evidence:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^ source.doctrine keyword.control.doctrine
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.section.doctrine
 #                         ^ source.doctrine punctuation.separator.key-value.doctrine
+>            # This line allows the input to help with comparison without letting it become current truth.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            support_only AcceptedPeerSet for comparison
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^^^^^^^^^ source.doctrine keyword.control.doctrine
@@ -486,6 +561,8 @@
 #                                         ^^^ source.doctrine keyword.control.doctrine
 #                                            ^ source.doctrine
 #                                             ^^^^^^^^^^ source.doctrine keyword.control.doctrine
+>            # This line says those old values stop counting as proof on rewrite passes.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            ignore SectionMetadata.description for rewrite_evidence when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^^^ source.doctrine keyword.control.doctrine
@@ -497,20 +574,28 @@
 #                                                                    ^^^^ source.doctrine keyword.control.doctrine
 #                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
+>        # This named law section handles artifacts that are no longer current.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        invalidation:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
 #                    ^ source.doctrine punctuation.separator.key-value.doctrine
+>            # This block applies only when the condition is true inside the surrounding law context.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            when CurrentHandoff.structure_changed:
 #^^^^^^^^^^^^ source.doctrine
 #            ^^^^ source.doctrine keyword.control.doctrine
 #                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line explicitly says an artifact is no longer current downstream.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                invalidate SectionReview via RewriteAwareCoordinationHandoff.invalidations
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^^^^^^^ source.doctrine keyword.control.doctrine
 #                          ^^^^^^^^^^^^^^^ source.doctrine
 #                                         ^^^ source.doctrine keyword.control.doctrine
 #                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line ends the turn with an explicit reason.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                stop "Structure changed; downstream review is no longer current."
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^ source.doctrine keyword.control.doctrine
@@ -518,6 +603,8 @@
 #                     ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>                # This line sends the same work to a named owner with an explicit message.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                route "Route the same issue back to RoutingOwner." -> RoutingOwner
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^^ source.doctrine keyword.control.doctrine
@@ -531,6 +618,8 @@
 #                                                                      ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent BaseMetadataPolishDemo:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -576,6 +665,8 @@
 #        ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent RewriteAwareMetadataPolishDemo:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine

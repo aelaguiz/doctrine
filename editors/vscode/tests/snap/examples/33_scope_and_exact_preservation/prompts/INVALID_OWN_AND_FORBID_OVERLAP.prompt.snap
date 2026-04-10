@@ -1,3 +1,10 @@
+># This file is intentionally invalid.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># The workflow claims ownership of a field and forbids editing that same field.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output SectionMetadata: "Section Metadata"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -33,6 +40,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output CoordinationHandoff: "Coordination Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -61,6 +70,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -73,6 +84,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -82,6 +95,8 @@
 #        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow InvalidNarrowMetadataEdit: "Narrow Metadata Edit"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -91,10 +106,14 @@
 #                                    ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                     ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        current artifact SectionMetadata via CoordinationHandoff.current_artifact
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -103,18 +122,26 @@
 #                        ^^^^^^^^^^^^^^^^^ source.doctrine
 #                                         ^^^ source.doctrine keyword.control.doctrine
 #                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line limits the edit authority to exactly the named fields.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        own only SectionMetadata.name
 #^^^^^^^^ source.doctrine
 #        ^^^ source.doctrine keyword.control.doctrine
 #           ^ source.doctrine
 #            ^^^^ source.doctrine keyword.control.doctrine
 #                ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line names fields this branch is not allowed to modify.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>        # This forbids editing the same field the workflow already claimed as owned.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        forbid SectionMetadata.name
 #^^^^^^^^ source.doctrine
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent InvalidOwnAndForbidOverlap:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine

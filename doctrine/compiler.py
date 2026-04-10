@@ -40,6 +40,7 @@ AddressableTarget: TypeAlias = (
     AddressableRootDecl
     | model.RecordScalar
     | model.RecordSection
+    | model.GuardedOutputSection
     | model.EnumMember
     | "ResolvedSectionItem"
     | "ResolvedUseItem"
@@ -1238,6 +1239,7 @@ class CompilationContext:
     def _compile_output_decl(
         self, decl: model.OutputDecl, *, unit: IndexedUnit
     ) -> CompiledSection:
+        self._validate_output_guard_sections(decl, unit=unit)
         scalar_items, section_items, extras = self._split_record_items(
             decl.items,
             scalar_keys={"target", "shape", "requirement"},
@@ -1319,6 +1321,170 @@ class CompilationContext:
             body.append(trust_surface_section)
 
         return CompiledSection(title=decl.title, body=tuple(body))
+
+    def _validate_output_guard_sections(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        self._validate_output_record_items(
+            decl.items,
+            decl=decl,
+            unit=unit,
+            owner_label=f"output {decl.name}",
+        )
+
+    def _validate_output_record_items(
+        self,
+        items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...],
+        *,
+        decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.GuardedOutputSection):
+                self._validate_output_guard_expr(
+                    item.when_expr,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                self._validate_output_record_items(
+                    item.items,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                continue
+            if isinstance(item, model.RecordSection):
+                self._validate_output_record_items(
+                    item.items,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                continue
+            if isinstance(item, model.RecordScalar) and item.body is not None:
+                self._validate_output_record_items(
+                    item.body,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                continue
+            if isinstance(item, model.RecordRef) and item.body is not None:
+                self._validate_output_record_items(
+                    item.body,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
+                )
+
+    def _validate_output_guard_expr(
+        self,
+        expr: model.Expr,
+        *,
+        decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if isinstance(expr, model.ExprRef):
+            self._validate_output_guard_ref(
+                expr,
+                decl=decl,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            return
+        if isinstance(expr, model.ExprBinary):
+            self._validate_output_guard_expr(
+                expr.left,
+                decl=decl,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            self._validate_output_guard_expr(
+                expr.right,
+                decl=decl,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            return
+        if isinstance(expr, model.ExprCall):
+            for arg in expr.args:
+                self._validate_output_guard_expr(
+                    arg,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            return
+        if isinstance(expr, model.ExprSet):
+            for item in expr.items:
+                self._validate_output_guard_expr(
+                    item,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+
+    def _validate_output_guard_ref(
+        self,
+        ref: model.ExprRef,
+        *,
+        decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if self._output_guard_ref_allowed(ref, unit=unit):
+            return
+        raise CompileError(
+            f"Output guard reads disallowed source in {owner_label}: {'.'.join(ref.parts)}"
+        )
+
+    def _output_guard_ref_allowed(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        return self._expr_ref_matches_input_decl(ref, unit=unit) or self._expr_ref_matches_enum_member(
+            ref,
+            unit=unit,
+        )
+
+    def _expr_ref_matches_input_decl(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        for split_at in range(len(ref.parts), 0, -1):
+            root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
+            if not self._ref_exists_in_registry(root, unit=unit, registry_name="inputs_by_name"):
+                continue
+            _target_unit, _decl = self._resolve_input_decl(root, unit=unit)
+            return True
+        return False
+
+    def _expr_ref_matches_enum_member(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        if len(ref.parts) < 2:
+            return False
+        for split_at in range(len(ref.parts) - 1, 0, -1):
+            root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
+            enum_decl = self._try_resolve_enum_decl(root, unit=unit)
+            if enum_decl is None:
+                continue
+            remainder = ref.parts[split_at:]
+            return len(remainder) == 1 and any(member.key == remainder[0] for member in enum_decl.members)
+        return False
 
     def _compile_trust_surface_section(
         self,
@@ -1417,7 +1583,7 @@ class CompilationContext:
 
     def _compile_record_support_items(
         self,
-        items: tuple[model.RecordItem, ...],
+        items: tuple[model.AnyRecordItem, ...],
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -1437,7 +1603,7 @@ class CompilationContext:
 
     def _compile_record_item(
         self,
-        item: model.RecordItem,
+        item: model.AnyRecordItem,
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -1465,6 +1631,20 @@ class CompilationContext:
                     ),
                 ),
             )
+
+        if isinstance(item, model.GuardedOutputSection):
+            condition = self._render_condition_expr(item.when_expr, unit=unit)
+            body: list[CompiledBodyItem] = [f"Rendered only when {condition}."]
+            compiled_items = self._compile_record_support_items(
+                item.items,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+            )
+            if compiled_items:
+                body.append("")
+                body.extend(compiled_items)
+            return (CompiledSection(title=item.title, body=tuple(body)),)
 
         if isinstance(item, model.RecordScalar):
             return self._compile_fallback_scalar(
@@ -3496,12 +3676,39 @@ class CompilationContext:
         surface_label: str,
         ref_label: str,
     ) -> DisplayValue:
+        current = self._resolve_addressable_path_node(
+            start,
+            path,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            ref_label=ref_label,
+        )
+
+        return self._display_addressable_target_value(
+            current,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
+
+    def _resolve_addressable_path_node(
+        self,
+        start: AddressableNode,
+        path: tuple[str, ...],
+        *,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+    ) -> AddressableNode:
         current = start
 
         for index, segment in enumerate(path):
             is_last = index == len(path) - 1
             if is_last and isinstance(current.target, model.Agent) and segment == "name":
-                return DisplayValue(text=current.target.name, kind="symbol")
+                return AddressableNode(
+                    unit=current.unit,
+                    root_decl=current.root_decl,
+                    target=current.target,
+                )
             if is_last and segment == "title":
                 title = self._display_addressable_title(
                     current,
@@ -3509,7 +3716,7 @@ class CompilationContext:
                     surface_label=surface_label,
                 )
                 if title is not None:
-                    return DisplayValue(text=title, kind="title")
+                    return current
             if is_last and segment in {"name", "title"}:
                 raise CompileError(
                     f"Unknown addressable path on {surface_label} in {owner_label}: "
@@ -3530,11 +3737,7 @@ class CompilationContext:
                 )
             current = next_node
 
-        return self._display_addressable_target_value(
-            current,
-            owner_label=owner_label,
-            surface_label=surface_label,
-        )
+        return current
 
     def _get_addressable_children(
         self,
@@ -3567,6 +3770,12 @@ class CompilationContext:
                 root_decl=node.root_decl,
             )
         if isinstance(target, model.RecordSection):
+            return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.GuardedOutputSection):
             return self._record_items_to_addressable_children(
                 target.items,
                 unit=node.unit,
@@ -3641,14 +3850,14 @@ class CompilationContext:
 
     def _record_items_to_addressable_children(
         self,
-        items: tuple[model.RecordItem, ...],
+        items: tuple[model.AnyRecordItem, ...],
         *,
         unit: IndexedUnit,
         root_decl: AddressableRootDecl,
     ) -> dict[str, AddressableNode]:
         children: dict[str, AddressableNode] = {}
         for item in items:
-            if isinstance(item, (model.RecordScalar, model.RecordSection)):
+            if isinstance(item, (model.RecordScalar, model.RecordSection, model.GuardedOutputSection)):
                 children[item.key] = AddressableNode(
                     unit=unit,
                     root_decl=root_decl,
@@ -3743,7 +3952,7 @@ class CompilationContext:
             ),
         ):
             return DisplayValue(text=target.title, kind="title")
-        if isinstance(target, model.RecordSection):
+        if isinstance(target, (model.RecordSection, model.GuardedOutputSection)):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.RecordScalar):
             if target.body is not None:
@@ -4191,8 +4400,15 @@ class CompilationContext:
             if message and not message.endswith("."):
                 message += "."
             text = "Stop." if stmt.message is None else f"Stop: {message}"
+            if stmt.when_expr is not None:
+                text = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, {_lowercase_initial(text)}"
         elif isinstance(stmt, model.LawRouteStmt):
             text = stmt.label if stmt.label.endswith(".") else f"{stmt.label}."
+            if stmt.when_expr is not None:
+                text = (
+                    f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, "
+                    f"{_lowercase_initial(text)}"
+                )
         elif isinstance(stmt, model.ActiveWhenStmt):
             text = f"This pass runs only when {self._render_condition_expr(stmt.expr, unit=unit)}."
         elif isinstance(stmt, model.ModeStmt):
@@ -4263,6 +4479,16 @@ class CompilationContext:
         if isinstance(expr, model.ExprRef):
             return self._render_condition_ref(expr, unit=unit)
         if isinstance(expr, model.ExprBinary):
+            if expr.op == "in" and isinstance(expr.right, model.ExprSet):
+                subject = self._render_condition_subject(expr.left, unit=unit)
+                choices = [self._render_condition_choice(item, unit=unit) for item in expr.right.items]
+                if not choices:
+                    return f"{subject} is in {{}}"
+                if len(choices) == 1:
+                    return f"{subject} is {choices[0]}"
+                if len(choices) == 2:
+                    return f"{subject} is {choices[0]} or {choices[1]}"
+                return f"{subject} is {', '.join(choices[:-1])}, or {choices[-1]}"
             left = self._render_condition_expr(expr.left, unit=unit)
             right = self._render_condition_expr(expr.right, unit=unit)
             joiner = expr.op
@@ -4276,6 +4502,19 @@ class CompilationContext:
             return f"{_humanize_key(expr.name).lower()}({args})"
         return self._render_expr(expr, unit=unit)
 
+    def _render_condition_choice(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
+        if isinstance(expr, str):
+            return expr.replace("_", " ")
+        return self._render_expr(expr, unit=unit)
+
+    def _render_condition_subject(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
+        if isinstance(expr, model.ExprRef):
+            parts = expr.parts
+            if len(parts) == 1:
+                return _humanize_key(parts[0]).lower()
+            return f"{self._render_ref_root(parts[:-1], unit=unit)} {_humanize_key(parts[-1]).lower()}"
+        return self._render_condition_expr(expr, unit=unit)
+
     def _render_condition_ref(self, ref: model.ExprRef, *, unit: IndexedUnit) -> str:
         parts = ref.parts
         if not parts:
@@ -4285,6 +4524,12 @@ class CompilationContext:
             return f"{self._render_ref_root(parts[:-1], unit=unit)} is missing"
         if key == "unclear":
             return f"{self._render_ref_root(parts[:-1], unit=unit)} is unclear"
+        if key.endswith("_missing"):
+            return f"{_humanize_key(key.removesuffix('_missing')).lower()} is missing"
+        if key.endswith("_unknown"):
+            return f"{_humanize_key(key.removesuffix('_unknown')).lower()} is unknown"
+        if key.endswith("_repeated"):
+            return f"{_humanize_key(key.removesuffix('_repeated')).lower()} is repeated"
         if key.startswith("owes_"):
             return f"{_humanize_key(key.removeprefix('owes_')).lower()} is owed now"
         if key.endswith("_changed"):
@@ -4317,6 +4562,9 @@ class CompilationContext:
         if isinstance(expr, model.ExprCall):
             args = ", ".join(self._render_expr(arg, unit=unit) for arg in expr.args)
             return f"{expr.name}({args})"
+        if isinstance(expr, model.ExprSet):
+            rendered = ", ".join(self._render_expr(item, unit=unit) for item in expr.items)
+            return "{" + rendered + "}"
         if isinstance(expr, str):
             return expr
         if isinstance(expr, bool):
@@ -5147,17 +5395,17 @@ class CompilationContext:
 
     def _split_record_items(
         self,
-        items: tuple[model.RecordItem, ...],
+        items: tuple[model.AnyRecordItem, ...],
         *,
         scalar_keys: set[str] | None = None,
         section_keys: set[str] | None = None,
         owner_label: str,
-    ) -> tuple[dict[str, model.RecordScalar], dict[str, model.RecordSection], tuple[model.RecordItem, ...]]:
+    ) -> tuple[dict[str, model.RecordScalar], dict[str, model.RecordSection], tuple[model.AnyRecordItem, ...]]:
         scalar_keys = scalar_keys or set()
         section_keys = section_keys or set()
         scalar_items: dict[str, model.RecordScalar] = {}
         section_items: dict[str, model.RecordSection] = {}
-        extras: list[model.RecordItem] = []
+        extras: list[model.AnyRecordItem] = []
 
         for item in items:
             if isinstance(item, model.RecordScalar) and item.key in scalar_keys:
@@ -5655,6 +5903,12 @@ def _humanize_key(value: str) -> str:
     value = _CAMEL_BOUNDARY_RE.sub(" ", value)
     words = value.split()
     return " ".join(word if word.isupper() else word.capitalize() for word in words)
+
+
+def _lowercase_initial(value: str) -> str:
+    if not value:
+        return value
+    return value[0].lower() + value[1:]
 
 
 def _display_addressable_ref(ref: model.AddressableRef) -> str:

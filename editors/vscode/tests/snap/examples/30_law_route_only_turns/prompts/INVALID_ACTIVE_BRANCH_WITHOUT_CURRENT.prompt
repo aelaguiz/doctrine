@@ -1,24 +1,37 @@
+# This file is intentionally invalid.
+# An active branch stops and routes work, but it never says what is current for that branch.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent RoutingOwner:
     role: "Own explicit reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when route-only work cannot continue safely."
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line turns the workflow on only when the condition is true.
         active when CurrentHandoff.missing
 
+        # This block applies only when the condition is true inside the surrounding law context.
         when CurrentHandoff.missing:
+            # This line ends the turn with an explicit reason.
+            # This stop line is fine on its own, but this active branch never declares any current subject before stopping.
             stop "Current handoff is missing."
+            # This line sends the same work to a named owner with an explicit message.
             route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidActiveBranchWithoutCurrent:
     role: "Trigger an active branch with no current subject."
     workflow: InvalidRouteOnlyTurns

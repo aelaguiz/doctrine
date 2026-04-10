@@ -1,0 +1,93 @@
+# This file is the full generic Slice A route-only handoff example.
+# It keeps the semantics in `workflow` + `law`, keeps the produced contract on
+# `output`, and keeps conditional readback as output-owned guarded sections.
+
+# Declare the host facts that ground the full route-only handoff comment.
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use host-provided route facts that say what live job is in force, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or full rewrite, whether a critic miss repeated, what the next concrete step is, what keeps failing, which role returned the issue, and what the next concrete fix is."
+
+
+# Declare the rich route-only handoff comment. The workflow law decides when
+# the route-only branch is in force; this output decides what the comment must
+# say.
+output RouteOnlyHandoffOutput: "Routing Handoff Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This titled section groups the always-required route-only readback.
+    must_include: "Must Include"
+        # This field says what route state is now in force.
+        current_route: "Current Route"
+            "Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair."
+
+        # This field says who owns next under the allowed route-only outcomes.
+        next_owner: "Next Owner"
+            "Name the next owner when ownership is changing now. If ownership stays local, say plainly that it stays local. If the earliest clear owner is still unclear, say plainly that RoutingOwner keeps the issue."
+
+        # This field says what should happen next.
+        next_step: "Next Step"
+            "Say the next concrete step now."
+
+    # This guarded section appears only when rewrite-aware readback matters.
+    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+        "Say plainly that later section metadata must be rewritten instead of inherited."
+
+    # This guarded section appears only when the same critic miss repeated.
+    repeated_problem: "Repeated Problem" when RouteFacts.critic_miss_repeated:
+        # This nested field says what pattern repeated.
+        failing_pattern: "What Keeps Failing"
+            "Say what keeps failing."
+
+        # This nested field says who sent the issue back.
+        returned_from: "Returned From"
+            "Say which role returned it."
+
+        # This nested field says what concrete fix should happen next.
+        next_fix: "Next Concrete Fix"
+            "Say the next concrete fix."
+
+    # This block says what a downstream owner should understand from the
+    # comment alone.
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, and what the next concrete step is."
+
+
+# Declare the concrete reroute owner for the unknown-next-owner branch.
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue safely."
+    workflow: "Instructions"
+        "Take back the same issue when the next specialist owner is still not justified."
+
+
+# Declare the route-only workflow that activates the slice and drives the
+# reroute semantics.
+workflow RouteOnlyTurns: "Routing-Only Turns"
+    "Handle turns that can only stop, reroute, or keep ownership explicit."
+
+    law:
+        # This line turns the workflow on only when the route-only slice is
+        # actually in force.
+        active when RouteFacts.live_job in {"routing", "process_repair", "owner_repair"} and RouteFacts.current_specialist_output_missing
+        # This line says the branch carries no current specialist artifact.
+        current none
+        # This line ends the turn with an explicit reason.
+        stop "No specialist artifact is current for this turn."
+
+        # This line sends the issue back to RoutingOwner only when the
+        # next specialist owner is still not justified.
+        route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown
+
+
+# Declare a concrete agent that wires the canonical Slice A workflow and
+# output together.
+agent RouteOnlyTurnsDemo:
+    role: "Keep route-only work explicit when no specialist artifact is current."
+    workflow: RouteOnlyTurns
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteOnlyHandoffOutput

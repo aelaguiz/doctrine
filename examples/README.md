@@ -11,7 +11,7 @@ Each numbered example may contain:
 
 Read the examples in numeric order. The sequence is intentional.
 
-For the shipped workflow-law model behind examples `30` through `38`, start
+For the shipped workflow-law model behind examples `30` through `42`, start
 with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md).
 
 ## Reading Order
@@ -26,14 +26,22 @@ with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md).
   authored-slot requirements
 - `27` through `29`: addressable nested items, recursive workflow paths, and
   enums for closed vocabularies
-- `30` through `38`: active workflow-law proof for route-only turns, portable
+- `30` through `42`: active workflow-law proof for route-only turns, portable
   currentness, trust carriers, scope and preservation law, basis roles,
-  invalidation, law reuse, and the metadata-polish capstone
+  invalidation, law reuse, output-owned guarded readback, and the route-only
+  handoff capstones
 
 ## Workflow Law Ladder
 
-- `30_law_route_only_turns`: route-only work with `current none`, `stop`, and
-  explicit reroute
+The route-only ladder is staged on purpose:
+
+- `30` introduces the narrow setup
+- `40` and `41` split the local and reroute ownership outcomes on whether the
+  next owner is still unknown
+- `42` combines them into the full route-only handoff capstone
+
+- `30_law_route_only_turns`: narrow route-only setup with `current none`,
+  `stop`, and explicit reroute
 - `31_currentness_and_trust_surface`: one current artifact plus emitted trust
   carriers
 - `32_modes_and_match`: enum-backed modes, exhaustive `match`, and one current
@@ -49,6 +57,19 @@ with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md).
 - `37_law_reuse_and_patching`: named law subsections with explicit inheritance
   and override rules
 - `38_metadata_polish_capstone`: the full integrated portable-truth model
+- `39_guarded_output_sections`: output-owned keyed guarded sections, nested
+  guarded readback, and output-guard namespace limits
+- `40_route_only_local_ownership`: local-ownership branch of the route-only
+  slice with `current none` when reroute is not justified
+- `41_route_only_reroute_handoff`: explicit reroute branch of the route-only
+  slice when the next owner is still unknown, paired with an emitted handoff
+  comment contract
+- `42_route_only_handoff_capstone`: the full generic Slice A route-only
+  handoff model with guarded conditional readback
+
+The route-only ladder teaches the split ownership story and rendered contracts.
+It does not yet claim integrated active proof for `next_owner` agreement with
+the routed target or for `standalone_read` overpromising guarded detail.
 
 ## Important Rules
 

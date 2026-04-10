@@ -1,25 +1,37 @@
+# This file is intentionally invalid.
+# A current artifact must point at a declared input or output artifact, not an enum declaration.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 enum MetadataPolishMode: "Metadata Polish Mode"
     manifest_title: "manifest-title"
     section_summary: "section-summary"
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
+        # This line points at an enum, not at an input or output artifact.
         current artifact MetadataPolishMode via CoordinationHandoff.current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidCurrentTargetWrongKind:
     role: "Trigger a wrong-kind current target."
     workflow: InvalidCarryCurrentTruth

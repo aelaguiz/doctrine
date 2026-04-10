@@ -14,13 +14,15 @@ Use it when a turn needs any of these behaviors:
 - stop lines and honest reroute
 
 If you are learning the feature family, start here and then read the active
-example ladder in [`examples/30_*` through `examples/38_*`](../examples/README.md).
+example ladder in [`examples/30_*` through `examples/42_*`](../examples/README.md).
 
 ## Mental Model
 
 - Authored workflow prose still explains the job in human language.
 - `law` inside `workflow` decides what is true now for the current turn.
 - `output` still decides what the turn emits.
+- keyed guarded sections inside `output` keep conditional readback on the
+  output contract instead of creating a second control plane
 - `trust_surface` inside `output` names the emitted fields a downstream owner
   must be able to read and trust.
 - `standalone_read` is the human-facing companion to `trust_surface`. It does
@@ -40,6 +42,24 @@ It adds two reserved child surfaces on existing owners:
 
 - `law` on `workflow`
 - `trust_surface` on `output`
+
+It also widens normal `output` record bodies with keyed guarded sections:
+
+```prompt
+output RouteOnlyHandoffOutput: "Route-Only Handoff Output"
+    ...
+    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+        "Name whether the section is brand new or undergoing a full rewrite."
+```
+
+Guarded output sections are still output-owned authored fields:
+
+- they render as documented conditional shells in compiled `AGENTS.md`
+- they are required only when the guard is true at runtime
+- their guards may read declared inputs, enum members, and compiler-owned host
+  facts rooted there
+- they may not read workflow-local bindings, emitted output fields, or
+  undeclared runtime names
 
 The shipped statement families are grouped by job:
 
@@ -248,15 +268,22 @@ The language stays Doctrine-native:
 
 - authors still write ordinary workflow prose for mission and tone
 - the compiler owns law semantics, ordering, and fail-loud validation
-- outputs still render as normal output contracts with readable `trust_surface`
-  and `standalone_read` sections
+- outputs still render as normal output contracts with readable `trust_surface`,
+  guarded conditional shells, and `standalone_read` sections
 
 ## Example Ladder
 
 The active examples are intended to be read in order:
 
-- `30_law_route_only_turns`: route-only work with `current none`, `stop`, and
-  explicit reroute
+The route-only story is staged on purpose:
+
+- `30` introduces the narrow law surface
+- `40` and `41` split the local-ownership and reroute outcomes on whether the
+  next owner is still unknown
+- `42` recombines those ideas into the full route-only handoff capstone
+
+- `30_law_route_only_turns`: narrow route-only setup with `current none`,
+  `stop`, and explicit reroute
 - `31_currentness_and_trust_surface`: portable currentness through emitted
   carrier fields and trusted output surfaces
 - `32_modes_and_match`: enum-backed `mode`, exhaustive `match`, and one current
@@ -273,6 +300,21 @@ The active examples are intended to be read in order:
   patching
 - `38_metadata_polish_capstone`: the full portable-truth model across modes,
   carriers, scope, preservation, evidence, invalidation, and reroute
+- `39_guarded_output_sections`: output-owned keyed guarded sections, nested
+  guarded readback, and the narrowed output-guard namespace
+- `40_route_only_local_ownership`: local-ownership branch of the route-only
+  slice with `current none` when ownership stays local because reroute is not
+  justified
+- `41_route_only_reroute_handoff`: explicit reroute branch of the route-only
+  slice when the next owner is still unknown, paired with a handoff comment
+  contract
+- `42_route_only_handoff_capstone`: the full generic Slice A route-only
+  handoff model with conditional reroute and guarded output readback
+
+The route-only ladder teaches the split ownership outcomes and rendered output
+contracts. It does not yet claim integrated active proof for `next_owner`
+agreement with the routed target or for `standalone_read` overpromising guarded
+detail.
 
 ## Not Shipped
 
