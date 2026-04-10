@@ -1,8 +1,13 @@
+# This file shows how a narrow edit can own only a small part of an artifact.
+# Everything outside the owned fields stays protected by explicit preservation rules.
+
+# Define a closed set of allowed values so later law can branch on names instead of free-form strings.
 enum MetadataEditMode: "Metadata Edit Mode"
     name_only: "name-only"
     summary_refresh: "summary-refresh"
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
@@ -10,6 +15,7 @@ input CurrentHandoff: "Current Handoff"
     "Use the host-provided handoff facts that say which metadata edit mode is active."
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input ApprovedPlan: "Approved Plan"
     source: File
         path: "unit_root/_authoring/APPROVED_PLAN.md"
@@ -17,6 +23,7 @@ input ApprovedPlan: "Approved Plan"
     requirement: Required
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input ApprovedStructure: "Approved Structure"
     source: File
         path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
@@ -24,6 +31,7 @@ input ApprovedStructure: "Approved Structure"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -31,42 +39,60 @@ output SectionMetadata: "Section Metadata"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know which artifact is current now."
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow NarrowMetadataEdit: "Narrow Metadata Edit"
     "Keep narrow ownership explicit and preserve every unowned field."
 
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line binds one typed mode value that later rules can branch on.
         mode edit_mode = CurrentHandoff.active_mode as MetadataEditMode
 
+        # This block splits the law by the chosen mode. Only one arm is active at a time.
         match edit_mode:
             MetadataEditMode.name_only:
+                # This line says what artifact is current now and which output field must carry that fact forward.
                 current artifact SectionMetadata via CoordinationHandoff.current_artifact
+                # This line limits the edit authority to exactly the named fields.
                 own only SectionMetadata.name
+                # This line says everything outside the carve-out must stay exactly as it was.
                 preserve exact SectionMetadata.* except SectionMetadata.name
+                # This line keeps the upstream source authoritative for decisions while wording changes happen around it.
                 preserve decisions ApprovedPlan
 
             MetadataEditMode.summary_refresh:
+                # This line says what artifact is current now and which output field must carry that fact forward.
                 current artifact SectionMetadata via CoordinationHandoff.current_artifact
+                # This line limits the edit authority to exactly the named fields.
                 own only {SectionMetadata.name, SectionMetadata.description}
+                # This line says everything outside the carve-out must stay exactly as it was.
                 preserve exact SectionMetadata.* except {SectionMetadata.name, SectionMetadata.description}
+                # This line keeps the upstream source authoritative for decisions while wording changes happen around it.
                 preserve decisions ApprovedStructure
+                # This line names fields this branch is not allowed to modify.
                 forbid {SectionMetadata.taxonomy, SectionMetadata.flags}
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent NarrowMetadataEditDemo:
     role: "Keep narrow ownership explicit and preserve every unowned field."
     workflow: NarrowMetadataEdit

@@ -1,8 +1,13 @@
+# This file shows that not every input plays the same role.
+# Some inputs are only for comparison, and some old values stop counting as evidence during rewrites.
+
+# Define a closed set of allowed values so later law can branch on names instead of free-form strings.
 enum RewriteRegime: "Rewrite Regime"
     carry_forward: "carry-forward"
     rewrite: "rewrite"
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
@@ -10,6 +15,7 @@ input CurrentHandoff: "Current Handoff"
     "Use the host-provided handoff facts that say whether this pass is a rewrite."
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input AcceptedPeerSet: "Accepted Peer Set"
     source: File
         path: "catalog/accepted_peers.json"
@@ -17,6 +23,7 @@ input AcceptedPeerSet: "Accepted Peer Set"
     requirement: Advisory
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input StaleMetadataNotes: "Stale Metadata Notes"
     source: File
         path: "unit_root/_authoring/stale_metadata_notes.md"
@@ -24,6 +31,7 @@ input StaleMetadataNotes: "Stale Metadata Notes"
     requirement: Advisory
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -31,37 +39,50 @@ output SectionMetadata: "Section Metadata"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # This field lists read-only comparison help that informed the pass without becoming truth.
     comparison_basis: "Comparison Basis"
         "Name any comparison-only inputs used in this pass."
 
+    # This field lists old values that stop counting as evidence on rewrite passes.
     rewrite_exclusions: "Rewrite Evidence Exclusions"
         "Name any fields whose old values do not count as rewrite evidence."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
         comparison_basis
         rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what old wording no longer counts as rewrite evidence."
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow RewriteAwarePolish: "Rewrite-Aware Polish"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        # This line allows the input to help with comparison without letting it become current truth.
         support_only AcceptedPeerSet for comparison
+        # This line says those old values stop counting as proof on rewrite passes.
         ignore {SectionMetadata.name, SectionMetadata.description} for rewrite_evidence when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+        # This line says the named input or artifact can be present but cannot decide what is true now.
         ignore StaleMetadataNotes for truth
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RewriteAwarePolishDemo:
     role: "Separate comparison help, live truth, and rewrite evidence."
     workflow: RewriteAwarePolish

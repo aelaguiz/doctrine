@@ -54,13 +54,18 @@ class ExprCall:
 
 
 @dataclass(slots=True, frozen=True)
+class ExprSet:
+    items: tuple["Expr", ...]
+
+
+@dataclass(slots=True, frozen=True)
 class ExprBinary:
     op: str
     left: "Expr"
     right: "Expr"
 
 
-Expr: TypeAlias = ExprRef | ExprCall | ExprBinary | str | int | bool
+Expr: TypeAlias = ExprRef | ExprCall | ExprSet | ExprBinary | str | int | bool
 
 
 @dataclass(slots=True, frozen=True)
@@ -281,23 +286,33 @@ RecordScalarValue: TypeAlias = str | NameRef | AddressableRef
 class RecordScalar:
     key: str
     value: RecordScalarValue
-    body: tuple["RecordItem", ...] | None = None
+    body: tuple["AnyRecordItem", ...] | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class RecordSection:
     key: str
     title: str
-    items: tuple["RecordItem", ...]
+    items: tuple["AnyRecordItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class GuardedOutputSection:
+    key: str
+    title: str
+    when_expr: Expr
+    items: tuple["AnyRecordItem", ...]
 
 
 @dataclass(slots=True, frozen=True)
 class RecordRef:
     ref: NameRef
-    body: tuple["RecordItem", ...] | None = None
+    body: tuple["AnyRecordItem", ...] | None = None
 
 
 RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef
+AnyRecordItem: TypeAlias = RecordItem | GuardedOutputSection
+OutputRecordItem: TypeAlias = RecordItem | GuardedOutputSection
 
 
 @dataclass(slots=True, frozen=True)
@@ -501,7 +516,7 @@ class InputSourceDecl:
 class OutputDecl:
     name: str
     title: str
-    items: tuple[RecordItem, ...]
+    items: tuple[OutputRecordItem, ...]
     trust_surface: tuple[TrustSurfaceItem, ...] = ()
 
 

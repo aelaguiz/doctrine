@@ -1,0 +1,60 @@
+# This file shows the honest local-ownership route-only case.
+# The turn has no current specialist artifact, it does not reroute, and the
+# emitted comment stays grounded in explicit branch truth plus host facts.
+
+# Declare the host facts that justify the local-ownership comment.
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided route facts that say whether the current specialist output is missing, whether the next owner is still unclear, and what the current owner should do next before rerouting is justified."
+
+
+# Declare the comment this turn emits when ownership stays local.
+output LocalOwnershipComment: "Local Ownership Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This field names the route-only state now in force.
+    current_route: "Current Route"
+        "Say plainly that this is a route-only local-ownership turn: no specialist artifact is current, so ownership stays local until rerouting is justified."
+
+    # This field names the ownership outcome that follows from there being no
+    # semantic reroute.
+    next_owner: "Next Owner"
+        "Say plainly that ownership stays local because rerouting is not justified on this turn."
+
+    # This field names the next local repair step from the host facts.
+    next_step: "Next Step"
+        "Name the next local repair step from the route facts."
+
+    # This block says what a downstream owner should understand from the
+    # comment alone.
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that this route-only turn stayed local because no specialist artifact is current, who owns next, and what the next local repair step is."
+
+
+# Declare the route-only workflow that stops honestly without rerouting.
+workflow RouteOnlyLocalOwnership: "Route-Only Local Ownership"
+    "Stop when the specialist output is missing but the next owner is clear enough to keep ownership local."
+
+    law:
+        # This line turns the workflow on only when the route-only local stop
+        # is actually in force.
+        active when RouteFacts.current_specialist_output_missing and RouteFacts.next_owner_unknown == false
+        # This line says the branch carries no current specialist artifact.
+        current none
+        # This line ends the turn with an explicit reason.
+        stop "No specialist artifact is current for this turn."
+
+
+# Declare a concrete agent that wires the local route-only workflow and the
+# grounded local-ownership comment together.
+agent RouteOnlyLocalOwnershipDemo:
+    role: "Keep local route-only stops explicit when specialist output is missing."
+    workflow: RouteOnlyLocalOwnership
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        LocalOwnershipComment

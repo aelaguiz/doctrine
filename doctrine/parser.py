@@ -34,7 +34,7 @@ class IoBodyParts:
 
 @dataclass(slots=True, frozen=True)
 class OutputBodyParts:
-    items: tuple[model.RecordItem, ...]
+    items: tuple[model.OutputRecordItem, ...]
     trust_surface: tuple[model.TrustSurfaceItem, ...]
 
 
@@ -292,7 +292,7 @@ class ToAst(Transformer):
         return value
 
     def output_body(self, items):
-        record_items: list[model.RecordItem] = []
+        record_items: list[model.OutputRecordItem] = []
         trust_surface: tuple[model.TrustSurfaceItem, ...] = ()
         for item in items:
             if isinstance(item, tuple) and item and isinstance(item[0], model.TrustSurfaceItem):
@@ -305,6 +305,35 @@ class ToAst(Transformer):
                 continue
             record_items.append(item)
         return OutputBodyParts(items=tuple(record_items), trust_surface=trust_surface)
+
+    def output_record_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def output_record_item(self, value):
+        return value
+
+    def output_record_item_body(self, items):
+        return tuple(items[0])
+
+    @v_args(inline=True)
+    def output_record_keyed_item(self, key, head, body=None):
+        if isinstance(head, str) and body is not None:
+            return model.RecordSection(key=key, title=head, items=tuple(body))
+        return model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body))
+
+    @v_args(inline=True)
+    def output_record_ref_item(self, ref, body=None):
+        return model.RecordRef(ref=ref, body=None if body is None else tuple(body))
+
+    @v_args(inline=True)
+    def guarded_output_section(self, key, title, when_expr, items):
+        return model.GuardedOutputSection(
+            key=key,
+            title=title,
+            when_expr=when_expr,
+            items=tuple(items),
+        )
 
     def trust_surface_block(self, items):
         return tuple(items)
@@ -664,6 +693,9 @@ class ToAst(Transformer):
 
     def expr_call(self, items):
         return model.ExprCall(name=items[0], args=tuple(items[1:]))
+
+    def expr_set(self, items):
+        return model.ExprSet(items=tuple(items))
 
     @v_args(inline=True)
     def expr_or(self, left, right):

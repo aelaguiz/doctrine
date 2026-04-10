@@ -1,0 +1,51 @@
+# This file keeps the old literal `next_owner` wording to prove that routed
+# next-owner fields now need an explicit structured binding to the route target.
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided route facts that say whether the current specialist output is missing, whether the next owner is still unclear, and what RoutingOwner should do next after the reroute."
+
+
+output RerouteHandoffComment: "Reroute Handoff Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_route: "Current Route"
+        "Say plainly that this is a route-only reroute turn: no specialist artifact is current and the issue is returning to RoutingOwner."
+
+    next_owner: "Next Owner"
+        "Say plainly that RoutingOwner now owns the rerouted turn."
+
+    next_step: "Next Step"
+        "Name the next reroute follow-up step from the route facts."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that this route-only turn rerouted because no specialist artifact is current, who owns next, and what the next reroute step is."
+
+
+agent RoutingOwner:
+    role: "Own route-only follow-up when specialist output is missing."
+    workflow: "Route Repairs"
+        "Take back the same issue when route-only work cannot continue safely."
+
+
+workflow RouteOnlyReroute: "Route-Only Reroute"
+    "Stop and reroute when the specialist output is missing and the next owner is still unclear."
+
+    law:
+        active when RouteFacts.current_specialist_output_missing and RouteFacts.next_owner_unknown
+        current none
+        stop "No specialist artifact is current for this turn."
+        route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+agent InvalidRouteOnlyRerouteHandoffDemo:
+    role: "Keep explicit route-only reroutes aligned with the emitted handoff comment."
+    workflow: RouteOnlyReroute
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RerouteHandoffComment

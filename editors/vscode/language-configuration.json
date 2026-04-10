@@ -32,7 +32,7 @@
   },
   "onEnterRules": [
     {
-      "beforeText": "^\\s*(?:(?:law|trust_surface)\\s*:|(?:when|match)\\b.*:|(?:override\\s+)?(?:else|[A-Za-z_][A-Za-z0-9_.]*)\\s*:)\\s*$",
+      "beforeText": "^\\s*(?:(?:law|trust_surface)\\s*:|(?:when|match)\\b.*:|[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s+when\\b.*:|(?:override\\s+)?(?:else|[A-Za-z_][A-Za-z0-9_.]*)\\s*:)\\s*$",
       "action": {
         "indent": "indent"
       }

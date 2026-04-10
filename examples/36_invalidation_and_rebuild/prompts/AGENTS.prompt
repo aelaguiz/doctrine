@@ -1,3 +1,7 @@
+# This file shows what happens when a once-current artifact stops being trustworthy.
+# One branch invalidates old truth, another blocks work until rebuild, and another reissues current truth after repair.
+
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
@@ -5,6 +9,7 @@ input CurrentHandoff: "Current Handoff"
     "Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested."
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -12,6 +17,7 @@ output SectionMetadata: "Section Metadata"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output SectionReview: "Section Review"
     target: File
         path: "unit_root/_authoring/SECTION_REVIEW.md"
@@ -19,84 +25,116 @@ output SectionReview: "Section Review"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output InvalidationHandoff: "Invalidation Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # This field lists artifacts that used to be current but no longer are.
     invalidations: "Invalidations"
         "Name any artifacts that are no longer current."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
         invalidations
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output BlockedReviewHandoff: "Blocked Review Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field lists artifacts that used to be current but no longer are.
     invalidations: "Invalidations"
         "Name any artifacts that are still no longer current."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         invalidations
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is no longer current."
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output RebuildHandoff: "Rebuild Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is current now."
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RoutingOwner:
     role: "Own explicit reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when rebuild work is required."
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow StructureChange: "Structure Change"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line turns the workflow on only when the condition is true.
         active when CurrentHandoff.structure_changed
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact SectionMetadata via InvalidationHandoff.current_artifact
+        # This line explicitly says an artifact is no longer current downstream.
         invalidate SectionReview via InvalidationHandoff.invalidations
+        # This line ends the turn with an explicit reason.
         stop "Structure moved; downstream review is no longer current."
+        # This line sends the same work to a named owner with an explicit message.
         route "Route the same issue back to RoutingOwner for rebuild." -> RoutingOwner
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow BlockedSectionReview: "Blocked Section Review"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line turns the workflow on only when the condition is true.
         active when CurrentHandoff.section_review_invalidated
+        # This line says the branch carries no durable artifact forward.
         current none
+        # This line ends the turn with an explicit reason.
         stop "Section Review is invalidated until rebuild work completes."
+        # This line sends the same work to a named owner with an explicit message.
         route "Route the same issue back to RoutingOwner until review is rebuilt." -> RoutingOwner
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow RebuildSectionReview: "Rebuild Section Review"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line turns the workflow on only when the condition is true.
         active when CurrentHandoff.rebuild_requested
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact SectionReview via RebuildHandoff.current_artifact
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent StructureChangeDemo:
     role: "Invalidate downstream review when structure changes."
     workflow: StructureChange
@@ -107,6 +145,7 @@ agent StructureChangeDemo:
         InvalidationHandoff
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent BlockedSectionReviewDemo:
     role: "Do not keep reviewing against invalidated downstream truth."
     workflow: BlockedSectionReview
@@ -116,6 +155,7 @@ agent BlockedSectionReviewDemo:
         BlockedReviewHandoff
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RebuildSectionReviewDemo:
     role: "Rebuild invalidated review work and reissue it as current truth."
     workflow: RebuildSectionReview

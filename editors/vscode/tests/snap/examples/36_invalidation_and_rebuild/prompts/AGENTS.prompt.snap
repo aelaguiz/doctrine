@@ -1,3 +1,10 @@
+># This file shows what happens when a once-current artifact stops being trustworthy.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># One branch invalidates old truth, another blocks work until rebuild, and another reissues current truth after repair.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input CurrentHandoff: "Current Handoff"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -32,6 +39,8 @@
 #                                                                                                                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output SectionMetadata: "Section Metadata"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -67,6 +76,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output SectionReview: "Section Review"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -102,6 +113,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output InvalidationHandoff: "Invalidation Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -130,6 +143,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -142,6 +157,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # This field lists artifacts that used to be current but no longer are.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    invalidations: "Invalidations"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -154,6 +171,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -165,6 +184,8 @@
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This block says what a downstream owner should understand just from reading this output.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    standalone_read: "Standalone Read"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -178,6 +199,8 @@
 #                                                                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output BlockedReviewHandoff: "Blocked Review Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -206,6 +229,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field lists artifacts that used to be current but no longer are.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    invalidations: "Invalidations"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -218,6 +243,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -226,6 +253,8 @@
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This block says what a downstream owner should understand just from reading this output.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    standalone_read: "Standalone Read"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -239,6 +268,8 @@
 #                                                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output RebuildHandoff: "Rebuild Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -267,6 +298,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -279,6 +312,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -287,6 +322,8 @@
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This block says what a downstream owner should understand just from reading this output.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    standalone_read: "Standalone Read"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -300,6 +337,8 @@
 #                                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent RoutingOwner:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -326,6 +365,8 @@
 #                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >
+># Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow StructureChange: "Structure Change"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -335,16 +376,22 @@
 #                          ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                           ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line turns the workflow on only when the condition is true.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        active when CurrentHandoff.structure_changed
 #^^^^^^^^ source.doctrine
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^ source.doctrine
 #               ^^^^ source.doctrine keyword.control.doctrine
 #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        current artifact SectionMetadata via InvalidationHandoff.current_artifact
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -353,12 +400,16 @@
 #                        ^^^^^^^^^^^^^^^^^ source.doctrine
 #                                         ^^^ source.doctrine keyword.control.doctrine
 #                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line explicitly says an artifact is no longer current downstream.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        invalidate SectionReview via InvalidationHandoff.invalidations
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^^^ source.doctrine keyword.control.doctrine
 #                  ^^^^^^^^^^^^^^^ source.doctrine
 #                                 ^^^ source.doctrine keyword.control.doctrine
 #                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line ends the turn with an explicit reason.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        stop "Structure moved; downstream review is no longer current."
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
@@ -366,6 +417,8 @@
 #             ^ source.doctrine punctuation.definition.string.begin.doctrine
 #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>        # This line sends the same work to a named owner with an explicit message.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        route "Route the same issue back to RoutingOwner for rebuild." -> RoutingOwner
 #^^^^^^^^ source.doctrine
 #        ^^^^^ source.doctrine keyword.control.doctrine
@@ -379,6 +432,8 @@
 #                                                                          ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow BlockedSectionReview: "Blocked Section Review"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -388,21 +443,29 @@
 #                               ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line turns the workflow on only when the condition is true.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        active when CurrentHandoff.section_review_invalidated
 #^^^^^^^^ source.doctrine
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^ source.doctrine
 #               ^^^^ source.doctrine keyword.control.doctrine
 #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line says the branch carries no durable artifact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        current none
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine keyword.control.doctrine
 #               ^ source.doctrine
 #                ^^^^ source.doctrine keyword.control.doctrine
+>        # This line ends the turn with an explicit reason.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        stop "Section Review is invalidated until rebuild work completes."
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
@@ -410,6 +473,8 @@
 #             ^ source.doctrine punctuation.definition.string.begin.doctrine
 #              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>        # This line sends the same work to a named owner with an explicit message.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        route "Route the same issue back to RoutingOwner until review is rebuilt." -> RoutingOwner
 #^^^^^^^^ source.doctrine
 #        ^^^^^ source.doctrine keyword.control.doctrine
@@ -423,6 +488,8 @@
 #                                                                                      ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow RebuildSectionReview: "Rebuild Section Review"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -432,16 +499,22 @@
 #                               ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line turns the workflow on only when the condition is true.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        active when CurrentHandoff.rebuild_requested
 #^^^^^^^^ source.doctrine
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^ source.doctrine
 #               ^^^^ source.doctrine keyword.control.doctrine
 #                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        current artifact SectionReview via RebuildHandoff.current_artifact
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -452,6 +525,8 @@
 #                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent StructureChangeDemo:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -494,6 +569,8 @@
 #        ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent BlockedSectionReviewDemo:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -533,6 +610,8 @@
 #        ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent RebuildSectionReviewDemo:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine

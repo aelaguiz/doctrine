@@ -1,3 +1,7 @@
+# This file is intentionally invalid.
+# An invalidation must name the output field that carries the loss of currentness forward.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output SectionReview: "Section Review"
     target: File
         path: "unit_root/_authoring/SECTION_REVIEW.md"
@@ -5,12 +9,18 @@ output SectionReview: "Section Review"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidStructureChange: "Structure Change"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says the branch carries no durable artifact forward.
         current none
+        # This line explicitly says an artifact is no longer current downstream.
+        # This line names what becomes non-current, but it never says which output field carries that invalidation forward.
         invalidate SectionReview
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidInvalidationWithoutVia:
     role: "Trigger an invalidation without a carrier."
     workflow: InvalidStructureChange

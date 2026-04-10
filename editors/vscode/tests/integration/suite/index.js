@@ -430,6 +430,37 @@ async function testWorkflowLawDefinitionProvider() {
     sourceText: "RoutingOwner",
     occurrence: 2,
   });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:',
+    expectedRelativeTargetPath:
+      "examples/39_guarded_output_sections/prompts/AGENTS.prompt",
+    relativePath: "examples/39_guarded_output_sections/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "Read {{GuardedReadbackComment:rewrite_mode.title}} and {{GuardedReadbackComment:repeated_problem.title}} when the conditional readback matters for this turn.",
+    sourceText: "rewrite_mode",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'rewrite_detail: "Rewrite Detail" when RouteFacts.section_status in {"new", "full_rewrite"}:',
+    expectedRelativeTargetPath:
+      "examples/39_guarded_output_sections/prompts/AGENTS.prompt",
+    relativePath: "examples/39_guarded_output_sections/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "Read {{NestedGuardedReadbackComment:detail_panel.status_summary.title}} before {{NestedGuardedReadbackComment:detail_panel.rewrite_detail.title}} when nested conditional detail is in play.",
+    sourceText: "rewrite_detail",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "agent RoutingOwner",
+    expectedRelativeTargetPath:
+      "examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt",
+    relativePath: "examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown',
+    sourceText: "RoutingOwner",
+    occurrence: 2,
+  });
 }
 
 async function testFullClickableSurface() {

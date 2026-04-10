@@ -1,8 +1,13 @@
+# This file shows three kinds of preservation beyond exact field copying.
+# Each workflow keeps one kind of thing stable: structure, mapping, or vocabulary.
+
+# Define a closed set of allowed values so later law can branch on names instead of free-form strings.
 enum CriticVerdict: "Critic Verdict"
     accept: "accept"
     changes_requested: "changes requested"
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input ApprovedStructure: "Approved Structure"
     source: File
         path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
@@ -10,6 +15,7 @@ input ApprovedStructure: "Approved Structure"
     requirement: Required
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input SlotMapping: "Slot Mapping"
     source: File
         path: "unit_root/_authoring/slot_mapping.json"
@@ -17,6 +23,7 @@ input SlotMapping: "Slot Mapping"
     requirement: Required
 
 
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input ReviewTemplate: "Review Template"
     source: File
         path: "unit_root/_authoring/review_template.md"
@@ -24,39 +31,56 @@ input ReviewTemplate: "Review Template"
     requirement: Required
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know which artifact remains current now."
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow PreserveStructure: "Preserve Structure"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact ApprovedStructure via CoordinationHandoff.current_artifact
+        # This line says the overall document skeleton must stay stable.
         preserve structure ApprovedStructure
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow PreserveMapping: "Preserve Mapping"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact SlotMapping via CoordinationHandoff.current_artifact
+        # This line says source-to-target assignments must stay stable.
         preserve mapping SlotMapping
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow PreserveVocabulary: "Preserve Vocabulary"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
         current artifact ReviewTemplate via CoordinationHandoff.current_artifact
+        # This line says the closed term set must stay stable.
         preserve vocabulary CriticVerdict
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent PreserveStructureDemo:
     role: "Preserve document skeletons while allowing a narrow wording pass."
     workflow: PreserveStructure
@@ -66,6 +90,7 @@ agent PreserveStructureDemo:
         CoordinationHandoff
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent PreserveMappingDemo:
     role: "Keep source-to-target mappings stable during a narrow update."
     workflow: PreserveMapping
@@ -75,6 +100,7 @@ agent PreserveMappingDemo:
         CoordinationHandoff
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent PreserveVocabularyDemo:
     role: "Keep closed vocabulary stable while revising the surrounding guidance."
     workflow: PreserveVocabulary

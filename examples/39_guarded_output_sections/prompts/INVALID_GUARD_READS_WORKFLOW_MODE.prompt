@@ -1,0 +1,38 @@
+# This compile-negative keeps workflow-local mode bindings out of output
+# guards.
+
+# Define a closed set of allowed values so the workflow can bind one local
+# mode name.
+enum RewriteMode: "Rewrite Mode"
+    full_rewrite: "full rewrite"
+
+
+# Declare a workflow that binds a local mode name inside `law`.
+workflow LocalModeWorkflow: "Local Mode Workflow"
+    law:
+        # This line binds a workflow-local mode name.
+        mode pass_mode = RewriteMode.full_rewrite as RewriteMode
+        # This line keeps the branch valid so the output-guard failure is the
+        # thing this prompt proves.
+        current none
+
+
+# Declare an output that incorrectly tries to read the workflow-local mode
+# binding.
+output BrokenGuardedComment: "Broken Guarded Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This line is invalid because guarded output sections may not read
+    # workflow-local names such as `pass_mode`.
+    rewrite_mode: "Rewrite Mode" when pass_mode == RewriteMode.full_rewrite:
+        "Name whether the pass is a full rewrite."
+
+
+# Declare a concrete agent that wires the invalid workflow and output together.
+agent InvalidGuardReadsWorkflowModeDemo:
+    role: "Keep output guards inside the declared expression namespace."
+    workflow: LocalModeWorkflow
+    outputs: "Outputs"
+        BrokenGuardedComment

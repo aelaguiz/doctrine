@@ -40,6 +40,7 @@ AddressableTarget: TypeAlias = (
     AddressableRootDecl
     | model.RecordScalar
     | model.RecordSection
+    | model.GuardedOutputSection
     | model.EnumMember
     | "ResolvedSectionItem"
     | "ResolvedUseItem"
@@ -1238,6 +1239,7 @@ class CompilationContext:
     def _compile_output_decl(
         self, decl: model.OutputDecl, *, unit: IndexedUnit
     ) -> CompiledSection:
+        self._validate_output_guard_sections(decl, unit=unit)
         scalar_items, section_items, extras = self._split_record_items(
             decl.items,
             scalar_keys={"target", "shape", "requirement"},
@@ -1319,6 +1321,322 @@ class CompilationContext:
             body.append(trust_surface_section)
 
         return CompiledSection(title=decl.title, body=tuple(body))
+
+    def _validate_output_guard_sections(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        self._validate_output_record_items(
+            decl.items,
+            decl=decl,
+            unit=unit,
+            owner_label=f"output {decl.name}",
+        )
+        self._validate_standalone_read_guard_contract(decl, unit=unit)
+
+    def _validate_output_record_items(
+        self,
+        items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...],
+        *,
+        decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.GuardedOutputSection):
+                self._validate_output_guard_expr(
+                    item.when_expr,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                self._validate_output_record_items(
+                    item.items,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                continue
+            if isinstance(item, model.RecordSection):
+                self._validate_output_record_items(
+                    item.items,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                continue
+            if isinstance(item, model.RecordScalar) and item.body is not None:
+                self._validate_output_record_items(
+                    item.body,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                )
+                continue
+            if isinstance(item, model.RecordRef) and item.body is not None:
+                self._validate_output_record_items(
+                    item.body,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
+                )
+
+    def _validate_output_guard_expr(
+        self,
+        expr: model.Expr,
+        *,
+        decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if isinstance(expr, model.ExprRef):
+            self._validate_output_guard_ref(
+                expr,
+                decl=decl,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            return
+        if isinstance(expr, model.ExprBinary):
+            self._validate_output_guard_expr(
+                expr.left,
+                decl=decl,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            self._validate_output_guard_expr(
+                expr.right,
+                decl=decl,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            return
+        if isinstance(expr, model.ExprCall):
+            for arg in expr.args:
+                self._validate_output_guard_expr(
+                    arg,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            return
+        if isinstance(expr, model.ExprSet):
+            for item in expr.items:
+                self._validate_output_guard_expr(
+                    item,
+                    decl=decl,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+
+    def _validate_output_guard_ref(
+        self,
+        ref: model.ExprRef,
+        *,
+        decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if self._output_guard_ref_allowed(ref, unit=unit):
+            return
+        raise CompileError(
+            f"Output guard reads disallowed source in {owner_label}: {'.'.join(ref.parts)}"
+        )
+
+    def _output_guard_ref_allowed(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        return self._expr_ref_matches_input_decl(ref, unit=unit) or self._expr_ref_matches_enum_member(
+            ref,
+            unit=unit,
+        )
+
+    def _validate_standalone_read_guard_contract(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        for path, item in self._iter_output_items_with_paths(decl.items):
+            if not path or path[-1] != "standalone_read":
+                continue
+            owner_label = f"output {decl.name}.{'.'.join(path)}"
+            for ref in self._iter_record_item_interpolation_refs(item):
+                if self._interpolation_ref_enters_guarded_output_section(
+                    ref,
+                    unit=unit,
+                    owner_label=owner_label,
+                ):
+                    raise CompileError(
+                        "standalone_read cannot interpolate guarded output detail "
+                        f"in {owner_label}: {_display_addressable_ref(ref)}"
+                    )
+
+    def _iter_output_items_with_paths(
+        self,
+        items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...],
+        *,
+        prefix: tuple[str, ...] = (),
+    ) -> tuple[tuple[tuple[str, ...], model.AnyRecordItem], ...]:
+        entries: list[tuple[tuple[str, ...], model.AnyRecordItem]] = []
+        for item in items:
+            if isinstance(item, model.RecordSection):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                entries.extend(self._iter_output_items_with_paths(item.items, prefix=path))
+                continue
+            if isinstance(item, model.GuardedOutputSection):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                entries.extend(self._iter_output_items_with_paths(item.items, prefix=path))
+                continue
+            if isinstance(item, model.RecordScalar):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                if item.body is not None:
+                    entries.extend(self._iter_output_items_with_paths(item.body, prefix=path))
+                continue
+            if isinstance(item, model.RecordRef) and item.body is not None:
+                entries.extend(self._iter_output_items_with_paths(item.body, prefix=prefix))
+        return tuple(entries)
+
+    def _iter_record_item_interpolation_refs(
+        self,
+        item: model.AnyRecordItem,
+    ) -> tuple[model.AddressableRef, ...]:
+        if isinstance(item, model.RecordScalar):
+            refs = self._interpolation_refs_from_scalar_value(item.value)
+            if item.body is not None:
+                refs = (*refs, *self._iter_record_body_interpolation_refs(item.body))
+            return refs
+        if isinstance(item, (model.RecordSection, model.GuardedOutputSection)):
+            return self._iter_record_body_interpolation_refs(item.items)
+        if isinstance(item, model.RecordRef) and item.body is not None:
+            return self._iter_record_body_interpolation_refs(item.body)
+        return ()
+
+    def _iter_record_body_interpolation_refs(
+        self,
+        items: tuple[model.AnyRecordItem, ...],
+    ) -> tuple[model.AddressableRef, ...]:
+        refs: list[model.AddressableRef] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                refs.extend(self._interpolation_refs_from_prose_line(item))
+                continue
+            refs.extend(self._iter_record_item_interpolation_refs(item))
+        return tuple(refs)
+
+    def _interpolation_refs_from_prose_line(
+        self,
+        value: model.ProseLine,
+    ) -> tuple[model.AddressableRef, ...]:
+        text = value if isinstance(value, str) else value.text
+        return self._interpolation_refs_from_text(text)
+
+    def _interpolation_refs_from_scalar_value(
+        self,
+        value: model.RecordScalarValue,
+    ) -> tuple[model.AddressableRef, ...]:
+        if isinstance(value, str):
+            return self._interpolation_refs_from_text(value)
+        if isinstance(value, model.AddressableRef):
+            return (value,)
+        return ()
+
+    def _interpolation_refs_from_text(
+        self,
+        text: str,
+    ) -> tuple[model.AddressableRef, ...]:
+        if "{{" not in text or "}}" not in text:
+            return ()
+        refs: list[model.AddressableRef] = []
+        for match in _INTERPOLATION_RE.finditer(text):
+            ref = self._parse_interpolation_expr_ref(match.group(1))
+            if ref is not None:
+                refs.append(ref)
+        return tuple(refs)
+
+    def _parse_interpolation_expr_ref(
+        self,
+        expression: str,
+    ) -> model.AddressableRef | None:
+        match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
+        if match is None:
+            return None
+        return model.AddressableRef(
+            root=_name_ref_from_dotted_name(match.group(1)),
+            path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
+        )
+
+    def _interpolation_ref_enters_guarded_output_section(
+        self,
+        ref: model.AddressableRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        try:
+            target_unit, root_decl = self._resolve_addressable_root_decl(
+                ref.root,
+                unit=unit,
+                owner_label=owner_label,
+                ambiguous_label="standalone_read interpolation ref",
+                missing_local_label="standalone_read",
+            )
+        except CompileError:
+            return False
+
+        if not isinstance(root_decl, model.OutputDecl):
+            return False
+
+        current = AddressableNode(unit=target_unit, root_decl=root_decl, target=root_decl)
+        for segment in ref.path:
+            children = self._get_addressable_children(current)
+            if children is None:
+                return False
+            current = children.get(segment)
+            if current is None:
+                return False
+            if isinstance(current.target, model.GuardedOutputSection):
+                return True
+        return False
+
+    def _expr_ref_matches_input_decl(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        for split_at in range(len(ref.parts), 0, -1):
+            root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
+            if not self._ref_exists_in_registry(root, unit=unit, registry_name="inputs_by_name"):
+                continue
+            _target_unit, _decl = self._resolve_input_decl(root, unit=unit)
+            return True
+        return False
+
+    def _expr_ref_matches_enum_member(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        if len(ref.parts) < 2:
+            return False
+        for split_at in range(len(ref.parts) - 1, 0, -1):
+            root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
+            enum_decl = self._try_resolve_enum_decl(root, unit=unit)
+            if enum_decl is None:
+                continue
+            remainder = ref.parts[split_at:]
+            return len(remainder) == 1 and any(member.key == remainder[0] for member in enum_decl.members)
+        return False
 
     def _compile_trust_surface_section(
         self,
@@ -1417,7 +1735,7 @@ class CompilationContext:
 
     def _compile_record_support_items(
         self,
-        items: tuple[model.RecordItem, ...],
+        items: tuple[model.AnyRecordItem, ...],
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -1437,7 +1755,7 @@ class CompilationContext:
 
     def _compile_record_item(
         self,
-        item: model.RecordItem,
+        item: model.AnyRecordItem,
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -1465,6 +1783,20 @@ class CompilationContext:
                     ),
                 ),
             )
+
+        if isinstance(item, model.GuardedOutputSection):
+            condition = self._render_condition_expr(item.when_expr, unit=unit)
+            body: list[CompiledBodyItem] = [f"Rendered only when {condition}."]
+            compiled_items = self._compile_record_support_items(
+                item.items,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+            )
+            if compiled_items:
+                body.append("")
+                body.extend(compiled_items)
+            return (CompiledSection(title=item.title, body=tuple(body)),)
 
         if isinstance(item, model.RecordScalar):
             return self._compile_fallback_scalar(
@@ -3496,12 +3828,39 @@ class CompilationContext:
         surface_label: str,
         ref_label: str,
     ) -> DisplayValue:
+        current = self._resolve_addressable_path_node(
+            start,
+            path,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            ref_label=ref_label,
+        )
+
+        return self._display_addressable_target_value(
+            current,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
+
+    def _resolve_addressable_path_node(
+        self,
+        start: AddressableNode,
+        path: tuple[str, ...],
+        *,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+    ) -> AddressableNode:
         current = start
 
         for index, segment in enumerate(path):
             is_last = index == len(path) - 1
             if is_last and isinstance(current.target, model.Agent) and segment == "name":
-                return DisplayValue(text=current.target.name, kind="symbol")
+                return AddressableNode(
+                    unit=current.unit,
+                    root_decl=current.root_decl,
+                    target=current.target,
+                )
             if is_last and segment == "title":
                 title = self._display_addressable_title(
                     current,
@@ -3509,7 +3868,7 @@ class CompilationContext:
                     surface_label=surface_label,
                 )
                 if title is not None:
-                    return DisplayValue(text=title, kind="title")
+                    return current
             if is_last and segment in {"name", "title"}:
                 raise CompileError(
                     f"Unknown addressable path on {surface_label} in {owner_label}: "
@@ -3530,11 +3889,7 @@ class CompilationContext:
                 )
             current = next_node
 
-        return self._display_addressable_target_value(
-            current,
-            owner_label=owner_label,
-            surface_label=surface_label,
-        )
+        return current
 
     def _get_addressable_children(
         self,
@@ -3567,6 +3922,12 @@ class CompilationContext:
                 root_decl=node.root_decl,
             )
         if isinstance(target, model.RecordSection):
+            return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(target, model.GuardedOutputSection):
             return self._record_items_to_addressable_children(
                 target.items,
                 unit=node.unit,
@@ -3641,14 +4002,14 @@ class CompilationContext:
 
     def _record_items_to_addressable_children(
         self,
-        items: tuple[model.RecordItem, ...],
+        items: tuple[model.AnyRecordItem, ...],
         *,
         unit: IndexedUnit,
         root_decl: AddressableRootDecl,
     ) -> dict[str, AddressableNode]:
         children: dict[str, AddressableNode] = {}
         for item in items:
-            if isinstance(item, (model.RecordScalar, model.RecordSection)):
+            if isinstance(item, (model.RecordScalar, model.RecordSection, model.GuardedOutputSection)):
                 children[item.key] = AddressableNode(
                     unit=unit,
                     root_decl=root_decl,
@@ -3743,7 +4104,7 @@ class CompilationContext:
             ),
         ):
             return DisplayValue(text=target.title, kind="title")
-        if isinstance(target, model.RecordSection):
+        if isinstance(target, (model.RecordSection, model.GuardedOutputSection)):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.RecordScalar):
             if target.body is not None:
@@ -4191,8 +4552,15 @@ class CompilationContext:
             if message and not message.endswith("."):
                 message += "."
             text = "Stop." if stmt.message is None else f"Stop: {message}"
+            if stmt.when_expr is not None:
+                text = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, {_lowercase_initial(text)}"
         elif isinstance(stmt, model.LawRouteStmt):
             text = stmt.label if stmt.label.endswith(".") else f"{stmt.label}."
+            if stmt.when_expr is not None:
+                text = (
+                    f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, "
+                    f"{_lowercase_initial(text)}"
+                )
         elif isinstance(stmt, model.ActiveWhenStmt):
             text = f"This pass runs only when {self._render_condition_expr(stmt.expr, unit=unit)}."
         elif isinstance(stmt, model.ModeStmt):
@@ -4263,6 +4631,22 @@ class CompilationContext:
         if isinstance(expr, model.ExprRef):
             return self._render_condition_ref(expr, unit=unit)
         if isinstance(expr, model.ExprBinary):
+            if expr.op in {"==", "!="} and isinstance(expr.right, bool):
+                expected = expr.right if expr.op == "==" else not expr.right
+                return self._render_boolean_condition_expr(expr.left, expected=expected, unit=unit)
+            if expr.op in {"==", "!="} and isinstance(expr.left, bool):
+                expected = expr.left if expr.op == "==" else not expr.left
+                return self._render_boolean_condition_expr(expr.right, expected=expected, unit=unit)
+            if expr.op == "in" and isinstance(expr.right, model.ExprSet):
+                subject = self._render_condition_subject(expr.left, unit=unit)
+                choices = [self._render_condition_choice(item, unit=unit) for item in expr.right.items]
+                if not choices:
+                    return f"{subject} is in {{}}"
+                if len(choices) == 1:
+                    return f"{subject} is {choices[0]}"
+                if len(choices) == 2:
+                    return f"{subject} is {choices[0]} or {choices[1]}"
+                return f"{subject} is {', '.join(choices[:-1])}, or {choices[-1]}"
             left = self._render_condition_expr(expr.left, unit=unit)
             right = self._render_condition_expr(expr.right, unit=unit)
             joiner = expr.op
@@ -4276,6 +4660,42 @@ class CompilationContext:
             return f"{_humanize_key(expr.name).lower()}({args})"
         return self._render_expr(expr, unit=unit)
 
+    def _render_boolean_condition_expr(
+        self,
+        expr: model.Expr,
+        *,
+        expected: bool,
+        unit: IndexedUnit,
+    ) -> str:
+        rendered = self._render_condition_expr(expr, unit=unit)
+        if expected:
+            return rendered
+        return self._negate_condition_text(rendered)
+
+    def _negate_condition_text(self, text: str) -> str:
+        if " is not " in text:
+            head, tail = text.rsplit(" is not ", 1)
+            return f"{head} is {tail}"
+        if " is " in text:
+            head, tail = text.rsplit(" is ", 1)
+            return f"{head} is not {tail}"
+        if text.startswith("not "):
+            return text.removeprefix("not ")
+        return f"not ({text})"
+
+    def _render_condition_choice(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
+        if isinstance(expr, str):
+            return expr.replace("_", " ")
+        return self._render_expr(expr, unit=unit)
+
+    def _render_condition_subject(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
+        if isinstance(expr, model.ExprRef):
+            parts = expr.parts
+            if len(parts) == 1:
+                return _humanize_key(parts[0]).lower()
+            return f"{self._render_ref_root(parts[:-1], unit=unit)} {_humanize_key(parts[-1]).lower()}"
+        return self._render_condition_expr(expr, unit=unit)
+
     def _render_condition_ref(self, ref: model.ExprRef, *, unit: IndexedUnit) -> str:
         parts = ref.parts
         if not parts:
@@ -4285,6 +4705,12 @@ class CompilationContext:
             return f"{self._render_ref_root(parts[:-1], unit=unit)} is missing"
         if key == "unclear":
             return f"{self._render_ref_root(parts[:-1], unit=unit)} is unclear"
+        if key.endswith("_missing"):
+            return f"{_humanize_key(key.removesuffix('_missing')).lower()} is missing"
+        if key.endswith("_unknown"):
+            return f"{_humanize_key(key.removesuffix('_unknown')).lower()} is unknown"
+        if key.endswith("_repeated"):
+            return f"{_humanize_key(key.removesuffix('_repeated')).lower()} is repeated"
         if key.startswith("owes_"):
             return f"{_humanize_key(key.removeprefix('owes_')).lower()} is owed now"
         if key.endswith("_changed"):
@@ -4317,6 +4743,9 @@ class CompilationContext:
         if isinstance(expr, model.ExprCall):
             args = ", ".join(self._render_expr(arg, unit=unit) for arg in expr.args)
             return f"{expr.name}({args})"
+        if isinstance(expr, model.ExprSet):
+            rendered = ", ".join(self._render_expr(item, unit=unit) for item in expr.items)
+            return "{" + rendered + "}"
         if isinstance(expr, str):
             return expr
         if isinstance(expr, bool):
@@ -4365,6 +4794,7 @@ class CompilationContext:
         if not branches:
             branches = (LawBranch(),)
 
+        route_only_branch_seen = False
         for branch in branches:
             if len(branch.current_subjects) != 1:
                 current_labels = ", ".join(
@@ -4386,6 +4816,8 @@ class CompilationContext:
                 raise CompileError(
                     f"`current none` cannot appear with owned scope in {owner_label}"
                 )
+            if isinstance(current, model.CurrentNoneStmt):
+                route_only_branch_seen = True
             current_target_key: tuple[tuple[str, ...], str] | None = None
             if isinstance(current, model.CurrentArtifactStmt):
                 current_target_key = self._validate_current_artifact_stmt(
@@ -4443,9 +4875,145 @@ class CompilationContext:
                         self._path_set_contains_path(preserve.target, path)
                         for path in own_target.paths
                     ):
-                            raise CompileError(
-                                f"Owned scope overlaps exact-preserved scope in {owner_label}"
-                            )
+                        raise CompileError(
+                            f"Owned scope overlaps exact-preserved scope in {owner_label}"
+                        )
+            if isinstance(current, model.CurrentNoneStmt) and branch.routes:
+                self._validate_route_only_next_owner_contract(
+                    branch,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                )
+
+        if route_only_branch_seen:
+            self._validate_route_only_standalone_read_contract(
+                agent_contract=agent_contract,
+                unit=unit,
+                owner_label=owner_label,
+            )
+
+    def _validate_route_only_next_owner_contract(
+        self,
+        branch: LawBranch,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> None:
+        output_items = tuple(agent_contract.outputs.items())
+        if not output_items:
+            return
+
+        for route in branch.routes:
+            route_unit, route_agent = self._resolve_agent_ref(route.target, unit=unit)
+            next_owner_fields_found = False
+            for (_output_key, (output_unit, output_decl)) in output_items:
+                for path, item in self._iter_output_items_with_paths(output_decl.items):
+                    if not path or path[-1] != "next_owner":
+                        continue
+                    next_owner_fields_found = True
+                    if self._record_item_mentions_agent(
+                        item,
+                        target_unit=route_unit,
+                        target_agent_name=route_agent.name,
+                        unit=output_unit,
+                        owner_label=f"output {output_decl.name}.{'.'.join(path)}",
+                    ):
+                        continue
+                    raise CompileError(
+                        "next_owner field must interpolate routed target "
+                        f"in {owner_label}: {output_decl.name}.{'.'.join(path)} -> {route_agent.name}"
+                    )
+            if next_owner_fields_found:
+                continue
+
+    def _record_item_mentions_agent(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        target_unit: IndexedUnit,
+        target_agent_name: str,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        if (
+            isinstance(item, model.RecordScalar)
+            and isinstance(item.value, model.NameRef)
+            and self._name_ref_matches_agent(
+                item.value,
+                target_unit=target_unit,
+                target_agent_name=target_agent_name,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        ):
+            return True
+
+        return any(
+            self._addressable_ref_matches_agent(
+                ref,
+                target_unit=target_unit,
+                target_agent_name=target_agent_name,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            for ref in self._iter_record_item_interpolation_refs(item)
+        )
+
+    def _addressable_ref_matches_agent(
+        self,
+        ref: model.AddressableRef,
+        *,
+        target_unit: IndexedUnit,
+        target_agent_name: str,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        try:
+            root_unit, root_decl = self._resolve_addressable_root_decl(
+                ref.root,
+                unit=unit,
+                owner_label=owner_label,
+                ambiguous_label="next_owner interpolation ref",
+                missing_local_label="next_owner",
+            )
+        except CompileError:
+            return False
+
+        if not isinstance(root_decl, model.Agent):
+            return False
+        if root_decl.name != target_agent_name or root_unit.module_parts != target_unit.module_parts:
+            return False
+        return not ref.path or ref.path == ("name",)
+
+    def _name_ref_matches_agent(
+        self,
+        ref: model.NameRef,
+        *,
+        target_unit: IndexedUnit,
+        target_agent_name: str,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        try:
+            ref_unit, agent = self._resolve_agent_ref(ref, unit=unit)
+        except CompileError:
+            return False
+        _ = owner_label
+        return agent.name == target_agent_name and ref_unit.module_parts == target_unit.module_parts
+
+    def _validate_route_only_standalone_read_contract(
+        self,
+        *,
+        agent_contract: AgentContract,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        _ = unit
+        _ = owner_label
+        for _output_key, (output_unit, output_decl) in agent_contract.outputs.items():
+            self._validate_standalone_read_guard_contract(output_decl, unit=output_unit)
 
     def _validate_law_stmt_tree(
         self,
@@ -5147,17 +5715,17 @@ class CompilationContext:
 
     def _split_record_items(
         self,
-        items: tuple[model.RecordItem, ...],
+        items: tuple[model.AnyRecordItem, ...],
         *,
         scalar_keys: set[str] | None = None,
         section_keys: set[str] | None = None,
         owner_label: str,
-    ) -> tuple[dict[str, model.RecordScalar], dict[str, model.RecordSection], tuple[model.RecordItem, ...]]:
+    ) -> tuple[dict[str, model.RecordScalar], dict[str, model.RecordSection], tuple[model.AnyRecordItem, ...]]:
         scalar_keys = scalar_keys or set()
         section_keys = section_keys or set()
         scalar_items: dict[str, model.RecordScalar] = {}
         section_items: dict[str, model.RecordSection] = {}
-        extras: list[model.RecordItem] = []
+        extras: list[model.AnyRecordItem] = []
 
         for item in items:
             if isinstance(item, model.RecordScalar) and item.key in scalar_keys:
@@ -5655,6 +6223,12 @@ def _humanize_key(value: str) -> str:
     value = _CAMEL_BOUNDARY_RE.sub(" ", value)
     words = value.split()
     return " ".join(word if word.isupper() else word.capitalize() for word in words)
+
+
+def _lowercase_initial(value: str) -> str:
+    if not value:
+        return value
+    return value[0].lower() + value[1:]
 
 
 def _display_addressable_ref(ref: model.AddressableRef) -> str:

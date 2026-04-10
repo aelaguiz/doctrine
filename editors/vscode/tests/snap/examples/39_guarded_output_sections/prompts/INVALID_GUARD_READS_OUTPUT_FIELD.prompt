@@ -1,0 +1,26 @@
+# This compile-negative keeps emitted output fields out of output guards.
+
+# Declare an output that emits one ordinary field.
+output BrokenGuardedComment: "Broken Guarded Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This ordinary output field is legal on its own.
+    next_owner: "Next Owner"
+        "Name the next owner."
+
+    # This guarded section is invalid because output guards may not read
+    # emitted output fields from the same contract.
+    reroute_reason: "Reroute Reason" when BrokenGuardedComment.next_owner:
+        "Explain why the turn reroutes."
+
+
+# Declare a concrete agent that exists only to compile the invalid output
+# contract.
+agent InvalidGuardReadsOutputFieldDemo:
+    role: "Keep emitted output fields out of output-guard conditions."
+    workflow: "Broken Workflow"
+        "This agent exists only to compile the output contract."
+    outputs: "Outputs"
+        BrokenGuardedComment

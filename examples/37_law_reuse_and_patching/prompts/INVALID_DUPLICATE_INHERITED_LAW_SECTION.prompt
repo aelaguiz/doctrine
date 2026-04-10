@@ -1,3 +1,7 @@
+# This file is intentionally invalid.
+# The child tries to account for the same inherited law section twice.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -5,30 +9,44 @@ output SectionMetadata: "Section Metadata"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the one artifact that is current now."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow BaseMetadataPolish: "Base Metadata Polish"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This named law section says what artifact is authoritative in each active branch.
         currentness:
+            # This line says what artifact is current now and which output field must carry that fact forward.
             current artifact SectionMetadata via CoordinationHandoff.current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow ChildMetadataPolish[BaseMetadataPolish]: "Child Metadata Polish"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line explicitly carries a named law section forward from the parent workflow.
+        # The child already accounted for `currentness` once; repeating it is the error.
         inherit currentness
+        # This line explicitly carries a named law section forward from the parent workflow.
+        # The child already accounted for `currentness` once; repeating it is the error.
         inherit currentness
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidDuplicateInheritedLawSection:
     role: "Trigger duplicate inherited law accounting."
     workflow: ChildMetadataPolish

@@ -1,28 +1,42 @@
+# This file is intentionally invalid.
+# One branch tries to say both "nothing is current" and "this artifact is current" at the same time.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationComment: "Coordination Comment"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This field carries the name of whatever artifact is current right now.
     current_artifact: "Current Artifact"
         "Name the current artifact."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This block applies only when the condition is true inside the surrounding law context.
         when CurrentHandoff.missing:
+            # This line says the branch carries no durable artifact forward.
             current none
+            # This line says what artifact is current now and which output field must carry that fact forward.
+            # This second currentness line is the problem: the same branch already said `current none`.
             current artifact CoordinationComment via CoordinationComment.current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidCurrentNoneAndCurrentArtifact:
     role: "Trigger conflicting currentness."
     workflow: InvalidRouteOnlyTurns

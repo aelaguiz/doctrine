@@ -1,0 +1,97 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "route-only handoff capstone integrates current none conditional reroute and guarded readback"
+status = "active"
+kind = "render_contract"
+agent = "RouteOnlyTurnsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/route_only_turns_demo/AGENTS.md"
+expected_lines = [
+  "Keep route-only work explicit when no specialist artifact is current.",
+  "",
+  "## Routing-Only Turns",
+  "",
+  "Handle turns that can only stop, reroute, or keep ownership explicit.",
+  "",
+  "This pass runs only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.",
+  "",
+  "There is no current artifact for this turn.",
+  "",
+  "Stop: No specialist artifact is current for this turn.",
+  "",
+  "When next owner is unknown, keep the issue on RoutingOwner until the next specialist owner is actually justified.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use host-provided route facts that say what live job is in force, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or full rewrite, whether a critic miss repeated, what the next concrete step is, what keeps failing, which role returned the issue, and what the next concrete fix is.",
+  "",
+  "## Outputs",
+  "",
+  "### Routing Handoff Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Must Include",
+  "",
+  "##### Current Route",
+  "",
+  "Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair.",
+  "",
+  "##### Next Owner",
+  "",
+  "Name the next owner when ownership is changing now. If ownership stays local, say plainly that it stays local. If the earliest clear owner is still unclear, say plainly that RoutingOwner keeps the issue.",
+  "",
+  "##### Next Step",
+  "",
+  "Say the next concrete step now.",
+  "",
+  "#### Rewrite Mode",
+  "",
+  "Rendered only when route facts section status is new or full rewrite.",
+  "",
+  "Say plainly that later section metadata must be rewritten instead of inherited.",
+  "",
+  "#### Repeated Problem",
+  "",
+  "Rendered only when critic miss is repeated.",
+  "",
+  "##### What Keeps Failing",
+  "",
+  "Say what keeps failing.",
+  "",
+  "##### Returned From",
+  "",
+  "Say which role returned it.",
+  "",
+  "##### Next Concrete Fix",
+  "",
+  "Say the next concrete fix.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, and what the next concrete step is.",
+]
+
+[[cases]]
+name = "standalone_read cannot interpolate guarded route-only detail"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_STANDALONE_READ_REFERENCES_GUARDED_DETAIL.prompt"
+agent = "InvalidRouteOnlyTurnsDemo"
+exception_type = "CompileError"
+error_code = "E340"
+message_contains = [
+  "standalone_read cannot interpolate guarded output detail",
+  "RouteOnlyHandoffOutput.standalone_read",
+  "RouteOnlyHandoffOutput:rewrite_mode.title",
+]

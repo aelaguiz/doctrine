@@ -1,0 +1,14 @@
+# This parse-negative keeps the old title-only guarded-section sketch out of
+# the shipped grammar.
+
+# Declare an output that tries to use the draft title-only syntax instead of
+# the shipped keyed form.
+output BrokenGuardedComment: "Broken Guarded Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This line is the invalid shape. A guarded output section must start with
+    # a stable key such as `repeated_problem:`.
+    section "Repeated Problem" when RouteFacts.critic_miss_repeated:
+        "Say whether the same critic miss repeated."

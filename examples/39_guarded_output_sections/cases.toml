@@ -1,0 +1,165 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "guarded output sections render as keyed conditional shells and stay addressable"
+status = "active"
+kind = "render_contract"
+agent = "GuardedOutputSectionsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/guarded_output_sections_demo/AGENTS.md"
+expected_lines = [
+  "Keep conditional output readback explicit and addressable.",
+  "",
+  "## Read First",
+  "",
+  "Read the guarded sections directly from the emitted output contract.",
+  "",
+  "### Read Now",
+  "",
+  "- Rewrite Mode",
+  "- Repeated Problem",
+  "",
+  "Read Rewrite Mode and Repeated Problem when the conditional readback matters for this turn.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn.",
+  "",
+  "## Outputs",
+  "",
+  "### Guarded Readback Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Rewrite Mode",
+  "",
+  "Rendered only when route facts section status is new or full rewrite.",
+  "",
+  "Name whether the section is brand new or undergoing a full rewrite.",
+  "",
+  "#### Repeated Problem",
+  "",
+  "Rendered only when critic miss is repeated.",
+  "",
+  "Say whether the same critic miss has repeated.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and know which conditional readback blocks might appear.",
+]
+
+[[cases]]
+name = "nested guarded output sections render at the correct heading depth"
+status = "active"
+kind = "render_contract"
+agent = "NestedGuardedOutputSectionsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/nested_guarded_output_sections_demo/AGENTS.md"
+expected_lines = [
+  "Keep nested conditional output readback explicit and addressable.",
+  "",
+  "## Read First",
+  "",
+  "Read the nested guarded sections directly from the emitted output contract.",
+  "",
+  "### Read Now",
+  "",
+  "- Status Summary",
+  "- Rewrite Detail",
+  "",
+  "Read Status Summary before Rewrite Detail when nested conditional detail is in play.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn.",
+  "",
+  "## Outputs",
+  "",
+  "### Nested Guarded Readback Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Detail Panel",
+  "",
+  "##### Status Summary",
+  "",
+  "Summarize the status facts that drove this turn.",
+  "",
+  "##### Rewrite Detail",
+  "",
+  "Rendered only when route facts section status is new or full rewrite.",
+  "",
+  "Explain why rewrite-aware handling applies on this turn.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and know which nested conditional details might appear.",
+]
+
+[[cases]]
+name = "title-only guarded output syntax is not part of the shipped grammar"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_TITLE_ONLY_GUARDED_OUTPUT_SECTION.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected token",
+  "Repeated Problem",
+]
+
+[[cases]]
+name = "output guards cannot read workflow-local mode bindings"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_GUARD_READS_WORKFLOW_MODE.prompt"
+agent = "InvalidGuardReadsWorkflowModeDemo"
+exception_type = "CompileError"
+error_code = "E338"
+message_contains = [
+  "Output guard reads disallowed source",
+  "pass_mode",
+]
+
+[[cases]]
+name = "output guards cannot read emitted output fields"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_GUARD_READS_OUTPUT_FIELD.prompt"
+agent = "InvalidGuardReadsOutputFieldDemo"
+exception_type = "CompileError"
+error_code = "E338"
+message_contains = [
+  "Output guard reads disallowed source",
+  "BrokenGuardedComment.next_owner",
+]
+
+[[cases]]
+name = "output guards cannot read undeclared runtime names"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_GUARD_READS_UNDECLARED_NAME.prompt"
+agent = "InvalidGuardReadsUndeclaredNameDemo"
+exception_type = "CompileError"
+error_code = "E338"
+message_contains = [
+  "Output guard reads disallowed source",
+  "route_mode",
+]

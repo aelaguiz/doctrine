@@ -1,0 +1,23 @@
+# This compile-negative keeps undeclared runtime names out of output guards.
+
+# Declare an output that incorrectly tries to read a free-floating runtime
+# name the language never declared.
+output BrokenGuardedComment: "Broken Guarded Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This guarded section is invalid because `route_mode` is not a declared
+    # input, enum member, emitted output field, or workflow-local binding.
+    reroute_reason: "Reroute Reason" when route_mode == "reroute":
+        "Explain why the turn reroutes."
+
+
+# Declare a concrete agent that exists only to compile the invalid output
+# contract.
+agent InvalidGuardReadsUndeclaredNameDemo:
+    role: "Keep undeclared runtime names out of output-guard conditions."
+    workflow: "Broken Workflow"
+        "This agent exists only to compile the output contract."
+    outputs: "Outputs"
+        BrokenGuardedComment

@@ -1,3 +1,7 @@
+# This file is intentionally invalid.
+# The `via` reference points at an output field that does not exist.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 input ApprovedPlan: "Approved Plan"
     source: File
         path: "unit_root/_authoring/APPROVED_PLAN.md"
@@ -5,6 +9,7 @@ input ApprovedPlan: "Approved Plan"
     requirement: Required
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
@@ -13,15 +18,21 @@ output CoordinationHandoff: "Coordination Handoff"
     handoff_summary: "Handoff Summary"
         "Summarize the current truth."
 
+    # Only the fields listed here are trustworthy readback for the next owner.
     trust_surface:
         handoff_summary
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says what artifact is current now and which output field must carry that fact forward.
+        # This `via` path points at `current_artifact`, but this output never declares that field.
         current artifact ApprovedPlan via CoordinationHandoff.current_artifact
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent InvalidViaUnknownOutputField:
     role: "Trigger an unknown carrier field."
     workflow: InvalidCarryCurrentTruth

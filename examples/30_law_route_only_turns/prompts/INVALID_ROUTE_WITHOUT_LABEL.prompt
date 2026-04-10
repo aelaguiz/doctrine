@@ -1,10 +1,19 @@
+# This file is intentionally invalid.
+# A route needs a quoted human-readable message before the arrow.
+
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent RoutingOwner:
     role: "Own explicit reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when route-only work cannot continue safely."
 
 
+# The declarations below are just enough setup to isolate the one broken rule this file is testing.
 workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line says the branch carries no durable artifact forward.
         current none
+        # This line sends the same work to a named owner with an explicit message.
+        # This route is missing the quoted message that explains the reroute in plain language.
         route -> RoutingOwner

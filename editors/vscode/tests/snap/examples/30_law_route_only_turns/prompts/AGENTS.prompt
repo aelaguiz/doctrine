@@ -1,3 +1,7 @@
+# This file shows route-only work.
+# The law can decide that nothing durable is current, stop the turn, and send the same issue back to a named owner.
+
+# Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
@@ -5,38 +9,53 @@ input CurrentHandoff: "Current Handoff"
     "Use the host-provided handoff facts that say whether the current handoff is missing or unclear."
 
 
+# Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output CoordinationComment: "Coordination Comment"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
+    # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
         "A downstream owner should be able to read this comment alone and understand that no current artifact was carried forward."
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RoutingOwner:
     role: "Own explicit reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when route-only work cannot continue safely."
 
 
+# Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow RouteOnlyTurns: "Route-Only Triage"
     "Handle turns that can only stop and reroute."
 
+    # This block holds the machine-checked rules for the turn.
     law:
+        # This line turns the workflow on only when the condition is true.
         active when CurrentHandoff.missing or CurrentHandoff.unclear
 
+        # This block applies only when the condition is true inside the surrounding law context.
         when CurrentHandoff.missing:
+            # This line says the branch carries no durable artifact forward.
             current none
+            # This line ends the turn with an explicit reason.
             stop "Current handoff is missing."
+            # This line sends the same work to a named owner with an explicit message.
             route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
+        # This block applies only when the condition is true inside the surrounding law context.
         when CurrentHandoff.unclear:
+            # This line says the branch carries no durable artifact forward.
             current none
+            # This line ends the turn with an explicit reason.
             stop "Current handoff is unclear."
+            # This line sends the same work to a named owner with an explicit message.
             route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
+# Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RouteOnlyTurnsDemo:
     role: "Keep route-only work explicit when no durable artifact is current."
     workflow: RouteOnlyTurns

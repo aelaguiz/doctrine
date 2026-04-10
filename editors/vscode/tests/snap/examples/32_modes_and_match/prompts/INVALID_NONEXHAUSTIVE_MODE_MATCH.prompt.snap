@@ -1,3 +1,10 @@
+># This file is intentionally invalid.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># The `match` does not cover every possible mode value.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >enum EditMode: "Edit Mode"
 #^^^^ source.doctrine keyword.declaration.doctrine
 #    ^ source.doctrine
@@ -21,6 +28,8 @@
 #                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input CurrentHandoff: "Current Handoff"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -50,6 +59,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >input ApprovedPlan: "Approved Plan"
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine
@@ -85,6 +96,8 @@
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >output CoordinationHandoff: "Coordination Handoff"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -113,6 +126,8 @@
 #                ^ source.doctrine
 #                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
+>    # This field carries the name of whatever artifact is current right now.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    current_artifact: "Current Artifact"
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -125,6 +140,8 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
 >
+>    # Only the fields listed here are trustworthy readback for the next owner.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    trust_surface:
 #^^^^ source.doctrine
 #    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
@@ -134,6 +151,8 @@
 #        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >workflow InvalidModeAwareEdit: "Mode-Aware Edit"
 #^^^^^^^^ source.doctrine keyword.declaration.doctrine
 #        ^ source.doctrine
@@ -143,10 +162,14 @@
 #                               ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                                ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>    # This block holds the machine-checked rules for the turn.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >    law:
 #^^^^ source.doctrine
 #    ^^^ source.doctrine keyword.other.field.doctrine
 #       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        # This line binds one typed mode value that later rules can branch on.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        mode edit_mode = CurrentHandoff.active_mode as EditMode
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
@@ -154,12 +177,18 @@
 #                                                    ^^ source.doctrine keyword.control.doctrine
 #                                                      ^^^^^^^^^^ source.doctrine
 >
+>        # This block splits the law by the chosen mode. Only one arm is active at a time.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>        # This match only covers one enum member, so one possible mode has no branch.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        match edit_mode:
 #^^^^^^^^ source.doctrine
 #        ^^^^^ source.doctrine keyword.control.doctrine
 #             ^^^^^^^^^^^^ source.doctrine
 >            EditMode.manifest_title:
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                # This line says what artifact is current now and which output field must carry that fact forward.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >                current artifact ApprovedPlan via CoordinationHandoff.current_artifact
 #^^^^^^^^^^^^^^^^ source.doctrine
 #                ^^^^^^^ source.doctrine keyword.control.doctrine
@@ -170,6 +199,8 @@
 #                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
 >
+># The declarations below are just enough setup to isolate the one broken rule this file is testing.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >agent InvalidNonexhaustiveModeMatch:
 #^^^^^ source.doctrine keyword.declaration.doctrine
 #     ^ source.doctrine

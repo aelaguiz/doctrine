@@ -1105,6 +1105,51 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(
+            r"^Output guard reads disallowed source in (?P<owner>.+): (?P<source>.+)$"
+        ),
+        "E338",
+        "Output guard reads disallowed source",
+        lambda match: (
+            f"Output guard in {match.group('owner')} reads disallowed source "
+            f"`{match.group('source')}`."
+        ),
+        (
+            "Read only declared inputs and enum members in output guards.",
+            "Do not read workflow-local bindings or emitted output fields inside guarded output sections.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^next_owner field must interpolate routed target in (?P<owner>.+): (?P<path>.+) -> (?P<target>.+)$"
+        ),
+        "E339",
+        "Routed next_owner field is not structurally bound",
+        lambda match: (
+            f"`next_owner` field `{match.group('path')}` in {match.group('owner')} "
+            f"does not structurally bind the routed target `{match.group('target')}`."
+        ),
+        (
+            "Use an explicit interpolation such as `{{RoutingOwner}}` or `{{RoutingOwner:name}}` inside the `next_owner` field for routed branches.",
+            "If ownership stays local, keep the field generic and do not emit a semantic route.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^standalone_read cannot interpolate guarded output detail in (?P<owner>.+): (?P<ref>.+)$"
+        ),
+        "E340",
+        "Standalone read references guarded output detail",
+        lambda match: (
+            f"`standalone_read` in {match.group('owner')} references guarded output detail "
+            f"`{match.group('ref')}`."
+        ),
+        (
+            "Keep `standalone_read` at branch-level readback only.",
+            "Do not interpolate guarded section titles or guarded fields inside `standalone_read`.",
+        ),
+    ),
+    (
         re.compile(r"^Mode value is outside enum (?P<enum>.+) in (?P<owner>.+): (?P<value>.+)$"),
         "E341",
         "Mode value outside enum",

@@ -1,0 +1,65 @@
+# This file keeps the routed `next_owner` field correctly bound but makes
+# `standalone_read` overpromise guarded detail through structured interpolation.
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use host-provided route facts that say what live job is in force, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or full rewrite, whether a critic miss repeated, what the next concrete step is, what keeps failing, which role returned the issue, and what the next concrete fix is."
+
+
+output RouteOnlyHandoffOutput: "Routing Handoff Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    must_include: "Must Include"
+        current_route: "Current Route"
+            "Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair."
+
+        next_owner: "Next Owner"
+            "Name the next owner when ownership is changing now. If ownership stays local, say plainly that it stays local. If the earliest clear owner is still unclear, say plainly that {{RoutingOwner}} keeps the issue."
+
+        next_step: "Next Step"
+            "Say the next concrete step now."
+
+    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+        "Say plainly that later section metadata must be rewritten instead of inherited."
+
+    repeated_problem: "Repeated Problem" when RouteFacts.critic_miss_repeated:
+        failing_pattern: "What Keeps Failing"
+            "Say what keeps failing."
+
+        returned_from: "Returned From"
+            "Say which role returned it."
+
+        next_fix: "Next Concrete Fix"
+            "Say the next concrete fix."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, what the next concrete step is, and whether {{RouteOnlyHandoffOutput:rewrite_mode.title}} appears on this turn."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue safely."
+    workflow: "Instructions"
+        "Take back the same issue when the next specialist owner is still not justified."
+
+
+workflow RouteOnlyTurns: "Routing-Only Turns"
+    "Handle turns that can only stop, reroute, or keep ownership explicit."
+
+    law:
+        active when RouteFacts.live_job in {"routing", "process_repair", "owner_repair"} and RouteFacts.current_specialist_output_missing
+        current none
+        stop "No specialist artifact is current for this turn."
+        route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown
+
+
+agent InvalidRouteOnlyTurnsDemo:
+    role: "Keep route-only work explicit when no specialist artifact is current."
+    workflow: RouteOnlyTurns
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteOnlyHandoffOutput

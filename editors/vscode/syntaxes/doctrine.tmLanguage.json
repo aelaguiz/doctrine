@@ -124,6 +124,9 @@
       "include": "#keyValueRef"
     },
     {
+      "include": "#guardedOutputHeader"
+    },
+    {
       "include": "#keyValueString"
     },
     {
@@ -738,7 +741,7 @@
           "name": "punctuation.definition.string.begin.doctrine"
         }
       },
-      "end": "(\")(\\s*)(->)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "end": "(\")(\\s*)(->)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(\\s+)(when)\\b.*)?\\s*$",
       "endCaptures": {
         "1": {
           "name": "punctuation.definition.string.end.doctrine"
@@ -748,6 +751,9 @@
         },
         "5": {
           "name": "entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        },
+        "7": {
+          "name": "keyword.control.doctrine"
         }
       },
       "contentName": "string.quoted.double.doctrine",
@@ -915,6 +921,26 @@
         },
         "6": {
           "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "guardedOutputHeader": {
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")(\\s+)(when)\\b(.*)(:)\\s*$",
+      "captures": {
+        "2": {
+          "name": "entity.name.section.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "string.quoted.double.doctrine"
+        },
+        "8": {
+          "name": "keyword.control.doctrine"
+        },
+        "10": {
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
