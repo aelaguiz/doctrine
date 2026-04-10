@@ -1,0 +1,29 @@
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    law:
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+
+
+agent InvalidCurrentOutputNotEmitted:
+    role: "Trigger a current output artifact that is never emitted."
+    workflow: InvalidCarryCurrentTruth
+    outputs: "Outputs"
+        CoordinationHandoff

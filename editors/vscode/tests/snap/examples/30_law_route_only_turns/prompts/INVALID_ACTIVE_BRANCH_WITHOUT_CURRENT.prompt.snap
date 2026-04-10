@@ -1,0 +1,128 @@
+>input CurrentHandoff: "Current Handoff"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    source: Prompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: JsonObject
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent RoutingOwner:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Own explicit reroutes when specialist work cannot continue."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Instructions"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Take back the same issue when route-only work cannot continue safely."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                 ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        active when CurrentHandoff.missing
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine keyword.control.doctrine
+#              ^ source.doctrine
+#               ^^^^ source.doctrine keyword.control.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>
+>        when CurrentHandoff.missing:
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine keyword.control.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>            stop "Current handoff is missing."
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^ source.doctrine keyword.control.doctrine
+#                ^ source.doctrine
+#                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^ source.doctrine keyword.control.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                              ^ source.doctrine
+#                                                               ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                                 ^ source.doctrine
+#                                                                  ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent InvalidActiveBranchWithoutCurrent:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                       ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Trigger an active branch with no current subject."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: InvalidRouteOnlyTurns
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    inputs: "Inputs"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        CurrentHandoff
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

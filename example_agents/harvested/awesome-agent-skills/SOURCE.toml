@@ -1,0 +1,29 @@
+schema_version = 1
+
+slug = "awesome-agent-skills"
+title = "Awesome Agent Skills"
+source_kind = "skill_catalog"
+primary_format = "README catalog"
+
+upstream = "VoltAgent/awesome-agent-skills"
+url = "https://github.com/VoltAgent/awesome-agent-skills"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "archive_and_curation_sources",
+  "skills_tools_and_capabilities",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "README.md",
+]
+
+local_raw_paths = [
+  "raw/README.md",
+]
+
+notes = "Curation index for real skill packages. Best for skill packaging conventions, quality standards, and catalog-level taxonomy rather than direct agent behavior."

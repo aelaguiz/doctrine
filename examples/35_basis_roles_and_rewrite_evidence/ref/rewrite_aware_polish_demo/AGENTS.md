@@ -1,5 +1,15 @@
 Separate comparison help, live truth, and rewrite evidence.
 
+## Rewrite-Aware Polish
+
+Current artifact: Section Metadata.
+
+Accepted Peer Set is comparison-only support.
+
+When CurrentHandoff.rewrite_regime is rewrite, ignore {`SectionMetadata.name`, `SectionMetadata.description`} for rewrite evidence.
+
+Stale Metadata Notes does not count as truth for this pass.
+
 ## Inputs
 
 ### Current Handoff
@@ -24,16 +34,6 @@ Use the host-provided handoff facts that say whether this pass is a rewrite.
 - Shape: Markdown Document
 - Requirement: Advisory
 
-## Rewrite-Aware Polish
-
-Current artifact: Section Metadata.
-
-Accepted Peer Set is comparison-only support.
-
-On rewrite passes, the old `name` and `description` values do not count as rewrite evidence.
-
-Stale metadata notes do not count as truth for this pass.
-
 ## Outputs
 
 ### Section Metadata
@@ -48,6 +48,18 @@ Stale metadata notes do not count as truth for this pass.
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Comparison Basis
+
+Name any comparison-only inputs used in this pass.
+
+#### Rewrite Evidence Exclusions
+
+Name any fields whose old values do not count as rewrite evidence.
 
 #### Trust Surface
 

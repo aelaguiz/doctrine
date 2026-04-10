@@ -2,9 +2,10 @@
 
 Status: proposal
 
-This document revises the earlier workflow-law proposal using the freeze
-decisions in
-[MODE_SCOPE_TRUTH_WORKFLOW_LAW_AUDIT_2026-04-10.md](MODE_SCOPE_TRUTH_WORKFLOW_LAW_AUDIT_2026-04-10.md).
+This document remains the original proposal/spec reference for the workflow-law
+cutover. It is not the canonical shipped-language summary after implementation;
+for shipped truth, use `doctrine/`, the active manifests, and the current docs
+set under `docs/README.md`.
 
 The v1 design is intentionally Doctrine-native:
 
@@ -1149,9 +1150,10 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 
 ## Live Review Corpus
 
-The current shipped corpus still stops at `examples/29_enums`.
+At proposal time, the shipped corpus still stopped at `examples/29_enums`.
 
-The workflow-law review corpus now lives under `examples/30_*` through
+The workflow-law review corpus for this proposal lived under `examples/30_*`
+through
 `examples/38_*`.
 
 Those live example directories are now the source of truth for:

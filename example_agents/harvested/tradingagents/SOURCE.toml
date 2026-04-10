@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "tradingagents"
+title = "TradingAgents"
+source_kind = "production_codebase"
+primary_format = "Python prompt code"
+
+upstream = "TauricResearch/TradingAgents"
+url = "https://github.com/TauricResearch/TradingAgents"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "orchestration_roles_and_delegation",
+  "io_contracts_and_handoffs",
+  "context_and_memory",
+  "domain_specific_constraints",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "raw/README.md",
+  "raw/tradingagents/agents/researchers/bull_researcher.py",
+  "raw/tradingagents/agents/researchers/bear_researcher.py",
+  "raw/tradingagents/agents/managers/research_manager.py",
+  "raw/tradingagents/agents/managers/portfolio_manager.py",
+]
+
+local_raw_paths = [
+  "raw/README.md",
+  "raw/tradingagents/agents/researchers/bull_researcher.py",
+  "raw/tradingagents/agents/researchers/bear_researcher.py",
+  "raw/tradingagents/agents/managers/research_manager.py",
+  "raw/tradingagents/agents/managers/portfolio_manager.py",
+]
+
+notes = """
+This repo turns a trading decision into a staged debate among specialized agents, with shared state, memory-backed reflections, and a final manager decision. It is valuable Doctrine pressure for named roles, explicit current-vs-history state, and structured downstream decision output.
+"""

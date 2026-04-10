@@ -17,6 +17,7 @@ from doctrine.indenter import DoctrineIndenter
 class WorkflowBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.WorkflowItem, ...]
+    law: model.LawBody | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -31,6 +32,12 @@ class IoBodyParts:
     items: tuple[model.IoItem, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class OutputBodyParts:
+    items: tuple[model.RecordItem, ...]
+    trust_surface: tuple[model.TrustSurfaceItem, ...]
+
+
 class ToAst(Transformer):
     def CNAME(self, token):
         return str(token)
@@ -43,6 +50,9 @@ class ToAst(Transformer):
 
     def ESCAPED_STRING(self, token):
         return ast.literal_eval(str(token))
+
+    def SIGNED_NUMBER(self, token):
+        return int(str(token))
 
     @v_args(inline=True)
     def start(self, prompt_file):
@@ -180,7 +190,12 @@ class ToAst(Transformer):
             return value
         if isinstance(value, model.NameRef):
             raise ValueError("Authored workflow slot references cannot also define an inline body.")
-        return model.WorkflowBody(title=value, preamble=body.preamble, items=body.items)
+        return model.WorkflowBody(
+            title=value,
+            preamble=body.preamble,
+            items=body.items,
+            law=body.law,
+        )
 
     def _skills_value(
         self,
@@ -216,6 +231,7 @@ class ToAst(Transformer):
                 title=title,
                 preamble=workflow_body.preamble,
                 items=workflow_body.items,
+                law=workflow_body.law,
             ),
             parent_ref=parent_ref,
         )
@@ -263,8 +279,43 @@ class ToAst(Transformer):
         return model.InputSourceDecl(name=name, title=title, items=tuple(items))
 
     @v_args(inline=True)
-    def output_decl(self, name, title, items):
-        return model.OutputDecl(name=name, title=title, items=tuple(items))
+    def output_decl(self, name, title, body):
+        return model.OutputDecl(
+            name=name,
+            title=title,
+            items=body.items,
+            trust_surface=body.trust_surface,
+        )
+
+    @v_args(inline=True)
+    def output_body_line(self, value):
+        return value
+
+    def output_body(self, items):
+        record_items: list[model.RecordItem] = []
+        trust_surface: tuple[model.TrustSurfaceItem, ...] = ()
+        for item in items:
+            if isinstance(item, tuple) and item and isinstance(item[0], model.TrustSurfaceItem):
+                if trust_surface:
+                    raise TransformParseFailure(
+                        "Output declarations may define `trust_surface` only once.",
+                        hints=("Keep exactly one `trust_surface:` block per output declaration.",),
+                    )
+                trust_surface = tuple(item)
+                continue
+            record_items.append(item)
+        return OutputBodyParts(items=tuple(record_items), trust_surface=trust_surface)
+
+    def trust_surface_block(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def trust_surface_item(self, path, when_expr=None):
+        return model.TrustSurfaceItem(path=tuple(path), when_expr=when_expr)
+
+    @v_args(inline=True)
+    def trust_surface_when(self, expr):
+        return expr
 
     @v_args(inline=True)
     def outputs_decl(self, name, parent_ref_or_title, title_or_body, body=None):
@@ -349,9 +400,18 @@ class ToAst(Transformer):
     def workflow_body(self, items):
         preamble: list[model.ProseLine] = []
         workflow_items: list[model.WorkflowItem] = []
+        law: model.LawBody | None = None
         for item in items:
+            if isinstance(item, model.LawBody):
+                if law is not None:
+                    raise TransformParseFailure(
+                        "Workflow declarations may define `law` only once.",
+                        hints=("Keep exactly one `law:` block per workflow body.",),
+                    )
+                law = item
+                continue
             if isinstance(item, (str, model.EmphasizedLine)):
-                if workflow_items:
+                if workflow_items or law is not None:
                     raise TransformParseFailure(
                         "Workflow prose lines must appear before keyed workflow entries.",
                         hints=(
@@ -361,7 +421,11 @@ class ToAst(Transformer):
                 preamble.append(item)
                 continue
             workflow_items.append(item)
-        return WorkflowBodyParts(preamble=tuple(preamble), items=tuple(workflow_items))
+        return WorkflowBodyParts(
+            preamble=tuple(preamble),
+            items=tuple(workflow_items),
+            law=law,
+        )
 
     def workflow_section_body(self, items):
         return tuple(items)
@@ -424,6 +488,218 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def workflow_override_use(self, key, target):
         return model.OverrideUse(key=key, target=target)
+
+    @v_args(inline=True)
+    def law_block(self, body):
+        return body
+
+    def law_body(self, items):
+        return model.LawBody(items=tuple(items))
+
+    def law_section(self, items):
+        return model.LawSection(key=items[0], items=tuple(items[1:]))
+
+    @v_args(inline=True)
+    def law_inherit(self, key):
+        return model.LawInherit(key=key)
+
+    def law_override_section(self, items):
+        return model.LawOverrideSection(key=items[0], items=tuple(items[1:]))
+
+    @v_args(inline=True)
+    def active_when_stmt(self, expr):
+        return model.ActiveWhenStmt(expr=expr)
+
+    @v_args(inline=True)
+    def mode_stmt(self, name, expr, enum_ref):
+        return model.ModeStmt(name=name, expr=expr, enum_ref=enum_ref)
+
+    @v_args(inline=True)
+    def must_stmt(self, expr):
+        return model.MustStmt(expr=expr)
+
+    @v_args(inline=True)
+    def current_artifact_stmt(self, target, carrier):
+        return model.CurrentArtifactStmt(target=target, carrier=carrier)
+
+    def current_none_stmt(self, _items):
+        return model.CurrentNoneStmt()
+
+    @v_args(inline=True)
+    def own_only_stmt(self, target, when_expr=None):
+        return model.OwnOnlyStmt(target=target, when_expr=when_expr)
+
+    def preserve_stmt(self, items):
+        kind = items[0]
+        target = items[1]
+        when_expr: model.Expr | None = items[2] if len(items) > 2 else None
+        return model.PreserveStmt(kind=kind, target=target, when_expr=when_expr)
+
+    @v_args(inline=True)
+    def support_only_stmt(self, target, when_expr=None):
+        return model.SupportOnlyStmt(target=target, when_expr=when_expr)
+
+    def ignore_stmt(self, items):
+        target = items[0]
+        bases: tuple[str, ...] = ()
+        when_expr: model.Expr | None = None
+        for extra in items[1:]:
+            if isinstance(extra, tuple):
+                bases = extra
+            else:
+                when_expr = extra
+        return model.IgnoreStmt(target=target, bases=bases, when_expr=when_expr)
+
+    @v_args(inline=True)
+    def invalidate_stmt(self, target, carrier, when_expr=None):
+        return model.InvalidateStmt(target=target, carrier=carrier, when_expr=when_expr)
+
+    @v_args(inline=True)
+    def forbid_stmt(self, target, when_expr=None):
+        return model.ForbidStmt(target=target, when_expr=when_expr)
+
+    def when_stmt(self, items):
+        return model.WhenStmt(expr=items[0], items=tuple(items[1:]))
+
+    @v_args(inline=True)
+    def match_stmt(self, expr, *cases):
+        return model.MatchStmt(expr=expr, cases=tuple(cases))
+
+    def match_case(self, items):
+        head = items[0]
+        if head == "__ELSE__":
+            head = None
+        return model.MatchArm(head=head, items=tuple(items[1:]))
+
+    def else_match_head(self, _items):
+        return "__ELSE__"
+
+    @v_args(inline=True)
+    def stop_stmt(self, message=None, when_expr=None):
+        if message is not None and not isinstance(message, str):
+            when_expr = message
+            message = None
+        return model.StopStmt(message=message, when_expr=when_expr)
+
+    @v_args(inline=True)
+    def law_route_stmt(self, label, target, when_expr=None):
+        return model.LawRouteStmt(label=label, target=target, when_expr=when_expr)
+
+    def preserve_exact(self, _items):
+        return "exact"
+
+    def preserve_structure(self, _items):
+        return "structure"
+
+    def preserve_decisions(self, _items):
+        return "decisions"
+
+    def preserve_mapping(self, _items):
+        return "mapping"
+
+    def preserve_vocabulary(self, _items):
+        return "vocabulary"
+
+    def ignore_basis_list(self, items):
+        return tuple(items)
+
+    def ignore_basis_truth(self, _items):
+        return "truth"
+
+    def ignore_basis_comparison(self, _items):
+        return "comparison"
+
+    def ignore_basis_rewrite_evidence(self, _items):
+        return "rewrite_evidence"
+
+    @v_args(inline=True)
+    def law_when_clause(self, expr):
+        return expr
+
+    def path_set_expr(self, items):
+        paths: list[model.LawPath] = []
+        except_paths: list[model.LawPath] = []
+        if items:
+            first = items[0]
+            if isinstance(first, tuple):
+                paths.extend(first)
+            else:
+                paths.append(first)
+            for extra in items[1:]:
+                if isinstance(extra, tuple):
+                    except_paths.extend(extra)
+                else:
+                    except_paths.append(extra)
+        return model.LawPathSet(paths=tuple(paths), except_paths=tuple(except_paths))
+
+    def path_set_base(self, items):
+        if len(items) == 1 and isinstance(items[0], model.LawPath):
+            return items[0]
+        return tuple(items)
+
+    def law_path(self, items):
+        parts = list(items[0])
+        wildcard = len(items) > 1
+        return model.LawPath(parts=tuple(parts), wildcard=wildcard)
+
+    def law_path_wildcard(self, _items):
+        return "*"
+
+    def field_path(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def expr_ref(self, parts):
+        return model.ExprRef(parts=tuple(parts))
+
+    @v_args(inline=True)
+    def expr_number(self, value):
+        return value
+
+    def expr_true(self, _items):
+        return True
+
+    def expr_false(self, _items):
+        return False
+
+    def expr_call(self, items):
+        return model.ExprCall(name=items[0], args=tuple(items[1:]))
+
+    @v_args(inline=True)
+    def expr_or(self, left, right):
+        return model.ExprBinary(op="or", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_and(self, left, right):
+        return model.ExprBinary(op="and", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_eq(self, left, right):
+        return model.ExprBinary(op="==", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_ne(self, left, right):
+        return model.ExprBinary(op="!=", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_gt(self, left, right):
+        return model.ExprBinary(op=">", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_gte(self, left, right):
+        return model.ExprBinary(op=">=", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_lt(self, left, right):
+        return model.ExprBinary(op="<", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_lte(self, left, right):
+        return model.ExprBinary(op="<=", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_in(self, left, right):
+        return model.ExprBinary(op="in", left=left, right=right)
 
     @v_args(inline=True)
     def skill_entry(self, key, target, body=None):

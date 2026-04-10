@@ -1,0 +1,38 @@
+schema_version = 1
+
+slug = "claude-code-system-prompts"
+title = "Claude Code System Prompts"
+source_kind = "prompt_archive"
+primary_format = "markdown prompt files"
+
+upstream = "Piebald-AI/claude-code-system-prompts"
+url = "https://github.com/Piebald-AI/claude-code-system-prompts"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "orchestration_roles_and_delegation",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "io_contracts_and_handoffs",
+  "context_and_memory",
+]
+
+expected_artifacts = [
+  "system-prompts/agent-prompt-plan-mode-enhanced.md",
+  "system-prompts/agent-prompt-explore.md",
+  "system-prompts/agent-prompt-verification-specialist.md",
+  "system-prompts/agent-prompt-security-monitor-for-autonomous-agent-actions-first-part.md",
+  "system-prompts/agent-prompt-security-monitor-for-autonomous-agent-actions-second-part.md",
+]
+
+local_raw_paths = [
+  "raw/system-prompts/agent-prompt-plan-mode-enhanced.md",
+  "raw/system-prompts/agent-prompt-explore.md",
+  "raw/system-prompts/agent-prompt-verification-specialist.md",
+  "raw/system-prompts/agent-prompt-security-monitor-for-autonomous-agent-actions-first-part.md",
+  "raw/system-prompts/agent-prompt-security-monitor-for-autonomous-agent-actions-second-part.md",
+]
+
+notes = "Best-in-class source for split prompts, read-only subagents, adversarial verification, and explicit allow/block security policy."

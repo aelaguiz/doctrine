@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "openclaw-medical-skills"
+title = "OpenClaw Medical Skills"
+source_kind = "skill_library"
+primary_format = "SKILL.md"
+
+upstream = "FreedomIntelligence/OpenClaw-Medical-Skills"
+url = "https://github.com/FreedomIntelligence/OpenClaw-Medical-Skills"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "skills_tools_and_capabilities",
+  "negative_guardrails",
+  "commands_and_quality_gates",
+  "domain_specific_constraints",
+  "io_contracts_and_handoffs",
+]
+
+expected_artifacts = [
+  "raw/README.md",
+  "raw/skills/prior-auth-review-skill/SKILL.md",
+  "raw/skills/fhir-developer-skill/SKILL.md",
+  "raw/skills/search-strategy/SKILL.md",
+  "raw/skills/scientific-brainstorming/SKILL.md",
+]
+
+local_raw_paths = [
+  "raw/README.md",
+  "raw/skills/prior-auth-review-skill/SKILL.md",
+  "raw/skills/fhir-developer-skill/SKILL.md",
+  "raw/skills/search-strategy/SKILL.md",
+  "raw/skills/scientific-brainstorming/SKILL.md",
+]
+
+notes = """
+This repo is a dense skill library with explicit invocations, allowed-tools lists, measurable outcomes, required connectors, and strict workflow guidance. It is especially useful for Doctrine because it combines hard validation rules with domain-specific output contracts and skill-scoped usage boundaries.
+"""

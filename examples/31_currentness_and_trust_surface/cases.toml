@@ -3,13 +3,19 @@ default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
 name = "current truth can be carried from an input artifact"
-status = "planned"
+status = "active"
 kind = "render_contract"
 agent = "CurrentApprovedPlanDemo"
 assertion = "exact_lines"
 approx_ref = "ref/current_approved_plan_demo/AGENTS.md"
 expected_lines = [
   "Carry one portable current artifact through a declared handoff field.",
+  "",
+  "## Carry Current Truth",
+  "",
+  "Keep one current artifact explicit and portable.",
+  "",
+  "Current artifact: Approved Plan.",
   "",
   "## Inputs",
   "",
@@ -19,14 +25,6 @@ expected_lines = [
   "- Path: `unit_root/_authoring/APPROVED_PLAN.md`",
   "- Shape: Markdown Document",
   "- Requirement: Required",
-  "",
-  "## Carry Current Truth",
-  "",
-  "This pass keeps one current artifact explicit and portable.",
-  "",
-  "Current artifact: Approved Plan.",
-  "",
-  "The coordination handoff must name that current artifact.",
   "",
   "## Outputs",
   "",
@@ -51,7 +49,7 @@ expected_lines = [
 
 [[cases]]
 name = "current truth can be carried from a newly produced artifact"
-status = "planned"
+status = "active"
 kind = "render_contract"
 agent = "CurrentSectionMetadataDemo"
 assertion = "exact_lines"
@@ -61,11 +59,9 @@ expected_lines = [
   "",
   "## Carry Current Truth",
   "",
-  "This pass keeps one current artifact explicit and portable.",
+  "Keep one current artifact explicit and portable.",
   "",
   "Current artifact: Section Metadata.",
-  "",
-  "The coordination handoff must name that current artifact.",
   "",
   "## Outputs",
   "",
@@ -97,73 +93,76 @@ expected_lines = [
 
 [[cases]]
 name = "current artifact bindings require via carriers"
-status = "planned"
-kind = "compile_fail"
+status = "active"
+kind = "parse_fail"
 prompt = "prompts/INVALID_CURRENT_ARTIFACT_WITHOUT_VIA.prompt"
-agent = "InvalidCurrentArtifactWithoutVia"
-exception_type = "CompileError"
+exception_type = "ParseError"
+error_code = "E133"
 message_contains = [
-  "current artifact",
-  "via",
+  "Missing `via` carrier",
 ]
 
 [[cases]]
 name = "carrier refs reject unknown output fields"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_VIA_UNKNOWN_OUTPUT_FIELD.prompt"
 agent = "InvalidViaUnknownOutputField"
 exception_type = "CompileError"
+error_code = "E337"
 message_contains = [
-  "CoordinationHandoff",
-  "current_artifact",
+  "Unknown current carrier field",
+  "CoordinationHandoff.current_artifact",
 ]
 
 [[cases]]
 name = "carrier fields must be listed in the trust surface"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_VIA_FIELD_NOT_IN_TRUST_SURFACE.prompt"
 agent = "InvalidViaFieldNotInTrustSurface"
 exception_type = "CompileError"
+error_code = "E336"
 message_contains = [
-  "trust_surface",
+  "Current carrier field missing from trust surface",
   "current_artifact",
 ]
 
 [[cases]]
 name = "workflows that carry current truth must emit the carrier output"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_CARRIER_OUTPUT_NOT_EMITTED.prompt"
 agent = "InvalidCarrierOutputNotEmitted"
 exception_type = "CompileError"
+error_code = "E333"
 message_contains = [
+  "Current carrier output not emitted",
   "CoordinationHandoff",
-  "emit",
 ]
 
 [[cases]]
 name = "current output artifacts must be emitted by the concrete turn"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_CURRENT_OUTPUT_NOT_EMITTED.prompt"
 agent = "InvalidCurrentOutputNotEmitted"
 exception_type = "CompileError"
+error_code = "E334"
 message_contains = [
-  "current artifact",
+  "Current output not emitted",
   "SectionMetadata",
-  "emit",
 ]
 
 [[cases]]
 name = "current artifact targets must stay rooted in declared inputs or outputs"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_CURRENT_TARGET_WRONG_KIND.prompt"
 agent = "InvalidCurrentTargetWrongKind"
 exception_type = "CompileError"
+error_code = "E335"
 message_contains = [
-  "current artifact",
+  "Current artifact target has wrong kind",
   "input or output",
 ]

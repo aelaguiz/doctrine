@@ -1,0 +1,59 @@
+enum EditMode: "Edit Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+    law:
+        mode edit_mode = CurrentHandoff.active_mode as EditMode
+
+        match edit_mode:
+            EditMode.manifest_title:
+                current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+                current artifact ApprovedStructure via CoordinationHandoff.current_artifact
+
+            EditMode.section_summary:
+                current artifact ApprovedStructure via CoordinationHandoff.current_artifact
+
+
+agent InvalidDuplicateCurrentInMatchArm:
+    role: "Trigger duplicate current bindings in one match arm."
+    workflow: InvalidModeAwareEdit
+    inputs: "Inputs"
+        CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
+    outputs: "Outputs"
+        CoordinationHandoff

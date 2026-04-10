@@ -1,6 +1,7 @@
 %import common.CNAME
 %import common.ESCAPED_STRING
 %import common.SH_COMMENT
+%import common.SIGNED_NUMBER
 %import common.WS_INLINE
 
 %ignore WS_INLINE
@@ -37,7 +38,7 @@ input_decl: "input" CNAME ":" string _NL _INDENT record_body _DEDENT
 outputs_decl: "outputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
-output_decl: "output" CNAME ":" string _NL _INDENT record_body _DEDENT
+output_decl: "output" CNAME ":" string _NL _INDENT output_body _DEDENT
 json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
@@ -89,6 +90,7 @@ workflow_body: workflow_body_line+
 workflow_string: prose_line _NL?
 workflow_body_line: workflow_string
                   | workflow_item
+                  | law_block
 
 ?workflow_item: workflow_skills_inline
               | workflow_skills_ref
@@ -156,6 +158,16 @@ io_section: CNAME ":" string _NL _INDENT record_body _DEDENT
 io_inherit: "inherit" CNAME _NL?
 io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
+output_body: output_body_line+
+output_body_line: record_text
+                | record_keyed_item
+                | record_ref_item
+                | trust_surface_block
+
+trust_surface_block: "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
+trust_surface_item: field_path trust_surface_when? _NL?
+trust_surface_when: "when" expr
+
 record_body: record_item+
 ?record_item: record_text
             | record_keyed_item
@@ -175,6 +187,100 @@ ref_list: ref_item+
 ref_item: name_ref _NL?
 
 route_stmt: "route" string "->" name_ref _NL?
+
+law_block: "law" ":" _NL _INDENT law_body _DEDENT
+law_body: law_item+
+?law_item: law_stmt
+         | law_section
+         | law_inherit
+         | law_override_section
+
+law_section: CNAME ":" _NL _INDENT law_stmt+ _DEDENT
+law_inherit: "inherit" CNAME _NL?
+law_override_section: "override" CNAME ":" _NL _INDENT law_stmt+ _DEDENT
+
+?law_stmt: active_when_stmt
+         | mode_stmt
+         | must_stmt
+         | current_artifact_stmt
+         | current_none_stmt
+         | own_only_stmt
+         | preserve_stmt
+         | support_only_stmt
+         | ignore_stmt
+         | invalidate_stmt
+         | forbid_stmt
+         | when_stmt
+         | match_stmt
+         | stop_stmt
+         | law_route_stmt
+
+active_when_stmt: "active" "when" expr _NL
+mode_stmt: "mode" CNAME "=" expr "as" name_ref _NL
+must_stmt: "must" expr _NL
+current_artifact_stmt: "current" "artifact" law_path "via" law_path _NL
+current_none_stmt: "current" "none" _NL
+own_only_stmt: "own" "only" path_set_expr law_when_clause? _NL
+preserve_stmt: "preserve" preserve_kind path_set_expr law_when_clause? _NL
+support_only_stmt: "support_only" path_set_expr "for" "comparison" law_when_clause? _NL
+ignore_stmt: "ignore" path_set_expr "for" ignore_basis_list law_when_clause? _NL
+           | "ignore" path_set_expr law_when_clause? _NL
+invalidate_stmt: "invalidate" law_path "via" law_path law_when_clause? _NL
+forbid_stmt: "forbid" path_set_expr law_when_clause? _NL
+when_stmt: "when" expr ":" _NL _INDENT law_stmt+ _DEDENT
+match_stmt: "match" expr ":" _NL _INDENT match_case+ _DEDENT
+stop_stmt: "stop" string law_when_clause? _NL
+         | "stop" law_when_clause _NL
+         | "stop" _NL
+law_route_stmt: "route" string "->" name_ref law_when_clause? _NL
+
+match_case: match_head ":" _NL _INDENT law_stmt+ _DEDENT
+?match_head: expr
+           | "else" -> else_match_head
+
+preserve_kind: "exact"      -> preserve_exact
+             | "structure"  -> preserve_structure
+             | "decisions"  -> preserve_decisions
+             | "mapping"    -> preserve_mapping
+             | "vocabulary" -> preserve_vocabulary
+
+ignore_basis_list: ignore_basis ("," ignore_basis)*
+ignore_basis: "truth"            -> ignore_basis_truth
+            | "comparison"       -> ignore_basis_comparison
+            | "rewrite_evidence" -> ignore_basis_rewrite_evidence
+
+law_when_clause: "when" expr
+
+?path_set_expr: path_set_base ("except" path_set_base)*
+?path_set_base: law_path
+              | "{" law_path ("," law_path)* "}"
+
+law_path: dotted_name LAW_WILDCARD?
+
+field_path: CNAME ("." CNAME)*
+
+?expr: or_expr
+?or_expr: and_expr
+        | or_expr "or" and_expr   -> expr_or
+?and_expr: comparison_expr
+         | and_expr "and" comparison_expr -> expr_and
+?comparison_expr: expr_atom
+                | expr_atom "==" expr_atom -> expr_eq
+                | expr_atom "!=" expr_atom -> expr_ne
+                | expr_atom ">" expr_atom  -> expr_gt
+                | expr_atom ">=" expr_atom -> expr_gte
+                | expr_atom "<" expr_atom  -> expr_lt
+                | expr_atom "<=" expr_atom -> expr_lte
+                | expr_atom "in" expr_atom -> expr_in
+?expr_atom: dotted_name           -> expr_ref
+          | string
+          | SIGNED_NUMBER         -> expr_number
+          | "true"                -> expr_true
+          | "false"               -> expr_false
+          | expr_call
+          | "(" expr ")"
+
+expr_call: CNAME "(" expr ("," expr)* ")"
 
 path_ref: PATH_REF
 name_ref: dotted_name
@@ -200,6 +306,7 @@ IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
 WARNING_KEYWORD.2: /warning(?=[ \t]*")/
 NOTE_KEYWORD.2: /note(?=[ \t]*")/
 PATH_REF: /[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
+LAW_WILDCARD: ".*"
 
 DOTS: /\.+/
 

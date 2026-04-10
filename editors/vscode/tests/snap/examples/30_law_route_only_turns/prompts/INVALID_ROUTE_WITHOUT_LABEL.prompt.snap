@@ -1,0 +1,47 @@
+>agent RoutingOwner:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Own explicit reroutes when specialist work cannot continue."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Instructions"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Take back the same issue when route-only work cannot continue safely."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                 ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        current none
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine keyword.control.doctrine
+>        route -> RoutingOwner
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>

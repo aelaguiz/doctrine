@@ -1,0 +1,24 @@
+workflow ReadFirst: "Read First"
+    read_now: "Read Now"
+        "Build {{SectionConceptsTermsFileOutput:must_include.analysis.tables.missing_table}} before you finalize the file."
+
+
+output SectionConceptsTermsFileOutput: "Section Concepts Terms File"
+    target: File
+        path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        analysis: "Analysis"
+            tables: "Tables"
+                concept_ladder_table: "Concept Ladder Table"
+                    "Map what earlier sections already taught and what the learner should learn next."
+
+
+agent InvalidUnknownRecordPathDemo:
+    role: "Trigger an unknown deep record path."
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        SectionConceptsTermsFileOutput

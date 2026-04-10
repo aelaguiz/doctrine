@@ -1,0 +1,253 @@
+enum MetadataPolishMode: "Metadata Polish Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+enum RewriteRegime: "Rewrite Regime"
+    carry_forward: "carry-forward"
+    rewrite: "rewrite"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say whether metadata polish is owed, which mode is active, which preserve basis remains authoritative, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed."
+
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+
+
+output PrimaryManifest: "Primary Manifest"
+    target: File
+        path: "unit_root/_authoring/primary_manifest.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output BaseCoordinationHandoff: "Base Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    active_mode: "Active Mode"
+        "Name the one active mode for this pass."
+
+    preserve_basis: "Preserve Basis"
+        "Name the upstream declaration whose decisions remain authoritative."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    trust_surface:
+        current_artifact
+        active_mode
+        preserve_basis
+        comparison_basis when CurrentHandoff.peer_comparison_used
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now, which mode is active, and why that preserve basis remains authoritative."
+
+
+output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    active_mode: "Active Mode"
+        "Name the one active mode for this pass."
+
+    preserve_basis: "Preserve Basis"
+        "Name the upstream declaration whose decisions remain authoritative."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    rewrite_exclusions: "Rewrite Evidence Exclusions"
+        "Name any fields whose old values do not count as rewrite evidence."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        active_mode
+        preserve_basis
+        comparison_basis when CurrentHandoff.peer_comparison_used
+        rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+        invalidations when CurrentHandoff.structure_changed
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when the current specialist cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when metadata polish cannot continue safely."
+
+
+workflow BaseMetadataPolish: "Metadata Polish"
+    "Handle the last narrow wording pass after structure is already locked."
+
+    law:
+        activation:
+            active when CurrentHandoff.owes_metadata_polish
+
+        mode_selection:
+            mode pass_mode = CurrentHandoff.active_mode as MetadataPolishMode
+
+        currentness:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    current artifact PrimaryManifest via BaseCoordinationHandoff.current_artifact
+                    must CurrentHandoff.preserve_basis == ApprovedPlan
+
+                MetadataPolishMode.section_summary:
+                    current artifact SectionMetadata via BaseCoordinationHandoff.current_artifact
+                    must CurrentHandoff.preserve_basis == ApprovedStructure
+
+        scope:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    own only PrimaryManifest.title
+                    preserve exact PrimaryManifest.* except PrimaryManifest.title
+                    preserve decisions ApprovedPlan
+
+                MetadataPolishMode.section_summary:
+                    own only {SectionMetadata.name, SectionMetadata.description}
+                    preserve exact SectionMetadata.* except {SectionMetadata.name, SectionMetadata.description}
+                    preserve decisions ApprovedStructure
+                    forbid {SectionMetadata.taxonomy, SectionMetadata.flags}
+
+        evidence:
+            support_only AcceptedPeerSet for comparison
+
+        stop_lines:
+            when unclear(pass_mode, CurrentHandoff.preserve_basis):
+                stop "Mode or preserve basis is unclear."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Metadata Polish"
+    law:
+        inherit activation
+        inherit mode_selection
+        inherit scope
+
+        override currentness:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    current artifact PrimaryManifest via RewriteAwareCoordinationHandoff.current_artifact
+                    must CurrentHandoff.preserve_basis == ApprovedPlan
+
+                MetadataPolishMode.section_summary:
+                    current artifact SectionMetadata via RewriteAwareCoordinationHandoff.current_artifact
+                    must CurrentHandoff.preserve_basis == ApprovedStructure
+
+        override evidence:
+            support_only AcceptedPeerSet for comparison
+
+            ignore PrimaryManifest.title for rewrite_evidence when pass_mode == MetadataPolishMode.manifest_title and CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+
+            ignore {SectionMetadata.name, SectionMetadata.description} for rewrite_evidence when pass_mode == MetadataPolishMode.section_summary and CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+
+        override stop_lines:
+            when CurrentHandoff.structure_changed:
+                invalidate SectionReview via RewriteAwareCoordinationHandoff.invalidations
+                stop "Structure moved; downstream review is no longer current."
+                route "Route the same issue back to RoutingOwner for rebuild." -> RoutingOwner
+
+            when unclear(pass_mode, CurrentHandoff.preserve_basis):
+                stop "Mode or preserve basis is unclear."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+workflow ManifestTitleMetadataPolish[BaseMetadataPolish]: "Metadata Polish"
+    law:
+        inherit activation
+
+        override mode_selection:
+            mode pass_mode = MetadataPolishMode.manifest_title as MetadataPolishMode
+
+        inherit currentness
+        inherit scope
+        inherit evidence
+        inherit stop_lines
+
+
+workflow RewriteAwareSectionSummaryMetadataPolish[RewriteAwareMetadataPolish]: "Metadata Polish"
+    law:
+        inherit activation
+
+        override mode_selection:
+            mode pass_mode = MetadataPolishMode.section_summary as MetadataPolishMode
+
+        inherit currentness
+        inherit scope
+        inherit evidence
+        inherit stop_lines
+
+
+agent MetadataPolishCapstoneDemo:
+    role: "Handle the last narrow wording pass after structure is already locked."
+    workflow: ManifestTitleMetadataPolish
+    inputs: "Inputs"
+        CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
+        AcceptedPeerSet
+    outputs: "Outputs"
+        PrimaryManifest
+        BaseCoordinationHandoff
+
+
+agent RewriteAwareMetadataPolishCapstoneDemo:
+    role: "Handle the last narrow wording pass after structure is already locked."
+    workflow: RewriteAwareSectionSummaryMetadataPolish
+    inputs: "Inputs"
+        CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
+        AcceptedPeerSet
+    outputs: "Outputs"
+        SectionMetadata
+        RewriteAwareCoordinationHandoff

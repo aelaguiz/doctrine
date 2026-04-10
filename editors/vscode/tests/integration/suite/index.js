@@ -10,6 +10,7 @@ async function run() {
   await testImportLinks();
   await testDefinitionProvider();
   await testAddressableDefinitionProvider();
+  await testWorkflowLawDefinitionProvider();
   await testFullClickableSurface();
 }
 
@@ -370,6 +371,64 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
     sourceText: "grounding",
+  });
+}
+
+async function testWorkflowLawDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: 'current_artifact: "Current Artifact"',
+    expectedRelativeTargetPath:
+      "examples/31_currentness_and_trust_surface/prompts/AGENTS.prompt",
+    relativePath: "examples/31_currentness_and_trust_surface/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact ApprovedPlan via CoordinationHandoff.current_artifact",
+    sourceText: "current_artifact",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'rewrite_exclusions: "Rewrite Evidence Exclusions"',
+    expectedRelativeTargetPath:
+      "examples/37_law_reuse_and_patching/prompts/AGENTS.prompt",
+    relativePath: "examples/37_law_reuse_and_patching/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite",
+    sourceText: "rewrite_exclusions",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "enum EditMode",
+    expectedRelativeTargetPath: "examples/32_modes_and_match/prompts/AGENTS.prompt",
+    relativePath: "examples/32_modes_and_match/prompts/AGENTS.prompt",
+    sourceLineFragment: "mode edit_mode = CurrentHandoff.active_mode as EditMode",
+    sourceText: "EditMode",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'manifest_title: "manifest-title"',
+    expectedRelativeTargetPath: "examples/32_modes_and_match/prompts/AGENTS.prompt",
+    relativePath: "examples/32_modes_and_match/prompts/AGENTS.prompt",
+    sourceLineFragment: "EditMode.manifest_title:",
+    sourceText: "manifest_title",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "reroute_on_unclear:",
+    expectedRelativeTargetPath:
+      "examples/37_law_reuse_and_patching/prompts/AGENTS.prompt",
+    relativePath: "examples/37_law_reuse_and_patching/prompts/AGENTS.prompt",
+    sourceLineFragment: "inherit reroute_on_unclear",
+    sourceText: "reroute_on_unclear",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "agent RoutingOwner",
+    expectedRelativeTargetPath:
+      "examples/37_law_reuse_and_patching/prompts/AGENTS.prompt",
+    relativePath: "examples/37_law_reuse_and_patching/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'route "Route the same issue back to RoutingOwner." -> RoutingOwner',
+    sourceText: "RoutingOwner",
+    occurrence: 2,
   });
 }
 

@@ -1,0 +1,30 @@
+schema_version = 1
+slug = "cursor-security-rules"
+title = "matank001/cursor-security-rules"
+source_kind = "security_rule_pack"
+primary_format = "README.md plus scoped .mdc files"
+upstream = "matank001/cursor-security-rules"
+url = "https://github.com/matank001/cursor-security-rules"
+status = "extracted"
+priority = "high"
+buckets = [
+  "negative_guardrails",
+  "domain_specific_constraints",
+  "scope_hierarchy",
+  "skills_tools_and_capabilities",
+]
+expected_artifacts = [
+  "raw/README.md",
+  "raw/secure-development-principles.mdc",
+  "raw/secure-mcp-usage.mdc",
+  "raw/dangerous-flows.mdc",
+  "raw/secure-dev-python.mdc",
+]
+local_raw_paths = [
+  "raw/README.md",
+  "raw/secure-development-principles.mdc",
+  "raw/secure-mcp-usage.mdc",
+  "raw/dangerous-flows.mdc",
+  "raw/secure-dev-python.mdc",
+]
+notes = "A compact security rule pack with universal guardrails, protocol-specific warnings, and flow-tracing guidance. Strong source material for Doctrine negative examples, scoped rules, and explicit do-not-do instructions."

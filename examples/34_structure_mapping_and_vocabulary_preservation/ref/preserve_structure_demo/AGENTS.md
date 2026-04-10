@@ -1,5 +1,11 @@
 Preserve document skeletons while allowing a narrow wording pass.
 
+## Preserve Structure
+
+Current artifact: Approved Structure.
+
+Preserve structure `ApprovedStructure`.
+
 ## Inputs
 
 ### Approved Structure
@@ -9,14 +15,6 @@ Preserve document skeletons while allowing a narrow wording pass.
 - Shape: Markdown Document
 - Requirement: Required
 
-## Preserve Structure
-
-Current artifact: Approved Structure.
-
-Preserve the heading skeleton and section order.
-
-The coordination handoff must keep Approved Structure named as the current truth.
-
 ## Outputs
 
 ### Coordination Handoff
@@ -24,6 +22,10 @@ The coordination handoff must keep Approved Structure named as the current truth
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
 
 #### Trust Surface
 

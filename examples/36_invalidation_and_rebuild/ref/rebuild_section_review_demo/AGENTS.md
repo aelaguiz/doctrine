@@ -1,5 +1,11 @@
 Rebuild invalidated review work and reissue it as current truth.
 
+## Rebuild Section Review
+
+This pass runs only when rebuild requested.
+
+Current artifact: Section Review.
+
 ## Inputs
 
 ### Current Handoff
@@ -9,12 +15,6 @@ Rebuild invalidated review work and reissue it as current truth.
 - Requirement: Required
 
 Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested.
-
-## Rebuild Section Review
-
-Current artifact: Section Review.
-
-The rebuild handoff must name Section Review as current again.
 
 ## Outputs
 
@@ -30,6 +30,10 @@ The rebuild handoff must name Section Review as current again.
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
 
 #### Trust Surface
 

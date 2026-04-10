@@ -1,0 +1,76 @@
+>input ApprovedPlan: "Approved Plan"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    source: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "unit_root/_authoring/APPROVED_PLAN.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                  ^ source.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                    ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        current artifact ApprovedPlan
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^ source.doctrine keyword.control.doctrine
+#                        ^^^^^^^^^^^^^^ source.doctrine
+>
+>
+>agent InvalidCurrentArtifactWithoutVia:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                      ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Trigger a missing current carrier."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: InvalidCarryCurrentTruth
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

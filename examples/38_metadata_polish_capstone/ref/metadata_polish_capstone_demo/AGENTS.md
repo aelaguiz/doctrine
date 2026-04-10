@@ -1,5 +1,27 @@
 Handle the last narrow wording pass after structure is already locked.
 
+## Metadata Polish
+
+This pass runs only when metadata polish is owed now.
+
+Active mode: manifest-title.
+
+Current artifact: Primary Manifest.
+
+Must CurrentHandoff.preserve_basis == ApprovedPlan.
+
+Own only `PrimaryManifest.title`.
+
+Preserve exact `PrimaryManifest.*` except `PrimaryManifest.title`.
+
+Preserve decisions `ApprovedPlan`.
+
+Accepted Peer Set is comparison-only support.
+
+If unclear(pass_mode, CurrentHandoff.preserve_basis):
+- Stop: Mode or preserve basis is unclear.
+- Route the same issue back to RoutingOwner.
+
 ## Inputs
 
 ### Current Handoff
@@ -31,24 +53,6 @@ Use the host-provided handoff facts that say whether metadata polish is owed, wh
 - Shape: Json Object
 - Requirement: Advisory
 
-## Metadata Polish
-
-This pass runs only when metadata polish is owed now.
-
-Active mode: manifest-title.
-
-Current artifact: Primary Manifest.
-
-Own only `title`.
-
-Preserve every other manifest field exactly.
-
-Preserve the decisions already owned by Approved Plan.
-
-Accepted Peer Set is comparison-only support.
-
-If mode or preserve basis is unclear, stop and route the same issue back to RoutingOwner.
-
 ## Outputs
 
 ### Primary Manifest
@@ -63,6 +67,22 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Active Mode
+
+Name the one active mode for this pass.
+
+#### Preserve Basis
+
+Name the upstream declaration whose decisions remain authoritative.
+
+#### Comparison Basis
+
+Name any comparison-only artifacts used in this pass.
 
 #### Trust Surface
 

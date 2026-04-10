@@ -1,5 +1,11 @@
 Keep source-to-target mappings stable during a narrow update.
 
+## Preserve Mapping
+
+Current artifact: Slot Mapping.
+
+Preserve mapping `SlotMapping`.
+
 ## Inputs
 
 ### Slot Mapping
@@ -9,14 +15,6 @@ Keep source-to-target mappings stable during a narrow update.
 - Shape: Json Object
 - Requirement: Required
 
-## Preserve Mapping
-
-Current artifact: Slot Mapping.
-
-Preserve the approved concept-to-slot mapping.
-
-The coordination handoff must keep Slot Mapping named as the current truth.
-
 ## Outputs
 
 ### Coordination Handoff
@@ -24,6 +22,10 @@ The coordination handoff must keep Slot Mapping named as the current truth.
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
 
 #### Trust Surface
 

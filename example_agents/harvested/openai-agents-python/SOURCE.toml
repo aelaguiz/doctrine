@@ -1,0 +1,39 @@
+schema_version = 1
+
+slug = "openai-agents-python"
+title = "OpenAI Agents Python"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + docs"
+
+upstream = "openai/openai-agents-python"
+url = "https://github.com/openai/openai-agents-python"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "commands_and_quality_gates",
+  "skills_tools_and_capabilities",
+  "io_contracts_and_handoffs",
+  "orchestration_roles_and_delegation",
+  "negative_guardrails",
+  "context_and_memory",
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/docs/agents.md",
+  "raw/docs/tools.md",
+  "raw/docs/handoffs.md",
+  "raw/docs/results.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/docs/agents.md",
+  "raw/docs/tools.md",
+  "raw/docs/handoffs.md",
+  "raw/docs/results.md",
+]
+
+notes = "Strong pressure for repo-level verification gates, typed agent configuration, handoff semantics, tool-as-agent delegation, and separate result surfaces."

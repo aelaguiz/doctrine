@@ -1,0 +1,14 @@
+enum EditMode: "Edit Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+    law:
+        mode edit_mode = "taxonomy" as EditMode
+        current none
+
+
+agent InvalidModeValueOutsideEnum:
+    role: "Trigger a mode value outside the enum."
+    workflow: InvalidModeAwareEdit

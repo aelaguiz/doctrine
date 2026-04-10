@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "rockylinux-org"
+title = "Rocky Linux Website"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + docs index + repo playbooks"
+
+upstream = "rocky-linux/rockylinux.org"
+url = "https://github.com/rocky-linux/rockylinux.org"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "domain_specific_constraints",
+  "context_and_memory",
+]
+
+expected_artifacts = [
+  "CLAUDE.md",
+  "docs/README.md",
+  "docs/i18n/caching-and-locale-detection.md",
+  "docs/e2e/testing-patterns.md",
+  "docs/decisions/eslint-9-over-biome.md",
+  "docs/upgrades/next-16.md",
+]
+
+local_raw_paths = [
+  "raw/CLAUDE.md",
+  "raw/docs/README.md",
+  "raw/docs/i18n/caching-and-locale-detection.md",
+  "raw/docs/e2e/testing-patterns.md",
+  "raw/docs/decisions/eslint-9-over-biome.md",
+  "raw/docs/upgrades/next-16.md",
+]
+
+notes = "Repo-level instructions plus documentation playbooks that capture i18n caching, Playwright testing, lint policy, and Next.js upgrade decisions for a large multi-language site."

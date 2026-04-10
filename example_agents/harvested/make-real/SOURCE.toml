@@ -1,0 +1,39 @@
+schema_version = 1
+
+slug = "make-real"
+title = "Make Real"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + markdown system prompts"
+
+upstream = "tldraw/make-real"
+url = "https://github.com/tldraw/make-real"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "skills_tools_and_capabilities",
+  "io_contracts_and_handoffs",
+  "negative_guardrails",
+  "commands_and_quality_gates",
+]
+
+expected_artifacts = [
+  "CLAUDE.md",
+  "prompts/original.md",
+  "prompts/google-system-prompt.md",
+  "prompts/openai-system-prompt.md",
+  "prompts/anthropic-system-prompt.md",
+  "prompts/scratchpad.md",
+]
+
+local_raw_paths = [
+  "raw/CLAUDE.md",
+  "raw/prompts/original.md",
+  "raw/prompts/google-system-prompt.md",
+  "raw/prompts/openai-system-prompt.md",
+  "raw/prompts/anthropic-system-prompt.md",
+  "raw/prompts/scratchpad.md",
+]
+
+notes = "Prompt-first prototype app with a repo guide and several model-specific markdown prompts that define output format, provider behavior, annotation stripping, and refactor-from-existing-code rules."

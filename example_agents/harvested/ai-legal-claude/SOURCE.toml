@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "ai-legal-claude"
+title = "AI Legal Claude"
+source_kind = "production_codebase"
+primary_format = "orchestrator skill + subagent markdown"
+
+upstream = "zubair-trabzada/ai-legal-claude"
+url = "https://github.com/zubair-trabzada/ai-legal-claude"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "orchestration_roles_and_delegation",
+  "io_contracts_and_handoffs",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "domain_specific_constraints",
+]
+
+expected_artifacts = [
+  "raw/skills/legal-review/SKILL.md",
+  "raw/agents/legal-clauses.md",
+  "raw/agents/legal-risks.md",
+  "raw/agents/legal-compliance.md",
+  "raw/agents/legal-terms.md",
+  "raw/agents/legal-recommendations.md",
+]
+
+local_raw_paths = [
+  "raw/skills/legal-review/SKILL.md",
+  "raw/agents/legal-clauses.md",
+  "raw/agents/legal-risks.md",
+  "raw/agents/legal-compliance.md",
+  "raw/agents/legal-terms.md",
+  "raw/agents/legal-recommendations.md",
+]
+
+notes = "Strong pressure for parallel subagent orchestration, clause-to-risk-to-compliance role split, obligation mapping, negotiation output, and strict disclaimer and report templates."

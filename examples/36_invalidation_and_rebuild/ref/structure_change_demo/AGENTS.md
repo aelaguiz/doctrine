@@ -1,5 +1,17 @@
 Invalidate downstream review when structure changes.
 
+## Structure Change
+
+This pass runs only when structure changed.
+
+Current artifact: Section Metadata.
+
+Section Review is no longer current.
+
+Stop: Structure moved; downstream review is no longer current.
+
+Route the same issue back to RoutingOwner for rebuild.
+
 ## Inputs
 
 ### Current Handoff
@@ -9,16 +21,6 @@ Invalidate downstream review when structure changes.
 - Requirement: Required
 
 Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested.
-
-## Structure Change
-
-Current artifact: Section Metadata.
-
-Section Review is no longer current after this change.
-
-The invalidation handoff must name that invalidation.
-
-Stop and route the same issue back to RoutingOwner for rebuild.
 
 ## Outputs
 
@@ -34,6 +36,14 @@ Stop and route the same issue back to RoutingOwner for rebuild.
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Invalidations
+
+Name any artifacts that are no longer current.
 
 #### Trust Surface
 

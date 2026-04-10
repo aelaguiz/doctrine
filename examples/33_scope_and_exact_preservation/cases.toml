@@ -3,13 +3,34 @@ default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
 name = "own only and preserve exact keep narrow edits honest"
-status = "planned"
+status = "active"
 kind = "render_contract"
 agent = "NarrowMetadataEditDemo"
 assertion = "exact_lines"
 approx_ref = "ref/narrow_metadata_edit_demo/AGENTS.md"
 expected_lines = [
   "Keep narrow ownership explicit and preserve every unowned field.",
+  "",
+  "## Narrow Metadata Edit",
+  "",
+  "Keep narrow ownership explicit and preserve every unowned field.",
+  "",
+  "Work in exactly one mode:",
+  "- name-only",
+  "- summary-refresh",
+  "",
+  "If mode is name-only:",
+  "- Current artifact: Section Metadata.",
+  "- Own only `SectionMetadata.name`.",
+  "- Preserve exact `SectionMetadata.*` except `SectionMetadata.name`.",
+  "- Preserve decisions `ApprovedPlan`.",
+  "",
+  "If mode is summary-refresh:",
+  "- Current artifact: Section Metadata.",
+  "- Own only {`SectionMetadata.name`, `SectionMetadata.description`}.",
+  "- Preserve exact `SectionMetadata.*` except `SectionMetadata.name`, `SectionMetadata.description`.",
+  "- Preserve decisions `ApprovedStructure`.",
+  "- Do not modify {`SectionMetadata.taxonomy`, `SectionMetadata.flags`}.",
   "",
   "## Inputs",
   "",
@@ -35,27 +56,6 @@ expected_lines = [
   "- Shape: Markdown Document",
   "- Requirement: Required",
   "",
-  "## Narrow Metadata Edit",
-  "",
-  "Keep narrow ownership explicit and preserve every unowned field.",
-  "",
-  "Work in exactly one mode:",
-  "- name-only",
-  "- summary-refresh",
-  "",
-  "If mode is name-only:",
-  "- Current artifact: Section Metadata.",
-  "- Own only `name`.",
-  "- Preserve every other metadata field exactly.",
-  "- Preserve the decisions already owned by Approved Plan.",
-  "",
-  "If mode is summary-refresh:",
-  "- Current artifact: Section Metadata.",
-  "- Own only `name` and `description`.",
-  "- Preserve every other metadata field exactly.",
-  "- Preserve the decisions already owned by Approved Structure.",
-  "- Do not widen into `taxonomy` or `flags`.",
-  "",
   "## Outputs",
   "",
   "### Section Metadata",
@@ -71,6 +71,10 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
   "#### Trust Surface",
   "",
   "- Current Artifact",
@@ -82,48 +86,50 @@ expected_lines = [
 
 [[cases]]
 name = "owned paths must stay addressable"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_OWN_PATH_NOT_ADDRESSABLE.prompt"
 agent = "InvalidOwnPathNotAddressable"
 exception_type = "CompileError"
+error_code = "E352"
 message_contains = [
-  "own only",
-  "missing_field",
+  "Owned scope target is unknown",
+  "MissingArtifact",
 ]
 
 [[cases]]
 name = "owned paths must stay rooted in the current artifact"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_OWN_PATH_NOT_ROOTED_IN_CURRENT_ARTIFACT.prompt"
 agent = "InvalidOwnPathNotRootedInCurrentArtifact"
 exception_type = "CompileError"
+error_code = "E351"
 message_contains = [
-  "own only",
-  "current artifact",
+  "Owned scope is outside the current artifact",
+  "PrimaryManifest.title",
 ]
 
 [[cases]]
 name = "exact preservation cannot overlap owned scope without an explicit except"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_OWN_AND_EXACT_PRESERVE_OVERLAP.prompt"
 agent = "InvalidOwnAndExactPreserveOverlap"
 exception_type = "CompileError"
+error_code = "E353"
 message_contains = [
-  "preserve exact",
-  "overlap",
+  "Owned scope overlaps exact preservation",
 ]
 
 [[cases]]
 name = "owned and forbidden scope cannot overlap"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_OWN_AND_FORBID_OVERLAP.prompt"
 agent = "InvalidOwnAndForbidOverlap"
 exception_type = "CompileError"
+error_code = "E354"
 message_contains = [
-  "owned",
-  "forbidden",
+  "Owned scope overlaps forbidden scope",
 ]

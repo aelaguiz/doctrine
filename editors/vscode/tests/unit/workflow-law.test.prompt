@@ -1,0 +1,50 @@
+# SYNTAX TEST "source.doctrine" "workflow-law keywords and trust surfaces"
+
+workflow CarryCurrentTruth: "Carry Current Truth"
+    law:
+#   ^^^ keyword.other.field.doctrine
+#      ^ punctuation.separator.key-value.doctrine
+        active when CurrentHandoff.owes_edit
+#       ^^^^^^ keyword.control.doctrine
+#              ^^^^ keyword.control.doctrine
+
+        mode edit_mode = CurrentHandoff.active_mode as EditMode
+#       ^^^^ keyword.control.doctrine
+
+        current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+#       ^^^^^^^ keyword.control.doctrine
+#               ^^^^^^^^ keyword.control.doctrine
+
+        own only SectionMetadata.title
+#       ^^^ keyword.control.doctrine
+#           ^^^^ keyword.control.doctrine
+
+        preserve exact SectionMetadata except SectionMetadata.title
+#       ^^^^^^^^ keyword.control.doctrine
+#                ^^^^^ keyword.control.doctrine
+#                                      ^^^^^^ keyword.control.doctrine
+
+        support_only AcceptedPeerSet for comparison
+#       ^^^^^^^^^^^^ keyword.control.doctrine
+
+        ignore SectionMetadata.description for rewrite_evidence
+#       ^^^^^^ keyword.control.doctrine
+
+        invalidate SectionReview via CoordinationHandoff.invalidations
+#       ^^^^^^^^^^ keyword.control.doctrine
+
+        when CurrentHandoff.structure_changed:
+#       ^^^^ keyword.control.doctrine
+
+        match edit_mode:
+#       ^^^^^ keyword.control.doctrine
+
+            else:
+#           ^^^^ keyword.control.doctrine
+
+output CoordinationHandoff: "Coordination Handoff"
+    trust_surface:
+#   ^^^^^^^^^^^^^ keyword.other.field.doctrine
+#                ^ punctuation.separator.key-value.doctrine
+        rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+#                          ^^^^ keyword.control.doctrine

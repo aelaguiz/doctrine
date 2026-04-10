@@ -1,0 +1,110 @@
+>enum CriticVerdict: "Critic Verdict"
+#^^^^ source.doctrine keyword.declaration.doctrine
+#    ^ source.doctrine
+#     ^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>    accept: "accept"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    changes_requested: "changes requested"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>workflow ReadFirst: "Read First"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>    verdict_rules: "Verdict Rules"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Return {{CriticVerdict:missing_member}} only when the work is ready."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                  ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                               ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                              ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>output ReviewDecision: "Review Decision"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                        ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent InvalidUnknownEnumMemberDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Trigger an unknown enum member ref."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>    read_first: ReadFirst
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        ReviewDecision
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

@@ -1,0 +1,32 @@
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    handoff_summary: "Handoff Summary"
+        "Summarize the current truth."
+
+    trust_surface:
+        handoff_summary
+
+
+workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    law:
+        current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+
+
+agent InvalidViaFieldNotInTrustSurface:
+    role: "Trigger a carrier field that is not trusted downstream."
+    workflow: InvalidCarryCurrentTruth
+    outputs: "Outputs"
+        CoordinationHandoff

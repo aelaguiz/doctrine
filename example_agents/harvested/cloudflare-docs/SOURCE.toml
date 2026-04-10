@@ -1,0 +1,41 @@
+schema_version = 1
+
+slug = "cloudflare-docs"
+title = "Cloudflare Docs"
+source_kind = "documentation_site"
+primary_format = "AGENTS.md + style-guide MDX"
+
+upstream = "cloudflare/cloudflare-docs"
+url = "https://github.com/cloudflare/cloudflare-docs"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "skills_tools_and_capabilities",
+  "context_and_memory",
+  "domain_specific_constraints"
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/src/content/docs/style-guide/index.mdx",
+  "raw/src/content/docs/style-guide/ai-tooling.mdx",
+  "raw/src/content/docs/style-guide/documentation-content-strategy/writing-guidelines.mdx",
+  "raw/src/content/docs/style-guide/formatting/code-block-guidelines.mdx",
+  "raw/src/content/docs/style-guide/how-we-docs/reviews.mdx"
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/src/content/docs/style-guide/index.mdx",
+  "raw/src/content/docs/style-guide/ai-tooling.mdx",
+  "raw/src/content/docs/style-guide/documentation-content-strategy/writing-guidelines.mdx",
+  "raw/src/content/docs/style-guide/formatting/code-block-guidelines.mdx",
+  "raw/src/content/docs/style-guide/how-we-docs/reviews.mdx"
+]
+
+notes = "Repo-level AGENTS plus style-guide MDX pages that encode authoring law, MDX safety rules, AI tooling guidance, review automation, and docs-specific behavior for contributors and agents."

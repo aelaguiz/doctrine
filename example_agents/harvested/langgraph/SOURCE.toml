@@ -1,0 +1,38 @@
+schema_version = 1
+
+slug = "langgraph"
+title = "LangGraph"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+
+upstream = "langchain-ai/langgraph"
+url = "https://github.com/langchain-ai/langgraph"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "io_contracts_and_handoffs",
+  "orchestration_roles_and_delegation",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "AGENTS.md",
+  "CLAUDE.md",
+  "README.md",
+  "libs/prebuilt/README.md",
+  "libs/cli/README.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/CLAUDE.md",
+  "raw/README.md",
+  "raw/libs/prebuilt/README.md",
+  "raw/libs/cli/README.md",
+]
+
+notes = "Low-level agent orchestration repo with repo-wide monorepo rules, a high-level product README, and sublibrary docs that define concrete agent, tool, validation, interrupt, and CLI deployment behavior."

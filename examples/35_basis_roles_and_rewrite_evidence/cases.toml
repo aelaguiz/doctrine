@@ -3,13 +3,23 @@ default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
 name = "basis roles can separate comparison help truth and rewrite evidence"
-status = "planned"
+status = "active"
 kind = "render_contract"
 agent = "RewriteAwarePolishDemo"
 assertion = "exact_lines"
 approx_ref = "ref/rewrite_aware_polish_demo/AGENTS.md"
 expected_lines = [
   "Separate comparison help, live truth, and rewrite evidence.",
+  "",
+  "## Rewrite-Aware Polish",
+  "",
+  "Current artifact: Section Metadata.",
+  "",
+  "Accepted Peer Set is comparison-only support.",
+  "",
+  "When CurrentHandoff.rewrite_regime is rewrite, ignore {`SectionMetadata.name`, `SectionMetadata.description`} for rewrite evidence.",
+  "",
+  "Stale Metadata Notes does not count as truth for this pass.",
   "",
   "## Inputs",
   "",
@@ -35,16 +45,6 @@ expected_lines = [
   "- Shape: Markdown Document",
   "- Requirement: Advisory",
   "",
-  "## Rewrite-Aware Polish",
-  "",
-  "Current artifact: Section Metadata.",
-  "",
-  "Accepted Peer Set is comparison-only support.",
-  "",
-  "On rewrite passes, the old `name` and `description` values do not count as rewrite evidence.",
-  "",
-  "Stale metadata notes do not count as truth for this pass.",
-  "",
   "## Outputs",
   "",
   "### Section Metadata",
@@ -60,6 +60,18 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Comparison Basis",
+  "",
+  "Name any comparison-only inputs used in this pass.",
+  "",
+  "#### Rewrite Evidence Exclusions",
+  "",
+  "Name any fields whose old values do not count as rewrite evidence.",
+  "",
   "#### Trust Surface",
   "",
   "- Current Artifact",
@@ -73,24 +85,24 @@ expected_lines = [
 
 [[cases]]
 name = "comparison support cannot also be ignored for comparison"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_SUPPORT_ONLY_AND_IGNORE_COMPARISON_CONTRADICTION.prompt"
 agent = "InvalidSupportOnlyAndIgnoreComparisonContradiction"
 exception_type = "CompileError"
+error_code = "E362"
 message_contains = [
-  "support_only",
-  "comparison",
+  "Comparison-only basis contradiction",
 ]
 
 [[cases]]
 name = "the current artifact cannot be ignored for truth"
-status = "planned"
+status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_CURRENT_ARTIFACT_IGNORED_FOR_TRUTH.prompt"
 agent = "InvalidCurrentArtifactIgnoredForTruth"
 exception_type = "CompileError"
+error_code = "E361"
 message_contains = [
-  "current artifact",
-  "truth",
+  "Current artifact ignored for truth",
 ]

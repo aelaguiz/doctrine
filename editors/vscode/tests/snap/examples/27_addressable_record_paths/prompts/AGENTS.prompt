@@ -1,0 +1,50 @@
+# This example makes explicitly keyed nested record items addressable through
+# arbitrary dotted paths.
+# - path refs can target titled nested sections and scalar leaves inside record
+#   declarations
+# - workflow section bodies accept `Decl:path.to.child`
+# - generic scalar values can reuse `Decl:path.to.child` without flattening the
+#   source declaration
+
+workflow ReadFirst: "Read First"
+    read_now: "Read Now"
+        SectionConceptsTermsFileOutput:title
+        SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table.title
+        SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table
+        "Build {{SectionConceptsTermsFileOutput:must_include.analysis.tables.title}} inside {{SectionConceptsTermsFileOutput:title}} before you finalize `{{SectionConceptsTermsFileOutput:target.path}}`."
+
+
+output SectionConceptsTermsFileOutput: "Section Concepts Terms File"
+    target: File
+        path: "section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+    must_include: "Must Include"
+        analysis: "Analysis"
+            tables: "Tables"
+                concept_ladder_table: "Concept Ladder Table"
+                    "Map what earlier sections already taught and what the learner should learn next."
+
+        ids: "Concept IDs"
+            "Keep ids stable when the section already has accepted concepts."
+
+
+skill ConceptsTermsSkill: "Concepts Terms Skill"
+    purpose: "Use {{SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table}} before you finalize the document."
+
+    canonical_table: SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table
+    canonical_path: SectionConceptsTermsFileOutput:target.path
+
+
+agent AddressableRecordPathsDemo:
+    role: "Keep deep contract paths readable without flattening the contract."
+
+    read_first: ReadFirst
+
+    skills: "Skills"
+        can_run: "Can Run"
+            skill concepts_terms: ConceptsTermsSkill
+
+    outputs: "Outputs"
+        SectionConceptsTermsFileOutput

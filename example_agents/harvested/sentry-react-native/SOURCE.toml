@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "sentry-react-native"
+title = "Sentry React Native"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + CI.md + nested AGENTS.md"
+
+upstream = "getsentry/sentry-react-native"
+url = "https://github.com/getsentry/sentry-react-native"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "context_and_memory",
+  "domain_specific_constraints"
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/CI.md",
+  "raw/packages/core/AGENTS.md",
+  "raw/packages/core/android/AGENTS.md",
+  "raw/packages/core/ios/AGENTS.md",
+  "raw/samples/react-native/AGENTS.md"
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/CI.md",
+  "raw/packages/core/AGENTS.md",
+  "raw/packages/core/android/AGENTS.md",
+  "raw/packages/core/ios/AGENTS.md",
+  "raw/samples/react-native/AGENTS.md"
+]
+
+notes = "Repo-level workflow rules combined with nested package, platform, and sample-app instructions. Strong on command gates, platform-specific native bridge conventions, and label-driven CI gating."

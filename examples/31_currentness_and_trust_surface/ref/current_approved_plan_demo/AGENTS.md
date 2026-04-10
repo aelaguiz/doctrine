@@ -1,5 +1,11 @@
 Carry one portable current artifact through a declared handoff field.
 
+## Carry Current Truth
+
+Keep one current artifact explicit and portable.
+
+Current artifact: Approved Plan.
+
 ## Inputs
 
 ### Approved Plan
@@ -8,14 +14,6 @@ Carry one portable current artifact through a declared handoff field.
 - Path: `unit_root/_authoring/APPROVED_PLAN.md`
 - Shape: Markdown Document
 - Requirement: Required
-
-## Carry Current Truth
-
-This pass keeps one current artifact explicit and portable.
-
-Current artifact: Approved Plan.
-
-The coordination handoff must name that current artifact.
 
 ## Outputs
 

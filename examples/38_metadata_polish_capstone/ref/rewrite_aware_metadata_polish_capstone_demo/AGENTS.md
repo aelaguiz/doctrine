@@ -1,5 +1,38 @@
 Handle the last narrow wording pass after structure is already locked.
 
+## Metadata Polish
+
+This pass runs only when metadata polish is owed now.
+
+Active mode: section-summary.
+
+Current artifact: Section Metadata.
+
+Must CurrentHandoff.preserve_basis == ApprovedStructure.
+
+Own only {`SectionMetadata.name`, `SectionMetadata.description`}.
+
+Preserve exact `SectionMetadata.*` except `SectionMetadata.name`, `SectionMetadata.description`.
+
+Preserve decisions `ApprovedStructure`.
+
+Do not modify {`SectionMetadata.taxonomy`, `SectionMetadata.flags`}.
+
+Accepted Peer Set is comparison-only support.
+
+When pass_mode is manifest-title and CurrentHandoff.rewrite_regime is rewrite, ignore `PrimaryManifest.title` for rewrite evidence.
+
+When pass_mode is section-summary and CurrentHandoff.rewrite_regime is rewrite, ignore {`SectionMetadata.name`, `SectionMetadata.description`} for rewrite evidence.
+
+If structure changed:
+- Section Review is no longer current.
+- Stop: Structure moved; downstream review is no longer current.
+- Route the same issue back to RoutingOwner for rebuild.
+
+If unclear(pass_mode, CurrentHandoff.preserve_basis):
+- Stop: Mode or preserve basis is unclear.
+- Route the same issue back to RoutingOwner.
+
 ## Inputs
 
 ### Current Handoff
@@ -31,30 +64,6 @@ Use the host-provided handoff facts that say whether metadata polish is owed, wh
 - Shape: Json Object
 - Requirement: Advisory
 
-## Metadata Polish
-
-This pass runs only when metadata polish is owed now.
-
-Active mode: section-summary.
-
-Current artifact: Section Metadata.
-
-Own only `name` and `description`.
-
-Preserve every other metadata field exactly.
-
-Preserve the decisions already owned by Approved Structure.
-
-Do not widen into `taxonomy` or `flags`.
-
-Accepted Peer Set is comparison-only support.
-
-On rewrite passes, the old `name` and `description` values do not count as rewrite evidence.
-
-If structure changed, Section Review is no longer current. The rewrite-aware coordination handoff must say so. Stop and route the same issue back to RoutingOwner for rebuild.
-
-If mode or preserve basis is unclear, stop and route the same issue back to RoutingOwner.
-
 ## Outputs
 
 ### Section Metadata
@@ -69,6 +78,30 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Active Mode
+
+Name the one active mode for this pass.
+
+#### Preserve Basis
+
+Name the upstream declaration whose decisions remain authoritative.
+
+#### Comparison Basis
+
+Name any comparison-only artifacts used in this pass.
+
+#### Rewrite Evidence Exclusions
+
+Name any fields whose old values do not count as rewrite evidence.
+
+#### Invalidations
+
+Name any artifacts that are no longer current.
 
 #### Trust Surface
 

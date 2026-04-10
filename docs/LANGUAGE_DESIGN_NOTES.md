@@ -7,6 +7,9 @@ This document is intentionally short and easy to rewrite. Its job is to record
 the language decisions we have made so far, why we made them, and how we
 currently expect the parser to behave.
 
+The shipped surface now runs through the workflow-law family in
+`examples/30_*` through `examples/38_*`, not only through `29_enums`.
+
 ## Design Approach
 
 - We are designing the language example-first.
@@ -126,6 +129,30 @@ Current intent for enums:
 - `{{EnumRef}}` renders the enum title
 - `{{EnumRef:member_key}}` renders the concrete member literal
 - duplicate enum member keys fail loud during compilation
+
+## Workflow Law
+
+Workflow law is now a shipped compiler-owned surface.
+
+Current intent:
+- `law` lives only inside `workflow`
+- `trust_surface` lives only inside `output`
+- every active law leaf branch must resolve exactly one current-subject form:
+  either `current artifact ... via ...` or `current none`
+- currentness and invalidation move only through emitted output fields that are
+  listed in the relevant output's `trust_surface`
+- branch shaping is explicit through `active when`, `when`, `match`, `stop`,
+  and `route`
+- typed modes bind with `mode <name> = <expr> as EnumRef` and `match` stays
+  exhaustive or fails loud
+- scope and preservation law is explicit through `own only`, `preserve exact`,
+  `preserve structure`, `preserve mapping`, `preserve vocabulary`, and
+  `forbid`
+- basis roles are explicit through `support_only ... for comparison` and
+  `ignore ... for truth|comparison|rewrite_evidence`
+- reusable named law subsections live inside inherited workflows through
+  `inherit <section_key>` and `override <section_key>:`
+- examples illustrate intent, but compiler semantics own the language
 
 ## Nested Workflow Direction
 
@@ -278,6 +305,13 @@ The current examples are intentionally pushing on these rules so we can validate
   declarations and `outputs` refs must resolve to `output` declarations.
 - `11_skills_and_tools` is intentionally skill-first.
 - reusable capabilities should be modeled as `skill` declarations.
+- `30_law_route_only_turns` through `38_metadata_polish_capstone` are active
+  shipped proof, not planned-only review examples.
+- workflow law is now the shipped way to express route-only turns, portable
+  currentness, trust carriers, scope/preservation law, basis roles,
+  invalidation, and named law reuse.
+- `law` on workflows and `trust_surface` on outputs are reserved typed
+  surfaces, not generic prose or generic record fallbacks.
 - `12_role_home_composition` has already earned the basic role-home shell by
   composing shared `workflow` sections into named agent fields.
 - that means the open question is what belongs inside those composed sections,
@@ -333,9 +367,11 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 29
+## Shipped Through 38
 
-The shipped language subset now covers examples `01` through `29`.
+The shipped language subset now covers examples `01` through `38`, including
+workflow law on existing `workflow` and `output` owners rather than through
+new top-level declaration kinds.
 
 Current shipped declaration kinds:
 - `import`
@@ -353,6 +389,11 @@ Current shipped declaration kinds:
 - `json schema`
 - `skill`
 - `enum`
+
+Workflow law does not add a new top-level declaration family.
+It adds reserved child surfaces on existing owners:
+- `law` on `workflow`
+- `trust_surface` on `output`
 
 Current shipped agent field families:
 - `role`
@@ -383,6 +424,14 @@ Current shipped boundaries:
     reuse or patch those named blocks directly
   - anonymous parent-agent `inputs` and `outputs` fields are not themselves
     inherited patch surfaces
+- `workflow` now owns the reserved `law` block for typed currentness,
+  invalidation, mode/match branching, scope, preservation, basis-role, stop,
+  and reroute semantics
+- `output` now owns the reserved `trust_surface` block for downstream-readable
+  carrier fields and guarded trust items
+- portable currentness and invalidation move only through emitted output fields
+  listed in the relevant `trust_surface`; there is no packet or shadow carrier
+  model
 - `route "..." -> AgentName` is a narrow typed line item inside workflow and
   authored-slot sections, not a standalone role-graph DSL
 - output paths such as `section_root/...` stay plain path strings explained by

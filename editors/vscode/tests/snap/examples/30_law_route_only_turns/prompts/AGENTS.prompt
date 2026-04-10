@@ -1,0 +1,46 @@
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say whether the current handoff is missing or unclear."
+
+
+output CoordinationComment: "Coordination Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that no current artifact was carried forward."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when route-only work cannot continue safely."
+
+
+workflow RouteOnlyTurns: "Route-Only Triage"
+    "Handle turns that can only stop and reroute."
+
+    law:
+        active when CurrentHandoff.missing or CurrentHandoff.unclear
+
+        when CurrentHandoff.missing:
+            current none
+            stop "Current handoff is missing."
+            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+        when CurrentHandoff.unclear:
+            current none
+            stop "Current handoff is unclear."
+            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+agent RouteOnlyTurnsDemo:
+    role: "Keep route-only work explicit when no durable artifact is current."
+    workflow: RouteOnlyTurns
+    inputs: "Inputs"
+        CurrentHandoff
+    outputs: "Outputs"
+        CoordinationComment

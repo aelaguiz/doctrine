@@ -1,5 +1,11 @@
 Keep closed vocabulary stable while revising the surrounding guidance.
 
+## Preserve Vocabulary
+
+Current artifact: Review Template.
+
+Preserve vocabulary `CriticVerdict`.
+
 ## Inputs
 
 ### Review Template
@@ -9,14 +15,6 @@ Keep closed vocabulary stable while revising the surrounding guidance.
 - Shape: Markdown Document
 - Requirement: Required
 
-## Preserve Vocabulary
-
-Current artifact: Review Template.
-
-Preserve the Critic Verdict vocabulary.
-
-The coordination handoff must keep Review Template named as the current truth.
-
 ## Outputs
 
 ### Coordination Handoff
@@ -24,6 +22,10 @@ The coordination handoff must keep Review Template named as the current truth.
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
 
 #### Trust Surface
 

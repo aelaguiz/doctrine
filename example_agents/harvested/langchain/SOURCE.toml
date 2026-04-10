@@ -1,0 +1,32 @@
+schema_version = 1
+
+slug = "langchain"
+title = "LangChain"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+
+upstream = "langchain-ai/langchain"
+url = "https://github.com/langchain-ai/langchain"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "AGENTS.md",
+  "CLAUDE.md",
+  "README.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/CLAUDE.md",
+  "raw/README.md",
+]
+
+notes = "Large Python monorepo with duplicated top-level AGENTS/CLAUDE guidance, explicit public-API stability rules, repo-wide test and lint gates, and a README that frames the agent-engineering boundary between LangChain and LangGraph."

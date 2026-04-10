@@ -1,0 +1,171 @@
+>output SectionMetadata: "Section Metadata"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                         ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "unit_root/_authoring/section_metadata.json"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: JsonObject
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>output CoordinationHandoff: "Coordination Handoff"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                             ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: Comment
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    current_artifact: "Current Artifact"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Name the one artifact that is current now."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    trust_surface:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+>        current_artifact
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>workflow BaseMetadataPolish: "Base Metadata Polish"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+#                            ^ source.doctrine
+#                             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                              ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        currentness:
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+>            current artifact SectionMetadata via CoordinationHandoff.current_artifact
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^ source.doctrine keyword.control.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#                            ^^^^^^^^^^^^^^^^^ source.doctrine
+#                                             ^^^ source.doctrine keyword.control.doctrine
+#                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>
+>
+>workflow ChildMetadataPolish[BaseMetadataPolish]: "Child Metadata Polish"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                             ^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                               ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                 ^ source.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                   ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        inherit currentness
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>        current none
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine keyword.control.doctrine
+>
+>
+>agent InvalidBareLawStatementInInheritedChild:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                             ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Trigger a bare law statement in an inherited child."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: ChildMetadataPolish
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        SectionMetadata
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        CoordinationHandoff
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

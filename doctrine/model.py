@@ -43,6 +43,187 @@ class NameRef:
 
 
 @dataclass(slots=True, frozen=True)
+class ExprRef:
+    parts: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ExprCall:
+    name: str
+    args: tuple["Expr", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ExprBinary:
+    op: str
+    left: "Expr"
+    right: "Expr"
+
+
+Expr: TypeAlias = ExprRef | ExprCall | ExprBinary | str | int | bool
+
+
+@dataclass(slots=True, frozen=True)
+class LawPath:
+    parts: tuple[str, ...]
+    wildcard: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class LawPathSet:
+    paths: tuple[LawPath, ...]
+    except_paths: tuple[LawPath, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class TrustSurfaceItem:
+    path: tuple[str, ...]
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ActiveWhenStmt:
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class ModeStmt:
+    name: str
+    expr: Expr
+    enum_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class MustStmt:
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class CurrentArtifactStmt:
+    target: LawPath
+    carrier: LawPath
+
+
+@dataclass(slots=True, frozen=True)
+class CurrentNoneStmt:
+    pass
+
+
+@dataclass(slots=True, frozen=True)
+class OwnOnlyStmt:
+    target: LawPathSet
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class PreserveStmt:
+    kind: str
+    target: LawPathSet
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SupportOnlyStmt:
+    target: LawPathSet
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class IgnoreStmt:
+    target: LawPathSet
+    bases: tuple[str, ...]
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class InvalidateStmt:
+    target: LawPath
+    carrier: LawPath
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ForbidStmt:
+    target: LawPathSet
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class WhenStmt:
+    expr: Expr
+    items: tuple["LawStmt", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class MatchArm:
+    head: Expr | None
+    items: tuple["LawStmt", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class MatchStmt:
+    expr: Expr
+    cases: tuple[MatchArm, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class StopStmt:
+    message: str | None = None
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class LawRouteStmt:
+    label: str
+    target: NameRef
+    when_expr: Expr | None = None
+
+
+LawStmt: TypeAlias = (
+    ActiveWhenStmt
+    | ModeStmt
+    | MustStmt
+    | CurrentArtifactStmt
+    | CurrentNoneStmt
+    | OwnOnlyStmt
+    | PreserveStmt
+    | SupportOnlyStmt
+    | IgnoreStmt
+    | InvalidateStmt
+    | ForbidStmt
+    | WhenStmt
+    | MatchStmt
+    | StopStmt
+    | LawRouteStmt
+)
+
+
+@dataclass(slots=True, frozen=True)
+class LawSection:
+    key: str
+    items: tuple[LawStmt, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class LawInherit:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class LawOverrideSection:
+    key: str
+    items: tuple[LawStmt, ...]
+
+
+LawTopLevelItem: TypeAlias = LawStmt | LawSection | LawInherit | LawOverrideSection
+
+
+@dataclass(slots=True, frozen=True)
+class LawBody:
+    items: tuple[LawTopLevelItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class AddressableRef:
     root: NameRef
     path: tuple[str, ...] = ()
@@ -213,6 +394,7 @@ class WorkflowBody:
     title: str
     preamble: tuple[ProseLine, ...]
     items: tuple[WorkflowItem, ...]
+    law: LawBody | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -320,6 +502,7 @@ class OutputDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+    trust_surface: tuple[TrustSurfaceItem, ...] = ()
 
 
 @dataclass(slots=True, frozen=True)

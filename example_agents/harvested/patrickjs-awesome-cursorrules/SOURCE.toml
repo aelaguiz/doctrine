@@ -1,0 +1,30 @@
+schema_version = 1
+slug = "patrickjs-awesome-cursorrules"
+title = "PatrickJS/awesome-cursorrules"
+source_kind = "curation_catalog"
+primary_format = "README.md plus scoped .mdc files"
+upstream = "PatrickJS/awesome-cursorrules"
+url = "https://github.com/PatrickJS/awesome-cursorrules"
+status = "extracted"
+priority = "high"
+buckets = [
+  "archive_and_curation_sources",
+  "scope_hierarchy",
+  "negative_guardrails",
+  "commands_and_quality_gates",
+]
+expected_artifacts = [
+  "raw/README.md",
+  "raw/rules/typescript-nextjs-react-cursorrules-prompt-file/README.md",
+  "raw/rules/typescript-nextjs-react-cursorrules-prompt-file/next-js-app-router-data-fetching-rendering-and-routing-rules.mdc",
+  "raw/rules/python-312-fastapi-best-practices-cursorrules-prom/unit-testing-requirement.mdc",
+  "raw/rules/javascript-typescript-code-quality-cursorrules-pro/coding-guidelines---early-returns-and-conditionals.mdc",
+]
+local_raw_paths = [
+  "raw/README.md",
+  "raw/rules/typescript-nextjs-react-cursorrules-prompt-file/README.md",
+  "raw/rules/typescript-nextjs-react-cursorrules-prompt-file/next-js-app-router-data-fetching-rendering-and-routing-rules.mdc",
+  "raw/rules/python-312-fastapi-best-practices-cursorrules-prom/unit-testing-requirement.mdc",
+  "raw/rules/javascript-typescript-code-quality-cursorrules-pro/coding-guidelines---early-returns-and-conditionals.mdc",
+]
+notes = "A broad rule catalog with both packaging-level metadata and small scoped rule files. Useful for extracting hierarchy, glob scope, and narrow guardrail examples without dragging product-specific jargon into Doctrine."

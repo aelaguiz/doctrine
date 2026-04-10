@@ -6,6 +6,8 @@ Start here if you are new to the repo:
   runtime stays `AGENTS.md`
 - [../examples/README.md](../examples/README.md): how to read the numbered
   example corpus and its manifests
+- [../example_agents/README.md](../example_agents/README.md): external
+  instruction bank for harvesting real-world test cases and design pressure
 
 Reference docs:
 
@@ -18,6 +20,8 @@ Reference docs:
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-The live docs set is intentionally small. Historical plans, worklogs, and
-one-off research notes do not stay in `docs/`; use git history if you need that
-context.
+The live docs set is intentionally small. Active plan docs and worklogs may
+remain in `docs/` while work is in flight, but the shipped language truth
+stays anchored in `doctrine/`, the manifest-backed examples, and the current
+docs index. The shipped numbered corpus now runs through
+`examples/38_metadata_polish_capstone`, including the workflow-law cutover.

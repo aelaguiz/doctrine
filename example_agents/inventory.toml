@@ -1,0 +1,505 @@
+schema_version = 1
+
+[[sources]]
+slug = "agentsmd-spec"
+title = "agents.md Specification"
+source_kind = "meta_resource"
+primary_format = "AGENTS.md specification"
+upstream = "agentsmd/agents.md"
+url = "https://github.com/agentsmd/agents.md"
+status = "candidate"
+priority = "high"
+buckets = ["scope_hierarchy", "archive_and_curation_sources"]
+notes = "Canonical scope and precedence reference for AGENTS.md itself."
+
+[[sources]]
+slug = "vercel-nextjs"
+title = "Next.js Hierarchical AGENTS"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "vercel/next.js"
+url = "https://github.com/vercel/next.js"
+status = "extracted"
+priority = "high"
+buckets = ["scope_hierarchy", "commands_and_quality_gates", "negative_guardrails"]
+notes = "High-signal monorepo source with multiple AGENTS files and per-package guidance."
+
+[[sources]]
+slug = "openai-codex"
+title = "Codex Monorepo AGENTS"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "openai/codex"
+url = "https://github.com/openai/codex"
+status = "extracted"
+priority = "high"
+buckets = ["scope_hierarchy", "commands_and_quality_gates", "negative_guardrails"]
+notes = "Good source for hard limits, Rust style constraints, and layered instruction files."
+
+[[sources]]
+slug = "openai-agents-python"
+title = "OpenAI Agents Python"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + CLAUDE.md"
+upstream = "openai/openai-agents-python"
+url = "https://github.com/openai/openai-agents-python"
+status = "extracted"
+priority = "high"
+buckets = ["skills_tools_and_capabilities", "commands_and_quality_gates", "orchestration_roles_and_delegation"]
+notes = "Useful for skill invocation rules, commit expectations, and multi-agent SDK pressure."
+
+[[sources]]
+slug = "claude-code-action"
+title = "Claude Code Action"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + README.md"
+upstream = "anthropics/claude-code-action"
+url = "https://github.com/anthropics/claude-code-action"
+status = "extracted"
+priority = "high"
+buckets = ["orchestration_roles_and_delegation", "io_contracts_and_handoffs", "commands_and_quality_gates", "negative_guardrails"]
+notes = "Markdown-heavy GitHub Action contract with mode selection, auth flow, prompt preparation, and JSON output behavior."
+
+[[sources]]
+slug = "sentry-monorepo"
+title = "Sentry Hierarchical AGENTS"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "getsentry/sentry"
+url = "https://github.com/getsentry/sentry"
+status = "extracted"
+priority = "high"
+buckets = ["scope_hierarchy", "negative_guardrails", "commands_and_quality_gates"]
+notes = "Good source for backend/frontend split rules and explicit PR-shaping guidance."
+
+[[sources]]
+slug = "cloudflare-agents"
+title = "Cloudflare Agents SDK"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "cloudflare/agents"
+url = "https://github.com/cloudflare/agents"
+status = "extracted"
+priority = "medium"
+buckets = ["scope_hierarchy", "commands_and_quality_gates", "skills_tools_and_capabilities"]
+notes = "Per-directory AGENTS hierarchy plus repo-specific verification flow."
+
+[[sources]]
+slug = "cloudflare-docs"
+title = "Cloudflare Docs MDX Guardrails"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "cloudflare/cloudflare-docs"
+url = "https://github.com/cloudflare/cloudflare-docs"
+status = "extracted"
+priority = "medium"
+buckets = ["negative_guardrails", "commands_and_quality_gates", "domain_specific_constraints"]
+notes = "Good source for concrete formatting guardrails that fail loudly in practice."
+
+[[sources]]
+slug = "sentry-mcp"
+title = "Sentry MCP Tool Governance"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "getsentry/sentry-mcp"
+url = "https://github.com/getsentry/sentry-mcp"
+status = "extracted"
+priority = "medium"
+buckets = ["skills_tools_and_capabilities", "negative_guardrails", "commands_and_quality_gates"]
+notes = "Useful for bounded tool-count rules and quality-gate phrasing."
+
+[[sources]]
+slug = "sentry-react-native"
+title = "Sentry React Native"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+upstream = "getsentry/sentry-react-native"
+url = "https://github.com/getsentry/sentry-react-native"
+status = "extracted"
+priority = "medium"
+buckets = ["context_and_memory", "commands_and_quality_gates", "domain_specific_constraints"]
+notes = "Good source for context compaction reload rules and multi-platform command pressure."
+
+[[sources]]
+slug = "livekit-agents-js"
+title = "LiveKit Agents JS"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + nested package READMEs"
+upstream = "livekit/agents-js"
+url = "https://github.com/livekit/agents-js"
+status = "extracted"
+priority = "high"
+buckets = ["commands_and_quality_gates", "orchestration_roles_and_delegation", "io_contracts_and_handoffs", "negative_guardrails"]
+notes = "Complex markdown-first repo guidance with plugin docs, session vocabulary, and contribution gates."
+
+[[sources]]
+slug = "rockylinux-org"
+title = "Rocky Linux Website"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + docs playbooks"
+upstream = "rocky-linux/rockylinux.org"
+url = "https://github.com/rocky-linux/rockylinux.org"
+status = "extracted"
+priority = "medium"
+buckets = ["commands_and_quality_gates", "negative_guardrails", "domain_specific_constraints", "context_and_memory"]
+notes = "Large-site markdown guidance with i18n, E2E, and upgrade playbooks."
+
+[[sources]]
+slug = "patrickjs-awesome-cursorrules"
+title = "Awesome Cursor Rules"
+source_kind = "cursor_rule_collection"
+primary_format = ".cursorrules"
+upstream = "PatrickJS/awesome-cursorrules"
+url = "https://github.com/PatrickJS/awesome-cursorrules"
+status = "extracted"
+priority = "high"
+buckets = ["archive_and_curation_sources", "domain_specific_constraints", "negative_guardrails"]
+notes = "Primary discovery surface for framework-specific Cursor rules."
+
+[[sources]]
+slug = "awesome-cursor-rules-mdc"
+title = "Awesome Cursor Rules MDC"
+source_kind = "cursor_rule_collection"
+primary_format = ".mdc"
+upstream = "sanjeed5/awesome-cursor-rules-mdc"
+url = "https://github.com/sanjeed5/awesome-cursor-rules-mdc"
+status = "candidate"
+priority = "medium"
+buckets = ["archive_and_curation_sources", "domain_specific_constraints"]
+notes = "Large converted rule bank in the newer Cursor format."
+
+[[sources]]
+slug = "survivorforge-cursor-rules"
+title = "Survivorforge Cursor Rules"
+source_kind = "cursor_rule_collection"
+primary_format = ".cursorrules + generator"
+upstream = "survivorforge/cursor-rules"
+url = "https://github.com/survivorforge/cursor-rules"
+status = "candidate"
+priority = "medium"
+buckets = ["archive_and_curation_sources", "commands_and_quality_gates", "domain_specific_constraints"]
+notes = "Useful source for multi-stack rule packaging."
+
+[[sources]]
+slug = "devin-cursorrules"
+title = "Devin-like Cursor Rules"
+source_kind = "cursor_rule_collection"
+primary_format = ".cursorrules"
+upstream = "grapeot/devin.cursorrules"
+url = "https://github.com/grapeot/devin.cursorrules"
+status = "candidate"
+priority = "medium"
+buckets = ["context_and_memory", "orchestration_roles_and_delegation", "negative_guardrails"]
+notes = "Interesting source for self-updating lessons-learned patterns."
+
+[[sources]]
+slug = "cursor-memory-bank"
+title = "Cursor Memory Bank"
+source_kind = "cursor_rule_collection"
+primary_format = ".mdc + workflow docs"
+upstream = "vanzan01/cursor-memory-bank"
+url = "https://github.com/vanzan01/cursor-memory-bank"
+status = "extracted"
+priority = "medium"
+buckets = ["context_and_memory", "orchestration_roles_and_delegation"]
+notes = "Strong source for structured lifecycle, memory loading, and context budgeting."
+
+[[sources]]
+slug = "cursor-security-rules"
+title = "Cursor Security Rules"
+source_kind = "cursor_rule_collection"
+primary_format = ".mdc"
+upstream = "matank001/cursor-security-rules"
+url = "https://github.com/matank001/cursor-security-rules"
+status = "extracted"
+priority = "medium"
+buckets = ["negative_guardrails", "domain_specific_constraints"]
+notes = "Security-heavy source for forbidden-command and secret-handling test ideas."
+
+[[sources]]
+slug = "crewai-examples"
+title = "CrewAI Examples"
+source_kind = "orchestration_system"
+primary_format = "agents.yaml + tasks.yaml"
+upstream = "crewAIInc/crewAI-examples"
+url = "https://github.com/crewAIInc/crewAI-examples"
+status = "extracted"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "skills_tools_and_capabilities"]
+notes = "Good source for role/task split and structured multi-agent coordination."
+
+[[sources]]
+slug = "microsoft-autogen"
+title = "Microsoft AutoGen"
+source_kind = "orchestration_system"
+primary_format = "Python configs"
+upstream = "microsoft/autogen"
+url = "https://github.com/microsoft/autogen"
+status = "candidate"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "skills_tools_and_capabilities"]
+notes = "Useful source for manager-worker and group-chat style orchestration."
+
+[[sources]]
+slug = "langchain"
+title = "LangChain"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + CLAUDE.md"
+upstream = "langchain-ai/langchain"
+url = "https://github.com/langchain-ai/langchain"
+status = "extracted"
+priority = "high"
+buckets = ["scope_hierarchy", "commands_and_quality_gates", "negative_guardrails"]
+notes = "Monorepo markdown contract with public-API stability rules and repo-wide command gates."
+
+[[sources]]
+slug = "langgraph"
+title = "LangGraph"
+source_kind = "orchestration_system"
+primary_format = "graph definitions + CLAUDE.md"
+upstream = "langchain-ai/langgraph"
+url = "https://github.com/langchain-ai/langgraph"
+status = "extracted"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "commands_and_quality_gates"]
+notes = "Graph-based orchestration source with strong architecture pressure."
+
+[[sources]]
+slug = "agency-swarm"
+title = "Agency Swarm"
+source_kind = "orchestration_system"
+primary_format = "per-agent directories"
+upstream = "VRSEN/agency-swarm"
+url = "https://github.com/VRSEN/agency-swarm"
+status = "extracted"
+priority = "high"
+buckets = ["orchestration_roles_and_delegation", "scope_hierarchy", "skills_tools_and_capabilities"]
+notes = "Strong source for per-agent directory contracts and tool/schema packaging."
+
+[[sources]]
+slug = "metagpt"
+title = "MetaGPT"
+source_kind = "orchestration_system"
+primary_format = "role and SOP definitions"
+upstream = "FoundationAgents/MetaGPT"
+url = "https://github.com/FoundationAgents/MetaGPT"
+status = "candidate"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "domain_specific_constraints"]
+notes = "Useful source for role-specialized SOPs and explicit coordination language."
+
+[[sources]]
+slug = "chatdev"
+title = "ChatDev"
+source_kind = "orchestration_system"
+primary_format = "zero-code workflow configs"
+upstream = "OpenBMB/ChatDev"
+url = "https://github.com/OpenBMB/ChatDev"
+status = "candidate"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "archive_and_curation_sources"]
+notes = "Good pressure source for role workflows and multi-agent software-dev pipelines."
+
+[[sources]]
+slug = "system-prompts-and-models"
+title = "System Prompts And Models Of AI Tools"
+source_kind = "prompt_archive"
+primary_format = "system prompts + tool JSON"
+upstream = "x1xhlol/system-prompts-and-models-of-ai-tools"
+url = "https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools"
+status = "extracted"
+priority = "high"
+buckets = ["archive_and_curation_sources", "skills_tools_and_capabilities", "negative_guardrails"]
+notes = "Large production prompt archive for extracting concrete guardrail and tool-use patterns."
+
+[[sources]]
+slug = "claude-code-system-prompts"
+title = "Claude Code System Prompts"
+source_kind = "prompt_archive"
+primary_format = "system prompt archive"
+upstream = "Piebald-AI/claude-code-system-prompts"
+url = "https://github.com/Piebald-AI/claude-code-system-prompts"
+status = "extracted"
+priority = "high"
+buckets = ["archive_and_curation_sources", "orchestration_roles_and_delegation", "context_and_memory"]
+notes = "Useful source for plan/explore/task mode splits and production agent reminders."
+
+[[sources]]
+slug = "make-real"
+title = "Make Real"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + markdown prompt family"
+upstream = "tldraw/make-real"
+url = "https://github.com/tldraw/make-real"
+status = "extracted"
+priority = "medium"
+buckets = ["skills_tools_and_capabilities", "io_contracts_and_handoffs", "negative_guardrails"]
+notes = "Prompt-first markdown system with provider-specific behavior and a tight output contract."
+
+[[sources]]
+slug = "awesome-agent-skills"
+title = "Awesome Agent Skills"
+source_kind = "prompt_archive"
+primary_format = "SKILL.md collection"
+upstream = "VoltAgent/awesome-agent-skills"
+url = "https://github.com/VoltAgent/awesome-agent-skills"
+status = "extracted"
+priority = "medium"
+buckets = ["skills_tools_and_capabilities", "archive_and_curation_sources"]
+notes = "Large skill bank for capability packaging patterns."
+
+[[sources]]
+slug = "vercel-agent-browser"
+title = "Vercel Agent Browser"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + SKILL.md + references"
+upstream = "vercel-labs/agent-browser"
+url = "https://github.com/vercel-labs/agent-browser"
+status = "extracted"
+priority = "high"
+buckets = ["skills_tools_and_capabilities", "io_contracts_and_handoffs", "commands_and_quality_gates", "negative_guardrails"]
+notes = "Browser-automation skill contract with markdown references for commands, auth, sessions, and proxy behavior."
+
+[[sources]]
+slug = "vercel-agent-skills"
+title = "Vercel Agent Skills"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + SKILL.md collection"
+upstream = "vercel-labs/agent-skills"
+url = "https://github.com/vercel-labs/agent-skills"
+status = "extracted"
+priority = "high"
+buckets = ["skills_tools_and_capabilities", "commands_and_quality_gates", "domain_specific_constraints"]
+notes = "Markdown skill-pack repo with nested AGENTS and multiple frontend-focused SKILL contracts."
+
+[[sources]]
+slug = "seclab-taskflow-agent"
+title = "Security Lab Taskflow Agent"
+source_kind = "domain_agent"
+primary_format = "YAML personalities + staged pipeline"
+upstream = "GitHubSecurityLab/seclab-taskflow-agent"
+url = "https://github.com/GitHubSecurityLab/seclab-taskflow-agent"
+status = "extracted"
+priority = "high"
+buckets = ["domain_specific_constraints", "orchestration_roles_and_delegation", "negative_guardrails"]
+notes = "High-signal security source with staged verification and evidence requirements."
+
+[[sources]]
+slug = "strix"
+title = "Strix"
+source_kind = "domain_agent"
+primary_format = "agent configs"
+upstream = "usestrix/strix"
+url = "https://github.com/usestrix/strix"
+status = "candidate"
+priority = "medium"
+buckets = ["domain_specific_constraints", "negative_guardrails", "skills_tools_and_capabilities"]
+notes = "Good source for security execution boundaries and exploit-proof requirements."
+
+[[sources]]
+slug = "tradingagents"
+title = "TradingAgents"
+source_kind = "domain_agent"
+primary_format = "multi-agent finance roles"
+upstream = "TauricResearch/TradingAgents"
+url = "https://github.com/TauricResearch/TradingAgents"
+status = "extracted"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "domain_specific_constraints"]
+notes = "Useful source for role debates, researcher/trader splits, and risk-manager patterns."
+
+[[sources]]
+slug = "ai-trader"
+title = "AI Trader"
+source_kind = "domain_agent"
+primary_format = "SKILL.md + exchange integrations"
+upstream = "HKUDS/AI-Trader"
+url = "https://github.com/HKUDS/AI-Trader"
+status = "candidate"
+priority = "medium"
+buckets = ["skills_tools_and_capabilities", "domain_specific_constraints", "orchestration_roles_and_delegation"]
+notes = "Good source for capability packaging and agent-onboarding patterns."
+
+[[sources]]
+slug = "ai-scientist-v2"
+title = "AI Scientist v2"
+source_kind = "domain_agent"
+primary_format = "research workflow prompts"
+upstream = "SakanaAI/AI-Scientist-v2"
+url = "https://github.com/SakanaAI/AI-Scientist-v2"
+status = "candidate"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "domain_specific_constraints", "context_and_memory"]
+notes = "Useful source for autonomous research workflows and evidence loops."
+
+[[sources]]
+slug = "openclaw-medical-skills"
+title = "OpenClaw Medical Skills"
+source_kind = "domain_agent"
+primary_format = "SKILL.md collection"
+upstream = "FreedomIntelligence/OpenClaw-Medical-Skills"
+url = "https://github.com/FreedomIntelligence/OpenClaw-Medical-Skills"
+status = "extracted"
+priority = "medium"
+buckets = ["skills_tools_and_capabilities", "domain_specific_constraints"]
+notes = "Strong source for domain-scoped capability packaging and medical guardrails."
+
+[[sources]]
+slug = "ai-legal-claude"
+title = "AI Legal Claude"
+source_kind = "domain_agent"
+primary_format = "skills + parallel agents"
+upstream = "zubair-trabzada/ai-legal-claude"
+url = "https://github.com/zubair-trabzada/ai-legal-claude"
+status = "extracted"
+priority = "medium"
+buckets = ["orchestration_roles_and_delegation", "domain_specific_constraints", "skills_tools_and_capabilities"]
+notes = "Useful source for clause-analysis splits, risk review, and plain-English translation roles."
+
+[[sources]]
+slug = "awesome-agents-md"
+title = "Awesome AGENTS.md"
+source_kind = "meta_resource"
+primary_format = "curated AGENTS inventory"
+upstream = "Ischca/awesome-agents-md"
+url = "https://github.com/Ischca/awesome-agents-md"
+status = "candidate"
+priority = "medium"
+buckets = ["archive_and_curation_sources", "scope_hierarchy"]
+notes = "Discovery source for real AGENTS.md files and templates."
+
+[[sources]]
+slug = "awesome-copilot"
+title = "Awesome Copilot"
+source_kind = "meta_resource"
+primary_format = "agent and skill collection"
+upstream = "github/awesome-copilot"
+url = "https://github.com/github/awesome-copilot"
+status = "candidate"
+priority = "low"
+buckets = ["archive_and_curation_sources", "skills_tools_and_capabilities"]
+notes = "Useful secondary discovery surface for instruction and skill patterns."
+
+[[sources]]
+slug = "awesome-cli-coding-agents"
+title = "Awesome CLI Coding Agents"
+source_kind = "meta_resource"
+primary_format = "curated agent list"
+upstream = "bradAGI/awesome-cli-coding-agents"
+url = "https://github.com/bradAGI/awesome-cli-coding-agents"
+status = "candidate"
+priority = "low"
+buckets = ["archive_and_curation_sources"]
+notes = "Broad discovery list for additional terminal-native agent repos."
+
+[[sources]]
+slug = "awesome-ai-agents"
+title = "Awesome AI Agents"
+source_kind = "meta_resource"
+primary_format = "curated agent list"
+upstream = "e2b-dev/awesome-ai-agents"
+url = "https://github.com/e2b-dev/awesome-ai-agents"
+status = "candidate"
+priority = "low"
+buckets = ["archive_and_curation_sources"]
+notes = "Large discovery source for follow-on harvesting once the first bank fills out."

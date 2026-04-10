@@ -1,0 +1,126 @@
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested."
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output InvalidationHandoff: "Invalidation Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        invalidations
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
+
+
+output BlockedReviewHandoff: "Blocked Review Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are still no longer current."
+
+    trust_surface:
+        invalidations
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is no longer current."
+
+
+output RebuildHandoff: "Rebuild Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when rebuild work is required."
+
+
+workflow StructureChange: "Structure Change"
+    law:
+        active when CurrentHandoff.structure_changed
+        current artifact SectionMetadata via InvalidationHandoff.current_artifact
+        invalidate SectionReview via InvalidationHandoff.invalidations
+        stop "Structure moved; downstream review is no longer current."
+        route "Route the same issue back to RoutingOwner for rebuild." -> RoutingOwner
+
+
+workflow BlockedSectionReview: "Blocked Section Review"
+    law:
+        active when CurrentHandoff.section_review_invalidated
+        current none
+        stop "Section Review is invalidated until rebuild work completes."
+        route "Route the same issue back to RoutingOwner until review is rebuilt." -> RoutingOwner
+
+
+workflow RebuildSectionReview: "Rebuild Section Review"
+    law:
+        active when CurrentHandoff.rebuild_requested
+        current artifact SectionReview via RebuildHandoff.current_artifact
+
+
+agent StructureChangeDemo:
+    role: "Invalidate downstream review when structure changes."
+    workflow: StructureChange
+    inputs: "Inputs"
+        CurrentHandoff
+    outputs: "Outputs"
+        SectionMetadata
+        InvalidationHandoff
+
+
+agent BlockedSectionReviewDemo:
+    role: "Do not keep reviewing against invalidated downstream truth."
+    workflow: BlockedSectionReview
+    inputs: "Inputs"
+        CurrentHandoff
+    outputs: "Outputs"
+        BlockedReviewHandoff
+
+
+agent RebuildSectionReviewDemo:
+    role: "Rebuild invalidated review work and reissue it as current truth."
+    workflow: RebuildSectionReview
+    inputs: "Inputs"
+        CurrentHandoff
+    outputs: "Outputs"
+        SectionReview
+        RebuildHandoff

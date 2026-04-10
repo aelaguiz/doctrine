@@ -1,0 +1,139 @@
+>input CurrentHandoff: "Current Handoff"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    source: Prompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: JsonObject
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>output CoordinationComment: "Coordination Comment"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                             ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: Comment
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    current_artifact: "Current Artifact"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Name the current artifact."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    trust_surface:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+>        current_artifact
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                 ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        when CurrentHandoff.missing:
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine keyword.control.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>            current none
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^ source.doctrine keyword.control.doctrine
+#                   ^ source.doctrine
+#                    ^^^^ source.doctrine keyword.control.doctrine
+>            current artifact CoordinationComment via CoordinationComment.current_artifact
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^ source.doctrine keyword.control.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#                            ^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                 ^^^ source.doctrine keyword.control.doctrine
+#                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>
+>
+>agent InvalidCurrentNoneAndCurrentArtifact:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                          ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Trigger conflicting currentness."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: InvalidRouteOnlyTurns
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    inputs: "Inputs"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        CurrentHandoff
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

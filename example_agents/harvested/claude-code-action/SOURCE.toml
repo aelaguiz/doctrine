@@ -1,0 +1,36 @@
+schema_version = 1
+
+slug = "claude-code-action"
+title = "Claude Code Action"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md"
+
+upstream = "anthropics/claude-code-action"
+url = "https://github.com/anthropics/claude-code-action"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "io_contracts_and_handoffs",
+  "negative_guardrails",
+  "orchestration_roles_and_delegation",
+]
+
+expected_artifacts = [
+  "CLAUDE.md",
+  "README.md",
+  "base-action/CLAUDE.md",
+  "base-action/README.md",
+]
+
+local_raw_paths = [
+  "raw/CLAUDE.md",
+  "raw/README.md",
+  "raw/base-action/CLAUDE.md",
+  "raw/base-action/README.md",
+]
+
+notes = "GitHub Action plus base-action split with mode detection, prompt preparation, provider authentication, JSON execution outputs, and a separate lower-level action contract that is closer to a Doctrine-style turn surface than a plain library README."

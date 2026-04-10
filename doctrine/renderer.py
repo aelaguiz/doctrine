@@ -29,7 +29,6 @@ def _render_section(section: CompiledSection, *, depth: int) -> str:
         if body_lines and body_lines[-1] != "":
             body_lines.append("")
         body_lines.extend(_render_section(item, depth=depth + 1).splitlines())
-        body_lines.append("")
 
     while body_lines and body_lines[-1] == "":
         body_lines.pop()

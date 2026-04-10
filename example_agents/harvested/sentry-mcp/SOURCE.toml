@@ -1,0 +1,37 @@
+schema_version = 1
+
+slug = "sentry-mcp"
+title = "Sentry MCP"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + docs + nested CLAUDE.md"
+
+upstream = "getsentry/sentry-mcp"
+url = "https://github.com/getsentry/sentry-mcp"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "commands_and_quality_gates",
+  "skills_tools_and_capabilities",
+  "negative_guardrails",
+  "domain_specific_constraints",
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/docs/adding-tools.md",
+  "raw/docs/security.md",
+  "raw/docs/common-patterns.md",
+  "raw/packages/mcp-core/src/internal/agents/tools/data/CLAUDE.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/docs/adding-tools.md",
+  "raw/docs/security.md",
+  "raw/docs/common-patterns.md",
+  "raw/packages/mcp-core/src/internal/agents/tools/data/CLAUDE.md",
+]
+
+notes = "Strong pressure for tool-budget governance, safe tool annotations, explicit security limits, reusable schema contracts, and data-documented agent namespaces."

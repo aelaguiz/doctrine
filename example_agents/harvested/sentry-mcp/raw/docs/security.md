@@ -1,0 +1,233 @@
+# Security
+
+Authentication and security patterns for the Sentry MCP server.
+
+## OAuth Architecture
+
+The MCP server acts as an OAuth proxy between clients and Sentry:
+
+```
+MCP Client → MCP Server → Sentry OAuth → Sentry API
+```
+
+### Key Components
+
+1. **OAuth Provider** (@cloudflare/workers-oauth-provider)
+   - Manages client authorization
+   - Stores tokens in KV storage
+   - Handles state management
+   - Sets auth props in ExecutionContext
+
+2. **Client Approval**
+   - First-time clients require user approval
+   - Approved clients stored in signed cookies
+   - Per-organization access control
+
+3. **Token Management**
+   - Access tokens encrypted in KV storage
+   - MCP refresh reuses cached Sentry access tokens while they remain valid
+   - Tokens scoped to organizations
+
+## Implementation Patterns
+
+### OAuth Flow Handler
+
+See implementation: `packages/mcp-cloudflare/src/server/oauth/authorize.ts` and `packages/mcp-cloudflare/src/server/oauth/callback.ts`
+
+Key endpoints:
+
+- `/authorize` - Client approval and redirect to Sentry
+- `/callback` - Handle Sentry callback, store tokens
+- `/approve` - Process user approval
+
+### Required OAuth Scopes
+
+```typescript
+const REQUIRED_SCOPES = [
+  "org:read",
+  "project:read", 
+  "issue:read",
+  "issue:write"
+];
+```
+
+### Security Context
+
+```typescript
+interface ServerContext {
+  userId?: string;
+  clientId: string;
+  accessToken: string;
+  grantedSkills: Set<Skill>;  // Primary authorization method
+  // grantedScopes is deprecated and will be removed Jan 1, 2026
+  constraints: Constraints;
+  sentryHost: string;
+  mcpUrl?: string;
+}
+```
+
+Context captured in closures during server build and propagated through:
+
+- Tool handlers (via closure capture and direct parameter passing)
+- API client initialization
+- Error messages (sanitized)
+
+## Security Measures
+
+### SSRF Protection
+
+The MCP server validates `regionUrl` parameters to prevent Server-Side Request Forgery (SSRF) attacks:
+
+```typescript
+// Region URL validation rules:
+// 1. By default, only the base host itself is allowed as regionUrl
+// 2. Additional domains must be in SENTRY_ALLOWED_REGION_DOMAINS allowlist
+// 3. Must use HTTPS protocol for security
+// 4. Empty/undefined regionUrl means use the base host
+
+// Base host always allowed
+validateRegionUrl("https://sentry.io", "sentry.io"); // ✅ Base host match
+validateRegionUrl("https://mycompany.com", "mycompany.com"); // ✅ Base host match
+
+// Allowlist domains (sentry.io, us.sentry.io, de.sentry.io)
+validateRegionUrl("https://us.sentry.io", "sentry.io"); // ✅ In allowlist
+validateRegionUrl("https://de.sentry.io", "mycompany.com"); // ✅ In allowlist
+validateRegionUrl("https://sentry.io", "mycompany.com"); // ✅ In allowlist
+
+// Rejected domains
+validateRegionUrl("https://evil.com", "sentry.io"); // ❌ Not in allowlist
+validateRegionUrl("http://us.sentry.io", "sentry.io"); // ❌ Must use HTTPS
+validateRegionUrl("https://eu.sentry.io", "sentry.io"); // ❌ Not in allowlist
+validateRegionUrl("https://sub.mycompany.com", "mycompany.com"); // ❌ Not base host or allowlist
+```
+
+Implementation: `packages/mcp-server/src/internal/tool-helpers/validate-region-url.ts`
+
+### Prompt Injection Protection
+
+Tools that accept user input are vulnerable to prompt injection attacks. Key mitigations:
+
+1. **Parameter Validation**: All tool inputs validated with Zod schemas
+2. **URL Validation**: URLs parsed and validated before use
+3. **Region Constraints**: Region URLs restricted to known Sentry domains
+4. **No Direct Command Execution**: Tools don't execute user-provided commands
+
+Example protection in tools:
+
+```typescript
+// URLs must be valid and from expected domains
+if (!issueUrl.includes('sentry.io')) {
+  throw new UserInputError("Invalid Sentry URL");
+}
+
+// Region URLs validated against base host
+const validatedHost = validateRegionUrl(regionUrl, baseHost);
+```
+
+### State Parameter Protection
+
+The OAuth `state` is a compact HMAC-signed payload with a 10‑minute expiry:
+
+```typescript
+// Payload contains only what's needed on callback
+type OAuthState = {
+  clientId: string;
+  redirectUri: string; // must be a valid URL
+  scope: string[];     // from OAuth provider parseAuthRequest
+  permissions?: string[]; // user selections from approval
+  iat: number;         // issued at (ms)
+  exp: number;         // expires at (ms)
+};
+
+// Sign: `${hex(hmacSHA256(json))}.${btoa(json)}` using COOKIE_SECRET
+const signed = `${signatureHex}.${btoa(JSON.stringify(state))}`;
+
+// On callback: split, verify signature, parse, check exp > Date.now()
+```
+
+Implementation: `packages/mcp-cloudflare/src/server/oauth/state.ts`
+
+### Input Validation
+
+All user inputs sanitized:
+
+- HTML content escaped
+- URLs validated
+- OAuth parameters verified
+
+### Cookie Security
+
+```typescript
+// Signed cookie for approved clients
+const cookie = await signCookie(
+  `approved_clients=${JSON.stringify(approvedClients)}`,
+  COOKIE_SECRET
+);
+
+// Cookie attributes
+"HttpOnly; Secure; SameSite=Lax; Max-Age=2592000" // 30 days
+```
+
+## Error Handling
+
+Security-aware error responses:
+
+- No token/secret exposure in errors
+- Generic messages for auth failures
+- Detailed logging server-side only
+
+```typescript
+catch (error) {
+  if (error.message.includes("token")) {
+    return new Response("Authentication failed", { status: 401 });
+  }
+  // Log full error server-side
+  console.error("OAuth error:", error);
+  return new Response("An error occurred", { status: 500 });
+}
+```
+
+## Multi-Tenant Security
+
+### Organization Isolation
+
+- Tokens scoped to organizations
+- Users can switch organizations
+- Each organization requires separate approval
+
+### Access Control
+
+```typescript
+// Verify organization access
+const orgs = await apiService.listOrganizations();
+if (!orgs.find(org => org.slug === requestedOrg)) {
+  throw new UserInputError("No access to organization");
+}
+```
+
+## Environment Variables
+
+Required for OAuth:
+
+```bash
+SENTRY_CLIENT_ID=your_oauth_app_id
+SENTRY_CLIENT_SECRET=your_oauth_app_secret  
+COOKIE_SECRET=random_32_char_string
+```
+
+## CORS Configuration
+
+```typescript
+// Allowed origins for OAuth flow
+const ALLOWED_ORIGINS = [
+  "https://sentry.io",
+  "https://*.sentry.io"
+];
+```
+
+## References
+
+- OAuth implementation: `packages/mcp-cloudflare/src/server/oauth/*`
+- Cookie utilities: `packages/mcp-cloudflare/src/server/utils/cookies.ts`
+- OAuth Provider: `packages/mcp-cloudflare/src/server/bindings.ts`
+- Sentry OAuth docs: <https://docs.sentry.io/api/guides/oauth/>

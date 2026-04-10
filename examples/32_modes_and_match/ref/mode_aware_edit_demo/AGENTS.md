@@ -1,5 +1,23 @@
 Edit in exactly one typed mode and carry that mode through the handoff.
 
+## Mode-Aware Edit
+
+Edit in exactly one typed mode and carry that mode through the handoff.
+
+This pass runs only when edit is owed now.
+
+Work in exactly one mode:
+- manifest-title
+- section-summary
+
+If mode is manifest-title:
+- Current artifact: Approved Plan.
+- Must CurrentHandoff.preserve_basis == ApprovedPlan.
+
+If mode is section-summary:
+- Current artifact: Approved Structure.
+- Must CurrentHandoff.preserve_basis == ApprovedStructure.
+
 ## Inputs
 
 ### Current Handoff
@@ -24,24 +42,6 @@ Use the host-provided handoff facts that say whether edit work is owed, which mo
 - Shape: Markdown Document
 - Requirement: Required
 
-## Mode-Aware Edit
-
-This pass runs only when edit work is owed now.
-
-Work in exactly one mode:
-- manifest-title
-- section-summary
-
-If mode is manifest-title:
-- Current artifact: Approved Plan.
-- Approved Plan must stay the preserve basis for this mode.
-- The coordination handoff must name manifest-title as the active mode.
-
-If mode is section-summary:
-- Current artifact: Approved Structure.
-- Approved Structure must stay the preserve basis for this mode.
-- The coordination handoff must name section-summary as the active mode.
-
 ## Outputs
 
 ### Coordination Handoff
@@ -49,6 +49,14 @@ If mode is section-summary:
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Active Mode
+
+Name the active mode for this pass.
 
 #### Trust Surface
 

@@ -2,11 +2,9 @@ Carry a newly produced artifact as the current downstream truth.
 
 ## Carry Current Truth
 
-This pass keeps one current artifact explicit and portable.
+Keep one current artifact explicit and portable.
 
 Current artifact: Section Metadata.
-
-The coordination handoff must name that current artifact.
 
 ## Outputs
 

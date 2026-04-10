@@ -66,6 +66,19 @@ const WORKFLOW_SKILLS_REF_RE = new RegExp(
 const OVERRIDE_BODY_RE = new RegExp(
   `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_OR_EMPTY_PATTERN}\\s*$`,
 );
+const LAW_FIELD_RE = /^\s*law\s*:\s*$/;
+const TRUST_SURFACE_FIELD_RE = /^\s*trust_surface\s*:\s*$/;
+const LAW_OVERRIDE_SECTION_RE = new RegExp(
+  `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*$`,
+);
+const LAW_SECTION_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*$`);
+const LAW_WHEN_RE = /^\s*when\b.*:\s*$/;
+const LAW_MATCH_RE = /^\s*match\b.*:\s*$/;
+const LAW_MATCH_ARM_RE = new RegExp(`^\\s*(else|${DOTTED_NAME_PATTERN})\\s*:\\s*$`);
+const TRUST_SURFACE_ITEM_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})(?:\\s+when\\b.*)?\\s*$`,
+);
+const UPPERCASE_DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
 
 const PROSE_LINE_RE = /^\s*(?:(?:required|important|warning|note)\s+)?"(?:\\.|[^"\\])*"\s*$/;
 const ROLE_INLINE_RE = new RegExp(`^\\s*role\\s*:\\s*${STRING_PATTERN}\\s*$`);
@@ -321,6 +334,15 @@ function classifyDefinitionSite(source, position) {
     case "workflow_body":
       sites.push(...collectWorkflowBodySites(lineText, position.line));
       break;
+    case "law_body":
+      sites.push(...collectLawBodySites(lineText, position.line, true));
+      break;
+    case "law_statement_body":
+      sites.push(...collectLawBodySites(lineText, position.line, false));
+      break;
+    case "law_match_body":
+      sites.push(...collectLawMatchBodySites(lineText, position.line));
+      break;
     case "workflow_section_body":
       sites.push(...collectWorkflowSectionSites(lineText, position.line));
       break;
@@ -343,6 +365,9 @@ function classifyDefinitionSite(source, position) {
           lineContext.container.fieldKind,
         ),
       );
+      break;
+    case "trust_surface_body":
+      sites.push(...collectTrustSurfaceBodySites(lineText, position.line));
       break;
     default:
       break;
@@ -474,6 +499,41 @@ function collectWorkflowBodySites(lineText, lineNumber) {
   return sites;
 }
 
+function collectLawBodySites(lineText, lineNumber, allowStructural) {
+  const sites = [];
+
+  if (allowStructural) {
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      sites.push(createStructuralSite(lineText, lineNumber, inheritItem[1]));
+    }
+
+    const overrideSection = lineText.match(LAW_OVERRIDE_SECTION_RE);
+    if (overrideSection) {
+      sites.push(createStructuralSite(lineText, lineNumber, overrideSection[1]));
+    }
+  }
+
+  const routeTarget = lineText.match(ROUTE_RE);
+  if (routeTarget) {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.AGENT,
+      range: createLastMatchRange(lineText, lineNumber, routeTarget[4]),
+      ref: parseNameRef(routeTarget[4]),
+      requireConcrete: true,
+    });
+    return sites;
+  }
+
+  sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  return sites;
+}
+
+function collectLawMatchBodySites(lineText, lineNumber) {
+  return collectShippedLawRefSites(lineText, lineNumber);
+}
+
 function collectWorkflowSectionSites(lineText, lineNumber) {
   const sites = [];
   const routeTarget = lineText.match(ROUTE_RE);
@@ -510,6 +570,16 @@ function collectWorkflowSectionSites(lineText, lineNumber) {
     });
   }
 
+  return sites;
+}
+
+function collectTrustSurfaceBodySites(lineText, lineNumber) {
+  const sites = [];
+  const trustSurfaceItem = lineText.match(TRUST_SURFACE_ITEM_RE);
+  if (trustSurfaceItem) {
+    sites.push(createStructuralSite(lineText, lineNumber, trustSurfaceItem[1]));
+  }
+  sites.push(...collectShippedLawRefSites(lineText, lineNumber));
   return sites;
 }
 
@@ -821,6 +891,64 @@ async function resolveReferenceTarget(ref, source, declarationKind, requireConcr
   return { declaration, document: targetSource.document };
 }
 
+async function resolveWorkflowParentBody(site, source) {
+  const { declaration, container } = site.lineContext;
+  if (container.owner === "agent_slot") {
+    return resolveInheritedWorkflowSlotBody(site, source);
+  }
+
+  if (declaration.kind !== DECLARATION_KIND.WORKFLOW || !declaration.parentRef) {
+    return undefined;
+  }
+
+  const parent = await resolveReferenceTarget(
+    declaration.parentRef,
+    source,
+    DECLARATION_KIND.WORKFLOW,
+    false,
+  );
+  if (!parent) {
+    return undefined;
+  }
+
+  return {
+    document: parent.document,
+    bodySpec: getDeclarationBodySpec(parent.declaration),
+  };
+}
+
+function findWorkflowLawBodySpec(document, workflowBodySpec) {
+  const baseIndent = findBodyBaseIndent(document, workflowBodySpec);
+  if (baseIndent === undefined) {
+    return undefined;
+  }
+
+  for (
+    let lineNumber = workflowBodySpec.lineNumber + 1;
+    lineNumber <= workflowBodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    if (!LAW_FIELD_RE.test(lineText)) {
+      continue;
+    }
+
+    return {
+      type: "law_body",
+      endLine: findBodyEndLine(document, lineNumber, workflowBodySpec.endLine),
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "workflow_law",
+    };
+  }
+
+  return undefined;
+}
+
 async function resolveImmediateParentBody(site, source) {
   const { declaration, container } = site.lineContext;
   if (!declaration) {
@@ -849,27 +977,33 @@ async function resolveImmediateParentBody(site, source) {
   }
 
   if (container.type === "workflow_body") {
-    if (container.owner === "agent_slot") {
-      return resolveInheritedWorkflowSlotBody(site, source);
-    }
+    return resolveWorkflowParentBody(site, source);
+  }
 
-    if (declaration.kind !== DECLARATION_KIND.WORKFLOW || !declaration.parentRef) {
+  if (container.type === "law_body") {
+    const parentWorkflowBody = await resolveWorkflowParentBody(site, source);
+    if (!parentWorkflowBody) {
       return undefined;
     }
 
-    const parent = await resolveReferenceTarget(
-      declaration.parentRef,
-      source,
-      DECLARATION_KIND.WORKFLOW,
-      false,
+    const parentLawBody = findWorkflowLawBodySpec(
+      parentWorkflowBody.document,
+      parentWorkflowBody.bodySpec,
     );
-    if (!parent) {
+    if (!parentLawBody) {
       return undefined;
     }
 
     return {
-      document: parent.document,
-      bodySpec: getDeclarationBodySpec(parent.declaration),
+      document: parentWorkflowBody.document,
+      bodySpec: parentLawBody,
+    };
+  }
+
+  if (container.type === "trust_surface_body") {
+    return {
+      document: source.document,
+      bodySpec: getDeclarationBodySpec(declaration),
     };
   }
 
@@ -1021,12 +1155,16 @@ function findStructuralKeyTarget(parentBody, key) {
       return getAgentBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "workflow_body":
       return getWorkflowBodyItems(parentBody.document, parentBody.bodySpec).get(key);
+    case "law_body":
+      return getLawBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "workflow_section_body":
       return getWorkflowSectionBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "skills_body":
       return getSkillsBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "io_body":
       return getIoBodyItems(parentBody.document, parentBody.bodySpec).get(key);
+    case "record_body":
+      return getRecordBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     default:
       return undefined;
   }
@@ -1328,6 +1466,15 @@ function getChildBodySpecForLine(document, declaration, container, lineNumber) {
     case "workflow_body":
       childBody = getWorkflowChildBodySpec(lineText, lineNumber);
       break;
+    case "law_body":
+      childBody = getLawBodyChildBodySpec(lineText, lineNumber, true);
+      break;
+    case "law_statement_body":
+      childBody = getLawBodyChildBodySpec(lineText, lineNumber, false);
+      break;
+    case "law_match_body":
+      childBody = getLawMatchBodyChildBodySpec(lineText, lineNumber);
+      break;
     case "workflow_section_body":
       childBody = getWorkflowSectionChildBodySpec(lineText, lineNumber);
       break;
@@ -1436,6 +1583,15 @@ function getAgentChildBodySpec(lineText, lineNumber) {
 }
 
 function getWorkflowChildBodySpec(lineText, lineNumber) {
+  if (LAW_FIELD_RE.test(lineText)) {
+    return {
+      type: "law_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "workflow_law",
+    };
+  }
+
   if (new RegExp(`^\\s*skills\\s*:\\s*${STRING_PATTERN}\\s*$`).test(lineText)) {
     return {
       type: "skills_body",
@@ -1498,6 +1654,49 @@ function getWorkflowSectionChildBodySpec(lineText, lineNumber) {
   }
 
   return undefined;
+}
+
+function getLawBodyChildBodySpec(lineText, lineNumber, allowStructural) {
+  if (LAW_MATCH_RE.test(lineText)) {
+    return {
+      type: "law_match_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
+  if (LAW_WHEN_RE.test(lineText)) {
+    return {
+      type: "law_statement_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
+  if (
+    allowStructural &&
+    (LAW_OVERRIDE_SECTION_RE.test(lineText) || LAW_SECTION_RE.test(lineText))
+  ) {
+    return {
+      type: "law_statement_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
+  return undefined;
+}
+
+function getLawMatchBodyChildBodySpec(lineText, lineNumber) {
+  if (!LAW_MATCH_ARM_RE.test(lineText)) {
+    return undefined;
+  }
+
+  return {
+    type: "law_statement_body",
+    indent: leadingSpaces(lineText),
+    lineNumber,
+  };
 }
 
 function getSkillsChildBodySpec(lineText, lineNumber, allowStructural, fieldKind) {
@@ -1570,6 +1769,15 @@ function getIoChildBodySpec(lineText, lineNumber, fieldKind) {
 }
 
 function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
+  if (TRUST_SURFACE_FIELD_RE.test(lineText)) {
+    return {
+      type: "trust_surface_body",
+      fieldKind,
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
   if (
     new RegExp(
       `^\\s*(?:${IDENTIFIER_PATTERN}\\s*:\\s*(?:${STRING_PATTERN}|${DOTTED_NAME_PATTERN}|${PATH_REF_PATTERN})|${DOTTED_NAME_PATTERN})\\s*$`,
@@ -1795,6 +2003,55 @@ function getWorkflowBodyItems(document, bodySpec) {
         lineNumber,
       });
     }
+  }
+
+  return items;
+}
+
+function getLawBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      items.set(inheritItem[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, inheritItem[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideSection = lineText.match(LAW_OVERRIDE_SECTION_RE);
+    if (overrideSection) {
+      items.set(overrideSection[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideSection[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const lawSection = lineText.match(LAW_SECTION_RE);
+    if (!lawSection) {
+      continue;
+    }
+
+    items.set(lawSection[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, lawSection[1]),
+      lineNumber,
+    });
   }
 
   return items;
@@ -2439,6 +2696,72 @@ function parseNameRef(rawRef) {
     declarationName: parts[parts.length - 1],
     moduleParts: parts.slice(0, -1),
   };
+}
+
+function maskQuotedText(lineText) {
+  return lineText.replace(/"(?:\\.|[^"\\])*"/g, (match) => " ".repeat(match.length));
+}
+
+function splitShippedLawToken(rawToken) {
+  const segments = rawToken.split(".");
+  const declarationIndex = segments.findIndex((segment) => /^[A-Z]/.test(segment));
+  if (declarationIndex === -1) {
+    return undefined;
+  }
+
+  const rootText = segments.slice(0, declarationIndex + 1).join(".");
+  const pathSegments = segments.slice(declarationIndex + 1);
+  return {
+    pathText: pathSegments.length ? pathSegments.join(".") : undefined,
+    rootText,
+  };
+}
+
+function collectShippedLawRefSites(lineText, lineNumber) {
+  // The compiler owns law semantics. The editor mirrors only the shipped
+  // clickable declaration/path surface by scanning non-string law tokens that
+  // still look like declaration roots.
+  const maskedLine = maskQuotedText(lineText);
+  const sites = [];
+
+  for (const match of maskedLine.matchAll(UPPERCASE_DOTTED_TOKEN_RE)) {
+    const rawToken = match[0];
+    const tokenStart = match.index ?? -1;
+    if (tokenStart < 0) {
+      continue;
+    }
+
+    const split = splitShippedLawToken(rawToken);
+    if (!split) {
+      continue;
+    }
+
+    if (split.pathText) {
+      sites.push(
+        ...createAddressableRefSites({
+          lineNumber,
+          pathText: split.pathText,
+          pathStartCharacter: tokenStart + split.rootText.length + 1,
+          rootText: split.rootText,
+          startCharacter: tokenStart,
+        }),
+      );
+      continue;
+    }
+
+    const ref = parseNameRef(split.rootText);
+    if (!ref) {
+      continue;
+    }
+
+    sites.push({
+      type: "readableDeclRef",
+      range: createRangeFromStart(lineNumber, tokenStart, split.rootText.length),
+      ref,
+    });
+  }
+
+  return sites;
 }
 
 function createAddressableRefSites({

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TypeAlias
 
@@ -164,6 +164,37 @@ class ResolvedWorkflowBody:
     title: str
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedWorkflowItem, ...]
+    law: model.LawBody | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class AgentContract:
+    inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]]
+    outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]]
+
+
+@dataclass(slots=True, frozen=True)
+class LawBranch:
+    activation_exprs: tuple[model.Expr, ...] = ()
+    mode_bindings: tuple[model.ModeStmt, ...] = ()
+    current_subjects: tuple[model.CurrentArtifactStmt | model.CurrentNoneStmt, ...] = ()
+    musts: tuple[model.MustStmt, ...] = ()
+    owns: tuple[model.OwnOnlyStmt, ...] = ()
+    preserves: tuple[model.PreserveStmt, ...] = ()
+    supports: tuple[model.SupportOnlyStmt, ...] = ()
+    ignores: tuple[model.IgnoreStmt, ...] = ()
+    forbids: tuple[model.ForbidStmt, ...] = ()
+    invalidations: tuple[model.InvalidateStmt, ...] = ()
+    stops: tuple[model.StopStmt, ...] = ()
+    routes: tuple[model.LawRouteStmt, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedLawPath:
+    unit: IndexedUnit
+    decl: model.InputDecl | model.OutputDecl | model.EnumDecl
+    remainder: tuple[str, ...]
+    wildcard: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -284,6 +315,7 @@ class CompilationContext:
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
         self._enforce_legacy_role_workflow_order(agent)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
+        agent_contract = self._resolve_agent_contract(agent, unit=unit)
         unresolved_abstract_slots = [
             slot.key
             for slot in resolved_slot_states
@@ -354,7 +386,17 @@ class CompilationContext:
                     raise CompileError(
                         f"Internal compiler error: missing resolved authored slot in agent {agent.name}: {field.key}"
                     )
-                compiled_fields.append(self._compile_resolved_workflow(slot_body))
+                if field.key == "workflow":
+                    compiled_fields.append(
+                        self._compile_resolved_workflow(
+                            slot_body,
+                            unit=unit,
+                            agent_contract=agent_contract,
+                            owner_label=f"agent {agent.name} workflow",
+                        )
+                    )
+                else:
+                    compiled_fields.append(self._compile_resolved_workflow(slot_body))
                 continue
 
             field_key = self._typed_field_key(field)
@@ -401,6 +443,164 @@ class CompilationContext:
         if isinstance(field, model.SkillsField):
             return "skills"
         return type(field).__name__
+
+    def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
+        inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]] = {}
+        outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]] = {}
+
+        for field in agent.fields:
+            if isinstance(field, model.InputsField):
+                self._collect_input_decls_from_io_value(field.value, unit=unit, sink=inputs)
+            elif isinstance(field, model.OutputsField):
+                self._collect_output_decls_from_io_value(field.value, unit=unit, sink=outputs)
+
+        return AgentContract(inputs=inputs, outputs=outputs)
+
+    def _collect_input_decls_from_io_value(
+        self,
+        value: model.IoFieldValue,
+        *,
+        unit: IndexedUnit,
+        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]],
+    ) -> None:
+        if isinstance(value, tuple):
+            self._collect_input_decls_from_record_items(value, unit=unit, sink=sink)
+            return
+        if isinstance(value, model.IoBody):
+            self._collect_input_decls_from_io_items(value.items, unit=unit, sink=sink)
+            return
+        if self._ref_exists_in_registry(
+            value,
+            unit=unit,
+            registry_name="outputs_blocks_by_name",
+        ):
+            raise CompileError(
+                "Inputs fields must resolve to inputs blocks, not outputs blocks: "
+                f"{_dotted_ref_name(value)}"
+            )
+        target_unit, decl = self._resolve_inputs_block_ref(value, unit=unit)
+        self._collect_input_decls_from_io_items(decl.body.items, unit=target_unit, sink=sink)
+
+    def _collect_output_decls_from_io_value(
+        self,
+        value: model.IoFieldValue,
+        *,
+        unit: IndexedUnit,
+        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]],
+    ) -> None:
+        if isinstance(value, tuple):
+            self._collect_output_decls_from_record_items(value, unit=unit, sink=sink)
+            return
+        if isinstance(value, model.IoBody):
+            self._collect_output_decls_from_io_items(value.items, unit=unit, sink=sink)
+            return
+        if self._ref_exists_in_registry(
+            value,
+            unit=unit,
+            registry_name="inputs_blocks_by_name",
+        ):
+            raise CompileError(
+                "Outputs fields must resolve to outputs blocks, not inputs blocks: "
+                f"{_dotted_ref_name(value)}"
+            )
+        target_unit, decl = self._resolve_outputs_block_ref(value, unit=unit)
+        self._collect_output_decls_from_io_items(decl.body.items, unit=target_unit, sink=sink)
+
+    def _collect_input_decls_from_io_items(
+        self,
+        items: tuple[model.IoItem, ...],
+        *,
+        unit: IndexedUnit,
+        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]],
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.RecordSection):
+                self._collect_input_decls_from_record_items(item.items, unit=unit, sink=sink)
+            elif isinstance(item, model.RecordRef):
+                if self._ref_exists_in_registry(
+                    item.ref,
+                    unit=unit,
+                    registry_name="outputs_by_name",
+                ):
+                    raise CompileError(
+                        "Inputs refs must resolve to input declarations, not output declarations: "
+                        f"{_dotted_ref_name(item.ref)}"
+                    )
+                target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
+                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
+            elif isinstance(item, model.OverrideIoSection):
+                self._collect_input_decls_from_record_items(item.items, unit=unit, sink=sink)
+
+    def _collect_output_decls_from_io_items(
+        self,
+        items: tuple[model.IoItem, ...],
+        *,
+        unit: IndexedUnit,
+        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]],
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.RecordSection):
+                self._collect_output_decls_from_record_items(item.items, unit=unit, sink=sink)
+            elif isinstance(item, model.RecordRef):
+                if self._ref_exists_in_registry(
+                    item.ref,
+                    unit=unit,
+                    registry_name="inputs_by_name",
+                ):
+                    raise CompileError(
+                        "Outputs refs must resolve to output declarations, not input declarations: "
+                        f"{_dotted_ref_name(item.ref)}"
+                    )
+                target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
+            elif isinstance(item, model.OverrideIoSection):
+                self._collect_output_decls_from_record_items(item.items, unit=unit, sink=sink)
+
+    def _collect_input_decls_from_record_items(
+        self,
+        items: tuple[model.RecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]],
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.RecordSection):
+                self._collect_input_decls_from_record_items(item.items, unit=unit, sink=sink)
+            elif isinstance(item, model.RecordRef):
+                if self._ref_exists_in_registry(
+                    item.ref,
+                    unit=unit,
+                    registry_name="outputs_by_name",
+                ):
+                    raise CompileError(
+                        "Inputs refs must resolve to input declarations, not output declarations: "
+                        f"{_dotted_ref_name(item.ref)}"
+                    )
+                target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
+                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
+
+    def _collect_output_decls_from_record_items(
+        self,
+        items: tuple[model.RecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]],
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.RecordSection):
+                self._collect_output_decls_from_record_items(item.items, unit=unit, sink=sink)
+            elif isinstance(item, model.RecordRef):
+                if self._ref_exists_in_registry(
+                    item.ref,
+                    unit=unit,
+                    registry_name="inputs_by_name",
+                ):
+                    raise CompileError(
+                        "Outputs refs must resolve to output declarations, not input declarations: "
+                        f"{_dotted_ref_name(item.ref)}"
+                    )
+                target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
 
     def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
         if len(agent.fields) != 2:
@@ -1084,18 +1284,89 @@ class CompilationContext:
                 f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
             )
 
+        trust_surface_section = (
+            self._compile_trust_surface_section(decl, unit=unit)
+            if decl.trust_surface
+            else None
+        )
+
         if extras:
-            body.append("")
-            body.extend(
-                self._compile_record_support_items(
-                    extras,
-                    unit=unit,
-                    owner_label=f"output {decl.name}",
-                    surface_label="output prose",
+            support_items: list[CompiledBodyItem] = []
+            rendered_trust_surface = False
+            for item in extras:
+                if (
+                    trust_surface_section is not None
+                    and not rendered_trust_surface
+                    and isinstance(item, model.RecordSection)
+                    and item.key == "standalone_read"
+                ):
+                    support_items.append(trust_surface_section)
+                    rendered_trust_surface = True
+                support_items.extend(
+                    self._compile_record_item(
+                        item,
+                        unit=unit,
+                        owner_label=f"output {decl.name}",
+                        surface_label="output prose",
+                    )
                 )
-            )
+            if trust_surface_section is not None and not rendered_trust_surface:
+                support_items.append(trust_surface_section)
+            body.append("")
+            body.extend(support_items)
+        elif trust_surface_section is not None:
+            body.append("")
+            body.append(trust_surface_section)
 
         return CompiledSection(title=decl.title, body=tuple(body))
+
+    def _compile_trust_surface_section(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        lines: list[CompiledBodyItem] = []
+        for item in decl.trust_surface:
+            field_node = self._resolve_output_field_node(
+                decl,
+                path=item.path,
+                unit=unit,
+                owner_label=f"output {decl.name}",
+                surface_label="trust_surface",
+            )
+            label = self._display_addressable_target_value(
+                field_node,
+                owner_label=f"output {decl.name}",
+                surface_label="trust_surface",
+            ).text
+            if item.when_expr is not None:
+                label = self._render_trust_surface_label(
+                    label,
+                    item.when_expr,
+                    unit=unit,
+                )
+            lines.append(f"- {label}")
+        return CompiledSection(title="Trust Surface", body=tuple(lines))
+
+    def _render_trust_surface_label(
+        self,
+        label: str,
+        when_expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> str:
+        if (
+            isinstance(when_expr, model.ExprBinary)
+            and when_expr.op == "=="
+            and self._resolve_constant_enum_member(when_expr.right, unit=unit) == "rewrite"
+        ):
+            return f"{label} on rewrite passes"
+
+        condition = self._render_condition_expr(when_expr, unit=unit)
+        if condition.startswith("peer comparison"):
+            return f"{label} when peer comparison is used"
+        return f"{label} when {condition}"
 
     def _compile_output_files(
         self,
@@ -2082,6 +2353,10 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                 ),
+                law=self._resolve_law_body(
+                    workflow_body.law,
+                    owner_label=owner_label,
+                ),
             )
 
         parent_items_by_key = {item.key: item for item in parent_workflow.items}
@@ -2212,7 +2487,82 @@ class CompilationContext:
             title=workflow_body.title,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
+            law=self._resolve_law_body(
+                workflow_body.law,
+                owner_label=owner_label,
+                parent_law=parent_workflow.law,
+                parent_label=parent_label,
+            ),
         )
+
+    def _resolve_law_body(
+        self,
+        law_body: model.LawBody | None,
+        *,
+        owner_label: str,
+        parent_law: model.LawBody | None = None,
+        parent_label: str | None = None,
+    ) -> model.LawBody | None:
+        if law_body is None:
+            return parent_law
+        if parent_law is None:
+            return law_body
+
+        parent_items = parent_law.items
+        parent_has_sections = all(
+            isinstance(item, model.LawSection) for item in parent_items
+        )
+        child_has_named_items = all(
+            isinstance(
+                item,
+                (model.LawSection, model.LawInherit, model.LawOverrideSection),
+            )
+            for item in law_body.items
+        )
+
+        if not parent_has_sections or not child_has_named_items:
+            raise CompileError(
+                f"Inherited law blocks must use named sections only in {owner_label}"
+            )
+
+        parent_items_by_key = {
+            item.key: item for item in parent_items if isinstance(item, model.LawSection)
+        }
+        resolved_items: list[model.LawTopLevelItem] = []
+        accounted_keys: set[str] = set()
+
+        for item in law_body.items:
+            if isinstance(item, model.LawSection):
+                if item.key in parent_items_by_key:
+                    raise CompileError(
+                        f"Inherited law block accounts for the same parent subsection more than once in {owner_label}: {item.key}"
+                    )
+                resolved_items.append(item)
+                continue
+
+            parent_item = parent_items_by_key.get(item.key)
+            if parent_item is None:
+                raise CompileError(
+                    f"Cannot override undefined law section in {parent_label}: {item.key}"
+                )
+            if item.key in accounted_keys:
+                raise CompileError(
+                    f"Inherited law block accounts for the same parent subsection more than once in {owner_label}: {item.key}"
+                )
+            accounted_keys.add(item.key)
+
+            if isinstance(item, model.LawInherit):
+                resolved_items.append(parent_item)
+            else:
+                resolved_items.append(model.LawSection(key=item.key, items=item.items))
+
+        missing_keys = sorted(set(parent_items_by_key) - accounted_keys)
+        if missing_keys:
+            raise CompileError(
+                f"Inherited law block omits parent subsection(s) in {owner_label}: {', '.join(missing_keys)}"
+            )
+
+        return model.LawBody(items=tuple(resolved_items))
 
     def _resolve_skills_addressable_body(
         self,
@@ -2334,6 +2684,10 @@ class CompilationContext:
                 items=self._resolve_non_inherited_addressable_workflow_items(
                     workflow_body.items,
                     unit=unit,
+                    owner_label=owner_label,
+                ),
+                law=self._resolve_law_body(
+                    workflow_body.law,
                     owner_label=owner_label,
                 ),
             )
@@ -2464,6 +2818,12 @@ class CompilationContext:
             title=workflow_body.title,
             preamble=(),
             items=tuple(resolved_items),
+            law=self._resolve_law_body(
+                workflow_body.law,
+                owner_label=owner_label,
+                parent_law=parent_workflow.law,
+                parent_label=parent_label,
+            ),
         )
 
     def _resolve_non_inherited_items(
@@ -3524,7 +3884,11 @@ class CompilationContext:
             raise CompileError(f"Route target must be a concrete agent: {dotted_name}")
 
     def _compile_workflow_decl(
-        self, workflow_decl: model.WorkflowDecl, *, unit: IndexedUnit
+        self,
+        workflow_decl: model.WorkflowDecl,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
     ) -> CompiledSection:
         workflow_key = (unit.module_parts, workflow_decl.name)
         if workflow_key in self._workflow_compile_stack:
@@ -3537,14 +3901,41 @@ class CompilationContext:
         self._workflow_compile_stack.append(workflow_key)
         try:
             return self._compile_resolved_workflow(
-                self._resolve_workflow_decl(workflow_decl, unit=unit)
+                self._resolve_workflow_decl(workflow_decl, unit=unit),
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=f"workflow {_dotted_decl_name(unit.module_parts, workflow_decl.name)}",
             )
         finally:
             self._workflow_compile_stack.pop()
 
-    def _compile_resolved_workflow(self, workflow_body: ResolvedWorkflowBody) -> CompiledSection:
+    def _compile_resolved_workflow(
+        self,
+        workflow_body: ResolvedWorkflowBody,
+        *,
+        unit: IndexedUnit | None = None,
+        agent_contract: AgentContract | None = None,
+        owner_label: str | None = None,
+    ) -> CompiledSection:
         body: list[CompiledBodyItem] = list(workflow_body.preamble)
+        if workflow_body.law is not None:
+            if unit is None or agent_contract is None or owner_label is None:
+                raise CompileError(
+                    "Internal compiler error: workflow law requires unit, agent contract, and owner label"
+                )
+            if body and body[-1] != "":
+                body.append("")
+            body.extend(
+                self._compile_workflow_law(
+                    workflow_body.law,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                )
+            )
         for item in workflow_body.items:
+            if body and body[-1] != "":
+                body.append("")
             if isinstance(item, ResolvedSectionItem):
                 body.append(
                     CompiledSection(
@@ -3559,10 +3950,1169 @@ class CompilationContext:
                 continue
 
             body.append(
-                self._compile_workflow_decl(item.workflow_decl, unit=item.target_unit)
+                self._compile_workflow_decl(
+                    item.workflow_decl,
+                    unit=item.target_unit,
+                    agent_contract=agent_contract,
+                )
             )
 
         return CompiledSection(title=workflow_body.title, body=tuple(body))
+
+    def _compile_workflow_law(
+        self,
+        law_body: model.LawBody,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> tuple[CompiledBodyItem, ...]:
+        flat_items = self._flatten_law_items(law_body, owner_label=owner_label)
+        self._validate_workflow_law(
+            flat_items,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
+
+        lines: list[str] = []
+        mode_bindings: dict[str, model.ModeStmt] = {}
+        for item in flat_items:
+            rendered: list[str] = []
+            if isinstance(item, model.ActiveWhenStmt):
+                rendered.append(
+                    f"This pass runs only when {self._render_condition_expr(item.expr, unit=unit)}."
+                )
+            elif isinstance(item, model.ModeStmt):
+                mode_bindings[item.name] = item
+                fixed_mode = self._resolve_constant_enum_member(item.expr, unit=unit)
+                if fixed_mode is not None:
+                    rendered.append(f"Active mode: {fixed_mode}.")
+            elif isinstance(item, model.MatchStmt):
+                rendered.extend(
+                    self._render_match_stmt(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        mode_bindings=mode_bindings,
+                    )
+                )
+            elif isinstance(item, model.WhenStmt):
+                rendered.extend(
+                    self._render_when_stmt(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        mode_bindings=mode_bindings,
+                    )
+                )
+            else:
+                rendered.extend(
+                    self._render_law_stmt_lines(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        bullet=False,
+                    )
+                )
+
+            if not rendered:
+                continue
+            if lines:
+                lines.append("")
+            lines.extend(rendered)
+
+        return tuple(lines)
+
+    def _flatten_law_items(
+        self,
+        law_body: model.LawBody,
+        *,
+        owner_label: str,
+    ) -> tuple[model.LawStmt, ...]:
+        has_sections = any(isinstance(item, model.LawSection) for item in law_body.items)
+        if has_sections:
+            if not all(isinstance(item, model.LawSection) for item in law_body.items):
+                raise CompileError(
+                    f"Law blocks may not mix named sections with bare law statements in {owner_label}"
+                )
+            flattened: list[model.LawStmt] = []
+            for item in law_body.items:
+                flattened.extend(item.items)
+            return tuple(flattened)
+        return tuple(law_body.items)
+
+    def _render_match_stmt(
+        self,
+        stmt: model.MatchStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        mode_bindings: dict[str, model.ModeStmt],
+    ) -> list[str]:
+        fixed_mode: str | None = None
+        if isinstance(stmt.expr, model.ExprRef) and len(stmt.expr.parts) == 1:
+            mode_stmt = mode_bindings.get(stmt.expr.parts[0])
+            if mode_stmt is not None:
+                fixed_mode = self._resolve_constant_enum_member(mode_stmt.expr, unit=unit)
+
+        if fixed_mode is not None:
+            for case in stmt.cases:
+                if case.head is None or self._render_expr(case.head, unit=unit) == fixed_mode:
+                    return self._render_law_stmt_block(
+                        case.items,
+                        unit=unit,
+                        owner_label=owner_label,
+                        bullet=False,
+                    )
+            return []
+
+        labels = [
+            self._render_expr(case.head, unit=unit)
+            for case in stmt.cases
+            if case.head is not None
+        ]
+        lines = ["Work in exactly one mode:"]
+        lines.extend(f"- {label}" for label in labels)
+        for case in stmt.cases:
+            if case.head is None:
+                heading = "Else:"
+            else:
+                heading = f"If mode is {self._render_expr(case.head, unit=unit)}:"
+            lines.extend(["", heading])
+            lines.extend(
+                self._render_law_stmt_block(
+                    case.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                    bullet=True,
+                )
+            )
+        return lines
+
+    def _render_when_stmt(
+        self,
+        stmt: model.WhenStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        mode_bindings: dict[str, model.ModeStmt],
+    ) -> list[str]:
+        lines = [f"If {self._render_condition_expr(stmt.expr, unit=unit)}:"]
+        lines.extend(
+            self._render_law_stmt_block(
+                stmt.items,
+                unit=unit,
+                owner_label=owner_label,
+                bullet=True,
+                mode_bindings=mode_bindings,
+            )
+        )
+        return lines
+
+    def _render_law_stmt_block(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        bullet: bool,
+        mode_bindings: dict[str, model.ModeStmt] | None = None,
+    ) -> list[str]:
+        mode_bindings = dict(mode_bindings or {})
+        lines: list[str] = []
+        for item in items:
+            if isinstance(item, model.ModeStmt):
+                mode_bindings[item.name] = item
+            if isinstance(item, model.MatchStmt):
+                rendered = self._render_match_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    mode_bindings=mode_bindings,
+                )
+            elif isinstance(item, model.WhenStmt):
+                rendered = self._render_when_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    mode_bindings=mode_bindings,
+                )
+            else:
+                rendered = self._render_law_stmt_lines(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    bullet=bullet,
+                )
+            if (
+                lines
+                and rendered
+                and not (
+                    bullet
+                    and lines[-1].startswith("- ")
+                    and all(line.startswith("- ") for line in rendered)
+                )
+            ):
+                lines.append("")
+            lines.extend(rendered)
+        return lines
+
+    def _render_law_stmt_lines(
+        self,
+        stmt: model.LawStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        bullet: bool,
+    ) -> list[str]:
+        if isinstance(stmt, model.CurrentArtifactStmt):
+            text = f"Current artifact: {self._display_law_path_root(stmt.target, unit=unit)}."
+        elif isinstance(stmt, model.CurrentNoneStmt):
+            text = "There is no current artifact for this turn."
+        elif isinstance(stmt, model.MustStmt):
+            text = self._render_must_stmt(stmt, unit=unit)
+        elif isinstance(stmt, model.OwnOnlyStmt):
+            text = f"Own only {self._render_path_set(stmt.target)}."
+        elif isinstance(stmt, model.PreserveStmt):
+            text = f"Preserve {stmt.kind} {self._render_path_set(stmt.target)}."
+        elif isinstance(stmt, model.SupportOnlyStmt):
+            text = (
+                f"{self._render_path_set_subject(stmt.target, unit=unit)} is comparison-only support."
+            )
+        elif isinstance(stmt, model.IgnoreStmt):
+            text = self._render_ignore_stmt(stmt, unit=unit)
+        elif isinstance(stmt, model.ForbidStmt):
+            text = f"Do not modify {self._render_path_set(stmt.target)}."
+        elif isinstance(stmt, model.InvalidateStmt):
+            text = f"{self._display_law_path_root(stmt.target, unit=unit)} is no longer current."
+        elif isinstance(stmt, model.StopStmt):
+            message = stmt.message or ""
+            if message and not message.endswith("."):
+                message += "."
+            text = "Stop." if stmt.message is None else f"Stop: {message}"
+        elif isinstance(stmt, model.LawRouteStmt):
+            text = stmt.label if stmt.label.endswith(".") else f"{stmt.label}."
+        elif isinstance(stmt, model.ActiveWhenStmt):
+            text = f"This pass runs only when {self._render_condition_expr(stmt.expr, unit=unit)}."
+        elif isinstance(stmt, model.ModeStmt):
+            fixed_mode = self._resolve_constant_enum_member(stmt.expr, unit=unit)
+            return [] if fixed_mode is None else [f"Active mode: {fixed_mode}."]
+        else:
+            return []
+
+        if bullet:
+            return [f"- {text}"]
+        return [text]
+
+    def _render_must_stmt(self, stmt: model.MustStmt, *, unit: IndexedUnit) -> str:
+        if (
+            isinstance(stmt.expr, model.ExprBinary)
+            and stmt.expr.op == "=="
+            and isinstance(stmt.expr.left, model.ExprRef)
+        ):
+            return f"Must {self._render_expr(stmt.expr.left, unit=unit)} == {self._render_expr(stmt.expr.right, unit=unit)}."
+        return f"Must {self._render_expr(stmt.expr, unit=unit)}."
+
+    def _render_ignore_stmt(self, stmt: model.IgnoreStmt, *, unit: IndexedUnit) -> str:
+        target = self._render_path_set(stmt.target)
+        if stmt.bases == ("rewrite_evidence",):
+            prefix = "Ignore"
+            if stmt.when_expr is not None:
+                prefix = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, ignore"
+            return f"{prefix} {target} for rewrite evidence."
+        if stmt.bases == ("truth",) or not stmt.bases:
+            return f"{self._render_path_set_subject(stmt.target, unit=unit)} does not count as truth for this pass."
+        return f"Ignore {target} for {', '.join(stmt.bases)}."
+
+    def _render_path_set_subject(
+        self,
+        target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+        *,
+        unit: IndexedUnit,
+    ) -> str:
+        target = self._coerce_path_set(target)
+        if len(target.paths) == 1 and not target.except_paths:
+            path = target.paths[0]
+            if not path.wildcard:
+                return self._display_law_path_root(path, unit=unit)
+        return self._render_path_set(target)
+
+    def _render_path_set(
+        self,
+        target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+    ) -> str:
+        target = self._coerce_path_set(target)
+        parts = [self._render_law_path(path) for path in target.paths]
+        rendered = ", ".join(parts)
+        if len(parts) > 1:
+            rendered = "{" + rendered + "}"
+        if target.except_paths:
+            rendered += " except " + ", ".join(
+                self._render_law_path(path) for path in target.except_paths
+            )
+        return rendered
+
+    def _render_law_path(self, path: model.LawPath) -> str:
+        text = ".".join(path.parts)
+        if path.wildcard:
+            text += ".*"
+        return f"`{text}`"
+
+    def _render_condition_expr(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
+        if isinstance(expr, model.ExprRef):
+            return self._render_condition_ref(expr, unit=unit)
+        if isinstance(expr, model.ExprBinary):
+            left = self._render_condition_expr(expr.left, unit=unit)
+            right = self._render_condition_expr(expr.right, unit=unit)
+            joiner = expr.op
+            if expr.op == "==":
+                return f"{left} is {right}"
+            if expr.op == "!=":
+                return f"{left} is not {right}"
+            return f"{left} {joiner} {right}"
+        if isinstance(expr, model.ExprCall):
+            args = ", ".join(self._render_expr(arg, unit=unit) for arg in expr.args)
+            return f"{_humanize_key(expr.name).lower()}({args})"
+        return self._render_expr(expr, unit=unit)
+
+    def _render_condition_ref(self, ref: model.ExprRef, *, unit: IndexedUnit) -> str:
+        parts = ref.parts
+        if not parts:
+            return ""
+        key = parts[-1]
+        if key == "missing":
+            return f"{self._render_ref_root(parts[:-1], unit=unit)} is missing"
+        if key == "unclear":
+            return f"{self._render_ref_root(parts[:-1], unit=unit)} is unclear"
+        if key.startswith("owes_"):
+            return f"{_humanize_key(key.removeprefix('owes_')).lower()} is owed now"
+        if key.endswith("_changed"):
+            return f"{_humanize_key(key).lower()}"
+        if key.endswith("_invalidated"):
+            return f"{_humanize_key(key).lower()}"
+        if key.endswith("_requested"):
+            return f"{_humanize_key(key).lower()}"
+        if key.endswith("_used"):
+            return f"{_humanize_key(key).lower()}"
+        return self._render_expr(ref, unit=unit)
+
+    def _render_ref_root(self, parts: tuple[str, ...], *, unit: IndexedUnit) -> str:
+        if not parts:
+            return "this turn"
+        try:
+            root_path = model.LawPath(parts=parts)
+            return self._display_law_path_root(root_path, unit=unit).lower()
+        except CompileError:
+            return _humanize_key(parts[-1]).lower()
+
+    def _render_expr(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
+        if isinstance(expr, model.ExprRef):
+            return self._render_expr_ref(expr, unit=unit)
+        if isinstance(expr, model.ExprBinary):
+            return (
+                f"{self._render_expr(expr.left, unit=unit)} {expr.op} "
+                f"{self._render_expr(expr.right, unit=unit)}"
+            )
+        if isinstance(expr, model.ExprCall):
+            args = ", ".join(self._render_expr(arg, unit=unit) for arg in expr.args)
+            return f"{expr.name}({args})"
+        if isinstance(expr, str):
+            return expr
+        if isinstance(expr, bool):
+            return "true" if expr else "false"
+        return str(expr)
+
+    def _render_expr_ref(self, expr: model.ExprRef, *, unit: IndexedUnit) -> str:
+        constant = self._resolve_constant_enum_member(expr, unit=unit)
+        if constant is not None:
+            return constant
+        return ".".join(expr.parts)
+
+    def _resolve_constant_enum_member(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        if isinstance(expr, str):
+            return expr
+        if not isinstance(expr, model.ExprRef) or len(expr.parts) < 2:
+            return None
+        name_ref = _name_ref_from_dotted_name(".".join(expr.parts[:-1]))
+        enum_decl = self._try_resolve_enum_decl(name_ref, unit=unit)
+        if enum_decl is None:
+            return None
+        member = next((member for member in enum_decl.members if member.key == expr.parts[-1]), None)
+        if member is None:
+            return None
+        return member.value
+
+    def _validate_workflow_law(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> None:
+        self._validate_law_stmt_tree(
+            items,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        branches = self._collect_law_leaf_branches(items, unit=unit)
+        if not branches:
+            branches = (LawBranch(),)
+
+        for branch in branches:
+            if len(branch.current_subjects) != 1:
+                current_labels = ", ".join(
+                    "current none"
+                    if isinstance(subject, model.CurrentNoneStmt)
+                    else "current artifact"
+                    for subject in branch.current_subjects
+                )
+                if current_labels:
+                    raise CompileError(
+                        "Active leaf branch resolves more than one current-subject form "
+                        f"({current_labels}) in {owner_label}"
+                    )
+                raise CompileError(
+                    f"Active leaf branch must resolve exactly one current-subject form in {owner_label}"
+                )
+            current = branch.current_subjects[0]
+            if isinstance(current, model.CurrentNoneStmt) and branch.owns:
+                raise CompileError(
+                    f"`current none` cannot appear with owned scope in {owner_label}"
+                )
+            current_target_key: tuple[tuple[str, ...], str] | None = None
+            if isinstance(current, model.CurrentArtifactStmt):
+                current_target_key = self._validate_current_artifact_stmt(
+                    current,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                )
+                for own in branch.owns:
+                    self._validate_owned_scope(
+                        own,
+                        unit=unit,
+                        owner_label=owner_label,
+                        current_target=current,
+                    )
+                for invalidate in branch.invalidations:
+                    if self._law_paths_match(current.target, invalidate.target):
+                        raise CompileError(
+                            f"The current artifact cannot be invalidated in the same active branch in {owner_label}"
+                        )
+            for invalidate in branch.invalidations:
+                self._validate_invalidation_stmt(
+                    invalidate,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                )
+            for support in branch.supports:
+                for ignore in branch.ignores:
+                    if "comparison" in ignore.bases and self._path_sets_overlap(
+                        support.target,
+                        ignore.target,
+                    ):
+                        raise CompileError(
+                            f"support_only and ignore for comparison contradict in {owner_label}"
+                        )
+            if current_target_key is not None:
+                for ignore in branch.ignores:
+                    if ("truth" in ignore.bases or not ignore.bases) and self._path_set_contains_path(
+                        ignore.target,
+                        current.target,
+                    ):
+                        raise CompileError(
+                            f"The current artifact cannot be ignored for truth in {owner_label}"
+                        )
+            for own in branch.owns:
+                own_target = self._coerce_path_set(own.target)
+                for forbid in branch.forbids:
+                    if self._path_sets_overlap(own_target, forbid.target):
+                        raise CompileError(
+                            f"Owned and forbidden scope overlap in {owner_label}"
+                        )
+                for preserve in branch.preserves:
+                    if preserve.kind == "exact" and any(
+                        self._path_set_contains_path(preserve.target, path)
+                        for path in own_target.paths
+                    ):
+                            raise CompileError(
+                                f"Owned scope overlaps exact-preserved scope in {owner_label}"
+                            )
+
+    def _validate_law_stmt_tree(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        mode_bindings: dict[str, model.ModeStmt] | None = None,
+    ) -> None:
+        local_mode_bindings = dict(mode_bindings or {})
+        for item in items:
+            if isinstance(item, model.ModeStmt):
+                self._validate_mode_stmt(item, unit=unit, owner_label=owner_label)
+                local_mode_bindings[item.name] = item
+                continue
+            if isinstance(item, model.MatchStmt):
+                self._validate_match_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    mode_bindings=local_mode_bindings,
+                )
+                for case in item.cases:
+                    self._validate_law_stmt_tree(
+                        case.items,
+                        unit=unit,
+                        owner_label=owner_label,
+                        mode_bindings=local_mode_bindings,
+                    )
+                continue
+            if isinstance(item, model.WhenStmt):
+                self._validate_law_stmt_tree(
+                    item.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                    mode_bindings=local_mode_bindings,
+                )
+                continue
+            if isinstance(item, model.CurrentArtifactStmt):
+                self._validate_law_path_root(
+                    item.target,
+                    unit=unit,
+                    owner_label=owner_label,
+                    statement_label="current artifact",
+                    allowed_kinds=("input", "output"),
+                )
+                continue
+            if isinstance(item, model.InvalidateStmt):
+                self._validate_law_path_root(
+                    item.target,
+                    unit=unit,
+                    owner_label=owner_label,
+                    statement_label="invalidate",
+                    allowed_kinds=("input", "output"),
+                )
+                continue
+            if isinstance(item, (model.OwnOnlyStmt, model.SupportOnlyStmt, model.IgnoreStmt, model.ForbidStmt)):
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    owner_label=owner_label,
+                    statement_label=self._law_stmt_name(item),
+                    allowed_kinds=("input", "output"),
+                )
+                continue
+            if isinstance(item, model.PreserveStmt):
+                if item.kind == "vocabulary":
+                    self._validate_path_set_roots(
+                        item.target,
+                        unit=unit,
+                        owner_label=owner_label,
+                        statement_label="preserve vocabulary",
+                        allowed_kinds=("enum",),
+                    )
+                else:
+                    self._validate_path_set_roots(
+                        item.target,
+                        unit=unit,
+                        owner_label=owner_label,
+                        statement_label=f"preserve {item.kind}",
+                        allowed_kinds=("input", "output"),
+                    )
+                continue
+            if isinstance(item, model.LawRouteStmt):
+                self._validate_route_target(item.target, unit=unit)
+
+    def _validate_mode_stmt(
+        self,
+        stmt: model.ModeStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        enum_unit, enum_decl = self._resolve_decl_ref(
+            stmt.enum_ref,
+            unit=unit,
+            registry_name="enums_by_name",
+            missing_label="enum declaration",
+        )
+        fixed_mode = self._resolve_constant_enum_member(stmt.expr, unit=enum_unit)
+        if fixed_mode is None:
+            return
+        if not any(member.value == fixed_mode for member in enum_decl.members):
+            raise CompileError(
+                f"Mode value is outside enum {enum_decl.name} in {owner_label}: {fixed_mode}"
+            )
+
+    def _validate_match_stmt(
+        self,
+        stmt: model.MatchStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        mode_bindings: dict[str, model.ModeStmt],
+    ) -> None:
+        enum_decl = self._resolve_match_enum_decl(
+            stmt.expr,
+            unit=unit,
+            mode_bindings=mode_bindings,
+        )
+        if enum_decl is None:
+            return
+
+        if any(case.head is None for case in stmt.cases):
+            return
+
+        seen_members: set[str] = set()
+        for case in stmt.cases:
+            if case.head is None:
+                continue
+            member_value = self._resolve_constant_enum_member(case.head, unit=unit)
+            if member_value is None:
+                continue
+            if not any(member.value == member_value for member in enum_decl.members):
+                raise CompileError(
+                    f"Match arm is outside enum {enum_decl.name} in {owner_label}: {member_value}"
+                )
+            seen_members.add(member_value)
+
+        expected_members = {member.value for member in enum_decl.members}
+        if seen_members != expected_members:
+            raise CompileError(
+                f"match on {enum_decl.name} must be exhaustive or include else in {owner_label}"
+            )
+
+    def _resolve_match_enum_decl(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        mode_bindings: dict[str, model.ModeStmt],
+    ) -> model.EnumDecl | None:
+        if not isinstance(expr, model.ExprRef) or len(expr.parts) != 1:
+            return None
+        mode_stmt = mode_bindings.get(expr.parts[0])
+        if mode_stmt is None:
+            return None
+        enum_unit, enum_decl = self._resolve_decl_ref(
+            mode_stmt.enum_ref,
+            unit=unit,
+            registry_name="enums_by_name",
+            missing_label="enum declaration",
+        )
+        _ = enum_unit
+        return enum_decl
+
+    def _collect_law_leaf_branches(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+        branch: LawBranch | None = None,
+    ) -> tuple[LawBranch, ...]:
+        branches = (branch or LawBranch(),)
+        index = 0
+        while index < len(items):
+            item = items[index]
+            if isinstance(item, model.WhenStmt):
+                when_items: list[model.WhenStmt] = []
+                while index < len(items) and isinstance(items[index], model.WhenStmt):
+                    when_items.append(items[index])
+                    index += 1
+                next_branches: list[LawBranch] = []
+                for current_branch in branches:
+                    for when_item in when_items:
+                        next_branches.extend(
+                            self._collect_law_leaf_branches(
+                                when_item.items,
+                                unit=unit,
+                                branch=current_branch,
+                            )
+                        )
+                branches = tuple(next_branches)
+                continue
+            if isinstance(item, model.WhenStmt):
+                next_branches: list[LawBranch] = []
+                for current_branch in branches:
+                    next_branches.extend(
+                        self._collect_law_leaf_branches(
+                            item.items,
+                            unit=unit,
+                            branch=current_branch,
+                        )
+                    )
+                branches = tuple(next_branches)
+                continue
+            if isinstance(item, model.MatchStmt):
+                next_branches = []
+                for current_branch in branches:
+                    for case in self._select_match_cases(
+                        item,
+                        unit=unit,
+                        branch=current_branch,
+                    ):
+                        next_branches.extend(
+                            self._collect_law_leaf_branches(
+                                case.items,
+                                unit=unit,
+                                branch=current_branch,
+                            )
+                        )
+                branches = tuple(next_branches)
+                index += 1
+                continue
+            branches = tuple(self._branch_with_stmt(current_branch, item) for current_branch in branches)
+            index += 1
+        return branches
+
+    def _select_match_cases(
+        self,
+        stmt: model.MatchStmt,
+        *,
+        unit: IndexedUnit,
+        branch: LawBranch,
+    ) -> tuple[model.MatchArm, ...]:
+        fixed_mode = self._resolve_fixed_match_value(stmt.expr, unit=unit, branch=branch)
+        if fixed_mode is None:
+            return stmt.cases
+
+        exact_matches = tuple(
+            case
+            for case in stmt.cases
+            if case.head is not None
+            and self._resolve_constant_enum_member(case.head, unit=unit) == fixed_mode
+        )
+        if exact_matches:
+            return exact_matches
+        else_matches = tuple(case for case in stmt.cases if case.head is None)
+        if else_matches:
+            return else_matches
+        return stmt.cases
+
+    def _resolve_fixed_match_value(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: LawBranch,
+    ) -> str | None:
+        if not isinstance(expr, model.ExprRef) or len(expr.parts) != 1:
+            return None
+        for mode_stmt in reversed(branch.mode_bindings):
+            if mode_stmt.name == expr.parts[0]:
+                return self._resolve_constant_enum_member(mode_stmt.expr, unit=unit)
+        return None
+
+    def _branch_with_stmt(self, branch: LawBranch, stmt: model.LawStmt) -> LawBranch:
+        if isinstance(stmt, model.ActiveWhenStmt):
+            return replace(branch, activation_exprs=(*branch.activation_exprs, stmt.expr))
+        if isinstance(stmt, model.ModeStmt):
+            return replace(branch, mode_bindings=(*branch.mode_bindings, stmt))
+        if isinstance(stmt, (model.CurrentArtifactStmt, model.CurrentNoneStmt)):
+            return replace(branch, current_subjects=(*branch.current_subjects, stmt))
+        if isinstance(stmt, model.MustStmt):
+            return replace(branch, musts=(*branch.musts, stmt))
+        if isinstance(stmt, model.OwnOnlyStmt):
+            return replace(branch, owns=(*branch.owns, stmt))
+        if isinstance(stmt, model.PreserveStmt):
+            return replace(branch, preserves=(*branch.preserves, stmt))
+        if isinstance(stmt, model.SupportOnlyStmt):
+            return replace(branch, supports=(*branch.supports, stmt))
+        if isinstance(stmt, model.IgnoreStmt):
+            return replace(branch, ignores=(*branch.ignores, stmt))
+        if isinstance(stmt, model.ForbidStmt):
+            return replace(branch, forbids=(*branch.forbids, stmt))
+        if isinstance(stmt, model.InvalidateStmt):
+            return replace(branch, invalidations=(*branch.invalidations, stmt))
+        if isinstance(stmt, model.StopStmt):
+            return replace(branch, stops=(*branch.stops, stmt))
+        if isinstance(stmt, model.LawRouteStmt):
+            return replace(branch, routes=(*branch.routes, stmt))
+        return branch
+
+    def _validate_current_artifact_stmt(
+        self,
+        stmt: model.CurrentArtifactStmt,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> tuple[tuple[str, ...], str]:
+        target = self._validate_law_path_root(
+            stmt.target,
+            unit=unit,
+            owner_label=owner_label,
+            statement_label="current artifact",
+            allowed_kinds=("input", "output"),
+        )
+        if target.remainder or target.wildcard:
+            raise CompileError(
+                f"current artifact must stay rooted at one input or output artifact in {owner_label}: "
+                f"{'.'.join(stmt.target.parts)}"
+            )
+
+        carrier = self._validate_carrier_path(
+            stmt.carrier,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label="current artifact",
+        )
+        if isinstance(target.decl, model.OutputDecl):
+            target_key = (target.unit.module_parts, target.decl.name)
+            if target_key not in agent_contract.outputs:
+                raise CompileError(
+                    f"current artifact output must be emitted by the concrete turn in {owner_label}: "
+                    f"{target.decl.name}"
+                )
+        return (target.unit.module_parts, target.decl.name)
+
+    def _validate_invalidation_stmt(
+        self,
+        stmt: model.InvalidateStmt,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> None:
+        target = self._validate_law_path_root(
+            stmt.target,
+            unit=unit,
+            owner_label=owner_label,
+            statement_label="invalidate",
+            allowed_kinds=("input", "output"),
+        )
+        if target.remainder or target.wildcard:
+            raise CompileError(
+                f"invalidate must name one full input or output artifact in {owner_label}: "
+                f"{'.'.join(stmt.target.parts)}"
+            )
+        self._validate_carrier_path(
+            stmt.carrier,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label="invalidate",
+        )
+
+    def _validate_carrier_path(
+        self,
+        carrier: model.LawPath,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+        statement_label: str,
+    ) -> ResolvedLawPath:
+        resolved = self._validate_law_path_root(
+            carrier,
+            unit=unit,
+            owner_label=owner_label,
+            statement_label=f"{statement_label} carrier",
+            allowed_kinds=("output",),
+        )
+        if not isinstance(resolved.decl, model.OutputDecl):
+            raise CompileError(
+                f"{statement_label} via carrier must stay rooted in an emitted output in {owner_label}"
+            )
+        if not resolved.remainder or resolved.wildcard:
+            raise CompileError(
+                f"{statement_label} requires an explicit `via` field on an emitted output in {owner_label}"
+            )
+
+        output_key = (resolved.unit.module_parts, resolved.decl.name)
+        if output_key not in agent_contract.outputs:
+            raise CompileError(
+                f"{statement_label} carrier output must be emitted by the concrete turn in {owner_label}: "
+                f"{resolved.decl.name}"
+            )
+
+        self._resolve_output_field_node(
+            resolved.decl,
+            path=resolved.remainder,
+            unit=resolved.unit,
+            owner_label=owner_label,
+            surface_label=f"{statement_label} via",
+        )
+        if not any(item.path == resolved.remainder for item in resolved.decl.trust_surface):
+            raise CompileError(
+                f"{statement_label} carrier field must be listed in trust_surface in {owner_label}: "
+                f"{'.'.join(resolved.remainder)}"
+            )
+        return resolved
+
+    def _validate_owned_scope(
+        self,
+        stmt: model.OwnOnlyStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        current_target: model.CurrentArtifactStmt,
+    ) -> None:
+        target = self._coerce_path_set(stmt.target)
+        current_root = self._validate_law_path_root(
+            current_target.target,
+            unit=unit,
+            owner_label=owner_label,
+            statement_label="current artifact",
+            allowed_kinds=("input", "output"),
+        )
+        for path in target.paths:
+            resolved = self._validate_law_path_root(
+                path,
+                unit=unit,
+                owner_label=owner_label,
+                statement_label="own only",
+                allowed_kinds=("input", "output"),
+            )
+            if (
+                resolved.unit.module_parts != current_root.unit.module_parts
+                or resolved.decl.name != current_root.decl.name
+            ):
+                raise CompileError(
+                    f"own only must stay rooted in the current artifact in {owner_label}: "
+                    f"{'.'.join(path.parts)}"
+                )
+
+    def _validate_path_set_roots(
+        self,
+        target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        statement_label: str,
+        allowed_kinds: tuple[str, ...],
+    ) -> None:
+        target = self._coerce_path_set(target)
+        for path in (*target.paths, *target.except_paths):
+            self._validate_law_path_root(
+                path,
+                unit=unit,
+                owner_label=owner_label,
+                statement_label=statement_label,
+                allowed_kinds=allowed_kinds,
+            )
+
+    def _validate_law_path_root(
+        self,
+        path: model.LawPath,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        statement_label: str,
+        allowed_kinds: tuple[str, ...],
+    ) -> ResolvedLawPath:
+        resolved = self._resolve_law_path(
+            path,
+            unit=unit,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_kinds=allowed_kinds,
+        )
+        if isinstance(resolved.decl, model.EnumDecl) and resolved.remainder:
+            raise CompileError(
+                f"{statement_label} enum targets must not descend through fields in {owner_label}: "
+                f"{'.'.join(path.parts)}"
+            )
+        return resolved
+
+    def _resolve_law_path(
+        self,
+        path: model.LawPath,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        statement_label: str,
+        allowed_kinds: tuple[str, ...],
+    ) -> ResolvedLawPath:
+        matches: list[ResolvedLawPath] = []
+        for split_index in range(1, len(path.parts) + 1):
+            ref = model.NameRef(
+                module_parts=path.parts[: split_index - 1],
+                declaration_name=path.parts[split_index - 1],
+            )
+            try:
+                lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            except CompileError:
+                continue
+            remainder = path.parts[split_index:]
+            if "input" in allowed_kinds:
+                input_decl = lookup_unit.inputs_by_name.get(ref.declaration_name)
+                if input_decl is not None:
+                    matches.append(
+                        ResolvedLawPath(
+                            unit=lookup_unit,
+                            decl=input_decl,
+                            remainder=remainder,
+                            wildcard=path.wildcard,
+                        )
+                    )
+            if "output" in allowed_kinds:
+                output_decl = lookup_unit.outputs_by_name.get(ref.declaration_name)
+                if output_decl is not None:
+                    matches.append(
+                        ResolvedLawPath(
+                            unit=lookup_unit,
+                            decl=output_decl,
+                            remainder=remainder,
+                            wildcard=path.wildcard,
+                        )
+                    )
+            if "enum" in allowed_kinds:
+                enum_decl = lookup_unit.enums_by_name.get(ref.declaration_name)
+                if enum_decl is not None:
+                    matches.append(
+                        ResolvedLawPath(
+                            unit=lookup_unit,
+                            decl=enum_decl,
+                            remainder=remainder,
+                            wildcard=path.wildcard,
+                        )
+                    )
+
+        unique_matches: list[ResolvedLawPath] = []
+        seen: set[tuple[tuple[str, ...], str, tuple[str, ...], str]] = set()
+        for match in matches:
+            key = (
+                match.unit.module_parts,
+                match.decl.name,
+                match.remainder,
+                type(match.decl).__name__,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_matches.append(match)
+
+        if len(unique_matches) == 1:
+            return unique_matches[0]
+        if len(unique_matches) > 1:
+            choices = ", ".join(
+                _dotted_decl_name(match.unit.module_parts, match.decl.name)
+                for match in unique_matches
+            )
+            raise CompileError(
+                f"Ambiguous {statement_label} path in {owner_label}: "
+                f"{'.'.join(path.parts)} matches {choices}"
+            )
+
+        allowed_text = " or ".join(allowed_kinds)
+        raise CompileError(
+            f"{statement_label} target must resolve to a declared {allowed_text} in {owner_label}: "
+            f"{'.'.join(path.parts)}"
+        )
+
+    def _resolve_output_field_node(
+        self,
+        decl: model.OutputDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> AddressableNode:
+        current_node = AddressableNode(unit=unit, root_decl=decl, target=decl)
+        if not path:
+            return current_node
+        for segment in path:
+            children = self._get_addressable_children(current_node)
+            if children is None or segment not in children:
+                raise CompileError(
+                    f"Unknown output field on {surface_label} in {owner_label}: "
+                    f"{decl.name}.{'.'.join(path)}"
+                )
+            current_node = children[segment]
+        return current_node
+
+    def _law_paths_match(self, left: model.LawPath, right: model.LawPath) -> bool:
+        return self._law_path_contains_path(left, right) or self._law_path_contains_path(right, left)
+
+    def _law_path_contains_path(self, container: model.LawPath, path: model.LawPath) -> bool:
+        if len(container.parts) > len(path.parts):
+            return False
+        if path.parts[: len(container.parts)] != container.parts:
+            return False
+        if len(container.parts) == len(path.parts):
+            return container.wildcard or not path.wildcard or container.wildcard == path.wildcard
+        return container.wildcard
+
+    def _path_set_contains_path(
+        self,
+        target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+        path: model.LawPath,
+    ) -> bool:
+        target = self._coerce_path_set(target)
+        if not any(self._law_path_contains_path(base, path) for base in target.paths):
+            return False
+        if any(self._law_path_contains_path(excluded, path) for excluded in target.except_paths):
+            return False
+        return True
+
+    def _path_sets_overlap(
+        self,
+        left: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+        right: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+    ) -> bool:
+        left = self._coerce_path_set(left)
+        right = self._coerce_path_set(right)
+        for path in left.paths:
+            if self._path_set_contains_path(right, path):
+                return True
+        for path in right.paths:
+            if self._path_set_contains_path(left, path):
+                return True
+        return False
+
+    def _display_law_path_root(
+        self,
+        path: model.LawPath,
+        *,
+        unit: IndexedUnit,
+    ) -> str:
+        try:
+            resolved = self._resolve_law_path(
+                path,
+                unit=unit,
+                owner_label="workflow law",
+                statement_label="law path",
+                allowed_kinds=("input", "output", "enum"),
+            )
+        except CompileError:
+            return ".".join(path.parts)
+        title = self._display_readable_decl(resolved.decl)
+        if not resolved.remainder:
+            return title
+        return f"{title}.{'.'.join(resolved.remainder)}"
+
+    def _coerce_path_set(
+        self,
+        target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+    ) -> model.LawPathSet:
+        if isinstance(target, model.LawPathSet):
+            return target
+        if isinstance(target, tuple):
+            return model.LawPathSet(paths=target)
+        return model.LawPathSet(paths=(target,))
+
+    def _law_stmt_name(self, stmt: model.LawStmt) -> str:
+        if isinstance(stmt, model.OwnOnlyStmt):
+            return "own only"
+        if isinstance(stmt, model.SupportOnlyStmt):
+            return "support_only"
+        if isinstance(stmt, model.IgnoreStmt):
+            return "ignore"
+        if isinstance(stmt, model.ForbidStmt):
+            return "forbid"
+        return type(stmt).__name__
 
     def _compile_section_body(
         self,

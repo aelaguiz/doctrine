@@ -1,5 +1,15 @@
 Keep reusable law subsections explicit in the base workflow.
 
+## Base Metadata Polish
+
+Current artifact: Section Metadata.
+
+Accepted Peer Set is comparison-only support.
+
+If unclear(CurrentHandoff.preserve_basis):
+- Stop: Preserve basis is unclear.
+- Route the same issue back to RoutingOwner.
+
 ## Inputs
 
 ### Current Handoff
@@ -17,14 +27,6 @@ Use the host-provided handoff facts that say whether the preserve basis remains 
 - Shape: Json Object
 - Requirement: Advisory
 
-## Base Metadata Polish
-
-Current artifact: Section Metadata.
-
-Accepted Peer Set is comparison-only support.
-
-If preserve basis is unclear, stop and route the same issue back to RoutingOwner.
-
 ## Outputs
 
 ### Section Metadata
@@ -39,6 +41,14 @@ If preserve basis is unclear, stop and route the same issue back to RoutingOwner
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Comparison Basis
+
+Name any comparison-only artifacts used in this pass.
 
 #### Trust Surface
 
