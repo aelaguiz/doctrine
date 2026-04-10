@@ -33,4 +33,5 @@ agent InvalidBareLawStatementInInheritedChild:
     role: "Trigger a bare law statement in an inherited child."
     workflow: ChildMetadataPolish
     outputs: "Outputs"
+        SectionMetadata
         CoordinationHandoff

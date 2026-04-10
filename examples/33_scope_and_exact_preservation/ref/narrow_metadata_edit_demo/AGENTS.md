@@ -29,16 +29,16 @@ Use the host-provided handoff facts that say which metadata edit mode is active.
 Keep narrow ownership explicit and preserve every unowned field.
 
 Work in exactly one mode:
-- manifest-title
-- section-summary
+- name-only
+- summary-refresh
 
-If mode is manifest-title:
-- Current artifact: Primary Manifest.
-- Own only `title`.
-- Preserve every other manifest field exactly.
+If mode is name-only:
+- Current artifact: Section Metadata.
+- Own only `name`.
+- Preserve every other metadata field exactly.
 - Preserve the decisions already owned by Approved Plan.
 
-If mode is section-summary:
+If mode is summary-refresh:
 - Current artifact: Section Metadata.
 - Own only `name` and `description`.
 - Preserve every other metadata field exactly.
@@ -46,13 +46,6 @@ If mode is section-summary:
 - Do not widen into `taxonomy` or `flags`.
 
 ## Outputs
-
-### Primary Manifest
-
-- Target: File
-- Path: `unit_root/_authoring/primary_manifest.json`
-- Shape: Json Object
-- Requirement: Required
 
 ### Section Metadata
 

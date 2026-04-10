@@ -16,7 +16,7 @@ Current artifact: Section Metadata.
 
 Section Review is no longer current after this change.
 
-The coordination handoff must name that invalidation.
+The invalidation handoff must name that invalidation.
 
 Stop and route the same issue back to RoutingOwner for rebuild.
 
@@ -29,7 +29,7 @@ Stop and route the same issue back to RoutingOwner for rebuild.
 - Shape: Json Object
 - Requirement: Required
 
-### Coordination Handoff
+### Invalidation Handoff
 
 - Target: Turn Response
 - Shape: Comment

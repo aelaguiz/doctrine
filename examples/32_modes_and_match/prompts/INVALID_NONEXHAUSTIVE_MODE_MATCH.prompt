@@ -9,10 +9,10 @@ input CurrentHandoff: "Current Handoff"
     requirement: Required
 
 
-output PrimaryManifest: "Primary Manifest"
-    target: File
-        path: "unit_root/_authoring/primary_manifest.json"
-    shape: JsonObject
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
     requirement: Required
 
 
@@ -34,7 +34,7 @@ workflow InvalidModeAwareEdit: "Mode-Aware Edit"
 
         match edit_mode:
             EditMode.manifest_title:
-                current artifact PrimaryManifest via CoordinationHandoff.current_artifact
+                current artifact ApprovedPlan via CoordinationHandoff.current_artifact
 
 
 agent InvalidNonexhaustiveModeMatch:
@@ -42,5 +42,6 @@ agent InvalidNonexhaustiveModeMatch:
     workflow: InvalidModeAwareEdit
     inputs: "Inputs"
         CurrentHandoff
+        ApprovedPlan
     outputs: "Outputs"
         CoordinationHandoff

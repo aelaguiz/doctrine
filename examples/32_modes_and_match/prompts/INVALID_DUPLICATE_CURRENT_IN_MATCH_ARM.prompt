@@ -9,17 +9,17 @@ input CurrentHandoff: "Current Handoff"
     requirement: Required
 
 
-output PrimaryManifest: "Primary Manifest"
-    target: File
-        path: "unit_root/_authoring/primary_manifest.json"
-    shape: JsonObject
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
     requirement: Required
 
 
-output SectionMetadata: "Section Metadata"
-    target: File
-        path: "unit_root/_authoring/section_metadata.json"
-    shape: JsonObject
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
     requirement: Required
 
 
@@ -41,11 +41,11 @@ workflow InvalidModeAwareEdit: "Mode-Aware Edit"
 
         match edit_mode:
             EditMode.manifest_title:
-                current artifact PrimaryManifest via CoordinationHandoff.current_artifact
-                current artifact SectionMetadata via CoordinationHandoff.current_artifact
+                current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+                current artifact ApprovedStructure via CoordinationHandoff.current_artifact
 
             EditMode.section_summary:
-                current artifact SectionMetadata via CoordinationHandoff.current_artifact
+                current artifact ApprovedStructure via CoordinationHandoff.current_artifact
 
 
 agent InvalidDuplicateCurrentInMatchArm:
@@ -53,5 +53,7 @@ agent InvalidDuplicateCurrentInMatchArm:
     workflow: InvalidModeAwareEdit
     inputs: "Inputs"
         CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
     outputs: "Outputs"
         CoordinationHandoff

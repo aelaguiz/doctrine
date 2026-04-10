@@ -1,8 +1,3 @@
-enum MetadataPolishMode: "Metadata Polish Mode"
-    manifest_title: "manifest-title"
-    section_summary: "section-summary"
-
-
 enum RewriteRegime: "Rewrite Regime"
     carry_forward: "carry-forward"
     rewrite: "rewrite"
@@ -12,7 +7,7 @@ input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the host-provided handoff facts that say which metadata mode is active, which preserve basis remains authoritative, whether this pass is a rewrite, and whether structure changed."
+    "Use the host-provided handoff facts that say whether the preserve basis remains clear, whether this pass is a rewrite, and whether structure changed."
 
 
 input AcceptedPeerSet: "Accepted Peer Set"
@@ -20,13 +15,6 @@ input AcceptedPeerSet: "Accepted Peer Set"
         path: "catalog/accepted_peers.json"
     shape: JsonObject
     requirement: Advisory
-
-
-output PrimaryManifest: "Primary Manifest"
-    target: File
-        path: "unit_root/_authoring/primary_manifest.json"
-    shape: JsonObject
-    requirement: Required
 
 
 output SectionMetadata: "Section Metadata"
@@ -43,7 +31,26 @@ output SectionReview: "Section Review"
     requirement: Required
 
 
-output CoordinationHandoff: "Coordination Handoff"
+output BaseCoordinationHandoff: "Base Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    trust_surface:
+        current_artifact
+        comparison_basis
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now and what was comparison-only."
+
+
+output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
@@ -67,7 +74,7 @@ output CoordinationHandoff: "Coordination Handoff"
         invalidations when CurrentHandoff.structure_changed
 
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what is no longer current."
+        "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed."
 
 
 agent RoutingOwner:
@@ -78,44 +85,33 @@ agent RoutingOwner:
 
 workflow BaseMetadataPolish: "Base Metadata Polish"
     law:
-        mode_selection:
-            mode pass_mode = CurrentHandoff.active_mode as MetadataPolishMode
-
         currentness:
-            match pass_mode:
-                MetadataPolishMode.manifest_title:
-                    current artifact PrimaryManifest via CoordinationHandoff.current_artifact
-
-                MetadataPolishMode.section_summary:
-                    current artifact SectionMetadata via CoordinationHandoff.current_artifact
+            current artifact SectionMetadata via BaseCoordinationHandoff.current_artifact
 
         evidence:
             support_only AcceptedPeerSet for comparison
 
-        stop_lines:
-            when unclear(pass_mode, CurrentHandoff.preserve_basis):
-                stop "Mode or preserve basis is unclear."
+        reroute_on_unclear:
+            when unclear(CurrentHandoff.preserve_basis):
+                stop "Preserve basis is unclear."
                 route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
 workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Rewrite-Aware Metadata Polish"
     law:
-        inherit mode_selection
-        inherit currentness
+        inherit reroute_on_unclear
+
+        override currentness:
+            current artifact SectionMetadata via RewriteAwareCoordinationHandoff.current_artifact
 
         override evidence:
             support_only AcceptedPeerSet for comparison
-            ignore PrimaryManifest.title for rewrite_evidence when pass_mode == MetadataPolishMode.manifest_title and CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
-            ignore SectionMetadata.description for rewrite_evidence when pass_mode == MetadataPolishMode.section_summary and CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+            ignore SectionMetadata.description for rewrite_evidence when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
 
-        override stop_lines:
+        invalidation:
             when CurrentHandoff.structure_changed:
-                invalidate SectionReview via CoordinationHandoff.invalidations
+                invalidate SectionReview via RewriteAwareCoordinationHandoff.invalidations
                 stop "Structure changed; downstream review is no longer current."
-                route "Route the same issue back to RoutingOwner." -> RoutingOwner
-
-            when unclear(pass_mode, CurrentHandoff.preserve_basis):
-                stop "Mode or preserve basis is unclear."
                 route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
@@ -126,9 +122,8 @@ agent BaseMetadataPolishDemo:
         CurrentHandoff
         AcceptedPeerSet
     outputs: "Outputs"
-        PrimaryManifest
         SectionMetadata
-        CoordinationHandoff
+        BaseCoordinationHandoff
 
 
 agent RewriteAwareMetadataPolishDemo:
@@ -138,6 +133,5 @@ agent RewriteAwareMetadataPolishDemo:
         CurrentHandoff
         AcceptedPeerSet
     outputs: "Outputs"
-        PrimaryManifest
         SectionMetadata
-        CoordinationHandoff
+        RewriteAwareCoordinationHandoff

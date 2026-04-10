@@ -1,6 +1,6 @@
-output PrimaryManifest: "Primary Manifest"
+output SectionMetadata: "Section Metadata"
     target: File
-        path: "unit_root/_authoring/primary_manifest.json"
+        path: "unit_root/_authoring/section_metadata.json"
     shape: JsonObject
     requirement: Required
 
@@ -19,12 +19,13 @@ output CoordinationHandoff: "Coordination Handoff"
 
 workflow InvalidNarrowMetadataEdit: "Narrow Metadata Edit"
     law:
-        current artifact PrimaryManifest via CoordinationHandoff.current_artifact
-        own only PrimaryManifest.missing_field
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        own only SectionMetadata.missing_field
 
 
 agent InvalidOwnPathNotAddressable:
     role: "Trigger an unaddressable own path."
     workflow: InvalidNarrowMetadataEdit
     outputs: "Outputs"
+        SectionMetadata
         CoordinationHandoff

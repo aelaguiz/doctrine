@@ -33,4 +33,5 @@ agent InvalidDuplicateInheritedLawSection:
     role: "Trigger duplicate inherited law accounting."
     workflow: ChildMetadataPolish
     outputs: "Outputs"
+        SectionMetadata
         CoordinationHandoff

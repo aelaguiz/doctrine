@@ -19,7 +19,7 @@ output SectionReview: "Section Review"
     requirement: Required
 
 
-output CoordinationHandoff: "Coordination Handoff"
+output InvalidationHandoff: "Invalidation Handoff"
     target: TurnResponse
     shape: Comment
     requirement: Required
@@ -38,6 +38,36 @@ output CoordinationHandoff: "Coordination Handoff"
         "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
 
 
+output BlockedReviewHandoff: "Blocked Review Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are still no longer current."
+
+    trust_surface:
+        invalidations
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is no longer current."
+
+
+output RebuildHandoff: "Rebuild Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now."
+
+
 agent RoutingOwner:
     role: "Own explicit reroutes when specialist work cannot continue."
     workflow: "Instructions"
@@ -47,8 +77,8 @@ agent RoutingOwner:
 workflow StructureChange: "Structure Change"
     law:
         active when CurrentHandoff.structure_changed
-        current artifact SectionMetadata via CoordinationHandoff.current_artifact
-        invalidate SectionReview via CoordinationHandoff.invalidations
+        current artifact SectionMetadata via InvalidationHandoff.current_artifact
+        invalidate SectionReview via InvalidationHandoff.invalidations
         stop "Structure moved; downstream review is no longer current."
         route "Route the same issue back to RoutingOwner for rebuild." -> RoutingOwner
 
@@ -64,7 +94,7 @@ workflow BlockedSectionReview: "Blocked Section Review"
 workflow RebuildSectionReview: "Rebuild Section Review"
     law:
         active when CurrentHandoff.rebuild_requested
-        current artifact SectionReview via CoordinationHandoff.current_artifact
+        current artifact SectionReview via RebuildHandoff.current_artifact
 
 
 agent StructureChangeDemo:
@@ -74,7 +104,7 @@ agent StructureChangeDemo:
         CurrentHandoff
     outputs: "Outputs"
         SectionMetadata
-        CoordinationHandoff
+        InvalidationHandoff
 
 
 agent BlockedSectionReviewDemo:
@@ -83,7 +113,7 @@ agent BlockedSectionReviewDemo:
     inputs: "Inputs"
         CurrentHandoff
     outputs: "Outputs"
-        CoordinationHandoff
+        BlockedReviewHandoff
 
 
 agent RebuildSectionReviewDemo:
@@ -93,4 +123,4 @@ agent RebuildSectionReviewDemo:
         CurrentHandoff
     outputs: "Outputs"
         SectionReview
-        CoordinationHandoff
+        RebuildHandoff

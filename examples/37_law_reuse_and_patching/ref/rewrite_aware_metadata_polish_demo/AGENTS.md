@@ -8,7 +8,7 @@ Patch inherited law explicitly and add rewrite-only evidence rules.
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided handoff facts that say which metadata mode is active, which preserve basis remains authoritative, whether this pass is a rewrite, and whether structure changed.
+Use the host-provided handoff facts that say whether the preserve basis remains clear, whether this pass is a rewrite, and whether structure changed.
 
 ### Accepted Peer Set
 
@@ -19,28 +19,17 @@ Use the host-provided handoff facts that say which metadata mode is active, whic
 
 ## Rewrite-Aware Metadata Polish
 
-Work in exactly one metadata mode.
-
-If mode is manifest-title, current artifact is Primary Manifest.
-
-If mode is section-summary, current artifact is Section Metadata.
+Current artifact: Section Metadata.
 
 Accepted Peer Set is comparison-only support.
 
-On rewrite passes, the old title or summary wording does not count as rewrite evidence.
+On rewrite passes, the old `description` value does not count as rewrite evidence.
 
-If structure changed, Section Review is no longer current. The coordination handoff must name that invalidation. Stop and route the same issue back to RoutingOwner.
+If structure changed, Section Review is no longer current. The rewrite-aware handoff must name that invalidation. Stop and route the same issue back to RoutingOwner.
 
-If mode or preserve basis is unclear, stop and route the same issue back to RoutingOwner.
+If preserve basis is unclear, stop and route the same issue back to RoutingOwner.
 
 ## Outputs
-
-### Primary Manifest
-
-- Target: File
-- Path: `unit_root/_authoring/primary_manifest.json`
-- Shape: Json Object
-- Requirement: Required
 
 ### Section Metadata
 
@@ -49,7 +38,7 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 - Shape: Json Object
 - Requirement: Required
 
-### Coordination Handoff
+### Rewrite-Aware Coordination Handoff
 
 - Target: Turn Response
 - Shape: Comment
@@ -64,4 +53,4 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what is no longer current.
+A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed.

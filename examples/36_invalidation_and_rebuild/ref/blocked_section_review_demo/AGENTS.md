@@ -18,7 +18,7 @@ Stop and route the same issue back to RoutingOwner until review is rebuilt.
 
 ## Outputs
 
-### Coordination Handoff
+### Blocked Review Handoff
 
 - Target: Turn Response
 - Shape: Comment
@@ -26,9 +26,8 @@ Stop and route the same issue back to RoutingOwner until review is rebuilt.
 
 #### Trust Surface
 
-- Current Artifact
 - Invalidations
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now and what is no longer current.
+A downstream owner must be able to read this output alone and know what is no longer current.

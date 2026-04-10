@@ -34,4 +34,5 @@ agent InvalidOverrideUnknownLawSection:
     role: "Trigger an override of an unknown law section."
     workflow: ChildMetadataPolish
     outputs: "Outputs"
+        SectionMetadata
         CoordinationHandoff

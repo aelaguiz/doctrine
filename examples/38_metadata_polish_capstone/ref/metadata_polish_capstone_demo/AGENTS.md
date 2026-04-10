@@ -35,24 +35,15 @@ Use the host-provided handoff facts that say whether metadata polish is owed, wh
 
 This pass runs only when metadata polish is owed now.
 
-Work in exactly one mode:
-- manifest-title
-- section-summary
+Active mode: manifest-title.
 
-If mode is manifest-title:
-- Current artifact: Primary Manifest.
-- The coordination handoff must name that current artifact.
-- Own only `title`.
-- Preserve every other manifest field exactly.
-- Preserve the decisions already owned by Approved Plan.
+Current artifact: Primary Manifest.
 
-If mode is section-summary:
-- Current artifact: Section Metadata.
-- The coordination handoff must name that current artifact.
-- Own only `name` and `description`.
-- Preserve every other metadata field exactly.
-- Preserve the decisions already owned by Approved Structure.
-- Do not widen into `taxonomy` or `flags`.
+Own only `title`.
+
+Preserve every other manifest field exactly.
+
+Preserve the decisions already owned by Approved Plan.
 
 Accepted Peer Set is comparison-only support.
 
@@ -67,14 +58,7 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 - Shape: Json Object
 - Requirement: Required
 
-### Section Metadata
-
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
-
-### Coordination Handoff
+### Base Coordination Handoff
 
 - Target: Turn Response
 - Shape: Comment
@@ -89,4 +73,4 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now, why it is current, and what no longer counts as current.
+A downstream owner must be able to read this output alone and know what is current now, which mode is active, and why that preserve basis remains authoritative.

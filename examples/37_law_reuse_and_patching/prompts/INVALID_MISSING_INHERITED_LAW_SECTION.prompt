@@ -35,4 +35,5 @@ agent InvalidMissingInheritedLawSection:
     role: "Trigger an inherited law section omission."
     workflow: ChildMetadataPolish
     outputs: "Outputs"
+        SectionMetadata
         CoordinationHandoff

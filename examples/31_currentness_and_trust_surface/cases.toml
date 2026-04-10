@@ -144,6 +144,19 @@ message_contains = [
 ]
 
 [[cases]]
+name = "current output artifacts must be emitted by the concrete turn"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_OUTPUT_NOT_EMITTED.prompt"
+agent = "InvalidCurrentOutputNotEmitted"
+exception_type = "CompileError"
+message_contains = [
+  "current artifact",
+  "SectionMetadata",
+  "emit",
+]
+
+[[cases]]
 name = "current artifact targets must stay rooted in declared inputs or outputs"
 status = "planned"
 kind = "compile_fail"

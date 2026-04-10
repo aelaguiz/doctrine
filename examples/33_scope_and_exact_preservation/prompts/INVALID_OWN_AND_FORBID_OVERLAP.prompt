@@ -28,4 +28,5 @@ agent InvalidOwnAndForbidOverlap:
     role: "Trigger overlap between owned and forbidden scope."
     workflow: InvalidNarrowMetadataEdit
     outputs: "Outputs"
+        SectionMetadata
         CoordinationHandoff

@@ -245,6 +245,8 @@ Current requirement:
 - outputs should not be represented only as prose expectations
 - authors should be able to distinguish "the agent says this back in the turn"
   from "the agent writes a file" or "the agent leaves a tracker comment"
+- agent `outputs` should describe what the concrete turn produces, not a
+  role-wide catalog of every artifact a workflow family might touch
 
 ## Output Target Should Be Typed And Extensible
 

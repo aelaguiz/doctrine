@@ -14,7 +14,7 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 Current artifact: Section Review.
 
-The coordination handoff must name Section Review as current again.
+The rebuild handoff must name Section Review as current again.
 
 ## Outputs
 
@@ -25,7 +25,7 @@ The coordination handoff must name Section Review as current again.
 - Shape: Markdown Document
 - Requirement: Required
 
-### Coordination Handoff
+### Rebuild Handoff
 
 - Target: Turn Response
 - Shape: Comment
@@ -37,4 +37,4 @@ The coordination handoff must name Section Review as current again.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now and what is no longer current.
+A downstream owner must be able to read this output alone and know what is current now.

@@ -496,6 +496,8 @@ then all of the following must hold:
 - `current_artifact` is an addressable field on `CoordinationHandoff`
 - `current_artifact` is listed in `CoordinationHandoff.trust_surface`
 - the concrete agent turn emits `CoordinationHandoff`
+- if `PrimaryManifest` resolves to a declared `output`, the concrete agent turn
+  also emits `PrimaryManifest`
 
 If a workflow uses:
 
@@ -516,6 +518,9 @@ A workflow that uses transferable currentness must emit a carrier that can say
 what is current now.
 
 That is a hard v1 rule.
+
+If the current artifact resolves to a declared `output`, the concrete agent turn
+must also emit that output.
 
 Mode, preserve-basis, comparison-only, and rewrite-evidence details are also
 part of downstream trust when they matter, but v1 treats those as a mix of:
@@ -852,6 +857,8 @@ The compiler must reject at least these conditions.
 - a carrier ref field does not exist
 - a carrier ref field is not listed in the output's `trust_surface`
 - the concrete agent turn does not emit the carrier output
+- `current artifact` targets a declared `output` that the concrete agent turn
+  does not emit
 - an active leaf branch has more than one current-subject form
 - an active leaf branch has no current-subject form
 - `current none` appears with `current artifact` in the same active branch

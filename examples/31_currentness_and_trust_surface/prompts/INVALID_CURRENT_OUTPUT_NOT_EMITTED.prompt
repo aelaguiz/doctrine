@@ -1,10 +1,3 @@
-output PrimaryManifest: "Primary Manifest"
-    target: File
-        path: "unit_root/_authoring/primary_manifest.json"
-    shape: JsonObject
-    requirement: Required
-
-
 output SectionMetadata: "Section Metadata"
     target: File
         path: "unit_root/_authoring/section_metadata.json"
@@ -24,15 +17,13 @@ output CoordinationHandoff: "Coordination Handoff"
         current_artifact
 
 
-workflow InvalidNarrowMetadataEdit: "Narrow Metadata Edit"
+workflow InvalidCarryCurrentTruth: "Carry Current Truth"
     law:
         current artifact SectionMetadata via CoordinationHandoff.current_artifact
-        own only SectionMetadata.name
 
 
-agent InvalidOwnPathNotRootedInCurrentArtifact:
-    role: "Trigger an own path outside the current artifact."
-    workflow: InvalidNarrowMetadataEdit
+agent InvalidCurrentOutputNotEmitted:
+    role: "Trigger a current output artifact that is never emitted."
+    workflow: InvalidCarryCurrentTruth
     outputs: "Outputs"
-        SectionMetadata
         CoordinationHandoff

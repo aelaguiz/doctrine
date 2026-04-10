@@ -33,30 +33,16 @@ Work in exactly one mode:
 - section-summary
 
 If mode is manifest-title:
-- Current artifact: Primary Manifest.
+- Current artifact: Approved Plan.
 - Approved Plan must stay the preserve basis for this mode.
 - The coordination handoff must name manifest-title as the active mode.
 
 If mode is section-summary:
-- Current artifact: Section Metadata.
+- Current artifact: Approved Structure.
 - Approved Structure must stay the preserve basis for this mode.
 - The coordination handoff must name section-summary as the active mode.
 
 ## Outputs
-
-### Primary Manifest
-
-- Target: File
-- Path: `unit_root/_authoring/primary_manifest.json`
-- Shape: Json Object
-- Requirement: Required
-
-### Section Metadata
-
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
 
 ### Coordination Handoff
 

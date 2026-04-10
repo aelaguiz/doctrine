@@ -35,41 +35,27 @@ Use the host-provided handoff facts that say whether metadata polish is owed, wh
 
 This pass runs only when metadata polish is owed now.
 
-Work in exactly one mode:
-- manifest-title
-- section-summary
+Active mode: section-summary.
 
-If mode is manifest-title:
-- Current artifact: Primary Manifest.
-- The coordination handoff must name that current artifact.
-- Own only `title`.
-- Preserve every other manifest field exactly.
-- Preserve the decisions already owned by Approved Plan.
+Current artifact: Section Metadata.
 
-If mode is section-summary:
-- Current artifact: Section Metadata.
-- The coordination handoff must name that current artifact.
-- Own only `name` and `description`.
-- Preserve every other metadata field exactly.
-- Preserve the decisions already owned by Approved Structure.
-- Do not widen into `taxonomy` or `flags`.
+Own only `name` and `description`.
+
+Preserve every other metadata field exactly.
+
+Preserve the decisions already owned by Approved Structure.
+
+Do not widen into `taxonomy` or `flags`.
 
 Accepted Peer Set is comparison-only support.
 
-On rewrite passes, the old title or summary wording does not count as rewrite evidence.
+On rewrite passes, the old `name` and `description` values do not count as rewrite evidence.
 
-If structure changed, Section Review is no longer current. The coordination handoff must say so.
+If structure changed, Section Review is no longer current. The rewrite-aware coordination handoff must say so. Stop and route the same issue back to RoutingOwner for rebuild.
 
 If mode or preserve basis is unclear, stop and route the same issue back to RoutingOwner.
 
 ## Outputs
-
-### Primary Manifest
-
-- Target: File
-- Path: `unit_root/_authoring/primary_manifest.json`
-- Shape: Json Object
-- Requirement: Required
 
 ### Section Metadata
 
@@ -78,7 +64,7 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 - Shape: Json Object
 - Requirement: Required
 
-### Coordination Handoff
+### Rewrite-Aware Coordination Handoff
 
 - Target: Turn Response
 - Shape: Comment
@@ -95,4 +81,4 @@ If mode or preserve basis is unclear, stop and route the same issue back to Rout
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now, why it is current, and what no longer counts as current.
+A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed.
