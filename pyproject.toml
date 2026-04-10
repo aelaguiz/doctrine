@@ -31,3 +31,8 @@ output_dir = "examples/07_handoffs/build"
 name = "example_14_handoff_truth"
 entrypoint = "examples/14_handoff_truth/prompts/AGENTS.prompt"
 output_dir = "examples/14_handoff_truth/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_36_invalidation_and_rebuild"
+entrypoint = "examples/36_invalidation_and_rebuild/prompts/AGENTS.prompt"
+output_dir = "examples/36_invalidation_and_rebuild/build"

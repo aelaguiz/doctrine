@@ -1,0 +1,87 @@
+enum MetadataEditMode: "Metadata Edit Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say which metadata edit mode is active."
+
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output PrimaryManifest: "Primary Manifest"
+    target: File
+        path: "unit_root/_authoring/primary_manifest.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now."
+
+
+workflow NarrowMetadataEdit: "Narrow Metadata Edit"
+    "Keep narrow ownership explicit and preserve every unowned field."
+
+    law:
+        mode edit_mode = CurrentHandoff.active_mode as MetadataEditMode
+
+        match edit_mode:
+            MetadataEditMode.manifest_title:
+                current artifact PrimaryManifest via CoordinationHandoff.current_artifact
+                own only PrimaryManifest.title
+                preserve exact PrimaryManifest.* except PrimaryManifest.title
+                preserve decisions ApprovedPlan
+
+            MetadataEditMode.section_summary:
+                current artifact SectionMetadata via CoordinationHandoff.current_artifact
+                own only {SectionMetadata.name, SectionMetadata.description}
+                preserve exact SectionMetadata.* except {SectionMetadata.name, SectionMetadata.description}
+                preserve decisions ApprovedStructure
+                forbid {SectionMetadata.taxonomy, SectionMetadata.flags}
+
+
+agent NarrowMetadataEditDemo:
+    role: "Keep narrow ownership explicit and preserve every unowned field."
+    workflow: NarrowMetadataEdit
+    inputs: "Inputs"
+        CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
+    outputs: "Outputs"
+        PrimaryManifest
+        SectionMetadata
+        CoordinationHandoff

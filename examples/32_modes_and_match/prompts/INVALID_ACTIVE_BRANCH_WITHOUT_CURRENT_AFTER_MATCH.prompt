@@ -1,0 +1,57 @@
+enum EditMode: "Edit Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output PrimaryManifest: "Primary Manifest"
+    target: File
+        path: "unit_root/_authoring/primary_manifest.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+    law:
+        mode edit_mode = CurrentHandoff.active_mode as EditMode
+
+        match edit_mode:
+            EditMode.manifest_title:
+                current artifact PrimaryManifest via CoordinationHandoff.current_artifact
+
+            EditMode.section_summary:
+                must CurrentHandoff.preserve_basis == ApprovedStructure
+
+
+agent InvalidActiveBranchWithoutCurrentAfterMatch:
+    role: "Trigger a match arm with no current subject."
+    workflow: InvalidModeAwareEdit
+    inputs: "Inputs"
+        CurrentHandoff
+        ApprovedStructure
+    outputs: "Outputs"
+        CoordinationHandoff

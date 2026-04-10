@@ -1,0 +1,198 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "base workflows can name reusable law subsections"
+status = "planned"
+kind = "render_contract"
+agent = "BaseMetadataPolishDemo"
+assertion = "exact_lines"
+approx_ref = "ref/base_metadata_polish_demo/AGENTS.md"
+expected_lines = [
+  "Keep reusable law subsections explicit in the base workflow.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say which metadata mode is active, which preserve basis remains authoritative, whether this pass is a rewrite, and whether structure changed.",
+  "",
+  "### Accepted Peer Set",
+  "",
+  "- Source: File",
+  "- Path: `catalog/accepted_peers.json`",
+  "- Shape: Json Object",
+  "- Requirement: Advisory",
+  "",
+  "## Base Metadata Polish",
+  "",
+  "Work in exactly one metadata mode.",
+  "",
+  "If mode is manifest-title, current artifact is Primary Manifest.",
+  "",
+  "If mode is section-summary, current artifact is Section Metadata.",
+  "",
+  "Accepted Peer Set is comparison-only support.",
+  "",
+  "If mode or preserve basis is unclear, stop and route the same issue back to RoutingOwner.",
+  "",
+  "## Outputs",
+  "",
+  "### Primary Manifest",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/primary_manifest.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "### Section Metadata",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/section_metadata.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Comparison Basis",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what is no longer current.",
+]
+
+[[cases]]
+name = "child workflows can inherit and override named law subsections"
+status = "planned"
+kind = "render_contract"
+agent = "RewriteAwareMetadataPolishDemo"
+assertion = "exact_lines"
+approx_ref = "ref/rewrite_aware_metadata_polish_demo/AGENTS.md"
+expected_lines = [
+  "Patch inherited law explicitly and add rewrite-only evidence rules.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say which metadata mode is active, which preserve basis remains authoritative, whether this pass is a rewrite, and whether structure changed.",
+  "",
+  "### Accepted Peer Set",
+  "",
+  "- Source: File",
+  "- Path: `catalog/accepted_peers.json`",
+  "- Shape: Json Object",
+  "- Requirement: Advisory",
+  "",
+  "## Rewrite-Aware Metadata Polish",
+  "",
+  "Work in exactly one metadata mode.",
+  "",
+  "If mode is manifest-title, current artifact is Primary Manifest.",
+  "",
+  "If mode is section-summary, current artifact is Section Metadata.",
+  "",
+  "Accepted Peer Set is comparison-only support.",
+  "",
+  "On rewrite passes, the old title or summary wording does not count as rewrite evidence.",
+  "",
+  "If structure changed, Section Review is no longer current. The coordination handoff must name that invalidation. Stop and route the same issue back to RoutingOwner.",
+  "",
+  "If mode or preserve basis is unclear, stop and route the same issue back to RoutingOwner.",
+  "",
+  "## Outputs",
+  "",
+  "### Primary Manifest",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/primary_manifest.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "### Section Metadata",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/section_metadata.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Comparison Basis",
+  "- Rewrite Evidence Exclusions on rewrite passes",
+  "- Invalidations when structure changed",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what is no longer current.",
+]
+
+[[cases]]
+name = "inherited law blocks must account for every named parent subsection"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_INHERITED_LAW_SECTION.prompt"
+agent = "InvalidMissingInheritedLawSection"
+exception_type = "CompileError"
+message_contains = [
+  "inherited law",
+  "missing",
+]
+
+[[cases]]
+name = "inherited law blocks cannot account for one subsection twice"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_INHERITED_LAW_SECTION.prompt"
+agent = "InvalidDuplicateInheritedLawSection"
+exception_type = "CompileError"
+message_contains = [
+  "duplicate",
+  "currentness",
+]
+
+[[cases]]
+name = "override cannot target unknown law subsections"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OVERRIDE_UNKNOWN_LAW_SECTION.prompt"
+agent = "InvalidOverrideUnknownLawSection"
+exception_type = "CompileError"
+message_contains = [
+  "override",
+  "unknown",
+]
+
+[[cases]]
+name = "inherited law blocks cannot mix bare statements with patch entries"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_BARE_LAW_STATEMENT_IN_INHERITED_CHILD.prompt"
+agent = "InvalidBareLawStatementInInheritedChild"
+exception_type = "CompileError"
+message_contains = [
+  "bare law",
+  "patch",
+]

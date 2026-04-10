@@ -1,0 +1,170 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "preserve structure can keep document skeletons stable"
+status = "planned"
+kind = "render_contract"
+agent = "PreserveStructureDemo"
+assertion = "exact_lines"
+approx_ref = "ref/preserve_structure_demo/AGENTS.md"
+expected_lines = [
+  "Preserve document skeletons while allowing a narrow wording pass.",
+  "",
+  "## Inputs",
+  "",
+  "### Approved Structure",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/APPROVED_STRUCTURE.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "## Preserve Structure",
+  "",
+  "Current artifact: Approved Structure.",
+  "",
+  "Preserve the heading skeleton and section order.",
+  "",
+  "The coordination handoff must keep Approved Structure named as the current truth.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "preserve mapping can keep source-to-target assignments stable"
+status = "planned"
+kind = "render_contract"
+agent = "PreserveMappingDemo"
+assertion = "exact_lines"
+approx_ref = "ref/preserve_mapping_demo/AGENTS.md"
+expected_lines = [
+  "Keep source-to-target mappings stable during a narrow update.",
+  "",
+  "## Inputs",
+  "",
+  "### Slot Mapping",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/slot_mapping.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "## Preserve Mapping",
+  "",
+  "Current artifact: Slot Mapping.",
+  "",
+  "Preserve the approved concept-to-slot mapping.",
+  "",
+  "The coordination handoff must keep Slot Mapping named as the current truth.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "preserve vocabulary can keep closed term sets stable"
+status = "planned"
+kind = "render_contract"
+agent = "PreserveVocabularyDemo"
+assertion = "exact_lines"
+approx_ref = "ref/preserve_vocabulary_demo/AGENTS.md"
+expected_lines = [
+  "Keep closed vocabulary stable while revising the surrounding guidance.",
+  "",
+  "## Inputs",
+  "",
+  "### Review Template",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/review_template.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "## Preserve Vocabulary",
+  "",
+  "Current artifact: Review Template.",
+  "",
+  "Preserve the Critic Verdict vocabulary.",
+  "",
+  "The coordination handoff must keep Review Template named as the current truth.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "structure preservation targets must be addressable"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_STRUCTURE_PRESERVE_TARGET.prompt"
+agent = "InvalidUnknownStructurePreserveTarget"
+exception_type = "CompileError"
+message_contains = [
+  "preserve structure",
+  "missing_structure",
+]
+
+[[cases]]
+name = "mapping preservation targets must be addressable"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_MAPPING_PRESERVE_TARGET.prompt"
+agent = "InvalidUnknownMappingPreserveTarget"
+exception_type = "CompileError"
+message_contains = [
+  "preserve mapping",
+  "missing_mapping",
+]
+
+[[cases]]
+name = "vocabulary preservation targets must stay known"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_VOCABULARY_PRESERVE_TARGET.prompt"
+agent = "InvalidUnknownVocabularyPreserveTarget"
+exception_type = "CompileError"
+message_contains = [
+  "preserve vocabulary",
+  "MissingVerdictEnum",
+]

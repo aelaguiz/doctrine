@@ -1,0 +1,15 @@
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    law:
+        current artifact ApprovedPlan
+
+
+agent InvalidCurrentArtifactWithoutVia:
+    role: "Trigger a missing current carrier."
+    workflow: InvalidCarryCurrentTruth

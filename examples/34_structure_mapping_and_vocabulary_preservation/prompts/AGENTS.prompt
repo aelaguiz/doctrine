@@ -1,0 +1,84 @@
+enum CriticVerdict: "Critic Verdict"
+    accept: "accept"
+    changes_requested: "changes requested"
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input SlotMapping: "Slot Mapping"
+    source: File
+        path: "unit_root/_authoring/slot_mapping.json"
+    shape: JsonObject
+    requirement: Required
+
+
+input ReviewTemplate: "Review Template"
+    source: File
+        path: "unit_root/_authoring/review_template.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact remains current now."
+
+
+workflow PreserveStructure: "Preserve Structure"
+    law:
+        current artifact ApprovedStructure via CoordinationHandoff.current_artifact
+        preserve structure ApprovedStructure
+
+
+workflow PreserveMapping: "Preserve Mapping"
+    law:
+        current artifact SlotMapping via CoordinationHandoff.current_artifact
+        preserve mapping SlotMapping
+
+
+workflow PreserveVocabulary: "Preserve Vocabulary"
+    law:
+        current artifact ReviewTemplate via CoordinationHandoff.current_artifact
+        preserve vocabulary CriticVerdict
+
+
+agent PreserveStructureDemo:
+    role: "Preserve document skeletons while allowing a narrow wording pass."
+    workflow: PreserveStructure
+    inputs: "Inputs"
+        ApprovedStructure
+    outputs: "Outputs"
+        CoordinationHandoff
+
+
+agent PreserveMappingDemo:
+    role: "Keep source-to-target mappings stable during a narrow update."
+    workflow: PreserveMapping
+    inputs: "Inputs"
+        SlotMapping
+    outputs: "Outputs"
+        CoordinationHandoff
+
+
+agent PreserveVocabularyDemo:
+    role: "Keep closed vocabulary stable while revising the surrounding guidance."
+    workflow: PreserveVocabulary
+    inputs: "Inputs"
+        ReviewTemplate
+    outputs: "Outputs"
+        CoordinationHandoff

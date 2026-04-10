@@ -1,0 +1,193 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "invalidation can revoke portable currentness after structure changes"
+status = "planned"
+kind = "render_contract"
+agent = "StructureChangeDemo"
+assertion = "exact_lines"
+approx_ref = "ref/structure_change_demo/AGENTS.md"
+expected_lines = [
+  "Invalidate downstream review when structure changes.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested.",
+  "",
+  "## Structure Change",
+  "",
+  "Current artifact: Section Metadata.",
+  "",
+  "Section Review is no longer current after this change.",
+  "",
+  "The coordination handoff must name that invalidation.",
+  "",
+  "Stop and route the same issue back to RoutingOwner for rebuild.",
+  "",
+  "## Outputs",
+  "",
+  "### Section Metadata",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/section_metadata.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Invalidations",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know what is current now and what is no longer current.",
+]
+
+[[cases]]
+name = "downstream review stays blocked after invalidation"
+status = "planned"
+kind = "render_contract"
+agent = "BlockedSectionReviewDemo"
+assertion = "exact_lines"
+approx_ref = "ref/blocked_section_review_demo/AGENTS.md"
+expected_lines = [
+  "Do not keep reviewing against invalidated downstream truth.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested.",
+  "",
+  "## Blocked Section Review",
+  "",
+  "There is no current artifact for this turn.",
+  "",
+  "Stop and route the same issue back to RoutingOwner until review is rebuilt.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Invalidations",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know what is current now and what is no longer current.",
+]
+
+[[cases]]
+name = "rebuild can reissue currentness after invalidation"
+status = "planned"
+kind = "render_contract"
+agent = "RebuildSectionReviewDemo"
+assertion = "exact_lines"
+approx_ref = "ref/rebuild_section_review_demo/AGENTS.md"
+expected_lines = [
+  "Rebuild invalidated review work and reissue it as current truth.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say whether structure changed, whether Section Review is invalidated, and whether rebuild work is requested.",
+  "",
+  "## Rebuild Section Review",
+  "",
+  "Current artifact: Section Review.",
+  "",
+  "The coordination handoff must name Section Review as current again.",
+  "",
+  "## Outputs",
+  "",
+  "### Section Review",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/SECTION_REVIEW.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know what is current now and what is no longer current.",
+]
+
+[[cases]]
+name = "invalidation and rebuild will need a future build-contract proof"
+status = "planned"
+kind = "build_contract"
+build_target = "example_36_invalidation_and_rebuild"
+
+[[cases]]
+name = "invalidate statements require explicit carriers"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_INVALIDATION_WITHOUT_VIA.prompt"
+agent = "InvalidInvalidationWithoutVia"
+exception_type = "CompileError"
+message_contains = [
+  "invalidate",
+  "via",
+]
+
+[[cases]]
+name = "invalidation carriers must be trusted downstream"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_INVALIDATION_FIELD_NOT_IN_TRUST_SURFACE.prompt"
+agent = "InvalidInvalidationFieldNotInTrustSurface"
+exception_type = "CompileError"
+message_contains = [
+  "invalidations",
+  "trust_surface",
+]
+
+[[cases]]
+name = "the current artifact cannot be invalidated in the same active branch"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_ARTIFACT_AND_INVALIDATION_SAME_TARGET.prompt"
+agent = "InvalidCurrentArtifactAndInvalidationSameTarget"
+exception_type = "CompileError"
+message_contains = [
+  "current artifact",
+  "invalidated",
+]

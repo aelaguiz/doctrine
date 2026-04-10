@@ -1,0 +1,38 @@
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow BaseMetadataPolish: "Base Metadata Polish"
+    law:
+        currentness:
+            current artifact SectionMetadata via CoordinationHandoff.current_artifact
+
+        stop_lines:
+            stop "Mode or preserve basis is unclear."
+
+
+workflow ChildMetadataPolish[BaseMetadataPolish]: "Child Metadata Polish"
+    law:
+        inherit stop_lines
+
+
+agent InvalidMissingInheritedLawSection:
+    role: "Trigger an inherited law section omission."
+    workflow: ChildMetadataPolish
+    outputs: "Outputs"
+        CoordinationHandoff

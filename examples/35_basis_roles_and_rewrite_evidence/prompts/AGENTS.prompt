@@ -1,0 +1,74 @@
+enum RewriteRegime: "Rewrite Regime"
+    carry_forward: "carry-forward"
+    rewrite: "rewrite"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say whether this pass is a rewrite."
+
+
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+
+
+input StaleMetadataNotes: "Stale Metadata Notes"
+    source: File
+        path: "unit_root/_authoring/stale_metadata_notes.md"
+    shape: MarkdownDocument
+    requirement: Advisory
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only inputs used in this pass."
+
+    rewrite_exclusions: "Rewrite Evidence Exclusions"
+        "Name any fields whose old values do not count as rewrite evidence."
+
+    trust_surface:
+        current_artifact
+        comparison_basis
+        rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what old wording no longer counts as rewrite evidence."
+
+
+workflow RewriteAwarePolish: "Rewrite-Aware Polish"
+    law:
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        support_only AcceptedPeerSet for comparison
+        ignore {SectionMetadata.name, SectionMetadata.description} for rewrite_evidence when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+        ignore StaleMetadataNotes for truth
+
+
+agent RewriteAwarePolishDemo:
+    role: "Separate comparison help, live truth, and rewrite evidence."
+    workflow: RewriteAwarePolish
+    inputs: "Inputs"
+        CurrentHandoff
+        AcceptedPeerSet
+        StaleMetadataNotes
+    outputs: "Outputs"
+        SectionMetadata
+        CoordinationHandoff

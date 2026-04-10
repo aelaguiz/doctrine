@@ -1,0 +1,99 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "law can express route-only turns with no current artifact"
+status = "planned"
+kind = "render_contract"
+agent = "RouteOnlyTurnsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/route_only_turns_demo/AGENTS.md"
+expected_lines = [
+  "Keep route-only work explicit when no durable artifact is current.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say whether the current handoff is missing or unclear.",
+  "",
+  "## Route-Only Triage",
+  "",
+  "Handle turns that can only stop and reroute.",
+  "",
+  "This pass runs only when the current handoff is missing or unclear.",
+  "",
+  "If the current handoff is missing, stop and route the same issue back to RoutingOwner.",
+  "",
+  "- There is no current artifact for this turn.",
+  "- Stop: Current handoff is missing.",
+  "- Route the same issue back to RoutingOwner.",
+  "",
+  "If the current handoff is unclear, stop and route the same issue back to RoutingOwner.",
+  "",
+  "- There is no current artifact for this turn.",
+  "- Stop: Current handoff is unclear.",
+  "- Route the same issue back to RoutingOwner.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand that no current artifact was carried forward.",
+]
+
+[[cases]]
+name = "current none cannot coexist with current artifact in one active branch"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt"
+agent = "InvalidCurrentNoneAndCurrentArtifact"
+exception_type = "CompileError"
+message_contains = [
+  "current none",
+  "current artifact",
+]
+
+[[cases]]
+name = "every active law branch still needs one current subject"
+status = "planned"
+kind = "compile_fail"
+prompt = "prompts/INVALID_ACTIVE_BRANCH_WITHOUT_CURRENT.prompt"
+agent = "InvalidActiveBranchWithoutCurrent"
+exception_type = "CompileError"
+message_contains = [
+  "active leaf branch",
+  "current-subject form",
+]
+
+[[cases]]
+name = "route statements still require labels"
+status = "planned"
+kind = "parse_fail"
+prompt = "prompts/INVALID_ROUTE_WITHOUT_LABEL.prompt"
+exception_type = "ParseError"
+message_contains = [
+  "route",
+  "label",
+]
+
+[[cases]]
+name = "route statements still require explicit targets"
+status = "planned"
+kind = "parse_fail"
+prompt = "prompts/INVALID_ROUTE_WITHOUT_TARGET.prompt"
+exception_type = "ParseError"
+message_contains = [
+  "route",
+  "target",
+]

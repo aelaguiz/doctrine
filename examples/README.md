@@ -23,6 +23,11 @@ Read the examples in numeric order. The sequence is intentional.
   authored-slot requirements
 - `27` through `29`: addressable nested items, recursive workflow paths, and
   enums for closed vocabularies
+- `30` through `38`: planned review-only workflow-law examples for route-only
+  turns, portable currentness, trust carriers, scope and preservation law,
+  basis roles, invalidation, law reuse, and the metadata-polish capstone
+
+The active shipped corpus still ends at `29` until workflow-law support lands.
 
 ## Important Rules
 
@@ -32,6 +37,8 @@ Read the examples in numeric order. The sequence is intentional.
   cases.
 - Keep new examples narrow: one new idea at a time.
 - Do not add a new language primitive just to paper over a bad example.
+- Planned cases are review surfaces. They should load cleanly in the corpus
+  runner without becoming active proof until the implementation exists.
 
 ## Useful Commands
 

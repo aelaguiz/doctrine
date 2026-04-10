@@ -1,0 +1,58 @@
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now."
+
+
+workflow CarryCurrentPlanTruth: "Carry Current Truth"
+    "Keep one current artifact explicit and portable."
+
+    law:
+        current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+
+
+workflow CarryCurrentOutputTruth: "Carry Current Truth"
+    "Keep one current artifact explicit and portable."
+
+    law:
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+
+
+agent CurrentApprovedPlanDemo:
+    role: "Carry one portable current artifact through a declared handoff field."
+    workflow: CarryCurrentPlanTruth
+    inputs: "Inputs"
+        ApprovedPlan
+    outputs: "Outputs"
+        CoordinationHandoff
+
+
+agent CurrentSectionMetadataDemo:
+    role: "Carry a newly produced artifact as the current downstream truth."
+    workflow: CarryCurrentOutputTruth
+    outputs: "Outputs"
+        SectionMetadata
+        CoordinationHandoff

@@ -1,0 +1,26 @@
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when route-only work cannot continue safely."
+
+
+workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+    law:
+        active when CurrentHandoff.missing
+
+        when CurrentHandoff.missing:
+            stop "Current handoff is missing."
+            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+agent InvalidActiveBranchWithoutCurrent:
+    role: "Trigger an active branch with no current subject."
+    workflow: InvalidRouteOnlyTurns
+    inputs: "Inputs"
+        CurrentHandoff

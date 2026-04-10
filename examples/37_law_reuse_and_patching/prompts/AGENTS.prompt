@@ -1,0 +1,143 @@
+enum MetadataPolishMode: "Metadata Polish Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+enum RewriteRegime: "Rewrite Regime"
+    carry_forward: "carry-forward"
+    rewrite: "rewrite"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say which metadata mode is active, which preserve basis remains authoritative, whether this pass is a rewrite, and whether structure changed."
+
+
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+
+
+output PrimaryManifest: "Primary Manifest"
+    target: File
+        path: "unit_root/_authoring/primary_manifest.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    rewrite_exclusions: "Rewrite Evidence Exclusions"
+        "Name any fields whose old values do not count as rewrite evidence."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        comparison_basis
+        rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+        invalidations when CurrentHandoff.structure_changed
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what is no longer current."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when workflow law requires a reroute."
+
+
+workflow BaseMetadataPolish: "Base Metadata Polish"
+    law:
+        mode_selection:
+            mode pass_mode = CurrentHandoff.active_mode as MetadataPolishMode
+
+        currentness:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    current artifact PrimaryManifest via CoordinationHandoff.current_artifact
+
+                MetadataPolishMode.section_summary:
+                    current artifact SectionMetadata via CoordinationHandoff.current_artifact
+
+        evidence:
+            support_only AcceptedPeerSet for comparison
+
+        stop_lines:
+            when unclear(pass_mode, CurrentHandoff.preserve_basis):
+                stop "Mode or preserve basis is unclear."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Rewrite-Aware Metadata Polish"
+    law:
+        inherit mode_selection
+        inherit currentness
+
+        override evidence:
+            support_only AcceptedPeerSet for comparison
+            ignore PrimaryManifest.title for rewrite_evidence when pass_mode == MetadataPolishMode.manifest_title and CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+            ignore SectionMetadata.description for rewrite_evidence when pass_mode == MetadataPolishMode.section_summary and CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+
+        override stop_lines:
+            when CurrentHandoff.structure_changed:
+                invalidate SectionReview via CoordinationHandoff.invalidations
+                stop "Structure changed; downstream review is no longer current."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+            when unclear(pass_mode, CurrentHandoff.preserve_basis):
+                stop "Mode or preserve basis is unclear."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+agent BaseMetadataPolishDemo:
+    role: "Keep reusable law subsections explicit in the base workflow."
+    workflow: BaseMetadataPolish
+    inputs: "Inputs"
+        CurrentHandoff
+        AcceptedPeerSet
+    outputs: "Outputs"
+        PrimaryManifest
+        SectionMetadata
+        CoordinationHandoff
+
+
+agent RewriteAwareMetadataPolishDemo:
+    role: "Patch inherited law explicitly and add rewrite-only evidence rules."
+    workflow: RewriteAwareMetadataPolish
+    inputs: "Inputs"
+        CurrentHandoff
+        AcceptedPeerSet
+    outputs: "Outputs"
+        PrimaryManifest
+        SectionMetadata
+        CoordinationHandoff
