@@ -63,13 +63,25 @@ The route-only ladder is staged on purpose:
   slice with `current none` when reroute is not justified
 - `41_route_only_reroute_handoff`: explicit reroute branch of the route-only
   slice when the next owner is still unknown, paired with an emitted handoff
-  comment contract
+  comment contract plus routed `next_owner` agreement proof
 - `42_route_only_handoff_capstone`: the full generic Slice A route-only
-  handoff model with guarded conditional readback
+  handoff model with guarded conditional readback plus `standalone_read`
+  guard-discipline proof
 
-The route-only ladder teaches the split ownership story and rendered contracts.
-It does not yet claim integrated active proof for `next_owner` agreement with
-the routed target or for `standalone_read` overpromising guarded detail.
+Examples `40` through `42` intentionally omit `trust_surface`. They are
+route-only comment-schema readback for `current none` turns, not portable
+current-truth carriers.
+
+The route-only ladder now carries integrated structured proof for the two Slice
+A coupling rules:
+
+- `41` proves that a routed `next_owner` field must explicitly bind the routed
+  target
+- `42` proves that `standalone_read` cannot structurally reference guarded
+  output detail
+
+That boundary is still honest. Doctrine validates structured interpolations and
+output structure here; it still does not parse arbitrary free prose.
 
 ## Important Rules
 

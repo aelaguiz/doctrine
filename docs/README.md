@@ -5,7 +5,8 @@ Start here if you are new to the repo:
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): what problem Doctrine solves and why the
   runtime stays `AGENTS.md`
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): canonical shipped reference for `law`,
-  `trust_surface`, carriers, currentness, invalidation, and law reuse
+  `trust_surface`, guarded output sections, conditional routes, carriers,
+  currentness, invalidation, and law reuse
 - [../examples/README.md](../examples/README.md): how to read the numbered
   example corpus and its manifests
 - [../example_agents/README.md](../example_agents/README.md): external
@@ -28,5 +29,6 @@ Historical proposal, planning, and worklog material lives under
 [archive/](archive/README.md) and is not part of the live docs path. The
 shipped numbered corpus now runs through
 `examples/42_route_only_handoff_capstone`, including the workflow-law cutover,
-the staged route-only setup ladder, and the guarded route-only handoff
-capstone.
+the staged route-only setup ladder, the guarded route-only handoff capstone,
+and manifest-backed proof for routed `next_owner` binding plus structured
+`standalone_read` guard discipline.

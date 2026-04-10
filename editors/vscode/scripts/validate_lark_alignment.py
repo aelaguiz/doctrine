@@ -118,6 +118,32 @@ def _require_pattern_match(
             )
 
 
+def _require_begin_end_pattern(
+    repository: dict[str, object],
+    pattern_name: str,
+    *,
+    begin_samples: list[str],
+    end_samples: list[str],
+    errors: list[str],
+) -> None:
+    pattern = repository.get(pattern_name, {})
+    begin = pattern.get("begin")
+    end = pattern.get("end")
+    if not isinstance(begin, str) or not isinstance(end, str):
+        errors.append(
+            f"tmLanguage repository must define `{pattern_name}` as a begin/end pattern."
+        )
+        return
+    compiled_begin = re.compile(begin)
+    compiled_end = re.compile(end)
+    for sample in begin_samples:
+        if compiled_begin.match(sample) is None:
+            errors.append(f"`{pattern_name}` begin must match sample `{sample}`.")
+    for sample in end_samples:
+        if compiled_end.match(sample) is None:
+            errors.append(f"`{pattern_name}` end must match sample `{sample}`.")
+
+
 def main() -> int:
     package = _load_json(PACKAGE_PATH)
     language_config = _load_json(LANGUAGE_CONFIG_PATH)
@@ -251,6 +277,15 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "guardedOutputHeader",
+        [
+            '    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:',
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "keyValueRef",
         generic_key_ref_samples,
         should_match=True,
@@ -275,6 +310,16 @@ def main() -> int:
         "standaloneReference",
         ["    route"],
         should_match=False,
+        errors=errors,
+    )
+    _require_begin_end_pattern(
+        repository,
+        "route",
+        begin_samples=['    route "Keep the issue on RoutingOwner.'],
+        end_samples=[
+            '" -> RoutingOwner',
+            '" -> RoutingOwner when RouteFacts.next_owner_unknown',
+        ],
         errors=errors,
     )
 

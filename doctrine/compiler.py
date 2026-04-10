@@ -1334,6 +1334,7 @@ class CompilationContext:
             unit=unit,
             owner_label=f"output {decl.name}",
         )
+        self._validate_standalone_read_guard_contract(decl, unit=unit)
 
     def _validate_output_record_items(
         self,
@@ -1454,6 +1455,157 @@ class CompilationContext:
             ref,
             unit=unit,
         )
+
+    def _validate_standalone_read_guard_contract(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        for path, item in self._iter_output_items_with_paths(decl.items):
+            if not path or path[-1] != "standalone_read":
+                continue
+            owner_label = f"output {decl.name}.{'.'.join(path)}"
+            for ref in self._iter_record_item_interpolation_refs(item):
+                if self._interpolation_ref_enters_guarded_output_section(
+                    ref,
+                    unit=unit,
+                    owner_label=owner_label,
+                ):
+                    raise CompileError(
+                        "standalone_read cannot interpolate guarded output detail "
+                        f"in {owner_label}: {_display_addressable_ref(ref)}"
+                    )
+
+    def _iter_output_items_with_paths(
+        self,
+        items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...],
+        *,
+        prefix: tuple[str, ...] = (),
+    ) -> tuple[tuple[tuple[str, ...], model.AnyRecordItem], ...]:
+        entries: list[tuple[tuple[str, ...], model.AnyRecordItem]] = []
+        for item in items:
+            if isinstance(item, model.RecordSection):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                entries.extend(self._iter_output_items_with_paths(item.items, prefix=path))
+                continue
+            if isinstance(item, model.GuardedOutputSection):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                entries.extend(self._iter_output_items_with_paths(item.items, prefix=path))
+                continue
+            if isinstance(item, model.RecordScalar):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                if item.body is not None:
+                    entries.extend(self._iter_output_items_with_paths(item.body, prefix=path))
+                continue
+            if isinstance(item, model.RecordRef) and item.body is not None:
+                entries.extend(self._iter_output_items_with_paths(item.body, prefix=prefix))
+        return tuple(entries)
+
+    def _iter_record_item_interpolation_refs(
+        self,
+        item: model.AnyRecordItem,
+    ) -> tuple[model.AddressableRef, ...]:
+        if isinstance(item, model.RecordScalar):
+            refs = self._interpolation_refs_from_scalar_value(item.value)
+            if item.body is not None:
+                refs = (*refs, *self._iter_record_body_interpolation_refs(item.body))
+            return refs
+        if isinstance(item, (model.RecordSection, model.GuardedOutputSection)):
+            return self._iter_record_body_interpolation_refs(item.items)
+        if isinstance(item, model.RecordRef) and item.body is not None:
+            return self._iter_record_body_interpolation_refs(item.body)
+        return ()
+
+    def _iter_record_body_interpolation_refs(
+        self,
+        items: tuple[model.AnyRecordItem, ...],
+    ) -> tuple[model.AddressableRef, ...]:
+        refs: list[model.AddressableRef] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                refs.extend(self._interpolation_refs_from_prose_line(item))
+                continue
+            refs.extend(self._iter_record_item_interpolation_refs(item))
+        return tuple(refs)
+
+    def _interpolation_refs_from_prose_line(
+        self,
+        value: model.ProseLine,
+    ) -> tuple[model.AddressableRef, ...]:
+        text = value if isinstance(value, str) else value.text
+        return self._interpolation_refs_from_text(text)
+
+    def _interpolation_refs_from_scalar_value(
+        self,
+        value: model.RecordScalarValue,
+    ) -> tuple[model.AddressableRef, ...]:
+        if isinstance(value, str):
+            return self._interpolation_refs_from_text(value)
+        if isinstance(value, model.AddressableRef):
+            return (value,)
+        return ()
+
+    def _interpolation_refs_from_text(
+        self,
+        text: str,
+    ) -> tuple[model.AddressableRef, ...]:
+        if "{{" not in text or "}}" not in text:
+            return ()
+        refs: list[model.AddressableRef] = []
+        for match in _INTERPOLATION_RE.finditer(text):
+            ref = self._parse_interpolation_expr_ref(match.group(1))
+            if ref is not None:
+                refs.append(ref)
+        return tuple(refs)
+
+    def _parse_interpolation_expr_ref(
+        self,
+        expression: str,
+    ) -> model.AddressableRef | None:
+        match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
+        if match is None:
+            return None
+        return model.AddressableRef(
+            root=_name_ref_from_dotted_name(match.group(1)),
+            path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
+        )
+
+    def _interpolation_ref_enters_guarded_output_section(
+        self,
+        ref: model.AddressableRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        try:
+            target_unit, root_decl = self._resolve_addressable_root_decl(
+                ref.root,
+                unit=unit,
+                owner_label=owner_label,
+                ambiguous_label="standalone_read interpolation ref",
+                missing_local_label="standalone_read",
+            )
+        except CompileError:
+            return False
+
+        if not isinstance(root_decl, model.OutputDecl):
+            return False
+
+        current = AddressableNode(unit=target_unit, root_decl=root_decl, target=root_decl)
+        for segment in ref.path:
+            children = self._get_addressable_children(current)
+            if children is None:
+                return False
+            current = children.get(segment)
+            if current is None:
+                return False
+            if isinstance(current.target, model.GuardedOutputSection):
+                return True
+        return False
 
     def _expr_ref_matches_input_decl(
         self,
@@ -4479,6 +4631,12 @@ class CompilationContext:
         if isinstance(expr, model.ExprRef):
             return self._render_condition_ref(expr, unit=unit)
         if isinstance(expr, model.ExprBinary):
+            if expr.op in {"==", "!="} and isinstance(expr.right, bool):
+                expected = expr.right if expr.op == "==" else not expr.right
+                return self._render_boolean_condition_expr(expr.left, expected=expected, unit=unit)
+            if expr.op in {"==", "!="} and isinstance(expr.left, bool):
+                expected = expr.left if expr.op == "==" else not expr.left
+                return self._render_boolean_condition_expr(expr.right, expected=expected, unit=unit)
             if expr.op == "in" and isinstance(expr.right, model.ExprSet):
                 subject = self._render_condition_subject(expr.left, unit=unit)
                 choices = [self._render_condition_choice(item, unit=unit) for item in expr.right.items]
@@ -4501,6 +4659,29 @@ class CompilationContext:
             args = ", ".join(self._render_expr(arg, unit=unit) for arg in expr.args)
             return f"{_humanize_key(expr.name).lower()}({args})"
         return self._render_expr(expr, unit=unit)
+
+    def _render_boolean_condition_expr(
+        self,
+        expr: model.Expr,
+        *,
+        expected: bool,
+        unit: IndexedUnit,
+    ) -> str:
+        rendered = self._render_condition_expr(expr, unit=unit)
+        if expected:
+            return rendered
+        return self._negate_condition_text(rendered)
+
+    def _negate_condition_text(self, text: str) -> str:
+        if " is not " in text:
+            head, tail = text.rsplit(" is not ", 1)
+            return f"{head} is {tail}"
+        if " is " in text:
+            head, tail = text.rsplit(" is ", 1)
+            return f"{head} is not {tail}"
+        if text.startswith("not "):
+            return text.removeprefix("not ")
+        return f"not ({text})"
 
     def _render_condition_choice(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
         if isinstance(expr, str):
@@ -4613,6 +4794,7 @@ class CompilationContext:
         if not branches:
             branches = (LawBranch(),)
 
+        route_only_branch_seen = False
         for branch in branches:
             if len(branch.current_subjects) != 1:
                 current_labels = ", ".join(
@@ -4634,6 +4816,8 @@ class CompilationContext:
                 raise CompileError(
                     f"`current none` cannot appear with owned scope in {owner_label}"
                 )
+            if isinstance(current, model.CurrentNoneStmt):
+                route_only_branch_seen = True
             current_target_key: tuple[tuple[str, ...], str] | None = None
             if isinstance(current, model.CurrentArtifactStmt):
                 current_target_key = self._validate_current_artifact_stmt(
@@ -4691,9 +4875,145 @@ class CompilationContext:
                         self._path_set_contains_path(preserve.target, path)
                         for path in own_target.paths
                     ):
-                            raise CompileError(
-                                f"Owned scope overlaps exact-preserved scope in {owner_label}"
-                            )
+                        raise CompileError(
+                            f"Owned scope overlaps exact-preserved scope in {owner_label}"
+                        )
+            if isinstance(current, model.CurrentNoneStmt) and branch.routes:
+                self._validate_route_only_next_owner_contract(
+                    branch,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                )
+
+        if route_only_branch_seen:
+            self._validate_route_only_standalone_read_contract(
+                agent_contract=agent_contract,
+                unit=unit,
+                owner_label=owner_label,
+            )
+
+    def _validate_route_only_next_owner_contract(
+        self,
+        branch: LawBranch,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> None:
+        output_items = tuple(agent_contract.outputs.items())
+        if not output_items:
+            return
+
+        for route in branch.routes:
+            route_unit, route_agent = self._resolve_agent_ref(route.target, unit=unit)
+            next_owner_fields_found = False
+            for (_output_key, (output_unit, output_decl)) in output_items:
+                for path, item in self._iter_output_items_with_paths(output_decl.items):
+                    if not path or path[-1] != "next_owner":
+                        continue
+                    next_owner_fields_found = True
+                    if self._record_item_mentions_agent(
+                        item,
+                        target_unit=route_unit,
+                        target_agent_name=route_agent.name,
+                        unit=output_unit,
+                        owner_label=f"output {output_decl.name}.{'.'.join(path)}",
+                    ):
+                        continue
+                    raise CompileError(
+                        "next_owner field must interpolate routed target "
+                        f"in {owner_label}: {output_decl.name}.{'.'.join(path)} -> {route_agent.name}"
+                    )
+            if next_owner_fields_found:
+                continue
+
+    def _record_item_mentions_agent(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        target_unit: IndexedUnit,
+        target_agent_name: str,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        if (
+            isinstance(item, model.RecordScalar)
+            and isinstance(item.value, model.NameRef)
+            and self._name_ref_matches_agent(
+                item.value,
+                target_unit=target_unit,
+                target_agent_name=target_agent_name,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        ):
+            return True
+
+        return any(
+            self._addressable_ref_matches_agent(
+                ref,
+                target_unit=target_unit,
+                target_agent_name=target_agent_name,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            for ref in self._iter_record_item_interpolation_refs(item)
+        )
+
+    def _addressable_ref_matches_agent(
+        self,
+        ref: model.AddressableRef,
+        *,
+        target_unit: IndexedUnit,
+        target_agent_name: str,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        try:
+            root_unit, root_decl = self._resolve_addressable_root_decl(
+                ref.root,
+                unit=unit,
+                owner_label=owner_label,
+                ambiguous_label="next_owner interpolation ref",
+                missing_local_label="next_owner",
+            )
+        except CompileError:
+            return False
+
+        if not isinstance(root_decl, model.Agent):
+            return False
+        if root_decl.name != target_agent_name or root_unit.module_parts != target_unit.module_parts:
+            return False
+        return not ref.path or ref.path == ("name",)
+
+    def _name_ref_matches_agent(
+        self,
+        ref: model.NameRef,
+        *,
+        target_unit: IndexedUnit,
+        target_agent_name: str,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> bool:
+        try:
+            ref_unit, agent = self._resolve_agent_ref(ref, unit=unit)
+        except CompileError:
+            return False
+        _ = owner_label
+        return agent.name == target_agent_name and ref_unit.module_parts == target_unit.module_parts
+
+    def _validate_route_only_standalone_read_contract(
+        self,
+        *,
+        agent_contract: AgentContract,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        _ = unit
+        _ = owner_label
+        for _output_key, (output_unit, output_decl) in agent_contract.outputs.items():
+            self._validate_standalone_read_guard_contract(output_decl, unit=output_unit)
 
     def _validate_law_stmt_tree(
         self,

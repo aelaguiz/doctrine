@@ -48,3 +48,7 @@ output CoordinationHandoff: "Coordination Handoff"
 #                ^ punctuation.separator.key-value.doctrine
         rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
 #                          ^^^^ keyword.control.doctrine
+
+    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+#   ^^^^^^^^^^^^ entity.name.section.doctrine
+#                                ^^^^ keyword.control.doctrine

@@ -63,8 +63,7 @@ Current shipped boundaries:
 - `trust_surface` items may be unconditional or guarded with `when`
 - guarded output sections render as conditional shells in compiled `AGENTS.md`
   but stay ordinary output fields rather than portable-truth carriers
-- guarded output sections may read declared inputs, enum members, and
-  compiler-owned host facts rooted there
+- guarded output sections may read declared inputs and enum members
 - guarded output sections may not read workflow-local bindings, emitted
   output fields, or undeclared runtime names
 - workflow law may bind `current artifact ... via ...` and `invalidate ... via ...`
@@ -93,10 +92,16 @@ Current shipped rules:
 - route-only conditional readback such as `rewrite_mode` or
   `repeated_problem` stays on the output contract unless the compiler
   explicitly promotes that field into `trust_surface`
+- when a route-only branch resolves a semantic route and an emitted output
+  includes a `next_owner` field, that field must structurally bind the routed
+  target rather than naming it only by prose convention
 - carrier semantics are compiler-owned and fail loud; they are not inferred
   from prose labels such as `current_artifact` or `invalidations`
 - `standalone_read` stays human-facing companion prose; it does not act as a
   second trust carrier or override `trust_surface`
+- `standalone_read` may summarize branch-level readback, but it may not
+  structurally interpolate guarded output detail that could be absent when a
+  guard is false
 
 This keeps the turn contract explicit:
 - `output` still says what the turn emits

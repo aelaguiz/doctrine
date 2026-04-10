@@ -143,15 +143,21 @@ Current decision:
 - `trust_surface` lives only inside `output`
 - `output` may use keyed guarded sections for conditional readback without
   promoting that readback into `trust_surface`
-- guarded output-section expressions read declared inputs, enum members, and
-  compiler-owned host facts rooted there; they do not read workflow-local mode
-  bindings, emitted output fields, or undeclared runtime names
+- guarded output-section expressions read declared inputs and enum members;
+  they do not read workflow-local mode bindings, emitted output fields, or
+  undeclared runtime names
 - every active law leaf branch must resolve exactly one current-subject form:
   either `current artifact ... via ...` or `current none`
 - currentness and invalidation move only through emitted output fields listed
   in the relevant output's `trust_surface`
 - branch shaping is explicit through `active when`, `when`, `mode`, `match`,
   `must`, `stop`, and `route`
+- inline conditional routes such as `route "..." -> Agent when expr` are part
+  of the shipped workflow-law surface
+- routed `next_owner` fields now use structured interpolation as the explicit
+  Slice A agreement surface
+- `standalone_read` may not structurally interpolate guarded output detail,
+  while still remaining free prose outside those structured refs
 - scope, preservation, evidence roles, invalidation, and named law subsection
   reuse are all compiler-owned surfaces now
 

@@ -1,0 +1,327 @@
+># This file keeps the routed `next_owner` field correctly bound but makes
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># `standalone_read` overpromise guarded detail through structured interpolation.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>input RouteFacts: "Route Facts"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>    source: Prompt
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: JsonObject
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    "Use host-provided route facts that say what live job is in force, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or full rewrite, whether a critic miss repeated, what the next concrete step is, what keeps failing, which role returned the issue, and what the next concrete fix is."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                                                                                                                                                                                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>output RouteOnlyHandoffOutput: "Routing Handoff Comment"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                             ^ source.doctrine punctuation.separator.key-value.doctrine
+#                              ^ source.doctrine
+#                               ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: Comment
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    must_include: "Must Include"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        current_route: "Current Route"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        next_owner: "Next Owner"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Name the next owner when ownership is changing now. If ownership stays local, say plainly that it stays local. If the earliest clear owner is still unclear, say plainly that {{RoutingOwner}} keeps the issue."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                                           ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                                                                                                                                             ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                                                                                                                                         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                                                                                                           ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        next_step: "Next Step"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Say the next concrete step now."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                ^ source.doctrine
+#                                 ^^^^ source.doctrine keyword.control.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                                                          ^ source.doctrine punctuation.separator.key-value.doctrine
+>        "Say plainly that later section metadata must be rewritten instead of inherited."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    repeated_problem: "Repeated Problem" when RouteFacts.critic_miss_repeated:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine
+#                                         ^^^^ source.doctrine keyword.control.doctrine
+#                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                                             ^ source.doctrine punctuation.separator.key-value.doctrine
+>        failing_pattern: "What Keeps Failing"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Say what keeps failing."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        returned_from: "Returned From"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Say which role returned it."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        next_fix: "Next Concrete Fix"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Say the next concrete fix."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, what the next concrete step is, and whether {{RouteOnlyHandoffOutput:rewrite_mode.title}} appears on this turn."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                                                                               ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                                                                                                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                                                                                                                                                                                       ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                                                                                                                                                                                                        ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                                                                                                                                                                                          ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                                                                                                                                                                            ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                                                                                                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent RoutingOwner:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Own explicit reroutes when specialist work cannot continue safely."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Instructions"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Take back the same issue when the next specialist owner is still not justified."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>workflow RouteOnlyTurns: "Routing-Only Turns"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    "Handle turns that can only stop, reroute, or keep ownership explicit."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    law:
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.other.field.doctrine
+#       ^ source.doctrine punctuation.separator.key-value.doctrine
+>        active when RouteFacts.live_job in {"routing", "process_repair", "owner_repair"} and RouteFacts.current_specialist_output_missing
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine keyword.control.doctrine
+#              ^ source.doctrine
+#               ^^^^ source.doctrine keyword.control.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                        ^^ source.doctrine keyword.control.doctrine
+#                                          ^^ source.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                             ^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                     ^^ source.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                        ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                                       ^^ source.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                                          ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                                                       ^^ source.doctrine
+#                                                                                         ^^^ source.doctrine keyword.control.doctrine
+#                                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        current none
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine keyword.control.doctrine
+>        stop "No specialist artifact is current for this turn."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>        route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine keyword.control.doctrine
+#             ^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                                                                     ^ source.doctrine
+#                                                                                                      ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                                                                        ^ source.doctrine
+#                                                                                                         ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+#                                                                                                                     ^ source.doctrine
+#                                                                                                                      ^^^^ source.doctrine keyword.control.doctrine
+#                                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>
+>
+>agent InvalidRouteOnlyTurnsDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Keep route-only work explicit when no specialist artifact is current."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: RouteOnlyTurns
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    inputs: "Inputs"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        RouteFacts
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        RouteOnlyHandoffOutput
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

@@ -1,8 +1,6 @@
-# This file shows the explicit reroute branch of the route-only slice.
-# The turn has no current specialist artifact, it reroutes honestly, and the
-# emitted comment stays grounded in route semantics plus host facts.
+# This file keeps the old literal `next_owner` wording to prove that routed
+# next-owner fields now need an explicit structured binding to the route target.
 
-# Declare the host facts that justify the reroute handoff comment.
 input RouteFacts: "Route Facts"
     source: Prompt
     shape: JsonObject
@@ -10,57 +8,41 @@ input RouteFacts: "Route Facts"
     "Use the host-provided route facts that say whether the current specialist output is missing, whether the next owner is still unclear, and what RoutingOwner should do next after the reroute."
 
 
-# Declare the comment this turn emits when the route changes explicitly.
 output RerouteHandoffComment: "Reroute Handoff Comment"
     target: TurnResponse
     shape: Comment
     requirement: Required
 
-    # This field names the route-only state now in force.
     current_route: "Current Route"
         "Say plainly that this is a route-only reroute turn: no specialist artifact is current and the issue is returning to RoutingOwner."
 
-    # This field names the reroute target that the workflow law already fixed.
     next_owner: "Next Owner"
-        "Say plainly that {{RoutingOwner}} now owns the rerouted turn."
+        "Say plainly that RoutingOwner now owns the rerouted turn."
 
-    # This field names the next reroute follow-up step from the host facts.
     next_step: "Next Step"
         "Name the next reroute follow-up step from the route facts."
 
-    # This block says what a downstream owner should understand from the
-    # comment alone.
     standalone_read: "Standalone Read"
         "A downstream owner should be able to read this comment alone and understand that this route-only turn rerouted because no specialist artifact is current, who owns next, and what the next reroute step is."
 
 
-# Declare the concrete reroute target so the workflow law points at an explicit
-# owner.
 agent RoutingOwner:
     role: "Own route-only follow-up when specialist output is missing."
     workflow: "Route Repairs"
         "Take back the same issue when route-only work cannot continue safely."
 
 
-# Declare the route-only workflow that stops honestly and reroutes explicitly.
 workflow RouteOnlyReroute: "Route-Only Reroute"
     "Stop and reroute when the specialist output is missing and the next owner is still unclear."
 
     law:
-        # This line turns the workflow on only when the route-only reroute is
-        # actually in force.
         active when RouteFacts.current_specialist_output_missing and RouteFacts.next_owner_unknown
-        # This line says the branch carries no current specialist artifact.
         current none
-        # This line ends the turn with an explicit reason.
         stop "No specialist artifact is current for this turn."
-        # This line sends the same issue back to the explicit reroute owner.
         route "Route the same issue back to RoutingOwner." -> RoutingOwner
 
 
-# Declare a concrete agent that wires the reroute workflow and the grounded
-# reroute handoff comment together.
-agent RouteOnlyRerouteHandoffDemo:
+agent InvalidRouteOnlyRerouteHandoffDemo:
     role: "Keep explicit route-only reroutes aligned with the emitted handoff comment."
     workflow: RouteOnlyReroute
     inputs: "Inputs"

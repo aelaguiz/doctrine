@@ -18,8 +18,9 @@ Repo-local VS Code language support for `.prompt` files.
   real definition site, enum roots and enum members, and structural
   `abstract` / `inherit` / local-key `override` sites, plus workflow-law and
   trust-surface surfaces such as law carrier refs, trust-surface field items,
-  enum-backed mode refs, law-section `inherit` / `override` keys, and route
-  targets inside `law` branches
+  enum-backed mode refs, law-section `inherit` / `override` keys, guarded
+  output-section paths, and route targets inside `law` branches, including
+  conditional `route "..." -> Agent when ...` forms
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
 
@@ -28,9 +29,10 @@ the same absolute and relative module rules the compiler ships.
 
 Workflow-law support here uses the same vocabulary as
 [../../docs/WORKFLOW_LAW.md](../../docs/WORKFLOW_LAW.md): `law`,
-`trust_surface`, carrier refs, trust-surface field items, enum-backed mode
-refs, named law subsection `inherit` / `override` keys, and route targets
-inside `law` branches.
+`trust_surface`, guarded output headers, carrier refs, trust-surface field
+items, enum-backed mode refs, named law subsection `inherit` / `override`
+keys, and route targets inside `law` branches, including conditional route
+lines.
 
 ## What it does not do yet
 
@@ -102,6 +104,13 @@ local editor is actually running the newest VSIX before changing the grammar.
    import path, one readable ref, one addressable path segment, one
    addressable `title` segment, one enum member, and one structural
    inheritance key.
+7. For the workflow-law ladder, smoke-check:
+   `examples/39_guarded_output_sections/prompts/AGENTS.prompt` for guarded
+   headers and guarded path clicks,
+   `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt` for routed
+   `next_owner` interpolation clicks, and
+   `examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt` for
+   conditional route target clicks.
 
 ## Development only: Extension Development Host
 

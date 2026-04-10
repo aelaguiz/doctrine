@@ -4,7 +4,7 @@ Keep local route-only stops explicit when specialist output is missing.
 
 Stop when the specialist output is missing but the next owner is clear enough to keep ownership local.
 
-This pass runs only when current specialist output is missing and next owner is unknown is false.
+This pass runs only when current specialist output is missing and next owner is not unknown.
 
 There is no current artifact for this turn.
 

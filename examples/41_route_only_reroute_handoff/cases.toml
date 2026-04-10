@@ -57,3 +57,17 @@ expected_lines = [
   "",
   "A downstream owner should be able to read this comment alone and understand that this route-only turn rerouted because no specialist artifact is current, who owns next, and what the next reroute step is.",
 ]
+
+[[cases]]
+name = "routed next_owner fields must structurally bind the explicit reroute target"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_NEXT_OWNER_OMITS_ROUTE_TARGET.prompt"
+agent = "InvalidRouteOnlyRerouteHandoffDemo"
+exception_type = "CompileError"
+error_code = "E339"
+message_contains = [
+  "next_owner field must interpolate routed target",
+  "RerouteHandoffComment.next_owner",
+  "RoutingOwner",
+]

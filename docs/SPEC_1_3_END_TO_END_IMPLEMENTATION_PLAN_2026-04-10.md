@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Spec 1.3 End-to-End Implementation - Architecture Plan"
 date: 2026-04-10
-status: active
+status: complete
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -32,7 +32,8 @@ Doctrine ships the Slice A behavior described in
 model/compiler, diagnostics, renderer, example corpus, docs, and VS Code
 extension, so the route-only workflow-law family behaves and renders as
 intended, the staged `review` design remains non-shipped, and the editor
-correctly highlights and links the shipped language surfaces.
+correctly highlights and links the shipped language surfaces while proposal
+rules 9 and 10 are carried forward honestly instead of being silently deferred.
 
 ## Problem
 
@@ -68,8 +69,9 @@ surface so syntax coloring and link clicks follow the real language.
    diverges from intended behavior.
 3. Define the canonical end state for semantics, rendering, diagnostics,
    examples, and editor support before changing code, including which example
-   mistakes get corrected or deleted and which renderer outputs become the real
-   user-facing contract.
+   mistakes get corrected or deleted, which renderer outputs become the real
+   user-facing contract, and how proposal rules 9 and 10 will be carried by
+   honest compiler/proof surfaces without magic or prose parsing.
 4. Implement the Doctrine core changes first, then align examples/docs/rendered
    refs, then fix the VS Code extension colorizing and definition/document-link
    behavior against the corrected language surface.
@@ -89,10 +91,65 @@ surface so syntax coloring and link clicks follow the real language.
 - No parallel grammar or semantic model between the compiler and the VS Code
   extension.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-10
+Verdict (code): COMPLETE
+Manual QA: pending (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None. A fresh audit reran the plan's code-verifiable proof lanes and
+  rechecked the compiler, corpus, live-doc, and VS Code anchors named in
+  Phases 1 through 4.
+  - Evidence anchors:
+    - `doctrine/compiler.py:1459`
+    - `doctrine/compiler.py:4896`
+    - `doctrine/diagnostics.py:1122`
+    - `examples/41_route_only_reroute_handoff/cases.toml:62`
+    - `examples/42_route_only_handoff_capstone/cases.toml:86`
+    - `docs/WORKFLOW_LAW.md:316`
+    - `editors/vscode/tests/integration/suite/index.js:454`
+    - `editors/vscode/scripts/validate_lark_alignment.py:315`
+  - Plan expects:
+    - Phase 1 to enforce routed `next_owner` binding and `standalone_read`
+      guard discipline on the compiler-owned workflow-law/output path.
+    - Phase 2 to carry those two rules into manifest-backed proof and keep the
+      live docs aligned to the shipped Slice A surface.
+    - Phase 3 to make guarded output headers and conditional law routes
+      intentional VS Code-supported surfaces with real proof coverage.
+    - Phase 4 to pass `make verify-examples`, `make verify-diagnostics`, and
+      `cd editors/vscode && make`, while keeping the stale example-42 ref
+      directory removed.
+  - Code reality:
+    - The compiler enforces both planned route-only contracts on the canonical
+      path, diagnostics classify them as `E339` and `E340`, the `41` and `42`
+      manifests actively prove both failures, the workflow-law docs teach those
+      structured couplings explicitly, and the VS Code validator plus
+      integration suite cover conditional routes and guarded-section
+      navigation.
+    - This audit reran `make verify-examples`, `make verify-diagnostics`, and
+      `cd editors/vscode && make`; all three passed.
+    - `examples/42_route_only_handoff_capstone/ref/route_only_handoff_capstone_demo`
+      remains absent, so the stale downstream truth surface did not regress.
+  - Fix:
+    - None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- Run a short live VS Code smoke on examples `39`, `41`, and `42` if human
+  confirmation of click-through and colorization is still desired beyond the
+  automated extension-host coverage already in place.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
-deep_dive_pass_1: not started
+deep_dive_pass_1: done 2026-04-10
 external_research_grounding: not started
 deep_dive_pass_2: not started
 recommended_flow: deep dive -> external research grounding -> deep dive again -> phase plan -> implement
@@ -204,14 +261,14 @@ Updated: 2026-04-10
   - Do not let refs replace manifests as proof.
   - Do not let advisory review lanes replace the single active corpus.
 
-## Phase alignment guidance (advisory; core planning commands adopt into Section 7 if needed)
-### Global (applies across phases)
+## Planning notes from folded references (non-authoritative; not a phase plan)
+### Global notes
 - Keep proposal freeze decisions and shipped workflow-law docs aligned with compiler-owned semantics, not with illustrative drift. (From: R1, R2)
 - Any example/doc/ref correction must preserve the manifest-backed proof model and must not justify new language primitives just to save bad examples. (From: R1, R3)
 - Keep `review` explicitly out of the current parser/compiler implementation plan even if staged review material remains referenced. (From: R1, R2)
 
-### Phase 1 — Doctrine core semantics, diagnostics, and renderer
-- Potentially relevant obligations (advisory):
+### Core implementation notes
+- Potentially relevant obligations:
   - Enforce the narrowed Slice A semantic boundary and keep `current none` as the only route-only currentness form. (From: R1, R2)
   - Preserve the narrowed output-guard namespace and fail-loud route/currentness rules. (From: R1, R2)
   - Make rendering reflect the intended layered law/output split and guarded-shell behavior. (From: R1, R2)
@@ -219,16 +276,16 @@ Updated: 2026-04-10
 - References:
   - R1, R2, R3
 
-### Phase 2 — Example, ref, and doc convergence
-- Potentially relevant obligations (advisory):
+### Docs, examples, and refs notes
+- Potentially relevant obligations:
   - Align examples `30`, `39`, `40`, `41`, and `42` to the corrected Slice A contract. (From: R1)
   - Keep the route-only ladder staged and narrow rather than turning examples into parallel semantics. (From: R2, R3)
   - Repair rendered refs and explanatory docs so they match the corrected implementation and the manifest-backed proof burden. (From: R1, R2, R3)
 - References:
   - R1, R2, R3
 
-### Phase 3 — VS Code surface alignment
-- Potentially relevant obligations (advisory):
+### Editor alignment notes
+- Potentially relevant obligations:
   - Align editor highlighting and click-through behavior to the shipped grammar and reference forms after Slice A convergence, not to stale example syntax or stale docs. (From: R1, R2, R3)
   - Keep the extension as an adapter of compiler-owned Doctrine rules rather than a second policy owner. (From: R1, R2)
 - References:
@@ -1271,6 +1328,9 @@ instead of hand-waving over broken renders or editor behavior.
 
 - Implementing the intended Slice A route-only workflow-law behavior from
   `docs/PROPOSAL_SPEC1_3.md` through the shipped Doctrine core.
+- Carrying proposal rule 9 (`next_owner` agreement) and rule 10
+  (`standalone_read` guard discipline) into the strongest honest
+  compiler/proof surfaces this run can support without hidden heuristics.
 - Tightening or correcting the workflow-law grammar, parser, model, compiler,
   diagnostics, and renderer wherever the current shipped implementation diverges
   from the intended Slice A contract.
@@ -1292,7 +1352,9 @@ instead of hand-waving over broken renders or editor behavior.
 - Preserving hand-authored examples or rendered refs merely because they exist.
 - Adding speculative language primitives, runtime shims, alternate renderers, or
   editor features beyond the behavior needed to support the shipped Doctrine
-  surface and the requested VS Code colorizing/link clicks.
+  surface, the requested VS Code colorizing/link clicks, and the smallest
+  explicit structured contract, if one is truly required to carry proposal
+  rule 9 honestly.
 - Broad editor-product work such as rename, completion, hover docs, or full
   semantic language-server features unless deeper planning proves one is
   required for the requested link-click behavior.
@@ -1305,6 +1367,10 @@ instead of hand-waving over broken renders or editor behavior.
   `doctrine/grammars/doctrine.lark`, `doctrine/parser.py`,
   `doctrine/model.py`, `doctrine/compiler.py`, `doctrine/renderer.py`, and
   `doctrine/diagnostics.py`.
+- Proposal rule 9 (`next_owner` agreement) has compiler/proof coverage through
+  an explicit structured surface rather than prose convention or hidden magic.
+- Proposal rule 10 (`standalone_read` guard discipline) has the strongest honest
+  manifest-backed proof the current language can support without prose parsing.
 - The rendered output for the corrected route-only and guarded-output examples
   matches the intended contract instead of the current known-wrong rendering.
 - Clear example mistakes have been corrected or replaced, and the active corpus
@@ -1402,49 +1468,941 @@ ladder for the workflow-law family.
 
 # 3) Research Grounding (external + internal “ground truth”)
 
-Research grounding will be completed in `research`. Current authoritative
-anchors are the proposal doc for intended Slice A behavior, the shipped
-workflow-law docs for current public surface, the `doctrine/` implementation,
-the manifest-backed example corpus, and the VS Code extension sources under
-`editors/vscode/`.
+<!-- arch_skill:block:research_grounding:start -->
+## 3.1 External anchors (papers, systems, prior art)
+
+- None added in this pass. The research question here is canonical internal
+  ownership for Spec 1.3 Slice A, and repo truth is already sufficient to name
+  the right implementation boundary. The proposal and shipped docs remain
+  folded product references, not external architecture owners.
+
+## 3.2 Internal ground truth (code as spec)
+
+- Authoritative behavior anchors (do not reinvent):
+  - `doctrine/grammars/doctrine.lark` owns the shipped syntax surface for
+    Slice A: `workflow ... law:`, `current artifact ... via ...`, `current
+    none`, `stop`, law-owned `route`, `output ... trust_surface:`, and keyed
+    guarded output sections. It also still ships a second `route_stmt` surface
+    inside ordinary workflow sections, which is relevant drift for this work.
+  - `doctrine/parser.py` is the syntax-to-AST boundary. `output_body()`
+    collects ordinary output items separately from exactly one
+    `trust_surface` block, `guarded_output_section()` builds
+    `model.GuardedOutputSection`, `workflow_body()` enforces a single `law`
+    block per workflow, `law_body()` and `law_route_stmt()` build the typed law
+    tree, and `route_stmt()` still builds the older non-law `model.RouteLine`
+    path. `parse_text()` and `parse_file()` are the only parse entry points,
+    and `build_lark_parser()` depends on `doctrine/indenter.py` for
+    indentation-sensitive parsing.
+  - `doctrine/model.py` is the typed semantic shape for this family. The
+    relevant ownership lives in `WorkflowBody.law`, `OutputDecl.items`,
+    `OutputDecl.trust_surface`, `GuardedOutputSection`, `TrustSurfaceItem`, the
+    `LawStmt` family, and `LawBody`. The same file also reveals a duplicate
+    route representation through `RouteLine` in `SectionBodyItem`, which sits
+    outside the law-owned path.
+  - `doctrine/compiler.py` is the canonical semantic owner. The concrete-turn
+    contract comes from `_resolve_agent_contract()`, which records the inputs
+    and outputs actually wired by a concrete agent before any law validation.
+    `_compile_output_decl()` validates guarded output sections, compiles
+    `trust_surface`, and currently injects the compiled trust surface just
+    before a keyed `standalone_read` section when present. `_compile_record_item()`
+    renders guarded output sections as conditional shells. `_compile_resolved_workflow()`
+    calls `_compile_workflow_law()` for workflow-law behavior, and
+    `_validate_workflow_law()` plus `_collect_law_leaf_branches()` enforce the
+    one-current-subject-per-active-leaf rule, owned-scope rules, invalidation
+    conflicts, and route target validity. `_validate_current_artifact_stmt()`
+    and `_validate_carrier_path()` enforce that currentness carriers come from
+    emitted outputs and that their fields are listed in `trust_surface`.
+  - `doctrine/compiler.py` also already contains the existing reusable
+    guarded-section/addressable-path machinery. `_get_addressable_children()`,
+    `_record_items_to_addressable_children()`, `_display_addressable_target_value()`,
+    and `_resolve_output_field_node()` all treat
+    `model.GuardedOutputSection` as an addressable titled node, which is the
+    core reason guarded sections already stay addressable instead of being a
+    renderer-only fiction.
+  - `doctrine/compiler.py` still owns a second route rendering path outside
+    workflow law. `_resolve_addressable_section_body_items()` turns old
+    `model.RouteLine` entries into `ResolvedRouteLine`, and `_compile_section_body()`
+    renders them as plain `label -> target` prose. That is a real shipped path,
+    but it is not the law-owned route-only semantic path.
+  - `doctrine/diagnostics.py` is the user-facing error catalog that mirrors the
+    parser/compiler rules with stable summaries and hints. Relevant anchors are
+    the parse-time route diagnostics (`E131`, `E132`, `E133`) and the
+    compile-time workflow-law/output diagnostics (`E331` through `E338`,
+    `E351` through `E372`, and `E381` through `E384`) for current-subject
+    rules, carrier/trust-surface rules, output-guard namespace rules, owned
+    scope, invalidation, and inherited-law structure. This file is not the
+    semantic owner; it translates semantic failures into stable diagnostics.
+  - `doctrine/renderer.py` is a thin serializer over `CompiledAgent` and
+    `CompiledSection`. It only turns compiled trees into Markdown headings and
+    prose. It does not understand workflow law, route-only behavior, guarded
+    output rules, or trust-surface policy on its own, so render bugs rooted in
+    Slice A meaning should be fixed in compiler output, not by moving policy
+    into the renderer.
+  - `doctrine/verify_corpus.py` is the existing preservation harness.
+    `_run_render_contract()` exercises the full parse -> compile -> render path
+    and compares it to manifest `expected_lines`. `_run_compile_fail()` and
+    `_run_parse_fail()` already give stable failure-proof lanes. `approx_ref`
+    diffs are surfaced for human review, but they are advisory and do not
+    replace manifest-backed proof. `build_contract` depends on
+    `doctrine/emit_docs.py`, which is downstream build emission rather than a
+    second owner of Slice A semantics.
+  - `docs/WORKFLOW_LAW.md` is the live docs-side semantic anchor. It fixes the
+    public mental model for `law`, `output`, `trust_surface`, and
+    `standalone_read`, positions examples `30` through `42` as the active
+    ladder, and explicitly says the route-only end of the ladder does not yet
+    prove `next_owner` agreement or `standalone_read` guard discipline.
+  - `docs/COMPILER_ERRORS.md` is the stable docs-side failure anchor. It
+    already names the route, currentness, trust-surface, output-guard, mode,
+    preservation, invalidation, and inherited-law diagnostics that later
+    implementation work must preserve or intentionally update.
+  - `examples/README.md` is the proof-policy anchor. It says the examples are
+    both the teaching surface and the verification corpus, but the active proof
+    lives in manifest-backed `cases.toml`, not in checked-in `ref/**` output.
+  - `examples/30_*` through `examples/42_*` are the live Slice A teaching and
+    preservation ladder. Examples `30` through `39` carry most of the negative
+    proof for law, currentness, trust carriers, and guarded output sections,
+    while `40` through `42` currently carry the route-only end mainly as render
+    proof rather than fully integrated compile/build proof.
+  - `editors/vscode/package.json`, `editors/vscode/extension.js`,
+    `editors/vscode/resolver.js`, `editors/vscode/syntaxes/doctrine.tmLanguage.json`,
+    and `editors/vscode/README.md` are the editor adaptation boundary. They are
+    not semantic owners, but they define the shipped highlighting,
+    document-link, and definition-provider behavior that must follow the same
+    Slice A surface as the compiler.
+- Canonical owner path / boundary to reuse:
+  - The canonical Doctrine owner path for Spec 1.3 Slice A is
+    `doctrine/grammars/doctrine.lark` -> `doctrine/parser.py` ->
+    `doctrine/model.py` -> `doctrine/compiler.py`. Grammar owns syntax,
+    parser/model own the typed AST, and the compiler owns cross-reference
+    validation, route-only/workflow-law semantics, guarded-output validation,
+    trust-surface enforcement, and the compiled readback text shape.
+  - `doctrine/renderer.py` and `doctrine/verify_corpus.py` are downstream
+    consumers of compiler output, not semantic owners. `doctrine/diagnostics.py`
+    is the stable presentation layer for failures, not the place to invent new
+    policy. The implementation should therefore converge in the compiler path
+    first and then let renderer, diagnostics, examples, and editor adapters
+    follow that core.
+  - Inside `doctrine/compiler.py`, the concrete owner boundary to reuse is
+    `_compile_resolved_workflow()` + `_compile_workflow_law()` +
+    `_validate_workflow_law()` for workflow-law semantics, together with
+    `_compile_output_decl()` + `_validate_output_guard_sections()` +
+    `_compile_record_item()` + `_resolve_output_field_node()` for output,
+    `trust_surface`, guarded sections, and compiled readback structure.
+- Existing patterns to reuse:
+  - Uniqueness-at-parse-time for reserved child blocks. The parser already
+    fail-louds on more than one `law` block per workflow and more than one
+    `trust_surface` block per output.
+  - Typed-AST then semantic-validation layering. Syntax goes into `model.*`
+    nodes first, then the compiler performs all cross-reference and
+    branch-level checks. Slice A work should extend that pattern, not add
+    renderer-side or manifest-side semantics.
+  - Branch flattening plus leaf-branch analysis. `_flatten_law_items()` and
+    `_collect_law_leaf_branches()` already give the right place to hang any
+    additional active-branch checks for route-only behavior.
+  - Addressable-child traversal. Guarded output sections are already integrated
+    into `_get_addressable_children()` and `_resolve_output_field_node()`, so
+    any deeper guarded-section work should reuse that path instead of inventing
+    special-case tree walkers.
+  - Compiler-error then diagnostics-translation split. Semantic checks should
+    stay in `doctrine/compiler.py` with plain `CompileError`s, and
+    `doctrine/diagnostics.py` should continue translating those failures into
+    stable codes/hints.
+  - Manifest-backed preservation. `doctrine/verify_corpus.py` already proves
+    exact rendered lines and exact failure codes/messages without treating
+    checked-in refs as authority.
+  - Ladder-by-example rollout. The shipped corpus already introduces one idea
+    at a time from `30` through `42`, so implementation should correct or
+    narrow the later route-only examples instead of inventing a parallel
+    teaching path.
+  - Thin editor registration with adapter-only resolver logic.
+    `editors/vscode/extension.js` is already just provider registration, which
+    is the correct boundary; convergence work should stay in the resolver and
+    TextMate grammar rather than adding a second editor-side semantic engine.
+  - Editor verification through repo-local fixtures. The VS Code package
+    already combines tmgrammar unit tests, snapshot tests over `examples/**`,
+    extension-host definition tests, and the Lark-alignment validator, so
+    extension work should deepen those lanes rather than adding bespoke checks.
+- Duplicate or drifting paths relevant to this change:
+  - The core ships two route surfaces today. The newer Slice A route-only path
+    is `LawRouteStmt` inside workflow law, while the older authored-workflow
+    path is `RouteLine` inside ordinary workflow sections. Both are in the
+    grammar/parser/model/compiler stack today, which means route semantics can
+    drift unless the implementation treats the law path as canonical for this
+    work.
+  - The compiler already special-cases a keyed `standalone_read` section only
+    for trust-surface placement. There is no deeper semantic enforcement of
+    `standalone_read` truthfulness in core code yet, so the current render path
+    can drift from the intended “do not overpromise guarded detail” rule.
+  - The proposal and public docs talk about route/output agreement for emitted
+    `next_owner`, but no Doctrine core file currently references `next_owner`
+    at all. That is a real missing active-proof path rather than an example-only
+    problem.
+  - Public docs say guarded output expressions may read declared inputs, enum
+    members, and compiler-owned host facts. The current compiler implementation
+    of `_output_guard_ref_allowed()` only accepts declared inputs and enum
+    members. Examples model host facts as ordinary declared inputs such as
+    `RouteFacts`, so the current code may still be adequate for Slice A, but
+    the broader wording in docs is ahead of the core if “host facts” is meant
+    to be a separate root kind.
+  - Checked-in example refs and rendered outputs are a downstream drift surface
+    rather than proof. The core harness explicitly treats `expected_lines` in
+    manifests as the contract and `approx_ref` only as surfaced inconsistency.
+  - The route-only end of the ladder is weaker than the earlier workflow-law
+    substrate. Examples `40`, `41`, and `42` currently prove rendered output,
+    but they do not yet carry the same depth of parse/compile/build proof that
+    examples `30` through `39` use for currentness, trust carriers, and guard
+    validation.
+  - The route-only examples omit `trust_surface` entirely while the public
+    workflow-law docs keep describing `output` plus `trust_surface` as the
+    portable-truth owner. That may be an intentional Slice A exception, but it
+    is a real docs/example tension that deep-dive must resolve explicitly.
+  - Example `42` uses inline conditional law route syntax
+    (`route "..." -> Target when ...`). The grammar/parser already support
+    this, but the public docs currently teach route more narrowly as
+    `route "..." -> Agent`, so this is a docs/example drift surface until
+    deep-dive decides whether to bless or rewrite it.
+  - The VS Code extension duplicates a large amount of language policy today:
+    `resolver.js` hard-codes declaration and law/trust-surface patterns,
+    maintains its own indentation-walk pseudo-parse, and
+    `doctrine.tmLanguage.json` carries a manual workflow-law keyword list.
+    Those surfaces will drift unless Slice A changes are driven from the
+    compiler-owned language contract first.
+  - `editors/vscode/language-configuration.json` is a third editor policy
+    surface with brittle indentation rules. Its declaration regex still omits
+    `enum`, which is already an evidence-based drift risk unrelated to user
+    semantics but relevant to extension correctness.
+- Behavior-preservation signals already available:
+  - `doctrine/verify_corpus.py` already provides the main end-to-end signal:
+    parse -> compile -> render -> exact-line comparison in `render_contract`
+    cases.
+  - The same harness already provides exact parse/compile-failure proof through
+    `parse_fail` and `compile_fail` cases, which is enough to protect new
+    diagnostics and semantic checks if the existing manifests are updated
+    honestly.
+  - `approx_ref` diffs already surface human-readable drift between current
+    rendered output and checked-in refs without making refs authoritative.
+  - The compiler already exposes stable failure strings that
+    `doctrine/diagnostics.py` maps to stable error codes, so behavior-preserving
+    validation changes can usually be proven by existing compile-fail manifests
+    rather than new harnesses.
+  - The workflow-law ladder already contains strong negative proof for the
+    substrate through manifest `parse_fail` and `compile_fail` cases in
+    examples `30`, `31`, `32`, `33`, `35`, `36`, and `37`.
+  - The route-only end also already has user-facing render-preservation hooks:
+    examples `40`, `41`, and `42` all have manifest `render_contract` cases,
+    which makes current renderer defects visible once the expected lines are
+    corrected.
+  - The VS Code extension already has a credible preservation stack in
+    `editors/vscode/package.json`: tmgrammar unit tests, snapshot tests against
+    `examples/**`, extension-host integration tests, and
+    `scripts/validate_lark_alignment.py`.
+  - Current VS Code integration coverage already protects workflow-law carrier
+    refs, enum-backed modes, law-section `inherit`/`override`, and law route
+    targets, but it does not yet exercise the later route-only/guarded-output
+    ladder the way it exercises examples `31`, `32`, and `37`.
+
+## 3.3 Open questions from research
+
+There are no remaining blocking open questions after deep-dive. The list below
+records the research questions that were resolved and then carried forward into
+Sections 5 and 6 so the evidence trail stays explicit.
+
+- `RouteLine` versus law route path:
+  Freeze `RouteLine` as a legacy authored-workflow path and keep
+  `LawRouteStmt` as the canonical Slice A route owner.
+- Guarded-output “host facts”:
+  Treat them as declared host-supplied inputs in this run; do not add a new
+  compiler-owned host-fact root kind.
+- Route-only `trust_surface` omission:
+  Keep `40` through `42` outside `trust_surface` as an intentional Slice A
+  boundary.
+- `next_owner` and `standalone_read` proof:
+  Do not invent prose parsing in this run. Proposal rule 9 still belongs in the
+  implementation target, but only through existing structured output surfaces
+  or the smallest explicit binding surface justified during implementation.
+  Proposal rule 10 also remains in scope, but its proof must stay honest to the
+  current no-prose-parser boundary and use the strongest manifest-backed signal
+  the language can support.
+- `standalone_read` placement:
+  Keep the current compiler-owned placement rule in `_compile_output_decl()`
+  unless implementation finds a concrete call-site breakage that requires a
+  narrower structural refinement.
+- Inline conditional law route:
+  Keep and document it as a first-class shipped surface because the
+  grammar/parser already ship it and the capstone already uses it.
+- VS Code coverage for `39` through `42`:
+  Add explicit unit, snapshot, integration, and Lark-alignment coverage rather
+  than relying on incidental support.
+<!-- arch_skill:block:research_grounding:end -->
 
 # 4) Current Architecture (as-is)
 
-Current architecture will be grounded in `deep-dive`. This section must map the
-real control paths from grammar to parser/model/compiler/renderer/verification,
-plus the VS Code grammar and resolver paths, before implementation starts.
+<!-- arch_skill:block:current_architecture:start -->
+## 4.1 On-disk structure
+
+The current Slice A surface is spread across four concrete repo layers:
+
+- `doctrine/`
+  - `doctrine/grammars/doctrine.lark` owns shipped syntax, including
+    `guarded_output_section`, `trust_surface`, `law_route_stmt`, and the older
+    authored-workflow `route_stmt`.
+  - `doctrine/parser.py` converts syntax into typed AST nodes and keeps
+    `trust_surface` and `law` fail-loudly unique.
+  - `doctrine/model.py` carries the core typed split through
+    `WorkflowBody.law`, `OutputDecl.trust_surface`, `GuardedOutputSection`,
+    `LawRouteStmt`, and the legacy `RouteLine`.
+  - `doctrine/compiler.py` is the semantic owner.
+  - `doctrine/diagnostics.py`, `doctrine/renderer.py`,
+    `doctrine/verify_corpus.py`, and `doctrine/emit_docs.py` are the
+    translation, serialization, proof, and emitted-ref paths that sit
+    downstream of the compiler.
+- `docs/`
+  - `docs/WORKFLOW_LAW.md`, `docs/AGENT_IO_DESIGN_NOTES.md`,
+    `docs/COMPILER_ERRORS.md`, `docs/LANGUAGE_DESIGN_NOTES.md`, and
+    `docs/README.md` are the human-facing surfaces most likely to drift if the
+    core changes and the docs are not repaired in the same run.
+- `examples/`
+  - The workflow-law ladder is concentrated in examples `30` through `42`.
+  - Each example splits authored prompts, manifest-backed proof in `cases.toml`,
+    and downstream render snapshots under `ref/`.
+- `editors/vscode/`
+  - `package.json` and `extension.js` are a thin shell.
+  - `resolver.js`, `syntaxes/doctrine.tmLanguage.json`, and
+    `language-configuration.json` encode the adapter behavior that must follow
+    the compiler-owned surface.
+  - `tests/**` and `scripts/validate_lark_alignment.py` are the editor proof
+    lane.
+
+## 4.2 Control paths (runtime)
+
+The current end-to-end Doctrine path is already coherent at the top level:
+
+`parse_file()` -> `parse_text()` -> Lark grammar -> `ToAst` builders ->
+`compile_prompt()` -> `CompilationContext.compile_agent()` ->
+`_resolve_agent_contract()` plus `_compile_workflow_decl()` /
+`_compile_output_decl()` -> `render_markdown()` -> manifest verification.
+
+Three concrete downstream runtime paths sit on top of that shared core:
+
+- Core compile/render path:
+  - `doctrine/compiler.py::_compile_output_decl()` validates guarded output
+    expressions, inserts the compiled `Trust Surface` section, and renders
+    guarded output sections as conditional shells through `_compile_record_item()`.
+  - `_compile_resolved_workflow()`, `_compile_workflow_law()`, and
+    `_render_law_stmt_lines()` merge authored workflow prose with law-owned
+    currentness, stop, and route consequences.
+- Emitted-ref path:
+  - `doctrine/emit_docs.py::emit_target()` parses the configured entrypoint,
+    compiles each root concrete agent, and serializes the rendered `AGENTS.md`
+    trees under the configured output directories.
+  - That means checked-in refs are downstream products of the compiler/render
+    path, not an independent source of truth.
+- VS Code authoring path:
+  - `editors/vscode/extension.js` registers an import-only
+    `DocumentLinkProvider` plus a shared `DefinitionProvider`.
+  - `editors/vscode/resolver.js` indexes declarations once per document and then
+    resolves imports, declarations, addressable paths, and some workflow-law
+    references through its own regex and indentation-based pseudo-parse.
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json` and
+    `editors/vscode/language-configuration.json` shape the lexical and editing
+    experience around that same authored text.
+
+The main control-path fault line is still internal to the compiler:
+
+- Slice A route semantics live on the workflow-law path.
+- Older non-law route prose still flows through the legacy authored-workflow
+  `RouteLine` path.
+
+## 4.3 Object model + key abstractions
+
+Current Slice A behavior is organized around these key abstractions:
+
+- Output-side abstractions:
+  - `OutputDecl.trust_surface`
+  - `GuardedOutputSection`
+  - addressable output traversal via `_get_addressable_children()`,
+    `_record_items_to_addressable_children()`, and `_resolve_output_field_node()`
+- Workflow-law abstractions:
+  - `CurrentNoneStmt`
+  - `LawRouteStmt`
+  - `LawBranch` leaf analysis inside `_validate_workflow_law()` and
+    `_collect_law_leaf_branches()`
+- Legacy authored-workflow abstraction:
+  - `RouteLine` in the AST
+  - `ResolvedRouteLine` in compilation
+
+The object-model split is actually good news: the repo already distinguishes
+the canonical workflow-law route path from the older authored-workflow route
+path at the model layer. The drift is not that the compiler lacks a type split;
+it is that the repo still ships both paths and the public surfaces do not
+explain the boundary clearly enough.
+
+## 4.4 Observability + failure behavior today
+
+Current failure and proof behavior is uneven but concrete:
+
+- Compiler and parser failures are surfaced through stable diagnostics in
+  `doctrine/diagnostics.py`.
+- Manifest-backed corpus verification already proves exact render,
+  compile-fail, parse-fail, and build behavior through
+  `doctrine/verify_corpus.py`.
+- Checked-in example refs are only advisory via `approx_ref`.
+- The editor is intentionally fail-silent for unresolved links or definitions;
+  missing targets generally produce no navigation result rather than a second
+  semantic error system.
+
+The main observed drift points are:
+
+- The core still ships two route paths: `LawRouteStmt` for Slice A and the
+  legacy `RouteLine` path for older authored workflows.
+- Output-guard docs currently overstate the allowed source space. The compiler
+  only accepts declared inputs and enum members today; “host facts” are modeled
+  as declared inputs, not as a separate root kind.
+- Route-only examples `40` through `42` intentionally omit `trust_surface`, but
+  the live docs do not explain that exception sharply enough yet.
+- Example `42` uses inline conditional law-route syntax
+  (`route "..." -> Agent when expr`), which the grammar/parser already ship,
+  but the live docs and editor coverage do not yet treat as a first-class
+  public surface.
+- Compiled law wording is currently clumsy in at least one route-only render:
+  example `40` produces “next owner is unknown is false,” which is a compiled
+  text bug, not a contract worth preserving.
+- Examples `40` through `42` are proof-light compared with the earlier
+  workflow-law ladder. They lean on `render_contract` plus refs and do not yet
+  provide integrated active proof for routed `next_owner` agreement or for
+  `standalone_read` guard discipline.
+
+## 4.5 UI surfaces (rendered docs + editor)
+
+The user-facing surfaces that currently matter are:
+
+- Compiled `AGENTS.md` output
+  - workflow prose
+  - law activation/currentness/stop/route consequences
+  - output schema, guarded-section shells, and `trust_surface`
+- VS Code authoring ergonomics
+  - syntax coloring
+  - indentation behavior
+  - import link clicks
+  - go-to-definition for declarations, addressable paths, and workflow-law refs
+
+Those surfaces are already real, but they are not equally protected.
+Highlighting, indentation, and navigation coverage stop short of the corrected
+`39` through `42` surface, and emitted refs still reflect at least one known
+bad render phrasing.
+<!-- arch_skill:block:current_architecture:end -->
 
 # 5) Target Architecture (to-be)
 
-Target architecture will be defined in `deep-dive` after current-state
-grounding. It must name the canonical owner path for Slice A semantics, the
-renderer contract, the example/doc alignment rules, and the exact extension
-boundary for highlighting and navigation.
+<!-- arch_skill:block:target_architecture:start -->
+## 5.1 On-disk structure (future)
+
+The future on-disk ownership should be explicit and boring:
+
+- `doctrine/grammars/doctrine.lark` -> `doctrine/parser.py` ->
+  `doctrine/model.py` -> `doctrine/compiler.py` remain the one canonical owner
+  path for Slice A.
+- `doctrine/renderer.py`, `doctrine/diagnostics.py`,
+  `doctrine/verify_corpus.py`, and `doctrine/emit_docs.py` remain downstream
+  adapter or proof surfaces.
+- Live docs that survive this run must match the compiler-owned truth:
+  - `docs/WORKFLOW_LAW.md`
+  - `docs/AGENT_IO_DESIGN_NOTES.md`
+  - `docs/COMPILER_ERRORS.md` if diagnostics wording changes
+  - `docs/LANGUAGE_DESIGN_NOTES.md` where it still describes current language
+    decisions
+  - `docs/README.md`
+  - `examples/README.md`
+- The example ladder remains the public teaching/proof surface:
+  - keep `30` and `39` as the strong substrate anchors
+  - correct `40` through `42`
+  - delete the empty stale directory
+    `examples/42_route_only_handoff_capstone/ref/route_only_handoff_capstone_demo`
+- The VS Code extension remains an adapter bundle:
+  - thin shell in `package.json` and `extension.js`
+  - syntax/navigation behavior in `resolver.js`,
+    `syntaxes/doctrine.tmLanguage.json`, and
+    `language-configuration.json`
+  - proof in `tests/**` plus `scripts/validate_lark_alignment.py`
+
+## 5.2 Control paths (future)
+
+The future runtime path stays on the existing core, but with the route-only
+family fully converged onto the law-owned path:
+
+`parse_file()` -> `parse_text()` -> Lark grammar -> `ToAst` builders ->
+`compile_prompt()` -> `CompilationContext.compile_agent()` ->
+`_resolve_agent_contract()` plus `_compile_workflow_decl()` /
+`_compile_output_decl()` -> `render_markdown()` -> `verify_corpus` and
+`emit_docs` as downstream consumers.
+
+Control-path decisions:
+
+- All enforceable Slice A semantics stay in `doctrine/compiler.py`.
+- The workflow-law path owns all route-only semantics:
+  - `_compile_resolved_workflow()`
+  - `_compile_workflow_law()`
+  - `_render_law_stmt_lines()`
+  - `_validate_workflow_law()`
+  - `LawBranch` leaf analysis
+- Output-side guarded readback stays on:
+  - `_compile_output_decl()`
+  - `_compile_record_item()`
+  - `_resolve_output_field_node()`
+- Emitted refs remain downstream products of the compiler plus renderer through
+  `doctrine/emit_docs.py`; they are refreshed after core/render fixes, not used
+  to define those fixes.
+- The VS Code path remains thin:
+  - imports keep using `DocumentLinkProvider`
+  - all other click-through stays definition-provider based
+  - resolver, grammar, indentation, validator, and tests are updated to match
+    the corrected shipped syntax rather than inventing a second semantic model
+
+## 5.3 Object model + abstractions (future)
+
+The future object-model stance is now fully specified:
+
+- `LawRouteStmt` is the canonical route abstraction for Slice A.
+  - All route-only semantics remain on `_compile_workflow_law()`,
+    `_validate_workflow_law()`, and `LawBranch`.
+- `RouteLine` stays supported only as a legacy authored-workflow abstraction for
+  older non-law examples and workflows.
+  - It is frozen outside Slice A.
+  - This run does not widen, enrich, or reinterpret it.
+- `GuardedOutputSection` remains an output-owned, keyed, titled, addressable
+  abstraction.
+- Output guards stay narrow and compiler-owned.
+  - For this run, “host facts” means declared host-supplied inputs rooted in
+    the ordinary input registry.
+  - This run does not add a hidden host-fact root kind.
+- Route-only outputs `40` through `42` stay intentionally outside
+  `trust_surface`.
+  - Carrier-backed portable truth remains the `31` / `36` family.
+  - Route-only comment-schema readback remains an output-owned exception for
+    turns with `current none`.
+- `standalone_read` stays authored explanatory prose, not a second semantic
+  plane.
+  - No prose parser.
+  - No NLP-style validation.
+  - Proposal rule 9 (`next_owner` agreement) remains part of this plan, but any
+    compiler-owned enforcement must use an existing structured output surface or
+    the smallest explicit binding surface justified in implementation.
+  - Proposal rule 10 (`standalone_read` guard discipline) also remains part of
+    this plan, but its proof path must stay honest to the current language
+    boundary and cannot rely on prose parsing.
+
+## 5.4 Invariants and boundaries
+
+Boundary rules for implementation:
+
+- Grammar owns syntax.
+- Parser and model own the typed AST.
+- Compiler owns all enforceable Slice A semantics, compiled render layering,
+  and addressable output/readback structure.
+- Diagnostics translate parser/compiler failures into stable codes.
+- Renderer stays a dumb serializer over compiled sections.
+- Manifest-backed examples, live docs, emitted refs, and the VS Code extension
+  all follow the compiler-owned contract.
+
+This architecture rejects the following escape hatches:
+
+- no new top-level `review` surface
+- no renderer-side policy patching
+- no diagnostics-side policy invention
+- no new host-fact root kind
+- no prose parser for `standalone_read`
+- no new verification harness
+- no language server
+- no compatibility rules in docs/examples/editor support for known-bad example
+  shapes
+- no expansion of the legacy `RouteLine` path to own Slice A behavior
+- no editor-side semantic enforcement of `next_owner` agreement or
+  `standalone_read` guard discipline
+
+This plan still carries proposal rules 9 and 10. What it rejects is hidden
+heuristics. If existing structured surfaces are insufficient for rule 9, the
+only acceptable widening is a small explicit compiler-owned contract recorded
+in Section 10. Rule 10 must stay within the no-prose-parser boundary even when
+its proof burden is strengthened.
+
+## 5.5 UI surfaces (rendered docs + editor)
+
+The future user-facing surfaces should be intentionally aligned:
+
+- Compiled `AGENTS.md` renders should keep four layers distinct:
+  1. authored workflow prose
+  2. law activation and currentness summary
+  3. law stop/route consequences
+  4. output schema plus guarded-section shells and `trust_surface`
+- Public docs and examples should teach the same story:
+  - `docs/WORKFLOW_LAW.md` explicitly documents the route-only no-`trust_surface`
+    exception, the narrow guard-source rule, and inline conditional law routes
+    if that syntax stays shipped
+  - `docs/AGENT_IO_DESIGN_NOTES.md` explicitly contrasts carrier-backed portable
+    truth with route-only comment-schema readback
+  - `examples/README.md` explicitly says refs are not proof, `40` through `42`
+    omit `trust_surface` intentionally, and `42` is the route-only capstone plus
+    `39`-style guarded readback
+- VS Code should expose the corrected shipped surface to authors:
+  - guarded output headers are highlighted and indent correctly
+  - conditional law routes are highlighted and navigable
+  - imports click through with document links
+  - declarations, addressable paths, guarded sections, and route targets resolve
+    through go-to-definition
+<!-- arch_skill:block:target_architecture:end -->
 
 # 6) Call-Site Audit (exhaustive change inventory)
 
-The exhaustive change map will be built in `deep-dive`. It must cover the core
-Doctrine implementation, active examples and refs, workflow-law docs, compiler
-error docs, and the VS Code extension/test surfaces.
+<!-- arch_skill:block:call_site_audit:start -->
+## 6.1 Change map (table)
+
+| Area | File | Symbol / Call site | Current behavior | Required change | Why | New API / contract | Tests impacted |
+| ---- | ---- | ------------------ | ---------------- | --------------- | --- | ------------------ | -------------- |
+| Core syntax | `doctrine/grammars/doctrine.lark` | `guarded_output_section`, `law_route_stmt`, `route_stmt`, `trust_surface_block` | Grammar already ships guarded sections, law routes with optional `when`, and the legacy authored `route_stmt`. | Preserve guarded/trust/law forms; explicitly treat `route_stmt` as legacy only for this run. | Stops route-path drift without inventing new syntax. | Slice A route semantics live only on `law_route_stmt`. | `make verify-examples`; `30`, `39`, `41`, `42`; legacy route examples `07`, `10`, `12`, `20`, `26`. |
+| Core parse | `doctrine/parser.py` | `output_body()`, `guarded_output_section()`, `current_none_stmt()`, `law_route_stmt()`, `route_stmt()` | Parser already splits `trust_surface`, builds guarded nodes, parses `current none`, and keeps law routes separate from `RouteLine`. | Preserve the AST split and keep `LawRouteStmt` plus `current none` as the Slice A route/currentness owner path; no new semantics added to `RouteLine`. | Keeps typed ownership correct and fail-loud. | No new parser path; only clarified ownership. | Existing workflow-law manifests; `30` route/currentness failures; `39` guard failures. |
+| Core model | `doctrine/model.py` | `OutputDecl.trust_surface`, `GuardedOutputSection`, `CurrentNoneStmt`, `LawRouteStmt`, `RouteLine` | Model already expresses the right shipped split plus the legacy route path. | Preserve existing Slice A nodes; freeze `RouteLine` as legacy. | No new model abstraction needed for this run. | Same AST, clearer boundary. | Indirectly all workflow-law examples. |
+| Core compile | `doctrine/compiler.py` | `_compile_output_decl()`, `_compile_record_item()`, `_compile_trust_surface_section()` | Compiler owns output guard validation, `trust_surface` insertion, and guarded-section rendering. | Keep policy here; fix render ordering and wording only here, not in renderer. | Output/readback layering is compiler-owned. | Compiled output remains SSOT. | `31`, `39`, `40`, `41`, `42` render contracts. |
+| Core compile | `doctrine/compiler.py` | `_validate_output_guard_sections()`, `_validate_output_record_items()`, `_validate_output_guard_expr()`, `_validate_output_guard_ref()`, `_output_guard_ref_allowed()` | Guards accept inputs and enum members only, and nested guarded sections are validated recursively through the output-record traversal. | Preserve that narrow rule; align docs and diagnostics wording to it. | Prevent hidden host-fact semantics and keep nested guarded-section ownership on the compiler path that already exists. | “Host facts” means declared host-supplied inputs in this run. | `39` `E338` cases; `make verify-diagnostics` if wording changes. |
+| Core compile | `doctrine/compiler.py` | `_compile_resolved_workflow()`, `_compile_workflow_law()`, `_render_law_stmt_lines()`, `_render_condition_expr()`, `_render_condition_subject()`, `_render_condition_ref()` | Workflow/law layering is centralized, but the current condition-rendering helper path still produces awkward route-only wording in example `40`. | Keep Slice A rendering on this path and fix condition phrasing here. | Avoid preserving broken renders or moving policy to serializer. | Compiled law text remains compiler-owned. | `30`, `40`, `41`, `42` render contracts. |
+| Core compile | `doctrine/compiler.py` | `_validate_workflow_law()`, `_validate_law_stmt_tree()`, `_collect_law_leaf_branches()`, `_branch_with_stmt()`, `_validate_route_target()`, `_validate_carrier_path()` | Enforces one current subject per active leaf, carrier/trust rules, invalidation contradictions, and route target validity. | Preserve as canonical semantic validation path; if proposal rule 9 needs explicit route/output coupling, land it here or on adjacent compiler-owned output validation rather than in docs or the editor. | This is the right place for enforceable law semantics. | No hidden coupling; only the smallest explicit structured contract if rule 9 truly requires one. | `30` `E331/E332`; `31` `E336/E337`; `36` `E371/E372`; `37` `E381-E384`; targeted `40`-`42` proof cases. |
+| Core legacy | `doctrine/compiler.py` | `_resolve_addressable_section_body_items()`, `_compile_section_body()` | Legacy `RouteLine` still compiles to plain `label -> target` prose. | Freeze as non-Slice-A legacy behavior; do not extend. | Keeps older authored workflows working without owning new law behavior. | No new Slice A behavior on `RouteLine`. | Older authored-route examples `07`, `10`, `12`, `14`, `17`, `20`, `26`. |
+| Emit path | `doctrine/emit_docs.py` | `emit_target()`, `load_emit_targets()` | Emitted example refs are generated downstream from `compile_prompt()` plus `render_markdown()`, but the current plan did not name the emit path explicitly. | Treat it as the canonical ref-refresh path after render fixes; do not special-case refs by hand. | Rendered refs are part of the user-visible output lane and must follow the same compiler-owned truth. | Refs are regenerated downstream, never hand-authored policy surfaces. | targeted emit commands when ref snapshots are refreshed; `make verify-examples`. |
+| Proposal gap closure | `doctrine/compiler.py`, `doctrine/verify_corpus.py`, `examples/40_route_only_local_ownership/**`, `examples/41_route_only_reroute_handoff/**`, `examples/42_route_only_handoff_capstone/**` | route/output agreement for `next_owner`; `standalone_read` guard discipline | Proposal rules 9 and 10 are target behavior, but the numbered corpus still lacks integrated active proof for them and the prior plan wording risked treating them as permanent deferrals. | Carry them into this run honestly: land the smallest explicit compiler-owned agreement surface for `next_owner` that avoids magic, and add the strongest manifest-backed integrated proof for both rules without prose parsing. | This is the main remaining proposal-alignment gap. | No hidden magic; explicit structured contract only if needed. | `40`-`42` manifests; `make verify-examples`; `make verify-diagnostics` if a new error surface appears. |
+| Diagnostics | `doctrine/diagnostics.py` | `_classify_unexpected_token()`, workflow-law mappings for `E331`, `E332`, and `E338` | Stable codes already exist, but `E338` wording overpromises host-fact support and the route-only parse/compile surface spans more than one code. | Rewrite hints only if needed to match the shipped core rule and keep the route-only/guarded-output codes aligned with the compiler. | Diagnostics must describe real compiler behavior. | Stable codes preserved; only wording may narrow. | `make verify-diagnostics`; existing parse/compile-fail manifests. |
+| Verification | `doctrine/verify_corpus.py`, `doctrine/renderer.py` | `_load_case()`, `_run_render_contract()`, `_run_parse_fail()`, `_run_compile_fail()`, `_run_build_contract()`, `_build_contract_ref_diff()`, `render_markdown()`, `_render_section()` | Existing harness already proves exact render, parse-fail, compile-fail, and build output, but the prior inventory understated the concrete proof path. | Preserve harness; strengthen `40` to `42` with the smallest honest existing manifest kinds. | No new harness needed. | Manifest-backed proof remains SSOT. | `make verify-examples`; targeted `verify_corpus`. |
+| Live docs | `docs/WORKFLOW_LAW.md` | shipped workflow-law reference | Live mental model is good, but it under-documents inline conditional law routes, overstates guard-source breadth, and does not explain the route-only no-`trust_surface` exception sharply enough. | Rewrite to document the actual shipped Slice A contract, including conditional law routes if kept. | Main public semantic explainer must match compiler truth. | Live docs follow compiler-owned Slice A. | `39`, `40`, `42` examples as proof anchors. |
+| Live docs | `docs/AGENT_IO_DESIGN_NOTES.md` | `output` / `trust_surface` / `standalone_read` boundary | Explains portable truth well, but route-only comment-schema readback is not contrasted strongly enough and host-fact wording is too broad. | Rewrite to make the `31/36` carrier path vs `40/42` route-only path explicit. | Prevents readers from “fixing” route-only examples by adding bogus `trust_surface`. | Route-only outputs remain outside `trust_surface`. | `31`, `36`, `40`, `42`. |
+| Live docs | `docs/COMPILER_ERRORS.md` | canonical error catalog | Stable error coverage exists, but the doc will drift if `E338` wording is narrowed or route-only errors gain clearer wording examples. | Update only where diagnostics text or examples materially change. | The error catalog is user-facing truth, not a stale appendix. | Error docs follow shipped diagnostics wording. | `make verify-diagnostics`; doc-only. |
+| Live docs | `docs/LANGUAGE_DESIGN_NOTES.md` | current language decisions | The notes still repeat the broader “compiler-owned host facts” wording and may be used as a living design explainer even if they are not the main index doc. | Sync or narrow the Slice A language-decision notes wherever they would contradict the corrected compiler-owned rule. | Prevents a second semi-live design story from surviving after the change. | Design notes follow the same Slice A boundary decisions. | doc-only. |
+| Live docs | `docs/README.md`, `examples/README.md` | docs index and corpus policy | Docs index is high-level; corpus guide states refs are not proof but does not explicitly say `40` to `42` omit `trust_surface` intentionally or that `42` is the conditional-route capstone. | Rewrite the index and corpus ladder text to steer readers to manifests and the corrected Slice A story. | Keeps onboarding and corpus policy aligned. | Manifests stay the proof surface; refs stay downstream only. | `make verify-examples`; doc-only. |
+| Examples anchor | `examples/30_law_route_only_turns/cases.toml`, `examples/30_law_route_only_turns/prompts/AGENTS.prompt`, `examples/30_law_route_only_turns/prompts/INVALID_*.prompt`, `examples/30_law_route_only_turns/ref/route_only_triage_demo/AGENTS.md` | route-only setup and negative currentness/route cases | `30` is the honest no-carrier setup and already proves route/currentness failures through concrete invalid prompts. | Keep semantics; tighten prose/comments where needed so they teach the intended ladder more explicitly. | Preserve the strong substrate example instead of shifting meaning elsewhere. | `30` stays the no-carrier setup with explicit parse/compile-fail proof. | Existing `30` manifests; `make verify-examples`. |
+| Examples anchor | `examples/39_guarded_output_sections/cases.toml`, `examples/39_guarded_output_sections/prompts/AGENTS.prompt`, `examples/39_guarded_output_sections/prompts/INVALID_*.prompt`, `examples/39_guarded_output_sections/ref/guarded_output_sections_demo/AGENTS.md`, `examples/39_guarded_output_sections/ref/nested_guarded_output_sections_demo/AGENTS.md` | guarded-output anchor and negative guard-namespace cases | `39` is already the clean guarded-section anchor and the place where nested guarded sections plus `E338` failures are actively proven. | Keep semantics; tighten prose/comments where needed so the compiler-owned guard boundary is taught explicitly. | Preserve the strong guarded-output substrate instead of rediscovering it elsewhere. | `39` stays the guarded-output anchor. | Existing `39` manifests; `make verify-examples`; `make verify-diagnostics` if wording changes. |
+| Examples capstone | `examples/40_route_only_local_ownership/cases.toml`, `examples/40_route_only_local_ownership/prompts/AGENTS.prompt`, `examples/40_route_only_local_ownership/ref/route_only_local_ownership_demo/AGENTS.md` | local-ownership route-only outcome | `40` teaches the no-reroute branch, but its current compiled wording is broken. | Keep no-`trust_surface` omission; fix prompt/comments and refresh the ref only after compiler wording is corrected. | This is the first route-only outcome users see. | Route-only output stays comment-schema readback, not portable truth. | `40` manifest and ref; `make verify-examples`. |
+| Examples capstone | `examples/41_route_only_reroute_handoff/cases.toml`, `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt`, `examples/41_route_only_reroute_handoff/ref/route_only_reroute_handoff_demo/AGENTS.md` | reroute-handoff branch | `41` teaches the semantic reroute outcome and should stay paired cleanly against `40`. | Keep no-`trust_surface` omission; correct prompt/comments and refresh the ref after final compiler wording settles. | This is the clean reroute counterpart to `40`. | Route-only output stays comment-schema readback, not portable truth. | `41` manifest and ref; `make verify-examples`. |
+| Examples capstone | `examples/42_route_only_handoff_capstone/cases.toml`, `examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt`, `examples/42_route_only_handoff_capstone/ref/route_only_turns_demo/AGENTS.md` | route-only capstone with guarded readback and conditional route | `42` is the public capstone, but it is still half-documented and currently proof-light beyond render output. | Keep no-`trust_surface` omission; document the conditional route syntax explicitly, strengthen manifests where honest, and refresh the ref after final compiler wording settles. | This is the slice capstone and the most drift-prone example in scope. | Route-only output stays comment-schema readback, not portable truth. | `42` manifest and ref; `make verify-examples`. |
+| Example refs | `examples/40_route_only_local_ownership/ref/route_only_local_ownership_demo/AGENTS.md`, `examples/41_route_only_reroute_handoff/ref/route_only_reroute_handoff_demo/AGENTS.md`, `examples/42_route_only_handoff_capstone/ref/route_only_turns_demo/AGENTS.md` | rendered downstream snapshots | Current refs encode at least one known-bad render phrasing and are not yet aligned to the corrected capstone story. | Refresh these refs only after compiler/render wording is fixed and manifests agree. | Refs should mirror shipped behavior, not pin known-bad prose. | Refs remain downstream snapshots, never semantic owners. | targeted emit + `make verify-examples`. |
+| Example cleanup | `examples/42_route_only_handoff_capstone/ref/route_only_handoff_capstone_demo` | empty stale ref directory | Delete it. | Dead downstream truth surface should not remain live. | None. | N/A |
+| VS Code shell | `editors/vscode/package.json`, `editors/vscode/extension.js` | `registerDefinitionProvider()` and package test scripts | The shell is already thin. For examples `39` through `42`, the relevant click surface is the definition provider, not the import-only document-link provider. | Preserve the thin shell and extend the fixture/test inputs through `39` to `42`. | Keep adapter boundary clean while proving the actual requested click-through surface. | Imports stay document-link only; route-only and guarded-output clicks stay definition-provider based. | `cd editors/vscode && make`; `npm test`. |
+| VS Code resolver | `editors/vscode/resolver.js` | `ROUTE_RE`, `collectLawBodySites()`, `collectWorkflowSectionSites()`, `collectRecordBodySites()`, `resolveDirectDefinition()`, `resolveAddressableDefinition()`, `getIoChildBodySpec()`, `getRecordChildBodySpec()`, `collectShippedLawRefSites()` | Navigation for guarded sections and conditional law routes is partly incidental and partly heuristic. In particular, conditional route targets in example `42` currently survive through generic law-token fallback because `ROUTE_RE` expects the agent target at end of line. | Make guarded output sections and conditional law-route targets intentional supported paths; keep runtime-only fields non-goals. | Avoid a second policy engine while covering the shipped syntax. | Resolver adapts shipped syntax explicitly, not accidentally. | Integration tests for `39` to `42`. |
+| VS Code grammar | `editors/vscode/syntaxes/doctrine.tmLanguage.json` | route rule and generic key rules | Bare law/trust syntax is covered, but guarded output headers and `route ... when ...` are not first-class. | Add explicit guarded-header and conditional law-route highlighting coverage. | Highlighting must match shipped grammar. | TextMate remains lexical adapter only. | Unit tests, snapshots, validator. |
+| VS Code ergonomics | `editors/vscode/language-configuration.json` | `onEnterRules` | Indents after `law:` and `trust_surface:`, but not after guarded output headers like `rewrite_mode: "..." when ...:`. | Add a narrow guarded-section indentation rule. | Prevent editor ergonomics drift on shipped syntax. | Indentation follows shipped guarded header form. | `cd editors/vscode && make`; add targeted coverage. |
+| VS Code validator | `editors/vscode/scripts/validate_lark_alignment.py` | `_require_pattern_match()` plus the current explicit keyword/regex checks | Validator exists, but it does not yet explicitly assert guarded output headers or conditional law routes, and it does not validate `language-configuration.json` indentation behavior. | Add explicit sample coverage for shipped guarded headers and `route "..." -> Agent when expr`, and keep indentation coverage honest elsewhere. | Prevents regex drift between the grammar and the editor adapter without overstating what the validator covers. | Validator asserts the corrected shipped lexical forms and nothing more. | `cd editors/vscode && make`; validator run. |
+| VS Code unit fixtures | `editors/vscode/tests/unit/workflow-law.test.prompt`, `editors/vscode/tests/unit/route-highlighting.test.prompt` | lexical fixtures for workflow-law syntax | Current unit fixtures only cover bare workflow-law keywords and bare `route "..." -> Agent`, not guarded headers or conditional routes. | Add fixtures that exercise example-39 guarded output headers and example-42 conditional law routes directly. | Unit-level lexical proof should cover the actual Slice A additions. | Unit fixtures mirror the corrected shipped syntax. | `npm run test:unit`. |
+| VS Code snapshots | `editors/vscode/tests/snap/examples/39_guarded_output_sections/**`, `editors/vscode/tests/snap/examples/40_route_only_local_ownership/**`, `editors/vscode/tests/snap/examples/41_route_only_reroute_handoff/**`, `editors/vscode/tests/snap/examples/42_route_only_handoff_capstone/**` | example-backed highlighting snapshots | Snapshots currently stop at example `38`, so the extension has no snapshot proof for the corrected `39` to `42` surface. | Add snapshot fixtures for examples `39` through `42`, including the example-39 invalid prompt siblings, after those prompts are corrected. | Snapshot proof should include the actual route-only and guarded-output ladder in scope. | Snapshot corpus follows corrected examples, not stale ones. | `npm run test:snap`. |
+| VS Code integration | `editors/vscode/tests/integration/run.js`, `editors/vscode/tests/integration/suite/index.js` | `run()`, `testAddressableDefinitionProvider()`, `testWorkflowLawDefinitionProvider()`, full clickable-surface checks | Integration tests currently protect earlier workflow-law and addressable-path behavior but do not exercise the `39` to `42` ladder. | Add definition/navigation checks for guarded section keys, nested guarded paths, `title` hops, route-only output addressability, and conditional route targets. | The requested link-click behavior must be proven on the exact Slice A surface in scope. | Integration suite covers corrected `39` to `42` authoring flows. | `npm run test:integration`. |
+| VS Code docs | `editors/vscode/README.md` | extension support matrix and smoke steps | README still describes the older support surface and does not name guarded output headers or conditional law routes. | Rewrite the support matrix and smoke checklist after the corrected Slice A alignment lands. | The editor docs are a live user-facing surface. | README follows the actual supported syntax/navigation surface. | doc-only; `cd editors/vscode && make` when packaging changes. |
+
+## 6.2 Migration notes
+
+- Canonical owner path / shared code path:
+  - `doctrine/grammars/doctrine.lark` -> `doctrine/parser.py` ->
+    `doctrine/model.py` -> `doctrine/compiler.py`
+- Deprecated APIs (if any):
+  - No public API is deprecated in this run.
+  - Internally, `RouteLine` is frozen as a legacy authored-workflow path and is
+    explicitly not the Slice A route owner.
+- Delete list (what must be removed; include superseded shims/parallel paths if any):
+  - delete the empty stale directory
+    `examples/42_route_only_handoff_capstone/ref/route_only_handoff_capstone_demo`
+  - delete any new editor fixtures accidentally added for illustrative-but
+    non-shipped Slice A syntax
+- Capability-replacing harnesses to delete or justify:
+  - no new language server
+  - no new verification harness
+  - no prose parser for `standalone_read`
+  - no hidden compiler-owned host-fact root kind
+- Live docs/comments/instructions to update or delete:
+  - `docs/WORKFLOW_LAW.md`
+  - `docs/AGENT_IO_DESIGN_NOTES.md`
+  - `docs/COMPILER_ERRORS.md` if diagnostics wording changes
+  - `docs/LANGUAGE_DESIGN_NOTES.md` where it still describes current language
+    decisions for this slice
+  - `docs/README.md`
+  - `examples/README.md`
+  - `examples/30_law_route_only_turns/cases.toml`
+  - `examples/30_law_route_only_turns/prompts/AGENTS.prompt`
+  - `examples/30_law_route_only_turns/prompts/INVALID_*.prompt` when route/currentness wording changes
+  - `examples/30_law_route_only_turns/ref/route_only_triage_demo/AGENTS.md`
+  - `examples/39_guarded_output_sections/cases.toml`
+  - `examples/39_guarded_output_sections/prompts/AGENTS.prompt`
+  - `examples/39_guarded_output_sections/prompts/INVALID_*.prompt` when guard-namespace wording changes
+  - `examples/39_guarded_output_sections/ref/guarded_output_sections_demo/AGENTS.md`
+  - `examples/39_guarded_output_sections/ref/nested_guarded_output_sections_demo/AGENTS.md`
+  - `examples/40_route_only_local_ownership/cases.toml`
+  - `examples/40_route_only_local_ownership/prompts/AGENTS.prompt`
+  - `examples/40_route_only_local_ownership/ref/route_only_local_ownership_demo/AGENTS.md`
+  - `examples/41_route_only_reroute_handoff/cases.toml`
+  - `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt`
+  - `examples/41_route_only_reroute_handoff/ref/route_only_reroute_handoff_demo/AGENTS.md`
+  - `examples/42_route_only_handoff_capstone/cases.toml`
+  - `examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt`
+  - `examples/42_route_only_handoff_capstone/ref/route_only_turns_demo/AGENTS.md`
+  - `editors/vscode/README.md`
+  - `editors/vscode/resolver.js` boundary comments if support surfaces expand
+  - any emit-target comments or usage notes that still treat refs as primary
+    truth instead of downstream output
+- Behavior-preservation signals for refactors:
+  - `make verify-examples`
+  - `make verify-diagnostics` when diagnostics change
+  - targeted `uv run --locked python -m doctrine.verify_corpus --manifest ...`
+  - `cd editors/vscode && make`
+  - existing unit/snap/integration editor tests plus
+    `scripts/validate_lark_alignment.py`
+
+## Pattern Consolidation Sweep
+
+| Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude) |
+| ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
+| Law semantics | `doctrine/compiler.py::_validate_workflow_law()` and `LawBranch` | All Slice A enforceable law semantics hang off law leaf-branch analysis. | Prevents route/currentness semantics from leaking into parser, renderer, docs, or the editor. | include |
+| Output readback | `doctrine/compiler.py::_compile_output_decl()` and `_resolve_output_field_node()` | Guarded output sections stay compiler-owned, addressable, and output-owned. | Prevents a second guarded-section model in docs/examples/editor code. | include |
+| Route-only teaching | `examples/30`, `40`, `41`, `42`; `docs/WORKFLOW_LAW.md`; `examples/README.md` | Route-only turns teach one explicit story: `current none`, optional law route, output-owned readback, no `trust_surface`. | Prevents the corpus from “symmetrizing” route-only examples into the portable-truth carrier model. | include |
+| Rendered refs | `doctrine/emit_docs.py`; example `ref/**` trees for `30`, `39`, `40`, `41`, `42` | Checked-in refs follow the compiler/render path and manifests instead of becoming a sidecar policy source. | Prevents bad renders or hand-edited refs from turning into a second truth surface. | include |
+| Editor adaptation | `editors/vscode/resolver.js`, `doctrine.tmLanguage.json`, `language-configuration.json`, validator, tests | Extension stays adapter-only and follows shipped grammar forms for guarded headers and conditional law routes. | Prevents three editor-side syntax stories from drifting away from the compiler. | include |
+| Legacy authored routes | `doctrine/grammars/doctrine.lark::route_stmt`, `doctrine/model.py::RouteLine`, `doctrine/compiler.py::_compile_section_body()` | Hard-cut deletion of the legacy authored-route path. | Worth considering eventually, but it widens scope beyond the requested Slice A convergence run. | defer |
+| Extra docs outside the live docs set | `docs/STDLIB_LAYERS.md`, `docs/DOCTRINE_AGENT_DATA_FLOW_VISUALIZATION_2026-04-10.md`, `docs/REVIEW_SPEC.md` | Align every non-primary doc in the same run. | Important to notice, but not part of the core live docs set this plan needs to ship cleanly. | defer |
+| Host-fact semantics | new compiler root kind or editor-side synthetic roots | Introduce a special host-fact root distinct from declared inputs. | Adds new semantics and duplicate truth without necessity in this run. | exclude |
+| Prose policing | prose parser for `standalone_read` or editor-side semantic checks | Parse authored prose to prove guard discipline or route/output agreement. | Would invent hidden behavior and a second semantic system. | exclude |
+<!-- arch_skill:block:call_site_audit:end -->
 
 # 7) Depth-First Phased Implementation Plan (authoritative)
 
-The authoritative phase plan will be written in `phase-plan` after research and
-deep-dive make the change inventory trustworthy. It must keep the order
-foundation-first: Doctrine core semantics, renderer/diagnostics, examples/docs,
-then VS Code extension alignment and final verification.
+<!-- arch_skill:block:phase_plan:start -->
+> Rule: systematic build, foundational first; every phase has exit criteria + explicit verification plan. Refactors, consolidations, and shared-path extractions must preserve existing behavior with the smallest credible signal. No fallbacks/runtime shims. Keep `doctrine/` as the semantic owner, keep refs/docs/editor surfaces downstream, and prefer existing proof lanes over new harnesses.
+
+Warn-first note:
+
+- `external_research_grounding` is still not started in `planning_passes`.
+- That does not block this phase plan because internal grounding, target architecture, and the call-site audit are already strong enough to drive implementation.
+- If implementation uncovers a real design ambiguity that the current repo cannot answer, stop and route that specific gap through `external-research` before widening the code path.
+
+## Phase 1 — Compiler-owned Slice A convergence
+
+Status: COMPLETE
+
+Completed work:
+- Created the implementation worklog at
+  `docs/SPEC_1_3_END_TO_END_IMPLEMENTATION_PLAN_2026-04-10_WORKLOG.md`.
+- Synced the repo with `uv sync`.
+- Ran the current targeted route-only manifests for `40`, `41`, and `42` as a
+  baseline before code changes. They passed against the old shipped behavior,
+  which confirmed the active corpus still encoded the pre-fix route-only story.
+- Fixed compiler-owned route-only condition rendering so the boolean comparison
+  wording used by the route-only ladder now reads naturally instead of leaking
+  raw comparison structure into the rendered output.
+- Landed proposal rule 9 on the compiler-owned path without new grammar:
+  routed `next_owner` fields must now structurally bind the routed target
+  through the existing interpolation surface.
+- Landed the honest proposal rule 10 enforcement boundary on the
+  compiler-owned path: `standalone_read` may not structurally interpolate
+  guarded output detail, while arbitrary prose remains outside compiler proof.
+- Narrowed guarded-output source wording in diagnostics to the shipped surface
+  of declared inputs and enum members.
+- Added the new compiler diagnostics needed to make those boundaries explicit:
+  `E339` for routed `next_owner` fields that do not structurally bind the route
+  target, and `E340` for `standalone_read` interpolations that reach guarded
+  output detail.
+- Re-ran the targeted ladder manifests for `30`, `39`, `40`, `41`, and `42`
+  against the corrected compiler behavior and they passed.
+- Ran `make verify-diagnostics` after the diagnostics changes and it passed.
+
+* Goal:
+  Land the minimum Doctrine core changes needed so Slice A semantics, validation, and compiled wording are correct on the canonical `doctrine/grammars/doctrine.lark` -> `doctrine/parser.py` -> `doctrine/model.py` -> `doctrine/compiler.py` path.
+* Work:
+  - Preserve the shipped syntax and typed AST split unless implementation finds a real parser/model bug.
+  - Fix compiler-owned route-only rendering on the law path, especially the condition-rendering helpers that currently produce broken wording in example `40`.
+  - Keep all enforceable route-only semantics on the law-owned path and keep `RouteLine` frozen as legacy behavior.
+  - Resolve proposal rule 9 (`next_owner` agreement) on the compiler-owned path.
+    Use an existing structured output surface if possible; if not, only the
+    smallest explicit binding surface is allowed, and the decision must be
+    recorded rather than hidden behind docs or example convention.
+  - Preserve the narrow guarded-output namespace and, if needed, narrow diagnostics wording so docs and errors stop promising a hidden host-fact root.
+  - Define the honest non-prose-parser proof boundary for proposal rule 10
+    (`standalone_read` guard discipline) so Phase 2 can add integrated proof
+    without pretending the compiler can parse arbitrary prose.
+  - Keep renderer policy-free; only touch `doctrine/renderer.py` if the serializer itself is wrong rather than the compiled section tree.
+  - Keep emitted-ref generation downstream via `doctrine/emit_docs.py`; do not hand-patch refs as a substitute for core fixes.
+* Verification (smallest signal):
+  - Run targeted corpus checks for `examples/30_law_route_only_turns/cases.toml`, `examples/39_guarded_output_sections/cases.toml`, `examples/40_route_only_local_ownership/cases.toml`, `examples/41_route_only_reroute_handoff/cases.toml`, and `examples/42_route_only_handoff_capstone/cases.toml`.
+  - Run `make verify-diagnostics` if diagnostics text or error mappings change.
+* Docs/comments (propagation; only if needed):
+  - Add or tighten only high-leverage comments at the compiler boundary if the law-route / guarded-output split would otherwise be easy to misread later.
+* Exit criteria:
+  - Targeted manifests for the `30` / `39` / `40` / `41` / `42` ladder pass against the corrected compiler behavior.
+  - Proposal rule 9 has a compiler-owned implementation path that is explicit
+    enough to verify and does not depend on hidden magic.
+  - The plan for proposal rule 10 proof is explicit and honest before Phase 2
+    starts adding corpus coverage.
+  - No new semantic ownership has leaked into renderer, refs, docs, or the editor.
+  - `RouteLine` remains legacy-only and Slice A behavior is owned by workflow law plus output.
+* Rollback:
+  - Revert the core patchset as one unit if full-corpus preservation signals fail or if the implementation starts requiring a second semantic path instead of converging onto the compiler-owned one.
+
+## Phase 2 — Example, emitted-ref, and live-doc convergence
+
+Status: COMPLETE
+
+Completed work:
+- Updated the route-only ladder examples so the authored prompts and expected
+  rendered refs now follow the corrected compiler behavior instead of preserving
+  the old hand-authored drift.
+- Strengthened the route-only proof surfaces with two new manifest-backed
+  failure cases:
+  `examples/41_route_only_reroute_handoff/prompts/INVALID_NEXT_OWNER_OMITS_ROUTE_TARGET.prompt`
+  for `E339`, and
+  `examples/42_route_only_handoff_capstone/prompts/INVALID_STANDALONE_READ_REFERENCES_GUARDED_DETAIL.prompt`
+  for `E340`.
+- Refreshed the affected emitted refs through the normal emit/verify path and
+  deleted the stale empty ref directory at
+  `examples/42_route_only_handoff_capstone/ref/route_only_handoff_capstone_demo`.
+- Synced the touched live docs so they now describe the shipped Slice A
+  boundary: `docs/WORKFLOW_LAW.md`, `docs/AGENT_IO_DESIGN_NOTES.md`,
+  `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/COMPILER_ERRORS.md`,
+  `docs/README.md`, and `examples/README.md`.
+- Re-ran the touched ladder manifests while iterating and kept the examples,
+  refs, and docs aligned to the compiler-owned truth.
+
+* Goal:
+  Make the public teaching/proof surfaces follow the corrected core truth without preserving illustrative mistakes.
+* Work:
+  - Update the route-only and guarded-output ladder examples in `30`, `39`, `40`, `41`, and `42`.
+  - Keep `30` as the no-carrier setup, `39` as the guarded-output anchor, and `40` to `42` as the route-only ladder outside `trust_surface`.
+  - Strengthen manifests only through existing proof kinds such as
+    `render_contract`, `parse_fail`, `compile_fail`, and `build_contract`.
+  - Add integrated proof coverage for proposal rules 9 and 10 in the `40` to
+    `42` ladder using the strongest honest manifest-backed signals available
+    after Phase 1.
+  - Refresh emitted refs through the normal emit path after the compiler wording is correct.
+  - Delete `examples/42_route_only_handoff_capstone/ref/route_only_handoff_capstone_demo`.
+  - Sync the live docs that would otherwise drift: `docs/WORKFLOW_LAW.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/COMPILER_ERRORS.md` when needed, `docs/LANGUAGE_DESIGN_NOTES.md` where it still describes current language decisions, `docs/README.md`, and `examples/README.md`.
+* Verification (smallest signal):
+  - Re-run the touched ladder manifests individually while iterating.
+  - Refresh the affected emit targets if the example refs are regenerated in this phase.
+* Docs/comments (propagation; only if needed):
+  - Rewrite any touched example comments or notes that still imply route-only `trust_surface`, broad host-fact access, or stale capstone wording.
+* Exit criteria:
+  - The touched examples, manifests, refs, and live docs all tell the same Slice A story.
+  - The numbered ladder no longer treats proposal rules 9 and 10 as invisible
+    gaps; it either proves them with the agreed honest signals or records the
+    exact remaining limit without ambiguity.
+  - No checked-in ref remains as a known-bad render snapshot.
+  - No touched live doc still promises behavior the compiler does not ship.
+* Rollback:
+  - Hold or revert ref/doc refreshes if they drift from the core implementation, and treat the core/compiler output as the authority until the public surfaces are re-aligned.
+
+## Phase 3 — VS Code adaptation and proof expansion
+
+Status: COMPLETE
+
+Completed work:
+- Updated `editors/vscode/resolver.js` so guarded output headers are treated as
+  intentional record bodies and conditional law routes
+  (`route "..." -> Agent when expr`) are definition-resolvable supported forms
+  instead of incidental fallbacks.
+- Updated `editors/vscode/syntaxes/doctrine.tmLanguage.json` and
+  `editors/vscode/language-configuration.json` so guarded output headers and
+  conditional law routes colorize and indent correctly.
+- Expanded `editors/vscode/scripts/validate_lark_alignment.py` so the extension
+  validates the lexical forms it now intentionally supports, including guarded
+  output headers and both plain and conditional law-route endings.
+- Expanded the unit, snapshot, and integration coverage for examples `39`
+  through `42`, including guarded-output path navigation and conditional route
+  target navigation.
+- Added snapshot-fixture coverage for the corrected `39` to `42` prompts under
+  `editors/vscode/tests/snap/examples/`.
+- Rewrote the extension README notes so they match the corrected highlighting
+  and click-through surface.
+- Ran `cd editors/vscode && make` and it passed.
+
+* Goal:
+  Make the existing VS Code extension correctly colorize and resolve click-through for the corrected `39` through `42` surface without turning the extension into a second semantic engine.
+* Work:
+  - Keep `extension.js` and `package.json` thin; imports stay `DocumentLink`-only and the relevant route-only / guarded-output click path stays on the definition provider.
+  - Update `editors/vscode/resolver.js` so guarded output sections and conditional law routes are intentional supported paths instead of incidental fallbacks.
+  - Update `editors/vscode/syntaxes/doctrine.tmLanguage.json` so guarded headers and `route "..." -> Agent when expr` are first-class lexical forms.
+  - Update `editors/vscode/language-configuration.json` so guarded headers indent correctly.
+  - Expand `editors/vscode/scripts/validate_lark_alignment.py` only for the lexical forms it actually owns.
+  - Add the missing unit, snapshot, and integration coverage for examples `39` through `42`.
+  - Rewrite `editors/vscode/README.md` and any touched resolver boundary comments if the supported surface changes.
+* Verification (smallest signal):
+  - Run `cd editors/vscode && make`.
+  - Ensure the added unit, snapshot, integration, and validator coverage passes on the corrected example set.
+* Docs/comments (propagation; only if needed):
+  - Update extension README support notes and boundary comments so they describe the actual supported click/highlighting surface.
+* Exit criteria:
+  - Examples `39` through `42` are covered by explicit VS Code proof rather than incidental support.
+  - Conditional law routes no longer rely on generic resolver fallback for click-through.
+  - Guarded section headers highlight and indent correctly.
+* Rollback:
+  - Revert the extension patchset independently if editor packaging/tests fail, while keeping the core/compiler/docs work intact.
+
+## Phase 4 — Final convergence verification and ship cleanup
+
+Status: COMPLETE
+
+Completed work:
+- Ran the full shipped corpus verification with `make verify-examples` and it
+  passed.
+- Re-ran `make verify-diagnostics` after the final diagnostics/doc convergence
+  and it passed.
+- Re-ran the full VS Code extension build/test/package flow with
+  `cd editors/vscode && make` and it passed.
+- Confirmed the stale ref directory was removed and the touched live docs and
+  extension README no longer describe the retired route-only drift.
+- Automated extension-host integration coverage passed for the user-visible
+  editor behavior this run changed, including guarded section navigation and
+  conditional route navigation.
+
+Manual QA (non-blocking):
+- No separate interactive GUI editor smoke session was run during this terminal
+  pass. The honest remaining manual-only gap is the absence of a live click/test
+  in an open VS Code window beyond the automated extension-host coverage above.
+
+* Goal:
+  Prove the full convergence run end to end and clear the remaining cleanup needed before implementation is considered complete.
+* Work:
+  - Run the full shipped corpus verification.
+  - Run diagnostics verification if diagnostics changed.
+  - Re-run the full VS Code extension build/test/package flow.
+  - Confirm the stale ref directory is gone and no touched live doc/comment/instruction still describes retired behavior.
+  - Perform a short manual editor smoke check on the corrected examples:
+    `39` guarded section navigation, `41` reroute target navigation, `42` conditional route navigation, and colorization for guarded headers / conditional routes.
+* Verification (smallest signal):
+  - `make verify-examples`
+  - `make verify-diagnostics` when diagnostics changed
+  - `cd editors/vscode && make`
+* Docs/comments (propagation; only if needed):
+  - Clean up any final stale comments, README notes, or emitted-ref usage notes discovered during the final pass.
+* Exit criteria:
+  - Full repo checks for the touched surfaces pass.
+  - Manual editor smoke confirms the exact user-visible colorizing and link-click behavior requested.
+  - The plan can move cleanly to `implement` / completion audit without open Slice A drift items.
+* Rollback:
+  - Reopen the earliest failing phase and revert only the latest convergence layer that introduced the regression instead of patching around it with fallbacks.
+<!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
 
 Use the repo's shipped checks as the primary trust signals.
 
+- Prefer targeted `uv run --locked python -m doctrine.verify_corpus --manifest ...`
+  while landing core and example changes, then use the full corpus at the end of
+  the run.
 - Run `make verify-examples` for end-to-end corpus correctness.
 - Run `make verify-diagnostics` if diagnostics or error surfaces change.
 - Run `cd editors/vscode && make` for extension packaging/tests when the editor
   support changes.
+- Use the emit path only to refresh downstream refs after compiler/render truth
+  is settled; do not treat emitted refs as a substitute for manifest-backed
+  proof.
 - Add or update the smallest stable proof cases needed to catch Slice A semantic
   drift and VS Code highlighting/navigation regressions without inventing a new
   verification harness.
+- Carry proposal rules 9 and 10 with the strongest honest signals we can land:
+  compiler-owned structured checks where available, and manifest-backed proof
+  where the current language boundary stops short of prose parsing.
+- Keep final manual QA short and specific to the user-visible surfaces this plan
+  changes: corrected route-only renders plus VS Code colorizing and
+  click-through on examples `39` through `42`.
 
 # 9) Rollout / Ops / Telemetry
 
@@ -1462,3 +2420,53 @@ and the editor.
   they drift from intended Slice A behavior, and it includes VS Code
   colorizing/link-click support in scope instead of leaving editor behavior as
   follow-up.
+- 2026-04-10: Deep-dive locked the canonical Slice A owner path to
+  `doctrine/grammars/doctrine.lark` -> `doctrine/parser.py` ->
+  `doctrine/model.py` -> `doctrine/compiler.py`, froze `RouteLine` as a legacy
+  non-Slice-A path, kept route-only examples `40` through `42` outside
+  `trust_surface`, interpreted “host facts” as declared host-supplied inputs for
+  this run, kept inline conditional law-route syntax as a first-class shipped
+  surface because the grammar already ships it, and explicitly rejected prose
+  parsing, hidden magic-key semantics, and editor-side semantic enforcement as
+  out of scope for this implementation.
+- 2026-04-10: A second deep-dive hardening pass normalized Sections 4 through 6
+  onto the canonical arch-step subsection shape, added `doctrine/emit_docs.py`
+  plus the concrete rendered-ref refresh path to the call-site audit, pulled in
+  `docs/COMPILER_ERRORS.md` and `docs/LANGUAGE_DESIGN_NOTES.md` as live docs to
+  sync when wording changes, and expanded the VS Code inventory to name the
+  exact validator, unit, snapshot, and integration surfaces that must cover the
+  corrected `39` through `42` ladder. This pass intentionally did not mark
+  `deep_dive_pass_2` complete because no external research had been folded in.
+- 2026-04-10: `phase-plan` wrote the authoritative execution checklist in
+  Section 7. The plan proceeds despite missing external research because the
+  repo-grounded architecture and call-site audit are already strong enough to
+  implement; if implementation finds a real unresolved design gap, that gap is
+  routed through `external-research` instead of widening the code path by
+  assumption.
+- 2026-04-10: Proposal-alignment audit found one real miss in the earlier plan:
+  it had treated proposal rules 9 and 10 as if they were broadly deferred from
+  this run. The corrected plan now keeps the no-prose-parser and no-hidden-magic
+  stance, but it explicitly carries `next_owner` agreement and
+  `standalone_read` guard-discipline proof forward as implementation work rather
+  than silently demoting them to docs-only burden.
+- 2026-04-10: Phase 1 implementation resolved proposal rule 9 by requiring
+  routed `next_owner` fields to structurally bind the route target through the
+  existing interpolation surface instead of introducing new grammar or a hidden
+  magic-key semantic path.
+- 2026-04-10: Phase 1 implementation resolved the honest proposal rule 10
+  boundary by rejecting `standalone_read` interpolations that descend into
+  guarded output detail while explicitly leaving arbitrary free prose outside
+  compiler parsing and proof.
+- 2026-04-10: Phase 3 adaptation made guarded output headers and conditional law
+  routes first-class VS Code support surfaces, with explicit resolver,
+  highlighting, indentation, validator, snapshot, and integration coverage for
+  the corrected `39` through `42` ladder.
+- 2026-04-10: `audit-implementation` found the planned code work complete. No
+  phases were reopened. The only remaining item is a non-blocking manual VS
+  Code smoke pass in a live editor window; automated extension-host coverage is
+  already present for the guarded-section and conditional-route navigation this
+  run changed.
+- 2026-04-10: A repeat `audit-implementation` pass after the later
+  `implement` re-entry rechecked the plan against current repo reality and kept
+  the same verdict: no missing code work, no reopened phases, and only the
+  non-blocking live VS Code smoke remaining.

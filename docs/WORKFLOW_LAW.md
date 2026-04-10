@@ -56,8 +56,7 @@ Guarded output sections are still output-owned authored fields:
 
 - they render as documented conditional shells in compiled `AGENTS.md`
 - they are required only when the guard is true at runtime
-- their guards may read declared inputs, enum members, and compiler-owned host
-  facts rooted there
+- their guards may read declared inputs and enum members
 - they may not read workflow-local bindings, emitted output fields, or
   undeclared runtime names
 
@@ -76,7 +75,7 @@ The shipped statement families are grouped by job:
 - truth transitions:
   `invalidate ... via ...`
 - control flow:
-  `stop`, `route "..." -> Agent`
+  `stop`, `route "..." -> Agent`, `route "..." -> Agent when expr`
 - reuse:
   named law subsections plus `inherit` / `override`
 
@@ -147,6 +146,9 @@ Currentness rules:
 - that field must be listed in the output's `trust_surface`
 - if the current artifact is itself an output root, the concrete turn must emit
   that output
+- route-only outputs such as examples `40` through `42` intentionally stay
+  outside `trust_surface`; they normalize comment-schema readback for
+  `current none` turns instead of carrying portable current truth
 
 ## Scope And Preservation
 
@@ -311,10 +313,15 @@ The route-only story is staged on purpose:
 - `42_route_only_handoff_capstone`: the full generic Slice A route-only
   handoff model with conditional reroute and guarded output readback
 
-The route-only ladder teaches the split ownership outcomes and rendered output
-contracts. It does not yet claim integrated active proof for `next_owner`
-agreement with the routed target or for `standalone_read` overpromising guarded
-detail.
+The route-only ladder now proves both remaining Slice A structured couplings:
+
+- `41` proves that a routed `next_owner` field must structurally bind the
+  routed target through explicit interpolation
+- `42` proves that `standalone_read` may not structurally interpolate guarded
+  output detail
+
+That proof boundary stays honest: Doctrine still does not parse arbitrary prose
+inside `standalone_read`.
 
 ## Not Shipped
 

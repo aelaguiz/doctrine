@@ -1,0 +1,100 @@
+# This file shows the guarded output-section surface in isolation.
+# The point is to keep conditional readback on `output`, not to smuggle it into
+# workflow law or a second control plane.
+
+# Declare the host facts that guarded output sections are allowed to read.
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn."
+
+
+# Declare a reusable workflow that reads guarded sections directly from the same
+# output contract the agent emits.
+workflow ReadGuardedSections: "Read First"
+    "Read the guarded sections directly from the emitted output contract."
+
+    read_now: "Read Now"
+        GuardedReadbackComment:rewrite_mode
+        GuardedReadbackComment:repeated_problem
+        "Read {{GuardedReadbackComment:rewrite_mode.title}} and {{GuardedReadbackComment:repeated_problem.title}} when the conditional readback matters for this turn."
+
+
+# Declare a reusable workflow that reads nested guarded sections directly from
+# the same output contract the agent emits.
+workflow ReadNestedGuardedSections: "Read First"
+    "Read the nested guarded sections directly from the emitted output contract."
+
+    read_now: "Read Now"
+        NestedGuardedReadbackComment:detail_panel.status_summary
+        NestedGuardedReadbackComment:detail_panel.rewrite_detail
+        "Read {{NestedGuardedReadbackComment:detail_panel.status_summary.title}} before {{NestedGuardedReadbackComment:detail_panel.rewrite_detail.title}} when nested conditional detail is in play."
+
+
+# Declare an output that keeps conditional readback on the output contract
+# itself.
+output GuardedReadbackComment: "Guarded Readback Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This guarded section appears only when rewrite-aware readback matters.
+    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+        "Name whether the section is brand new or undergoing a full rewrite."
+
+    # This guarded section appears only when the same critic miss repeated.
+    repeated_problem: "Repeated Problem" when RouteFacts.critic_miss_repeated:
+        "Say whether the same critic miss has repeated."
+
+    # This block says what a downstream owner should understand from the output
+    # contract alone.
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and know which conditional readback blocks might appear."
+
+
+# Declare an output that nests one guarded section under an ordinary titled
+# output section.
+output NestedGuardedReadbackComment: "Nested Guarded Readback Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This titled output section groups the always-present and conditional
+    # detail together.
+    detail_panel: "Detail Panel"
+        # This nested titled section names the baseline status facts.
+        status_summary: "Status Summary"
+            "Summarize the status facts that drove this turn."
+
+        # This nested guarded section appears only when rewrite-aware detail
+        # matters.
+        rewrite_detail: "Rewrite Detail" when RouteFacts.section_status in {"new", "full_rewrite"}:
+            "Explain why rewrite-aware handling applies on this turn."
+
+    # This block says what a downstream owner should understand from the output
+    # contract alone.
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and know which nested conditional details might appear."
+
+
+# Declare a concrete agent that proves guarded-section addressability without
+# reaching into outputs it does not emit.
+agent GuardedOutputSectionsDemo:
+    role: "Keep conditional output readback explicit and addressable."
+    read_first: ReadGuardedSections
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        GuardedReadbackComment
+
+
+# Declare a concrete agent that proves nested guarded-section addressability
+# without reaching into outputs it does not emit.
+agent NestedGuardedOutputSectionsDemo:
+    role: "Keep nested conditional output readback explicit and addressable."
+    read_first: ReadNestedGuardedSections
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        NestedGuardedReadbackComment

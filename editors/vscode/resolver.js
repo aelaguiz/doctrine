@@ -27,7 +27,7 @@ const PATCH_FIELD_RE = new RegExp(
   `^\\s*(inputs|outputs)\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
 const ROUTE_RE = new RegExp(
-  `^(\\s*route\\s+\")((?:[^\"\\\\]|\\\\.)*)(\"\\s*->\\s*)(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^(\\s*route\\s+\")((?:[^\"\\\\]|\\\\.)*)(\"\\s*->\\s*)(${DOTTED_NAME_PATTERN})(?:\\s+when\\b.*)?\\s*$`,
 );
 const USE_RE = new RegExp(
   `^\\s*use\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -77,6 +77,9 @@ const LAW_MATCH_RE = /^\s*match\b.*:\s*$/;
 const LAW_MATCH_ARM_RE = new RegExp(`^\\s*(else|${DOTTED_NAME_PATTERN})\\s*:\\s*$`);
 const TRUST_SURFACE_ITEM_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})(?:\\s+when\\b.*)?\\s*$`,
+);
+const GUARDED_OUTPUT_HEADER_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
 );
 const UPPERCASE_DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
 
@@ -1772,6 +1775,15 @@ function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
   if (TRUST_SURFACE_FIELD_RE.test(lineText)) {
     return {
       type: "trust_surface_body",
+      fieldKind,
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
+  if (GUARDED_OUTPUT_HEADER_RE.test(lineText)) {
+    return {
+      type: "record_body",
       fieldKind,
       indent: leadingSpaces(lineText),
       lineNumber,

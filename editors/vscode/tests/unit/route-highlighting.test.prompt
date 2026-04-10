@@ -13,3 +13,11 @@
 #                                  ^ keyword.operator.doctrine
 #                                  ^ punctuation.separator.route.doctrine
 #                                     ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.route-target.doctrine
+
+        route "Keep the issue on RoutingOwner." -> RoutingOwner when RouteFacts.next_owner_unknown
+#       ^^^^^ keyword.control.doctrine
+#                                               ^ keyword.operator.route.doctrine
+#                                               ^ keyword.operator.doctrine
+#                                               ^ punctuation.separator.route.doctrine
+#                                                  ^^^^^^^^^^^^ entity.name.type.reference.route-target.doctrine
+#                                                               ^^^^ keyword.control.doctrine
