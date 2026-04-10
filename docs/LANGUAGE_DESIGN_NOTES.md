@@ -134,25 +134,21 @@ Current intent for enums:
 
 Workflow law is now a shipped compiler-owned surface.
 
-Current intent:
+This document records the language decision, not the full reader-facing
+reference. For the canonical shipped workflow-law guide, use
+[WORKFLOW_LAW.md](WORKFLOW_LAW.md).
+
+Current decision:
 - `law` lives only inside `workflow`
 - `trust_surface` lives only inside `output`
 - every active law leaf branch must resolve exactly one current-subject form:
   either `current artifact ... via ...` or `current none`
-- currentness and invalidation move only through emitted output fields that are
-  listed in the relevant output's `trust_surface`
-- branch shaping is explicit through `active when`, `when`, `match`, `stop`,
-  and `route`
-- typed modes bind with `mode <name> = <expr> as EnumRef` and `match` stays
-  exhaustive or fails loud
-- scope and preservation law is explicit through `own only`, `preserve exact`,
-  `preserve structure`, `preserve mapping`, `preserve vocabulary`, and
-  `forbid`
-- basis roles are explicit through `support_only ... for comparison` and
-  `ignore ... for truth|comparison|rewrite_evidence`
-- reusable named law subsections live inside inherited workflows through
-  `inherit <section_key>` and `override <section_key>:`
-- examples illustrate intent, but compiler semantics own the language
+- currentness and invalidation move only through emitted output fields listed
+  in the relevant output's `trust_surface`
+- branch shaping is explicit through `active when`, `when`, `mode`, `match`,
+  `must`, `stop`, and `route`
+- scope, preservation, evidence roles, invalidation, and named law subsection
+  reuse are all compiler-owned surfaces now
 
 ## Nested Workflow Direction
 

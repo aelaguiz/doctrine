@@ -61,6 +61,9 @@ and anonymized drift examples.
 The shipped implementation lives in `doctrine/`. The examples are design
 pressure plus proof, not the source of truth by themselves.
 
+For the shipped workflow-law model, start with
+[docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md).
+
 ## Quick Example
 
 ```prompt
@@ -153,6 +156,7 @@ For extension-specific details, see
 ## Repo Guide
 
 - Start here: [docs/README.md](docs/README.md)
+- Workflow law guide: [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)
 - Language examples: [examples/README.md](examples/README.md)
 - Example agents bank: [example_agents/README.md](example_agents/README.md)
 - Language and compiler truth: `doctrine/`

@@ -26,6 +26,12 @@ Repo-local VS Code language support for `.prompt` files.
 The extension resolves Doctrine imports from the nearest `prompts/` root using
 the same absolute and relative module rules the compiler ships.
 
+Workflow-law support here uses the same vocabulary as
+[../../docs/WORKFLOW_LAW.md](../../docs/WORKFLOW_LAW.md): `law`,
+`trust_surface`, carrier refs, trust-surface field items, enum-backed mode
+refs, named law subsection `inherit` / `override` keys, and route targets
+inside `law` branches.
+
 ## What it does not do yet
 
 - synthetic destinations for built-in `source:` or `target:` names such as

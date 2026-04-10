@@ -6,6 +6,11 @@ The goal is to describe the turn-level contract the language already supports,
 and the explicit non-goals that keep it from drifting into packet or
 root-binding machinery too early.
 
+For the language-level workflow-law reference, use
+[WORKFLOW_LAW.md](WORKFLOW_LAW.md). This document focuses on the I/O boundary:
+what outputs emit, what fields are trusted carriers, and how downstream readers
+learn what is current now.
+
 ## Why This Exists
 
 The shipped language can now say useful things about:
@@ -79,6 +84,8 @@ Current shipped rules:
   other shipped workflow-law facts
 - carrier semantics are compiler-owned and fail loud; they are not inferred
   from prose labels such as `current_artifact` or `invalidations`
+- `standalone_read` stays human-facing companion prose; it does not act as a
+  second trust carrier or override `trust_surface`
 
 This keeps the turn contract explicit:
 - `output` still says what the turn emits

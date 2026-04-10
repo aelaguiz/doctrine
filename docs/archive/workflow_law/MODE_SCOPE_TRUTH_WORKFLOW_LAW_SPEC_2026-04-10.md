@@ -1,5 +1,9 @@
 # Mode, Scope, And Truth Workflow Law Spec
 
+> Historical note: this file is preserved as the original 2026-04-10 workflow-law
+> design spec. For the live shipped reference, use
+> [`../../WORKFLOW_LAW.md`](../../WORKFLOW_LAW.md).
+
 Status: proposal
 
 This document remains the original proposal/spec reference for the workflow-law

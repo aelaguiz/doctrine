@@ -14,6 +14,10 @@ related:
   - editors/vscode/README.md
 ---
 
+> Historical note: this file is preserved as the 2026-04-10 implementation plan
+> for the workflow-law cutover. For the live shipped reference, use
+> [`../../WORKFLOW_LAW.md`](../../WORKFLOW_LAW.md).
+
 # TL;DR
 
 ## Outcome

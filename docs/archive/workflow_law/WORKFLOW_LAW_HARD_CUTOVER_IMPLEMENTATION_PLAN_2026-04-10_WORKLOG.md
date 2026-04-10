@@ -1,6 +1,10 @@
 # Worklog
 
-Plan doc: /Users/aelaguiz/workspace/doctrine/docs/WORKFLOW_LAW_HARD_CUTOVER_IMPLEMENTATION_PLAN_2026-04-10.md
+> Historical note: this file is preserved as the implementation worklog for the
+> 2026-04-10 workflow-law cutover. For the live shipped reference, use
+> [`../../WORKFLOW_LAW.md`](../../WORKFLOW_LAW.md).
+
+Plan doc: `/Users/aelaguiz/workspace/doctrine/docs/archive/workflow_law/WORKFLOW_LAW_HARD_CUTOVER_IMPLEMENTATION_PLAN_2026-04-10.md`
 
 ## Initial entry
 - Run started.
