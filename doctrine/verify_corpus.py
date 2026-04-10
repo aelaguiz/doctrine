@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import sys
 import tempfile
 import tomllib
 from dataclasses import dataclass
@@ -32,7 +31,6 @@ class CaseSpec:
     manifest_path: Path
     example_dir: Path
     name: str
-    status: str
     kind: str
     prompt_path: Path
     approx_ref_path: Path | None
@@ -53,7 +51,7 @@ class CaseResult:
 
 
 @dataclass(slots=True, frozen=True)
-class AdvisoryDiff:
+class RefDiff:
     case: CaseSpec
     label: str
     diff: str
@@ -62,15 +60,14 @@ class AdvisoryDiff:
 @dataclass(slots=True)
 class VerificationReport:
     manifest_errors: list[str]
-    active_results: list[CaseResult]
-    planned_cases: list[CaseSpec]
-    advisory_diffs: list[AdvisoryDiff]
+    case_results: list[CaseResult]
+    ref_diffs: list[RefDiff]
     surfaced_inconsistencies: list[str]
 
     def failed(self) -> bool:
         return bool(
             self.manifest_errors
-            or any(result.result == "FAIL" for result in self.active_results)
+            or any(result.result == "FAIL" for result in self.case_results)
             or self.surfaced_inconsistencies
         )
 
@@ -94,9 +91,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     manifest_errors: list[str] = []
-    active_results: list[CaseResult] = []
-    planned_cases: list[CaseSpec] = []
-    advisory_diffs: list[AdvisoryDiff] = []
+    case_results: list[CaseResult] = []
+    ref_diffs: list[RefDiff] = []
     surfaced_inconsistencies: list[str] = []
 
     try:
@@ -104,9 +100,8 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     except ManifestError as exc:
         return VerificationReport(
             manifest_errors=[str(exc)],
-            active_results=active_results,
-            planned_cases=planned_cases,
-            advisory_diffs=advisory_diffs,
+            case_results=case_results,
+            ref_diffs=ref_diffs,
             surfaced_inconsistencies=surfaced_inconsistencies,
         )
 
@@ -118,38 +113,26 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
             manifest_errors.append(f"{_display_path(manifest_path)}: {exc}")
 
     for case in cases:
-        if case.status == "planned":
-            planned_cases.append(case)
-            advisory_diff = _build_contract_ref_diff(
-                case,
-                expected_lines=case.expected_lines,
-                output_label=f"contract://{case.name}",
-            )
-            if advisory_diff is not None:
-                advisory_diffs.append(advisory_diff)
-            continue
-
         try:
             if case.kind == "render_contract":
-                active_results.append(_run_render_contract(case, advisory_diffs))
+                case_results.append(_run_render_contract(case, ref_diffs))
             elif case.kind == "build_contract":
-                active_results.append(_run_build_contract(case))
+                case_results.append(_run_build_contract(case))
             elif case.kind == "parse_fail":
-                active_results.append(_run_parse_fail(case))
+                case_results.append(_run_parse_fail(case))
             elif case.kind == "compile_fail":
-                active_results.append(_run_compile_fail(case))
+                case_results.append(_run_compile_fail(case))
             else:  # pragma: no cover - blocked by manifest validation
                 raise ManifestError(f"Unsupported case kind {case.kind!r}.")
         except Exception as exc:  # pragma: no cover - exercised by the command itself
-            active_results.append(
+            case_results.append(
                 CaseResult(case=case, result="FAIL", detail=_format_case_failure(exc))
             )
 
     return VerificationReport(
         manifest_errors=manifest_errors,
-        active_results=active_results,
-        planned_cases=planned_cases,
-        advisory_diffs=advisory_diffs,
+        case_results=case_results,
+        ref_diffs=ref_diffs,
         surfaced_inconsistencies=surfaced_inconsistencies,
     )
 
@@ -232,12 +215,7 @@ def _load_case(
     case_index: int,
 ) -> CaseSpec:
     name = _require_str(raw_case, "name", case_index=case_index)
-    status = _require_choice(
-        raw_case,
-        "status",
-        {"active", "planned"},
-        case_index=case_index,
-    )
+    _require_choice(raw_case, "status", {"active"}, case_index=case_index)
     kind = _require_choice(
         raw_case,
         "kind",
@@ -277,7 +255,6 @@ def _load_case(
             manifest_path=manifest_path,
             example_dir=example_dir,
             name=name,
-            status=status,
             kind=kind,
             prompt_path=prompt_path,
             approx_ref_path=approx_ref_path,
@@ -292,7 +269,6 @@ def _load_case(
             manifest_path=manifest_path,
             example_dir=example_dir,
             name=name,
-            status=status,
             kind=kind,
             prompt_path=prompt_path,
             approx_ref_path=approx_ref_path,
@@ -315,7 +291,6 @@ def _load_case(
         manifest_path=manifest_path,
         example_dir=example_dir,
         name=name,
-        status=status,
         kind=kind,
         prompt_path=prompt_path,
         approx_ref_path=approx_ref_path,
@@ -341,19 +316,17 @@ def _resolve_example_path(example_dir: Path, rel_path: str, *, label: str) -> Pa
     return resolved
 
 
-def _run_render_contract(
-    case: CaseSpec, advisory_diffs: list[AdvisoryDiff]
-) -> CaseResult:
+def _run_render_contract(case: CaseSpec, ref_diffs: list[RefDiff]) -> CaseResult:
     prompt_file = parse_file(case.prompt_path)
     compiled = compile_prompt(prompt_file, case.agent or "")
     rendered = render_markdown(compiled)
-    advisory_diff = _build_contract_ref_diff(
+    ref_diff = _build_contract_ref_diff(
         case,
         expected_lines=tuple(rendered.splitlines()),
         output_label=f"rendered://{case.agent}",
     )
-    if advisory_diff is not None:
-        advisory_diffs.append(advisory_diff)
+    if ref_diff is not None:
+        ref_diffs.append(ref_diff)
 
     actual_lines = tuple(rendered.splitlines())
     if actual_lines != case.expected_lines:
@@ -456,7 +429,7 @@ def _assert_expected_exception(case: CaseSpec, exc: Exception) -> None:
 
 def _build_contract_ref_diff(
     case: CaseSpec, *, expected_lines: tuple[str, ...], output_label: str
-) -> AdvisoryDiff | None:
+) -> RefDiff | None:
     if case.approx_ref_path is None:
         return None
 
@@ -464,7 +437,7 @@ def _build_contract_ref_diff(
     if ref_lines == expected_lines:
         return None
 
-    return AdvisoryDiff(
+    return RefDiff(
         case=case,
         label=f"{case.approx_ref_path.relative_to(REPO_ROOT)} vs {case.name}",
         diff=_build_diff(
@@ -551,9 +524,9 @@ def format_report(report: VerificationReport) -> str:
             lines.append(f"- {error}")
         lines.append("")
 
-    lines.append("Active case results:")
-    if report.active_results:
-        for result in report.active_results:
+    lines.append("Case results:")
+    if report.case_results:
+        for result in report.case_results:
             case_path = _display_path(result.case.manifest_path)
             lines.append(
                 f"- {result.result} {case_path} :: {result.case.name} :: {result.detail}"
@@ -562,20 +535,11 @@ def format_report(report: VerificationReport) -> str:
         lines.append("- None.")
 
     lines.append("")
-    lines.append("Planned cases:")
-    if report.planned_cases:
-        for case in report.planned_cases:
-            case_path = _display_path(case.manifest_path)
-            lines.append(f"- PLANNED {case_path} :: {case.name}")
-    else:
-        lines.append("- None.")
-
-    lines.append("")
-    lines.append("Advisory ref diffs:")
-    if report.advisory_diffs:
-        for advisory in report.advisory_diffs:
-            lines.append(f"- {advisory.label}")
-            lines.append(advisory.diff.rstrip("\n"))
+    lines.append("Checked ref diffs:")
+    if report.ref_diffs:
+        for ref_diff in report.ref_diffs:
+            lines.append(f"- {ref_diff.label}")
+            lines.append(ref_diff.diff.rstrip("\n"))
     else:
         lines.append("- None.")
 

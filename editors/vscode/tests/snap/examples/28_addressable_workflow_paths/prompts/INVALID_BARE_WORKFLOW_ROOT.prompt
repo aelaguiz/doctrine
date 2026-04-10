@@ -1,0 +1,24 @@
+workflow ReviewRules: "Review Rules"
+    gates: "Gates"
+        build: "Build"
+            check_build_honesty: "Check Build Honesty"
+                "Compare the current build to the plan before you accept it."
+
+
+workflow ReadFirst: "Read First"
+    review_sequence: "Review Sequence"
+        ReviewRules
+
+
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidBareWorkflowRootDemo:
+    role: "Trigger a bare workflow root ref where a path is required."
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        ReviewComment

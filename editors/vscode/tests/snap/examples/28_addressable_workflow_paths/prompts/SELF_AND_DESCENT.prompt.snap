@@ -1,0 +1,198 @@
+># This prompt exercises the self-addressed addressable-root fix and the nested
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># descent surfaces the editor also needs to follow.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>skill GroundingSkill: "Grounding Skill"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    purpose: "Ground the current claim before you write."
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>skills SharedSkills: "Shared Skills"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                      ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>    "Keep {{SharedSkills:can_run.grounding}} available before you act."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^ source.doctrine string.quoted.double.doctrine
+#          ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#            ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                        ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                         ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                          ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    can_run: "Can Run"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        skill grounding: GroundingSkill
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine keyword.control.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>workflow ReviewRules: "Review Rules"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>    "Run {{ReviewRules:gates.build.check_build_honesty}} before you review anything else."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^ source.doctrine string.quoted.double.doctrine
+#         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#           ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                      ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                      ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    gates: "Gates"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        build: "Build"
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            check_build_honesty: "Check Build Honesty"
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                ^ source.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>                "Compare the current build to the plan before you accept it."
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>workflow WorkflowRoot: "Workflow Root"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                        ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                     ^ source.doctrine punctuation.definition.string.end.doctrine
+>    use shared: ReviewRules
+#^^^^ source.doctrine
+#    ^^^ source.doctrine keyword.control.doctrine
+#       ^ source.doctrine
+#        ^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^ source.doctrine entity.name.type.reference.use-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    skills: SharedSkills
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    review_sequence: "Review Sequence"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        WorkflowRoot:shared.title
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        WorkflowRoot:skills.title
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        WorkflowRoot:shared.gates.build.check_build_honesty
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        WorkflowRoot:skills.can_run.grounding
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        "Run {{WorkflowRoot:shared.gates.build.check_build_honesty}} with {{WorkflowRoot:skills.can_run.grounding}}."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^ source.doctrine string.quoted.double.doctrine
+#             ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#               ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                           ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                  ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                    ^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                          ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                            ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                        ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                                 ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                   ^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent SelfAddressableRootsDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Keep self-addressed and workflow-owned nested paths stable."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    workflow: WorkflowRoot
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

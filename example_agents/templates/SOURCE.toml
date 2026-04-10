@@ -1,0 +1,27 @@
+schema_version = 1
+
+slug = "source-slug"
+title = "Human Title"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+
+upstream = "owner/repo"
+url = "https://github.com/owner/repo"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "AGENTS.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+]
+
+notes = "Why this source is worth harvesting and what Doctrine surfaces it pressures."

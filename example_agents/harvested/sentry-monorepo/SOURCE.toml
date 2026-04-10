@@ -1,0 +1,35 @@
+schema_version = 1
+
+slug = "sentry-monorepo"
+title = "Sentry Monorepo"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+
+upstream = "getsentry/sentry"
+url = "https://github.com/getsentry/sentry"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "domain_specific_constraints",
+]
+
+expected_artifacts = [
+  "AGENTS.md",
+  "src/AGENTS.md",
+  "tests/AGENTS.md",
+  "static/AGENTS.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/src/AGENTS.md",
+  "raw/tests/AGENTS.md",
+  "raw/static/AGENTS.md",
+]
+
+notes = "Large Django-plus-React repo with layered instruction files for root, backend, tests, and frontend. Strong examples of command requirements, scoped patterns, security guardrails, and file-placement rules."

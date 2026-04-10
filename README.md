@@ -51,13 +51,18 @@ and anonymized drift examples.
 - reusable and inherited `workflow` declarations
 - typed `skill`, `input`, `output`, `input source`, `output target`,
   `output shape`, and `json schema` declarations
+- workflow law on `workflow` plus `trust_surface` on `output` for portable
+  currentness, invalidation, preservation, basis roles, and law reuse
 - ordinary authored slots such as routing and stop rules
 - named `skills`, `inputs`, and `outputs` block reuse and inheritance
 - imports, dotted refs, agent mentions, and authored-prose interpolation
-- manifest-backed verification for examples `01` through `26`
+- manifest-backed verification for examples `01` through `38`
 
 The shipped implementation lives in `doctrine/`. The examples are design
 pressure plus proof, not the source of truth by themselves.
+
+For the shipped workflow-law model, start with
+[docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md).
 
 ## Quick Example
 
@@ -151,7 +156,9 @@ For extension-specific details, see
 ## Repo Guide
 
 - Start here: [docs/README.md](docs/README.md)
+- Workflow law guide: [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)
 - Language examples: [examples/README.md](examples/README.md)
+- Example agents bank: [example_agents/README.md](example_agents/README.md)
 - Language and compiler truth: `doctrine/`
 - VS Code extension: [editors/vscode/README.md](editors/vscode/README.md)
 

@@ -1,0 +1,99 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "law can express route-only turns with no current artifact"
+status = "active"
+kind = "render_contract"
+agent = "RouteOnlyTurnsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/route_only_turns_demo/AGENTS.md"
+expected_lines = [
+  "Keep route-only work explicit when no durable artifact is current.",
+  "",
+  "## Route-Only Triage",
+  "",
+  "Handle turns that can only stop and reroute.",
+  "",
+  "This pass runs only when current handoff is missing or current handoff is unclear.",
+  "",
+  "If current handoff is missing:",
+  "- There is no current artifact for this turn.",
+  "- Stop: Current handoff is missing.",
+  "- Route the same issue back to RoutingOwner.",
+  "",
+  "If current handoff is unclear:",
+  "- There is no current artifact for this turn.",
+  "- Stop: Current handoff is unclear.",
+  "- Route the same issue back to RoutingOwner.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say whether the current handoff is missing or unclear.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand that no current artifact was carried forward.",
+]
+
+[[cases]]
+name = "current none cannot coexist with current artifact in one active branch"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt"
+agent = "InvalidCurrentNoneAndCurrentArtifact"
+exception_type = "CompileError"
+error_code = "E332"
+message_contains = [
+  "Multiple current-subject forms",
+  "current none",
+  "current artifact",
+]
+
+[[cases]]
+name = "every active law branch still needs one current subject"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_ACTIVE_BRANCH_WITHOUT_CURRENT.prompt"
+agent = "InvalidActiveBranchWithoutCurrent"
+exception_type = "CompileError"
+error_code = "E331"
+message_contains = [
+  "Missing current-subject form",
+]
+
+[[cases]]
+name = "route statements still require labels"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_ROUTE_WITHOUT_LABEL.prompt"
+exception_type = "ParseError"
+error_code = "E131"
+message_contains = [
+  "Missing route label",
+]
+
+[[cases]]
+name = "route statements still require explicit targets"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_ROUTE_WITHOUT_TARGET.prompt"
+exception_type = "ParseError"
+error_code = "E132"
+message_contains = [
+  "Missing route target",
+]

@@ -1,0 +1,39 @@
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidRewriteAwarePolish: "Rewrite-Aware Polish"
+    law:
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        support_only AcceptedPeerSet for comparison
+        ignore AcceptedPeerSet for comparison
+
+
+agent InvalidSupportOnlyAndIgnoreComparisonContradiction:
+    role: "Trigger contradictory comparison basis roles."
+    workflow: InvalidRewriteAwarePolish
+    outputs: "Outputs"
+        SectionMetadata
+        CoordinationHandoff

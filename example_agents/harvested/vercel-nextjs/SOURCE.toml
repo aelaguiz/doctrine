@@ -1,0 +1,30 @@
+schema_version = 1
+
+slug = "vercel-nextjs"
+title = "Vercel Next.js"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+
+upstream = "vercel/next.js"
+url = "https://github.com/vercel/next.js"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "AGENTS.md",
+  "packages/next/AGENTS.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/packages/next/AGENTS.md",
+]
+
+notes = "Monorepo guidance with root vs package-local instruction scope, command-first workflow gates, mandatory test generation, and explicit anti-patterns around test helpers and module-resolution shortcuts."

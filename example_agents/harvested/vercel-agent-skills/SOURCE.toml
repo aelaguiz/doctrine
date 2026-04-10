@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "vercel-agent-skills"
+title = "Vercel Agent Skills"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + compiled skill docs"
+
+upstream = "vercel-labs/agent-skills"
+url = "https://github.com/vercel-labs/agent-skills"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "commands_and_quality_gates",
+  "skills_tools_and_capabilities",
+  "negative_guardrails",
+  "io_contracts_and_handoffs",
+  "domain_specific_constraints",
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/skills/react-native-skills/AGENTS.md",
+  "raw/skills/react-native-skills/SKILL.md",
+  "raw/skills/react-best-practices/SKILL.md",
+  "raw/skills/react-view-transitions/SKILL.md",
+  "raw/skills/composition-patterns/SKILL.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/skills/react-native-skills/AGENTS.md",
+  "raw/skills/react-native-skills/SKILL.md",
+  "raw/skills/react-best-practices/SKILL.md",
+  "raw/skills/react-view-transitions/SKILL.md",
+  "raw/skills/composition-patterns/SKILL.md",
+]
+
+notes = "Strong pressure for generated-vs-source skill packaging, rule catalogs, React and React Native performance contracts, and view-transition/composition behavior that is encoded in markdown rather than code."

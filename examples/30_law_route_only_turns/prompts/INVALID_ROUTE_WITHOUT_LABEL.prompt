@@ -1,0 +1,10 @@
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when route-only work cannot continue safely."
+
+
+workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+    law:
+        current none
+        route -> RoutingOwner

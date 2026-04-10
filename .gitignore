@@ -8,3 +8,6 @@ __pycache__/
 /editors/vscode/.vscode-test/
 /examples/*/build/
 /editors/vscode/*.vsix
+/repomix-output.md
+/repomix-output.xml
+/repomix.config.json

@@ -1,0 +1,38 @@
+schema_version = 1
+
+slug = "crewai-examples"
+title = "CrewAI Examples"
+source_kind = "production_codebase"
+primary_format = "YAML agent/task configs"
+
+upstream = "crewAIInc/crewAI-examples"
+url = "https://github.com/crewAIInc/crewAI-examples"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "orchestration_roles_and_delegation",
+  "io_contracts_and_handoffs",
+  "negative_guardrails",
+]
+
+expected_artifacts = [
+  "raw/README.md",
+  "raw/flows/meeting_assistant_flow/src/meeting_assistant_flow/crews/meeting_assistant_crew/config/agents.yaml",
+  "raw/flows/meeting_assistant_flow/src/meeting_assistant_flow/crews/meeting_assistant_crew/config/tasks.yaml",
+  "raw/flows/email_auto_responder_flow/src/email_auto_responder_flow/crews/email_filter_crew/config/agents.yaml",
+  "raw/flows/email_auto_responder_flow/src/email_auto_responder_flow/crews/email_filter_crew/config/tasks.yaml",
+]
+
+local_raw_paths = [
+  "raw/README.md",
+  "raw/flows/meeting_assistant_flow/src/meeting_assistant_flow/crews/meeting_assistant_crew/config/agents.yaml",
+  "raw/flows/meeting_assistant_flow/src/meeting_assistant_flow/crews/meeting_assistant_crew/config/tasks.yaml",
+  "raw/flows/email_auto_responder_flow/src/email_auto_responder_flow/crews/email_filter_crew/config/agents.yaml",
+  "raw/flows/email_auto_responder_flow/src/email_auto_responder_flow/crews/email_filter_crew/config/tasks.yaml",
+]
+
+notes = """
+This repo gives clean role/task pairs with explicit goals, backstory, expected_output, and branch-like conditional behavior. The meeting assistant and email responder flows are the best pressure points because they show task-local inputs and outputs without requiring any Doctrine-specific runtime language.
+"""

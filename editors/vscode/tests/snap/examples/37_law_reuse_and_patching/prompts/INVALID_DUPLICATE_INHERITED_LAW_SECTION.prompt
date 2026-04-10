@@ -1,0 +1,37 @@
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow BaseMetadataPolish: "Base Metadata Polish"
+    law:
+        currentness:
+            current artifact SectionMetadata via CoordinationHandoff.current_artifact
+
+
+workflow ChildMetadataPolish[BaseMetadataPolish]: "Child Metadata Polish"
+    law:
+        inherit currentness
+        inherit currentness
+
+
+agent InvalidDuplicateInheritedLawSection:
+    role: "Trigger duplicate inherited law accounting."
+    workflow: ChildMetadataPolish
+    outputs: "Outputs"
+        SectionMetadata
+        CoordinationHandoff

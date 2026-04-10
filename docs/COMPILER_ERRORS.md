@@ -55,6 +55,9 @@ Stability rules:
 | `E103` | Unexpected end of file | The file ended before the current declaration or block was complete. |
 | `E104` | Indentation-sensitive parse failure | The parser saw an unexpected indent or dedent. |
 | `E105` | Invalid authored slot body | A referenced authored workflow slot was given an inline body instead of either a named workflow ref or an inline workflow body. |
+| `E131` | Missing route label | A route line reached `->` without a quoted label first. |
+| `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
+| `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |
 | `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet. |
 
 ### Compile codes
@@ -97,6 +100,28 @@ Stability rules:
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
 | `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
 | `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. |
+| `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
+| `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
+| `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |
+| `E334` | Current output not emitted | A workflow-law current artifact points at an output the concrete turn does not emit. |
+| `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared input or output. |
+| `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
+| `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
+| `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
+| `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
+| `E351` | Owned scope is outside the current artifact | `own only` points at a path that is not rooted in the current artifact. |
+| `E352` | Owned scope target is unknown | `own only` points at an undeclared input or output target. |
+| `E353` | Owned scope overlaps exact preservation | `own only` overlaps `preserve exact` without an explicit `except`. |
+| `E354` | Owned scope overlaps forbidden scope | `own only` overlaps `forbid`. |
+| `E355` | Preserve target is unknown | `preserve structure`, `preserve mapping`, or `preserve vocabulary` points at an unknown declared target. |
+| `E361` | Current artifact ignored for truth | The current artifact is also ignored for truth in the same active branch. |
+| `E362` | Comparison-only basis contradiction | `support_only ... for comparison` and `ignore ... for comparison` contradict each other. |
+| `E371` | Current artifact invalidated in same branch | The current artifact is invalidated in the same active branch that declares it current. |
+| `E372` | Invalidation carrier field missing from trust surface | An `invalidate ... via ...` carrier field is not listed in the output's `trust_surface`. |
+| `E381` | Inherited law requires named sections | An inherited workflow-law block mixed bare statements with section patching. |
+| `E382` | Duplicate inherited law subsection | An inherited workflow-law block accounted for the same parent subsection more than once. |
+| `E383` | Missing inherited law subsection | An inherited workflow-law block omitted one or more required parent subsections. |
+| `E384` | Cannot override undefined law subsection | `override <section_key>:` targeted a law subsection the parent workflow does not define. |
 
 ### Emit codes
 

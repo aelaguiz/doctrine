@@ -1,0 +1,35 @@
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        invalidations
+
+
+workflow InvalidStructureChange: "Structure Change"
+    law:
+        current artifact SectionReview via CoordinationHandoff.current_artifact
+        invalidate SectionReview via CoordinationHandoff.invalidations
+
+
+agent InvalidCurrentArtifactAndInvalidationSameTarget:
+    role: "Trigger invalidation of the current artifact."
+    workflow: InvalidStructureChange
+    outputs: "Outputs"
+        SectionReview
+        CoordinationHandoff

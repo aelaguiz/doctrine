@@ -1,0 +1,27 @@
+enum MetadataPolishMode: "Metadata Polish Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    law:
+        current artifact MetadataPolishMode via CoordinationHandoff.current_artifact
+
+
+agent InvalidCurrentTargetWrongKind:
+    role: "Trigger a wrong-kind current target."
+    workflow: InvalidCarryCurrentTruth
+    outputs: "Outputs"
+        CoordinationHandoff

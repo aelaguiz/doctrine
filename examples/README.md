@@ -11,6 +11,9 @@ Each numbered example may contain:
 
 Read the examples in numeric order. The sequence is intentional.
 
+For the shipped workflow-law model behind examples `30` through `38`, start
+with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md).
+
 ## Reading Order
 
 - `01` through `06`: core agent and workflow syntax, imports, inheritance, and
@@ -23,6 +26,29 @@ Read the examples in numeric order. The sequence is intentional.
   authored-slot requirements
 - `27` through `29`: addressable nested items, recursive workflow paths, and
   enums for closed vocabularies
+- `30` through `38`: active workflow-law proof for route-only turns, portable
+  currentness, trust carriers, scope and preservation law, basis roles,
+  invalidation, law reuse, and the metadata-polish capstone
+
+## Workflow Law Ladder
+
+- `30_law_route_only_turns`: route-only work with `current none`, `stop`, and
+  explicit reroute
+- `31_currentness_and_trust_surface`: one current artifact plus emitted trust
+  carriers
+- `32_modes_and_match`: enum-backed modes, exhaustive `match`, and one current
+  subject per branch
+- `33_scope_and_exact_preservation`: narrow ownership with exact preservation
+  and overlap checks
+- `34_structure_mapping_and_vocabulary_preservation`: preserve non-exact truth
+  such as structure, mapping, and vocabulary
+- `35_basis_roles_and_rewrite_evidence`: comparison-only support and rewrite-
+  evidence exclusions
+- `36_invalidation_and_rebuild`: invalidation as a truth transition plus the
+  rebuild pattern
+- `37_law_reuse_and_patching`: named law subsections with explicit inheritance
+  and override rules
+- `38_metadata_polish_capstone`: the full integrated portable-truth model
 
 ## Important Rules
 
@@ -32,6 +58,8 @@ Read the examples in numeric order. The sequence is intentional.
   cases.
 - Keep new examples narrow: one new idea at a time.
 - Do not add a new language primitive just to paper over a bad example.
+- Keep the corpus single-surface: shipped manifests should stay active proof,
+  not advisory review lanes.
 
 ## Useful Commands
 

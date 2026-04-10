@@ -1,0 +1,71 @@
+enum EditMode: "Edit Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say whether edit work is owed, which mode is active, and which preserve basis stays authoritative."
+
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    active_mode: "Active Mode"
+        "Name the active mode for this pass."
+
+    trust_surface:
+        current_artifact
+        active_mode
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now and which mode is active."
+
+
+workflow ModeAwareEdit: "Mode-Aware Edit"
+    "Edit in exactly one typed mode and carry that mode through the handoff."
+
+    law:
+        active when CurrentHandoff.owes_edit
+        mode edit_mode = CurrentHandoff.active_mode as EditMode
+
+        match edit_mode:
+            EditMode.manifest_title:
+                current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+                must CurrentHandoff.preserve_basis == ApprovedPlan
+
+            EditMode.section_summary:
+                current artifact ApprovedStructure via CoordinationHandoff.current_artifact
+                must CurrentHandoff.preserve_basis == ApprovedStructure
+
+
+agent ModeAwareEditDemo:
+    role: "Edit in exactly one typed mode and carry that mode through the handoff."
+    workflow: ModeAwareEdit
+    inputs: "Inputs"
+        CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
+    outputs: "Outputs"
+        CoordinationHandoff

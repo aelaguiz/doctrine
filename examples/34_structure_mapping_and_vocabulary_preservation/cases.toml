@@ -1,0 +1,179 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "preserve structure can keep document skeletons stable"
+status = "active"
+kind = "render_contract"
+agent = "PreserveStructureDemo"
+assertion = "exact_lines"
+approx_ref = "ref/preserve_structure_demo/AGENTS.md"
+expected_lines = [
+  "Preserve document skeletons while allowing a narrow wording pass.",
+  "",
+  "## Preserve Structure",
+  "",
+  "Current artifact: Approved Structure.",
+  "",
+  "Preserve structure `ApprovedStructure`.",
+  "",
+  "## Inputs",
+  "",
+  "### Approved Structure",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/APPROVED_STRUCTURE.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "preserve mapping can keep source-to-target assignments stable"
+status = "active"
+kind = "render_contract"
+agent = "PreserveMappingDemo"
+assertion = "exact_lines"
+approx_ref = "ref/preserve_mapping_demo/AGENTS.md"
+expected_lines = [
+  "Keep source-to-target mappings stable during a narrow update.",
+  "",
+  "## Preserve Mapping",
+  "",
+  "Current artifact: Slot Mapping.",
+  "",
+  "Preserve mapping `SlotMapping`.",
+  "",
+  "## Inputs",
+  "",
+  "### Slot Mapping",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/slot_mapping.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "preserve vocabulary can keep closed term sets stable"
+status = "active"
+kind = "render_contract"
+agent = "PreserveVocabularyDemo"
+assertion = "exact_lines"
+approx_ref = "ref/preserve_vocabulary_demo/AGENTS.md"
+expected_lines = [
+  "Keep closed vocabulary stable while revising the surrounding guidance.",
+  "",
+  "## Preserve Vocabulary",
+  "",
+  "Current artifact: Review Template.",
+  "",
+  "Preserve vocabulary `CriticVerdict`.",
+  "",
+  "## Inputs",
+  "",
+  "### Review Template",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/review_template.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "structure preservation targets must be addressable"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_STRUCTURE_PRESERVE_TARGET.prompt"
+agent = "InvalidUnknownStructurePreserveTarget"
+exception_type = "CompileError"
+error_code = "E355"
+message_contains = [
+  "Preserve target is unknown",
+  "MissingStructure",
+]
+
+[[cases]]
+name = "mapping preservation targets must be addressable"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_MAPPING_PRESERVE_TARGET.prompt"
+agent = "InvalidUnknownMappingPreserveTarget"
+exception_type = "CompileError"
+error_code = "E355"
+message_contains = [
+  "Preserve target is unknown",
+  "MissingMapping",
+]
+
+[[cases]]
+name = "vocabulary preservation targets must stay known"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_VOCABULARY_PRESERVE_TARGET.prompt"
+agent = "InvalidUnknownVocabularyPreserveTarget"
+exception_type = "CompileError"
+error_code = "E355"
+message_contains = [
+  "Preserve target is unknown",
+  "MissingVerdictEnum",
+]

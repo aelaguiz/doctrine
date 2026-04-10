@@ -1,21 +1,28 @@
 # Agent I/O Design Notes
 
-This document now records the shipped I/O subset through examples `08` to `14`.
+This document now records the shipped I/O model through examples `08` to `38`.
 
 The goal is to describe the turn-level contract the language already supports,
 and the explicit non-goals that keep it from drifting into packet or
 root-binding machinery too early.
+
+For the language-level workflow-law reference, use
+[WORKFLOW_LAW.md](WORKFLOW_LAW.md). This document focuses on the I/O boundary:
+what outputs emit, what fields are trusted carriers, and how downstream readers
+learn what is current now.
 
 ## Why This Exists
 
 The shipped language can now say useful things about:
 - agent shape
 - workflow shape
+- workflow law
 - workflow reuse
 - inheritance
 - next-owner routing
 - typed inputs and typed input sources
 - typed outputs, output targets, output shapes, and JSON schemas
+- portable currentness and invalidation carried through trusted outputs
 - authored routing and stop guidance
 - skill-first capability references
 
@@ -25,6 +32,8 @@ The core turn-contract questions the shipped subset already answers are:
 - what an agent turn must have before it can run
 - what an agent turn may optionally consult
 - what an agent turn produces
+- what downstream truth is current after the turn
+- what downstream truth is no longer current after the turn
 - what should happen when required inputs are missing
 
 Packets may still become important later, but they are still a convention built
@@ -39,6 +48,8 @@ Current shipped boundaries:
 - input `shape` stays a symbolic label in this subset
 - `output` is the one produced-contract primitive
 - `output` supports either `target + shape` or `files`
+- `output` may also declare typed authored child fields plus reserved
+  `trust_surface`
 - `target` resolves to built-ins such as `TurnResponse` and `File`, or to a
   declared `output target`
 - `shape` resolves to a declared `output shape` first, then to a symbolic label
@@ -46,12 +57,40 @@ Current shipped boundaries:
   primitive
 - richer authored support sections such as `must_include`,
   `standalone_read`, and `notes` stay authored prose
+- `trust_surface` is the explicit portable-truth contract for an output
+- `trust_surface` items may be unconditional or guarded with `when`
+- workflow law may bind `current artifact ... via ...` and `invalidate ... via ...`
+  only through declared output fields
+- trusted carrier fields must actually be emitted by the concrete turn
 - path conventions such as `section_root/...` stay plain strings explained by
   surrounding guidance
 - compiled `AGENTS.md` emission is a separate build layer configured outside the
   prompt language; it is not an `output target`
 - there is still no packet primitive, no root-binding declaration, and no
   `runtime_tools` surface
+
+## Portable Truth And Trust Carriers
+
+Workflow law and output I/O now meet at one explicit handoff boundary.
+
+Current shipped rules:
+- portable currentness is declared in workflow law with `current artifact ... via ...`
+- route-only turns may use `current none` instead of a current artifact
+- invalidation is declared in workflow law with `invalidate ... via ...`
+- the carrier side of either rule must point at an emitted output field that is
+  listed in that output's `trust_surface`
+- `trust_surface` is where downstream owners learn which output fields carry
+  current truth, comparison-only basis, rewrite exclusions, invalidations, or
+  other shipped workflow-law facts
+- carrier semantics are compiler-owned and fail loud; they are not inferred
+  from prose labels such as `current_artifact` or `invalidations`
+- `standalone_read` stays human-facing companion prose; it does not act as a
+  second trust carrier or override `trust_surface`
+
+This keeps the turn contract explicit:
+- `output` still says what the turn emits
+- `trust_surface` says which emitted fields carry portable downstream truth
+- workflow law says when those trusted fields are active and what they mean
 
 ## Current Framing
 
@@ -245,6 +284,8 @@ Current requirement:
 - outputs should not be represented only as prose expectations
 - authors should be able to distinguish "the agent says this back in the turn"
   from "the agent writes a file" or "the agent leaves a tracker comment"
+- agent `outputs` should describe what the concrete turn produces, not a
+  role-wide catalog of every artifact a workflow family might touch
 
 ## Output Target Should Be Typed And Extensible
 

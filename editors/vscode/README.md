@@ -16,12 +16,21 @@ Repo-local VS Code language support for `.prompt` files.
   roots and path segments in interpolation / workflow section / generic record
   value surfaces, including trailing `title` segments when they resolve to a
   real definition site, enum roots and enum members, and structural
-  `abstract` / `inherit` / local-key `override` sites
+  `abstract` / `inherit` / local-key `override` sites, plus workflow-law and
+  trust-surface surfaces such as law carrier refs, trust-surface field items,
+  enum-backed mode refs, law-section `inherit` / `override` keys, and route
+  targets inside `law` branches
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
 
 The extension resolves Doctrine imports from the nearest `prompts/` root using
 the same absolute and relative module rules the compiler ships.
+
+Workflow-law support here uses the same vocabulary as
+[../../docs/WORKFLOW_LAW.md](../../docs/WORKFLOW_LAW.md): `law`,
+`trust_surface`, carrier refs, trust-surface field items, enum-backed mode
+refs, named law subsection `inherit` / `override` keys, and route targets
+inside `law` branches.
 
 ## What it does not do yet
 
@@ -29,6 +38,9 @@ the same absolute and relative module rules the compiler ships.
   `File`, `Prompt`, `EnvVar`, or `TurnResponse`
 - synthetic destinations for compiler-derived built-in `...:title` hops that
   do not resolve to a declaration or authored keyed line
+- synthetic destinations for undeclared dynamic prompt-object fields such as
+  `CurrentHandoff.active_mode` when the root declaration exists but the segment
+  is runtime-only rather than an authored keyed field
 - completion, hover, rename, symbol search, or a full language server
 
 ## Install in VS Code or Cursor

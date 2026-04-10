@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "vercel-agent-browser"
+title = "Vercel Agent Browser"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + skill markdown + reference docs"
+
+upstream = "vercel-labs/agent-browser"
+url = "https://github.com/vercel-labs/agent-browser"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "commands_and_quality_gates",
+  "skills_tools_and_capabilities",
+  "io_contracts_and_handoffs",
+  "negative_guardrails",
+  "context_and_memory",
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/skills/agent-browser/SKILL.md",
+  "raw/skills/agent-browser/references/authentication.md",
+  "raw/skills/agent-browser/references/session-management.md",
+  "raw/skills/agent-browser/references/commands.md",
+  "raw/skills/agent-browser/references/proxy-support.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/skills/agent-browser/SKILL.md",
+  "raw/skills/agent-browser/references/authentication.md",
+  "raw/skills/agent-browser/references/session-management.md",
+  "raw/skills/agent-browser/references/commands.md",
+  "raw/skills/agent-browser/references/proxy-support.md",
+]
+
+notes = "Browser automation contracts with explicit command sequencing, state/session persistence, authentication handling, proxy configuration, and strong refresh-after-change behavior."

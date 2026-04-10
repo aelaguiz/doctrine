@@ -1,0 +1,40 @@
+# This prompt exercises the self-addressed addressable-root fix and the nested
+# descent surfaces the editor also needs to follow.
+
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground the current claim before you write."
+
+
+skills SharedSkills: "Shared Skills"
+    "Keep {{SharedSkills:can_run.grounding}} available before you act."
+
+    can_run: "Can Run"
+        skill grounding: GroundingSkill
+
+
+workflow ReviewRules: "Review Rules"
+    "Run {{ReviewRules:gates.build.check_build_honesty}} before you review anything else."
+
+    gates: "Gates"
+        build: "Build"
+            check_build_honesty: "Check Build Honesty"
+                "Compare the current build to the plan before you accept it."
+
+
+workflow WorkflowRoot: "Workflow Root"
+    use shared: ReviewRules
+
+    skills: SharedSkills
+
+    review_sequence: "Review Sequence"
+        WorkflowRoot:shared.title
+        WorkflowRoot:skills.title
+        WorkflowRoot:shared.gates.build.check_build_honesty
+        WorkflowRoot:skills.can_run.grounding
+        "Run {{WorkflowRoot:shared.gates.build.check_build_honesty}} with {{WorkflowRoot:skills.can_run.grounding}}."
+
+
+agent SelfAddressableRootsDemo:
+    role: "Keep self-addressed and workflow-owned nested paths stable."
+
+    workflow: WorkflowRoot

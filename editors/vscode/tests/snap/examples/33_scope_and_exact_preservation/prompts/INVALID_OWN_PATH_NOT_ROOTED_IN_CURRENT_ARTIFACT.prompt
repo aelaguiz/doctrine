@@ -1,0 +1,38 @@
+output PrimaryManifest: "Primary Manifest"
+    target: File
+        path: "unit_root/_authoring/primary_manifest.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidNarrowMetadataEdit: "Narrow Metadata Edit"
+    law:
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        own only PrimaryManifest.title
+
+
+agent InvalidOwnPathNotRootedInCurrentArtifact:
+    role: "Trigger an own path outside the current artifact."
+    workflow: InvalidNarrowMetadataEdit
+    outputs: "Outputs"
+        SectionMetadata
+        CoordinationHandoff

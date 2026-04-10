@@ -1,0 +1,137 @@
+enum RewriteRegime: "Rewrite Regime"
+    carry_forward: "carry-forward"
+    rewrite: "rewrite"
+
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided handoff facts that say whether the preserve basis remains clear, whether this pass is a rewrite, and whether structure changed."
+
+
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output BaseCoordinationHandoff: "Base Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    trust_surface:
+        current_artifact
+        comparison_basis
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now and what was comparison-only."
+
+
+output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    rewrite_exclusions: "Rewrite Evidence Exclusions"
+        "Name any fields whose old values do not count as rewrite evidence."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        comparison_basis
+        rewrite_exclusions when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+        invalidations when CurrentHandoff.structure_changed
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue."
+    workflow: "Instructions"
+        "Take back the same issue when workflow law requires a reroute."
+
+
+workflow BaseMetadataPolish: "Base Metadata Polish"
+    law:
+        currentness:
+            current artifact SectionMetadata via BaseCoordinationHandoff.current_artifact
+
+        evidence:
+            support_only AcceptedPeerSet for comparison
+
+        reroute_on_unclear:
+            when unclear(CurrentHandoff.preserve_basis):
+                stop "Preserve basis is unclear."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Rewrite-Aware Metadata Polish"
+    law:
+        inherit reroute_on_unclear
+
+        override currentness:
+            current artifact SectionMetadata via RewriteAwareCoordinationHandoff.current_artifact
+
+        override evidence:
+            support_only AcceptedPeerSet for comparison
+            ignore SectionMetadata.description for rewrite_evidence when CurrentHandoff.rewrite_regime == RewriteRegime.rewrite
+
+        invalidation:
+            when CurrentHandoff.structure_changed:
+                invalidate SectionReview via RewriteAwareCoordinationHandoff.invalidations
+                stop "Structure changed; downstream review is no longer current."
+                route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+
+agent BaseMetadataPolishDemo:
+    role: "Keep reusable law subsections explicit in the base workflow."
+    workflow: BaseMetadataPolish
+    inputs: "Inputs"
+        CurrentHandoff
+        AcceptedPeerSet
+    outputs: "Outputs"
+        SectionMetadata
+        BaseCoordinationHandoff
+
+
+agent RewriteAwareMetadataPolishDemo:
+    role: "Patch inherited law explicitly and add rewrite-only evidence rules."
+    workflow: RewriteAwareMetadataPolish
+    inputs: "Inputs"
+        CurrentHandoff
+        AcceptedPeerSet
+    outputs: "Outputs"
+        SectionMetadata
+        RewriteAwareCoordinationHandoff

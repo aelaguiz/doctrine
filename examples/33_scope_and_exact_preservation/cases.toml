@@ -1,0 +1,135 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "own only and preserve exact keep narrow edits honest"
+status = "active"
+kind = "render_contract"
+agent = "NarrowMetadataEditDemo"
+assertion = "exact_lines"
+approx_ref = "ref/narrow_metadata_edit_demo/AGENTS.md"
+expected_lines = [
+  "Keep narrow ownership explicit and preserve every unowned field.",
+  "",
+  "## Narrow Metadata Edit",
+  "",
+  "Keep narrow ownership explicit and preserve every unowned field.",
+  "",
+  "Work in exactly one mode:",
+  "- name-only",
+  "- summary-refresh",
+  "",
+  "If mode is name-only:",
+  "- Current artifact: Section Metadata.",
+  "- Own only `SectionMetadata.name`.",
+  "- Preserve exact `SectionMetadata.*` except `SectionMetadata.name`.",
+  "- Preserve decisions `ApprovedPlan`.",
+  "",
+  "If mode is summary-refresh:",
+  "- Current artifact: Section Metadata.",
+  "- Own only {`SectionMetadata.name`, `SectionMetadata.description`}.",
+  "- Preserve exact `SectionMetadata.*` except `SectionMetadata.name`, `SectionMetadata.description`.",
+  "- Preserve decisions `ApprovedStructure`.",
+  "- Do not modify {`SectionMetadata.taxonomy`, `SectionMetadata.flags`}.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided handoff facts that say which metadata edit mode is active.",
+  "",
+  "### Approved Plan",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/APPROVED_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Approved Structure",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/APPROVED_STRUCTURE.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "## Outputs",
+  "",
+  "### Section Metadata",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/_authoring/section_metadata.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact is current now.",
+]
+
+[[cases]]
+name = "owned paths must stay addressable"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OWN_PATH_NOT_ADDRESSABLE.prompt"
+agent = "InvalidOwnPathNotAddressable"
+exception_type = "CompileError"
+error_code = "E352"
+message_contains = [
+  "Owned scope target is unknown",
+  "MissingArtifact",
+]
+
+[[cases]]
+name = "owned paths must stay rooted in the current artifact"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OWN_PATH_NOT_ROOTED_IN_CURRENT_ARTIFACT.prompt"
+agent = "InvalidOwnPathNotRootedInCurrentArtifact"
+exception_type = "CompileError"
+error_code = "E351"
+message_contains = [
+  "Owned scope is outside the current artifact",
+  "PrimaryManifest.title",
+]
+
+[[cases]]
+name = "exact preservation cannot overlap owned scope without an explicit except"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OWN_AND_EXACT_PRESERVE_OVERLAP.prompt"
+agent = "InvalidOwnAndExactPreserveOverlap"
+exception_type = "CompileError"
+error_code = "E353"
+message_contains = [
+  "Owned scope overlaps exact preservation",
+]
+
+[[cases]]
+name = "owned and forbidden scope cannot overlap"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OWN_AND_FORBID_OVERLAP.prompt"
+agent = "InvalidOwnAndForbidOverlap"
+exception_type = "CompileError"
+error_code = "E354"
+message_contains = [
+  "Owned scope overlaps forbidden scope",
+]

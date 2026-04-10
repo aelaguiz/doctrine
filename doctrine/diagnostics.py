@@ -472,6 +472,26 @@ def _extract_toml_decode_position(
 def _classify_unexpected_token(
     exc: UnexpectedToken,
 ) -> tuple[str, str, tuple[str, ...]]:
+    previous = exc.token_history[-1] if exc.token_history else None
+    expected = set(exc.expected or ())
+    if previous is not None and previous.type == "ROUTE" and exc.token.value == "->":
+        return (
+            "E131",
+            "Missing route label",
+            ("Add a quoted route label before `->`.",),
+        )
+    if "CNAME" in expected and exc.token.type == "_NL":
+        return (
+            "E132",
+            "Missing route target",
+            ("Add an explicit agent target after `->`.",),
+        )
+    if "VIA" in expected:
+        return (
+            "E133",
+            "Missing `via` carrier",
+            ("Add `via Output.field` after the current artifact or invalidation target.",),
+        )
     token_type = exc.token.type
     if token_type == "_INDENT":
         return (
@@ -998,6 +1018,248 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         "E291",
         "Prompt source path is required for compilation",
         lambda _match: "Prompt source path is required for compilation.",
+        (),
+    ),
+    (
+        re.compile(
+            r"^Active leaf branch must resolve exactly one current-subject form in (?P<owner>.+)$"
+        ),
+        "E331",
+        "Missing current-subject form",
+        lambda match: (
+            "Each active workflow-law leaf branch must declare exactly one current subject "
+            f"in {match.group('owner')}."
+        ),
+        ("Add either `current artifact ... via ...` or `current none` in each active branch.",),
+    ),
+    (
+        re.compile(
+            r"^Active leaf branch resolves more than one current-subject form \((?P<detail>.+)\) in (?P<owner>.+)$"
+        ),
+        "E332",
+        "Multiple current-subject forms",
+        lambda match: (
+            f"One active workflow-law leaf branch declares multiple current-subject forms "
+            f"({match.group('detail')}) in {match.group('owner')}."
+        ),
+        ("Keep exactly one `current artifact` or `current none` in each active branch.",),
+    ),
+    (
+        re.compile(
+            r"^current artifact carrier output must be emitted by the concrete turn in (?P<owner>.+): (?P<name>.+)$"
+        ),
+        "E333",
+        "Current carrier output not emitted",
+        lambda match: (
+            f"Current-artifact carrier output `{match.group('name')}` is not emitted by "
+            f"{match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^current artifact output must be emitted by the concrete turn in (?P<owner>.+): (?P<name>.+)$"
+        ),
+        "E334",
+        "Current output not emitted",
+        lambda match: (
+            f"Current-artifact output `{match.group('name')}` is not emitted by "
+            f"{match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^current artifact target must resolve to a declared input or output in (?P<owner>.+): (?P<name>.+)$"
+        ),
+        "E335",
+        "Current artifact target has wrong kind",
+        lambda match: (
+            f"Current-artifact target `{match.group('name')}` must resolve to a declared input "
+            f"or output in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^current artifact carrier field must be listed in trust_surface in (?P<owner>.+): (?P<name>.+)$"
+        ),
+        "E336",
+        "Current carrier field missing from trust surface",
+        lambda match: (
+            f"Current-artifact carrier field `{match.group('name')}` is not listed in "
+            f"`trust_surface` in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Unknown output field on current artifact via in (?P<owner>.+): (?P<path>.+)$"
+        ),
+        "E337",
+        "Unknown current carrier field",
+        lambda match: (
+            f"Current-artifact carrier field `{match.group('path')}` does not exist in "
+            f"{match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Mode value is outside enum (?P<enum>.+) in (?P<owner>.+): (?P<value>.+)$"),
+        "E341",
+        "Mode value outside enum",
+        lambda match: (
+            f"Mode value `{match.group('value')}` is outside enum `{match.group('enum')}` "
+            f"in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^match on (?P<enum>.+) must be exhaustive or include else in (?P<owner>.+)$"),
+        "E342",
+        "Non-exhaustive mode match",
+        lambda match: (
+            f"`match` on `{match.group('enum')}` must cover every enum member or include `else` "
+            f"in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^own only must stay rooted in the current artifact in (?P<owner>.+): (?P<path>.+)$"),
+        "E351",
+        "Owned scope is outside the current artifact",
+        lambda match: (
+            f"Owned scope `{match.group('path')}` is not rooted in the current artifact in "
+            f"{match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^own only target must resolve to a declared input or output in (?P<owner>.+): (?P<path>.+)$"
+        ),
+        "E352",
+        "Owned scope target is unknown",
+        lambda match: (
+            f"Owned scope target `{match.group('path')}` must resolve to a declared input or output "
+            f"in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Owned scope overlaps exact-preserved scope in (?P<owner>.+)$"),
+        "E353",
+        "Owned scope overlaps exact preservation",
+        lambda match: (
+            f"Owned scope overlaps exact-preserved scope in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Owned and forbidden scope overlap in (?P<owner>.+)$"),
+        "E354",
+        "Owned scope overlaps forbidden scope",
+        lambda match: (
+            f"Owned scope overlaps forbidden scope in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^preserve (?P<kind>structure|mapping|vocabulary) target must resolve to a declared (?P<label>input or output|enum) in (?P<owner>.+): (?P<path>.+)$"
+        ),
+        "E355",
+        "Preserve target is unknown",
+        lambda match: (
+            f"`preserve {match.group('kind')}` target `{match.group('path')}` must resolve to a "
+            f"declared {match.group('label')} in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^The current artifact cannot be ignored for truth in (?P<owner>.+)$"),
+        "E361",
+        "Current artifact ignored for truth",
+        lambda match: (
+            f"The current artifact is being ignored for truth in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^support_only and ignore for comparison contradict in (?P<owner>.+)$"),
+        "E362",
+        "Comparison-only basis contradiction",
+        lambda match: (
+            f"`support_only` and `ignore ... for comparison` contradict in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^The current artifact cannot be invalidated in the same active branch in (?P<owner>.+)$"
+        ),
+        "E371",
+        "Current artifact invalidated in same branch",
+        lambda match: (
+            f"The current artifact is invalidated in the same active branch in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^invalidate carrier field must be listed in trust_surface in (?P<owner>.+): (?P<name>.+)$"
+        ),
+        "E372",
+        "Invalidation carrier field missing from trust surface",
+        lambda match: (
+            f"Invalidation carrier field `{match.group('name')}` is not listed in `trust_surface` "
+            f"in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Inherited law blocks must use named sections only in (?P<owner>.+)$"),
+        "E381",
+        "Inherited law requires named sections",
+        lambda match: (
+            f"Inherited law blocks must use named sections only in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Inherited law block accounts for the same parent subsection more than once in (?P<owner>.+): (?P<key>.+)$"
+        ),
+        "E382",
+        "Duplicate inherited law subsection",
+        lambda match: (
+            f"Inherited law block accounts for subsection `{match.group('key')}` more than once "
+            f"in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Inherited law block omits parent subsection\(s\) in (?P<owner>.+): (?P<keys>.+)$"
+        ),
+        "E383",
+        "Missing inherited law subsection",
+        lambda match: (
+            f"Inherited law block omits parent subsection(s) `{match.group('keys')}` in "
+            f"{match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Cannot override undefined law section in (?P<owner>.+): (?P<key>.+)$"
+        ),
+        "E384",
+        "Cannot override undefined law subsection",
+        lambda match: (
+            f"Cannot override undefined law subsection `{match.group('key')}` in "
+            f"{match.group('owner')}."
+        ),
         (),
     ),
     (

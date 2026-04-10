@@ -1,0 +1,41 @@
+schema_version = 1
+
+slug = "seclab-taskflow-agent"
+title = "GitHub Security Lab Taskflow Agent"
+source_kind = "production_codebase"
+primary_format = "YAML taskflow grammar"
+
+upstream = "GitHubSecurityLab/seclab-taskflow-agent"
+url = "https://github.com/GitHubSecurityLab/seclab-taskflow-agent"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "io_contracts_and_handoffs",
+  "orchestration_roles_and_delegation",
+  "skills_tools_and_capabilities",
+]
+
+expected_artifacts = [
+  "raw/README.md",
+  "raw/examples/personalities/example_triage_agent.yaml",
+  "raw/examples/taskflows/CVE-2023-2283.yaml",
+  "raw/examples/taskflows/comprehensive_test.yaml",
+  "raw/examples/taskflows/example_reusable_taskflows.yaml",
+]
+
+local_raw_paths = [
+  "raw/README.md",
+  "raw/examples/personalities/example_triage_agent.yaml",
+  "raw/examples/taskflows/CVE-2023-2283.yaml",
+  "raw/examples/taskflows/comprehensive_test.yaml",
+  "raw/examples/taskflows/example_reusable_taskflows.yaml",
+]
+
+notes = """
+This repo shows a declarative taskflow system with personalities, reusable taskflows, MCP toolboxes, inputs, env injection, headless execution, and explicit must_complete semantics. It is especially valuable because it combines staged workflows with guardrails such as blocked tools and a no-speculation security review prompt.
+"""

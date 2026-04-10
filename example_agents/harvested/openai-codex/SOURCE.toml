@@ -1,0 +1,31 @@
+schema_version = 1
+
+slug = "openai-codex"
+title = "OpenAI Codex"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md"
+
+upstream = "openai/codex"
+url = "https://github.com/openai/codex"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "skills_tools_and_capabilities",
+]
+
+expected_artifacts = [
+  "AGENTS.md",
+  "codex-rs/tui/src/bottom_pane/AGENTS.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/codex-rs/tui/src/bottom_pane/AGENTS.md",
+]
+
+notes = "Rust-specific repo guidance with strict style and API guardrails, sandbox-aware exclusions, build and test expectations, and a nested TUI state-machine guide that adds local docs synchronization rules."

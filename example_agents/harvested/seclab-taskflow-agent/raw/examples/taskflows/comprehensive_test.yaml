@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: GitHub, Inc.
+# SPDX-License-Identifier: MIT
+
+# Comprehensive test taskflow that exercises every grammar feature:
+#   - model_config reference with model aliases
+#   - globals (with CLI override via -g)
+#   - inputs (task-level template variables)
+#   - env (task-scoped environment variables)
+#   - must_complete
+#   - exclude_from_context
+#   - max_steps
+#   - MCP toolboxes (echo)
+#   - shell task (run)
+#   - repeat_prompt + async iteration
+#   - reusable tasks (uses)
+#   - reusable prompts ({% include %})
+#   - agent handoffs (multi-agent)
+#   - headless mode
+#   - blocked_tools
+
+seclab-taskflow-agent:
+  version: "1.0"
+  filetype: taskflow
+
+model_config: examples.model_configs.model_config
+
+globals:
+  topic: fruit
+  detail_level: brief
+
+taskflow:
+  # ---------------------------------------------------------------
+  # Task 1: Shell task — produces a JSON array for repeat_prompt
+  # Features: run, must_complete
+  # ---------------------------------------------------------------
+  - task:
+      name: generate-items
+      must_complete: true
+      run: |
+        echo '[{"name": "apple", "color": "red"}, {"name": "banana", "color": "yellow"}, {"name": "orange", "color": "orange"}]'
+
+  # ---------------------------------------------------------------
+  # Task 2: Repeat prompt over shell output, async iteration
+  # Features: repeat_prompt, async, async_limit, exclude_from_context,
+  #           model (alias), inputs, globals, env, max_steps
+  # ---------------------------------------------------------------
+  - task:
+      name: describe-items
+      repeat_prompt: true
+      async: true
+      async_limit: 3
+      exclude_from_context: true
+      must_complete: true
+      model: gpt_default
+      max_steps: 10
+      agents:
+        - examples.personalities.fruit_expert
+      inputs:
+        format: one-sentence
+      env:
+        FRUIT_MODE: "analysis"
+      user_prompt: |
+        The topic is {{ globals.topic }} at {{ globals.detail_level }} detail level.
+        Describe the {{ result.name }} (which is {{ result.color }}) in {{ inputs.format }} format.
+
+  # ---------------------------------------------------------------
+  # Task 3: MCP tool call with echo server
+  # Features: toolboxes, headless, blocked_tools
+  # ---------------------------------------------------------------
+  - task:
+      name: echo-test
+      must_complete: true
+      headless: true
+      agents:
+        - examples.personalities.echo
+      user_prompt: |
+        Echo the following message: "All {{ globals.topic }} items processed successfully"
+      blocked_tools:
+        - nonexistent_tool_to_test_filtering
+
+  # ---------------------------------------------------------------
+  # Task 4: Reusable task via `uses`
+  # Features: uses (inherits from single_step_taskflow)
+  # ---------------------------------------------------------------
+  - task:
+      name: reusable-task
+      uses: examples.taskflows.single_step_taskflow
+      model: gpt_default
+
+  # ---------------------------------------------------------------
+  # Task 5: Reusable prompt via {% include %}
+  # Features: Jinja2 include directive, reusable prompts
+  # ---------------------------------------------------------------
+  - task:
+      name: include-prompt
+      agents:
+        - examples.personalities.fruit_expert
+      model: gpt_default
+      max_steps: 5
+      user_prompt: |
+        Tell me about apples.
+
+        {% include 'examples.prompts.example_prompt' %}
+
+        Keep your answer to two sentences per fruit.
+
+  # ---------------------------------------------------------------
+  # Task 6: Agent handoffs (multi-agent)
+  # Features: multiple agents (first=primary, rest=handoff targets)
+  # ---------------------------------------------------------------
+  - task:
+      name: handoff-test
+      model: gpt_default
+      max_steps: 15
+      agents:
+        - examples.personalities.fruit_expert
+        - examples.personalities.apple_expert
+        - examples.personalities.banana_expert
+        - examples.personalities.orange_expert
+      user_prompt: |
+        You are a fruit coordinator. I need specific expert advice on each fruit.
+        Please hand off to the apple expert for a one-sentence fact about apples,
+        then to the banana expert for a one-sentence fact about bananas,
+        then to the orange expert for a one-sentence fact about oranges.
+        Each expert should provide exactly one interesting fact.

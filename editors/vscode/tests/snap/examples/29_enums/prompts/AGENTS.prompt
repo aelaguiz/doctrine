@@ -1,0 +1,41 @@
+# This example adds top-level enums for closed vocabularies with addressable
+# members.
+# - enums have titled roots and flat keyed string members
+# - interpolation may render the enum title or a concrete member literal
+# - generic scalar values may reuse enum titles and members without copying
+#   bare strings
+
+enum CriticVerdict: "Critic Verdict"
+    accept: "accept"
+    changes_requested: "changes requested"
+
+
+enum StepKind: "Step Kind"
+    guided_walkthrough: "guided_walkthrough"
+    scripted_hand: "scripted_hand"
+
+
+workflow ReadFirst: "Read First"
+    verdict_rules: "Verdict Rules"
+        "Use the {{CriticVerdict}} vocabulary and return {{CriticVerdict:accept}} or {{CriticVerdict:changes_requested}}."
+        "Keep {{StepKind:guided_walkthrough}} distinct from {{StepKind:scripted_hand}}."
+
+
+output ReviewDecision: "Review Decision"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+    verdict_family: CriticVerdict
+    accepted_value: CriticVerdict:accept
+    changes_requested_value: CriticVerdict:changes_requested
+    walkthrough_kind: StepKind:guided_walkthrough
+
+
+agent EnumRefsDemo:
+    role: "Keep closed vocabularies declared once instead of copying bare strings."
+
+    read_first: ReadFirst
+
+    outputs: "Outputs"
+        ReviewDecision

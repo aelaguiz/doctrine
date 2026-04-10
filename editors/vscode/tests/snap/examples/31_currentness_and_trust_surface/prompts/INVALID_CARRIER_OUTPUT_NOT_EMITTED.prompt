@@ -1,0 +1,36 @@
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+    law:
+        current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+
+
+agent InvalidCarrierOutputNotEmitted:
+    role: "Trigger a missing emitted carrier output."
+    workflow: InvalidCarryCurrentTruth
+    outputs: "Outputs"
+        SectionMetadata

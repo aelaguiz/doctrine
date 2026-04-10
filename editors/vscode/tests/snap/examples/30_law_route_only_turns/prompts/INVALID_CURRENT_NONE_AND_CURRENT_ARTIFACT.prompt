@@ -1,0 +1,30 @@
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationComment: "Coordination Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the current artifact."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+    law:
+        when CurrentHandoff.missing:
+            current none
+            current artifact CoordinationComment via CoordinationComment.current_artifact
+
+
+agent InvalidCurrentNoneAndCurrentArtifact:
+    role: "Trigger conflicting currentness."
+    workflow: InvalidRouteOnlyTurns
+    inputs: "Inputs"
+        CurrentHandoff

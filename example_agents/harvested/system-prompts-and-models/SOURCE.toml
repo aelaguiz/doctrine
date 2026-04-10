@@ -1,0 +1,37 @@
+schema_version = 1
+
+slug = "system-prompts-and-models"
+title = "System Prompts and Models of AI Tools"
+source_kind = "prompt_archive"
+primary_format = "mixed prompt files and tool schemas"
+
+upstream = "x1xhlol/system-prompts-and-models-of-ai-tools"
+url = "https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "skills_tools_and_capabilities",
+  "orchestration_roles_and_delegation",
+]
+
+expected_artifacts = [
+  "Cursor Prompts/Agent Prompt 2025-09-03.txt",
+  "Cursor Prompts/Agent Tools v1.0.json",
+  "Devin AI/Prompt.txt",
+  "Anthropic/Claude Code 2.0.txt",
+  "Kiro/Mode_Clasifier_Prompt.txt",
+]
+
+local_raw_paths = [
+  "raw/Cursor Prompts/Agent Prompt 2025-09-03.txt",
+  "raw/Cursor Prompts/Agent Tools v1.0.json",
+  "raw/Devin AI/Prompt.txt",
+  "raw/Anthropic/Claude Code 2.0.txt",
+  "raw/Kiro/Mode_Clasifier_Prompt.txt",
+]
+
+notes = "Mixed production prompt archive with strong pressure on exact tool schemas, read-only planning, autonomous execution limits, and small mode routers."

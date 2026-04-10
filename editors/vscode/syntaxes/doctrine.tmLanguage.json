@@ -82,6 +82,18 @@
       "include": "#reasonScalarField"
     },
     {
+      "include": "#lawField"
+    },
+    {
+      "include": "#trustSurfaceField"
+    },
+    {
+      "include": "#lawKeyword"
+    },
+    {
+      "include": "#elseMatchArm"
+    },
+    {
       "include": "#route"
     },
     {
@@ -678,6 +690,43 @@
           "include": "#stringInterpolation"
         }
       ]
+    },
+    "lawField": {
+      "match": "^(\\s*)(law)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "trustSurfaceField": {
+      "match": "^(\\s*)(trust_surface)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "lawKeyword": {
+      "match": "\\b(active|and|artifact|as|comparison|current|decisions|else|exact|except|false|for|forbid|ignore|in|invalidate|mapping|match|mode|must|none|only|or|own|preserve|rewrite_evidence|stop|structure|support_only|true|truth|via|vocabulary|when)\\b",
+      "name": "keyword.control.doctrine"
+    },
+    "elseMatchArm": {
+      "match": "^(\\s*)(else)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.control.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
     },
     "route": {
       "begin": "^(\\s*)(route)(\\s+)(\")",

@@ -1,0 +1,31 @@
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+
+workflow InvalidRewriteAwarePolish: "Rewrite-Aware Polish"
+    law:
+        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+        ignore SectionMetadata for truth
+
+
+agent InvalidCurrentArtifactIgnoredForTruth:
+    role: "Trigger truth-ignore on the current artifact."
+    workflow: InvalidRewriteAwarePolish
+    outputs: "Outputs"
+        SectionMetadata
+        CoordinationHandoff

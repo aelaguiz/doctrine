@@ -1,0 +1,41 @@
+schema_version = 1
+
+slug = "cloudflare-agents"
+title = "Cloudflare Agents SDK"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + nested AGENTS.md family"
+
+upstream = "cloudflare/agents"
+url = "https://github.com/cloudflare/agents"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "skills_tools_and_capabilities",
+  "context_and_memory",
+  "domain_specific_constraints"
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/design/AGENTS.md",
+  "raw/docs/AGENTS.md",
+  "raw/examples/AGENTS.md",
+  "raw/guides/AGENTS.md",
+  "raw/packages/agents/AGENTS.md"
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/design/AGENTS.md",
+  "raw/docs/AGENTS.md",
+  "raw/examples/AGENTS.md",
+  "raw/guides/AGENTS.md",
+  "raw/packages/agents/AGENTS.md"
+]
+
+notes = "Monorepo instruction hierarchy with root build/test gates, design-vs-docs-vs-example scope splits, example and guide conventions, and package-local API boundaries for the core SDK."

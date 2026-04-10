@@ -1,0 +1,30 @@
+schema_version = 1
+slug = "cursor-memory-bank"
+title = "vanzan01/cursor-memory-bank"
+source_kind = "workflow_memory_system"
+primary_format = "README.md plus command docs"
+upstream = "vanzan01/cursor-memory-bank"
+url = "https://github.com/vanzan01/cursor-memory-bank"
+status = "extracted"
+priority = "high"
+buckets = [
+  "context_and_memory",
+  "orchestration_roles_and_delegation",
+  "io_contracts_and_handoffs",
+  "scope_hierarchy",
+]
+expected_artifacts = [
+  "raw/README.md",
+  "raw/COMMANDS_README.md",
+  "raw/memory_bank_upgrade_guide.md",
+  "raw/MEMORY_BANK_OPTIMIZATIONS.md",
+  "raw/optimization-journey/04-single-source-of-truth.md",
+]
+local_raw_paths = [
+  "raw/README.md",
+  "raw/COMMANDS_README.md",
+  "raw/memory_bank_upgrade_guide.md",
+  "raw/MEMORY_BANK_OPTIMIZATIONS.md",
+  "raw/optimization-journey/04-single-source-of-truth.md",
+]
+notes = "A command-driven memory workflow with explicit stage transitions, a shared state directory, and strong single-source-of-truth language. Good pressure for Doctrine context handling, handoff truth, and scope-controlled instruction loading."

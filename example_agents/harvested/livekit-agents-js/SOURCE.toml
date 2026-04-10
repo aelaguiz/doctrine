@@ -1,0 +1,40 @@
+schema_version = 1
+
+slug = "livekit-agents-js"
+title = "LiveKit Agents JS"
+source_kind = "production_codebase"
+primary_format = "CLAUDE.md + README.md + CONTRIBUTING.md + nested package READMEs"
+
+upstream = "livekit/agents-js"
+url = "https://github.com/livekit/agents-js"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "scope_hierarchy",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "orchestration_roles_and_delegation",
+  "io_contracts_and_handoffs",
+]
+
+expected_artifacts = [
+  "CLAUDE.md",
+  "README.md",
+  "CONTRIBUTING.md",
+  "agents/README.md",
+  "plugins/openai/README.md",
+  "plugins/elevenlabs/README.md",
+]
+
+local_raw_paths = [
+  "raw/CLAUDE.md",
+  "raw/README.md",
+  "raw/CONTRIBUTING.md",
+  "raw/agents/README.md",
+  "raw/plugins/openai/README.md",
+  "raw/plugins/elevenlabs/README.md",
+]
+
+notes = "Top-level agent guidance plus nested package docs that spell out the monorepo shape, contribution gates, plugin capability matrix, and agent/session/handoff vocabulary."

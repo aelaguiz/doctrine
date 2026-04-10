@@ -13,8 +13,8 @@ PACKAGE_PATH = ROOT / "editors" / "vscode" / "package.json"
 LANGUAGE_CONFIG_PATH = ROOT / "editors" / "vscode" / "language-configuration.json"
 TM_LANGUAGE_PATH = ROOT / "editors" / "vscode" / "syntaxes" / "doctrine.tmLanguage.json"
 
-WORD_LITERAL_RE = re.compile(r'"([a-z]+)"')
-IDENTIFIER_LIKE_RE = re.compile(r"^[a-z]+$")
+WORD_LITERAL_RE = re.compile(r'"([a-z_]+)"')
+IDENTIFIER_LIKE_RE = re.compile(r"^[a-z_]+$")
 EXTRA_GRAMMAR_KEYWORDS = {"important", "note", "required", "warning"}
 GENERIC_KEY_STRING_KEYS = (
     "abstract",
@@ -162,6 +162,30 @@ def main() -> int:
     generic_key_only_samples = [f"    {keyword}:" for keyword in GENERIC_KEY_STRING_KEYS]
     generic_standalone_ref_samples = [f"    {keyword}" for keyword in GENERIC_STANDALONE_REFS]
 
+    _require_pattern_match(
+        repository,
+        "lawField",
+        ["    law:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "trustSurfaceField",
+        ["    trust_surface:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "lawKeyword",
+        [
+            "support_only",
+            "rewrite_evidence",
+        ],
+        should_match=True,
+        errors=errors,
+    )
     _require_pattern_match(
         repository,
         "abstractField",

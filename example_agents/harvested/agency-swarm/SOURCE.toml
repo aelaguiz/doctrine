@@ -1,0 +1,36 @@
+schema_version = 1
+
+slug = "agency-swarm"
+title = "Agency Swarm"
+source_kind = "production_codebase"
+primary_format = "AGENTS.md + role instructions"
+
+upstream = "VRSEN/agency-swarm"
+url = "https://github.com/VRSEN/agency-swarm"
+
+status = "extracted"
+priority = "high"
+
+buckets = [
+  "orchestration_roles_and_delegation",
+  "commands_and_quality_gates",
+  "negative_guardrails",
+  "context_and_memory",
+  "io_contracts_and_handoffs",
+]
+
+expected_artifacts = [
+  "raw/AGENTS.md",
+  "raw/tests/integration/fin_agency/financial_research_agency/PortfolioManager/instructions.md",
+  "raw/tests/integration/fin_agency/financial_research_agency/RiskAnalyst/instructions.md",
+  "raw/tests/integration/fin_agency/financial_research_agency/ReportGenerator/instructions.md",
+]
+
+local_raw_paths = [
+  "raw/AGENTS.md",
+  "raw/tests/integration/fin_agency/financial_research_agency/PortfolioManager/instructions.md",
+  "raw/tests/integration/fin_agency/financial_research_agency/RiskAnalyst/instructions.md",
+  "raw/tests/integration/fin_agency/financial_research_agency/ReportGenerator/instructions.md",
+]
+
+notes = "Strong pressure for evidence-first task execution, explicit planning discipline, role preconditions, ordered delegation, and review-before-forwarding behavior."
