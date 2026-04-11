@@ -1,0 +1,172 @@
+># This example adds one narrow Phase 1 identity step:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># concrete agents may carry human-facing head titles, and enum members may
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># split structural key, human-facing title, and host-facing wire value.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>#
+#^ source.doctrine comment.line.number-sign.doctrine
+># Bare readable refs default to title when the target exposes one.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># `:key` keeps the structural identity visible, and enum members additionally
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># expose `.wire` for external or serialized surfaces.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>enum NextOwner: "Next Owner"
+#^^^^ source.doctrine keyword.declaration.doctrine
+#    ^ source.doctrine
+#     ^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    section_author: "Section Author"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        wire: "section-author"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine keyword.other.field.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    copy_editor: "Copy Editor"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        wire: "copy-editor"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine keyword.other.field.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>workflow IdentityStrings: "Identity Strings"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+#                         ^ source.doctrine
+#                          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                           ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    owner_labels: "Owner Labels"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Route blocked work back to {{ProjectLead}}."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                      ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                 ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                   ^ source.doctrine string.quoted.double.doctrine
+#                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "Use {{ProjectLead:key}} when the structural owner key must stay visible."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^ source.doctrine string.quoted.double.doctrine
+#             ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#               ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                          ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                           ^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                              ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "The agent title is {{ProjectLead:title}}."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                            ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                              ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                         ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                          ^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                               ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                 ^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "The handoff title is {{NextOwner:section_author}}."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                              ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                ^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                         ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                          ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                        ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                          ^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "The handoff key is {{NextOwner:section_author.key}}."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                            ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                              ^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                       ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                        ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                          ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                            ^ source.doctrine string.quoted.double.doctrine
+#                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "The handoff wire is {{NextOwner:section_author.wire}}."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                               ^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                        ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                         ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                            ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                              ^ source.doctrine string.quoted.double.doctrine
+#                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent ProjectLead: "Project Lead"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                    ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>    role: "Keep owner identity readable without losing structural keys."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent IdentityTitlesDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Keep owner identity readable without losing structural keys."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    read_first: IdentityStrings
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

@@ -1,0 +1,50 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "titled agents and enum wire projections stay readable and addressable"
+status = "active"
+kind = "render_contract"
+agent = "IdentityTitlesDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep owner identity readable without losing structural keys.",
+  "",
+  "## Identity Strings",
+  "",
+  "### Owner Labels",
+  "",
+  "Route blocked work back to Project Lead.",
+  "Use ProjectLead when the structural owner key must stay visible.",
+  "The agent title is Project Lead.",
+  "The handoff title is Section Author.",
+  "The handoff key is section_author.",
+  "The handoff wire is section-author.",
+]
+
+[[cases]]
+name = "invalid wire projection on an agent fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_AGENT_WIRE_PROJECTION.prompt"
+agent = "InvalidAgentWireProjectionDemo"
+exception_type = "CompileError"
+error_code = "E273"
+message_contains = [
+  "Unknown addressable path",
+  "ProjectLead:wire",
+]
+
+[[cases]]
+name = "duplicate enum wire values fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ENUM_WIRE.prompt"
+agent = "InvalidDuplicateEnumWireDemo"
+exception_type = "CompileError"
+error_code = "E294"
+message_contains = [
+  "Duplicate enum member wire",
+  "enum NextOwner",
+  "same-owner",
+]

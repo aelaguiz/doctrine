@@ -1,0 +1,13 @@
+workflow BrokenIdentityStrings: "Broken Identity Strings"
+    owner_labels: "Owner Labels"
+        "Do not allow {{ProjectLead:wire}} on an agent."
+
+
+agent ProjectLead: "Project Lead"
+    role: "Own blocked follow-up."
+
+
+agent InvalidAgentWireProjectionDemo:
+    role: "Trigger invalid wire projection validation."
+
+    read_first: BrokenIdentityStrings

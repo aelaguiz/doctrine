@@ -49,7 +49,7 @@ Agents are the top-level runtime owners.
 abstract agent BaseRole:
     read_first: SharedTurn
 
-agent Reviewer[BaseRole]:
+agent Reviewer[BaseRole]: "Review Lead"
     role: "Core job: review the current brief."
     inherit read_first
 ```
@@ -59,6 +59,9 @@ Important rules:
 - `agent` declares a concrete runtime owner.
 - `abstract agent` declares an inheritance-only owner that does not render on
   its own.
+- A concrete agent may declare a head title. Bare readable refs default to that
+  title, while `:key` and the legacy `:name` projection keep the structural
+  declaration name available.
 - Every concrete agent needs a `role`.
 - Reserved typed agent fields include `inputs`, `outputs`, `analysis`,
   `skills`, and `review`.
@@ -335,23 +338,30 @@ Examples:
 - `DraftSpec`
 - `ReviewComment`
 - `MetadataContract:files.summary`
+- `ProjectLead:title`
+- `ProjectLead:key`
 - `ReleaseAnalysis:stages.title`
 - `LessonPlan:read_order.first`
 - `LessonPlan:step_arc.columns.coaching_level.title`
+- `NextOwner:section_author.wire`
 
 ### Addressable paths
 
 Nested keyed items can be addressed explicitly:
 
 - `Decl:path.to.child`
+- `ProjectLead:key`
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
 - `LessonPlan:overview.title`
 - `LessonPlan:step_arc.rows.step_1`
+- `NextOwner:section_author.wire`
 
 Paths follow authored keyed structure only. Trying to descend past a scalar
 leaf fails loudly. Keyed list items, keyed definition items, table columns,
-and table rows are addressable; anonymous list items are not.
+and table rows are addressable; anonymous list items are not. The first `:`
+separates the root declaration from its path, and any deeper projections use
+dot segments such as `NextOwner:section_author.wire`.
 
 ### Authored interpolation
 
@@ -359,10 +369,26 @@ Authored prose surfaces may interpolate declaration data inline:
 
 - `{{Ref}}`
 - `{{Ref:path.to.child}}`
+- `{{ProjectLead:key}}`
 - `{{AgentRef:name}}`
+- `{{NextOwner:section_author.wire}}`
 
 Interpolation is still authored prose. Authors keep control of punctuation,
 wording, and emphasis.
+
+Concrete-agent roots expose title-bearing identity projections:
+
+- bare `{{AgentRef}}` defaults to the human-facing title when one exists
+- `{{AgentRef:title}}` resolves the visible title explicitly
+- `{{AgentRef:key}}` and legacy `{{AgentRef:name}}` resolve the structural
+  declaration name
+
+Enum members expose the same title-versus-key split plus optional wire values:
+
+- bare `{{EnumRef:member_key}}` defaults to the member title
+- `{{EnumRef:member_key.key}}` resolves the structural member key
+- `{{EnumRef:member_key.wire}}` resolves the serialized or host-facing wire
+  value
 
 Review-bound outputs add semantic interpolation roots such as `contract.*` and
 `fields.*`; those are documented in [REVIEW_SPEC.md](REVIEW_SPEC.md).
@@ -374,9 +400,19 @@ set of values to branch on.
 
 ```prompt
 enum ReviewMode: "Review Mode"
-    draft_rewrite: "draft-rewrite"
-    metadata_refresh: "metadata-refresh"
+    draft_rewrite: "Draft Rewrite"
+        wire: "draft-rewrite"
+
+    metadata_refresh: "Metadata Refresh"
+        wire: "metadata-refresh"
 ```
+
+Important rules:
+
+- Enum member keys stay structural; authored titles are the readable runtime
+  surface.
+- `wire:` is optional and remains the host-facing or serialized value.
+- The one-line member form remains legal shorthand for `title == wire`.
 
 The shipped expression surface supports:
 

@@ -1,0 +1,17 @@
+enum NextOwner: "Next Owner"
+    section_author: "Section Author"
+        wire: "same-owner"
+
+    copy_editor: "Copy Editor"
+        wire: "same-owner"
+
+
+workflow IdentityStrings: "Identity Strings"
+    owner_labels: "Owner Labels"
+        "This workflow only exists to keep the prompt concrete."
+
+
+agent InvalidDuplicateEnumWireDemo:
+    role: "Trigger duplicate enum wire validation."
+
+    read_first: IdentityStrings

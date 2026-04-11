@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Readable Markdown Full Implementation - Architecture Plan"
 date: 2026-04-11
-status: active
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -95,60 +95,28 @@ VS Code extension onto the same shipped truth.
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-11
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: pending (non-blocking)
 
 ## Code blockers (why code is not done)
-- Phase 5 remains false-complete. Fresh audit evidence shows the repo-root
-  proof signals are green from this worktree, but the VS Code package path is
-  still red: `make` in `editors/vscode/` exits non-zero after
-  `test:integration` aborts with `SIGABRT` on all four startup attempts.
+- None.
 
 ## Reopened phases (false-complete fixes)
-- Phase 5 (Proof, docs, diagnostics, and editor parity cutover) — reopened
-  because:
-  - fresh `.venv/bin/python -m doctrine.verify_corpus` passes the full shipped
-    corpus through `examples/61_multiline_code_and_readable_failures`, and
-    fresh `.venv/bin/python -m doctrine.diagnostic_smoke` passes, so the
-    earlier repo-root D2 blocker is no longer real in this worktree
-  - fresh `make` evidence in `editors/vscode/` passes `npm install`,
-    `test:unit`, and `test:snap`, resolves cached VS Code `1.115.0` after the
-    version lookup falls back from `ENOTFOUND`, then still exits non-zero after
-    four `SIGABRT` retries in `test:integration`, so alignment validation,
-    VSIX packaging, and `cd editors/vscode && make` are not green end to end
+- None.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- VS Code extension-host integration still does not pass from fresh audit
-  context
-  - Evidence anchors:
-    - `editors/vscode/package.json:24`
-    - `editors/vscode/package.json:28`
-    - `editors/vscode/package.json:29`
-    - `editors/vscode/tests/integration/run.js:12`
-    - `editors/vscode/tests/integration/run.js:138`
-    - `editors/vscode/tests/integration/run.js:157`
-  - Plan expects:
-    - Phase 5 ends with a passing `cd editors/vscode && make` so editor
-      behavior, integration coverage, alignment validation, and VSIX packaging
-      are proved against the shipped readable-markdown surface.
-  - Code reality:
-    - Fresh `make verify-examples` and `make verify-diagnostics` are not usable
-      in this sandbox because `uv run --locked ...` fails before Python starts,
-      so this audit used the equivalent direct `.venv/bin/python -m ...`
-      surfaces for repo-root proof.
-    - Fresh `.venv/bin/python -m doctrine.verify_corpus` passes the full
-      shipped corpus, and fresh `.venv/bin/python -m doctrine.diagnostic_smoke`
-      passes.
-    - Fresh `make` in `editors/vscode/` passes `npm install`, `test:unit`, and
-      `test:snap`.
-    - The same `make` run reuses cached VS Code `1.115.0` from the short temp
-      cache after version lookup falls back from `ENOTFOUND`, then
-      `npm run test:integration` exits with `SIGABRT` on four consecutive
-      startup attempts, so alignment validation, VSIX packaging, and
-      `cd editors/vscode && make` remain red end to end.
-  - Fix:
-    - Make the extension-host integration run reliable from fresh audit
-      context, then rerun `npm test` and `cd editors/vscode && make`.
+- None. Fresh verification from this worktree passed:
+  - `make verify-diagnostics`
+  - `make verify-examples`
+  - `cd editors/vscode && make`
+
+## Notes
+- This doc now survives as historical context. The canonical active Phase 1
+  completion artifact is
+  `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`.
+- The shipped Phase 1 proof corpus now runs through
+  `examples/62_identity_titles_keys_and_wire`.
+- The earlier VS Code package-path blocker is no longer real in this worktree.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 - Run the live-editor smoke ladder from `editors/vscode/README.md` after Phase
@@ -2443,15 +2411,15 @@ Rollback:
 
 ## Phase 5 - Proof, docs, diagnostics, and editor parity cutover
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETED
 
-Missing (code):
+Completed (fresh proof):
 
 - fresh `.venv/bin/python -m doctrine.verify_corpus` and
   `.venv/bin/python -m doctrine.diagnostic_smoke` are green from this
-  worktree, but `make` in `editors/vscode/` still exits non-zero because
-  `npm run test:integration` aborts with `SIGABRT` after four startup attempts
-  before alignment validation or VSIX packaging can run
+  worktree
+- `cd editors/vscode && make` is green in this worktree, including
+  `npm run test:integration`, alignment validation, and VSIX packaging
 
 Manual QA (non-blocking):
 

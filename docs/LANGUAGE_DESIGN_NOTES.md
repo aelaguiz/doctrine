@@ -32,7 +32,7 @@ use [../examples/README.md](../examples/README.md).
 ## Shipped Boundaries
 
 Doctrine's current shipped surface runs through the numbered corpus up to
-`examples/53_review_bound_carrier_roots`.
+`examples/62_identity_titles_keys_and_wire`.
 
 That shipped surface includes:
 
@@ -42,6 +42,10 @@ That shipped surface includes:
 - workflow law on `workflow`
 - first-class `review`
 - concrete-turn bindings and bound roots for law and review carriers
+- `analysis`, owner-aware `schema:` / `structure:`, readable `document`
+  blocks, multiline code blocks, and schema-backed review contracts
+- title-bearing concrete-agent heads plus enum-member key/title/wire identity
+  projections
 
 ## Current Non-Goals
 

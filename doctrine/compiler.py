@@ -211,6 +211,7 @@ AddressableTarget: TypeAlias = (
     | "ResolvedWorkflowSkillsItem"
     | "ResolvedSkillsSection"
     | "ResolvedSkillEntry"
+    | "AddressableProjectionTarget"
 )
 
 
@@ -628,6 +629,12 @@ class DisplayValue:
 
 
 @dataclass(slots=True, frozen=True)
+class AddressableProjectionTarget:
+    text: str
+    kind: str
+
+
+@dataclass(slots=True, frozen=True)
 class AddressableNode:
     unit: IndexedUnit
     root_decl: AddressableRootDecl
@@ -723,10 +730,14 @@ def _register_decl(
 
 def _validate_enum_decl(decl: model.EnumDecl, *, owner_label: str) -> None:
     seen_keys: set[str] = set()
+    seen_wire_values: set[str] = set()
     for member in decl.members:
         if member.key in seen_keys:
             raise CompileError(f"Duplicate enum member key in {owner_label}: {member.key}")
         seen_keys.add(member.key)
+        if member.value in seen_wire_values:
+            raise CompileError(f"Duplicate enum member wire in {owner_label}: {member.value}")
+        seen_wire_values.add(member.value)
 
 
 class CompilationSession:
@@ -1508,7 +1519,7 @@ class CompilationContext:
         nodes[key] = FlowAgentNode(
             module_parts=unit.module_parts,
             name=agent.name,
-            title=agent.name,
+            title=agent.title or agent.name,
             detail_lines=self._flow_agent_detail_lines(agent, unit=unit),
         )
 
@@ -10987,21 +10998,20 @@ class CompilationContext:
 
         for index, segment in enumerate(path):
             is_last = index == len(path) - 1
-            if is_last and isinstance(current.target, model.Agent) and segment == "name":
-                return AddressableNode(
-                    unit=current.unit,
-                    root_decl=current.root_decl,
-                    target=current.target,
-                )
-            if is_last and segment == "title":
-                title = self._display_addressable_title(
+            if is_last:
+                projection = self._resolve_addressable_projection(
                     current,
+                    segment=segment,
                     owner_label=owner_label,
                     surface_label=surface_label,
                 )
-                if title is not None:
-                    return current
-            if is_last and segment in {"name", "title"}:
+                if projection is not None:
+                    return AddressableNode(
+                        unit=current.unit,
+                        root_decl=current.root_decl,
+                        target=projection,
+                    )
+            if is_last and segment in {"name", "title", "key", "wire"}:
                 raise CompileError(
                     f"Unknown addressable path on {surface_label} in {owner_label}: "
                     f"{ref_label}"
@@ -11022,6 +11032,36 @@ class CompilationContext:
             current = next_node
 
         return current
+
+    def _resolve_addressable_projection(
+        self,
+        node: AddressableNode,
+        *,
+        segment: str,
+        owner_label: str,
+        surface_label: str,
+    ) -> AddressableProjectionTarget | None:
+        target = node.target
+        if segment == "title":
+            title = self._display_addressable_title(
+                node,
+                owner_label=owner_label,
+                surface_label=surface_label,
+            )
+            if title is not None:
+                return AddressableProjectionTarget(text=title, kind="title")
+            return None
+        if isinstance(target, model.Agent):
+            if segment in {"name", "key"}:
+                return AddressableProjectionTarget(text=target.name, kind="symbol")
+            return None
+        if isinstance(target, model.EnumMember):
+            if segment == "key":
+                return AddressableProjectionTarget(text=target.key, kind="symbol")
+            if segment == "wire":
+                return AddressableProjectionTarget(text=target.value, kind="symbol")
+            return None
+        return None
 
     def _get_addressable_children(
         self,
@@ -11418,6 +11458,8 @@ class CompilationContext:
         surface_label: str,
     ) -> DisplayValue:
         target = node.target
+        if isinstance(target, AddressableProjectionTarget):
+            return DisplayValue(text=target.text, kind=target.kind)
         if isinstance(target, ReviewSemanticFieldsRoot):
             return DisplayValue(text="Review Fields", kind="title")
         if isinstance(target, ReviewSemanticContractRoot):
@@ -11441,6 +11483,8 @@ class CompilationContext:
         if isinstance(target, ReviewSemanticContractGateTarget):
             return DisplayValue(text=target.gate.title, kind="title")
         if isinstance(target, model.Agent):
+            if target.title is not None:
+                return DisplayValue(text=target.title, kind="title")
             return DisplayValue(text=target.name, kind="symbol")
         if isinstance(target, model.AnalysisDecl):
             return DisplayValue(text=target.title, kind="title")
@@ -11487,7 +11531,7 @@ class CompilationContext:
                 surface_label=surface_label,
             )
         if isinstance(target, model.EnumMember):
-            return DisplayValue(text=target.value, kind="symbol")
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, ResolvedSectionItem):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, ResolvedUseItem):
@@ -11535,7 +11579,7 @@ class CompilationContext:
     ) -> str | None:
         target = node.target
         if isinstance(target, model.Agent):
-            return None
+            return target.title
         if isinstance(target, model.ReadableListItem):
             return None
         if isinstance(target, model.RecordScalar):
@@ -11624,7 +11668,7 @@ class CompilationContext:
 
     def _display_readable_decl(self, decl: ReadableDecl) -> str:
         if isinstance(decl, model.Agent):
-            return decl.name
+            return decl.title or decl.name
         return decl.title
 
     def _validate_route_target(self, ref: model.NameRef, *, unit: IndexedUnit) -> None:
@@ -12455,7 +12499,7 @@ class CompilationContext:
             return False
         if root_decl.name != target_agent_name or root_unit.module_parts != target_unit.module_parts:
             return False
-        return not ref.path or ref.path == ("name",)
+        return not ref.path or ref.path in {("name",), ("key",), ("title",)}
 
     def _name_ref_matches_agent(
         self,

@@ -170,7 +170,9 @@ local editor is actually running the newest VSIX before changing the grammar.
    `examples/60_shared_readable_bodies/prompts/AGENTS.prompt` for skill-entry
    and output-body readable descendants, and
    `examples/61_multiline_code_and_readable_failures/prompts/AGENTS.prompt`
-   for output-body readable code-block clicks.
+   for output-body readable code-block clicks, and
+   `examples/62_identity_titles_keys_and_wire/prompts/AGENTS.prompt` for
+   titled-agent `:key` clicks and enum-member `.wire` clicks.
 
 ## Development only: Extension Development Host
 

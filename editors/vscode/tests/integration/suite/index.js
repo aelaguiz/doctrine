@@ -558,6 +558,29 @@ async function testWorkflowLawDefinitionProvider() {
       'Reuse {{ManifestGuide:example_manifest.title}} when you draft the manifest guide.',
     sourceText: "example_manifest",
   });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'agent ProjectLead: "Project Lead"',
+    expectedRelativeTargetPath:
+      "examples/62_identity_titles_keys_and_wire/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/62_identity_titles_keys_and_wire/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      '"Use {{ProjectLead:key}} when the structural owner key must stay visible."',
+    sourceText: "key",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'wire: "section-author"',
+    expectedRelativeTargetPath:
+      "examples/62_identity_titles_keys_and_wire/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/62_identity_titles_keys_and_wire/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      '"The handoff wire is {{NextOwner:section_author.wire}}."',
+    sourceText: "wire",
+    occurrence: 2,
+  });
 }
 
 async function testReviewDefinitionProvider() {

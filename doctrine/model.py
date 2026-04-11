@@ -969,6 +969,7 @@ Field: TypeAlias = (
 class Agent:
     name: str
     fields: tuple[Field, ...]
+    title: str | None = None
     abstract: bool = False
     parent_ref: NameRef | None = None
 
@@ -1070,7 +1071,12 @@ class SkillDecl:
 @dataclass(slots=True, frozen=True)
 class EnumMember:
     key: str
-    value: str
+    title: str
+    wire: str | None = None
+
+    @property
+    def value(self) -> str:
+        return self.wire if self.wire is not None else self.title
 
 
 @dataclass(slots=True, frozen=True)
