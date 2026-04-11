@@ -144,7 +144,7 @@ def _check_output_schema_owner_conflict_surfaces_as_parse_error() -> None:
             parse_file(prompt_path)
         except Exception as exc:
             _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E105", f"expected E105, got {getattr(exc, 'code', None)}")
+            _expect(getattr(exc, "code", None) == "E199", f"expected E199, got {getattr(exc, 'code', None)}")
             _expect("schema" in str(exc).lower(), str(exc))
             _expect("must_include" in str(exc), str(exc))
             return
@@ -672,7 +672,7 @@ abstract agent AnalysisBase:
     role: "Base role."
     abstract analysis
 
-agent AnalysisDemo: [AnalysisBase]
+agent AnalysisDemo [AnalysisBase]:
     role: "Keep the analysis attachment visible."
     analysis: DraftAnalysis
 """
@@ -699,7 +699,7 @@ agent OutputDemo:
 
 def _input_structure_attachment_source() -> str:
     return """document LessonPlan: "Lesson Plan"
-    section summary: "Summary" required
+    section summary: "Summary"
         "State the lesson summary."
 
 input DraftSpec: "Draft Spec"
