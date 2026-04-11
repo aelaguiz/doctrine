@@ -36,3 +36,8 @@ output_dir = "examples/14_handoff_truth/build"
 name = "example_36_invalidation_and_rebuild"
 entrypoint = "examples/36_invalidation_and_rebuild/prompts/AGENTS.prompt"
 output_dir = "examples/36_invalidation_and_rebuild/build"
+
+[[tool.doctrine.emit.targets]]
+name = "public_code_review_pack"
+entrypoint = "prompts/doctrine/packs_public/code_review/AGENTS.prompt"
+output_dir = "examples/52_public_code_review_pack/build"

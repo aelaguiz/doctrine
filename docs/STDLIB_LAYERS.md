@@ -1,4 +1,18 @@
-Yes — I think that is the right long-term shape.
+Yes — that is now the shipped direction, and the first shared-root
+implementation slice is landed.
+
+Status note:
+
+- the public module namespaces are `doctrine.std.*` and
+  `doctrine.packs_public.*`
+- the shipped physical authored-source roots are `prompts/doctrine/std/**` and
+  `prompts/doctrine/packs_public/**`
+- manifest-backed proof now lives in `examples/50_stdlib_coordination`,
+  `examples/51_stdlib_role_home_and_portable_truth`, and
+  `examples/52_public_code_review_pack`
+- shared coordination outputs currently keep generic trust carriers explicit
+  and unconditional because ordinary output guards may not read imported input
+  conventions under the shipped compiler
 
 The clean version is a **four-layer stack**:
 
@@ -94,28 +108,21 @@ This layer should contain reusable, domain-neutral foundations such as:
 
 This is also where most of your default prose should live. The current docs already make a big deal of richer output contract material staying on `output`, and the portable-truth model says `output` is the canonical downstream trust surface. So stdlib should ship a lot of pre-authored `output` declarations and `outputs` blocks with good default `standalone_read`, trust fields, and predictable section titles.    
 
-A strong stdlib shape would be:
+A strong stdlib shape is now:
 
 ```text
-doctrine/std/
+prompts/doctrine/std/
   coordination/
+    inputs.prompt
     outputs.prompt
     workflows.prompt
     enums.prompt
-
-  review/
-    outputs.prompt
-    workflows.prompt
-    enums.prompt
-    skills.prompt
-
-  editing/
-    workflows.prompt
-    outputs.prompt
 
   role_home/
     workflows.prompt
-    skills.prompt
+
+  portable_truth/
+    workflows.prompt
 ```
 
 The point is that authors in Layers 3 and 4 mostly stop writing English paragraphs like:
@@ -129,7 +136,7 @@ Instead, they import defaults that already render that prose, and they mostly au
 A stdlib example might look like this:
 
 ```prompt
-# doctrine/std/coordination/outputs.prompt
+# prompts/doctrine/std/coordination/outputs.prompt
 
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
@@ -144,7 +151,7 @@ output CoordinationHandoff: "Coordination Handoff"
 
     trust_surface:
         current_artifact
-        invalidations when invalidation_count > 0
+        invalidations
 
     standalone_read: "Standalone Read"
         "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
@@ -158,21 +165,18 @@ outputs PortableTruthOutputs: "Outputs"
 And a reusable stdlib workflow shell could look like this:
 
 ```prompt
-# doctrine/std/editing/workflows.prompt
+# prompts/doctrine/std/coordination/workflows.prompt
 
-workflow ModeAwarePortableTruthEdit: "Mode-Aware Edit"
-    "Edit in exactly one active mode and carry portable truth forward."
+workflow RouteOnlyTurns: "Route-Only Triage"
+    "Handle turns that can only stop and reroute."
 
     law:
-        activation:
-            active when CurrentHandoff.owed_now
+        active when CurrentHandoff.missing or CurrentHandoff.unclear
 
-        stop_lines:
-            stop "Current artifact, mode, or preserve basis is unclear." when unclear(
-                CurrentHandoff.current_artifact,
-                CurrentHandoff.active_mode,
-                CurrentHandoff.preserve_basis,
-            )
+        when CurrentHandoff.missing:
+            current none
+            stop "Current handoff is missing."
+            route "Route the same issue back to RoutingOwner." -> doctrine.std.coordination.workflows.RoutingOwner
 ```
 
 Notice what stdlib is doing here: it is not choosing your domain nouns. It is choosing **structure**, **defaults**, and **override points**. That is where the power comes from.
@@ -207,7 +211,7 @@ That makes it a strong public proving ground without dragging Lessons IP into th
 A public pack layout could be:
 
 ```text
-doctrine/packs_public/code_review/
+prompts/doctrine/packs_public/code_review/
   common/
     enums.prompt
     outputs.prompt
@@ -609,7 +613,7 @@ doctrine/
 Possibly also keep Layer 3 *initially* in the Doctrine repo, but only as examples or public packs while it is still stabilizing.
 
 ```text
-doctrine/packs_public/
+prompts/doctrine/packs_public/
   code_review/
 ```
 
@@ -757,10 +761,10 @@ That last point matters. Layer 2 may document host field conventions, but it sho
 
 ## 5. The real v1 surface for Layer 2
 
-Based on the examples you have now, I would define Layer 2 v1 as four public module families:
+Based on the examples you have now, Layer 2 v1 is four public module families:
 
 ```text
-doctrine/std/
+prompts/doctrine/std/
   coordination/
     enums.prompt
     inputs.prompt
@@ -1017,7 +1021,10 @@ Every Layer 2 coordination output must obey these requirements:
 * every trust carrier used by law must appear in `trust_surface`,
 * `standalone_read` must never promise more than the declared trust surface actually carries,
 * field titles must remain stable and generic,
-* if a field is conditional in `trust_surface`, the prose must read conditionally too.
+* if a field is conditional in `trust_surface`, the prose must read conditionally too,
+* shared output modules should keep those conditions rooted in shipped output
+  semantics rather than in imported input-guard conventions that the current
+  compiler does not allow on ordinary outputs.
 
 That last rule is important because your example audit caught places where rendered prose outran the actual trust surface. Layer 2 should make that impossible by design.
 
@@ -1483,7 +1490,9 @@ That is the cleanest consequence of everything your examples and audits have con
 * Layer 2 role-home workflows carry the remaining generic prose,
 * public/private packs keep their own nouns and branch law.
 
-If you want, I can turn this into an actual draft `doctrine/std/README.md` plus first-cut `.prompt` files for the proposed Layer 2 modules.
+That draft is now materially shipped under `prompts/doctrine/std/**`, with the
+direction doc still serving as the higher-level explanation of why the layer
+split exists.
 
 -----
 
@@ -1518,7 +1527,7 @@ So this phase is **not** “new features.” It is the point where the already-e
 I would make Phase 3 ship these exact deliverables:
 
 ```text
-doctrine/std/
+prompts/doctrine/std/
   portable_truth/
     README.md
     EXAMPLES.md

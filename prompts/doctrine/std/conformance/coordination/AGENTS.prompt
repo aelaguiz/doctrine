@@ -1,0 +1,59 @@
+import doctrine.std.coordination.enums
+import doctrine.std.coordination.inputs
+import doctrine.std.coordination.outputs
+import doctrine.std.coordination.workflows
+
+
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+    "Use accepted peer examples only for comparison when coordination needs them."
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+workflow SharedRootPortableTruth: "Shared Root Portable Truth"
+    "Import shared coordination carriers from the repo-level stdlib root."
+
+    law:
+        active when doctrine.std.coordination.inputs.CurrentHandoff.owes_portable_truth
+        current artifact SectionMetadata via doctrine.std.coordination.outputs.PortableTruthHandoffFull.current_artifact
+        support_only AcceptedPeerSet for comparison
+        ignore SectionMetadata.description for rewrite_evidence when doctrine.std.coordination.inputs.CurrentHandoff.rewrite_regime == doctrine.std.coordination.enums.RewriteRegime.rewrite
+
+        when doctrine.std.coordination.inputs.CurrentHandoff.structure_changed:
+            invalidate SectionReview via doctrine.std.coordination.outputs.PortableTruthHandoffFull.invalidations
+
+
+agent SharedRootRouteOnlyDemo:
+    role: "Import the shared route-only workflow and coordination comment from the repo-level stdlib root."
+    workflow: doctrine.std.coordination.workflows.RouteOnlyTurns
+    inputs: "Inputs"
+        doctrine.std.coordination.inputs.CurrentHandoff
+    outputs: "Outputs"
+        doctrine.std.coordination.outputs.CoordinationComment
+
+
+agent SharedRootPortableTruthDemo:
+    role: "Import shared coordination inputs, enums, and output carriers from the repo-level stdlib root."
+    workflow: SharedRootPortableTruth
+    inputs: "Inputs"
+        doctrine.std.coordination.inputs.CurrentHandoff
+        AcceptedPeerSet
+    outputs: "Outputs"
+        SectionMetadata
+        doctrine.std.coordination.outputs.PortableTruthHandoffFull

@@ -1,0 +1,124 @@
+# Use this for route-only or block-only turns where no current artifact is
+# carried forward.
+output CoordinationComment: "Coordination Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand the coordination state for this turn."
+
+
+# Use this when one artifact is current and must stay portable downstream.
+output PortableTruthHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now."
+
+
+# Use this when one typed mode must stay explicit alongside the current
+# artifact.
+output ModeAwarePortableTruthHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    active_mode: "Active Mode"
+        "Name the active mode for this pass."
+
+    trust_surface:
+        current_artifact
+        active_mode
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now and which mode is active."
+
+
+# Use this when comparison-only help matters to the next owner.
+output ComparisonPortableTruthHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    trust_surface:
+        current_artifact
+        comparison_basis
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now and what was comparison-only."
+
+
+# Use this when downstream readers must see both the new current artifact and
+# what stopped being current.
+output InvalidationPortableTruthHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        invalidations
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
+
+
+# Use this when currentness, mode, preserve basis, comparison-only help,
+# rewrite exclusions, and invalidations all matter together.
+output PortableTruthHandoffFull: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    active_mode: "Active Mode"
+        "Name the one active mode for this pass."
+
+    preserve_basis: "Preserve Basis"
+        "Name the upstream declaration whose decisions remain authoritative."
+
+    comparison_basis: "Comparison Basis"
+        "Name any comparison-only artifacts used in this pass."
+
+    rewrite_exclusions: "Rewrite Evidence Exclusions"
+        "Name any fields whose old values do not count as rewrite evidence."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        active_mode
+        preserve_basis
+        comparison_basis
+        rewrite_exclusions
+        invalidations
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what is no longer current when structure changed."

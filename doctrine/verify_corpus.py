@@ -176,7 +176,7 @@ def _load_manifest(path: Path) -> tuple[CaseSpec, ...]:
 
     example_dir = path.parent.resolve()
     default_prompt_rel = _require_str(raw, "default_prompt")
-    default_prompt_path = _resolve_example_path(
+    default_prompt_path = _resolve_prompt_path(
         example_dir, default_prompt_rel, label="default_prompt"
     )
 
@@ -229,7 +229,7 @@ def _load_case(
     prompt_path = (
         default_prompt_path
         if prompt_rel == default_prompt_rel
-        else _resolve_example_path(example_dir, prompt_rel, label=f"cases[{case_index}].prompt")
+        else _resolve_prompt_path(example_dir, prompt_rel, label=f"cases[{case_index}].prompt")
     )
 
     approx_ref_rel = raw_case.get("approx_ref")
@@ -302,13 +302,41 @@ def _load_case(
 
 
 def _resolve_example_path(example_dir: Path, rel_path: str, *, label: str) -> Path:
+    return _resolve_manifest_path(
+        example_dir,
+        rel_path,
+        label=label,
+        allowed_root=example_dir,
+        escape_label="the owning example directory",
+    )
+
+
+def _resolve_prompt_path(example_dir: Path, rel_path: str, *, label: str) -> Path:
+    # Shared-root stdlib and public-pack proof lanes still run from example-owned
+    # manifests, but their prompt entrypoints live under the repo-level
+    # `prompts/` root instead of the local example directory.
+    return _resolve_manifest_path(
+        example_dir,
+        rel_path,
+        label=label,
+        allowed_root=REPO_ROOT,
+        escape_label="the repo root",
+    )
+
+
+def _resolve_manifest_path(
+    example_dir: Path,
+    rel_path: str,
+    *,
+    label: str,
+    allowed_root: Path,
+    escape_label: str,
+) -> Path:
     resolved = (example_dir / rel_path).resolve()
     try:
-        resolved.relative_to(example_dir)
+        resolved.relative_to(allowed_root)
     except ValueError as exc:
-        raise ManifestError(
-            f"{label} escapes the owning example directory: {rel_path!r}."
-        ) from exc
+        raise ManifestError(f"{label} escapes {escape_label}: {rel_path!r}.") from exc
 
     if not resolved.is_file():
         raise ManifestError(f"{label} does not exist: {rel_path!r}.")

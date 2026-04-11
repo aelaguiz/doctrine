@@ -1,0 +1,75 @@
+import doctrine.packs_public.code_review.enums
+import doctrine.packs_public.code_review.inputs
+import doctrine.packs_public.code_review.owners
+import doctrine.packs_public.code_review.outputs
+import doctrine.std.coordination.inputs
+import doctrine.std.portable_truth.workflows
+import doctrine.std.role_home.workflows
+
+
+workflow CodeReviewWorkflowCore[doctrine.std.portable_truth.workflows.PortableTruthLawConventions]: "Workflow Core"
+    inherit portable_truth_section_contract
+    inherit truth_surface_boundary
+    inherit override_discipline
+
+    review_boundary: "Review Boundary"
+        "Keep code-review domain nouns local to this pack while the portable-truth shape stays generic."
+
+
+workflow CodeReviewSupport[doctrine.std.role_home.workflows.CoordinationReadbackDiscipline]: "Standards And Support"
+    inherit trust_surface_discipline
+    inherit readback_guardrail
+
+    review_readback_rule: "Review Readback Rule"
+        "Keep scope, validation state, and current artifact identity explicit for the next owner."
+
+
+workflow CodeReviewSkills[doctrine.std.role_home.workflows.SkillFirstSupport]: "Skills And Support"
+    inherit skill_first_support
+    inherit capability_boundary
+
+    review_skill_rule: "Review Skill Rule"
+        "Use named reusable review and validation helpers when specialist judgment is needed."
+
+
+skill ValidationRunner: "validation-runner"
+    purpose: "Run the repo's validation follow-up for the current code-review artifact."
+
+    use_when: "Use When"
+        "Use this when the current review mode depends on a fresh validation record."
+
+
+workflow CodeReviewContract: "Code Review Contract"
+    scope_alignment: "Scope Alignment"
+        "Confirm the selected artifact stays inside the approved review boundary."
+
+    validation_truth: "Validation Truth"
+        "Confirm the selected artifact does not rely on stale validation state."
+
+
+review CodeReview: "Code Review"
+    subject: doctrine.packs_public.code_review.inputs.PatchSummary
+    contract: CodeReviewContract
+    comment_output: doctrine.packs_public.code_review.outputs.CodeReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    evidence_checks: "Evidence Checks"
+        preserve exact doctrine.packs_public.code_review.inputs.ApprovedBoundary.exact_scope_boundary
+        reject contract.scope_alignment when doctrine.std.coordination.inputs.CurrentHandoff.scope_leak
+        reject contract.validation_truth when doctrine.std.coordination.inputs.CurrentHandoff.validation_stale
+        accept "The shared code review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact doctrine.packs_public.code_review.inputs.PatchSummary via doctrine.packs_public.code_review.outputs.CodeReviewComment.current_artifact
+        route "Accepted patch review returns to ReviewLead." -> doctrine.packs_public.code_review.owners.ReviewLead
+
+    on_reject: "If Rejected"
+        current artifact doctrine.packs_public.code_review.inputs.PatchSummary via doctrine.packs_public.code_review.outputs.CodeReviewComment.current_artifact
+        route "Rejected patch review returns to CodeAuthor." -> doctrine.packs_public.code_review.owners.CodeAuthor

@@ -1,0 +1,26 @@
+import doctrine.packs_public.code_review.inputs
+import doctrine.packs_public.code_review.outputs
+import doctrine.packs_public.code_review.workflows
+import doctrine.std.coordination.inputs
+import doctrine.std.role_home.workflows
+
+
+agent CodeReviewPackDemo:
+    role: "Review the current code-review artifact and keep the next owner explicit."
+    read_first: doctrine.std.role_home.workflows.CurrentTruthDiscipline
+    workflow_core: doctrine.packs_public.code_review.workflows.CodeReviewWorkflowCore
+    how_to_take_a_turn: doctrine.std.role_home.workflows.HowToTakeATurn
+    standards_and_support: doctrine.packs_public.code_review.workflows.CodeReviewSupport
+    skills_and_support: doctrine.packs_public.code_review.workflows.CodeReviewSkills
+    review: doctrine.packs_public.code_review.workflows.CodeReview
+    inputs: "Inputs"
+        doctrine.std.coordination.inputs.CurrentHandoff
+        doctrine.packs_public.code_review.inputs.PatchSummary
+        doctrine.packs_public.code_review.inputs.ValidationRecord
+        doctrine.packs_public.code_review.inputs.ApprovedBoundary
+    outputs: "Outputs"
+        doctrine.packs_public.code_review.outputs.CodeReviewComment
+    skills: "Skills"
+        can_run: "Can Run"
+            skill validation_runner: doctrine.packs_public.code_review.workflows.ValidationRunner
+                requirement: Advisory

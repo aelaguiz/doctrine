@@ -1,0 +1,41 @@
+# Shared role-home defaults stay generic and prose-heavy on purpose.
+
+workflow CurrentTruthDiscipline: "Read First"
+    current_truth_first: "Current Truth First"
+        "Read the declared current artifact and its declared carrier first."
+        "Treat the declared current artifact as authoritative for this turn."
+
+    comparison_boundary: "Comparison Boundary"
+        "Treat comparison-only artifacts as support, not as current truth."
+        "Do not treat nearby files, stale siblings, or unaccepted artifacts as current merely because they exist."
+
+
+workflow HowToTakeATurn: "How To Take A Turn"
+    turn_sequence: "Turn Sequence"
+        "Read the current artifact and the declared carrier first."
+        "Do the required analysis before you emit durable output."
+        "Close the turn by making currentness, stop lines, and routes explicit."
+
+    guardrails: "Guardrails"
+        "Do not compress uncertain state into vague summary language."
+        "Fail loud when the next owner or current artifact is not honest yet."
+
+
+workflow CoordinationReadbackDiscipline: "Standards And Support"
+    trust_surface_discipline: "Trust Surface Discipline"
+        "Make the trust surface explicit for the next owner."
+        "Keep downstream trust on declared output fields and trust_surface."
+
+    readback_guardrail: "Readback Guardrail"
+        "Do not compress currentness, comparison-only basis, rewrite exclusions, or invalidations into vague summary language."
+        "Do not let standalone readback promise more than the declared trust surface carries."
+
+
+workflow SkillFirstSupport: "Skills And Support"
+    skill_first_support: "Skill First Support"
+        "Prefer explicit reusable skills for specialist judgment."
+        "Do not smuggle deep quality bars into one-off workflow prose when a named skill can carry them."
+
+    capability_boundary: "Capability Boundary"
+        "Keep domain-local capability bars on named skills or pack-local support surfaces."
+        "Do not turn temporary support prose into hidden runtime machinery."

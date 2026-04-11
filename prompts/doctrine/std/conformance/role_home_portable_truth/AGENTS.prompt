@@ -1,0 +1,180 @@
+import doctrine.std.coordination.enums
+import doctrine.std.coordination.inputs
+import doctrine.std.coordination.outputs
+import doctrine.std.coordination.workflows
+import doctrine.std.portable_truth.workflows
+import doctrine.std.role_home.workflows
+
+
+enum MetadataPolishMode: "Metadata Polish Mode"
+    manifest_title: "manifest-title"
+    section_summary: "section-summary"
+
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input ApprovedStructure: "Approved Structure"
+    source: File
+        path: "unit_root/_authoring/APPROVED_STRUCTURE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input AcceptedPeerSet: "Accepted Peer Set"
+    source: File
+        path: "catalog/accepted_peers.json"
+    shape: JsonObject
+    requirement: Advisory
+    "Use accepted peer examples only for comparison when metadata polish needs them."
+
+
+output PrimaryManifest: "Primary Manifest"
+    target: File
+        path: "unit_root/_authoring/primary_manifest.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionMetadata: "Section Metadata"
+    target: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+output SectionReview: "Section Review"
+    target: File
+        path: "unit_root/_authoring/SECTION_REVIEW.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+workflow RewriteAwareReadFirst[doctrine.std.role_home.workflows.CurrentTruthDiscipline]: "Read First"
+    inherit current_truth_first
+    inherit comparison_boundary
+
+    lane_entry: "Lane Entry"
+        "Read the portable-truth handoff before you touch rewrite-aware metadata work."
+
+
+workflow PortableTruthWorkflowCore[doctrine.std.portable_truth.workflows.PortableTruthLawConventions]: "Workflow Core"
+    inherit portable_truth_section_contract
+    inherit truth_surface_boundary
+    inherit override_discipline
+
+    local_portable_truth_proof: "Local Portable Truth Proof"
+        "Keep activation, mode_selection, currentness, scope, evidence, invalidation, and stop_lines explicit in the rewrite-aware metadata workflow below."
+
+
+workflow RewriteAwareSupport[doctrine.std.role_home.workflows.CoordinationReadbackDiscipline]: "Standards And Support"
+    inherit trust_surface_discipline
+    inherit readback_guardrail
+
+    local_readback_rule: "Local Readback Rule"
+        "Keep preserve basis, rewrite exclusions, and invalidations explicit for the next owner."
+
+
+workflow RewriteAwareSkills[doctrine.std.role_home.workflows.SkillFirstSupport]: "Skills And Support"
+    inherit skill_first_support
+    inherit capability_boundary
+
+    local_skill_note: "Local Skill Note"
+        "Keep rewrite-aware metadata checks on named reusable skills when specialist judgment is needed."
+
+
+workflow BasePortableTruthPass: "Metadata Polish"
+    "Keep one current artifact, one preserve basis, and one honest next owner explicit."
+
+    law:
+        activation:
+            active when doctrine.std.coordination.inputs.CurrentHandoff.owes_metadata_polish
+
+        mode_selection:
+            mode pass_mode = doctrine.std.coordination.inputs.CurrentHandoff.active_mode as MetadataPolishMode
+
+        currentness:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    current artifact PrimaryManifest via doctrine.std.coordination.outputs.PortableTruthHandoffFull.current_artifact
+                    must doctrine.std.coordination.inputs.CurrentHandoff.preserve_basis == ApprovedPlan
+
+                MetadataPolishMode.section_summary:
+                    current artifact SectionMetadata via doctrine.std.coordination.outputs.PortableTruthHandoffFull.current_artifact
+                    must doctrine.std.coordination.inputs.CurrentHandoff.preserve_basis == ApprovedStructure
+
+        scope:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    preserve decisions ApprovedPlan
+
+                MetadataPolishMode.section_summary:
+                    preserve decisions ApprovedStructure
+
+        evidence:
+            support_only AcceptedPeerSet for comparison
+
+        stop_lines:
+            when unclear(pass_mode, doctrine.std.coordination.inputs.CurrentHandoff.preserve_basis):
+                stop "Mode or preserve basis is unclear."
+                route "Route the same issue back to RoutingOwner." -> doctrine.std.coordination.workflows.RoutingOwner
+
+
+workflow RewriteAwarePortableTruthPass[BasePortableTruthPass]: "Metadata Polish"
+    law:
+        inherit activation
+        inherit mode_selection
+        inherit scope
+
+        override currentness:
+            match pass_mode:
+                MetadataPolishMode.manifest_title:
+                    current artifact PrimaryManifest via doctrine.std.coordination.outputs.PortableTruthHandoffFull.current_artifact
+                    must doctrine.std.coordination.inputs.CurrentHandoff.preserve_basis == ApprovedPlan
+
+                MetadataPolishMode.section_summary:
+                    current artifact SectionMetadata via doctrine.std.coordination.outputs.PortableTruthHandoffFull.current_artifact
+                    must doctrine.std.coordination.inputs.CurrentHandoff.preserve_basis == ApprovedStructure
+
+        override evidence:
+            support_only AcceptedPeerSet for comparison
+            ignore SectionMetadata.description for rewrite_evidence when doctrine.std.coordination.inputs.CurrentHandoff.rewrite_regime == doctrine.std.coordination.enums.RewriteRegime.rewrite
+
+        invalidation:
+            when doctrine.std.coordination.inputs.CurrentHandoff.structure_changed:
+                invalidate SectionReview via doctrine.std.coordination.outputs.PortableTruthHandoffFull.invalidations
+                stop "Structure changed; downstream review is no longer current."
+                route "Route the same issue back to RoutingOwner." -> doctrine.std.coordination.workflows.RoutingOwner
+
+        inherit stop_lines
+
+
+abstract agent StdlibPortableTruthRole:
+    read_first: doctrine.std.role_home.workflows.CurrentTruthDiscipline
+    workflow_core: doctrine.std.portable_truth.workflows.PortableTruthLawConventions
+    how_to_take_a_turn: doctrine.std.role_home.workflows.HowToTakeATurn
+    standards_and_support: doctrine.std.role_home.workflows.CoordinationReadbackDiscipline
+    skills_and_support: doctrine.std.role_home.workflows.SkillFirstSupport
+
+
+agent StdlibPortableTruthRoleHomeDemo[StdlibPortableTruthRole]:
+    role: "Import stdlib role-home defaults and prove named portable-truth law overrides."
+    override read_first: RewriteAwareReadFirst
+    override workflow_core: PortableTruthWorkflowCore
+    inherit how_to_take_a_turn
+    workflow: RewriteAwarePortableTruthPass
+    inputs: "Inputs"
+        doctrine.std.coordination.inputs.CurrentHandoff
+        ApprovedPlan
+        ApprovedStructure
+        AcceptedPeerSet
+    outputs: "Outputs"
+        PrimaryManifest
+        SectionMetadata
+        doctrine.std.coordination.outputs.PortableTruthHandoffFull
+    override standards_and_support: RewriteAwareSupport
+    override skills_and_support: RewriteAwareSkills

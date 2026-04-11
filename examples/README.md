@@ -14,7 +14,9 @@ Read the examples in numeric order. The sequence is intentional.
 For the shipped workflow-law model behind examples `30` through `42`, start
 with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped
 review model behind examples `43` through `49`, start with
-[../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
+[../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md). For the shared-root stdlib
+and public-pack follow-through behind examples `50` through `52`, start with
+[../docs/STDLIB_LAYERS.md](../docs/STDLIB_LAYERS.md).
 
 ## Reading Order
 
@@ -35,6 +37,8 @@ review model behind examples `43` through `49`, start with
 - `43` through `49`: first-class `review` support for verdict coupling,
   blocked review, exact contract gates, portable current truth, carried mode
   and trigger state, review inheritance, and the full review capstone
+- `50` through `52`: shared-root stdlib coordination, shared role-home and
+  portable-truth conventions, and one public code-review proving pack
 
 ## Workflow Law Ladder
 
@@ -112,6 +116,15 @@ The review ladder begins right after the workflow-law capstones:
 That boundary is still honest. Doctrine validates structured interpolations and
 output structure here; it still does not parse arbitrary free prose.
 
+## Shared-root stdlib and public-pack proofs
+
+- `50_stdlib_coordination`: shared-root `doctrine.std.coordination.*` imports
+  proved through manifest prompt overrides
+- `51_stdlib_role_home_and_portable_truth`: shared-root role-home and
+  portable-truth conventions plus explicit named-law patching
+- `52_public_code_review_pack`: one public proving pack under
+  `prompts/doctrine/packs_public/code_review/**` plus emit-target build proof
+
 ## Important Rules
 
 - A checked-in ref file is not proof on its own. The manifest is the proof
@@ -142,4 +155,5 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_docs --target public_code_review_pack
 ```

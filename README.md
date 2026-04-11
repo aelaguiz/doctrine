@@ -59,7 +59,9 @@ and anonymized drift examples.
 - ordinary authored slots such as routing and stop rules
 - named `skills`, `inputs`, and `outputs` block reuse and inheritance
 - imports, dotted refs, agent mentions, and authored-prose interpolation
-- manifest-backed verification for examples `01` through `49`
+- shared-root stdlib and public-pack authored modules under
+  `prompts/doctrine/std/**` and `prompts/doctrine/packs_public/**`
+- manifest-backed verification for examples `01` through `52`
 
 The shipped implementation lives in `doctrine/`. The examples are design
 pressure plus proof, not the source of truth by themselves.
@@ -139,6 +141,7 @@ basename follows the entrypoint stem.
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_docs --target public_code_review_pack
 ```
 
 ## VS Code Extension

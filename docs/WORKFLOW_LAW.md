@@ -15,6 +15,8 @@ Use it when a turn needs any of these behaviors:
 
 If you are learning the feature family, start here and then read the active
 example ladder in [`examples/30_*` through `examples/42_*`](../examples/README.md).
+The shared-root stdlib follow-through for this family now lives under
+`prompts/doctrine/std/**` and is proved by `examples/50_*` and `examples/51_*`.
 
 ## Mental Model
 
@@ -59,6 +61,11 @@ Guarded output sections are still output-owned authored fields:
 - their guards may read declared inputs and enum members
 - they may not read workflow-local bindings, emitted output fields, or
   undeclared runtime names
+
+That boundary matters for the shared stdlib too: reusable coordination outputs
+may carry generic trust fields, but ordinary shared output modules may not key
+their guards off imported input conventions unless the compiler widens that
+surface explicitly.
 
 The shipped statement families are grouped by job:
 

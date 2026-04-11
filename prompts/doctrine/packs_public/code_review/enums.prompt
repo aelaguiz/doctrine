@@ -1,0 +1,3 @@
+enum CodeReviewMode: "Code Review Mode"
+    patch_review: "patch-review"
+    validation_follow_up: "validation-follow-up"

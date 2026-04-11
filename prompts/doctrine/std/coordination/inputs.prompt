@@ -1,0 +1,7 @@
+# This is a recommended host-coordination contract, not a hidden runtime packet.
+
+input CurrentHandoff: "Current Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided coordination facts for currentness, active mode, preserve basis, rewrite regime, invalidations, and stop-or-route conditions."

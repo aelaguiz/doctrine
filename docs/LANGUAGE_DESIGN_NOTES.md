@@ -9,7 +9,9 @@ currently expect the parser to behave.
 
 The shipped surface now runs through the workflow-law family in
 `examples/30_*` through `examples/42_*` and the first-class review ladder in
-`examples/43_*` through `examples/49_*`, not only through `29_enums`.
+`examples/43_*` through `examples/49_*`, plus the shared-root stdlib and
+public-pack proof lane in `examples/50_*` through `examples/52_*`, not only
+through `29_enums`.
 
 ## Design Approach
 
@@ -318,6 +320,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - `43_review_basic_verdict_and_route_coupling` through
   `49_review_capstone` are active shipped review proof, not draft proposal
   examples.
+- `50_stdlib_coordination` through `52_public_code_review_pack` are active
+  shipped proof that shared-root stdlib and public-pack modules compile,
+  render, and emit through the existing corpus harness without widening Layer 1.
 - workflow law is now the shipped way to express route-only turns, portable
   currentness, trust carriers, scope/preservation law, basis roles,
   invalidation, and named law reuse.
@@ -382,11 +387,12 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 49
+## Shipped Through 52
 
-The shipped language subset now covers examples `01` through `49`, including
-workflow law on existing `workflow` and `output` owners plus first-class
-`review` on its own shipped declaration family.
+The shipped language subset now covers examples `01` through `52`, including
+workflow law on existing `workflow` and `output` owners, first-class `review`
+on its own shipped declaration family, and shared-root stdlib/public-pack
+proof under the repo-level `prompts/` root.
 
 Current shipped declaration kinds:
 - `import`

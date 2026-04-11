@@ -1,0 +1,5 @@
+# Keep shared coordination enums small and visibly cross-domain.
+
+enum RewriteRegime: "Rewrite Regime"
+    carry_forward: "carry-forward"
+    rewrite: "rewrite"

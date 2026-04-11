@@ -1,0 +1,24 @@
+import .inputs
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue safely."
+    workflow: "Instructions"
+        "Take back the same issue when route-only work cannot continue safely."
+
+
+workflow RouteOnlyTurns: "Route-Only Triage"
+    "Handle turns that can only stop and reroute."
+
+    law:
+        active when inputs.CurrentHandoff.missing or inputs.CurrentHandoff.unclear
+
+        when inputs.CurrentHandoff.missing:
+            current none
+            stop "Current handoff is missing."
+            route "Route the same issue back to RoutingOwner." -> doctrine.std.coordination.workflows.RoutingOwner
+
+        when inputs.CurrentHandoff.unclear:
+            current none
+            stop "Current handoff is unclear."
+            route "Route the same issue back to RoutingOwner." -> doctrine.std.coordination.workflows.RoutingOwner

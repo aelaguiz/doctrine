@@ -1,0 +1,10 @@
+agent ReviewLead:
+    role: "Own accepted code review follow-up."
+    workflow: "Follow Up"
+        "Take the accepted code-review artifact to the next planning step."
+
+
+agent CodeAuthor:
+    role: "Repair rejected code-review defects."
+    workflow: "Revise"
+        "Revise the same code-review artifact when review requests changes."

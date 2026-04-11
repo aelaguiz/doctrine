@@ -1,0 +1,22 @@
+# This module documents the portable-truth workflow contract and the explicit
+# override model that reusable workflows should follow.
+
+workflow PortableTruthLawConventions: "Workflow Core"
+    portable_truth_section_contract: "Portable Truth Section Contract"
+        "Use `activation` to decide whether the branch is live."
+        "Use `mode_selection` to bind one typed mode when a mode matters."
+        "Use `currentness` to bind one current artifact or `current none`."
+        "Use `scope` to keep ownership and preservation explicit."
+        "Use `evidence` to keep comparison-only help and rewrite evidence honest."
+        "Use `invalidation` to revoke downstream portability when required."
+        "Use `stop_lines` to keep stop and reroute behavior explicit."
+
+    truth_surface_boundary: "Truth Surface Boundary"
+        "Keep currentness in workflow law."
+        "Keep downstream trust on declared output fields and trust_surface."
+        "Do not shift portable truth back into vague handoff narrative once the output contract exists."
+
+    override_discipline: "Override Discipline"
+        "When a portable-truth workflow is meant to be inherited, keep named law subsections stable."
+        "Have every child account for each inherited law subsection exactly once."
+        "Prefer explicit patching over hidden merge or silent fallback."

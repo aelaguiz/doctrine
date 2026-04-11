@@ -1,0 +1,87 @@
+Import shared coordination inputs, enums, and output carriers from the repo-level stdlib root.
+
+## Shared Root Portable Truth
+
+Import shared coordination carriers from the repo-level stdlib root.
+
+This pass runs only when portable truth is owed now.
+
+Current artifact: Section Metadata.
+
+Accepted Peer Set is comparison-only support.
+
+When doctrine.std.coordination.inputs.CurrentHandoff.rewrite_regime is rewrite, ignore `SectionMetadata.description` for rewrite evidence.
+
+If structure changed:
+- Section Review is no longer current.
+
+## Inputs
+
+### Current Handoff
+
+- Source: Prompt
+- Shape: Json Object
+- Requirement: Required
+
+Use the host-provided coordination facts for currentness, active mode, preserve basis, rewrite regime, invalidations, and stop-or-route conditions.
+
+### Accepted Peer Set
+
+- Source: File
+- Path: `catalog/accepted_peers.json`
+- Shape: Json Object
+- Requirement: Advisory
+
+Use accepted peer examples only for comparison when coordination needs them.
+
+## Outputs
+
+### Section Metadata
+
+- Target: File
+- Path: `unit_root/_authoring/section_metadata.json`
+- Shape: Json Object
+- Requirement: Required
+
+### Coordination Handoff
+
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
+
+#### Current Artifact
+
+Name the one artifact that is current now.
+
+#### Active Mode
+
+Name the one active mode for this pass.
+
+#### Preserve Basis
+
+Name the upstream declaration whose decisions remain authoritative.
+
+#### Comparison Basis
+
+Name any comparison-only artifacts used in this pass.
+
+#### Rewrite Evidence Exclusions
+
+Name any fields whose old values do not count as rewrite evidence.
+
+#### Invalidations
+
+Name any artifacts that are no longer current.
+
+#### Trust Surface
+
+- Current Artifact
+- Active Mode
+- Preserve Basis
+- Comparison Basis
+- Rewrite Evidence Exclusions
+- Invalidations
+
+#### Standalone Read
+
+A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what is no longer current when structure changed.

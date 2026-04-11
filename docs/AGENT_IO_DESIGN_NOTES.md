@@ -1,6 +1,6 @@
 # Agent I/O Design Notes
 
-This document now records the shipped I/O model through examples `08` to `49`.
+This document now records the shipped I/O model through examples `08` to `52`.
 
 The goal is to describe the turn-level contract the language already supports,
 and the explicit non-goals that keep it from drifting into packet or
@@ -53,6 +53,9 @@ Current shipped boundaries:
   a declared `input source`
 - input `shape` stays a symbolic label in this subset
 - `output` is the one produced-contract primitive
+- shared-root reusable coordination carriers now live under
+  `prompts/doctrine/std/coordination/**`, while one public proving pack now
+  lives under `prompts/doctrine/packs_public/code_review/**`
 - `output` supports either `target + shape` or `files`
 - `output` may also declare typed authored child fields plus reserved
   `trust_surface`
@@ -67,6 +70,10 @@ Current shipped boundaries:
   `standalone_read`, and `notes` stay authored prose
 - `trust_surface` is the explicit portable-truth contract for an output
 - `trust_surface` items may be unconditional or guarded with `when`
+- ordinary shared output modules cannot currently key output guards or
+  `trust_surface` guards off imported input conventions; keep that conditional
+  logic in workflow law or in review-bound output surfaces until the compiler
+  widens that boundary explicitly
 - guarded output sections render as conditional shells in compiled `AGENTS.md`
   but stay ordinary output fields rather than portable-truth carriers
 - guarded output sections may read declared inputs and enum members
@@ -155,6 +162,8 @@ This keeps the shipped I/O model coherent through the review ladder:
 - examples `43` through `49` prove how first-class `review` reuses that same
   `output` boundary for review comments, current truth, carried review state,
   and exact output agreement
+- examples `50` through `52` prove that the same I/O boundary is reusable from
+  one shared repo-level `prompts/` root for stdlib modules and a public pack
 
 ## Current Framing
 

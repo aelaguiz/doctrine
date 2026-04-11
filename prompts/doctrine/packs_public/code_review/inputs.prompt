@@ -1,0 +1,21 @@
+input PatchSummary: "Patch Summary"
+    source: File
+        path: "unit_root/PATCH_SUMMARY.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current patch summary when the code review mode is patch review."
+
+
+input ValidationRecord: "Validation Record"
+    source: File
+        path: "unit_root/VALIDATION_RECORD.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current validation record when the code review mode is validation follow up."
+
+
+input ApprovedBoundary: "Approved Boundary"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the approved boundary facts that define the exact scope the code review must preserve."

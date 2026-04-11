@@ -45,7 +45,7 @@ turn into a shadow standard library.
 Treat `docs/STDLIB_LAYERS.md` as the directional contract, but ground every
 implementation choice in shipped Doctrine truth: `doctrine/`,
 `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, and examples
-`30` through `43`. Use `example_agents/` only as design pressure for
+`30` through `49`. Use `example_agents/` only as design pressure for
 separation boundaries, especially around coordination and handoffs, role-home
 defaults, scoped instruction layers, skills and capabilities packaging, and
 domain-local output contracts. Build Layer 2 only from patterns already earned
@@ -94,6 +94,25 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-10
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
 # 0) Holistic North Star
 
 ## 0.1 The claim (falsifiable)
@@ -125,7 +144,7 @@ Layer 3 as the practical reusable foundation.
   - `docs/LANGUAGE_DESIGN_NOTES.md`
   - `docs/AGENT_IO_DESIGN_NOTES.md`
   - `docs/WORKFLOW_LAW.md`
-  - examples `30` through `43`
+  - examples `30` through `49`
 - Determine the initial Layer 2 v1 module families and their owner paths.
 - Determine the initial Layer 3 proving-ground shape, with code-review-style
   public packs as the leading candidate rather than a guaranteed outcome.
@@ -215,7 +234,7 @@ Behavior-preservation evidence for convergence work:
 
 - Doctrine is example-first and should only standardize patterns that the
   shipped corpus or core docs already earn.
-- Current shipped semantics run through examples `30` through `43`, not a
+- Current shipped semantics run through examples `30` through `49`, not a
   speculative next language tier.
 - Layer 2 must be authored in existing Doctrine source, not simulated by
   prose-only conventions that hide missing core support.
@@ -257,8 +276,8 @@ Behavior-preservation evidence for convergence work:
   and a concrete Layer 2 v1 shape.
 - `doctrine/` owns the shipped parser, compiler, renderer, diagnostics, and
   verification behavior.
-- Examples `30` through `43` prove the current workflow-law, portable-truth,
-  route-only, and early review surfaces.
+- Examples `30` through `49` prove the current workflow-law, portable-truth,
+  route-only, and full review surfaces.
 - `example_agents/` contains curated real-world instruction artifacts that
   pressure Doctrine toward clearer layering, handoffs, skills, and scoped
   behavior, but it is explicitly non-authoritative.
@@ -364,9 +383,9 @@ Behavior-preservation evidence for convergence work:
     the "output-heavy before workflow-heavy" direction by proving keyed,
     output-owned guarded sections without inventing a second semantic plane.
   - `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
-    proves that review pressure has started, but only at the smallest
-    verdict-and-route-coupled surface. It is not yet enough evidence for a
-    generic Layer 2 review module.
+    through `examples/49_review_capstone/prompts/AGENTS.prompt` prove review
+    as a shipped Doctrine surface, but that evidence is still too
+    review-shaped to justify a generic Layer 2 review module.
   - `example_agents/README.md` and `example_agents/harvested/index.md` are the
     authority for how the example-agent bank should be used: harvest-and-
     distill material only, never shipped Doctrine truth.
@@ -419,8 +438,8 @@ Behavior-preservation evidence for convergence work:
     Layer 2.
   - Review pressure is split across `docs/REVIEW_SPEC.md`,
     `docs/FULL_REVIEW_SPEC_IMPLEMENTATION_PLAN_2026-04-10.md`, and
-    `examples/43_review_basic_verdict_and_route_coupling/`. The pressure is
-    real, but it is still too early to bless a generic Layer 2 review module.
+    examples `43` through `49`. The pressure is real, but it is still too
+    early to bless a generic Layer 2 review module.
   - `example_agents/**` and the Lessons-related prose-bucket docs are valuable
     pressure surfaces, but they are also the easiest place for public Doctrine
     layering to accidentally absorb product-local vocabulary.
@@ -585,11 +604,11 @@ prompts/
         AGENTS.prompt
 
 examples/
-  44_stdlib_coordination/
+  50_stdlib_coordination/
     cases.toml
-  45_stdlib_role_home_and_portable_truth/
+  51_stdlib_role_home_and_portable_truth/
     cases.toml
-  46_public_code_review_pack/
+  52_public_code_review_pack/
     cases.toml
 ```
 
@@ -616,7 +635,7 @@ authored-source root, not a second import system:
   manifests may point at shared-root entrypoints through `cases[].prompt`.
 - Emit proof for stdlib and public packs uses ordinary `pyproject.toml`
   entrypoints and `doctrine.emit_docs`.
-- Existing numbered examples `01` through `43` remain the semantic substrate
+- Existing numbered examples `01` through `49` remain the semantic substrate
   and do not need mass migration to shared-library imports in the first pass.
 
 This deliberately avoids an initial import-resolution widening. If later work
@@ -705,12 +724,12 @@ Not UI work. The future user-facing surfaces are:
 | Layer 2 coordination surface | `prompts/doctrine/std/coordination/**` | enums, inputs, outputs, workflows | Repeated today across examples `32`, `35`, `36`, `37`, and `38`, plus docs direction. | Extract the earned generic coordination families into named modules. | Remove repeated generic coordination doctrine from examples and future packs. | `RewriteRegime`, `CurrentHandoff`, coordination output families, route-only generic workflow surfaces. | new stdlib manifests; possibly targeted existing example checks for preservation. |
 | Layer 2 role-home surface | `prompts/doctrine/std/role_home/workflows.prompt` | generic role-home defaults | Repeated today across examples `12`, `13`, and Lessons-pressure docs. | Extract only the generic role-home defaults into Layer 2. | Avoid pack-local repetition while keeping private nouns out. | `HowToTakeATurn`, `CurrentTruthDiscipline`, `CoordinationReadbackDiscipline`, `SkillFirstSupport`. | new role-home import manifests. |
 | Layer 2 portable-truth conventions | `prompts/doctrine/std/portable_truth/workflows.prompt`, `docs/STDLIB_LAYERS.md`, live stdlib docs under `docs/` | named `law` subsection conventions and composition guidance | Proven today by examples `37` and `38` but only documented in design prose. | Codify the named subsection conventions and reference workflow patterns without inventing new syntax. | Public packs and private packs need stable override points. | Named portable-truth workflow conventions under `doctrine.std.portable_truth.*`. | new manifests; docs review. |
-| Layer 3 public proving pack | `prompts/doctrine/packs_public/code_review/**` (tentative) | first public pack | Not implemented. Review pressure exists in docs and example `43` only. | Implement one public pack that proves Layer 2 sufficiency while keeping review-specific nouns local. | Prevent Layer 2 from guessing abstractions that should be earned by a public domain. | `doctrine.packs_public.code_review.*` import namespace. | new public-pack manifests and emit targets. |
-| Existing numbered corpus | `examples/12_*`, `examples/13_*`, `examples/21_*`, `examples/23_*`, `examples/24_*`, `examples/29_*`, `examples/32_*`, `examples/35_*`, `examples/36_*`, `examples/37_*`, `examples/38_*`, `examples/39_*`, `examples/43_*` | semantic substrate examples | These examples prove the patterns Layer 2 wants, but they are local prompt roots. | Preserve them as proof anchors; do not mass-migrate them to shared-root imports in the first stdlib pass. | Avoid turning the library bootstrap into a broad corpus rewrite. | Existing examples stay semantic substrate; new examples prove shared-root stdlib imports separately. | targeted preservation manifests; `make verify-examples`. |
-| New conformance examples | `examples/44_*`, `examples/45_*`, `examples/46_*` (names to finalize) | shared-root manifests | Absent. | Add manifest-backed examples whose `prompt` entries point at shared-root stdlib and public-pack entrypoints. | Real stdlib needs proof that imports, composition, and emitted outputs work from the canonical root. | Shared-root example manifests with `cases[].prompt` overrides. | targeted `verify_corpus`; `make verify-examples`. |
+| Layer 3 public proving pack | `prompts/doctrine/packs_public/code_review/**` (tentative) | first public pack | Not implemented. Review pressure exists in docs and examples `43` through `49`, but that pressure is still domain-shaped. | Implement one public pack that proves Layer 2 sufficiency while keeping review-specific nouns local. | Prevent Layer 2 from guessing abstractions that should be earned by a public domain. | `doctrine.packs_public.code_review.*` import namespace. | new public-pack manifests and emit targets. |
+| Existing numbered corpus | `examples/12_*`, `examples/13_*`, `examples/21_*`, `examples/23_*`, `examples/24_*`, `examples/29_*`, `examples/32_*`, `examples/35_*`, `examples/36_*`, `examples/37_*`, `examples/38_*`, `examples/39_*`, `examples/43_*` through `examples/49_*` | semantic substrate examples | These examples prove the patterns Layer 2 wants, but they are local prompt roots. | Preserve them as proof anchors; do not mass-migrate them to shared-root imports in the first stdlib pass. | Avoid turning the library bootstrap into a broad corpus rewrite. | Existing examples stay semantic substrate; new examples prove shared-root stdlib imports separately. | targeted preservation manifests; `make verify-examples`. |
+| New conformance examples | `examples/50_*`, `examples/51_*`, `examples/52_*` | shared-root manifests | Absent. | Add manifest-backed examples whose `prompt` entries point at shared-root stdlib and public-pack entrypoints. | Real stdlib needs proof that imports, composition, and emitted outputs work from the canonical root. | Shared-root example manifests with `cases[].prompt` overrides. | targeted `verify_corpus`; `make verify-examples`. |
 | Build proof | `pyproject.toml`, `doctrine/emit_docs.py` | emit targets | Emit targets currently cover only example entrypoints under local example roots. | Add shared-root stdlib and public-pack emit targets as needed. | Prove compiled docs for shipped reusable modules without new tooling. | Additional `tool.doctrine.emit.targets` for shared-root entrypoints. | targeted `emit_docs` runs; maybe `build_contract` manifests. |
 | Live docs | `docs/STDLIB_LAYERS.md`, `docs/README.md`, `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/WORKFLOW_LAW.md`, `examples/README.md` | layer and portable-truth explanations | Current docs explain the direction but not the final shared-root implementation path. | Rewrite touched live docs so they describe the shipped Layer 2 and Layer 3 boundary honestly. | Avoid a docs-only pseudo-stdlib or contradictory owner-path story. | One layer story across docs, prompts, and proof examples. | docs review; `make verify-examples` when example docs change. |
-| Review-facing docs | `docs/REVIEW_SPEC.md`, `docs/FULL_REVIEW_SPEC_IMPLEMENTATION_PLAN_2026-04-10.md`, `examples/43_review_basic_verdict_and_route_coupling/**` | review pressure surfaces | Real pressure exists, but the review family is still mid-proof. | Update only if the chosen public pack or extraction rules make them stale; otherwise keep them as pressure, not stdlib truth. | Prevent accidental early promotion of generic review semantics into Layer 2. | Review stays Layer 3 pressure in v1. | defer or targeted doc updates. |
+| Review-facing docs | `docs/REVIEW_SPEC.md`, `docs/FULL_REVIEW_SPEC_IMPLEMENTATION_PLAN_2026-04-10.md`, `examples/43_review_basic_verdict_and_route_coupling/**` through `examples/49_review_capstone/**` | review pressure surfaces | Real pressure exists, but the review family remains domain-shaped even after the shipped proof ladder. | Update only if the chosen public pack or extraction rules make them stale; otherwise keep them as pressure, not stdlib truth. | Prevent accidental early promotion of generic review semantics into Layer 2. | Review stays Layer 3 pressure in v1. | defer or targeted doc updates. |
 | Example-agent bank | `example_agents/**` | notes, candidate tests, raw excerpts | Curated pressure only, non-authoritative. | Use as design-reference support only; do not turn it into a runtime or proof dependency. | Keep public Doctrine generic and example-first. | No new runtime contract. | no runtime tests. |
 
 ## 6.2 Migration notes
@@ -761,7 +780,7 @@ Not UI work. The future user-facing surfaces are:
 | Generic coordination carriers | `examples/32`, `35`, `36`, `37`, `38`; `docs/STDLIB_LAYERS.md` | Extract generic handoff inputs and output families into Layer 2. | Prevents repeated coordination doctrine from staying trapped in examples or public packs. | include |
 | Generic role-home shells | `examples/12`, `13`; Lessons prose-bucket docs | Extract only the generic turn-discipline prose into Layer 2 role-home modules. | Prevents private-pack role-home language from becoming the hidden reusable default. | include |
 | Named `law` subsection conventions | `examples/37`, `38`; `docs/WORKFLOW_LAW.md` | Standardize named subsection keys and override points in Layer 2 conventions. | Prevents each public or private pack from inventing incompatible portable-truth patch structure. | include |
-| Shared review module in Layer 2 | `examples/43`, `docs/REVIEW_SPEC.md`, review plans | Promote review semantics into Layer 2 now. | The evidence is still too young and domain-shaped. | defer |
+| Shared review module in Layer 2 | `examples/43` through `49`, `docs/REVIEW_SPEC.md`, review plans | Promote review semantics into Layer 2 now. | The evidence is still domain-shaped and should stay in Layer 3 for now. | defer |
 | Mass migration of existing numbered examples to shared-root imports | `examples/**` | Rewrite the current corpus to import Layer 2 directly. | Would widen scope from stdlib implementation into a corpus-structure rewrite. | defer |
 | Import-resolution widening | `doctrine/compiler.py::_resolve_prompt_root()` | Add multi-root or workspace-wide import discovery immediately. | Not needed if shared-root entrypoints plus manifest overrides prove the stdlib cleanly. | defer |
 | Private-pack implementation inside this repo | external or private pack trees, Lessons docs | Implement Layer 4 as a real pack in this public repo. | Violates the private-pack boundary and pulls private nouns into public truth. | exclude |
@@ -784,6 +803,8 @@ Warn-first note:
   widening the authored-source or import path.
 
 ## Phase 1 — Shared-root Layer 2 foundation
+
+Status: COMPLETE
 
 * Goal:
   Create the canonical shared authored-source root for stdlib work and ship the
@@ -818,6 +839,8 @@ Warn-first note:
     widening
 
 ## Phase 2 — Role-home and portable-truth stdlib extraction
+
+Status: COMPLETE
 
 * Goal:
   Ship the generic Layer 2 role-home and portable-truth conventions that the
@@ -854,6 +877,8 @@ Warn-first note:
 
 ## Phase 3 — Public Layer 3 proving pack
 
+Status: COMPLETE
+
 * Goal:
   Implement one public proving pack that demonstrates Layer 2 sufficiency
   without turning review or another domain into the hidden reusable framework.
@@ -883,6 +908,8 @@ Warn-first note:
     or by forcing unearned review abstractions into the core library layer
 
 ## Phase 4 — Docs, proof, and build alignment
+
+Status: COMPLETE
 
 * Goal:
   Make the live docs, manifests, and emitted-build proof tell the same layer
@@ -917,6 +944,8 @@ Warn-first note:
     stale paths alive
 
 ## Phase 5 — Final verification and cleanup
+
+Status: COMPLETE
 
 * Goal:
   Prove the full stdlib-layer implementation end to end and remove stale
@@ -1084,3 +1113,116 @@ semantics in the first pass.
 - Add shared-root conformance examples that prove stdlib imports directly.
 - Revisit import-resolution widening only if later adoption work cannot be
   served by shared-root entrypoints and manifest `prompt` overrides.
+
+## 2026-04-10 - Let manifest prompt overrides resolve from the repo root, while keeping refs example-local
+
+### Context
+
+Shared-root stdlib proof depends on manifest `default_prompt` and
+case-specific `prompt` fields being able to point at
+`prompts/doctrine/std/**` and `prompts/doctrine/packs_public/**`. The shipped
+verifier previously resolved those prompt paths only relative to the owning
+example directory, which made the shared-root layout compile honestly through
+the compiler but fail to prove honestly through `verify_corpus`.
+
+### Options
+
+- Keep verifier prompt paths example-local and vendor shared-root entrypoints
+  back into every example.
+- Widen verifier prompt resolution for manifest-owned prompt entrypoints while
+  leaving `approx_ref` and checked refs rooted in the owning example.
+- Change compiler import semantics instead of fixing the verifier path
+  mismatch.
+
+### Decision
+
+Resolve manifest `default_prompt` and case-level `prompt` entries under
+`REPO_ROOT` in `doctrine/verify_corpus.py`, while keeping `approx_ref` and
+other reference-material paths constrained to the owning example directory.
+
+### Consequences
+
+- Shared-root stdlib and public-pack examples can now prove the real shipped
+  authored-source layout without vendored copies.
+- Ref locality stays honest: checked render/build refs still live with the
+  owning example.
+- No compiler import widening or alternate prompt loader was required.
+
+### Follow-ups
+
+- Keep any future shared-root proof surfaces on manifest prompt overrides
+  unless there is a real reason to widen the import model itself.
+
+## 2026-04-10 - Keep generic coordination trust carriers unconditional in Layer 2 outputs
+
+### Context
+
+The first shared coordination outputs were intended to encode generic portable-
+truth carrier families once, in Layer 2. During implementation, the shipped
+guard rules from examples `39` and `49` mattered: ordinary output guards
+cannot read imported input conventions and cannot read emitted output fields.
+
+### Options
+
+- Add new output-guard semantics so shared Layer 2 outputs can branch on input
+  conventions or emitted fields.
+- Duplicate coordination output families across each example or pack so every
+  local caller can re-author its own guards.
+- Keep the generic trust-carrier outputs explicit and unconditional, and let
+  workflows plus `law` decide when a carrier is current or relevant.
+
+### Decision
+
+Keep the shared coordination carrier outputs unconditional in
+`prompts/doctrine/std/coordination/outputs.prompt`, and express turn-specific
+currentness through workflow/law structure rather than through output guards.
+
+### Consequences
+
+- Layer 2 stays output-heavy, explicit, and inside already-earned semantics.
+- Shared coordination outputs remain reusable across route-only, portable-
+  truth, and review-shaped packs without hidden guard coupling.
+- The implementation does not invent a second semantic plane just to make the
+  stdlib feel more abstract.
+
+### Follow-ups
+
+- If a future design wants more compact output branching, earn that in Layer 1
+  first instead of hiding it in stdlib conventions.
+
+## 2026-04-10 - Use examples `50` through `52` for stdlib proof lanes
+
+### Context
+
+The implementation plan originally sketched new stdlib proof examples in the
+mid-40s. The shipped corpus already uses examples `43` through `49` for the
+review ladder, so reusing those numbers would blur review truth with stdlib
+conformance proof.
+
+### Options
+
+- Renumber the review ladder.
+- Reuse the mid-40s and let stdlib proof examples collide conceptually with
+  the review family.
+- Start the shared-root stdlib and public-pack proof lanes at `50`.
+
+### Decision
+
+Use:
+
+- `examples/50_stdlib_coordination`
+- `examples/51_stdlib_role_home_and_portable_truth`
+- `examples/52_public_code_review_pack`
+
+### Consequences
+
+- The shipped review ladder remains intact and easy to read.
+- Shared-root stdlib proof sits clearly after the current Layer 1 example
+  ladder instead of overlapping it.
+- Docs, manifests, and emitted-build proof now reference one coherent set of
+  example numbers.
+
+### Follow-ups
+
+- Keep future stdlib-layer proof examples above the current shipped ladder
+  unless the example index is intentionally reorganized.

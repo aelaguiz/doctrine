@@ -1,0 +1,35 @@
+import doctrine.packs_public.code_review.owners
+
+
+output CodeReviewComment: "Code Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the selected code-review artifact or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the exact artifact identity this code review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the code review analysis that led to the verdict, including the scope and validation facts that mattered."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the exact contents the next owner must read first."
+
+    current_artifact: "Current Artifact" when present(current_artifact):
+        "Name the artifact that remains current after this code review outcome."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{doctrine.packs_public.code_review.owners.ReviewLead}} when the review is accepted and {{doctrine.packs_public.code_review.owners.CodeAuthor}} when the review requests changes."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    trust_surface:
+        current_artifact when present(current_artifact)
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand what code-review artifact was judged, what remains current now when something remains current, who owns next, and which failures still matter."
