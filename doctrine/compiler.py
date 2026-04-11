@@ -11171,7 +11171,13 @@ class CompilationContext:
             if stmt.when_expr is not None:
                 text = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, {_lowercase_initial(text)}"
         elif isinstance(stmt, model.LawRouteStmt):
-            text = stmt.label if stmt.label.endswith(".") else f"{stmt.label}."
+            label = self._interpolate_authored_prose_string(
+                stmt.label,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="route labels",
+            )
+            text = label if label.endswith(".") else f"{label}."
             if stmt.when_expr is not None:
                 text = (
                     f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, "

@@ -1,0 +1,4 @@
+# Shared concrete owners for workflow-law route-label interpolation proof.
+
+agent ImportedRoutingOwner:
+    role: "Take back the same issue when an imported route-only reroute fires."

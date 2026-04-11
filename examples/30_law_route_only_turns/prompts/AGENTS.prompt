@@ -1,6 +1,7 @@
 # This file is the narrow route-only setup example.
 # It introduces `current none`, stop lines, and explicit reroute before the
 # richer route-only handoff examples later in the ladder.
+import shared.owners
 
 # Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
@@ -45,7 +46,7 @@ workflow RouteOnlyTriage: "Route-Only Triage"
             # This line ends the turn with an explicit reason.
             stop "Current handoff is missing."
             # This line sends the same work to a named owner with an explicit message.
-            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+            route "Route the same issue back to {{RoutingOwner:name}}." -> RoutingOwner
 
         # This block applies only when the condition is true inside the surrounding law context.
         when CurrentHandoff.unclear:
@@ -54,13 +55,32 @@ workflow RouteOnlyTriage: "Route-Only Triage"
             # This line ends the turn with an explicit reason.
             stop "Current handoff is unclear."
             # This line sends the same work to a named owner with an explicit message.
-            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+            route "Route the same issue back to {{RoutingOwner:name}}." -> RoutingOwner
 
 
 # Declare a concrete agent that wires the narrow setup example together.
 agent RouteOnlyTriageDemo:
     role: "Set up route-only law before the richer handoff examples."
     workflow: RouteOnlyTriage
+    inputs: "Inputs"
+        CurrentHandoff
+    outputs: "Outputs"
+        CoordinationComment
+
+
+workflow ImportedRouteOnlyTriage: "Imported Route-Only Triage"
+    "Prove that workflow-law route labels interpolate imported agent refs too."
+
+    law:
+        active when CurrentHandoff.missing
+        current none
+        stop "Current handoff is missing."
+        route "Route the same issue back to {{shared.owners.ImportedRoutingOwner:name}}." -> shared.owners.ImportedRoutingOwner
+
+
+agent ImportedRouteOnlyTriageDemo:
+    role: "Keep imported workflow-law route labels readable."
+    workflow: ImportedRouteOnlyTriage
     inputs: "Inputs"
         CurrentHandoff
     outputs: "Outputs"
