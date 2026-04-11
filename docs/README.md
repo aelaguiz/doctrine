@@ -37,11 +37,31 @@ parallelism.
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-## Second-Wave Specs
+## Phased Plan Set
 
-These documents record the design rationale behind the shipped second-wave
-language work. They remain useful architecture references, but evergreen truth
-still lives in `doctrine/` and the manifest-backed examples.
+These documents organize the second-wave language work into implementation
+order. Each phase doc is self-contained, restates the prior-phase baseline it
+needs, and groups the work that should be built together.
+
+- [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md):
+  phase 1 typed-markdown foundation, first-class `document`, the readable block
+  family, multiline strings, `structure:`, and the base renderer conversion
+- [02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md):
+  phase 2 `analysis`, `schema`, owner-aware `schema:` rules, output contracts,
+  diagnostics, and proof ordering
+- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md):
+  phase 3 advanced readable-markdown surfaces such as `properties`, explicit
+  guard shells, `render_profile`, typed row/item schemas, and later block
+  extensions
+- [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md):
+  phase 4 schema-backed review integration, review families, `route_only`,
+  `grounding`, and control-plane convergence
+
+## Drafting Artifacts
+
+These documents remain in the repo as drafting artifacts. They were the raw
+design inputs that were turned into the phased plan set above. Keep them for
+provenance and drafting history, not as the primary implementation-order view.
 
 - [ANALYSIS_AND_SCHEMA_SPEC.md](ANALYSIS_AND_SCHEMA_SPEC.md): first-class
   `analysis`, first-class `schema`, grammar, model, diagnostics, and example
@@ -58,9 +78,10 @@ still lives in `doctrine/` and the manifest-backed examples.
 - [SECOND_WAVE_LANGUAGE_NOTES.md](SECOND_WAVE_LANGUAGE_NOTES.md): broader
   design space, deferred ideas, and explicit non-first-wave language surfaces
 
-This split spec set supersedes `docs/big_pile_of_shit.md` as the durable
-reference for the feature wave. That monolith remains useful as historical
-design context, but it is intentionally not part of the evergreen docs path.
+The phased plan set supersedes the split drafting view as the implementation
+sequence. The legacy standalone specs and `docs/big_pile_of_shit.md` remain
+useful historical design context, but they are intentionally not the phased
+plan source of truth.
 
 ## Repo Truth
 

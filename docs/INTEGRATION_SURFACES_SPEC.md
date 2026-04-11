@@ -1,3 +1,14 @@
+---
+status: drafting_artifact
+artifact_role: pre-phase design input
+superseded_by_phase_docs: true
+---
+
+> Drafting artifact note (2026-04-11): This standalone integration doc remains
+> in the repo for provenance, but the implementation-order planning set now
+> lives in the numbered phase docs under `docs/01_` through `docs/04_`. Treat
+> this file as a pre-phase design input rather than the canonical phased plan.
+
 # Integration Surfaces For New Language Features
 
 This document defined, and now records, how the shipped second-wave language

@@ -44,7 +44,7 @@ review_decl: "review" CNAME inheritance? ":" string _NL _INDENT review_body _DED
 skills_decl: "skills" CNAME inheritance? ":" string _NL _INDENT skills_body _DEDENT
 inputs_decl: "inputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 input_source_decl: "input" "source" CNAME ":" string _NL _INDENT record_body _DEDENT
-input_decl: "input" CNAME ":" string _NL _INDENT record_body _DEDENT
+input_decl: "input" CNAME ":" string _NL _INDENT input_body _DEDENT
 outputs_decl: "outputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
@@ -124,7 +124,7 @@ review_body: review_item+
 subject_stmt: "subject" ":" artifact_subject_expr _NL?
 subject_map_stmt: "subject_map" ":" _NL _INDENT subject_map_entry+ _DEDENT
 subject_map_entry: enum_member_ref ":" artifact_ref _NL?
-contract_stmt: "contract" ":" contract_ref _NL?
+contract_stmt: "contract" ":" review_contract_ref _NL?
 comment_output_stmt: "comment_output" ":" output_ref _NL?
 fields_stmt: "fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
 semantic_field_binding: semantic_field_name ":" field_path _NL?
@@ -133,7 +133,7 @@ artifact_subject_expr: artifact_ref
                      | "{" artifact_ref ("," artifact_ref)* "}"
 artifact_ref: name_ref
 enum_member_ref: name_ref
-contract_ref: name_ref
+review_contract_ref: name_ref
 output_ref: name_ref
 
 semantic_field_name: "verdict"            -> review_semantic_field_verdict
@@ -349,9 +349,22 @@ io_section: CNAME ":" string _NL _INDENT record_body _DEDENT
 io_inherit: "inherit" CNAME _NL?
 io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
+input_body: input_body_line+
+input_body_line: input_structure_stmt
+               | record_item
+input_structure_stmt: "structure" ":" name_ref _NL?
+
 output_body: output_body_line+
 output_body_line: output_record_item
                 | trust_surface_block
+                | output_schema_stmt
+                | output_structure_stmt
+
+// `schema:` is owner-sensitive. In `output shape`, it stays the legacy json
+// schema config key. In `output`, it is a Doctrine schema attachment with its
+// own typed compiler path.
+output_schema_stmt: "schema" ":" name_ref _NL?
+output_structure_stmt: "structure" ":" name_ref _NL?
 
 ?output_record_item: record_text
                    | guarded_output_section

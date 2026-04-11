@@ -7,6 +7,8 @@
 #
 # Simple outputs can stay small.
 # Richer outputs can add more contract detail directly on `output`.
+# `output structure:` is now a typed document attachment, so free-form output
+# formatting guidance uses a different prose key in this example.
 # Paths like `section_root/...` and `lesson_root/...` stay plain path strings
 # in this example. The model assumes the surrounding turn guidance explains how
 # to interpret those prefixes; they are not promoted to separate root
@@ -55,7 +57,7 @@ output IssueSummaryResponse: "Issue Summary Response"
     purpose: "Purpose"
         "Give a short human-readable summary back in the turn."
 
-    structure: "Expected Structure"
+    format_notes: "Expected Structure"
         "State the issue in one or two sentences."
         "End with the main blocker or next step if one matters."
 

@@ -606,8 +606,17 @@ class ReviewSubjectMapConfig:
 
 
 @dataclass(slots=True, frozen=True)
+class ReviewContractRef:
+    ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class ReviewContractConfig:
-    contract_ref: NameRef
+    contract: ReviewContractRef
+
+    @property
+    def contract_ref(self) -> NameRef:
+        return self.contract.ref
 
 
 @dataclass(slots=True, frozen=True)
@@ -892,11 +901,20 @@ class Agent:
 
 
 @dataclass(slots=True, frozen=True)
+class InputStructureConfig:
+    structure_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class InputDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
-    structure_ref: NameRef | None = None
+    structure: InputStructureConfig | None = None
+
+    @property
+    def structure_ref(self) -> NameRef | None:
+        return None if self.structure is None else self.structure.structure_ref
 
 
 @dataclass(slots=True, frozen=True)
@@ -914,13 +932,31 @@ class InputSourceDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class OutputSchemaConfig:
+    schema_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class OutputStructureConfig:
+    structure_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class OutputDecl:
     name: str
     title: str
     items: tuple[OutputRecordItem, ...]
-    schema_ref: NameRef | None = None
-    structure_ref: NameRef | None = None
+    schema: OutputSchemaConfig | None = None
+    structure: OutputStructureConfig | None = None
     trust_surface: tuple[TrustSurfaceItem, ...] = ()
+
+    @property
+    def schema_ref(self) -> NameRef | None:
+        return None if self.schema is None else self.schema.schema_ref
+
+    @property
+    def structure_ref(self) -> NameRef | None:
+        return None if self.structure is None else self.structure.structure_ref
 
 
 @dataclass(slots=True, frozen=True)

@@ -33,10 +33,16 @@ class IoBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class InputBodyParts:
+    items: tuple[model.RecordItem, ...]
+    structure: model.InputStructureConfig | None
+
+
+@dataclass(slots=True, frozen=True)
 class OutputBodyParts:
     items: tuple[model.OutputRecordItem, ...]
-    schema_ref: model.NameRef | None
-    structure_ref: model.NameRef | None
+    schema: model.OutputSchemaConfig | None
+    structure: model.OutputStructureConfig | None
     trust_surface: tuple[model.TrustSurfaceItem, ...]
 
 
@@ -386,17 +392,36 @@ class ToAst(Transformer):
         )
 
     @v_args(inline=True)
-    def input_decl(self, name, title, items):
-        structure_ref, remaining_items = self._extract_structure_attachment(
-            tuple(items),
-            owner_label=f"input {name}",
-        )
+    def input_decl(self, name, title, body):
         return model.InputDecl(
             name=name,
             title=title,
-            items=remaining_items,
-            structure_ref=structure_ref,
+            items=body.items,
+            structure=body.structure,
         )
+
+    @v_args(inline=True)
+    def input_body_line(self, value):
+        return value
+
+    def input_body(self, items):
+        record_items: list[model.RecordItem] = []
+        structure: model.InputStructureConfig | None = None
+        for item in items:
+            if isinstance(item, model.InputStructureConfig):
+                if structure is not None:
+                    raise TransformParseFailure(
+                        "Input declarations may define `structure:` only once.",
+                        hints=("Keep exactly one `structure:` attachment per input declaration.",),
+                    )
+                structure = item
+                continue
+            record_items.append(item)
+        return InputBodyParts(items=tuple(record_items), structure=structure)
+
+    @v_args(inline=True)
+    def input_structure_stmt(self, ref):
+        return model.InputStructureConfig(structure_ref=ref)
 
     @v_args(inline=True)
     def input_source_decl(self, name, title, items):
@@ -408,8 +433,8 @@ class ToAst(Transformer):
             name=name,
             title=title,
             items=body.items,
-            schema_ref=body.schema_ref,
-            structure_ref=body.structure_ref,
+            schema=body.schema,
+            structure=body.structure,
             trust_surface=body.trust_surface,
         )
 
@@ -419,8 +444,8 @@ class ToAst(Transformer):
 
     def output_body(self, items):
         record_items: list[model.OutputRecordItem] = []
-        schema_ref: model.NameRef | None = None
-        structure_ref: model.NameRef | None = None
+        schema: model.OutputSchemaConfig | None = None
+        structure: model.OutputStructureConfig | None = None
         trust_surface: tuple[model.TrustSurfaceItem, ...] = ()
         for item in items:
             if isinstance(item, tuple) and item and isinstance(item[0], model.TrustSurfaceItem):
@@ -431,32 +456,24 @@ class ToAst(Transformer):
                 )
                 trust_surface = tuple(item)
                 continue
-            if isinstance(item, model.RecordScalar) and item.key == "schema":
-                if schema_ref is not None:
+            if isinstance(item, model.OutputSchemaConfig):
+                if schema is not None:
                     raise TransformParseFailure(
                         "Output declarations may define `schema:` only once.",
                         hints=("Keep exactly one `schema:` attachment per output declaration.",),
                     )
-                schema_ref = self._extract_name_ref_attachment(
-                    item,
-                    owner_label="output attachment",
-                    key="schema",
-                )
+                schema = item
                 continue
-            if isinstance(item, model.RecordScalar) and item.key == "structure":
-                if structure_ref is not None:
+            if isinstance(item, model.OutputStructureConfig):
+                if structure is not None:
                     raise TransformParseFailure(
                         "Output declarations may define `structure:` only once.",
                         hints=("Keep exactly one `structure:` attachment per output declaration.",),
                     )
-                structure_ref = self._extract_name_ref_attachment(
-                    item,
-                    owner_label="output attachment",
-                    key="structure",
-                )
+                structure = item
                 continue
             record_items.append(item)
-        if schema_ref is not None and any(
+        if schema is not None and any(
             isinstance(item, model.RecordSection) and item.key == "must_include"
             for item in record_items
         ):
@@ -469,10 +486,18 @@ class ToAst(Transformer):
             )
         return OutputBodyParts(
             items=tuple(record_items),
-            schema_ref=schema_ref,
-            structure_ref=structure_ref,
+            schema=schema,
+            structure=structure,
             trust_surface=trust_surface,
         )
+
+    @v_args(inline=True)
+    def output_schema_stmt(self, ref):
+        return model.OutputSchemaConfig(schema_ref=ref)
+
+    @v_args(inline=True)
+    def output_structure_stmt(self, ref):
+        return model.OutputStructureConfig(structure_ref=ref)
 
     def output_record_body(self, items):
         return tuple(items)
@@ -819,8 +844,9 @@ class ToAst(Transformer):
         return ref
 
     @v_args(inline=True)
-    def contract_ref(self, ref):
-        return ref
+    @v_args(inline=True)
+    def review_contract_ref(self, ref):
+        return model.ReviewContractRef(ref=ref)
 
     @v_args(inline=True)
     def output_ref(self, ref):
@@ -842,7 +868,7 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def contract_stmt(self, contract_ref):
-        return model.ReviewContractConfig(contract_ref=contract_ref)
+        return model.ReviewContractConfig(contract=contract_ref)
 
     @v_args(inline=True)
     def comment_output_stmt(self, output_ref):
@@ -1499,49 +1525,6 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def record_ref_item(self, ref, body=None):
         return model.RecordRef(ref=ref, body=None if body is None else tuple(body))
-
-    def _extract_structure_attachment(
-        self,
-        items: tuple[model.RecordItem, ...],
-        *,
-        owner_label: str,
-    ) -> tuple[model.NameRef | None, tuple[model.RecordItem, ...]]:
-        structure_ref: model.NameRef | None = None
-        remaining_items: list[model.RecordItem] = []
-        for item in items:
-            if isinstance(item, model.RecordScalar) and item.key == "structure":
-                if structure_ref is not None:
-                    raise TransformParseFailure(
-                        f"{owner_label} may define `structure:` only once.",
-                        hints=("Keep exactly one `structure:` attachment per declaration.",),
-                    )
-                structure_ref = self._extract_name_ref_attachment(
-                    item,
-                    owner_label=owner_label,
-                    key="structure",
-                )
-                continue
-            remaining_items.append(item)
-        return structure_ref, tuple(remaining_items)
-
-    def _extract_name_ref_attachment(
-        self,
-        item: model.RecordScalar,
-        *,
-        owner_label: str,
-        key: str,
-    ) -> model.NameRef:
-        if item.body is not None:
-            raise TransformParseFailure(
-                f"{owner_label} `{key}:` attachments may not define an inline body.",
-                hints=(f"Keep `{key}:` as a single declaration ref.",),
-            )
-        if not isinstance(item.value, model.NameRef):
-            raise TransformParseFailure(
-                f"{owner_label} `{key}:` attachments must reference a named declaration.",
-                hints=(f"Use `{key}: SomeDeclaration`.",),
-            )
-        return item.value
 
     def skills_body(self, items):
         preamble: list[model.ProseLine] = []

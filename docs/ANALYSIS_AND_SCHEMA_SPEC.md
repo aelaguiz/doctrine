@@ -1,5 +1,10 @@
 # Analysis And Schema Language Surfaces
 
+> Status note (2026-04-11): We believe the `analysis` and `schema` surfaces
+> described in this document are fully implemented in the current repo. If this
+> spec and the shipped implementation ever drift, trust `doctrine/` and the
+> manifest-backed examples.
+
 This document defines the two new core semantic declaration families that the
 language expansion is centered on:
 

@@ -1,3 +1,14 @@
+---
+status: drafting_artifact
+artifact_role: pre-phase design input
+superseded_by_phase_docs: true
+---
+
+> Drafting artifact note (2026-04-11): This standalone notes file remains in
+> the repo for provenance, but the implementation-order planning set now lives
+> in the numbered phase docs under `docs/01_` through `docs/04_`. Treat this
+> file as a pre-phase design input rather than the canonical phased plan.
+
 # Second-Wave And Deferred Language Ideas
 
 This document captures the broader language-enhancement ideas that were explored
