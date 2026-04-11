@@ -21,7 +21,7 @@ const INHERITED_AGENT_RE = new RegExp(
   `^\\s*(?:abstract\\s+)?agent\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*$`,
 );
 const INHERITED_BLOCK_RE = new RegExp(
-  `^\\s*(review|workflow|skills|inputs|outputs)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
+  `^\\s*(review|analysis|schema|document|workflow|skills|inputs|outputs)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
 );
 const PATCH_FIELD_RE = new RegExp(
   `^\\s*(inputs|outputs)\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*${STRING_PATTERN}\\s*$`,
@@ -162,6 +162,9 @@ const PURPOSE_OR_REASON_RE = new RegExp(
 const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "skills", "review"]);
 const READABLE_DECLARATION_KINDS = Object.freeze([
   "agent",
+  "analysis",
+  "schema_decl",
+  "document",
   "input",
   "input_source",
   "output",
@@ -175,6 +178,9 @@ const READABLE_DECLARATION_KINDS = Object.freeze([
 const DECLARATION_KIND = Object.freeze({
   AGENT: "agent",
   REVIEW: "review",
+  ANALYSIS: "analysis",
+  SCHEMA_DECL: "schema_decl",
+  DOCUMENT: "document",
   WORKFLOW: "workflow",
   SKILLS_BLOCK: "skills",
   INPUTS_BLOCK: "inputs",
@@ -191,6 +197,9 @@ const DECLARATION_KIND = Object.freeze({
 
 const ADDRESSABLE_DECLARATION_KINDS = Object.freeze([
   DECLARATION_KIND.AGENT,
+  DECLARATION_KIND.ANALYSIS,
+  DECLARATION_KIND.SCHEMA_DECL,
+  DECLARATION_KIND.DOCUMENT,
   DECLARATION_KIND.WORKFLOW,
   DECLARATION_KIND.SKILLS_BLOCK,
   DECLARATION_KIND.INPUT,
@@ -226,6 +235,30 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     kind: DECLARATION_KIND.WORKFLOW,
     regex: new RegExp(
       `^\\s*workflow\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
+    ),
+    nameGroup: 1,
+    parentGroup: 2,
+  },
+  {
+    kind: DECLARATION_KIND.ANALYSIS,
+    regex: new RegExp(
+      `^\\s*analysis\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
+    ),
+    nameGroup: 1,
+    parentGroup: 2,
+  },
+  {
+    kind: DECLARATION_KIND.SCHEMA_DECL,
+    regex: new RegExp(
+      `^\\s*schema\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
+    ),
+    nameGroup: 1,
+    parentGroup: 2,
+  },
+  {
+    kind: DECLARATION_KIND.DOCUMENT,
+    regex: new RegExp(
+      `^\\s*document\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
     ),
     nameGroup: 1,
     parentGroup: 2,
@@ -2807,6 +2840,36 @@ function getDeclarationBodySpec(declaration) {
         lineNumber: declaration.lineNumber,
         owner: "review_decl",
       };
+    case DECLARATION_KIND.ANALYSIS:
+      return {
+        type: "analysis_body",
+        declarationKind: declaration.kind,
+        declarationLine: declaration.lineNumber,
+        endLine: declaration.endLine,
+        indent: 0,
+        lineNumber: declaration.lineNumber,
+        owner: "analysis_decl",
+      };
+    case DECLARATION_KIND.SCHEMA_DECL:
+      return {
+        type: "schema_body",
+        declarationKind: declaration.kind,
+        declarationLine: declaration.lineNumber,
+        endLine: declaration.endLine,
+        indent: 0,
+        lineNumber: declaration.lineNumber,
+        owner: "schema_decl",
+      };
+    case DECLARATION_KIND.DOCUMENT:
+      return {
+        type: "document_body",
+        declarationKind: declaration.kind,
+        declarationLine: declaration.lineNumber,
+        endLine: declaration.endLine,
+        indent: 0,
+        lineNumber: declaration.lineNumber,
+        owner: "document_decl",
+      };
     case DECLARATION_KIND.WORKFLOW:
       return {
         type: "workflow_body",
@@ -4680,6 +4743,12 @@ function inheritanceKindToDeclarationKind(kind) {
   switch (kind) {
     case "review":
       return DECLARATION_KIND.REVIEW;
+    case "analysis":
+      return DECLARATION_KIND.ANALYSIS;
+    case "schema":
+      return DECLARATION_KIND.SCHEMA_DECL;
+    case "document":
+      return DECLARATION_KIND.DOCUMENT;
     case "workflow":
       return DECLARATION_KIND.WORKFLOW;
     case "skills":

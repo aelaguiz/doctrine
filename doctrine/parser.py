@@ -43,6 +43,24 @@ class ReviewBodyParts:
     items: tuple[model.ReviewItem, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class AnalysisBodyParts:
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.AnalysisItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaBodyParts:
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.SchemaItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class DocumentBodyParts:
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.DocumentItem, ...]
+
+
 class ToAst(Transformer):
     def CNAME(self, token):
         return str(token)
@@ -54,6 +72,9 @@ class ToAst(Transformer):
         return str(token)
 
     def ESCAPED_STRING(self, token):
+        return ast.literal_eval(str(token))
+
+    def MULTILINE_STRING(self, token):
         return ast.literal_eval(str(token))
 
     def SIGNED_NUMBER(self, token):
@@ -248,6 +269,63 @@ class ToAst(Transformer):
         )
 
     @v_args(inline=True)
+    def analysis_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        analysis_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            analysis_body = body
+        return model.AnalysisDecl(
+            name=name,
+            body=model.AnalysisBody(
+                title=title,
+                preamble=analysis_body.preamble,
+                items=analysis_body.items,
+            ),
+            parent_ref=parent_ref,
+        )
+
+    @v_args(inline=True)
+    def schema_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        schema_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            schema_body = body
+        return model.SchemaDecl(
+            name=name,
+            body=model.SchemaBody(
+                title=title,
+                preamble=schema_body.preamble,
+                items=schema_body.items,
+            ),
+            parent_ref=parent_ref,
+        )
+
+    @v_args(inline=True)
+    def document_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        document_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            document_body = body
+        return model.DocumentDecl(
+            name=name,
+            body=model.DocumentBody(
+                title=title,
+                preamble=document_body.preamble,
+                items=document_body.items,
+            ),
+            parent_ref=parent_ref,
+        )
+
+    @v_args(inline=True)
     def workflow_decl(self, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
@@ -346,6 +424,180 @@ class ToAst(Transformer):
 
     def output_record_item_body(self, items):
         return tuple(items[0])
+
+    @v_args(inline=True)
+    def analysis_string(self, value):
+        return value
+
+    @v_args(inline=True)
+    def analysis_body_line(self, value):
+        return value
+
+    def analysis_body(self, items):
+        preamble: list[model.ProseLine] = []
+        analysis_items: list[model.AnalysisItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if analysis_items:
+                    raise TransformParseFailure(
+                        "Analysis prose lines must appear before keyed analysis entries.",
+                        hints=(
+                            "Move prose lines to the top of the analysis body or put them inside a titled analysis section.",
+                        ),
+                    )
+                preamble.append(item)
+                continue
+            analysis_items.append(item)
+        return AnalysisBodyParts(preamble=tuple(preamble), items=tuple(analysis_items))
+
+    @v_args(inline=True)
+    def analysis_section(self, key, title, items):
+        return model.AnalysisSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def analysis_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def analysis_override_section(self, key, title_or_items, items=None):
+        title: str | None = None
+        section_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            section_items = items
+        return model.AnalysisOverrideSection(
+            key=key,
+            title=title,
+            items=tuple(section_items),
+        )
+
+    @v_args(inline=True)
+    def schema_string(self, value):
+        return value
+
+    @v_args(inline=True)
+    def schema_body_line(self, value):
+        return value
+
+    def schema_body(self, items):
+        preamble: list[model.ProseLine] = []
+        schema_items: list[model.SchemaItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if schema_items:
+                    raise TransformParseFailure(
+                        "Schema prose lines must appear before keyed schema entries.",
+                        hints=(
+                            "Move prose lines to the top of the schema body or put them inside a schema section.",
+                        ),
+                    )
+                preamble.append(item)
+                continue
+            schema_items.append(item)
+        return SchemaBodyParts(preamble=tuple(preamble), items=tuple(schema_items))
+
+    @v_args(inline=True)
+    def schema_section(self, key, title, items):
+        return model.SchemaSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def schema_gate(self, key, title):
+        return model.SchemaGate(key=key, title=title)
+
+    @v_args(inline=True)
+    def schema_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def schema_override_section(self, key, title_or_items, items=None):
+        title: str | None = None
+        section_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            section_items = items
+        return model.SchemaOverrideSection(
+            key=key,
+            title=title,
+            items=tuple(section_items),
+        )
+
+    @v_args(inline=True)
+    def schema_override_gate(self, key, title):
+        return model.SchemaOverrideGate(key=key, title=title)
+
+    @v_args(inline=True)
+    def document_string(self, value):
+        return value
+
+    @v_args(inline=True)
+    def document_body_line(self, value):
+        return value
+
+    def document_body(self, items):
+        preamble: list[model.ProseLine] = []
+        document_items: list[model.DocumentItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if document_items:
+                    raise TransformParseFailure(
+                        "Document prose lines must appear before keyed document blocks.",
+                        hints=(
+                            "Move prose lines to the top of the document body or put them inside a document block.",
+                        ),
+                    )
+                preamble.append(item)
+                continue
+            document_items.append(item)
+        return DocumentBodyParts(preamble=tuple(preamble), items=tuple(document_items))
+
+    @v_args(inline=True)
+    def document_block(self, kind, key, title, items):
+        return model.DocumentBlock(kind=kind, key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def document_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def document_override_block(self, kind, key, title_or_items, items=None):
+        title: str | None = None
+        block_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            block_items = items
+        return model.DocumentOverrideBlock(
+            kind=kind,
+            key=key,
+            title=title,
+            items=tuple(block_items),
+        )
+
+    def document_block_kind_section(self, _items):
+        return "section"
+
+    def document_block_kind_sequence(self, _items):
+        return "sequence"
+
+    def document_block_kind_bullets(self, _items):
+        return "bullets"
+
+    def document_block_kind_checklist(self, _items):
+        return "checklist"
+
+    def document_block_kind_definitions(self, _items):
+        return "definitions"
+
+    def document_block_kind_table(self, _items):
+        return "table"
+
+    def document_block_kind_callout(self, _items):
+        return "callout"
+
+    def document_block_kind_code(self, _items):
+        return "code"
+
+    def document_block_kind_rule(self, _items):
+        return "rule"
 
     @v_args(inline=True)
     def output_record_keyed_item(self, key, head, body=None):

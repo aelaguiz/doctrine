@@ -235,6 +235,27 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "analysisDeclaration",
+        ['analysis SharedAnalysis[shared.analysis.BaseAnalysis]: "Analysis"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "schemaDeclaration",
+        ['schema SharedSchema[shared.schema.BaseSchema]: "Schema"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "documentDeclaration",
+        ['document SharedDocument[shared.document.BaseDocument]: "Document"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "skillsDeclaration",
         ['skills SharedSkills[shared.skills.BaseSkills]: "Skills"'],
         should_match=True,
@@ -335,6 +356,25 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "readableBlockHeader",
+        [
+            '    section summary: "Summary"',
+            '    sequence steps: "Steps"',
+            '    bullets facts: "Facts"',
+            '    checklist release: "Release"',
+            '    definitions glossary: "Glossary"',
+            '    table matrix: "Matrix"',
+            '    callout warning_box: "Warning"',
+            '    code snippet: "Snippet"',
+            '    rule divider: "Divider"',
+            '    gate requirements: "Requirements"',
+            '    override section summary: "Updated Summary"',
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "reviewSemanticRef",
         ["contract.completeness", "fields.reviewed_artifact"],
         should_match=True,
@@ -392,6 +432,13 @@ def main() -> int:
             '" -> RoutingOwner',
             '" -> RoutingOwner when RouteFacts.next_owner_unknown',
         ],
+        errors=errors,
+    )
+    _require_begin_end_pattern(
+        repository,
+        "multilineStrings",
+        begin_samples=['"""'],
+        end_samples=['"""'],
         errors=errors,
     )
 

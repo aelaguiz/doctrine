@@ -7,7 +7,19 @@
       "include": "#comments"
     },
     {
+      "include": "#multilineStrings"
+    },
+    {
       "include": "#import"
+    },
+    {
+      "include": "#analysisDeclaration"
+    },
+    {
+      "include": "#schemaDeclaration"
+    },
+    {
+      "include": "#documentDeclaration"
     },
     {
       "include": "#workflow"
@@ -124,6 +136,9 @@
       "include": "#override"
     },
     {
+      "include": "#readableBlockHeader"
+    },
+    {
       "include": "#skillsField"
     },
     {
@@ -177,6 +192,26 @@
       "name": "comment.line.number-sign.doctrine",
       "match": "^\\s*#.*$"
     },
+    "multilineStrings": {
+      "begin": "\"\"\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.doctrine"
+        }
+      },
+      "end": "\"\"\"",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.doctrine"
+        }
+      },
+      "contentName": "string.quoted.multi.doctrine",
+      "patterns": [
+        {
+          "include": "#stringInterpolation"
+        }
+      ]
+    },
     "strings": {
       "begin": "\"",
       "beginCaptures": {
@@ -225,6 +260,75 @@
         },
         "4": {
           "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
+    "analysisDeclaration": {
+      "match": "^(\\s*)(analysis)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "schemaDeclaration": {
+      "match": "^(\\s*)(schema)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "documentDeclaration": {
+      "match": "^(\\s*)(document)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -955,6 +1059,23 @@
         },
         "9": {
           "name": "entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
+    "readableBlockHeader": {
+      "match": "^(\\s*)((override)(\\s+))?(section|sequence|bullets|checklist|definitions|table|callout|code|rule|gate)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "3": {
+          "name": "keyword.control.doctrine"
+        },
+        "5": {
+          "name": "keyword.control.doctrine"
+        },
+        "7": {
+          "name": "entity.name.section.doctrine"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
