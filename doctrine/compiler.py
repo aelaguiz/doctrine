@@ -20,6 +20,54 @@ class CompiledSection:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledSequenceBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledBulletsBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledChecklistBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledDefinitionsBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledTableBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledCalloutBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledCodeBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRuleBlock:
+    title: str
+    body: tuple["CompiledBodyItem", ...]
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
@@ -83,10 +131,24 @@ class FlowGraph:
     edges: tuple[FlowEdge, ...]
 
 
-CompiledBodyItem: TypeAlias = model.ProseLine | CompiledSection
-CompiledField: TypeAlias = model.RoleScalar | CompiledSection
+CompiledReadableBlock: TypeAlias = (
+    CompiledSection
+    | CompiledSequenceBlock
+    | CompiledBulletsBlock
+    | CompiledChecklistBlock
+    | CompiledDefinitionsBlock
+    | CompiledTableBlock
+    | CompiledCalloutBlock
+    | CompiledCodeBlock
+    | CompiledRuleBlock
+)
+CompiledBodyItem: TypeAlias = model.ProseLine | CompiledReadableBlock
+CompiledField: TypeAlias = model.RoleScalar | CompiledReadableBlock
 ReadableDecl: TypeAlias = (
     model.Agent
+    | model.AnalysisDecl
+    | model.SchemaDecl
+    | model.DocumentDecl
     | model.InputDecl
     | model.InputSourceDecl
     | model.OutputDecl
@@ -100,6 +162,9 @@ AddressableRootDecl: TypeAlias = (
     ReadableDecl
     | model.WorkflowDecl
     | model.SkillsDecl
+    | model.AnalysisDecl
+    | model.SchemaDecl
+    | model.DocumentDecl
     | "ReviewSemanticFieldsRoot"
     | "ReviewSemanticContractRoot"
 )
@@ -125,6 +190,9 @@ class IndexedUnit:
     module_parts: tuple[str, ...]
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
+    analyses_by_name: dict[str, model.AnalysisDecl]
+    schemas_by_name: dict[str, model.SchemaDecl]
+    documents_by_name: dict[str, model.DocumentDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
     reviews_by_name: dict[str, model.ReviewDecl]
     inputs_blocks_by_name: dict[str, model.InputsDecl]
@@ -511,6 +579,9 @@ _BUILTIN_OUTPUT_TARGETS = {
 
 _READABLE_DECL_REGISTRIES = (
     ("agent declaration", "agents_by_name"),
+    ("analysis declaration", "analyses_by_name"),
+    ("schema declaration", "schemas_by_name"),
+    ("document declaration", "documents_by_name"),
     ("input declaration", "inputs_by_name"),
     ("input source declaration", "input_sources_by_name"),
     ("output declaration", "outputs_by_name"),
@@ -651,6 +722,9 @@ class CompilationSession:
         allow_parallel_imports: bool,
     ) -> IndexedUnit:
         imports: list[model.ImportDecl] = []
+        analyses_by_name: dict[str, model.AnalysisDecl] = {}
+        schemas_by_name: dict[str, model.SchemaDecl] = {}
+        documents_by_name: dict[str, model.DocumentDecl] = {}
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
         reviews_by_name: dict[str, model.ReviewDecl] = {}
         skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
@@ -669,6 +743,18 @@ class CompilationSession:
         for declaration in prompt_file.declarations:
             if isinstance(declaration, model.ImportDecl):
                 imports.append(declaration)
+                continue
+            if isinstance(declaration, model.AnalysisDecl):
+                _register_decl(analyses_by_name, declaration.name, module_parts)
+                analyses_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.SchemaDecl):
+                _register_decl(schemas_by_name, declaration.name, module_parts)
+                schemas_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.DocumentDecl):
+                _register_decl(documents_by_name, declaration.name, module_parts)
+                documents_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.WorkflowDecl):
                 _register_decl(workflows_by_name, declaration.name, module_parts)
@@ -744,6 +830,9 @@ class CompilationSession:
             module_parts=module_parts,
             prompt_file=prompt_file,
             imports=tuple(imports),
+            analyses_by_name=analyses_by_name,
+            schemas_by_name=schemas_by_name,
+            documents_by_name=documents_by_name,
             workflows_by_name=workflows_by_name,
             reviews_by_name=reviews_by_name,
             inputs_blocks_by_name=inputs_blocks_by_name,

@@ -13,6 +13,9 @@ start: prompt_file
 prompt_file: _NL* declaration+ _NL*
 
 ?declaration: import_decl
+            | analysis_decl
+            | schema_decl
+            | document_decl
             | workflow_decl
             | abstract_review_decl
             | review_decl
@@ -32,6 +35,9 @@ prompt_file: _NL* declaration+ _NL*
 
 import_decl: "import" import_path _NL
 
+analysis_decl: "analysis" CNAME inheritance? ":" string _NL _INDENT analysis_body _DEDENT
+schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DEDENT
+document_decl: "document" CNAME inheritance? ":" string _NL _INDENT document_body _DEDENT
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
 abstract_review_decl: "abstract" "review" CNAME inheritance? ":" string _NL _INDENT review_body _DEDENT
 review_decl: "review" CNAME inheritance? ":" string _NL _INDENT review_body _DEDENT
@@ -206,6 +212,49 @@ union_expr: expr ("|" expr)*
 
 outcome_route_stmt: "route" string "->" name_ref outcome_when_clause? _NL
 outcome_when_clause: "when" expr
+
+analysis_body: analysis_body_line+
+analysis_body_line: analysis_string
+                  | analysis_section
+                  | analysis_inherit
+                  | analysis_override_section
+analysis_string: prose_line _NL?
+analysis_section: CNAME ":" string _NL _INDENT block_lines _DEDENT
+analysis_inherit: "inherit" CNAME _NL?
+analysis_override_section: "override" CNAME ":" string? _NL _INDENT block_lines _DEDENT
+
+schema_body: schema_body_line+
+schema_body_line: schema_string
+                | schema_section
+                | schema_gate
+                | schema_inherit
+                | schema_override_section
+                | schema_override_gate
+schema_string: prose_line _NL?
+schema_section: "section" CNAME ":" string _NL _INDENT block_lines _DEDENT
+schema_gate: "gate" CNAME ":" string _NL?
+schema_inherit: "inherit" CNAME _NL?
+schema_override_section: "override" "section" CNAME ":" string? _NL _INDENT block_lines _DEDENT
+schema_override_gate: "override" "gate" CNAME ":" string _NL?
+
+document_body: document_body_line+
+document_body_line: document_string
+                  | document_block
+                  | document_inherit
+                  | document_override_block
+document_string: prose_line _NL?
+document_block: document_block_kind CNAME ":" string _NL _INDENT block_lines _DEDENT
+document_inherit: "inherit" CNAME _NL?
+document_override_block: "override" document_block_kind CNAME ":" string? _NL _INDENT block_lines _DEDENT
+document_block_kind: "section" -> document_block_kind_section
+                   | "sequence" -> document_block_kind_sequence
+                   | "bullets" -> document_block_kind_bullets
+                   | "checklist" -> document_block_kind_checklist
+                   | "definitions" -> document_block_kind_definitions
+                   | "table" -> document_block_kind_table
+                   | "callout" -> document_block_kind_callout
+                   | "code" -> document_block_kind_code
+                   | "rule" -> document_block_kind_rule
 
 workflow_body: workflow_body_line+
 
@@ -434,6 +483,7 @@ emphasized_line: REQUIRED_KEYWORD string -> required_line
                | NOTE_KEYWORD string -> note_line
 
 ?string: ESCAPED_STRING
+       | MULTILINE_STRING
 
 REQUIRED_KEYWORD.2: /required(?=[ \t]*")/
 IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
@@ -441,6 +491,7 @@ WARNING_KEYWORD.2: /warning(?=[ \t]*")/
 NOTE_KEYWORD.2: /note(?=[ \t]*")/
 PATH_REF: /[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
 LAW_WILDCARD: ".*"
+MULTILINE_STRING: /""".*?"""/s
 
 DOTS: /\.+/
 

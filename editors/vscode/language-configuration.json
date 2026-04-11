@@ -38,7 +38,7 @@
       }
     },
     {
-      "beforeText": "^\\s*(?:(?:abstract\\s+agent|agent|abstract\\s+review|review|workflow|skills|input\\s+source|input|output\\s+target|output\\s+shape|output|json\\s+schema|skill)\\b.*:\\s*|(?:role|inputs|outputs|skills)\\s*:\\s*(?:\"(?:\\\\.|[^\"\\\\])*\"\\s*)?|(?:skill\\s+[A-Za-z_][A-Za-z0-9_]*|override\\s+[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s*|skill\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*)$",
+      "beforeText": "^\\s*(?:(?:abstract\\s+agent|agent|abstract\\s+review|review|analysis|schema|document|workflow|skills|input\\s+source|input|output\\s+target|output\\s+shape|output|json\\s+schema|skill|enum)\\b.*:\\s*|(?:role|inputs|outputs|skills)\\s*:\\s*(?:\"(?:\\\\.|[^\"\\\\])*\"\\s*)?|(?:(?:skill|section|sequence|bullets|checklist|definitions|table|callout|code|rule|gate)\\s+[A-Za-z_][A-Za-z0-9_]*|override\\s+(?:(?:section|sequence|bullets|checklist|definitions|table|callout|code|rule|gate)\\s+[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*)|[A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s*|skill\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*)$",
       "action": {
         "indent": "indent"
       }

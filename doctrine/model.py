@@ -427,6 +427,120 @@ class SkillsDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class AnalysisSection:
+    key: str
+    title: str
+    items: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class AnalysisOverrideSection:
+    key: str
+    title: str | None
+    items: tuple[ProseLine, ...]
+
+
+AnalysisItem: TypeAlias = ProseLine | AnalysisSection | InheritItem | AnalysisOverrideSection
+
+
+@dataclass(slots=True, frozen=True)
+class AnalysisBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[AnalysisItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class AnalysisDecl:
+    name: str
+    body: AnalysisBody
+    parent_ref: NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaSection:
+    key: str
+    title: str
+    items: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaGate:
+    key: str
+    title: str
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaOverrideSection:
+    key: str
+    title: str | None
+    items: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaOverrideGate:
+    key: str
+    title: str
+
+
+SchemaItem: TypeAlias = (
+    ProseLine
+    | SchemaSection
+    | SchemaGate
+    | InheritItem
+    | SchemaOverrideSection
+    | SchemaOverrideGate
+)
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[SchemaItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaDecl:
+    name: str
+    body: SchemaBody
+    parent_ref: NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class DocumentBlock:
+    kind: str
+    key: str
+    title: str
+    items: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class DocumentOverrideBlock:
+    kind: str
+    key: str
+    title: str | None
+    items: tuple[ProseLine, ...]
+
+
+DocumentItem: TypeAlias = ProseLine | DocumentBlock | InheritItem | DocumentOverrideBlock
+
+
+@dataclass(slots=True, frozen=True)
+class DocumentBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[DocumentItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class DocumentDecl:
+    name: str
+    body: DocumentBody
+    parent_ref: NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class ReviewSubjectConfig:
     subjects: tuple[NameRef, ...]
 
@@ -801,6 +915,9 @@ class EnumDecl:
 
 Declaration: TypeAlias = (
     ImportDecl
+    | AnalysisDecl
+    | SchemaDecl
+    | DocumentDecl
     | WorkflowDecl
     | ReviewDecl
     | SkillsDecl
