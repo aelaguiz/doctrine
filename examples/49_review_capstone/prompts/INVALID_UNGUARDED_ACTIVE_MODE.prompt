@@ -1,0 +1,120 @@
+# This compile-negative proves that carried review state must stay guarded when
+# some review outcomes omit the carried semantic value.
+
+enum ReviewMode: "Review Mode"
+    draft_rewrite: "draft-rewrite"
+
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+input ReviewState: "Review State"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the review state that says whether the active review mode is explicit."
+
+
+workflow CarryModeReviewContract: "Carry Mode Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required review basis."
+
+
+agent ReviewLead:
+    role: "Own accepted or unresolved review follow-up."
+    workflow: "Follow Up"
+        "Take accepted or unresolved review work to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Repair rejected draft defects."
+    workflow: "Revise"
+        "Revise the current draft when review requests changes."
+
+
+output CarryModeReviewComment: "Carry Mode Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    current_artifact: "Current Artifact" when present(current_artifact):
+        "Name the artifact that remains current after this review outcome."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the review is accepted or unresolved and {{DraftAuthor}} when the draft is rejected."
+
+    active_mode: "Active Mode"
+        "Name the active review mode when one is structurally live."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, whether an active mode is live, who owns next, and which parts of the draft matter now."
+
+    trust_surface:
+        current_artifact when present(current_artifact)
+        active_mode when present(active_mode)
+
+
+review BrokenCarryModeReview: "Broken Carry Mode Review"
+    subject: DraftSpec
+    contract: CarryModeReviewContract
+    comment_output: CarryModeReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+        active_mode: active_mode
+
+    checks: "Checks"
+        reject "The draft still leaves the core decision unclear." when DraftSpec.decision_unclear
+        accept "The shared review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact DraftSpec via CarryModeReviewComment.current_artifact
+        carry active_mode = ReviewMode.draft_rewrite
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        match ReviewState.active_mode:
+            ReviewMode.draft_rewrite:
+                current artifact DraftSpec via CarryModeReviewComment.current_artifact
+                carry active_mode = ReviewMode.draft_rewrite
+                route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+            else:
+                current none
+                route "Unresolved review mode returns to ReviewLead." -> ReviewLead
+
+
+agent InvalidUnguardedActiveModeDemo:
+    role: "Keep carried review mode fields from staying live when no carried mode exists."
+    review: BrokenCarryModeReview
+    inputs: "Inputs"
+        DraftSpec
+        ReviewState
+    outputs: "Outputs"
+        CarryModeReviewComment

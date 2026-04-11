@@ -592,6 +592,7 @@ class ResolvedReviewAgreementBranch:
     verdict: str
     route: model.ReviewOutcomeRouteStmt
     current: model.ReviewCurrentArtifactStmt | model.ReviewCurrentNoneStmt
+    current_carrier_path: tuple[str, ...] | None = None
     current_subject_key: tuple[tuple[str, ...], str] | None = None
     reviewed_subject_key: tuple[tuple[str, ...], str] | None = None
     carries: tuple[model.ReviewCarryStmt, ...] = ()
@@ -812,6 +813,19 @@ class CompilationSession:
                 for agent_name in agent_names
             }
             return tuple(futures[agent_name].result() for agent_name in agent_names)
+
+    def compile_readable_declaration(
+        self, declaration_kind: str, declaration_name: str
+    ) -> CompiledSection:
+        try:
+            return CompilationContext(self).compile_readable_declaration(
+                declaration_kind, declaration_name
+            )
+        except DoctrineError as exc:
+            raise exc.prepend_trace(
+                f"compile {declaration_kind} declaration `{declaration_name}`",
+                location=_path_location(self.root_unit.prompt_file.source_path),
+            ).ensure_location(path=self.root_unit.prompt_file.source_path)
 
     def _compile_agent_field_task(
         self,
@@ -1154,6 +1168,26 @@ class CompilationContext:
         if agent.abstract:
             raise CompileError(f"Abstract agent does not render: {agent_name}")
         return self._compile_agent_decl(agent, unit=self.root_unit)
+
+    def compile_readable_declaration(
+        self, declaration_kind: str, declaration_name: str
+    ) -> CompiledSection:
+        if declaration_kind == "analysis":
+            declaration = self.root_unit.analyses_by_name.get(declaration_name)
+            if declaration is None:
+                raise CompileError(f"Missing target analysis declaration: {declaration_name}")
+            return self._compile_analysis_decl(declaration, unit=self.root_unit)
+        if declaration_kind == "schema":
+            declaration = self.root_unit.schemas_by_name.get(declaration_name)
+            if declaration is None:
+                raise CompileError(f"Missing target schema declaration: {declaration_name}")
+            return self._compile_schema_decl(declaration, unit=self.root_unit)
+        if declaration_kind == "document":
+            declaration = self.root_unit.documents_by_name.get(declaration_name)
+            if declaration is None:
+                raise CompileError(f"Missing target document declaration: {declaration_name}")
+            return self._compile_document_decl(declaration, unit=self.root_unit)
+        raise CompileError(f"Unsupported readable declaration kind: {declaration_kind}")
 
     def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
         root_agents: list[tuple[IndexedUnit, model.Agent]] = []
@@ -4113,7 +4147,19 @@ class CompilationContext:
             blocked_gate_required=any_block_gates,
             gate_branches=reject_gate_branches,
         )
-        _ = accept_branches, reject_branches
+        self._validate_review_current_artifact_alignment(
+            (*accept_branches, *reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+        )
+        self._validate_review_optional_field_alignment(
+            (*accept_branches, *reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            field_bindings=field_bindings,
+            owner_label=owner_label,
+        )
 
         body: list[CompiledBodyItem] = [
             self._render_review_subject_summary(subjects),
@@ -5169,6 +5215,7 @@ class CompilationContext:
         gate_branches: tuple[ResolvedReviewGateBranch, ...],
         *,
         output_decl: model.OutputDecl,
+        field_bindings: dict[str, tuple[str, ...]],
     ) -> tuple[ResolvedReviewGateBranch, ...]:
         observation = self._review_gate_observation(output_decl)
         deduped: dict[tuple[object, ...], ResolvedReviewGateBranch] = {}
@@ -5177,6 +5224,7 @@ class CompilationContext:
                 self._review_gate_branch_validation_key(
                     branch,
                     observation=observation,
+                    preserve_blocked_gate_presence="blocked_gate" in field_bindings,
                 ),
                 branch,
             )
@@ -5187,6 +5235,7 @@ class CompilationContext:
         branch: ResolvedReviewGateBranch,
         *,
         observation: ReviewGateObservation,
+        preserve_blocked_gate_presence: bool = False,
     ) -> tuple[object, ...]:
         contract_failed_gate_ids = tuple(
             gate_id for gate_id in branch.failing_gate_ids if gate_id.startswith("contract.")
@@ -5201,6 +5250,8 @@ class CompilationContext:
         if observation.needs_blocked_gate_value:
             key.append(branch.blocked_gate_id)
         elif observation.needs_blocked_gate_presence:
+            key.append(branch.blocked_gate_id is not None)
+        elif preserve_blocked_gate_presence:
             key.append(branch.blocked_gate_id is not None)
 
         if observation.needs_contract_failed_gates_value:
@@ -5384,6 +5435,7 @@ class CompilationContext:
         gate_branches = self._compress_review_gate_branches_for_validation(
             gate_branches,
             output_decl=comment_output_decl,
+            field_bindings=field_bindings,
         )
         branches = self._collect_review_outcome_leaf_branches(section.items, unit=unit)
         if not branches:
@@ -5473,6 +5525,7 @@ class CompilationContext:
         self._validate_route_target(route.target, unit=unit)
 
         current = branch.currents[0]
+        current_carrier_path: tuple[str, ...] | None = None
         current_subject_key: tuple[tuple[str, ...], str] | None = None
         if isinstance(current, model.ReviewCurrentArtifactStmt):
             synthetic_current = model.CurrentArtifactStmt(
@@ -5485,6 +5538,13 @@ class CompilationContext:
                 agent_contract=agent_contract,
                 owner_label=owner_label,
             )
+            current_carrier_path = self._validate_carrier_path(
+                synthetic_current.carrier,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+                statement_label="current artifact",
+            ).remainder
             if (
                 current_subject_key not in subject_keys
                 and current_subject_key not in agent_contract.outputs
@@ -5511,6 +5571,7 @@ class CompilationContext:
             verdict=gate_branch.verdict,
             route=route,
             current=current,
+            current_carrier_path=current_carrier_path,
             current_subject_key=current_subject_key,
             reviewed_subject_key=self._resolve_reviewed_artifact_subject_key(
                 current_subject_key=current_subject_key,
@@ -5737,16 +5798,21 @@ class CompilationContext:
             owner_label=owner_label,
         )
 
-        if isinstance(branch.current, model.ReviewCurrentArtifactStmt) and not self._review_output_path_is_live(
-            output_decl,
-            path=branch.current.carrier.parts,
-            unit=output_unit,
-            branch=branch,
-        ):
-            raise CompileError(
-                "Review current artifact carrier field is not live for semantic currentness in "
-                f"{owner_label}: {output_decl.name}.{'.'.join(branch.current.carrier.parts)}"
-            )
+        if isinstance(branch.current, model.ReviewCurrentArtifactStmt):
+            if branch.current_carrier_path is None:
+                raise CompileError(
+                    f"Internal compiler error: missing review current carrier path in {owner_label}"
+                )
+            if not self._review_output_path_is_live(
+                output_decl,
+                path=branch.current_carrier_path,
+                unit=output_unit,
+                branch=branch,
+            ):
+                raise CompileError(
+                    "Review current artifact carrier field is not live for semantic currentness in "
+                    f"{owner_label}: {output_decl.name}.{'.'.join(branch.current_carrier_path)}"
+                )
 
         for carry in branch.carries:
             bound_path = field_bindings[carry.field_name]
@@ -5778,7 +5844,7 @@ class CompilationContext:
                     "Review conditional output field is not aligned with resolved review semantics "
                     f"in {owner_label}: failing_gates -> {output_decl.name}.{'.'.join(failing_gates_path)}"
                 )
-            if branch.blocked_gate_required:
+            if branch.blocked_gate_id is not None:
                 blocked_gate_path = field_bindings["blocked_gate"]
                 if not self._review_output_path_has_matching_failure_guard(
                     output_decl,
@@ -5800,6 +5866,77 @@ class CompilationContext:
                 "Review conditional output field is not aligned with resolved review semantics "
                 f"in {owner_label}: failing_gates -> {output_decl.name}.{'.'.join(failing_gates_path)}"
             )
+
+    def _validate_review_current_artifact_alignment(
+        self,
+        branches: tuple[ResolvedReviewAgreementBranch, ...],
+        *,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        carrier_paths = tuple(
+            dict.fromkeys(
+                branch.current_carrier_path
+                for branch in branches
+                if (
+                    isinstance(branch.current, model.ReviewCurrentArtifactStmt)
+                    and branch.current_carrier_path is not None
+                )
+            )
+        )
+        if not carrier_paths:
+            return
+
+        for branch in branches:
+            if not isinstance(branch.current, model.ReviewCurrentNoneStmt):
+                continue
+            for carrier_path in carrier_paths:
+                if not self._review_output_path_is_live(
+                    output_decl,
+                    path=carrier_path,
+                    unit=output_unit,
+                    branch=branch,
+                ):
+                    continue
+                raise CompileError(
+                    "Review current artifact carrier field stays live without semantic currentness in "
+                    f"{owner_label}.{branch.section_key}: {output_decl.name}.{'.'.join(carrier_path)}"
+                )
+
+    def _validate_review_optional_field_alignment(
+        self,
+        branches: tuple[ResolvedReviewAgreementBranch, ...],
+        *,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        field_bindings: dict[str, tuple[str, ...]],
+        owner_label: str,
+    ) -> None:
+        for field_name in _REVIEW_OPTIONAL_FIELD_NAMES:
+            bound_path = field_bindings.get(field_name)
+            if bound_path is None:
+                continue
+            for branch in branches:
+                field_present = (
+                    branch.blocked_gate_id is not None
+                    if field_name == "blocked_gate"
+                    else any(carry.field_name == field_name for carry in branch.carries)
+                )
+                if field_present:
+                    continue
+                if not self._review_output_path_is_live(
+                    output_decl,
+                    path=bound_path,
+                    unit=output_unit,
+                    branch=branch,
+                ):
+                    continue
+                raise CompileError(
+                    "Review conditional output field is not aligned with resolved review semantics "
+                    f"in {owner_label}.{branch.section_key}: {field_name} -> "
+                    f"{output_decl.name}.{'.'.join(bound_path)}"
+                )
 
     def _review_output_path_is_live(
         self,
@@ -6040,7 +6177,7 @@ class CompilationContext:
         if field_name == "current_artifact":
             return isinstance(branch.current, model.ReviewCurrentArtifactStmt)
         if field_name == "blocked_gate":
-            return branch.blocked_gate_required
+            return branch.blocked_gate_id is not None
         return self._review_semantic_ref_value(
             field_name,
             unit=unit,
@@ -12396,6 +12533,10 @@ class CompilationContext:
     ) -> str:
         if len(basis.paths) == 1 and not basis.except_paths and not basis.paths[0].wildcard:
             return self._display_law_path_root(basis.paths[0], unit=unit)
+        if not basis.except_paths and all(not path.wildcard for path in basis.paths):
+            return self._natural_language_join(
+                [self._display_law_path_root(path, unit=unit) for path in basis.paths]
+            )
         return self._render_path_set(basis)
 
     def _render_analysis_using_expr(
@@ -12404,7 +12545,20 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> str:
+        if isinstance(expr, model.ExprSet):
+            return self._natural_language_join(
+                [self._render_expr(item, unit=unit) for item in expr.items]
+            )
         return self._render_expr(expr, unit=unit)
+
+    def _natural_language_join(self, items: list[str] | tuple[str, ...]) -> str:
+        if not items:
+            return ""
+        if len(items) == 1:
+            return items[0]
+        if len(items) == 2:
+            return f"{items[0]} and {items[1]}"
+        return ", ".join(items[:-1]) + f", and {items[-1]}"
 
     def _render_law_path(self, path: model.LawPath) -> str:
         text = ".".join(path.parts)

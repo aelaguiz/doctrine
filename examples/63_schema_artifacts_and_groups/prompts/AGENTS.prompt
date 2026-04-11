@@ -26,6 +26,10 @@ schema BuildSurfaceSchema: "Build Surface Schema"
         summary: "Summary"
             "Summarize the shipped surface."
 
+    gates:
+        evidence_grounded: "Evidence Grounded"
+            "Confirm the evidence is cited."
+
     artifacts:
         outline_file: "Outline File"
             ref: OutlineFile

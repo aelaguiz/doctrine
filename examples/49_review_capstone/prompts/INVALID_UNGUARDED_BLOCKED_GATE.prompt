@@ -1,0 +1,108 @@
+# This compile-negative proves that `blocked_gate` must stay guarded when some
+# reject branches are ordinary review failures rather than handoff-first blocks.
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+input ReviewState: "Review State"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the review state that says whether review blocked before content review started."
+
+
+workflow BlockedGateReviewContract: "Blocked Gate Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required review basis."
+
+
+agent ReviewLead:
+    role: "Own blocked review follow-up."
+    workflow: "Follow Up"
+        "Take blocked review work back when the next specialist owner cannot be named honestly."
+
+
+agent DraftAuthor:
+    role: "Repair rejected draft defects."
+    workflow: "Revise"
+        "Revise the current draft when review requests changes."
+
+
+output BlockedGateReviewComment: "Blocked Gate Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that remains current after this review outcome."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when review blocks and {{DraftAuthor}} when the draft is rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+        blocked_gate: "Blocked Gate"
+            "Name the first blocking gate when the review stopped before content review started."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand whether review blocked or simply requested changes, who owns next, and which failures still matter."
+
+    trust_surface:
+        current_artifact
+
+
+review BrokenBlockedGateReview: "Broken Blocked Gate Review"
+    subject: DraftSpec
+    contract: BlockedGateReviewContract
+    comment_output: BlockedGateReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        blocked_gate: failure_detail.blocked_gate
+        next_owner: next_owner
+
+    checks: "Checks"
+        block "Review state is blocked." when ReviewState.blocked
+        reject "The draft still leaves the core decision unclear." when DraftSpec.decision_unclear
+        accept "The shared review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact DraftSpec via BlockedGateReviewComment.current_artifact
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current artifact DraftSpec via BlockedGateReviewComment.current_artifact
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+
+agent InvalidUnguardedBlockedGateDemo:
+    role: "Keep blocked gate fields from staying live on ordinary reject branches."
+    review: BrokenBlockedGateReview
+    inputs: "Inputs"
+        DraftSpec
+        ReviewState
+    outputs: "Outputs"
+        BlockedGateReviewComment
