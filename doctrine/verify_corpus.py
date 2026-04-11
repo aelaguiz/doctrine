@@ -17,7 +17,7 @@ from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
 from doctrine.parser import parse_file
-from doctrine.renderer import render_markdown
+from doctrine.renderer import render_markdown, render_readable_block
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BUILD_CONTRACT_REF_DIR = "build_ref"
@@ -41,6 +41,8 @@ class CaseSpec:
     approx_ref_path: Path | None
     agent: str | None = None
     build_target: str | None = None
+    declaration_kind: str | None = None
+    declaration_name: str | None = None
     assertion: str | None = None
     expected_lines: tuple[str, ...] = ()
     exception_type: str | None = None
@@ -191,7 +193,7 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     compile_case_indexes = [
         index
         for index, case in enumerate(cases)
-        if case.kind in {"render_contract", "compile_fail"}
+        if case.kind in {"render_contract", "render_declaration", "compile_fail"}
     ]
     if compile_case_indexes:
         session_cache = _CompilationSessionCache()
@@ -223,6 +225,10 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         try:
             if case.kind == "render_contract":
                 outcome = _run_render_contract(case)
+                ordered_results[index] = outcome.result
+                ordered_ref_diffs[index] = outcome.ref_diff
+            elif case.kind == "render_declaration":
+                outcome = _run_render_declaration(case)
                 ordered_results[index] = outcome.result
                 ordered_ref_diffs[index] = outcome.ref_diff
             elif case.kind == "build_contract":
@@ -344,7 +350,13 @@ def _load_case(
     kind = _require_choice(
         raw_case,
         "kind",
-        {"render_contract", "build_contract", "parse_fail", "compile_fail"},
+        {
+            "render_contract",
+            "render_declaration",
+            "build_contract",
+            "parse_fail",
+            "compile_fail",
+        },
         case_index=case_index,
     )
 
@@ -384,6 +396,33 @@ def _load_case(
             prompt_path=prompt_path,
             approx_ref_path=approx_ref_path,
             agent=agent,
+            assertion=assertion,
+            expected_lines=expected_lines,
+        )
+
+    if kind == "render_declaration":
+        declaration_kind = _require_choice(
+            raw_case,
+            "declaration_kind",
+            {"analysis", "schema", "document"},
+            case_index=case_index,
+        )
+        declaration_name = _require_str(raw_case, "declaration_name", case_index=case_index)
+        assertion = _require_choice(
+            raw_case, "assertion", {"exact_lines"}, case_index=case_index
+        )
+        expected_lines = _require_string_list(
+            raw_case, "expected_lines", case_index=case_index
+        )
+        return CaseSpec(
+            manifest_path=manifest_path,
+            example_dir=example_dir,
+            name=name,
+            kind=kind,
+            prompt_path=prompt_path,
+            approx_ref_path=approx_ref_path,
+            declaration_kind=declaration_kind,
+            declaration_name=declaration_name,
             assertion=assertion,
             expected_lines=expected_lines,
         )
@@ -481,6 +520,45 @@ def _run_render_contract(
     )
 
 
+def _run_render_declaration(
+    case: CaseSpec,
+    *,
+    session: CompilationSession | None = None,
+) -> CompileCaseOutcome:
+    if session is None:
+        session = CompilationSession(parse_file(case.prompt_path))
+    compiled = session.compile_readable_declaration(
+        case.declaration_kind or "", case.declaration_name or ""
+    )
+    rendered = render_readable_block(compiled, depth=2)
+    ref_diff = _build_contract_ref_diff(
+        case,
+        expected_lines=tuple(rendered.splitlines()),
+        output_label=f"rendered://{case.declaration_kind}:{case.declaration_name}",
+    )
+
+    actual_lines = tuple(rendered.splitlines())
+    if actual_lines != case.expected_lines:
+        diff = _build_diff(
+            case.expected_lines,
+            actual_lines,
+            fromfile=f"expected://{case.name}",
+            tofile=f"rendered://{case.declaration_kind}:{case.declaration_name}",
+        )
+        raise VerificationError(
+            "Rendered declaration output did not match the prompt-derived contract.\n" + diff
+        )
+
+    return CompileCaseOutcome(
+        result=CaseResult(
+            case=case,
+            result="PASS",
+            detail="declaration render matched exact_lines contract",
+        ),
+        ref_diff=ref_diff,
+    )
+
+
 def _run_parse_fail(case: CaseSpec) -> CaseResult:
     try:
         parse_file(case.prompt_path)
@@ -560,6 +638,8 @@ def _run_compile_case(
 ) -> CompileCaseOutcome:
     if case.kind == "render_contract":
         return _run_render_contract(case, session=session_cache.get(case.prompt_path))
+    if case.kind == "render_declaration":
+        return _run_render_declaration(case, session=session_cache.get(case.prompt_path))
     if case.kind == "compile_fail":
         return CompileCaseOutcome(
             result=_run_compile_fail(case, session_cache=session_cache)

@@ -1,10 +1,15 @@
 # This example introduces the concrete-agent `analysis:` attachment.
 # The analysis declaration stays reusable and addressable, while the concrete
-# agent keeps ordinary workflow ownership.
+# agent keeps ordinary workflow ownership. It also proves that multi-basis
+# analysis prose renders naturally instead of leaking symbolic set syntax.
 
 enum RiskBand: "Risk Band"
     low: "Low"
     high: "High"
+
+enum CompareRule: "Compare Rule"
+    same_route: "Same Route"
+    similar_burden: "Similar Burden"
 
 
 analysis ReleaseAnalysis: "Release Analysis"
@@ -14,10 +19,22 @@ analysis ReleaseAnalysis: "Release Analysis"
         compare "Coverage" against {CurrentPlan}
         defend "Recommendation" using {CurrentPlan}
 
+analysis ReleaseComparisonAnalysis: "Release Comparison Analysis"
+    stages: "Stages"
+        derive "Release plan" from {CurrentPlan, PriorPlan}
+        compare "Coverage" against {CurrentPlan, PriorPlan} using {CompareRule.same_route, CompareRule.similar_burden}
+        defend "Recommendation" using {CurrentPlan, PriorPlan}
+
 
 input CurrentPlan: "Current Plan"
     source: File
         path: "unit_root/CURRENT_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+input PriorPlan: "Prior Plan"
+    source: File
+        path: "unit_root/PRIOR_PLAN.md"
     shape: MarkdownDocument
     requirement: Required
 
@@ -29,3 +46,12 @@ agent ReleaseAnalysisDemo:
     analysis: ReleaseAnalysis
     inputs: "Inputs"
         CurrentPlan
+
+agent ReleaseComparisonAnalysisDemo:
+    role: "Follow {{ReleaseComparisonAnalysis:stages.title}} from {{ReleaseComparisonAnalysis:title}}."
+    workflow: "Ship"
+        "Use the attached comparison analysis before you finalize the release plan."
+    analysis: ReleaseComparisonAnalysis
+    inputs: "Inputs"
+        CurrentPlan
+        PriorPlan

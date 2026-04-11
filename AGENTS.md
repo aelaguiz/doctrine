@@ -58,23 +58,6 @@
 - `docs/GBRAIN_SKILLPACK.md`: deep reference for brain-first lookup, enrichment, and citation discipline
 - `examples/README.md`: how to read the examples and manifests
 
-## GBrain
-
-- Use gbrain here as repo memory, not as personal CRM. Capture doctrine-specific learnings: commands that worked, failures, diagnostics, edge cases, patterns, and follow-up notes that will help the next pass.
-- Do not use gbrain for people, companies, or unrelated personal context unless the user explicitly asks for that.
-- Do not treat gbrain as shipped truth for doctrine behavior; for language questions, trust `doctrine/` and the manifest-backed examples.
-- Use the `gbrain` CLI here. Do not assume a dedicated gbrain MCP server is available in the session.
-- Before any gbrain command, load the repo env with `set -a; source .env >/dev/null 2>&1; set +a`.
-- Start with `gbrain doctor --json` to prove the brain is reachable before you rely on it.
-- Read order:
-  - `gbrain search "doctrine <term>"` for a fast keyword pass
-  - `gbrain query "what have we learned about <term> in doctrine"` for hybrid search
-  - `gbrain get <slug>` once you know the page you want
-  - `gbrain list -n 20` or `gbrain stats` if you need to discover what is indexed
-- Write when the session produced durable repo value: a non-obvious fix, a repeated failure mode, a verification gotcha, a working workflow, or a decision that will matter later.
-- Keep secrets out of output. Report whether env vars were loaded; do not echo their values.
-- If `gbrain doctor` warns about embeddings and suggests `gbrain embed refresh`, use `gbrain embed --stale` on this install.
-
 ## Editing Notes
 
 - Examples are design intent plus proof inputs, not shipped truth on their own.

@@ -81,6 +81,8 @@ expected_lines = [
   "",
   "##### Blocked Gate",
   "",
+  "Rendered only when present(blocked_gate).",
+  "",
   "Name the first blocking gate when the review stopped before content review started.",
   "",
   "##### Failing Gates",

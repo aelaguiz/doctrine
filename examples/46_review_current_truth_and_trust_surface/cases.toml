@@ -120,6 +120,19 @@ message_contains = [
 ]
 
 [[cases]]
+name = "review currentness carrier fields must disappear on current-none branches"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_NONE_REQUIRES_GUARDED_CARRIER.prompt"
+agent = "InvalidCurrentNoneRequiresGuardedCarrierDemo"
+exception_type = "CompileError"
+error_code = "E497"
+message_contains = [
+  "current none",
+  "CurrentTruthReviewComment.current_artifact",
+]
+
+[[cases]]
 name = "review currentness cannot jump to an artifact outside the reviewed subjects"
 status = "active"
 kind = "compile_fail"
