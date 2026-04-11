@@ -1,0 +1,19 @@
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    properties summary: "Summary"
+        verdict: "Verdict"
+            "Use changes requested when the contract fails."
+
+        verdict: "Verdict Again"
+            "This should fail."
+
+
+agent InvalidDuplicatePropertyKeyDemo:
+    role: "Compile the broken review comment."
+    workflow: "Review"
+        "This should fail."
+    outputs: "Outputs"
+        ReviewComment

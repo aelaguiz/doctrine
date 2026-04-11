@@ -1,0 +1,16 @@
+output BrokenComment: "Broken Comment"
+    target: TurnResponse
+    shape: Comment
+
+    guard follow_up when BrokenComment.summary_present
+        properties:
+            escalation: "Escalation"
+                "This should fail."
+
+
+agent InvalidGuardShellSourceDemo:
+    role: "Compile the broken guard shell."
+    workflow: "Review"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenComment

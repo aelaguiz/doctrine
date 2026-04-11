@@ -78,12 +78,81 @@
 #   ^^^^^^ entity.name.section.doctrine
 #         ^ punctuation.separator.key-value.doctrine
 
+    render_profile: "Render Profile Slot"
+#   ^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                 ^ punctuation.separator.key-value.doctrine
+
+    properties: "Properties Slot"
+#   ^^^^^^^^^^ entity.name.section.doctrine
+#             ^ punctuation.separator.key-value.doctrine
+
+    markdown: "Markdown Slot"
+#   ^^^^^^^^ entity.name.section.doctrine
+#           ^ punctuation.separator.key-value.doctrine
+
+    html: "HTML Slot"
+#   ^^^^ entity.name.section.doctrine
+#       ^ punctuation.separator.key-value.doctrine
+
+    footnotes: "Footnotes Slot"
+#   ^^^^^^^^^ entity.name.section.doctrine
+#            ^ punctuation.separator.key-value.doctrine
+
+    image: "Image Slot"
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
+
+    guard: "Guard Slot"
+#   ^^^^^ entity.name.section.doctrine
+#        ^ punctuation.separator.key-value.doctrine
+
+    item_schema: "Item Schema Slot"
+#   ^^^^^^^^^^^ entity.name.section.doctrine
+#              ^ punctuation.separator.key-value.doctrine
+
+    row_schema: "Row Schema Slot"
+#   ^^^^^^^^^^ entity.name.section.doctrine
+#             ^ punctuation.separator.key-value.doctrine
+
+    src: "Source Path Slot"
+#   ^^^ entity.name.section.doctrine
+#      ^ punctuation.separator.key-value.doctrine
+
+    alt: "Alt Slot"
+#   ^^^ entity.name.section.doctrine
+#      ^ punctuation.separator.key-value.doctrine
+
+    caption: "Caption Slot"
+#   ^^^^^^^ entity.name.section.doctrine
+#          ^ punctuation.separator.key-value.doctrine
+
     shape: "Shape Slot"
 #   ^^^^^ entity.name.section.doctrine
 #        ^ punctuation.separator.key-value.doctrine
 
     workflow
 #   ^^^^^^^^ entity.name.type.reference.standalone.doctrine
+
+    render_profile
+#   ^^^^^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
+
+    properties
+#   ^^^^^^^^^^ entity.name.type.reference.standalone.doctrine
+
+    markdown
+#   ^^^^^^^^ entity.name.type.reference.standalone.doctrine
+
+    html
+#   ^^^^ entity.name.type.reference.standalone.doctrine
+
+    footnotes
+#   ^^^^^^^^^ entity.name.type.reference.standalone.doctrine
+
+    image
+#   ^^^^^ entity.name.type.reference.standalone.doctrine
+
+    guard
+#   ^^^^^ entity.name.type.reference.standalone.doctrine
 
     import
 #   ^^^^^^ entity.name.type.reference.standalone.doctrine

@@ -1,0 +1,13 @@
+render_profile BrokenProfile:
+    analysis.stages -> wire_only
+
+
+analysis DraftAnalysis: "Draft Analysis"
+    render_profile: BrokenProfile
+    facts: "Facts"
+        "This should fail."
+
+
+agent InvalidSemanticRenderProfileDemo:
+    role: "Compile the broken analysis."
+    analysis: DraftAnalysis

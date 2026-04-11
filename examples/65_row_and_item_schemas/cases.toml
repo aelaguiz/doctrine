@@ -1,0 +1,93 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "item_schema and row_schema descendants stay addressable on readable blocks"
+status = "active"
+kind = "render_contract"
+agent = "LessonPlanDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep Step Label, Topic, and Coaching Level aligned in Lesson Plan.",
+  "",
+  "## Plan",
+  "",
+  "Write the lesson plan.",
+  "",
+  "## Outputs",
+  "",
+  "### Lesson Plan File",
+  "",
+  "- Target: File",
+  "- Path: `lesson_root/LESSON_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Structure: Lesson Plan",
+  "",
+  "#### Structure: Lesson Plan",
+  "",
+  "##### Read Order",
+  "",
+  "_Advisory · ordered list_",
+  "",
+  "1. Read the learner goal.",
+  "2. Check the coaching move.",
+  "",
+  "##### Step Arc",
+  "",
+  "_Required · table_",
+  "",
+  "| Coaching Level | Evidence |",
+  "| --- | --- |",
+  "| High | The goal is restated in plain language. |",
+]
+
+[[cases]]
+name = "item_schema keys stay unique"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_KEY.prompt"
+agent = "InvalidDuplicateItemSchemaKeyDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Duplicate item_schema key",
+  "step_label",
+]
+
+[[cases]]
+name = "row_schema keys stay unique"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_KEY.prompt"
+agent = "InvalidDuplicateRowSchemaKeyDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Duplicate row_schema key",
+  "topic",
+]
+
+[[cases]]
+name = "readable lists reject repeated item_schema blocks"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_BLOCK.prompt"
+agent = "InvalidDuplicateItemSchemaBlockDemo"
+exception_type = "ParseError"
+error_code = "E199"
+message_contains = [
+  "Readable list bodies may define `item_schema:` only once.",
+]
+
+[[cases]]
+name = "readable tables reject repeated row_schema blocks"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_BLOCK.prompt"
+agent = "InvalidDuplicateRowSchemaBlockDemo"
+exception_type = "ParseError"
+error_code = "E199"
+message_contains = [
+  "Readable table bodies may define `row_schema:` only once.",
+]

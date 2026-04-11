@@ -581,6 +581,60 @@ async function testWorkflowLawDefinitionProvider() {
     sourceText: "wire",
     occurrence: 2,
   });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "render_profile CompactComment:",
+    expectedRelativeTargetPath:
+      "examples/64_render_profiles_and_properties/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/64_render_profiles_and_properties/prompts/AGENTS.prompt",
+    sourceLineFragment: "render_profile: CompactComment",
+    sourceText: "CompactComment",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'verdict: "Verdict"',
+    expectedRelativeTargetPath:
+      "examples/64_render_profiles_and_properties/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/64_render_profiles_and_properties/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Use {{ReviewComment:summary.verdict.title}}, {{NextOwner:section_author.wire}}, and {{ProjectLead}} when you write the compact review comment.',
+    sourceText: "verdict",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'step_label: "Step Label"',
+    expectedRelativeTargetPath:
+      "examples/65_row_and_item_schemas/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/65_row_and_item_schemas/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{LessonPlan:read_order.item_schema.step_label.title}}, {{LessonPlan:step_arc.row_schema.topic.title}}, and {{LessonPlan:step_arc.columns.coaching_level.title}} aligned in {{LessonPlan:title}}.',
+    sourceText: "step_label",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'topic: "Topic"',
+    expectedRelativeTargetPath:
+      "examples/65_row_and_item_schemas/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/65_row_and_item_schemas/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{LessonPlan:read_order.item_schema.step_label.title}}, {{LessonPlan:step_arc.row_schema.topic.title}}, and {{LessonPlan:step_arc.columns.coaching_level.title}} aligned in {{LessonPlan:title}}.',
+    sourceText: "topic",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'note_a: "Capture the shipped proof links."',
+    expectedRelativeTargetPath:
+      "examples/66_late_extension_blocks/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/66_late_extension_blocks/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{ReleaseAppendix:references.note_a}} and {{ReleaseAppendix:title}} aligned.',
+    sourceText: "note_a",
+  });
 }
 
 async function testReviewDefinitionProvider() {

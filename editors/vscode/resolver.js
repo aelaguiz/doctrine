@@ -42,7 +42,7 @@ const TOP_LEVEL_FIELD_REF_RE = new RegExp(
   `^\\s*(analysis|skills|inputs|outputs)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEYED_DECL_REF_RE = new RegExp(
-  `^\\s*(source|target|shape|schema|structure)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(source|target|shape|schema|structure|render_profile)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const AGENT_SLOT_REF_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -114,14 +114,16 @@ const SCHEMA_ARTIFACT_REF_RE = new RegExp(
 );
 const SCHEMA_GROUP_MEMBER_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*$`);
 const DOCUMENT_BLOCK_RE = new RegExp(
-  `^\\s*(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}(?:\\s+.+)?\\s*$`,
+  `^\\s*(section|sequence|bullets|checklist|definitions|properties|table|guard|callout|code|markdown|html|footnotes|image|rule)\\s+(${IDENTIFIER_PATTERN})\\s*(?::\\s*${STRING_PATTERN})?(?:\\s+.+)?\\s*$`,
 );
 const DOCUMENT_OVERRIDE_BLOCK_RE = new RegExp(
-  `^\\s*override\\s+(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?(?:\\s+.+)?\\s*$`,
+  `^\\s*override\\s+(section|sequence|bullets|checklist|definitions|properties|table|guard|callout|code|markdown|html|footnotes|image|rule)\\s+(${IDENTIFIER_PATTERN})\\s*(?::\\s*(?:${STRING_PATTERN})?)?(?:\\s+.+)?\\s*$`,
 );
 const READABLE_KEYED_STRING_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
+const READABLE_ITEM_SCHEMA_RE = /^\s*(item_schema)\s*:\s*$/;
+const READABLE_ROW_SCHEMA_RE = /^\s*(row_schema)\s*:\s*$/;
 const READABLE_TABLE_CONTAINER_RE = /^\s*(columns|rows)\s*:\s*$/;
 const READABLE_TABLE_ROW_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*$`);
 const LAW_OVERRIDE_SECTION_RE = new RegExp(
@@ -234,6 +236,7 @@ const DECLARATION_KIND = Object.freeze({
   JSON_SCHEMA: "json_schema",
   SKILL: "skill",
   ENUM: "enum",
+  RENDER_PROFILE: "render_profile",
 });
 
 const ADDRESSABLE_DECLARATION_KINDS = Object.freeze([
@@ -351,6 +354,13 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     kind: DECLARATION_KIND.OUTPUT_SHAPE,
     regex: new RegExp(
       `^\\s*output\\s+shape\\s+(${IDENTIFIER_PATTERN})\\s*:`,
+    ),
+    nameGroup: 1,
+  },
+  {
+    kind: DECLARATION_KIND.RENDER_PROFILE,
+    regex: new RegExp(
+      `^\\s*render_profile\\s+(${IDENTIFIER_PATTERN})(?:\\s*:)?\\s*$`,
     ),
     nameGroup: 1,
   },
@@ -843,6 +853,17 @@ function collectAnalysisBodySites(lineText, lineNumber) {
     });
   }
 
+  const keyedRef = lineText.match(KEYED_DECL_REF_RE);
+  if (keyedRef && keyedRef[1] === "render_profile") {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.RENDER_PROFILE,
+      range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
+      ref: parseNameRef(keyedRef[2]),
+      requireConcrete: false,
+    });
+  }
+
   sites.push(...collectBraceReferenceSites(lineText, lineNumber));
   return sites;
 }
@@ -889,6 +910,17 @@ function collectSchemaBodySites(lineText, lineNumber) {
     sites.push(createStructuralSite(lineText, lineNumber, groupMember[1]));
   }
 
+  const keyedRef = lineText.match(KEYED_DECL_REF_RE);
+  if (keyedRef && keyedRef[1] === "render_profile") {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.RENDER_PROFILE,
+      range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
+      ref: parseNameRef(keyedRef[2]),
+      requireConcrete: false,
+    });
+  }
+
   return sites;
 }
 
@@ -910,6 +942,17 @@ function collectDocumentBodySites(lineText, lineNumber) {
   const localBlock = lineText.match(DOCUMENT_BLOCK_RE);
   if (localBlock) {
     sites.push(createStructuralSite(lineText, lineNumber, localBlock[2]));
+  }
+
+  const keyedRef = lineText.match(KEYED_DECL_REF_RE);
+  if (keyedRef && keyedRef[1] === "render_profile") {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.RENDER_PROFILE,
+      range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
+      ref: parseNameRef(keyedRef[2]),
+      requireConcrete: false,
+    });
   }
 
   return sites;
@@ -3263,6 +3306,7 @@ function getReadableChildBodySpec(document, kind, lineText, lineNumber, endLine)
   const indent = leadingSpaces(lineText);
   switch (kind) {
     case "section":
+    case "guard":
       return {
         type: "readable_section_body",
         endLine: findBodyEndLine(document, lineNumber, endLine),
@@ -3279,8 +3323,9 @@ function getReadableChildBodySpec(document, kind, lineText, lineNumber, endLine)
         lineNumber,
       };
     case "definitions":
+    case "properties":
       return {
-        type: "readable_definitions_body",
+        type: kind === "properties" ? "readable_properties_body" : "readable_definitions_body",
         endLine: findBodyEndLine(document, lineNumber, endLine),
         indent,
         lineNumber,
@@ -3288,6 +3333,13 @@ function getReadableChildBodySpec(document, kind, lineText, lineNumber, endLine)
     case "table":
       return {
         type: "readable_table_body",
+        endLine: findBodyEndLine(document, lineNumber, endLine),
+        indent,
+        lineNumber,
+      };
+    case "footnotes":
+      return {
+        type: "readable_footnotes_body",
         endLine: findBodyEndLine(document, lineNumber, endLine),
         indent,
         lineNumber,
@@ -4683,6 +4735,21 @@ function getReadableListBodyItems(document, bodySpec) {
       continue;
     }
 
+    const itemSchema = lineText.match(READABLE_ITEM_SCHEMA_RE);
+    if (itemSchema) {
+      items.set(itemSchema[1], {
+        bodySpec: {
+          type: "readable_inline_schema_body",
+          endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+          indent: leadingSpaces(lineText),
+          lineNumber,
+        },
+        keyRange: createFirstMatchRange(lineText, lineNumber, itemSchema[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
     const keyedItem = lineText.match(READABLE_KEYED_STRING_RE);
     if (!keyedItem) {
       continue;
@@ -4701,6 +4768,102 @@ function getReadableDefinitionsBodyItems(document, bodySpec) {
   return getReadableListBodyItems(document, bodySpec);
 }
 
+function getReadablePropertiesBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const propertyItem = lineText.match(SCHEMA_ITEM_RE);
+    if (!propertyItem) {
+      continue;
+    }
+
+    items.set(propertyItem[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, propertyItem[1]),
+      lineNumber,
+      titleRange: createLastMatchRange(lineText, lineNumber, propertyItem[2]),
+    });
+  }
+
+  return items;
+}
+
+function getReadableInlineSchemaBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const schemaItem = lineText.match(SCHEMA_ITEM_RE);
+    if (!schemaItem) {
+      continue;
+    }
+
+    items.set(schemaItem[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, schemaItem[1]),
+      lineNumber,
+      titleRange: createLastMatchRange(lineText, lineNumber, schemaItem[2]),
+    });
+  }
+
+  return items;
+}
+
+function getReadableFootnotesBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const footnoteItem = lineText.match(SCHEMA_ITEM_RE);
+    if (!footnoteItem) {
+      continue;
+    }
+
+    items.set(footnoteItem[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, footnoteItem[1]),
+      lineNumber,
+      titleRange: createLastMatchRange(lineText, lineNumber, footnoteItem[2]),
+    });
+  }
+
+  return items;
+}
+
 function getReadableTableBodyItems(document, bodySpec) {
   const items = new Map();
   const baseIndent = findBodyBaseIndent(document, bodySpec);
@@ -4715,6 +4878,21 @@ function getReadableTableBodyItems(document, bodySpec) {
   ) {
     const lineText = document.lineAt(lineNumber).text;
     if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const rowSchema = lineText.match(READABLE_ROW_SCHEMA_RE);
+    if (rowSchema) {
+      items.set(rowSchema[1], {
+        bodySpec: {
+          type: "readable_inline_schema_body",
+          endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+          indent: leadingSpaces(lineText),
+          lineNumber,
+        },
+        keyRange: createFirstMatchRange(lineText, lineNumber, rowSchema[1]),
+        lineNumber,
+      });
       continue;
     }
 
@@ -4897,6 +5075,12 @@ function getAddressableBodyItems(document, bodySpec) {
       return getReadableListBodyItems(document, bodySpec);
     case "readable_definitions_body":
       return getReadableDefinitionsBodyItems(document, bodySpec);
+    case "readable_properties_body":
+      return getReadablePropertiesBodyItems(document, bodySpec);
+    case "readable_inline_schema_body":
+      return getReadableInlineSchemaBodyItems(document, bodySpec);
+    case "readable_footnotes_body":
+      return getReadableFootnotesBodyItems(document, bodySpec);
     case "readable_table_body":
       return getReadableTableBodyItems(document, bodySpec);
     case "readable_table_columns_body":
@@ -5634,6 +5818,8 @@ function keyedFieldToDeclarationKind(fieldName) {
       return DECLARATION_KIND.OUTPUT_SHAPE;
     case "schema":
       return DECLARATION_KIND.JSON_SCHEMA;
+    case "render_profile":
+      return DECLARATION_KIND.RENDER_PROFILE;
     default:
       return undefined;
   }
@@ -5662,6 +5848,16 @@ function keyedRecordFieldToDeclarationKind(fieldName, context = {}) {
         || declarationKind === DECLARATION_KIND.OUTPUT
       ) {
         return DECLARATION_KIND.DOCUMENT;
+      }
+      return undefined;
+    case "render_profile":
+      if (
+        declarationKind === DECLARATION_KIND.ANALYSIS
+        || declarationKind === DECLARATION_KIND.SCHEMA_DECL
+        || declarationKind === DECLARATION_KIND.DOCUMENT
+        || declarationKind === DECLARATION_KIND.OUTPUT
+      ) {
+        return DECLARATION_KIND.RENDER_PROFILE;
       }
       return undefined;
     default:

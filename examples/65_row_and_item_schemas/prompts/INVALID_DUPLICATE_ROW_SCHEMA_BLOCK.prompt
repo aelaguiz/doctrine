@@ -1,0 +1,25 @@
+document LessonPlan: "Lesson Plan"
+    table step_arc: "Step Arc"
+        row_schema:
+            topic: "Topic"
+                "Name the topic that the row covers."
+
+        row_schema:
+            evidence: "Evidence"
+                "This should fail."
+
+        columns:
+            topic: "Topic"
+
+
+output LessonPlanFile: "Lesson Plan File"
+    target: File
+        path: "lesson_root/LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: LessonPlan
+
+
+agent InvalidDuplicateRowSchemaBlockDemo:
+    role: "Compile the broken lesson plan."
+    outputs: "Outputs"
+        LessonPlanFile

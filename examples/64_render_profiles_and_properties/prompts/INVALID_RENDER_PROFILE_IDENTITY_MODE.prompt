@@ -1,0 +1,17 @@
+render_profile BrokenProfile:
+    identity.owner -> wire_only
+
+
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    render_profile: BrokenProfile
+    requirement: Required
+
+
+agent InvalidRenderProfileIdentityModeDemo:
+    role: "Compile the broken review comment."
+    workflow: "Review"
+        "This should fail."
+    outputs: "Outputs"
+        ReviewComment

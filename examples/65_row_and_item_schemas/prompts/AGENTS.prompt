@@ -1,0 +1,44 @@
+# This example ships `item_schema:` and `row_schema:` descendants on readable
+# list and table blocks.
+
+document LessonPlan: "Lesson Plan"
+    sequence read_order: "Read Order" advisory
+        item_schema:
+            step_label: "Step Label"
+                "Say what the reader should do at this step."
+
+        first: "Read the learner goal."
+        second: "Check the coaching move."
+
+    table step_arc: "Step Arc" required
+        row_schema:
+            topic: "Topic"
+                "Name the topic that the row covers."
+
+        columns:
+            coaching_level: "Coaching Level"
+                "Say how much coach guidance the step needs."
+
+            evidence: "Evidence"
+                "Name the evidence that proves the step landed."
+
+        rows:
+            step_1:
+                coaching_level: "High"
+                evidence: "The goal is restated in plain language."
+
+
+output LessonPlanFile: "Lesson Plan File"
+    target: File
+        path: "lesson_root/LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: LessonPlan
+    requirement: Required
+
+
+agent LessonPlanDemo:
+    role: "Keep {{LessonPlan:read_order.item_schema.step_label.title}}, {{LessonPlan:step_arc.row_schema.topic.title}}, and {{LessonPlan:step_arc.columns.coaching_level.title}} aligned in {{LessonPlan:title}}."
+    workflow: "Plan"
+        "Write the lesson plan."
+    outputs: "Outputs"
+        LessonPlanFile

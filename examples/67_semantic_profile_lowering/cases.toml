@@ -1,0 +1,46 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "analysis stages and document semantic targets render through attached profiles"
+status = "active"
+kind = "render_contract"
+agent = "SemanticProfileDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep the stage readback and handoff structure aligned.",
+  "",
+  "## Draft Analysis",
+  "",
+  "1. **Facts** — Restate the current draft job before you route work.",
+  "",
+  "2. **Plan** — Name the next concrete decision.",
+  "",
+  "## Outputs",
+  "",
+  "### Handoff File",
+  "",
+  "- Target: File",
+  "- Path: `handoff_root/HANDOFF.md`",
+  "- Shape: Markdown Document",
+  "- Structure: Handoff Comment",
+  "",
+  "#### Structure: Handoff Comment",
+  "",
+  "Contract Checks: Accept only if the handoff contract passes.",
+  "",
+  "Invalidations: Producer Handoff; Section Review",
+]
+
+[[cases]]
+name = "semantic render-profile targets reject unsupported modes"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SEMANTIC_RENDER_PROFILE_MODE.prompt"
+agent = "InvalidSemanticRenderProfileDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Invalid render_profile mode for analysis.stages",
+  "wire_only",
+]

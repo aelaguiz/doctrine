@@ -1,0 +1,64 @@
+# This example ships the late extension readable blocks and structured-cell
+# nested table bodies.
+
+document ReleaseAppendix: "Release Appendix"
+    markdown appendix_markdown: "Appendix Markdown" advisory
+        text: """
+## Appendix Notes
+
+Keep the appendix compact.
+"""
+
+    html inline_html: "Inline HTML" optional
+        text: """
+<div class=\"release-note\">HTML stays explicit.</div>
+"""
+
+    footnotes references: "References" optional
+        note_a: "Capture the shipped proof links."
+        note_b: "Name the owner for the next update."
+
+    image evidence: "Evidence" optional
+        src: "https://example.com/release.png"
+        alt: "Release checklist screenshot"
+        caption: "Current release checklist snapshot."
+
+    table follow_up_matrix: "Follow-Up Matrix" required
+        columns:
+            summary: "Summary"
+                "Say what changed."
+
+            details: "Details"
+                "Show the follow-up detail."
+
+        rows:
+            release_note:
+                summary: "Check the release note."
+                details:
+                    section next_steps: "Next Steps"
+                        "Confirm the release note matches the shipped proof."
+
+                    table proof_checks: "Proof Checks"
+                        columns:
+                            check: "Check"
+                                "Say what to verify."
+
+                        rows:
+                            shipped_docs:
+                                check: "Link every claim to proof."
+
+
+output ReleaseAppendixFile: "Release Appendix File"
+    target: File
+        path: "release_root/APPENDIX.md"
+    shape: MarkdownDocument
+    structure: ReleaseAppendix
+    requirement: Required
+
+
+agent ReleaseAppendixDemo:
+    role: "Keep {{ReleaseAppendix:references.note_a}} and {{ReleaseAppendix:title}} aligned."
+    workflow: "Document"
+        "Write the appendix."
+    outputs: "Outputs"
+        ReleaseAppendixFile

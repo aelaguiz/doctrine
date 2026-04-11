@@ -1,0 +1,43 @@
+# This example proves the shipped semantic render-profile targets and the
+# document-attached `render_profile:` path through `output structure:`.
+
+render_profile HomeAnalysis:
+    analysis.stages -> natural_ordered_prose
+
+
+render_profile StructuredArtifact:
+    review.contract_checks -> sentence
+    control.invalidations -> sentence
+
+
+analysis DraftAnalysis: "Draft Analysis"
+    render_profile: HomeAnalysis
+    facts: "Facts"
+        "Restate the current draft job before you route work."
+
+    plan: "Plan"
+        "Name the next concrete decision."
+
+
+document HandoffComment: "Handoff Comment"
+    render_profile: StructuredArtifact
+    section contract_checks: "Contract Checks"
+        "Accept only if the handoff contract passes."
+
+    sequence invalidations: "Invalidations"
+        handoff: "Producer Handoff"
+        review: "Section Review"
+
+
+output HandoffFile: "Handoff File"
+    target: File
+        path: "handoff_root/HANDOFF.md"
+    shape: MarkdownDocument
+    structure: HandoffComment
+
+
+agent SemanticProfileDemo:
+    role: "Keep the stage readback and handoff structure aligned."
+    analysis: DraftAnalysis
+    outputs: "Outputs"
+        HandoffFile

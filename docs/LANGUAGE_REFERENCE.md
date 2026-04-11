@@ -23,7 +23,7 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 A prompt file may contain imports and any mix of shipped declarations:
 
-- `analysis`, `schema`, `document`
+- `render_profile`, `analysis`, `schema`, `document`
 - `agent`, `abstract agent`
 - `workflow`
 - `review`, `abstract review`
@@ -149,6 +149,8 @@ analysis ReleaseAnalysis: "Release Analysis"
 Important rules:
 
 - `analysis` is a readable declaration with titled keyed sections.
+- `analysis` may attach `render_profile:` to control how its readable
+  structure renders when another shipped surface lowers it into markdown.
 - A section body may contain prose plus `derive`, `classify`, `compare`, and
   `defend`.
 - `classify ... as EnumRef` uses a declared `enum`.
@@ -184,6 +186,8 @@ Important rules:
 
 - `schema` owns reusable `sections:`, optional named `gates:`, first-class
   `artifacts:`, and reusable `groups:`.
+- `schema` may attach `render_profile:` to control how its readable sections
+  render when lowered into markdown.
 - A schema must declare at least one `sections:` or `artifacts:` block.
 - On `output`, `schema:` points at a Doctrine `schema` declaration.
 - On `output shape`, `schema:` remains the owner-aware attachment point for
@@ -212,21 +216,67 @@ document LessonPlan: "Lesson Plan"
 Important rules:
 
 - `document` supports readable block kinds such as `section`, `sequence`,
-  `bullets`, `checklist`, `definitions`, `table`, `callout`, `code`, and
-  `rule`.
+  `bullets`, `checklist`, `definitions`, `properties`, `table`, `guard`,
+  `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, and `rule`.
 - Block headers may carry `required`, `advisory`, or `optional`, plus
   descriptive `when <expr>` metadata.
+- `sequence`, `bullets`, and `checklist` may declare `item_schema:` for typed
+  keyed descendants on the list item surface.
+- `table` may declare `row_schema:` alongside `columns:` / `rows:` and may use
+  structured cell bodies when a row needs nested readable content.
+- Raw `markdown`, raw `html`, `footnotes`, and `image` are explicit block
+  kinds; they are not silent fallbacks from ordinary prose.
 - `document` inheritance uses the same explicit accounting model as workflows:
   `inherit key` keeps a parent block, `override <kind> key` replaces it in
   place, and changing block kind fails loudly.
 - `structure:` on `input` or `output` points at a named `document`.
 - `structure:` requires a markdown-bearing shape such as `MarkdownDocument` or
   `AgentOutputDocument`.
+- `document` may attach `render_profile:` so downstream markdown-bearing
+  surfaces can render the same structure with a different presentation policy.
 - Document blocks are addressable by authored key, and keyed descendants stay
   addressable where the block shape defines them:
   `LessonPlan:overview.title`, `LessonPlan:read_order.first`,
-  `LessonPlan:step_arc.columns.coaching_level.title`, and
+  `LessonPlan:read_order.item_schema.step_label.title`,
+  `LessonPlan:step_arc.columns.coaching_level.title`,
+  `LessonPlan:step_arc.row_schema.topic.title`, and
   `LessonPlan:step_arc.rows.step_1`.
+
+### Render Profiles
+
+`render_profile` declares reusable markdown presentation policy for shipped
+readable surfaces.
+
+```prompt
+render_profile CompactComment:
+    properties -> sentence
+    guarded_sections -> concise_explanatory_shell
+    identity.owner -> title_and_key
+    identity.enum_wire -> wire_only
+```
+
+Important rules:
+
+- Built-in shipped profile families are `ContractMarkdown`,
+  `ArtifactMarkdown`, and `CommentMarkdown`.
+- Authored `render_profile` declarations may override supported readable
+  targets such as `properties`, `guarded_sections`, the identity-aware
+  display family, and the shipped semantic lowering targets
+  `analysis.stages`, `review.contract_checks`, and `control.invalidations`.
+- `analysis.stages` supports `titled_section` and `natural_ordered_prose`.
+- `review.contract_checks` supports `titled_section` and `sentence`.
+- `control.invalidations` supports `expanded_sequence` and `sentence`.
+- `render_profile:` may attach to `analysis`, `schema`, `document`, and
+  markdown-bearing `output`.
+- `Comment` and `CommentText` outputs default to `CommentMarkdown`.
+- Other markdown-bearing outputs default to `ArtifactMarkdown`.
+- Unprojected identity refs stay human-facing by default; authored profiles may
+  request title-plus-key debug readback or wire-only enum display without
+  changing addressability.
+- A `document render_profile:` survives `output structure:` lowering unless the
+  markdown-bearing output attaches its own `render_profile:`.
+- Directly rendered readable declarations continue to use the contract-style
+  `ContractMarkdown` baseline unless a downstream lowering surface overrides it.
 
 ## Skills
 
@@ -302,8 +352,12 @@ Important rules:
   `json schema`.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
+- `render_profile:` may attach to a markdown-bearing `output` when exactly one
+  output artifact owns the markdown contract.
 - Output record bodies may reuse the same readable block family that `document`
-  uses, including `definitions`, `table`, `callout`, and `code`.
+  uses, including `definitions`, `properties`, `table`, explicit `guard`
+  shells, `callout`, `code`, raw `markdown`, raw `html`, `footnotes`, and
+  `image`.
 - `json schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
