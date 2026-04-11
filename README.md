@@ -1,12 +1,12 @@
 # Doctrine
 
-Doctrine is a Python-like DSL and compiler for building agent doctrine as code
-instead of hand-maintained Markdown.
+Doctrine is a Python-like DSL and compiler for authoring reusable agent
+doctrine as code and emitting runtime Markdown that existing coding-agent tools
+can read today.
 
-It keeps Markdown as the runtime artifact because coding agents can consume
-that today, but it moves the source of truth into reusable declarations,
-inheritance, typed inputs and outputs, skill contracts, and fail-loud
-compilation.
+It replaces copied, hand-maintained `AGENTS.md` prose with named declarations,
+explicit inheritance, typed I/O contracts, workflow law, and first-class
+review semantics.
 
 ## A Real Agent Example
 
@@ -14,60 +14,58 @@ compilation.
   <img src="docs/assets/readme-doctrine-agent-example.png" alt="Side-by-side view of a Doctrine source file for an agent and the compiled AGENTS.md runtime artifact it produces." width="1200">
 </p>
 
-This is a real Doctrine authoring flow from an agent repo. The left pane is
-the structured source of truth: reusable workflows, typed inputs, inherited
-sections, and skill declarations in one reviewable `.prompt` file. The right
-pane is the compiled `AGENTS.md` runtime artifact that existing coding-agent
-tools actually read.
+The left pane is the structured source of truth: reusable workflows, typed
+inputs and outputs, inherited sections, and skill declarations in one
+reviewable `.prompt` file. The right pane is the compiled runtime Markdown
+artifact that existing coding-agent tools actually consume.
 
-That split improves working on agents in concrete ways:
+That split matters in practice:
 
-- humans and coding agents edit one narrow source file instead of
-  hand-maintaining a giant runtime Markdown file
-- shared turn rules and handoff policy land once, then compile consistently
-  into the emitted `AGENTS.md`
-- reviewers can inspect intent in the source and verify the exact downstream
+- humans and coding agents edit one narrow source file instead of a giant
+  emitted Markdown file
+- shared policy changes land once and compile consistently into every concrete
+  agent
+- reviewers can inspect intent in source and verify the exact downstream
   runtime artifact beside it
 
-## Why this exists
+## Why Doctrine Exists
 
-Large agent systems drift fast when the source of truth is copied Markdown:
+Serious agent systems drift quickly when the source of truth is copied
+Markdown:
 
-- shared sections are duplicated across agents and edited inconsistently
-- one policy update lands in one file and misses three siblings
-- giant role homes become hard for humans to review and hard for coding agents
-  to edit without adding noise
+- shared sections get duplicated across agents and then edited inconsistently
+- one policy change lands in one file and misses three siblings
+- large role homes become hard for humans to review and hard for coding agents
+  to modify without noise
 - the runtime surface is Markdown, but the authoring problem is structured
   programming
 
-Doctrine turns that maintenance problem into a programming problem.
+Doctrine turns that maintenance problem into a language and compiler problem.
 
-Read [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md) for the motivating use case
-and anonymized drift examples.
+For the motivating use case and the runtime rationale, read
+[docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md).
 
-## What ships today
+## What Ships Today
 
 - concrete and abstract `agent` declarations
-- reusable and inherited `workflow` declarations
-- first-class `review` and `abstract review` declarations with review
-  contracts, exact gate export, carried mode and trigger state, portable
-  current truth, explicit inheritance, and output-agreement validation
-- typed `skill`, `input`, `output`, `input source`, `output target`,
-  `output shape`, and `json schema` declarations
-- workflow law on `workflow` plus `trust_surface` on `output` for portable
-  currentness, invalidation, preservation, basis roles, and law reuse
-- ordinary authored slots such as routing and stop rules
-- named `skills`, `inputs`, and `outputs` block reuse and inheritance
-- imports, dotted refs, agent mentions, and authored-prose interpolation
-- manifest-backed verification for examples `01` through `49`
+- reusable and inherited `workflow` declarations with explicit ordered patching
+- first-class `review` and `abstract review` declarations
+- typed `skill`, `skills`, `input`, `inputs`, `input source`, `output`,
+  `outputs`, `output target`, `output shape`, and `json schema` declarations
+- imports, readable refs, addressable paths, authored interpolation, and enums
+- workflow law on `workflow` plus `trust_surface` and guarded sections on
+  `output`
+- portable currentness, invalidation, scope, preservation, evidence roles, and
+  route-only turns
+- review contracts, exact failing gates, carried mode and trigger state,
+  current truth, inheritance, and bound review carriers
+- manifest-backed verification for the numbered corpus through
+  `examples/53_review_bound_carrier_roots`
+- a repo-local emit pipeline for compiled Markdown plus target-scoped workflow
+  flow artifacts, and a VS Code extension for `.prompt` files
 
-The shipped implementation lives in `doctrine/`. The examples are design
-pressure plus proof, not the source of truth by themselves.
-
-For the shipped workflow-law model, start with
-[docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md).
-For the shipped review model, start with
-[docs/REVIEW_SPEC.md](docs/REVIEW_SPEC.md).
+The shipped implementation lives in `doctrine/`. The examples are the teaching
+surface and proof surface, not the source of truth by themselves.
 
 ## Quick Example
 
@@ -93,7 +91,7 @@ agent BriefReviewer[ReviewRole]:
                 requirement: Advisory
 ```
 
-That compiles to runtime Markdown that existing coding-agent tools can consume:
+That compiles to runtime Markdown:
 
 ```md
 Core job: review the current brief and route the same issue honestly.
@@ -110,10 +108,13 @@ Leave one honest handoff and stop.
 #### repo-search
 ```
 
-## Verify The Repo
+## Get Started
+
+Sync the repo, then run the shipped corpus:
 
 ```bash
 uv sync
+npm ci
 make verify-examples
 ```
 
@@ -123,55 +124,67 @@ If you change diagnostics, also run:
 make verify-diagnostics
 ```
 
-For one manifest-backed example run:
+For one manifest-backed example:
 
 ```bash
 uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml
 ```
 
-## Emit Compiled Markdown
+## Emit Runtime Artifacts
 
-The emit pipeline reads configured targets from `pyproject.toml` and writes a
-compiled Markdown tree for each concrete agent in the entrypoint. Today the
-entrypoint may be either `AGENTS.prompt` or `SOUL.prompt`, and the emitted
-basename follows the entrypoint stem.
+Doctrine reads configured emit targets from `pyproject.toml`. `emit_docs`
+writes a compiled Markdown tree for each concrete agent in the entrypoint.
+`emit_flow` writes one target-scoped workflow data-flow artifact beside it as
+deterministic `.flow.d2` plus same-command `.flow.svg`. Entrypoints may be
+either `AGENTS.prompt` or `SOUL.prompt`, and the emitted basename follows the
+entrypoint stem.
+
+Start with [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md) for prerequisites, target
+configuration, output layout, troubleshooting, and the exact `emit_flow`
+workflow.
 
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_flow --target example_36_invalidation_and_rebuild
 ```
+
+## Documentation
+
+Start with the live docs set:
+
+- [docs/README.md](docs/README.md)
+- [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
+- [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
+- [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)
+- [docs/REVIEW_SPEC.md](docs/REVIEW_SPEC.md)
+- [examples/README.md](examples/README.md)
+- [editors/vscode/README.md](editors/vscode/README.md)
+
+Dated proposals, plans, worklogs, and exploratory notes under `docs/` are
+intentionally excluded from that live path. They are not part of Doctrine's
+evergreen open source documentation set.
 
 ## VS Code Extension
 
-The repo-local VS Code extension lives in `editors/vscode/` and provides
-full colorization plus full Ctrl/Cmd-click follow-definition behavior for the
-shipped Doctrine surface in `.prompt` files: imports, declaration refs,
-readable refs, interpolation roots, structural inheritance keys, workflow-law
-refs, and first-class review refs such as `review:` slots, inherited review
-sections, `contract.*`, and `fields.*`.
+The repo-local extension under `editors/vscode/` provides syntax highlighting
+plus Ctrl/Cmd-click navigation for the shipped Doctrine surface, including
+imports, declaration refs, interpolation roots, workflow law, and first-class
+review features.
 
-Build the installable VSIX:
+Build the installable VSIX with:
 
 ```bash
 cd editors/vscode
 make
 ```
 
-For extension-specific details, see
+For extension details, see
 [editors/vscode/README.md](editors/vscode/README.md).
-
-## Repo Guide
-
-- Start here: [docs/README.md](docs/README.md)
-- Workflow law guide: [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)
-- Language examples: [examples/README.md](examples/README.md)
-- Example agents bank: [example_agents/README.md](example_agents/README.md)
-- Language and compiler truth: `doctrine/`
-- VS Code extension: [editors/vscode/README.md](editors/vscode/README.md)
 
 ## Project Files
 
-- License: [LICENSE](LICENSE)
-- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- Security policy: [SECURITY.md](SECURITY.md)
+- [LICENSE](LICENSE)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [SECURITY.md](SECURITY.md)

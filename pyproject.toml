@@ -18,7 +18,7 @@ dependencies = [
 packages = ["doctrine"]
 
 [tool.setuptools.package-data]
-doctrine = ["grammars/*.lark"]
+doctrine = ["grammars/*.lark", "*.mjs"]
 
 [tool.doctrine.emit]
 

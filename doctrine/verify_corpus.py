@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import argparse
+import os
 import tempfile
+import threading
 import tomllib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from difflib import unified_diff
 from pathlib import Path
 from typing import Any
 
-from doctrine.compiler import compile_prompt
+from doctrine.compiler import CompilationSession, compile_prompt
 from doctrine.diagnostics import DoctrineError
-from doctrine.emit_docs import EmitError, emit_target, load_emit_targets
+from doctrine.emit_common import load_emit_targets
+from doctrine.emit_docs import emit_target
+from doctrine.emit_flow import emit_target_flow
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -72,6 +77,74 @@ class VerificationReport:
         )
 
 
+@dataclass(slots=True, frozen=True)
+class CompileCaseOutcome:
+    result: CaseResult
+    ref_diff: RefDiff | None = None
+
+
+class _CompilationSessionCache:
+    def __init__(self) -> None:
+        self._sessions: dict[Path, CompilationSession] = {}
+        self._errors: dict[Path, Exception] = {}
+        self._loading: dict[Path, threading.Event] = {}
+        self._lock = threading.Lock()
+
+    def get(self, prompt_path: Path) -> CompilationSession:
+        with self._lock:
+            cached_session = self._sessions.get(prompt_path)
+            if cached_session is not None:
+                return cached_session
+
+            cached_error = self._errors.get(prompt_path)
+            if cached_error is not None:
+                if isinstance(cached_error, DoctrineError):
+                    raise _clone_doctrine_error(cached_error)
+                raise cached_error
+
+            ready = self._loading.get(prompt_path)
+            if ready is None:
+                ready = threading.Event()
+                self._loading[prompt_path] = ready
+                is_loader = True
+            else:
+                is_loader = False
+
+        if not is_loader:
+            ready.wait()
+            with self._lock:
+                cached_session = self._sessions.get(prompt_path)
+                if cached_session is not None:
+                    return cached_session
+                cached_error = self._errors.get(prompt_path)
+            if cached_error is None:
+                raise RuntimeError(
+                    f"Compilation session build finished without a result: {prompt_path}"
+                )
+            if isinstance(cached_error, DoctrineError):
+                raise _clone_doctrine_error(cached_error)
+            raise cached_error
+
+        try:
+            session = CompilationSession(parse_file(prompt_path))
+        except Exception as exc:
+            with self._lock:
+                if isinstance(exc, DoctrineError):
+                    self._errors[prompt_path] = _clone_doctrine_error(exc)
+                else:
+                    self._errors[prompt_path] = exc
+            raise
+        else:
+            with self._lock:
+                self._sessions[prompt_path] = session
+            return session
+        finally:
+            with self._lock:
+                ready = self._loading.pop(prompt_path, None)
+            if ready is not None:
+                ready.set()
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _build_arg_parser().parse_args(argv)
     report = verify_corpus(args.manifest or None)
@@ -91,8 +164,6 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     manifest_errors: list[str] = []
-    case_results: list[CaseResult] = []
-    ref_diffs: list[RefDiff] = []
     surfaced_inconsistencies: list[str] = []
 
     try:
@@ -112,22 +183,63 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         except ManifestError as exc:
             manifest_errors.append(f"{_display_path(manifest_path)}: {exc}")
 
-    for case in cases:
+    ordered_results: list[CaseResult | None] = [None] * len(cases)
+    ordered_ref_diffs: list[RefDiff | None] = [None] * len(cases)
+
+    compile_case_indexes = [
+        index
+        for index, case in enumerate(cases)
+        if case.kind in {"render_contract", "compile_fail"}
+    ]
+    if compile_case_indexes:
+        session_cache = _CompilationSessionCache()
+        with ThreadPoolExecutor(
+            max_workers=_compile_case_worker_count(len(compile_case_indexes))
+        ) as executor:
+            futures = {
+                executor.submit(_run_compile_case, cases[index], session_cache): index
+                for index in compile_case_indexes
+            }
+            for future in as_completed(futures):
+                index = futures[future]
+                case = cases[index]
+                try:
+                    outcome = future.result()
+                except Exception as exc:  # pragma: no cover - exercised by the command itself
+                    ordered_results[index] = CaseResult(
+                        case=case,
+                        result="FAIL",
+                        detail=_format_case_failure(exc),
+                    )
+                else:
+                    ordered_results[index] = outcome.result
+                    ordered_ref_diffs[index] = outcome.ref_diff
+
+    for index, case in enumerate(cases):
+        if ordered_results[index] is not None:
+            continue
         try:
             if case.kind == "render_contract":
-                case_results.append(_run_render_contract(case, ref_diffs))
+                outcome = _run_render_contract(case)
+                ordered_results[index] = outcome.result
+                ordered_ref_diffs[index] = outcome.ref_diff
             elif case.kind == "build_contract":
-                case_results.append(_run_build_contract(case))
+                ordered_results[index] = _run_build_contract(case)
             elif case.kind == "parse_fail":
-                case_results.append(_run_parse_fail(case))
+                ordered_results[index] = _run_parse_fail(case)
             elif case.kind == "compile_fail":
-                case_results.append(_run_compile_fail(case))
+                ordered_results[index] = _run_compile_fail(case)
             else:  # pragma: no cover - blocked by manifest validation
                 raise ManifestError(f"Unsupported case kind {case.kind!r}.")
         except Exception as exc:  # pragma: no cover - exercised by the command itself
-            case_results.append(
-                CaseResult(case=case, result="FAIL", detail=_format_case_failure(exc))
+            ordered_results[index] = CaseResult(
+                case=case,
+                result="FAIL",
+                detail=_format_case_failure(exc),
             )
+
+    case_results = [result for result in ordered_results if result is not None]
+    ref_diffs = [ref_diff for ref_diff in ordered_ref_diffs if ref_diff is not None]
 
     return VerificationReport(
         manifest_errors=manifest_errors,
@@ -135,6 +247,17 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         ref_diffs=ref_diffs,
         surfaced_inconsistencies=surfaced_inconsistencies,
     )
+
+
+def _compile_case_worker_count(case_count: int) -> int:
+    if case_count <= 1:
+        return 1
+    cpu_count = os.cpu_count() or 1
+    return min(case_count, max(2, cpu_count))
+
+
+def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:
+    return type(error)(diagnostic=error.diagnostic)
 
 
 def _resolve_manifest_paths(manifest_args: list[str] | None) -> tuple[Path, ...]:
@@ -316,17 +439,22 @@ def _resolve_example_path(example_dir: Path, rel_path: str, *, label: str) -> Pa
     return resolved
 
 
-def _run_render_contract(case: CaseSpec, ref_diffs: list[RefDiff]) -> CaseResult:
-    prompt_file = parse_file(case.prompt_path)
-    compiled = compile_prompt(prompt_file, case.agent or "")
+def _run_render_contract(
+    case: CaseSpec,
+    *,
+    session: CompilationSession | None = None,
+) -> CompileCaseOutcome:
+    if session is None:
+        prompt_file = parse_file(case.prompt_path)
+        compiled = compile_prompt(prompt_file, case.agent or "")
+    else:
+        compiled = session.compile_agent(case.agent or "")
     rendered = render_markdown(compiled)
     ref_diff = _build_contract_ref_diff(
         case,
         expected_lines=tuple(rendered.splitlines()),
         output_label=f"rendered://{case.agent}",
     )
-    if ref_diff is not None:
-        ref_diffs.append(ref_diff)
 
     actual_lines = tuple(rendered.splitlines())
     if actual_lines != case.expected_lines:
@@ -341,10 +469,13 @@ def _run_render_contract(case: CaseSpec, ref_diffs: list[RefDiff]) -> CaseResult
             + diff
         )
 
-    return CaseResult(
-        case=case,
-        result="PASS",
-        detail="render matched exact_lines contract",
+    return CompileCaseOutcome(
+        result=CaseResult(
+            case=case,
+            result="PASS",
+            detail="render matched exact_lines contract",
+        ),
+        ref_diff=ref_diff,
     )
 
 
@@ -378,7 +509,13 @@ def _run_build_contract(case: CaseSpec) -> CaseResult:
         actual_root = Path(temp_dir)
         try:
             emit_target(target, output_dir_override=actual_root)
-        except EmitError as exc:
+            if _build_ref_has_flow_artifacts(expected_root):
+                emit_target_flow(
+                    target,
+                    output_dir_override=actual_root,
+                    include_svg=_build_ref_has_svg_artifacts(expected_root),
+                )
+        except DoctrineError as exc:
             raise VerificationError(str(exc)) from exc
 
         diff = _build_tree_diff(expected_root=expected_root, actual_root=actual_root)
@@ -394,15 +531,38 @@ def _run_build_contract(case: CaseSpec) -> CaseResult:
     )
 
 
-def _run_compile_fail(case: CaseSpec) -> CaseResult:
-    prompt_file = parse_file(case.prompt_path)
+def _run_compile_fail(
+    case: CaseSpec,
+    *,
+    session: CompilationSession | None = None,
+    session_cache: _CompilationSessionCache | None = None,
+) -> CaseResult:
     try:
-        compile_prompt(prompt_file, case.agent or "")
+        if session_cache is not None:
+            session_cache.get(case.prompt_path).compile_agent(case.agent or "")
+        elif session is not None:
+            session.compile_agent(case.agent or "")
+        else:
+            prompt_file = parse_file(case.prompt_path)
+            compile_prompt(prompt_file, case.agent or "")
     except Exception as exc:
         _assert_expected_exception(case, exc)
         return CaseResult(case=case, result="PASS", detail="compile failed as expected")
 
     raise VerificationError("Expected compile to fail, but it succeeded.")
+
+
+def _run_compile_case(
+    case: CaseSpec,
+    session_cache: _CompilationSessionCache,
+) -> CompileCaseOutcome:
+    if case.kind == "render_contract":
+        return _run_render_contract(case, session=session_cache.get(case.prompt_path))
+    if case.kind == "compile_fail":
+        return CompileCaseOutcome(
+            result=_run_compile_fail(case, session_cache=session_cache)
+        )
+    raise ManifestError(f"Unsupported parallel compile case kind {case.kind!r}.")
 
 
 def _assert_expected_exception(case: CaseSpec, exc: Exception) -> None:
@@ -513,6 +673,22 @@ def _build_tree_diff(*, expected_root: Path, actual_root: Path) -> str | None:
         )
 
     return "\n".join(lines) if lines else None
+
+
+def _build_ref_has_flow_artifacts(expected_root: Path) -> bool:
+    return any(
+        path.name.endswith(".flow.d2") or path.name.endswith(".flow.svg")
+        for path in expected_root.rglob("*")
+        if path.is_file()
+    )
+
+
+def _build_ref_has_svg_artifacts(expected_root: Path) -> bool:
+    return any(
+        path.name.endswith(".flow.svg")
+        for path in expected_root.rglob("*")
+        if path.is_file()
+    )
 
 
 def format_report(report: VerificationReport) -> str:

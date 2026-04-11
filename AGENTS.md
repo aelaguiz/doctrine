@@ -3,6 +3,7 @@
 ## Build And Verify
 
 - Sync the repo with `uv sync`.
+- Install the pinned flow-render dependency with `npm ci`.
 - Run the full shipped corpus with `make verify-examples`.
 - Run `make verify-diagnostics` when you change diagnostics.
 - For one manifest-backed example, use `uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml`.
@@ -23,6 +24,8 @@
   - `doctrine/parser.py`
   - `doctrine/model.py`
   - `doctrine/compiler.py`
+  - `doctrine/emit_common.py`
+  - `doctrine/emit_flow.py`
   - `doctrine/renderer.py`
   - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
@@ -48,6 +51,7 @@
 
 - `docs/README.md`: live docs index
 - `docs/WHY_DOCTRINE.md`: product story and motivating use case
+- `docs/EMIT_GUIDE.md`: canonical guide to emit targets, `emit_docs`, `emit_flow`, and output layout
 - `docs/LANGUAGE_DESIGN_NOTES.md`: current language decisions
 - `docs/AGENT_IO_DESIGN_NOTES.md`: shipped I/O model and non-goals
 - `docs/COMPILER_ERRORS.md`: canonical error catalog
