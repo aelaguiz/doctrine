@@ -11,9 +11,9 @@ phase: 3
 
 Phase 3 grows the typed-markdown system beyond the phase-1 core blocks so the
 same semantic structures can render cleanly in contracts, artifact shells, and
-compact comments. It adds fact-panel primitives, explicit guard shells,
-authored render policy, typed row/item schemas, and the later block extensions
-that earlier drafts kept outside the first shipping cut.
+compact comments. It adds fact-panel primitives, identity-aware compact fields,
+explicit guard shells, authored render policy, typed row/item schemas, and the
+later block extensions that earlier drafts kept outside the first shipping cut.
 
 This phase exists because phase 1 solves document structure, but it does not
 fully solve compact readbacks, guarded comment shells, or profile-sensitive
@@ -26,6 +26,8 @@ This phase assumes phases 1 and 2 are available:
 - typed markdown block rendering is the single readable path
 - `document` exists and is addressable
 - `analysis` and `schema` exist and render naturally
+- title-bearing concrete agents and enum members exist
+- schema artifacts and groups exist
 - multiline strings exist
 - `structure:` and owner-aware `schema:` are already stable
 
@@ -37,6 +39,7 @@ This phase owns:
 - explicit readable guard shells
 - authored `render_profile`
 - canonical contract, artifact, and comment profile families
+- identity-aware title/key/wire rendering defaults
 - lowering of semantic declarations into typed markdown
 - typed row and item schemas on readable blocks
 - later block extensions that earlier drafts left outside v1
@@ -56,7 +59,9 @@ Those later surfaces consume the render-policy machinery defined here.
 
 `properties` is the compact fact-panel primitive for labeled fields such as
 Target, Path, Shape, Requirement, Current Artifact, Next Owner, Active Mode,
-and similar surfaces that feel awkward as bullets or headings.
+and similar surfaces that feel awkward as bullets or headings. It is also the
+canonical readable home for title-bearing identities such as human owner names,
+human mode names, and title-plus-key debug readback.
 
 ### Surface syntax
 
@@ -65,7 +70,11 @@ properties route_state: "Route State" required
     current_route: "Current Route"
         "route-only turn; no specialist artifact is current"
     next_owner: "Next Owner"
-        "LessonsProjectLead"
+        "{{ProjectLead}}"
+    next_owner_key: "Next Owner Key"
+        "`{{ProjectLead:key}}`"
+    active_mode: "Active Mode"
+        "{{NextOwner.section_author}}"
     next_step: "Next Step"
         "repair ownership justification"
 ```
@@ -78,6 +87,8 @@ Rules:
 - entry bodies are compact prose or inline markdown
 - `properties` may appear in documents and in any readable body that already
   accepts shared readable blocks
+- title-bearing refs in property bodies render their human-facing title by
+  default unless a profile explicitly requests key or wire display
 
 ### Rendering
 
@@ -85,7 +96,9 @@ Compact profile:
 
 ```markdown
 - Current Route: route-only turn; no specialist artifact is current
-- Next Owner: LessonsProjectLead
+- Next Owner: Project Lead
+- Next Owner Key: `ProjectLead`
+- Active Mode: Section Author
 - Next Step: repair ownership justification
 ```
 
@@ -97,9 +110,26 @@ Expanded contract profile:
 _Required · properties_
 
 - Current Route: route-only turn; no specialist artifact is current
-- Next Owner: LessonsProjectLead
+- Next Owner: Project Lead
+- Next Owner Key: `ProjectLead`
+- Active Mode: Section Author
 - Next Step: repair ownership justification
 ```
+
+### Identity-aware rendering
+
+Phase 3 makes the default compact rendering rule explicit:
+
+- human-facing comment and artifact profiles should show `title` when an
+  identity exposes one
+- structural keys should appear only when the profile or authored field asks
+  for them
+- enum wire values should appear only when the profile or authored field asks
+  for them
+
+That rule is what keeps future review and route-only readbacks human-readable
+without giving up explicit structural identity when debugging or host-interop
+surfaces need it.
 
 ## Explicit Guard Shells
 
@@ -119,7 +149,7 @@ guard repeated_problem when RouteFacts.critic_miss_repeated
             failing_pattern: "What Keeps Failing"
                 "critic keeps rejecting vague metadata handoff"
             returned_from: "Returned From"
-                "LessonsAcceptanceCritic"
+                "Acceptance Critic"
             next_fix: "Next Concrete Fix"
                 "make section-mode preserve basis explicit"
 ```
@@ -152,11 +182,15 @@ Phase 3 ships three built-in profiles:
 ### Authored profile syntax
 
 ```prompt
-render_profile LessonsHome:
+render_profile ArtifactHome:
     current_artifact -> sentence
     own_only -> sentence
     preserve_exact -> sentence
+    identity.owner -> title
+    identity.debug -> title_and_key
+    identity.enum_wire -> wire_only
     review.contract_checks -> titled_section
+    control.invalidations -> expanded_sequence
     analysis.stages -> natural_ordered_prose
     guarded_sections -> concise_explanatory_shell
 ```
@@ -182,6 +216,11 @@ If no authored profile is attached:
 - profiles only change readback shape
 - profile rules apply after compilation into typed markdown, not before
 - later phases may map specialized control-plane surfaces onto these profiles
+- identity-bearing surfaces default to human-facing title projection in comment
+  and artifact profiles unless a more explicit policy is chosen
+- schema-group consumers may request either a collapsed group label or an
+  expanded member sequence, but control-plane profiles should default to
+  concrete member expansion
 
 ## Lowering Semantic Declarations Into Typed Markdown
 
@@ -220,6 +259,34 @@ document CriticVerdictComment: "Verdict And Handoff Comment"
             callout blocked_gate: "Blocked Gate"
                 kind: warning
 ```
+
+### Control-plane lowering targets
+
+Phase 3 also defines the typed-markdown targets that later phase-4 control-plane
+surfaces should lower into.
+
+Example intent for a concrete invalidation expansion:
+
+```prompt
+document RebuildComment: "Rebuild Comment"
+    properties summary: "Route State"
+        next_owner: "Next Owner"
+        active_mode: "Active Mode"
+
+    sequence invalidations: "Invalidations"
+        item_schema:
+            artifact_title: "Artifact"
+            artifact_path: "Path"
+```
+
+Requirements:
+
+- schema-group invalidations must be able to lower into one concrete readable
+  member per artifact in authored group order
+- compact comment profiles should render those members with human-facing titles
+  first and machine-oriented paths inline or adjacent
+- case-selected reviews from phase 4 must lower into the same typed-markdown
+  targets as ordinary reviews so the renderer does not fork by semantic source
 
 ## Typed Row And Item Schemas
 
@@ -364,22 +431,27 @@ Phase invariants:
 - render policy never changes semantic meaning
 - typed markdown remains the only readable-output architecture
 - late extensions remain explicit blocks, not silent fallbacks
+- title-bearing identities render human titles by default in human-facing
+  profiles
 
 ## Proof Plan
 
 Positive ladder for phase 3:
 
 1. `properties` in documents and comment-style outputs
-2. explicit guard shells with profile-sensitive render
-3. built-in and authored `render_profile`
-4. analysis and review lowering into typed markdown
-5. `row_schema` and `item_schema`
-6. raw markdown and HTML blocks
-7. footnotes, images, and nested tables through structured cells
+2. identity-aware title/key/wire rendering in compact fields
+3. explicit guard shells with profile-sensitive render
+4. built-in and authored `render_profile`
+5. analysis and review lowering into typed markdown
+6. control-plane lowering targets for schema-group invalidation expansion
+7. `row_schema` and `item_schema`
+8. raw markdown and HTML blocks
+9. footnotes, images, and nested tables through structured cells
 
 Compile-negative ladder for phase 3:
 
 - duplicate property key
+- invalid title/key/wire profile projection target
 - invalid profile target
 - invalid guard source in a guard shell
 - malformed `row_schema:` or `item_schema:`
@@ -389,10 +461,13 @@ Compile-negative ladder for phase 3:
 ## Exact Implementation Order
 
 1. Add `properties` as a compact readable block.
-2. Add explicit `guard` shells on top of the phase-1 guard model.
-3. Add built-in render profiles and authored `render_profile`.
-4. Lower `analysis` and review-shaped readable outputs into typed markdown by
+2. Add identity-aware title/key/wire rendering defaults for title-bearing
+   values inside readable blocks.
+3. Add explicit `guard` shells on top of the phase-1 guard model.
+4. Add built-in render profiles and authored `render_profile`.
+5. Lower `analysis` and review-shaped readable outputs into typed markdown by
    profile.
-5. Add `row_schema:` and `item_schema:` on readable blocks.
-6. Add raw markdown and HTML blocks as explicit late extensions.
-7. Add footnotes, images, and nested tables through structured cells.
+6. Add control-plane lowering targets for concrete invalidation expansion.
+7. Add `row_schema:` and `item_schema:` on readable blocks.
+8. Add raw markdown and HTML blocks as explicit late extensions.
+9. Add footnotes, images, and nested tables through structured cells.

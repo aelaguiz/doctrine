@@ -11,10 +11,11 @@ phase: 4
 
 Phase 4 integrates the semantic declaration work from earlier phases with
 Doctrine's control-plane surfaces. It makes schema-backed review contracts
-first-class, introduces a dedicated reusable review-family surface, adds
-dedicated `route_only` and `grounding` declaration families, and converges
-currentness, trust surfaces, preservation, invalidation, and compact comment
-rendering into one coherent control-plane layer.
+first-class, introduces a dedicated reusable review-family surface with
+case-selected reviews, adds dedicated `route_only` and `grounding`
+declaration families, and converges currentness, trust surfaces,
+preservation, invalidation, and compact comment rendering into one coherent
+control-plane layer.
 
 The purpose of this phase is not to replace workflow law or review, but to make
 the repeated control-plane seams explicit where earlier drafts identified them
@@ -36,10 +37,12 @@ This phase owns:
 
 - schema-backed `review contract:` integration
 - `review_family`
+- case-selected multi-mode review
 - `route_only`
 - `grounding`
 - control-plane integration with preservation, invalidation, `support_only`,
   `ignore rewrite_evidence`, and `trust_surface`
+- schema-group invalidation consumption and concrete expansion
 - compact currentness and handoff rendering for review and route-only comments
 
 ## Schema-Backed Review Contracts
@@ -66,6 +69,8 @@ Rules:
 - `contract.some_gate` resolves against workflow section keys or schema gate
   keys depending on contract kind
 - `contract.passes` remains valid for both kinds
+- the same contract-resolution rules apply inside explicitly selected review
+  cases
 
 ### Render intent
 
@@ -133,6 +138,117 @@ review LessonPlanReview[ProducerArtifactReview]: "Lesson Plan Review"
 - concrete reviews still own artifact-specific subjects, contracts, verdict
   routing, and local prose
 
+### Case-selected reviews
+
+Some critic families need one typed review surface whose live subject,
+contract, currentness, and routing all change by mode while still exporting the
+exact gates from the selected real contract.
+
+Phase 4 therefore adds first-class review cases rather than relying on a hidden
+"selected contract" projection.
+
+Canonical form:
+
+```prompt
+enum ReviewMode: "Review Mode"
+    dossier: "Dossier Review"
+        wire: "dossier"
+
+    copy: "Copy Review"
+        wire: "copy"
+
+review_family MultiModeArtifactReview: "Multi-Mode Artifact Review"
+    comment_output: ArtifactReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        current_artifact: current_artifact
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+        active_mode: active_mode
+
+    selector:
+        mode active_mode = ReviewState.active_mode as ReviewMode
+
+    cases:
+        dossier: "Dossier Review"
+            when ReviewMode.dossier
+            subject: SectionDossier
+            contract: DossierReviewContract
+
+            checks:
+                reject contract.handoff_truth when ProducerHandoff.names_wrong_current_artifact
+                reject contract.citation_grounding when ReviewState.citations_missing
+                accept "The dossier review contract passes." when contract.passes
+
+            on_accept:
+                current artifact SectionDossier via ArtifactReviewComment.current_artifact
+                carry active_mode = ReviewMode.dossier
+                route "Accepted dossier review returns to {{DossierAuthor}}." -> DossierAuthor
+
+            on_reject:
+                current artifact SectionDossier via ArtifactReviewComment.current_artifact
+                carry active_mode = ReviewMode.dossier
+                route "Rejected dossier review returns to {{DossierAuthor}}." -> DossierAuthor
+
+        copy: "Copy Review"
+            when ReviewMode.copy
+            subject: DraftCopy
+            contract: CopyReviewContract
+
+            checks:
+                reject contract.wording_precision when ReviewState.wording_missing
+                reject contract.metadata_alignment when ReviewState.metadata_conflict
+                accept "The copy review contract passes." when contract.passes
+
+            on_accept:
+                current artifact DraftCopy via ArtifactReviewComment.current_artifact
+                carry active_mode = ReviewMode.copy
+                route "Accepted copy review returns to {{CopyEditor}}." -> CopyEditor
+
+            on_reject:
+                current artifact DraftCopy via ArtifactReviewComment.current_artifact
+                carry active_mode = ReviewMode.copy
+                route "Rejected copy review returns to {{CopyEditor}}." -> CopyEditor
+```
+
+Requirements:
+
+- exactly one selector is active for a case-selected review family
+- exactly one case must match for any valid selected mode
+- each case owns one subject, one contract, one review-check surface, and
+  explicit `on_accept` and `on_reject` consequences
+- `contract.*` inside a case resolves only against that case's contract
+- `failing_gates` export the exact gates from the active case's contract with
+  their original ownership preserved
+- the selected case must determine currentness and next-owner routing in the
+  same semantic place as the selected contract
+
+Render intent when the active mode is dossier:
+
+```markdown
+## Review Mode
+
+Dossier Review
+
+## Failure Detail
+
+- Failing Gates:
+  - Handoff Truth
+  - Citation Grounding
+
+## Next Owner
+
+Dossier Author
+```
+
+This is the requirement that closes the multi-mode critic gap: the rendered
+review must read like the selected real review, not like a generic wrapper
+contract.
+
 ## `route_only`
 
 ### Purpose
@@ -160,11 +276,11 @@ route_only ProjectLeadRouteRepair: "Routing-Only Turns"
         rewrite_mode when section_status in {"new", "full_rewrite"}
 
     routes:
-        section_dossier_engineer -> SectionDossierEngineer
-        lessons_section_architect -> LessonsSectionArchitect
-        lessons_playable_strategist -> LessonsPlayableStrategist
-        lessons_lesson_architect -> LessonsLessonArchitect
-        else -> LessonsProjectLead
+        section_author -> SectionAuthor
+        section_architect -> SectionArchitect
+        playable_strategist -> PlayableStrategist
+        lesson_architect -> LessonArchitect
+        else -> ProjectLead
 ```
 
 ### Rules
@@ -194,7 +310,7 @@ grounding WordingGrounding: "Wording Grounding"
         start_from current_wording unless rewrite
         forbid draft_first
         allow one_narrower_followup
-        if unresolved -> route LessonsProjectLead
+        if unresolved -> route ProjectLead
 ```
 
 ### Rules
@@ -223,6 +339,10 @@ Integration rules:
   through typed fields and trusted outputs
 - render profiles and typed markdown only change readability; they do not own
   the underlying currentness semantics
+- `invalidate` may target either one concrete artifact root or one
+  `schema.groups.*` entry
+- invalidating a schema group must preserve member-level currentness semantics
+  while expanding the readable readback into one concrete member per artifact
 
 ## Currentness, Carriage, And Readback
 
@@ -251,14 +371,41 @@ document RouteOnlyHandoff: "Routing Handoff Comment"
                 next_fix: "Next Concrete Fix"
 ```
 
+Example concrete invalidation expansion:
+
+```prompt
+document RebuildRoutingComment: "Rebuild Routing Comment"
+    properties summary: "Route State"
+        next_owner: "Next Owner"
+        active_mode: "Active Mode"
+
+    sequence invalidations: "Invalidations"
+        item_schema:
+            artifact_title: "Artifact"
+            artifact_path: "Path"
+```
+
+Rendered intent:
+
+```markdown
+## Invalidations
+
+1. Outline File (`unit_root/OUTLINE.md`) is no longer current.
+2. Review Comment (`unit_root/REVIEW_COMMENT.md`) is no longer current.
+3. Manifest File (`unit_root/MANIFEST.json`) is no longer current.
+```
+
 ## Name Resolution And Inheritance
 
 Phase-4 resolution rules:
 
 - `review contract:` resolves to `workflow` or `schema`
 - `review` may inherit from a `review_family`
+- review-family selectors must resolve to a closed enum
+- review cases resolve `when` tags, subjects, and contracts explicitly
 - `route_only` routes resolve to agent targets
 - `grounding` route targets resolve to agents
+- `schema.groups.*` resolves to declared schema-group entries
 - control-plane readable outputs resolve document/profile refs through the
   phase-1 and phase-3 systems
 
@@ -277,8 +424,14 @@ Phase-4 fail-loud rules:
 - unknown schema gate in `contract.some_gate`
 - schema contract with no exported gates when used by review
 - unknown `review_family` target
+- review-family selector that does not resolve to a closed enum
+- duplicate or overlapping review-case selectors
+- review-case set that is not total for the selected mode surface
+- unresolved review-case subject or contract
 - unresolved `route_only` handoff output or route target
 - unresolved `grounding` route target
+- invalidation target that resolves to neither a concrete artifact root nor a
+  schema group
 - current-artifact carriage that contradicts `current none`
 - trust-surface paths that are not valid portable carriers
 
@@ -289,6 +442,7 @@ Phase invariants:
 - review verdict mechanics remain explicit
 - route-only currentness remains explicit
 - grounding never silently invents receipts
+- schema-group invalidation expands concrete members in authored group order
 
 ## Proof Plan
 
@@ -296,26 +450,35 @@ Positive ladder for phase 4:
 
 1. schema-backed `review contract:`
 2. `review_family` inheritance and patching
-3. `route_only` declaration with guarded handoff sections
-4. `grounding` declaration with explicit unresolved routing
-5. current-truth and `trust_surface` integration across review and route-only
+3. case-selected review family with exact gate export
+4. `route_only` declaration with guarded handoff sections
+5. `grounding` declaration with explicit unresolved routing
+6. current-truth and `trust_surface` integration across review and route-only
    outputs
+7. schema-group invalidation consumption with concrete readback expansion
 
 Compile-negative ladder for phase 4:
 
 - review references unknown schema gate
 - schema contract exports no gates
 - unknown `review_family`
+- overlapping or non-total review cases
+- review case with unresolved subject or contract
 - invalid `route_only` route target
 - contradictory `current none` and carried current artifact
+- invalid schema-group invalidation target
 - unresolved grounding route target
 
 ## Exact Implementation Order
 
 1. Allow `review contract:` to target schema contracts and export schema gates.
 2. Add `review_family` and concrete review inheritance from review families.
-3. Add `route_only` with explicit activation, `current none`, guarded handoff
+3. Add case-selected review families with explicit selector resolution,
+   exact-case gate export, and case-owned currentness/routing.
+4. Add `route_only` with explicit activation, `current none`, guarded handoff
    sections, and route tables.
-4. Add `grounding` with protocol policy and unresolved routing.
-5. Converge review and route-only readbacks onto typed markdown, render
-   profiles, `properties`, guard shells, and trusted currentness carriers.
+5. Add `grounding` with protocol policy and unresolved routing.
+6. Add schema-group invalidation targets and member-level expansion semantics.
+7. Converge review and route-only readbacks onto typed markdown, render
+   profiles, `properties`, guard shells, concrete invalidation expansion, and
+   trusted currentness carriers.

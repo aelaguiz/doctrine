@@ -11,8 +11,10 @@ phase: 1
 
 Phase 1 builds the readable-output foundation that every later phase relies on.
 It replaces the heading-only readable tree with a typed markdown block system,
-ships first-class `document`, adds multiline strings, and makes markdown-bearing
-contracts point at named document structures through `structure:`.
+ships first-class `document`, adds multiline strings, makes markdown-bearing
+contracts point at named document structures through `structure:`, and locks the
+base key-versus-title identity model that later control-plane surfaces rely on
+for human-readable owner and mode names.
 
 This phase exists to solve a structural problem, not a cosmetic one. Doctrine
 already renders readable content, but today rich semantic differences collapse
@@ -29,6 +31,8 @@ This phase owns:
 - the shared readable block family
 - multiline strings
 - `structure:` on markdown-bearing inputs and outputs
+- title-bearing identity surfaces for concrete agents and enum members
+- explicit identity projections such as `:title`, `:key`, and enum `:wire`
 - the renderer conversion from section-only recursion to block dispatch
 - document addressability, inheritance, validation, and proof
 
@@ -54,6 +58,8 @@ Baseline before phase 1:
   legal and must stay backward compatible.
 - Existing addressability, explicit inheritance accounting, and fail-loud
   diagnostics remain the governing language style.
+- Existing untitled agents and one-string enum members remain legal migration
+  forms until later cleanup passes remove the shorthand.
 
 ## Core Decision
 
@@ -117,6 +123,41 @@ structure: LessonPlan
 Phase 1 adds a general multiline string literal to Doctrine. The primary use
 case is `code.text`, but the feature belongs to the language core rather than
 to a one-off code-block exception.
+
+### Title-bearing identity surfaces
+
+Phase 1 also makes the "keys are law, titles are prose" rule apply directly to
+the human-facing identities that later phases need to render cleanly.
+
+Canonical forms:
+
+```prompt
+agent ProjectLead: "Project Lead"
+    role: "Own blocked follow-up and unresolved route repair."
+
+enum NextOwner: "Next Owner"
+    section_author: "Section Author"
+        wire: "section-author"
+
+    copy_editor: "Copy Editor"
+        wire: "copy-editor"
+```
+
+Rules:
+
+- a concrete `agent` may declare a human-facing title in its declaration head
+- the declaration key remains the structural identity used by inheritance,
+  routing, and patching
+- enum members gain the same key-versus-title split as other titled surfaces
+- enum members may additionally declare `wire:` for host-facing or external
+  serialized values
+- one-line enum member form remains legal as shorthand for `title == wire`
+- authored prose and later `properties` bodies default `{{Ref}}` to the
+  human-facing title when the target exposes one
+- `:key` remains available when a machine-oriented or debugging surface needs
+  the structural identity explicitly
+- enum members additionally expose `:wire` when the external serialized value
+  must be shown explicitly
 
 ## Surface Syntax
 
@@ -284,17 +325,28 @@ Examples:
 {{LessonPlan:step_arc.title}}
 {{LessonPlan:step_arc.columns.role.title}}
 {{LessonPlan:step_arc.columns.role}}
+{{ProjectLead}}
+{{ProjectLead:key}}
+{{NextOwner.section_author}}
+{{NextOwner.section_author:key}}
+{{NextOwner.section_author:wire}}
 ```
 
 Addressability rules:
 
 - document root is addressable
+- title-bearing concrete agent roots are addressable for identity projection
+- enum roots are addressable
+- enum members are addressable
 - keyed block children are addressable
 - table columns are addressable
 - table rows are addressable when present
 - keyed list items are addressable
 - keyed definition items are addressable
 - anonymous list items are legal but not addressable
+- `:title` resolves when the target owns a human-facing title
+- `:key` resolves for title-bearing declaration and enum-member identities
+- `:wire` resolves only for enum members that declare or inherit a wire value
 
 ## Inheritance And Patching
 
@@ -358,6 +410,10 @@ Rules:
 Existing authored keyed sections remain legal and compile as semantic `section`
 blocks. Existing emphasized prose lines remain legal and keep their current
 render behavior unless a prompt explicitly rewrites them as `callout`.
+
+Existing untitled concrete agents remain legal. Existing one-line enum members
+remain legal and continue to expose one authored string that acts as both title
+and wire value until the prompt is upgraded to the explicit split form.
 
 ## Render And Readback Rules
 
@@ -435,6 +491,17 @@ _Advisory · code · json_
 ```
 ````
 
+Identity projection in authored prose
+
+```markdown
+If the route is still unclear, Project Lead keeps the issue.
+
+When next owner is Section Author, hand the same issue to Section Author.
+
+Debug owner key: `ProjectLead`
+Wire value: `section-author`
+```
+
 ## Validation, Diagnostics, And Invariants
 
 These rules fail loud in phase 1:
@@ -453,6 +520,12 @@ These rules fail loud in phase 1:
 - `callout.kind` must be in the closed core set
 - `code.text` must use multiline string form
 - guard expressions must obey existing guarded-output restrictions
+- title-bearing identity projections must target surfaces that actually expose
+  them
+- enum member `wire` values must be unique within the owning enum
+- `wire:` is legal only on enum members
+- title-bearing concrete-agent heads and enum-member heads must preserve one
+  stable structural key plus one optional human-facing title
 
 Phase invariants:
 
@@ -461,6 +534,7 @@ Phase invariants:
 - no shadow document renderer
 - keys remain stable symbolic law
 - titles remain prose
+- wire values remain host-facing codecs, not structural identities
 
 ## Compiler Touchpoints
 
@@ -474,11 +548,14 @@ Primary implementation surfaces:
 
 Required compiler changes:
 
+- extend agent heads and enum members with title-bearing identity metadata
 - add `document_decl`
 - add readable block node types
 - add multiline string literal support
 - replace the `CompiledSection`-only readable tree with a richer block union
 - compile `structure:` on markdown-bearing inputs and outputs
+- compile title/key/wire identity projections alongside existing addressable
+  refs
 - compile document addressable roots
 - replace section-only rendering with block dispatch
 
@@ -486,15 +563,19 @@ Required compiler changes:
 
 Positive ladder for phase 1:
 
-1. first-class `document`
-2. rich blocks in output contracts
-3. documents with tables and definitions
-4. document inheritance
-5. document guards
-6. multiline strings and code blocks
+1. title-bearing concrete agents in authored prose
+2. titled enum members with explicit `wire:`
+3. first-class `document`
+4. rich blocks in output contracts
+5. documents with tables and definitions
+6. document inheritance
+7. document guards
+8. multiline strings and code blocks
 
 Compile-negative ladder for phase 1:
 
+- invalid identity projection such as `:wire` on a non-enum target
+- duplicate enum wire value in one enum
 - non-document `structure:` ref
 - duplicate document block key
 - document override kind mismatch
@@ -505,10 +586,13 @@ Compile-negative ladder for phase 1:
 
 ## Exact Implementation Order
 
-1. Add the typed markdown IR and compiled block union.
-2. Add multiline strings to the core grammar and parser.
-3. Add first-class `document` plus block parsing.
-4. Compile document addressable roots and inheritance.
-5. Add `structure:` resolution for markdown-bearing inputs and outputs.
-6. Replace section-only rendering with block-dispatch rendering.
-7. Land the positive and negative proof ladder for the document system.
+1. Add title-bearing identity metadata for concrete-agent heads and enum
+   members, including explicit `title`, `key`, and `wire` projections.
+2. Add the typed markdown IR and compiled block union.
+3. Add multiline strings to the core grammar and parser.
+4. Add first-class `document` plus block parsing.
+5. Compile document and identity addressable roots plus inheritance.
+6. Add `structure:` resolution for markdown-bearing inputs and outputs.
+7. Replace section-only rendering with block-dispatch rendering.
+8. Land the positive and negative proof ladder for the document system and
+   identity surfaces.
