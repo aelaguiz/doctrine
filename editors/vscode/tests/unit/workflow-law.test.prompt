@@ -15,6 +15,11 @@ workflow CarryCurrentTruth: "Carry Current Truth"
 #       ^^^^^^^ keyword.control.doctrine
 #               ^^^^^^^^ keyword.control.doctrine
 
+        current artifact approved_plan via coordination_handoff.current_artifact
+#                        ^^^^^^^^^^^^^ support.type.reference.doctrine
+#                                          ^^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine
+#                                                               ^^^^^^^^^^^^^^^^ variable.other.member.doctrine
+
         own only SectionMetadata.title
 #       ^^^ keyword.control.doctrine
 #           ^^^^ keyword.control.doctrine

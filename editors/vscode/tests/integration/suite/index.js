@@ -377,12 +377,42 @@ async function testAddressableDefinitionProvider() {
 
 async function testWorkflowLawDefinitionProvider() {
   await assertDefinitionTarget({
+    declarationSnippet: 'approved_plan: "Approved Plan Binding"',
+    expectedRelativeTargetPath:
+      "examples/50_bound_currentness_roots/prompts/AGENTS.prompt",
+    relativePath: "examples/50_bound_currentness_roots/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact approved_plan via coordination_handoff.current_artifact",
+    sourceText: "approved_plan",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'coordination_handoff: "Coordination Handoff Binding"',
+    expectedRelativeTargetPath:
+      "examples/50_bound_currentness_roots/prompts/AGENTS.prompt",
+    relativePath: "examples/50_bound_currentness_roots/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact approved_plan via coordination_handoff.current_artifact",
+    sourceText: "coordination_handoff",
+  });
+
+  await assertDefinitionTarget({
     declarationSnippet: 'current_artifact: "Current Artifact"',
     expectedRelativeTargetPath:
       "examples/31_currentness_and_trust_surface/prompts/AGENTS.prompt",
     relativePath: "examples/31_currentness_and_trust_surface/prompts/AGENTS.prompt",
     sourceLineFragment:
       "current artifact ApprovedPlan via CoordinationHandoff.current_artifact",
+    sourceText: "current_artifact",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'current_artifact: "Current Artifact"',
+    expectedRelativeTargetPath:
+      "examples/50_bound_currentness_roots/prompts/AGENTS.prompt",
+    relativePath: "examples/50_bound_currentness_roots/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact approved_plan via coordination_handoff.current_artifact",
     sourceText: "current_artifact",
   });
 
@@ -513,6 +543,39 @@ async function testReviewDefinitionProvider() {
     sourceLineFragment:
       '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
     sourceText: "reviewed_artifact",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'draft_spec: "Draft Spec Binding"',
+    expectedRelativeTargetPath:
+      "examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact draft_spec via review_comment.current_artifact",
+    sourceText: "draft_spec",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'review_comment: "Review Comment Binding"',
+    expectedRelativeTargetPath:
+      "examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact draft_spec via review_comment.current_artifact",
+    sourceText: "review_comment",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'current_artifact: "Current Artifact"',
+    expectedRelativeTargetPath:
+      "examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "current artifact draft_spec via review_comment.current_artifact",
+    sourceText: "current_artifact",
   });
 }
 

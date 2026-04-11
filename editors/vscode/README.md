@@ -19,16 +19,17 @@ Repo-local VS Code language support for `.prompt` files.
   roots and path segments in interpolation / workflow section / generic record
   value surfaces, including trailing `title` segments when they resolve to a
   real definition site, enum roots and enum members, and structural
-  `abstract` / `inherit` / local-key `override` sites, plus workflow-law and
-  trust-surface surfaces such as law carrier refs, trust-surface field items,
-  enum-backed mode refs, law-section `inherit` / `override` keys, guarded
-  output-section paths, and route targets inside `law` branches, including
-  conditional `route "..." -> Agent when ...` forms, plus review surfaces such
-  as top-level `review` / `abstract review` declarations, agent `review:`
-  slots, review-section `inherit` / `override` keys, `subject`, `contract`,
-  `comment_output`, `subject_map`, `fields` bindings, outcome carrier paths,
-  and review semantic refs such as `contract.<gate>` and
-  `fields.<semantic_field>`
+  `abstract` / `inherit` / local-key `override` sites, plus workflow-law
+  surfaces such as law carrier refs, enum-backed mode refs, law-section
+  `inherit` / `override` keys, guarded output-section paths, lower-case and
+  mixed-case bound roots that resolve through concrete-turn `inputs:` /
+  `outputs:` bindings, and route targets inside `law` branches, including
+  conditional `route "..." -> Agent when ...` forms, plus trust-surface field
+  items, plus review surfaces such as top-level `review` / `abstract review`
+  declarations, agent `review:` slots, review-section `inherit` / `override`
+  keys, `subject`, `contract`, `comment_output`, `subject_map`, `fields`
+  bindings, outcome carrier paths, lower-case bound review carrier roots, and
+  review semantic refs such as `contract.<gate>` and `fields.<semantic_field>`
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
 
@@ -39,15 +40,16 @@ Workflow-law support here uses the same vocabulary as
 [../../docs/WORKFLOW_LAW.md](../../docs/WORKFLOW_LAW.md): `law`,
 `trust_surface`, guarded output headers, carrier refs, trust-surface field
 items, enum-backed mode refs, named law subsection `inherit` / `override`
-keys, and route targets inside `law` branches, including conditional route
-lines.
+keys, lower-case and mixed-case bound roots in workflow-law carrier and
+artifact paths, and route targets inside `law` branches, including conditional
+route lines.
 
 Review support here uses the same vocabulary as
 [../../docs/REVIEW_SPEC.md](../../docs/REVIEW_SPEC.md): `review`,
 `abstract review`, `review:` agent slots, `subject`, `subject_map`,
 `contract`, `comment_output`, `fields`, named review sections, outcome
-sections, carried `active_mode` / `trigger_reason`, and semantic refs on the
-review comment surface.
+sections, carried `active_mode` / `trigger_reason`, bound review carrier roots,
+and semantic refs on the review comment surface.
 
 ## What it does not do yet
 
@@ -125,7 +127,11 @@ local editor is actually running the newest VSIX before changing the grammar.
    `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt` for routed
    `next_owner` interpolation clicks, and
    `examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt` for
-   conditional route target clicks.
+   conditional route target clicks,
+   `examples/50_bound_currentness_roots/prompts/AGENTS.prompt` for lower-case
+   bound root clicks in `current artifact ... via ...`, and
+   `examples/51_inherited_bound_io_roots/prompts/AGENTS.prompt` for inherited
+   bound-root clicks.
 8. For the review ladder, smoke-check:
    `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
    for `review:` slot clicks and top-level review colorization,
@@ -133,7 +139,9 @@ local editor is actually running the newest VSIX before changing the grammar.
    for `subject_map` and carried-state colorization, and
    `examples/49_review_capstone/prompts/AGENTS.prompt` for Ctrl/Cmd-click on
    `contract.clarity`, `fields.*`, inherited review keys, and review outcome
-   carrier paths.
+   carrier paths, plus
+   `examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt` for
+   lower-case review carrier roots and carried-field path clicks.
 
 ## Development only: Extension Development Host
 

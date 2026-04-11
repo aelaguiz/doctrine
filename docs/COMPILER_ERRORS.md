@@ -105,7 +105,7 @@ Stability rules:
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |
 | `E334` | Current output not emitted | A workflow-law current artifact points at an output the concrete turn does not emit. |
-| `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared input or output. |
+| `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared or bound concrete-turn input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
 | `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
 | `E338` | Output guard reads disallowed source | A guarded output section reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs and enum members. |
@@ -114,10 +114,10 @@ Stability rules:
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
 | `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
 | `E351` | Owned scope is outside the current artifact | `own only` points at a path that is not rooted in the current artifact. |
-| `E352` | Owned scope target is unknown | `own only` points at an undeclared input or output target. |
+| `E352` | Owned scope target is unknown | `own only` points at an undeclared or unbound concrete-turn input or output target. |
 | `E353` | Owned scope overlaps exact preservation | `own only` overlaps `preserve exact` without an explicit `except`. |
 | `E354` | Owned scope overlaps forbidden scope | `own only` overlaps `forbid`. |
-| `E355` | Preserve target is unknown | `preserve structure`, `preserve mapping`, or `preserve vocabulary` points at an unknown declared target. |
+| `E355` | Preserve target is unknown | `preserve structure`, `preserve mapping`, or `preserve vocabulary` points at an unknown declared or bound concrete-turn target. |
 | `E361` | Current artifact ignored for truth | The current artifact is also ignored for truth in the same active branch. |
 | `E362` | Comparison-only basis contradiction | `support_only ... for comparison` and `ignore ... for comparison` contradict each other. |
 | `E371` | Current artifact invalidated in same branch | The current artifact is invalidated in the same active branch that declares it current. |
@@ -148,7 +148,7 @@ Stability rules:
 | `E484` | compile | Review outcome is not total | A review outcome branch or review `match` does not cover every reachable path. |
 | `E485` | compile | Review outcome resolves more than one route | One terminal review outcome branch leaves more than one route live. |
 | `E486` | compile | Review outcome resolves more than one currentness result | One terminal review outcome branch leaves more than one currentness result live. |
-| `E487` | compile | Review currentness requires a valid carrier | `current artifact ... via ...` must carry through a declared output field. |
+| `E487` | compile | Review currentness requires a valid carrier | `current artifact ... via ...` must carry through a declared or bound concrete-turn output field. |
 | `E488` | compile | Review current carrier is missing from trust surface | The review currentness carrier field is not listed in `trust_surface`. |
 | `E489` | compile | Review subject set requires disambiguation | A multi-subject review branch does not prove exactly one live reviewed subject. |
 | `E490` | compile | Missing inherited review entry | A child review failed to account for an inherited review surface such as `fields` or a named pre-outcome section. |

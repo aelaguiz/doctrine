@@ -1,0 +1,52 @@
+# This file shows that scope and preservation law normalize through bound roots, not raw alias text.
+
+input SectionMetadata: "Section Metadata"
+    source: File
+        path: "unit_root/_authoring/section_metadata.json"
+    shape: JsonObject
+    requirement: Required
+
+
+input ApprovedBoundary: "Approved Boundary"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now."
+
+
+workflow BoundScopeAndPreservation: "Bound Scope And Preservation"
+    "Keep narrow ownership and preserved upstream truth attached to named bindings."
+
+    law:
+        current artifact section_metadata via coordination_handoff.current_artifact
+        own only {section_metadata.name, section_metadata.description}
+        preserve exact section_metadata.* except {section_metadata.name, section_metadata.description}
+        preserve structure approved_boundary
+
+
+agent BoundScopeAndPreservationDemo:
+    role: "Keep narrow ownership and preserved truth coherent through named bindings."
+    workflow: BoundScopeAndPreservation
+    inputs: "Inputs"
+        section_metadata: "Section Metadata Binding"
+            SectionMetadata
+
+        approved_boundary: "Approved Boundary Binding"
+            ApprovedBoundary
+    outputs: "Outputs"
+        coordination_handoff: "Coordination Handoff Binding"
+            CoordinationHandoff

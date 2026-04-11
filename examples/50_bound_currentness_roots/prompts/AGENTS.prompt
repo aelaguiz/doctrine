@@ -1,0 +1,41 @@
+# This file shows how workflow law can root currentness through named concrete-turn bindings.
+# The binding keys stay local to the concrete agent, but they still normalize to declared I/O truth.
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now."
+
+
+workflow CarryBoundCurrentTruth: "Carry Bound Current Truth"
+    "Keep currentness attached to the concrete turn's named bindings."
+
+    law:
+        current artifact approved_plan via coordination_handoff.current_artifact
+
+
+agent BoundCurrentTruthDemo:
+    role: "Carry portable current truth through named concrete-turn bindings."
+    workflow: CarryBoundCurrentTruth
+    inputs: "Inputs"
+        approved_plan: "Approved Plan Binding"
+            ApprovedPlan
+    outputs: "Outputs"
+        coordination_handoff: "Coordination Handoff Binding"
+            CoordinationHandoff

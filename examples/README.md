@@ -11,9 +11,9 @@ Each numbered example may contain:
 
 Read the examples in numeric order. The sequence is intentional.
 
-For the shipped workflow-law model behind examples `30` through `42`, start
+For the shipped workflow-law model behind examples `30` through `52`, start
 with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped
-review model behind examples `43` through `49`, start with
+review model behind examples `43` through `49` plus `53`, start with
 [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 
 ## Reading Order
@@ -28,13 +28,14 @@ review model behind examples `43` through `49`, start with
   authored-slot requirements
 - `27` through `29`: addressable nested items, recursive workflow paths, and
   enums for closed vocabularies
-- `30` through `42`: active workflow-law proof for route-only turns, portable
+- `30` through `52`: active workflow-law proof for route-only turns, portable
   currentness, trust carriers, scope and preservation law, basis roles,
-  invalidation, law reuse, output-owned guarded readback, and the route-only
-  handoff capstones
-- `43` through `49`: first-class `review` support for verdict coupling,
-  blocked review, exact contract gates, portable current truth, carried mode
-  and trigger state, review inheritance, and the full review capstone
+  invalidation, law reuse, concrete-turn bound roots, output-owned guarded
+  readback, and the route-only handoff capstones
+- `43` through `49` plus `53`: first-class `review` support for verdict
+  coupling, blocked review, exact contract gates, portable current truth,
+  carried mode and trigger state, review inheritance, the full review
+  capstone, and bound review carriers
 
 ## Workflow Law Ladder
 
@@ -72,6 +73,12 @@ The route-only ladder is staged on purpose:
 - `42_route_only_handoff_capstone`: the full generic Slice A route-only
   handoff model with guarded conditional readback plus `standalone_read`
   guard-discipline proof
+- `50_bound_currentness_roots`: concrete-turn binding keys as first-class law
+  roots for `current artifact ... via ...`
+- `51_inherited_bound_io_roots`: inherited `inputs:` and `outputs:` keys stay
+  law-visible without local duplication
+- `52_bound_scope_and_preservation`: `own only`, `preserve exact`, and
+  preserved upstream truth normalize through bound roots
 
 Examples `40` through `42` intentionally omit `trust_surface`. They are
 route-only comment-schema readback for `current none` turns, not portable
@@ -108,6 +115,8 @@ The review ladder begins right after the workflow-law capstones:
   `ignore ... for rewrite_evidence`, `preserve`, multi-subject review,
   carried state, portable current truth, and current-none blocked outcomes in
   one capstone surface
+- `53_review_bound_carrier_roots`: bound subject roots plus bound comment-
+  output carriers for review currentness and carried review state
 
 That boundary is still honest. Doctrine validates structured interpolations and
 output structure here; it still does not parse arbitrary free prose.

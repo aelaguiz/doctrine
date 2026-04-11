@@ -1,0 +1,54 @@
+# This file shows that inherited inputs and outputs blocks keep their keyed bindings visible to workflow law.
+
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know which artifact is current now."
+
+
+inputs BaseInputs: "Inputs"
+    approved_plan: "Approved Plan Binding"
+        ApprovedPlan
+
+
+inputs ReviewInputs[BaseInputs]: "Inputs"
+    inherit approved_plan
+
+
+outputs BaseOutputs: "Outputs"
+    coordination_handoff: "Coordination Handoff Binding"
+        CoordinationHandoff
+
+
+outputs ReviewOutputs[BaseOutputs]: "Outputs"
+    inherit coordination_handoff
+
+
+workflow CarryInheritedBoundCurrentTruth: "Carry Inherited Bound Current Truth"
+    "Keep currentness attached to inherited concrete-turn bindings."
+
+    law:
+        current artifact approved_plan via coordination_handoff.current_artifact
+
+
+agent InheritedBoundCurrentTruthDemo:
+    role: "Carry current truth through inherited binding roots."
+    workflow: CarryInheritedBoundCurrentTruth
+    inputs: ReviewInputs
+    outputs: ReviewOutputs

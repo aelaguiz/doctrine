@@ -103,7 +103,7 @@ exception_type = "CompileError"
 error_code = "E487"
 message_contains = [
   "MissingReviewComment.current_artifact",
-  "declared output",
+  "concrete-turn output",
 ]
 
 [[cases]]

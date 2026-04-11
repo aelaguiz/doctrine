@@ -12,7 +12,9 @@ The design still stays Doctrine-native:
 * `review` becomes the semantic home for critic / reviewer law
 * `output` remains the produced-contract primitive
 * review outputs remain declared `output`s
-* currentness reuses the existing `current artifact ... via Output.field` rule
+* currentness reuses the existing
+  `current artifact ... via output_root.field` rule, where `output_root`
+  may be a declared emitted output name or a bound concrete-turn output root
 * reuse still follows explicit ordered patching
 * no packet side channel, route payload, or shadow trust carrier is introduced
 
@@ -426,7 +428,8 @@ branch must prove **exactly one live subject member**. The compiler accepts
 three proof forms:
 
 1. direct currentness proof
-   the branch binds exactly one subject member with `current artifact X via Output.field`
+   the branch binds exactly one subject member with
+   `current artifact X via output_root.field`
 2. mode-map proof
    the review declares a total `subject_map` from one enum mode to one subject member,
    and the branch carries exactly one `active_mode` value
@@ -488,7 +491,8 @@ Conditionally required field bindings:
 * `trigger_reason`: required if any route branch carries downstream trigger reason
 
 `fields:` does **not** carry currentness by alias. Review currentness still uses
-the direct carrier rule `current artifact ... via Output.field`.
+the direct carrier rule `current artifact ... via output_root.field`, where
+`output_root` resolves to one emitted concrete-turn output.
 
 ### 7.5 Hard language verdicts
 
@@ -576,7 +580,7 @@ Allowed only outside outcome sections:
 
 Allowed only inside `on_accept` / `on_reject`:
 
-* `current artifact ... via Output.field`
+* `current artifact ... via output_root.field`
 * `current none`
 * `carry ...`
 * `route ...`
@@ -587,7 +591,8 @@ Allowed only inside `on_accept` / `on_reject`:
 Each terminal outcome branch must produce:
 
 * exactly one route outcome
-* exactly one currentness outcome (`current artifact ... via Output.field` or `current none`)
+* exactly one currentness outcome
+  (`current artifact ... via output_root.field` or `current none`)
 * zero or more carried semantic fields
 
 ### 7.9 Route determinism
@@ -605,21 +610,22 @@ Route resolution is fixed.
 
 `review` reuses the exact shipped portable-currentness rule:
 
-* `current artifact X via Output.field`
+* `current artifact X via output_root.field`
 * `current none`
 
 No `via current` alias exists.
 
 Every terminal outcome branch must resolve exactly one currentness outcome.
 
-`current artifact X via Output.field` means:
+`current artifact X via output_root.field` means:
 
 * `X` is authoritative after this review outcome
-* `Output.field` is the carrier that tells the next owner this is true
+* `output_root.field` is the carrier that tells the next owner this is true
 
 The carrier rules are the same as workflow law:
 
-* the carrier root must be a declared emitted `output`
+* the carrier root must resolve to an emitted concrete-turn `output`, either
+  by declared output name or by bound output root
 * the carrier field must exist
 * the carrier field must appear in that output's `trust_surface`
 
@@ -1333,7 +1339,8 @@ These examples assume the following decisions are frozen:
 * `contract:` points to a review-contract workflow: a top-level `workflow` whose first-level keyed sections export gate identities.
 * `fields:` binds compiler-owned review channels to concrete paths on `comment_output`.
 * `ReviewVerdict.accept` and `ReviewVerdict.changes_requested` are hard language verdicts.
-* `current artifact ... via Output.field` is reused exactly as the portable-currentness carrier form.
+* `current artifact ... via output_root.field` is reused exactly as the
+  portable-currentness carrier form.
 * guarded output sections may read bound semantic fields such as `verdict` or `active_mode`, but only after review resolution.
 * `on_accept` and `on_reject` are mandatory outcome sections.
 * outcome routing is first-match-wins and must be total.
@@ -1428,7 +1435,7 @@ Required negatives:
 
 What this proves:
 
-* `current artifact ... via Output.field`
+* `current artifact ... via output_root.field`
 * `trust_surface`
 * semantically coupled current artifact readback on the review output
 
@@ -1519,7 +1526,7 @@ What this proves:
 * multi-subject review
 * carried `active_mode`
 * carried `trigger_reason`
-* `current artifact ... via Output.field`
+* `current artifact ... via output_root.field`
 * `current none` for blocked handoff-first outcomes
 * one durable review comment output that stays readable and trusted downstream
 
@@ -1573,7 +1580,8 @@ The current audit pressure is now answered directly in the spec:
 
 * `review` is treated as a full Layer 1 primitive, not a narrow alias
 * blocked / unclear review turns live inside `review`
-* portable currentness is part of `review`, but it reuses the exact existing `via Output.field` carrier rule
+* portable currentness is part of `review`, but it reuses the exact existing
+  `via output_root.field` carrier rule
 * contract workflows export first-level keyed gate identities after flattening
 * contract evaluation exposes `contract.passes`, `contract.failed_gates`, `contract.first_failed_gate`, `failed(...)`, and `passed(...)`
 * `fields:` is a distinct inherited binding surface, not a prose section and not a hidden carrier alias

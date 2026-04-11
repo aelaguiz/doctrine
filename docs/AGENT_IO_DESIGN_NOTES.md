@@ -1,6 +1,6 @@
 # Agent I/O Design Notes
 
-This document now records the shipped I/O model through examples `08` to `49`.
+This document now records the shipped I/O model through examples `08` to `53`.
 
 The goal is to describe the turn-level contract the language already supports,
 and the explicit non-goals that keep it from drifting into packet or
@@ -72,10 +72,12 @@ Current shipped boundaries:
 - guarded output sections may read declared inputs and enum members
 - guarded output sections may not read workflow-local bindings, emitted
   output fields, or undeclared runtime names
-- workflow law may bind `current artifact ... via ...` and `invalidate ... via ...`
-  only through declared output fields
-- review may bind `current artifact ... via ...` only through the declared
-  `comment_output` field on the emitted review comment
+- workflow law may bind `current artifact ... via ...`, `invalidate ... via ...`,
+  scope, and preservation roots either through direct declaration names or
+  through keyed concrete-turn `inputs:` and `outputs:` bindings
+- review may bind `current artifact ... via ...` through the declared
+  `comment_output` field on the emitted review comment, including keyed
+  concrete-turn output bindings that normalize to that emitted output
 - review may carry `active_mode` and `trigger_reason` only through bound
   review-comment fields that stay live on the output contract and in
   `trust_surface`
@@ -98,6 +100,8 @@ Workflow law and output I/O now meet at one explicit handoff boundary.
 Current shipped rules:
 - portable currentness is declared in workflow law with `current artifact ... via ...`
 - route-only turns may use `current none` instead of a current artifact
+- workflow-law roots may normalize through direct declarations or keyed
+  concrete-turn bindings; the portable truth still lives on declared outputs
 - invalidation is declared in workflow law with `invalidate ... via ...`
 - the carrier side of either rule must point at an emitted output field that is
   listed in that output's `trust_surface`
