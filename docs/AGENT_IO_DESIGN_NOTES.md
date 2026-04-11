@@ -23,6 +23,7 @@ use [EMIT_GUIDE.md](EMIT_GUIDE.md).
 This keeps the split clean:
 
 - output contracts are still the emitted contract surface
+- typed `schema:` / `structure:` attachments stay on inputs or outputs
 - compiler-owned semantics still live in `workflow law` or `review`
 - downstream trust still flows through declared output fields, not through
   hidden side channels
@@ -47,6 +48,7 @@ Important rules:
 - Custom sources may be declared with `input source`.
 - Input bodies hold source-specific configuration plus authored explanatory
   prose.
+- `structure:` may attach a named `document` to a markdown-bearing input shape.
 - `inputs` blocks group inputs and optionally bind them under local keys for a
   concrete turn.
 
@@ -78,7 +80,12 @@ Important rules:
   `File`.
 - Custom targets may be declared with `output target`.
 - Output shapes may be named with `output shape`.
-- `json schema` attaches beneath `output shape`; it does not replace `output`.
+- `schema:` on `output` attaches a Doctrine `schema` declaration.
+- `schema:` on `output shape` still attaches a `json schema`; the field name is
+  owner-aware rather than globally retyped.
+- `structure:` may attach a named `document` to a markdown-bearing output.
+- `json schema` still attaches beneath `output shape`; it does not replace
+  `output`.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
 
@@ -89,6 +96,18 @@ Output bodies can include:
 - guarded sections
 - `standalone_read`
 - `trust_surface`
+
+Typed attachment example:
+
+```prompt
+output LessonPlanFile: "Lesson Plan File"
+    target: File
+        path: "lesson_root/_authoring/LESSON_PLAN.md"
+    shape: MarkdownDocument
+    schema: LessonPlanInventory
+    structure: LessonPlan
+    requirement: Required
+```
 
 ## Trusted Carriers And Portable Truth
 
@@ -197,3 +216,6 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `46`: review current truth on trusted output carriers
 - `47` and `49`: carried review state on output fields
 - `50` through `53`: bound roots for workflow law and review carriers
+- `55`: owner-aware output `schema:` attachments
+- `56`: typed `structure:` attachments on markdown-bearing inputs and outputs
+- `57`: schema-backed review contracts on ordinary output carriers

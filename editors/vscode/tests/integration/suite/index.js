@@ -631,6 +631,61 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
+    declarationSnippet: "analysis ReleaseAnalysis",
+    expectedRelativeTargetPath:
+      "examples/54_analysis_attachment/prompts/AGENTS.prompt",
+    relativePath: "examples/54_analysis_attachment/prompts/AGENTS.prompt",
+    sourceLineFragment: "analysis: ReleaseAnalysis",
+    sourceText: "ReleaseAnalysis",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'stages: "Stages"',
+    expectedRelativeTargetPath:
+      "examples/54_analysis_attachment/prompts/AGENTS.prompt",
+    relativePath: "examples/54_analysis_attachment/prompts/AGENTS.prompt",
+    sourceLineFragment: "{{ReleaseAnalysis:stages.title}}",
+    sourceText: "stages",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "json schema DeliveryJsonSchema",
+    expectedRelativeTargetPath:
+      "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
+    relativePath: "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
+    sourceLineFragment: "schema: DeliveryJsonSchema",
+    sourceText: "DeliveryJsonSchema",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "schema DeliveryInventory",
+    expectedRelativeTargetPath:
+      "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
+    relativePath: "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
+    sourceLineFragment: "schema: DeliveryInventory",
+    sourceText: "DeliveryInventory",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "document LessonPlan",
+    expectedRelativeTargetPath:
+      "examples/56_document_structure_attachments/prompts/AGENTS.prompt",
+    relativePath: "examples/56_document_structure_attachments/prompts/AGENTS.prompt",
+    sourceLineFragment: "structure: LessonPlan",
+    sourceText: "LessonPlan",
+    occurrence: 1,
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "schema PlanReviewContract",
+    expectedRelativeTargetPath:
+      "examples/57_schema_review_contracts/prompts/AGENTS.prompt",
+    relativePath: "examples/57_schema_review_contracts/prompts/AGENTS.prompt",
+    sourceLineFragment: "contract: PlanReviewContract",
+    sourceText: "PlanReviewContract",
+  });
+
+  await assertDefinitionTarget({
     declarationSnippet: "input ScopedCatalogTruth",
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",

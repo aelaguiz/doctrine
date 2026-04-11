@@ -427,20 +427,50 @@ class SkillsDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class DeriveStmt:
+    target_title: str
+    basis: LawPathSet
+
+
+@dataclass(slots=True, frozen=True)
+class ClassifyStmt:
+    target_title: str
+    enum_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class CompareStmt:
+    target_title: str
+    basis: LawPathSet
+    using_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class DefendStmt:
+    target_title: str
+    basis: LawPathSet
+
+
+AnalysisSectionItem: TypeAlias = (
+    ProseLine | SectionBodyRef | DeriveStmt | ClassifyStmt | CompareStmt | DefendStmt
+)
+
+
+@dataclass(slots=True, frozen=True)
 class AnalysisSection:
     key: str
     title: str
-    items: tuple[ProseLine, ...]
+    items: tuple[AnalysisSectionItem, ...]
 
 
 @dataclass(slots=True, frozen=True)
 class AnalysisOverrideSection:
     key: str
     title: str | None
-    items: tuple[ProseLine, ...]
+    items: tuple[AnalysisSectionItem, ...]
 
 
-AnalysisItem: TypeAlias = ProseLine | AnalysisSection | InheritItem | AnalysisOverrideSection
+AnalysisItem: TypeAlias = AnalysisSection | InheritItem | AnalysisOverrideSection
 
 
 @dataclass(slots=True, frozen=True)
@@ -456,40 +486,51 @@ class AnalysisDecl:
     body: AnalysisBody
     parent_ref: NameRef | None = None
 
+    @property
+    def title(self) -> str:
+        return self.body.title
+
 
 @dataclass(slots=True, frozen=True)
 class SchemaSection:
     key: str
     title: str
-    items: tuple[ProseLine, ...]
+    body: tuple[ProseLine, ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
 class SchemaGate:
     key: str
     title: str
+    body: tuple[ProseLine, ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
-class SchemaOverrideSection:
-    key: str
-    title: str | None
-    items: tuple[ProseLine, ...]
+class SchemaSectionsBlock:
+    items: tuple[SchemaSection, ...]
 
 
 @dataclass(slots=True, frozen=True)
-class SchemaOverrideGate:
-    key: str
-    title: str
+class SchemaGatesBlock:
+    items: tuple[SchemaGate, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaOverrideSectionsBlock:
+    items: tuple[SchemaSection, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaOverrideGatesBlock:
+    items: tuple[SchemaGate, ...]
 
 
 SchemaItem: TypeAlias = (
-    ProseLine
-    | SchemaSection
-    | SchemaGate
+    SchemaSectionsBlock
+    | SchemaGatesBlock
     | InheritItem
-    | SchemaOverrideSection
-    | SchemaOverrideGate
+    | SchemaOverrideSectionsBlock
+    | SchemaOverrideGatesBlock
 )
 
 
@@ -505,6 +546,10 @@ class SchemaDecl:
     name: str
     body: SchemaBody
     parent_ref: NameRef | None = None
+
+    @property
+    def title(self) -> str:
+        return self.body.title
 
 
 @dataclass(slots=True, frozen=True)
@@ -539,6 +584,10 @@ class DocumentDecl:
     body: DocumentBody
     parent_ref: NameRef | None = None
 
+    @property
+    def title(self) -> str:
+        return self.body.title
+
 
 @dataclass(slots=True, frozen=True)
 class ReviewSubjectConfig:
@@ -557,8 +606,17 @@ class ReviewSubjectMapConfig:
 
 
 @dataclass(slots=True, frozen=True)
+class ReviewContractRef:
+    ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class ReviewContractConfig:
-    workflow_ref: NameRef
+    contract: ReviewContractRef
+
+    @property
+    def contract_ref(self) -> NameRef:
+        return self.contract.ref
 
 
 @dataclass(slots=True, frozen=True)
@@ -805,6 +863,11 @@ class OutputsField:
 
 
 @dataclass(slots=True, frozen=True)
+class AnalysisField:
+    value: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
 
@@ -823,6 +886,7 @@ Field: TypeAlias = (
     | AuthoredSlotOverride
     | InputsField
     | OutputsField
+    | AnalysisField
     | SkillsField
     | ReviewField
 )
@@ -837,10 +901,20 @@ class Agent:
 
 
 @dataclass(slots=True, frozen=True)
+class InputStructureConfig:
+    structure_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class InputDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+    structure: InputStructureConfig | None = None
+
+    @property
+    def structure_ref(self) -> NameRef | None:
+        return None if self.structure is None else self.structure.structure_ref
 
 
 @dataclass(slots=True, frozen=True)
@@ -858,11 +932,31 @@ class InputSourceDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class OutputSchemaConfig:
+    schema_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class OutputStructureConfig:
+    structure_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class OutputDecl:
     name: str
     title: str
     items: tuple[OutputRecordItem, ...]
+    schema: OutputSchemaConfig | None = None
+    structure: OutputStructureConfig | None = None
     trust_surface: tuple[TrustSurfaceItem, ...] = ()
+
+    @property
+    def schema_ref(self) -> NameRef | None:
+        return None if self.schema is None else self.schema.schema_ref
+
+    @property
+    def structure_ref(self) -> NameRef | None:
+        return None if self.structure is None else self.structure.structure_ref
 
 
 @dataclass(slots=True, frozen=True)

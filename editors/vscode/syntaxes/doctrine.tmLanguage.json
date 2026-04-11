@@ -118,6 +118,9 @@
       "include": "#route"
     },
     {
+      "include": "#secondWaveKeyword"
+    },
+    {
       "include": "#reviewSemanticRef"
     },
     {
@@ -137,6 +140,9 @@
     },
     {
       "include": "#readableBlockHeader"
+    },
+    {
+      "include": "#analysisField"
     },
     {
       "include": "#skillsField"
@@ -975,6 +981,10 @@
         }
       ]
     },
+    "secondWaveKeyword": {
+      "name": "keyword.control.doctrine",
+      "match": "\\b(derive|classify|compare|defend|from|against|using|sections)\\b"
+    },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",
       "captures": {
@@ -1076,6 +1086,20 @@
         },
         "9": {
           "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "analysisField": {
+      "match": "^( {4})(analysis)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },

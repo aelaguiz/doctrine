@@ -36,6 +36,8 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
+- `54` through `57`: second-wave integration surfaces for `analysis`, typed
+  `schema:` / `structure:` attachments, and schema-backed review contracts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -98,6 +100,10 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `51_inherited_bound_io_roots` | Inherited bound I/O roots staying visible to workflow law. |
 | `52_bound_scope_and_preservation` | Bound roots for ownership and preservation law. |
 | `53_review_bound_carrier_roots` | Bound review carriers and carried review state. |
+| `54_analysis_attachment` | Concrete-agent `analysis:` attachment and analysis-root addressability. |
+| `55_owner_aware_schema_attachments` | Owner-aware split between `output shape.schema` and `output.schema`. |
+| `56_document_structure_attachments` | Typed `structure:` attachments on markdown-bearing inputs and outputs. |
+| `57_schema_review_contracts` | Schema-backed `review contract:` with exported schema gates. |
 
 ## Useful Commands
 

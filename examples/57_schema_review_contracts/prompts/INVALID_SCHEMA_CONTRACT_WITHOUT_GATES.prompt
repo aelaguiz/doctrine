@@ -1,0 +1,68 @@
+schema GateLessContract: "Gate-Less Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the reviewed plan."
+
+
+input DraftPlan: "Draft Plan"
+    source: File
+        path: "unit_root/DRAFT_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output PlanReviewComment: "Plan Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State the review verdict."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "State what the next owner should read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "List exact failing gates when they fail."
+
+
+review InvalidGateLessReview: "Invalid Gate-Less Review"
+    subject: DraftPlan
+    contract: GateLessContract
+    comment_output: PlanReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_gate_checks: "Contract Gate Checks"
+        accept "The schema review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+
+    on_reject: "If Rejected"
+        current none
+
+
+agent InvalidGateLessReviewDemo:
+    role: "This review references a schema contract with no gates."
+    review: InvalidGateLessReview
+    inputs: "Inputs"
+        DraftPlan
+    outputs: "Outputs"
+        PlanReviewComment

@@ -12,13 +12,17 @@ Repo-local VS Code language support for `.prompt` files.
 - supports Go to Definition and Ctrl/Cmd-click across the full shipped
   clickable surface:
   parent declaration refs, authored-slot refs and overrides, workflow `use`
-  refs, workflow `skills` refs and override refs, route targets, `skills`,
+  refs, workflow `skills` refs and override refs, route targets, `analysis`,
+  `skills`,
   `inputs`, `outputs`, patch-parent refs, `source`, `target`, `shape`,
-  `schema`, standalone input/output refs in typed I/O bodies, standalone
+  owner-aware `schema` refs on `output shape` and `output`, `structure` refs
+  on markdown-bearing `input` and `output` surfaces, standalone input/output
+  refs in typed I/O bodies, standalone
   readable refs in workflow bodies, interpolation roots, addressable path
   roots and path segments in interpolation / workflow section / generic record
   value surfaces, including trailing `title` segments when they resolve to a
-  real definition site, enum roots and enum members, and structural
+  real definition site, analysis section paths, enum roots and enum members,
+  and structural
   `abstract` / `inherit` / local-key `override` sites, plus workflow-law
   surfaces such as law carrier refs, enum-backed mode refs, law-section
   `inherit` / `override` keys, guarded output-section paths, lower-case and
@@ -50,6 +54,12 @@ Review support here uses the same vocabulary as
 `contract`, `comment_output`, `fields`, named review sections, outcome
 sections, carried `active_mode` / `trigger_reason`, bound review carrier roots,
 and semantic refs on the review comment surface.
+
+Second-wave support here also follows the shipped language guides: top-level
+`analysis`, `schema`, and `document` declarations, agent `analysis:` slots,
+typed `schema:` / `structure:` attachments, addressable analysis or document
+paths such as `Decl:section.title`, and schema-backed `review contract:`
+references.
 
 ## What it does not do yet
 
@@ -142,6 +152,15 @@ local editor is actually running the newest VSIX before changing the grammar.
    carrier paths, plus
    `examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt` for
    lower-case review carrier roots and carried-field path clicks.
+9. For the second-wave ladder, smoke-check:
+   `examples/54_analysis_attachment/prompts/AGENTS.prompt` for `analysis:`
+   slot clicks and `ReleaseAnalysis:stages.title`,
+   `examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt` for
+   owner-aware `schema:` clicks on both `output shape` and `output`,
+   `examples/56_document_structure_attachments/prompts/AGENTS.prompt` for
+   `structure:` clicks on markdown-bearing inputs and outputs, and
+   `examples/57_schema_review_contracts/prompts/AGENTS.prompt` for
+   schema-backed `contract:` clicks.
 
 ## Development only: Extension Development Host
 

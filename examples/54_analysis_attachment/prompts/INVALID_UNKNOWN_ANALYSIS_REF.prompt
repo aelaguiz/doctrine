@@ -1,0 +1,5 @@
+agent InvalidUnknownAnalysisRef:
+    role: "This agent references a missing analysis declaration."
+    workflow: "Ship"
+        "The workflow body is otherwise ordinary."
+    analysis: MissingAnalysis

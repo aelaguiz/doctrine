@@ -3,6 +3,8 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
+import signal
 import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -22,12 +24,18 @@ class SmokeFailure(RuntimeError):
 def main() -> int:
     _check_transform_errors_surface_as_parse_errors()
     _check_compile_missing_role_has_specific_code()
+    _check_analysis_field_renders()
+    _check_reserved_analysis_slot_key_is_rejected()
+    _check_output_schema_attachment_renders()
+    _check_input_structure_attachment_renders()
+    _check_output_schema_owner_conflict_surfaces_as_parse_error()
     _check_review_illegal_statement_placement_has_specific_code()
     _check_review_invalid_guarded_match_head_has_specific_code()
     _check_review_multiple_currentness_has_specific_code()
     _check_review_outcome_not_total_has_specific_code()
     _check_review_next_owner_alignment_has_specific_code()
     _check_review_failure_detail_guard_has_specific_code()
+    _check_review_exact_contract_gate_modes_do_not_blow_up()
     _check_review_semantic_addressability_renders()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
@@ -78,6 +86,69 @@ def _check_compile_missing_role_has_specific_code() -> None:
             _expect("missing role field" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for missing role field, but compilation succeeded")
+
+
+def _check_analysis_field_renders() -> None:
+    source = _analysis_attachment_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "AnalysisDemo"))
+        _expect("## Draft Analysis" in rendered, rendered)
+        _expect("### Facts" in rendered, rendered)
+        _expect("Restate the current draft job before you route work." in rendered, rendered)
+
+
+def _check_reserved_analysis_slot_key_is_rejected() -> None:
+    source = _reserved_analysis_slot_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "AnalysisDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect("reserved typed agent field" in str(exc).lower(), str(exc))
+            _expect("analysis" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for reserved analysis slot key, but compilation succeeded")
+
+
+def _check_output_schema_attachment_renders() -> None:
+    source = _output_schema_attachment_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "OutputDemo"))
+        _expect("- Schema: Lesson Inventory" in rendered, rendered)
+        _expect("### Required Sections" in rendered, rendered)
+        _expect("#### Summary" in rendered, rendered)
+
+
+def _check_input_structure_attachment_renders() -> None:
+    source = _input_structure_attachment_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "InputDemo"))
+        _expect("- Structure: Lesson Plan" in rendered, rendered)
+        _expect("### Structure: Lesson Plan" in rendered, rendered)
+        _expect("#### Summary" in rendered, rendered)
+
+
+def _check_output_schema_owner_conflict_surfaces_as_parse_error() -> None:
+    source = _output_schema_owner_conflict_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        try:
+            parse_file(prompt_path)
+        except Exception as exc:
+            _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E199", f"expected E199, got {getattr(exc, 'code', None)}")
+            _expect("schema" in str(exc).lower(), str(exc))
+            _expect("must_include" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected parse failure for output schema owner conflict, but parsing succeeded")
 
 
 def _check_review_illegal_statement_placement_has_specific_code() -> None:
@@ -211,6 +282,33 @@ def _check_review_semantic_addressability_renders() -> None:
         _expect("{{contract." not in rendered, rendered)
         _expect("Use Completeness before you route Next Owner." in rendered, rendered)
         _expect("compare Reviewed Artifact against Completeness." in rendered, rendered)
+
+
+def _check_review_exact_contract_gate_modes_do_not_blow_up() -> None:
+    source = _review_exact_gate_stress_source(gate_count=17)
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+
+        class _Timeout(RuntimeError):
+            pass
+
+        def _handle_timeout(_signum, _frame):
+            raise _Timeout()
+
+        previous = signal.signal(signal.SIGALRM, _handle_timeout)
+        try:
+            signal.alarm(5)
+            compile_prompt(prompt, "ExactGateReviewDemo")
+            signal.alarm(0)
+        except _Timeout as exc:
+            raise SmokeFailure(
+                "expected exact-gate multi-mode review compilation to finish without "
+                "review contract branch blow-up"
+            ) from exc
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, previous)
 
 
 def _check_emit_docs_handles_invalid_toml_without_traceback() -> None:
@@ -554,6 +652,93 @@ agent ReviewDemo:
 """
 
 
+def _analysis_attachment_source() -> str:
+    return """analysis DraftAnalysis: "Draft Analysis"
+    facts: "Facts"
+        "Restate the current draft job before you route work."
+
+agent AnalysisDemo:
+    role: "Keep the analysis attachment visible."
+    analysis: DraftAnalysis
+"""
+
+
+def _reserved_analysis_slot_source() -> str:
+    return """analysis DraftAnalysis: "Draft Analysis"
+    facts: "Facts"
+        "Restate the current draft job before you route work."
+
+abstract agent AnalysisBase:
+    role: "Base role."
+    abstract analysis
+
+agent AnalysisDemo [AnalysisBase]:
+    role: "Keep the analysis attachment visible."
+    analysis: DraftAnalysis
+"""
+
+
+def _output_schema_attachment_source() -> str:
+    return """schema LessonInventory: "Lesson Inventory"
+    sections:
+        summary: "Summary"
+            "State the required summary."
+
+output SchemaOutput: "Schema Output"
+    target: TurnResponse
+    shape: JsonObject
+    requirement: Required
+    schema: LessonInventory
+
+agent OutputDemo:
+    role: "Keep the schema attachment visible."
+    outputs: "Outputs"
+        SchemaOutput
+"""
+
+
+def _input_structure_attachment_source() -> str:
+    return """document LessonPlan: "Lesson Plan"
+    section summary: "Summary"
+        "State the lesson summary."
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "draft.md"
+    shape: MarkdownDocument
+    requirement: Required
+    structure: LessonPlan
+
+agent InputDemo:
+    role: "Keep the structure attachment visible."
+    inputs: "Inputs"
+        DraftSpec
+"""
+
+
+def _output_schema_owner_conflict_source() -> str:
+    return """schema LessonInventory: "Lesson Inventory"
+    sections:
+        summary: "Summary"
+            "State the required summary."
+
+output SchemaOutput: "Schema Output"
+    target: TurnResponse
+    shape: JsonObject
+    requirement: Required
+    schema: LessonInventory
+
+    must_include: "Must Include"
+        summary: "Summary"
+            "Repeat the summary locally."
+
+agent OutputDemo:
+    role: "Keep the schema attachment visible."
+    outputs: "Outputs"
+        SchemaOutput
+"""
+
+
 def _review_invalid_guarded_match_head_source() -> str:
     return """input DraftSpec: "Draft Spec"
     source: File
@@ -614,6 +799,71 @@ agent ReviewDemo:
     outputs: "Outputs"
         DraftReviewComment
 """
+
+
+def _review_exact_gate_stress_source(*, gate_count: int) -> str:
+    base_path = (
+        Path(__file__).resolve().parent.parent
+        / "examples"
+        / "45_review_contract_gate_export_and_exact_failures"
+        / "prompts"
+        / "AGENTS.prompt"
+    )
+    base = base_path.read_text()
+    modes = "\n".join(f"    m{i}: \"m{i}\"" for i in range(gate_count))
+    gates = "".join(
+        f"""    gate_{i}: "Gate {i}"
+        "Confirm gate {i}."
+
+"""
+        for i in range(gate_count)
+    )
+    gate_refs = ", ".join(f"{{{{contract.gate_{i}}}}}" for i in range(gate_count))
+    mode_checks = "".join(
+        f"""            ReviewMode.m{i}:
+                reject contract.gate_{i} when ReviewFacts.selected_review_basis_failed
+
+"""
+        for i in range(gate_count)
+    )
+    source = (
+        f"""enum ReviewMode: "Review Mode"
+{modes}
+
+input ReviewFacts: "Review Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+"""
+        + base
+    )
+    source = re.sub(
+        r'workflow ExactGateReviewContract: "Exact Gate Review Contract"\n(?:    .*?\n\n)+?# Declare the owners',
+        'workflow ExactGateReviewContract: "Exact Gate Review Contract"\n'
+        + gates
+        + "# Declare the owners",
+        source,
+        flags=re.S,
+    )
+    source = source.replace(
+        '    inputs: "Inputs"\n        DraftSpec\n',
+        '    inputs: "Inputs"\n        DraftSpec\n        ReviewFacts\n',
+    )
+    source = source.replace(
+        '            "Name the exact exported shared-contract gate identities in authored order, including {{contract.completeness}}, {{contract.clarity}}, and {{contract.handoff_truth}} when they fail."',
+        f'            "Name the exact exported shared-contract gate identities in authored order, including {gate_refs} when they fail."',
+    )
+    source = re.sub(
+        r'    contract_gate_checks: "Contract Gate Checks"\n(?:        .*\n)+?\n    on_accept:',
+        '    contract_gate_checks: "Contract Gate Checks"\n'
+        '        match ReviewFacts.selected_mode:\n'
+        + mode_checks
+        + '        accept "The shared review contract passes." when contract.passes\n\n'
+        '    on_accept:',
+        source,
+    )
+    return source
 
 
 def _indent_block(text: str, spaces: int) -> str:

@@ -138,7 +138,7 @@ Stability rules:
 | `E474` | compile | Review is missing subject | A concrete review omitted `subject:`. |
 | `E475` | compile | Review subject has the wrong kind | `subject:` must resolve only to declared `input` or `output` roots. |
 | `E476` | compile | Review is missing contract | A concrete review omitted `contract:`. |
-| `E477` | compile | Review contract target or gate ref is invalid | The referenced contract workflow uses unsupported workflow features or the review names an unknown `contract.<gate>` identity. |
+| `E477` | compile | Review contract target or gate ref is invalid | The referenced contract workflow or schema is invalid for review semantics, or the review names an unknown `contract.<gate>` identity. |
 | `E478` | compile | Review is missing comment_output | A concrete review omitted `comment_output:`. |
 | `E479` | compile | Review comment_output is not emitted | The concrete agent does not emit the review's declared `comment_output`. |
 | `E480` | compile | Concrete agent defines both workflow and review | A concrete agent may not attach both `workflow:` and `review:`. |

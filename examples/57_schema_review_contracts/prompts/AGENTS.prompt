@@ -1,0 +1,95 @@
+# This example lets `review contract:` target a `schema` with exported gates.
+
+schema PlanReviewContract: "Plan Review Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the reviewed plan."
+
+    gates:
+        outline_complete: "Outline Complete"
+            "Confirm the reviewed plan includes the outline."
+
+        evidence_grounded: "Evidence Grounded"
+            "Confirm the reviewed plan cites the current brief."
+
+
+input DraftPlan: "Draft Plan"
+    source: File
+        path: "unit_root/DRAFT_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    outline_missing: "Outline Missing"
+    evidence_missing: "Evidence Missing"
+
+
+agent ReviewLead:
+    role: "Own accepted plan follow-up."
+    workflow: "Follow Up"
+        "Take the accepted plan to the next step."
+
+
+agent PlanAuthor:
+    role: "Repair rejected plan defects."
+    workflow: "Revise"
+        "Revise the same plan when review requests changes."
+
+
+output PlanReviewComment: "Plan Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State the review verdict."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "State what the next owner should read first."
+
+    next_owner: "Next Owner"
+        "Name {{ReviewLead}} when accepted and {{PlanAuthor}} when rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "List exact failing gates, including {{contract.outline_complete}} and {{contract.evidence_grounded}} when they fail."
+
+
+review SchemaBackedPlanReview: "Schema Backed Plan Review"
+    subject: DraftPlan
+    contract: PlanReviewContract
+    comment_output: PlanReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_gate_checks: "Contract Gate Checks"
+        reject contract.outline_complete when DraftPlan.outline_missing
+        reject contract.evidence_grounded when DraftPlan.evidence_missing
+        accept "The schema review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted plan returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+
+
+agent SchemaReviewContractDemo:
+    role: "Keep schema-backed review verdicts and routes aligned."
+    review: SchemaBackedPlanReview
+    inputs: "Inputs"
+        DraftPlan
+    outputs: "Outputs"
+        PlanReviewComment

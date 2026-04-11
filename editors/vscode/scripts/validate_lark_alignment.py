@@ -35,6 +35,7 @@ GENERIC_KEY_STRING_KEYS = (
     "skills",
     "source",
     "target",
+    "structure",
     "use",
     "warning",
     "workflow",
@@ -293,6 +294,13 @@ def main() -> int:
         repository,
         "ioPatchField",
         ['    inputs[shared.io.BaseInputs]: "Inputs"', '    outputs[SharedOutputs]: "Outputs"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "analysisField",
+        ["    analysis: SharedAnalysis"],
         should_match=True,
         errors=errors,
     )

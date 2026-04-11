@@ -1,0 +1,31 @@
+# This example introduces the concrete-agent `analysis:` attachment.
+# The analysis declaration stays reusable and addressable, while the concrete
+# agent keeps ordinary workflow ownership.
+
+enum RiskBand: "Risk Band"
+    low: "Low"
+    high: "High"
+
+
+analysis ReleaseAnalysis: "Release Analysis"
+    stages: "Stages"
+        derive "Release plan" from {CurrentPlan}
+        classify "Risk band" as RiskBand
+        compare "Coverage" against {CurrentPlan}
+        defend "Recommendation" using {CurrentPlan}
+
+
+input CurrentPlan: "Current Plan"
+    source: File
+        path: "unit_root/CURRENT_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent ReleaseAnalysisDemo:
+    role: "Follow {{ReleaseAnalysis:stages.title}} from {{ReleaseAnalysis:title}}."
+    workflow: "Ship"
+        "Use the attached analysis before you finalize the release plan."
+    analysis: ReleaseAnalysis
+    inputs: "Inputs"
+        CurrentPlan

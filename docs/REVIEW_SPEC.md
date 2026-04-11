@@ -40,8 +40,8 @@ Important rules:
 
 ## Review Contracts
 
-`contract:` points at a named `workflow` that acts as the shared review
-contract.
+`contract:` points at a named `workflow` or `schema` that acts as the shared
+review contract.
 
 Example:
 
@@ -54,20 +54,36 @@ workflow DraftReviewContract: "Draft Review Contract"
         "Confirm the draft states the next action clearly."
 ```
 
-The first-level keyed sections in that contract become exported gate
-identities:
+A workflow contract exports its first-level keyed sections as gate identities.
+A schema contract exports its named `gates:` items the same way.
+
+Schema example:
+
+```prompt
+schema PlanReviewContract: "Plan Review Contract"
+    gates:
+        outline_complete: "Outline Complete"
+            "Confirm the draft has a complete outline."
+
+        evidence_grounded: "Evidence Grounded"
+            "Confirm the draft is grounded in cited evidence."
+```
+
+Exported gate identities include:
 
 - `contract.completeness`
 - `contract.clarity`
+- `contract.outline_complete`
+- `contract.evidence_grounded`
 
 The shipped review semantics also expose:
 
 - `contract.passes`
 - `contract.failed_gates`
 
-Contract workflows may use ordinary workflow prose, composition, and
-inheritance, but they are not the place for operational route or currentness
-semantics.
+Workflow contracts may use ordinary workflow prose, composition, and
+inheritance. Schema contracts use `sections:` and optional `gates:`. Neither
+contract surface is the place for operational route or currentness semantics.
 
 ## Core Review Configuration
 
@@ -76,7 +92,7 @@ A concrete review declares:
 - `subject:`: one reviewed input or output root, or a set of candidate roots
 - `subject_map:`: the mode-to-subject disambiguation surface when multiple
   subjects are in play
-- `contract:`: the shared contract workflow
+- `contract:`: the shared contract workflow or schema
 - `comment_output:`: the durable emitted review comment
 - `fields:`: semantic field bindings inside that output
 
@@ -169,7 +185,7 @@ Review gate ordering is deterministic.
 2. If any `block` gate fires, verdict becomes
    `ReviewVerdict.changes_requested` and content review stops for that branch.
 3. Evaluate local `reject` gates and assertion-style sections.
-4. Evaluate the referenced contract workflow.
+4. Evaluate the referenced contract surface.
 5. If no failures remain, evaluate the single `accept` gate.
 
 This is why the review ladder can keep `failing_gates`, `blocked_gate`, and
@@ -327,3 +343,5 @@ Read the review examples in this order:
   explicit review patching
 - `49_review_capstone`: the integrated review surface
 - `53_review_bound_carrier_roots`: bound review carriers and carried state
+- `57_schema_review_contracts`: schema-backed review contracts with exported
+  schema gates

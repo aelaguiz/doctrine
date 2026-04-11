@@ -23,6 +23,7 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 A prompt file may contain imports and any mix of shipped declarations:
 
+- `analysis`, `schema`, `document`
 - `agent`, `abstract agent`
 - `workflow`
 - `review`, `abstract review`
@@ -59,8 +60,8 @@ Important rules:
 - `abstract agent` declares an inheritance-only owner that does not render on
   its own.
 - Every concrete agent needs a `role`.
-- Reserved typed agent fields include `inputs`, `outputs`, `skills`, and
-  `review`.
+- Reserved typed agent fields include `inputs`, `outputs`, `analysis`,
+  `skills`, and `review`.
 - Any other keyed field is an authored workflow slot. Those slots can point at
   a named `workflow` or define an inline workflow body.
 - `abstract <slot_key>` marks an authored slot that concrete children must
@@ -69,6 +70,8 @@ Important rules:
 - `override <slot_key>:` replaces an inherited authored slot in place.
 - A concrete agent may not define both `workflow:` and `review:`. Review turns
   use `review:` as their main semantic body.
+- `analysis:` attaches one reusable `analysis` declaration to an otherwise
+  ordinary concrete turn.
 
 `role` has two shipped shapes:
 
@@ -119,6 +122,85 @@ Inherited workflows use explicit ordered patching:
 Children must account for every inherited keyed item exactly once. Doctrine
 does not do implicit merge by omission.
 
+## Analysis, Schemas, And Documents
+
+Doctrine ships three additional readable declaration families for structured
+reasoning, artifact inventories, and reusable markdown structure.
+
+### Analysis
+
+`analysis` declares a reusable reasoning program that a concrete agent may
+attach through `analysis:`.
+
+```prompt
+analysis ReleaseAnalysis: "Release Analysis"
+    stages: "Stages"
+        derive "Release plan" from {CurrentPlan}
+        classify "Risk band" as RiskBand
+        compare "Coverage" against {CurrentPlan}
+        defend "Recommendation" using {CurrentPlan}
+```
+
+Important rules:
+
+- `analysis` is a readable declaration with titled keyed sections.
+- A section body may contain prose plus `derive`, `classify`, `compare`, and
+  `defend`.
+- `classify ... as EnumRef` uses a declared `enum`.
+- `derive`, `compare`, and `defend` read declared artifact roots or addressable
+  paths.
+- Analysis sections are addressable, so refs such as
+  `ReleaseAnalysis:stages.title` are valid.
+
+### Schemas
+
+`schema` declares a reusable artifact inventory and optional gate catalog.
+
+```prompt
+schema DeliveryInventory: "Delivery Inventory"
+    sections:
+        summary: "Summary"
+            "Include a short summary."
+
+    gates:
+        evidence_grounded: "Evidence Grounded"
+            "Confirm the evidence is cited."
+```
+
+Important rules:
+
+- `schema` owns artifact inventory sections and optional named `gates:`.
+- On `output`, `schema:` points at a Doctrine `schema` declaration.
+- On `output shape`, `schema:` remains the owner-aware attachment point for
+  `json schema`.
+- Schema sections and gates are addressable by authored key.
+- `review contract:` may point at either a `workflow` or a `schema`.
+
+### Documents
+
+`document` declares a reusable markdown structure for markdown-bearing inputs
+and outputs.
+
+```prompt
+document LessonPlan: "Lesson Plan"
+    section overview: "Overview"
+        "Start with the plan overview."
+
+    sequence steps: "Sequence"
+        "List the lesson steps in order."
+```
+
+Important rules:
+
+- `document` supports readable block kinds such as `section`, `sequence`,
+  `bullets`, `checklist`, `definitions`, `table`, `callout`, `code`, and
+  `rule`.
+- `structure:` on `input` or `output` points at a named `document`.
+- `structure:` requires a markdown-bearing shape such as `MarkdownDocument` or
+  `AgentOutputDocument`.
+- Document blocks are addressable by authored key, for example
+  `LessonPlan:overview.title`.
+
 ## Skills
 
 Doctrine treats reusable capability as named `skill` declarations, not as
@@ -163,6 +245,7 @@ Important rules:
 - Built-in sources used in the shipped corpus include `Prompt`, `File`, and
   `EnvVar`.
 - Custom sources can be declared with `input source`.
+- `structure:` may attach a named `document` to a markdown-bearing input.
 - `inputs` blocks group and bind inputs with local keys for a concrete turn.
 
 ### Outputs
@@ -183,6 +266,11 @@ Important rules:
   `File`.
 - Custom targets can be declared with `output target`.
 - Output shapes can be named with `output shape`.
+- `schema:` on `output` attaches a Doctrine `schema` declaration.
+- `schema:` on `output shape` remains the owner-aware attachment point for
+  `json schema`.
+- `structure:` on `output` attaches a named `document` when the output shape is
+  markdown-bearing.
 - `json schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
@@ -231,6 +319,7 @@ Examples:
 - `DraftSpec`
 - `ReviewComment`
 - `MetadataContract:files.summary`
+- `ReleaseAnalysis:stages.title`
 
 ### Addressable paths
 
@@ -239,6 +328,7 @@ Nested keyed items can be addressed explicitly:
 - `Decl:path.to.child`
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
+- `LessonPlan:overview.title`
 
 Paths follow authored keyed structure only. Trying to descend past a scalar
 leaf fails loudly.

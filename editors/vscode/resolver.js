@@ -33,10 +33,10 @@ const USE_RE = new RegExp(
   `^\\s*use\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const TOP_LEVEL_FIELD_REF_RE = new RegExp(
-  `^\\s*(skills|inputs|outputs)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(analysis|skills|inputs|outputs)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEYED_DECL_REF_RE = new RegExp(
-  `^\\s*(source|target|shape|schema)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(source|target|shape|schema|structure)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const AGENT_SLOT_REF_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -88,6 +88,27 @@ const REVIEW_SECTION_RE = new RegExp(
 const REVIEW_OVERRIDE_SECTION_RE = new RegExp(
   `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?\\s*$`,
 );
+const ANALYSIS_SECTION_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+);
+const ANALYSIS_OVERRIDE_SECTION_RE = new RegExp(
+  `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?\\s*$`,
+);
+const ANALYSIS_CLASSIFY_RE = new RegExp(
+  `^\\s*classify\\s+${STRING_PATTERN}\\s+as\\s+(${DOTTED_NAME_PATTERN})\\s*$`,
+);
+const SCHEMA_BLOCK_FIELD_RE = /^\s*(sections|gates)\s*:\s*$/;
+const SCHEMA_INHERIT_BLOCK_RE = /^\s*inherit\s+(sections|gates)\s*$/;
+const SCHEMA_OVERRIDE_BLOCK_RE = /^\s*override\s+(sections|gates)\s*:\s*$/;
+const SCHEMA_ITEM_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+);
+const DOCUMENT_BLOCK_RE = new RegExp(
+  `^\\s*(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+);
+const DOCUMENT_OVERRIDE_BLOCK_RE = new RegExp(
+  `^\\s*override\\s+(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?\\s*$`,
+);
 const LAW_OVERRIDE_SECTION_RE = new RegExp(
   `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*$`,
 );
@@ -100,6 +121,11 @@ const TRUST_SURFACE_ITEM_RE = new RegExp(
 );
 const GUARDED_OUTPUT_HEADER_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
+);
+const BRACED_EXPR_RE = /\{([^{}]+)\}/g;
+const BRACED_REF_TOKEN_RE = new RegExp(
+  `\\b(${DOTTED_NAME_PATTERN})(?::(${DOTTED_NAME_PATTERN}))?\\b`,
+  "g",
 );
 const DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
 const UPPERCASE_DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
@@ -159,7 +185,7 @@ const PURPOSE_OR_REASON_RE = new RegExp(
   `^\\s*(purpose|reason)\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
 
-const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "skills", "review"]);
+const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "analysis", "skills", "review"]);
 const READABLE_DECLARATION_KINDS = Object.freeze([
   "agent",
   "analysis",
@@ -482,6 +508,15 @@ function classifyDefinitionSite(source, position) {
         ),
       );
       break;
+    case "analysis_body":
+      sites.push(...collectAnalysisBodySites(lineText, position.line));
+      break;
+    case "schema_body":
+      sites.push(...collectSchemaBodySites(lineText, position.line));
+      break;
+    case "document_body":
+      sites.push(...collectDocumentBodySites(lineText, position.line));
+      break;
     case "workflow_body":
       sites.push(...collectWorkflowBodySites(lineText, position.line));
       break;
@@ -510,11 +545,7 @@ function classifyDefinitionSite(source, position) {
       break;
     case "record_body":
       sites.push(
-        ...collectRecordBodySites(
-          lineText,
-          position.line,
-          lineContext.container.fieldKind,
-        ),
+        ...collectRecordBodySites(lineText, position.line, lineContext.container),
       );
       break;
     case "trust_surface_body":
@@ -663,22 +694,22 @@ function collectReviewBodySites(lineText, lineNumber) {
 
   const configRef = lineText.match(REVIEW_CONFIG_REF_RE);
   if (configRef) {
-    const declarationKind =
-      configRef[1] === "contract"
-        ? DECLARATION_KIND.WORKFLOW
-        : configRef[1] === "comment_output"
-          ? DECLARATION_KIND.OUTPUT
-          : undefined;
-    if (declarationKind) {
+    if (configRef[1] === "comment_output") {
       sites.push({
         type: "directDeclRef",
-        declarationKind,
+        declarationKind: DECLARATION_KIND.OUTPUT,
         range: createLastMatchRange(lineText, lineNumber, configRef[2]),
         ref: parseNameRef(configRef[2]),
         requireConcrete: false,
       });
       return sites;
     }
+    sites.push({
+      type: "readableDeclRef",
+      range: createLastMatchRange(lineText, lineNumber, configRef[2]),
+      ref: parseNameRef(configRef[2]),
+    });
+    return sites;
   }
 
   if (REVIEW_SUBJECT_MAP_FIELD_RE.test(lineText)) {
@@ -762,6 +793,94 @@ function collectReviewOutcomeSites(lineText, lineNumber) {
   sites.push(...collectReviewSemanticSites(lineText, lineNumber));
   sites.push(...collectShippedLawRefSites(lineText, lineNumber));
   sites.push(...collectBoundLawPathSites(lineText, lineNumber));
+  return sites;
+}
+
+function collectAnalysisBodySites(lineText, lineNumber) {
+  const sites = [];
+
+  const inheritItem = lineText.match(INHERIT_RE);
+  if (inheritItem) {
+    sites.push(createStructuralSite(lineText, lineNumber, inheritItem[1]));
+    return sites;
+  }
+
+  const overrideSection = lineText.match(ANALYSIS_OVERRIDE_SECTION_RE);
+  if (overrideSection) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideSection[1]));
+    return sites;
+  }
+
+  const localSection = lineText.match(ANALYSIS_SECTION_RE);
+  if (localSection) {
+    sites.push(createStructuralSite(lineText, lineNumber, localSection[1]));
+    return sites;
+  }
+
+  const classifyTarget = lineText.match(ANALYSIS_CLASSIFY_RE);
+  if (classifyTarget) {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.ENUM,
+      range: createLastMatchRange(lineText, lineNumber, classifyTarget[1]),
+      ref: parseNameRef(classifyTarget[1]),
+      requireConcrete: false,
+    });
+  }
+
+  sites.push(...collectBraceReferenceSites(lineText, lineNumber));
+  return sites;
+}
+
+function collectSchemaBodySites(lineText, lineNumber) {
+  const sites = [];
+
+  const inheritBlock = lineText.match(SCHEMA_INHERIT_BLOCK_RE);
+  if (inheritBlock) {
+    sites.push(createStructuralSite(lineText, lineNumber, inheritBlock[1]));
+    return sites;
+  }
+
+  const overrideBlock = lineText.match(SCHEMA_OVERRIDE_BLOCK_RE);
+  if (overrideBlock) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideBlock[1]));
+    return sites;
+  }
+
+  const blockField = lineText.match(SCHEMA_BLOCK_FIELD_RE);
+  if (blockField) {
+    sites.push(createStructuralSite(lineText, lineNumber, blockField[1]));
+    return sites;
+  }
+
+  const schemaItem = lineText.match(SCHEMA_ITEM_RE);
+  if (schemaItem) {
+    sites.push(createStructuralSite(lineText, lineNumber, schemaItem[1]));
+  }
+
+  return sites;
+}
+
+function collectDocumentBodySites(lineText, lineNumber) {
+  const sites = [];
+
+  const inheritItem = lineText.match(INHERIT_RE);
+  if (inheritItem) {
+    sites.push(createStructuralSite(lineText, lineNumber, inheritItem[1]));
+    return sites;
+  }
+
+  const overrideBlock = lineText.match(DOCUMENT_OVERRIDE_BLOCK_RE);
+  if (overrideBlock) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideBlock[2]));
+    return sites;
+  }
+
+  const localBlock = lineText.match(DOCUMENT_BLOCK_RE);
+  if (localBlock) {
+    sites.push(createStructuralSite(lineText, lineNumber, localBlock[2]));
+  }
+
   return sites;
 }
 
@@ -984,8 +1103,10 @@ function collectIoBodySites(lineText, lineNumber, fieldKind) {
   return sites;
 }
 
-function collectRecordBodySites(lineText, lineNumber, fieldKind) {
+function collectRecordBodySites(lineText, lineNumber, container) {
   const sites = [];
+  const fieldKind = container?.fieldKind;
+  const declarationKind = container?.declarationKind;
 
   const keyedPathRef = lineText.match(KEY_VALUE_PATH_REF_RE);
   if (keyedPathRef) {
@@ -1006,20 +1127,26 @@ function collectRecordBodySites(lineText, lineNumber, fieldKind) {
 
   const keyedRef = lineText.match(KEYED_DECL_REF_RE);
   if (keyedRef) {
-    sites.push({
-      type: "directDeclRef",
-      declarationKind: keyedFieldToDeclarationKind(keyedRef[1]),
-      range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
-      ref: parseNameRef(keyedRef[2]),
-      requireConcrete: false,
+    const targetKind = keyedRecordFieldToDeclarationKind(keyedRef[1], {
+      declarationKind,
+      fieldKind,
     });
+    if (targetKind) {
+      sites.push({
+        type: "directDeclRef",
+        declarationKind: targetKind,
+        range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
+        ref: parseNameRef(keyedRef[2]),
+        requireConcrete: false,
+      });
+    }
   }
 
   if (fieldKind === "inputs" || fieldKind === "outputs") {
-  const standalone = lineText.match(STANDALONE_REF_RE);
-  if (standalone) {
-    sites.push({
-      type: "directDeclRef",
+    const standalone = lineText.match(STANDALONE_REF_RE);
+    if (standalone) {
+      sites.push({
+        type: "directDeclRef",
         declarationKind:
           fieldKind === "inputs"
             ? DECLARATION_KIND.INPUT
@@ -1107,6 +1234,52 @@ function collectInterpolationSites(lineText, lineNumber) {
       ),
       ref,
     });
+  }
+
+  return sites;
+}
+
+function collectBraceReferenceSites(lineText, lineNumber) {
+  const sites = [];
+
+  for (const braceMatch of lineText.matchAll(BRACED_EXPR_RE)) {
+    const expression = braceMatch[1];
+    for (const token of expression.matchAll(BRACED_REF_TOKEN_RE)) {
+      const rootText = token[1];
+      const pathText = token[2];
+      const tokenOffset = token.index ?? 0;
+      const rootStart = (braceMatch.index ?? 0) + 1 + tokenOffset;
+
+      if (pathText) {
+        const pathOffset = token[0].indexOf(pathText);
+        sites.push(
+          ...createAddressableRefSites({
+            lineNumber,
+            pathText,
+            pathStartCharacter: rootStart + pathOffset,
+            rootText,
+            startCharacter: rootStart,
+          }),
+        );
+        continue;
+      }
+
+      const ref = parseNameRef(rootText);
+      if (!ref) {
+        continue;
+      }
+
+      sites.push({
+        type: "readableDeclRef",
+        range: new vscode.Range(
+          lineNumber,
+          rootStart,
+          lineNumber,
+          rootStart + rootText.length,
+        ),
+        ref,
+      });
+    }
   }
 
   return sites;
@@ -2125,16 +2298,16 @@ async function resolveWorkflowParentBody(site, source) {
   };
 }
 
-async function resolveReviewParentBody(site, source) {
+async function resolveSameKindParentBody(site, source, declarationKind) {
   const { declaration } = site.lineContext;
-  if (declaration.kind !== DECLARATION_KIND.REVIEW || !declaration.parentRef) {
+  if (declaration.kind !== declarationKind || !declaration.parentRef) {
     return undefined;
   }
 
   const parent = await resolveReferenceTarget(
     declaration.parentRef,
     source,
-    DECLARATION_KIND.REVIEW,
+    declarationKind,
     false,
   );
   if (!parent) {
@@ -2145,6 +2318,22 @@ async function resolveReviewParentBody(site, source) {
     document: parent.document,
     bodySpec: getDeclarationBodySpec(parent.declaration),
   };
+}
+
+async function resolveReviewParentBody(site, source) {
+  return resolveSameKindParentBody(site, source, DECLARATION_KIND.REVIEW);
+}
+
+async function resolveAnalysisParentBody(site, source) {
+  return resolveSameKindParentBody(site, source, DECLARATION_KIND.ANALYSIS);
+}
+
+async function resolveSchemaParentBody(site, source) {
+  return resolveSameKindParentBody(site, source, DECLARATION_KIND.SCHEMA_DECL);
+}
+
+async function resolveDocumentParentBody(site, source) {
+  return resolveSameKindParentBody(site, source, DECLARATION_KIND.DOCUMENT);
 }
 
 function findWorkflowLawBodySpec(document, workflowBodySpec) {
@@ -2212,6 +2401,18 @@ async function resolveImmediateParentBody(site, source) {
 
   if (container.type === "review_body") {
     return resolveReviewParentBody(site, source);
+  }
+
+  if (container.type === "analysis_body") {
+    return resolveAnalysisParentBody(site, source);
+  }
+
+  if (container.type === "schema_body") {
+    return resolveSchemaParentBody(site, source);
+  }
+
+  if (container.type === "document_body") {
+    return resolveDocumentParentBody(site, source);
   }
 
   if (
@@ -2405,6 +2606,12 @@ function findStructuralKeyTarget(parentBody, key) {
       return getAgentBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "review_body":
       return getReviewBodyItems(parentBody.document, parentBody.bodySpec).get(key);
+    case "analysis_body":
+      return getAnalysisBodyItems(parentBody.document, parentBody.bodySpec).get(key);
+    case "schema_body":
+      return getSchemaBodyItems(parentBody.document, parentBody.bodySpec).get(key);
+    case "document_body":
+      return getDocumentBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "workflow_body":
       return getWorkflowBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "law_body":
@@ -4088,6 +4295,198 @@ function getRecordBodyItems(document, bodySpec) {
   return items;
 }
 
+function getAnalysisBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      items.set(inheritItem[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, inheritItem[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideSection = lineText.match(ANALYSIS_OVERRIDE_SECTION_RE);
+    if (overrideSection) {
+      items.set(overrideSection[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideSection[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const localSection = lineText.match(ANALYSIS_SECTION_RE);
+    if (!localSection) {
+      continue;
+    }
+
+    items.set(localSection[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, localSection[1]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getSchemaBlockItems(document, lineNumber, endLine) {
+  const items = [];
+  const baseIndent = findBodyBaseIndent(document, {
+    endLine,
+    lineNumber,
+  });
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let childLineNumber = lineNumber + 1;
+    childLineNumber <= endLine;
+    childLineNumber += 1
+  ) {
+    const lineText = document.lineAt(childLineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const schemaItem = lineText.match(SCHEMA_ITEM_RE);
+    if (!schemaItem) {
+      continue;
+    }
+
+    items.push({
+      key: schemaItem[1],
+      keyRange: createFirstMatchRange(lineText, childLineNumber, schemaItem[1]),
+      lineNumber: childLineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getSchemaBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const inheritBlock = lineText.match(SCHEMA_INHERIT_BLOCK_RE);
+    if (inheritBlock) {
+      items.set(inheritBlock[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, inheritBlock[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideBlock = lineText.match(SCHEMA_OVERRIDE_BLOCK_RE);
+    const blockField = lineText.match(SCHEMA_BLOCK_FIELD_RE);
+    const blockMatch = overrideBlock || blockField;
+    if (blockMatch) {
+      const blockKey = blockMatch[1];
+      const blockEndLine = findBodyEndLine(document, lineNumber, bodySpec.endLine);
+      items.set(blockKey, {
+        keyRange: createFirstMatchRange(lineText, lineNumber, blockKey),
+        lineNumber,
+      });
+      for (const item of getSchemaBlockItems(document, lineNumber, blockEndLine)) {
+        items.set(item.key, {
+          keyRange: item.keyRange,
+          lineNumber: item.lineNumber,
+        });
+      }
+      continue;
+    }
+
+    const schemaItem = lineText.match(SCHEMA_ITEM_RE);
+    if (!schemaItem) {
+      continue;
+    }
+
+    items.set(schemaItem[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, schemaItem[1]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getDocumentBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      items.set(inheritItem[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, inheritItem[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideBlock = lineText.match(DOCUMENT_OVERRIDE_BLOCK_RE);
+    if (overrideBlock) {
+      items.set(overrideBlock[2], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideBlock[2]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const localBlock = lineText.match(DOCUMENT_BLOCK_RE);
+    if (!localBlock) {
+      continue;
+    }
+
+    items.set(localBlock[2], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, localBlock[2]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
 function getEnumBodyItems(document, bodySpec) {
   const items = new Map();
   const baseIndent = findBodyBaseIndent(document, bodySpec);
@@ -4125,6 +4524,12 @@ function getAddressableBodyItems(document, bodySpec) {
   switch (bodySpec.type) {
     case "review_body":
       return getReviewBodyItems(document, bodySpec);
+    case "analysis_body":
+      return getAnalysisBodyItems(document, bodySpec);
+    case "schema_body":
+      return getSchemaBodyItems(document, bodySpec);
+    case "document_body":
+      return getDocumentBodyItems(document, bodySpec);
     case "workflow_body":
       return getWorkflowBodyItems(document, bodySpec);
     case "workflow_section_body":
@@ -4764,6 +5169,8 @@ function inheritanceKindToDeclarationKind(kind) {
 
 function keyedFieldToDeclarationKind(fieldName) {
   switch (fieldName) {
+    case "analysis":
+      return DECLARATION_KIND.ANALYSIS;
     case "skills":
       return DECLARATION_KIND.SKILLS_BLOCK;
     case "inputs":
@@ -4778,6 +5185,36 @@ function keyedFieldToDeclarationKind(fieldName) {
       return DECLARATION_KIND.OUTPUT_SHAPE;
     case "schema":
       return DECLARATION_KIND.JSON_SCHEMA;
+    default:
+      return undefined;
+  }
+}
+
+function keyedRecordFieldToDeclarationKind(fieldName, context = {}) {
+  const { declarationKind } = context;
+  switch (fieldName) {
+    case "source":
+      return DECLARATION_KIND.INPUT_SOURCE;
+    case "target":
+      return DECLARATION_KIND.OUTPUT_TARGET;
+    case "shape":
+      return DECLARATION_KIND.OUTPUT_SHAPE;
+    case "schema":
+      if (declarationKind === DECLARATION_KIND.OUTPUT) {
+        return DECLARATION_KIND.SCHEMA_DECL;
+      }
+      if (declarationKind === DECLARATION_KIND.OUTPUT_SHAPE) {
+        return DECLARATION_KIND.JSON_SCHEMA;
+      }
+      return DECLARATION_KIND.JSON_SCHEMA;
+    case "structure":
+      if (
+        declarationKind === DECLARATION_KIND.INPUT
+        || declarationKind === DECLARATION_KIND.OUTPUT
+      ) {
+        return DECLARATION_KIND.DOCUMENT;
+      }
+      return undefined;
     default:
       return undefined;
   }

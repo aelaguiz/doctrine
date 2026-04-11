@@ -1,0 +1,35 @@
+# This example introduces typed `structure:` attachments on markdown-bearing
+# inputs and outputs through a reusable `document`.
+
+document LessonPlan: "Lesson Plan"
+    section overview: "Overview"
+        "Start with the plan overview."
+
+    section sequence: "Sequence"
+        "List the lesson steps in order."
+
+
+input CurrentLessonPlan: "Current Lesson Plan"
+    source: File
+        path: "lesson_root/CURRENT_LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: LessonPlan
+    requirement: Required
+
+
+output NextLessonPlan: "Next Lesson Plan"
+    target: File
+        path: "lesson_root/NEXT_LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: LessonPlan
+    requirement: Required
+
+
+agent LessonPlanStructureDemo:
+    role: "Keep {{LessonPlan:overview.title}} and {{LessonPlan:sequence.title}} aligned in {{LessonPlan:title}}."
+    workflow: "Rewrite"
+        "Use the shared document structure for both the current and next lesson plans."
+    inputs: "Inputs"
+        CurrentLessonPlan
+    outputs: "Outputs"
+        NextLessonPlan

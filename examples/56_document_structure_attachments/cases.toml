@@ -1,0 +1,70 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "document structure attachments render on markdown inputs and outputs"
+status = "active"
+kind = "render_contract"
+agent = "LessonPlanStructureDemo"
+assertion = "exact_lines"
+approx_ref = "ref/lesson_plan_structure_demo/AGENTS.md"
+expected_lines = [
+  "Keep Overview and Sequence aligned in Lesson Plan.",
+  "",
+  "## Rewrite",
+  "",
+  "Use the shared document structure for both the current and next lesson plans.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Lesson Plan",
+  "",
+  "- Source: File",
+  "- Path: `lesson_root/CURRENT_LESSON_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Structure: Lesson Plan",
+  "",
+  "#### Structure: Lesson Plan",
+  "",
+  "##### Overview",
+  "",
+  "Start with the plan overview.",
+  "",
+  "##### Sequence",
+  "",
+  "List the lesson steps in order.",
+  "",
+  "## Outputs",
+  "",
+  "### Next Lesson Plan",
+  "",
+  "- Target: File",
+  "- Path: `lesson_root/NEXT_LESSON_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Structure: Lesson Plan",
+  "",
+  "#### Structure: Lesson Plan",
+  "",
+  "##### Overview",
+  "",
+  "Start with the plan overview.",
+  "",
+  "##### Sequence",
+  "",
+  "List the lesson steps in order.",
+]
+
+[[cases]]
+name = "output structure fails on non-markdown output shapes"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_NON_MARKDOWN_OUTPUT_STRUCTURE.prompt"
+agent = "InvalidNonMarkdownOutputStructure"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Output structure requires a markdown-bearing shape",
+  "InvalidCommentOutput",
+]
