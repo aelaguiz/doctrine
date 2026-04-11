@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TypeAlias
@@ -20,6 +23,64 @@ class CompiledSection:
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class AgentFieldCompileSpec:
+    field: model.Field
+    slot_body: ResolvedWorkflowBody | None = None
+
+
+FlowAgentKey = tuple[tuple[str, ...], str]
+FlowArtifactKey = tuple[tuple[str, ...], str]
+
+
+@dataclass(slots=True, frozen=True)
+class FlowAgentNode:
+    module_parts: tuple[str, ...]
+    name: str
+    title: str
+    detail_lines: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class FlowInputNode:
+    module_parts: tuple[str, ...]
+    name: str
+    title: str
+    detail_lines: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class FlowOutputNode:
+    module_parts: tuple[str, ...]
+    name: str
+    title: str
+    detail_lines: tuple[str, ...] = ()
+    trust_surface: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class FlowEdge:
+    kind: str
+    source_kind: str
+    source_module_parts: tuple[str, ...]
+    source_name: str
+    target_kind: str
+    target_module_parts: tuple[str, ...]
+    target_name: str
+    label: str
+
+
+@dataclass(slots=True, frozen=True)
+class FlowGraph:
+    agents: tuple[FlowAgentNode, ...]
+    inputs: tuple[FlowInputNode, ...]
+    outputs: tuple[FlowOutputNode, ...]
+    edges: tuple[FlowEdge, ...]
 
 
 CompiledBodyItem: TypeAlias = model.ProseLine | CompiledSection
@@ -84,6 +145,7 @@ class IndexedUnit:
 @dataclass(slots=True, frozen=True)
 class ResolvedRouteLine:
     label: str
+    target_module_parts: tuple[str, ...]
     target_name: str
 
 
@@ -356,6 +418,18 @@ class ResolvedReviewAgreementBranch:
     blocked_gate_id: str | None = None
 
 
+@dataclass(slots=True, frozen=True)
+class ReviewGateObservation:
+    needs_blocked_gate_presence: bool = False
+    needs_blocked_gate_value: bool = False
+    needs_failing_gates_presence: bool = False
+    needs_failing_gates_value: bool = False
+    needs_contract_failed_gates_value: bool = False
+    needs_contract_first_failed_gate: bool = False
+    needs_contract_passes: bool = False
+    referenced_contract_gate_ids: tuple[str, ...] = ()
+
+
 OutputDeclKey = tuple[tuple[str, ...], str]
 
 
@@ -473,11 +547,360 @@ _REVIEW_VERDICT_TEXT = {
 _REVIEW_CONTRACT_FACT_KEYS = ("passes", "failed_gates", "first_failed_gate")
 
 
-class CompilationContext:
+def _default_worker_count(task_count: int) -> int:
+    if task_count <= 1:
+        return 1
+    cpu_count = os.cpu_count() or 1
+    return min(task_count, max(2, cpu_count))
+
+
+def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:
+    return type(error)(diagnostic=error.diagnostic)
+
+
+def _register_decl(
+    registry: dict[str, object],
+    name: str,
+    module_parts: tuple[str, ...],
+) -> None:
+    if name in registry:
+        dotted_name = ".".join((*module_parts, name)) or name
+        raise CompileError(f"Duplicate declaration name: {dotted_name}")
+
+
+def _validate_enum_decl(decl: model.EnumDecl, *, owner_label: str) -> None:
+    seen_keys: set[str] = set()
+    for member in decl.members:
+        if member.key in seen_keys:
+            raise CompileError(f"Duplicate enum member key in {owner_label}: {member.key}")
+        seen_keys.add(member.key)
+
+
+class CompilationSession:
     def __init__(self, prompt_file: model.PromptFile):
         self.prompt_root = _resolve_prompt_root(prompt_file.source_path)
         self._module_cache: dict[tuple[str, ...], IndexedUnit] = {}
-        self._loading_modules: set[tuple[str, ...]] = set()
+        self._module_load_errors: dict[tuple[str, ...], Exception] = {}
+        self._module_loading: dict[tuple[str, ...], threading.Event] = {}
+        self._module_lock = threading.Lock()
+        # Shared prompt graph data lives on the session; compile contexts stay task-local.
+        self.root_unit = self._index_unit(
+            prompt_file,
+            module_parts=(),
+            ancestry=(),
+            allow_parallel_imports=True,
+        )
+
+    def compile_agent(self, agent_name: str) -> CompiledAgent:
+        try:
+            return CompilationContext(self).compile_agent(agent_name)
+        except DoctrineError as exc:
+            raise exc.prepend_trace(
+                f"compile agent `{agent_name}`",
+                location=_path_location(self.root_unit.prompt_file.source_path),
+            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+
+    def compile_agents(self, agent_names: tuple[str, ...]) -> tuple[CompiledAgent, ...]:
+        if len(agent_names) <= 1:
+            return tuple(self.compile_agent(agent_name) for agent_name in agent_names)
+
+        with ThreadPoolExecutor(max_workers=_default_worker_count(len(agent_names))) as executor:
+            futures = {
+                agent_name: executor.submit(self.compile_agent, agent_name)
+                for agent_name in agent_names
+            }
+            return tuple(futures[agent_name].result() for agent_name in agent_names)
+
+    def _compile_agent_field_task(
+        self,
+        spec: AgentFieldCompileSpec,
+        *,
+        agent_name: str,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+    ) -> CompiledField:
+        return CompilationContext(self)._compile_agent_field(
+            spec,
+            agent_name=agent_name,
+            unit=unit,
+            agent_contract=agent_contract,
+            review_output_contexts=review_output_contexts,
+        )
+
+    def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
+        try:
+            return CompilationContext(self).extract_target_flow_graph(agent_names)
+        except DoctrineError as exc:
+            raise exc.prepend_trace(
+                "extract flow graph",
+                location=_path_location(self.root_unit.prompt_file.source_path),
+            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+
+    def load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
+        if not module_parts:
+            return self.root_unit
+        return self._load_module(module_parts, ancestry=())
+
+    def _index_unit(
+        self,
+        prompt_file: model.PromptFile,
+        *,
+        module_parts: tuple[str, ...],
+        ancestry: tuple[tuple[str, ...], ...],
+        allow_parallel_imports: bool,
+    ) -> IndexedUnit:
+        imports: list[model.ImportDecl] = []
+        workflows_by_name: dict[str, model.WorkflowDecl] = {}
+        reviews_by_name: dict[str, model.ReviewDecl] = {}
+        skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
+        inputs_blocks_by_name: dict[str, model.InputsDecl] = {}
+        inputs_by_name: dict[str, model.InputDecl] = {}
+        input_sources_by_name: dict[str, model.InputSourceDecl] = {}
+        outputs_blocks_by_name: dict[str, model.OutputsDecl] = {}
+        outputs_by_name: dict[str, model.OutputDecl] = {}
+        output_targets_by_name: dict[str, model.OutputTargetDecl] = {}
+        output_shapes_by_name: dict[str, model.OutputShapeDecl] = {}
+        json_schemas_by_name: dict[str, model.JsonSchemaDecl] = {}
+        skills_by_name: dict[str, model.SkillDecl] = {}
+        agents_by_name: dict[str, model.Agent] = {}
+        enums_by_name: dict[str, model.EnumDecl] = {}
+
+        for declaration in prompt_file.declarations:
+            if isinstance(declaration, model.ImportDecl):
+                imports.append(declaration)
+                continue
+            if isinstance(declaration, model.WorkflowDecl):
+                _register_decl(workflows_by_name, declaration.name, module_parts)
+                workflows_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.ReviewDecl):
+                _register_decl(reviews_by_name, declaration.name, module_parts)
+                reviews_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.SkillsDecl):
+                _register_decl(skills_blocks_by_name, declaration.name, module_parts)
+                skills_blocks_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.InputsDecl):
+                _register_decl(inputs_blocks_by_name, declaration.name, module_parts)
+                inputs_blocks_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.InputDecl):
+                _register_decl(inputs_by_name, declaration.name, module_parts)
+                inputs_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.InputSourceDecl):
+                _register_decl(input_sources_by_name, declaration.name, module_parts)
+                input_sources_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.OutputsDecl):
+                _register_decl(outputs_blocks_by_name, declaration.name, module_parts)
+                outputs_blocks_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.OutputDecl):
+                _register_decl(outputs_by_name, declaration.name, module_parts)
+                outputs_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.OutputTargetDecl):
+                _register_decl(output_targets_by_name, declaration.name, module_parts)
+                output_targets_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.OutputShapeDecl):
+                _register_decl(output_shapes_by_name, declaration.name, module_parts)
+                output_shapes_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.JsonSchemaDecl):
+                _register_decl(json_schemas_by_name, declaration.name, module_parts)
+                json_schemas_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.SkillDecl):
+                _register_decl(skills_by_name, declaration.name, module_parts)
+                skills_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.EnumDecl):
+                _register_decl(enums_by_name, declaration.name, module_parts)
+                _validate_enum_decl(
+                    declaration,
+                    owner_label=f"enum {_dotted_decl_name(module_parts, declaration.name)}",
+                )
+                enums_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.Agent):
+                _register_decl(agents_by_name, declaration.name, module_parts)
+                agents_by_name[declaration.name] = declaration
+                continue
+            raise CompileError(f"Unsupported declaration type: {type(declaration).__name__}")
+
+        imported_units = self._load_imports(
+            imports,
+            module_parts=module_parts,
+            importer_path=prompt_file.source_path,
+            ancestry=ancestry,
+            allow_parallel_imports=allow_parallel_imports,
+        )
+
+        return IndexedUnit(
+            module_parts=module_parts,
+            prompt_file=prompt_file,
+            imports=tuple(imports),
+            workflows_by_name=workflows_by_name,
+            reviews_by_name=reviews_by_name,
+            inputs_blocks_by_name=inputs_blocks_by_name,
+            inputs_by_name=inputs_by_name,
+            input_sources_by_name=input_sources_by_name,
+            outputs_blocks_by_name=outputs_blocks_by_name,
+            outputs_by_name=outputs_by_name,
+            output_targets_by_name=output_targets_by_name,
+            output_shapes_by_name=output_shapes_by_name,
+            json_schemas_by_name=json_schemas_by_name,
+            skills_by_name=skills_by_name,
+            skills_blocks_by_name=skills_blocks_by_name,
+            enums_by_name=enums_by_name,
+            agents_by_name=agents_by_name,
+            imported_units=imported_units,
+        )
+
+    def _load_imports(
+        self,
+        imports: list[model.ImportDecl],
+        *,
+        module_parts: tuple[str, ...],
+        importer_path: Path | None,
+        ancestry: tuple[tuple[str, ...], ...],
+        allow_parallel_imports: bool,
+    ) -> dict[tuple[str, ...], IndexedUnit]:
+        imported_units: dict[tuple[str, ...], IndexedUnit] = {}
+        if not imports:
+            return imported_units
+
+        resolved_imports = [
+            (_resolve_import_path(import_decl.path, module_parts=module_parts), import_decl)
+            for import_decl in imports
+        ]
+
+        if allow_parallel_imports and len(resolved_imports) > 1:
+            futures: dict[tuple[str, ...], object] = {}
+            with ThreadPoolExecutor(max_workers=_default_worker_count(len(resolved_imports))) as executor:
+                for resolved_module_parts, _import_decl in resolved_imports:
+                    if resolved_module_parts in futures:
+                        continue
+                    futures[resolved_module_parts] = executor.submit(
+                        self._load_module,
+                        resolved_module_parts,
+                        ancestry=ancestry,
+                    )
+
+                for resolved_module_parts, _import_decl in resolved_imports:
+                    try:
+                        imported_units[resolved_module_parts] = futures[
+                            resolved_module_parts
+                        ].result()
+                    except DoctrineError as exc:
+                        raise exc.prepend_trace(
+                            f"resolve import `{'.'.join(resolved_module_parts)}`",
+                            location=_path_location(importer_path),
+                        )
+            return imported_units
+
+        for resolved_module_parts, _import_decl in resolved_imports:
+            try:
+                imported_units[resolved_module_parts] = self._load_module(
+                    resolved_module_parts,
+                    ancestry=ancestry,
+                )
+            except DoctrineError as exc:
+                raise exc.prepend_trace(
+                    f"resolve import `{'.'.join(resolved_module_parts)}`",
+                    location=_path_location(importer_path),
+                )
+        return imported_units
+
+    def _load_module(
+        self,
+        module_parts: tuple[str, ...],
+        *,
+        ancestry: tuple[tuple[str, ...], ...],
+    ) -> IndexedUnit:
+        cached = self._module_cache.get(module_parts)
+        if cached is not None:
+            return cached
+        if module_parts in ancestry:
+            raise CompileError(f"Cyclic import module: {'.'.join(module_parts)}")
+
+        with self._module_lock:
+            cached = self._module_cache.get(module_parts)
+            if cached is not None:
+                return cached
+
+            cached_error = self._module_load_errors.get(module_parts)
+            if cached_error is not None:
+                if isinstance(cached_error, DoctrineError):
+                    raise _clone_doctrine_error(cached_error)
+                raise cached_error
+
+            ready = self._module_loading.get(module_parts)
+            if ready is None:
+                ready = threading.Event()
+                self._module_loading[module_parts] = ready
+                is_loader = True
+            else:
+                is_loader = False
+
+        if not is_loader:
+            ready.wait()
+            with self._module_lock:
+                cached = self._module_cache.get(module_parts)
+                if cached is not None:
+                    return cached
+                cached_error = self._module_load_errors.get(module_parts)
+            if cached_error is None:
+                raise CompileError(
+                    f"Internal compiler error: module load finished without a result: {'.'.join(module_parts)}"
+                )
+            if isinstance(cached_error, DoctrineError):
+                raise _clone_doctrine_error(cached_error)
+            raise cached_error
+
+        module_path = self.prompt_root.joinpath(*module_parts).with_suffix(".prompt")
+        try:
+            if not module_path.is_file():
+                raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
+            try:
+                prompt_file = parse_file(module_path)
+                indexed = self._index_unit(
+                    prompt_file,
+                    module_parts=module_parts,
+                    ancestry=(*ancestry, module_parts),
+                    allow_parallel_imports=False,
+                )
+            except DoctrineError as exc:
+                raise exc.prepend_trace(
+                    f"load import module `{'.'.join(module_parts)}`",
+                    location=_path_location(module_path),
+                ).ensure_location(path=module_path)
+        except Exception as exc:
+            with self._module_lock:
+                if isinstance(exc, DoctrineError):
+                    self._module_load_errors[module_parts] = _clone_doctrine_error(exc)
+                else:
+                    self._module_load_errors[module_parts] = exc
+            raise
+        else:
+            with self._module_lock:
+                self._module_cache[module_parts] = indexed
+            return indexed
+        finally:
+            with self._module_lock:
+                ready = self._module_loading.pop(module_parts, None)
+            if ready is not None:
+                ready.set()
+
+
+class CompilationContext:
+    def __init__(self, session: CompilationSession):
+        self.session = session
+        self.prompt_root = session.prompt_root
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
@@ -515,7 +938,8 @@ class CompilationContext:
             tuple[tuple[str, ...], str],
             tuple[ResolvedAgentSlotState, ...],
         ] = {}
-        self.root_unit = self._index_unit(prompt_file, module_parts=())
+        # Mutable resolution stacks and caches remain local to one compile task.
+        self.root_unit = session.root_unit
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
         agent = self.root_unit.agents_by_name.get(agent_name)
@@ -524,6 +948,720 @@ class CompilationContext:
         if agent.abstract:
             raise CompileError(f"Abstract agent does not render: {agent_name}")
         return self._compile_agent_decl(agent, unit=self.root_unit)
+
+    def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
+        root_agents: list[tuple[IndexedUnit, model.Agent]] = []
+        for agent_name in agent_names:
+            agent = self.root_unit.agents_by_name.get(agent_name)
+            if agent is None:
+                raise CompileError(f"Missing target agent: {agent_name}")
+            if agent.abstract:
+                raise CompileError(f"Abstract agent does not render: {agent_name}")
+            root_agents.append((self.root_unit, agent))
+
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode] = {}
+        input_nodes: dict[FlowArtifactKey, FlowInputNode] = {}
+        output_nodes: dict[FlowArtifactKey, FlowOutputNode] = {}
+        agent_notes: dict[FlowAgentKey, list[str]] = {}
+        input_notes: dict[FlowArtifactKey, list[str]] = {}
+        output_notes: dict[FlowArtifactKey, list[str]] = {}
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ] = {}
+
+        for unit, agent in root_agents:
+            agent_key = (unit.module_parts, agent.name)
+            self._flow_upsert_agent_node(agent_nodes, agent, unit=unit)
+
+            agent_contract = self._resolve_agent_contract(agent, unit=unit)
+            for input_key, (input_unit, input_decl) in sorted(agent_contract.inputs.items()):
+                self._flow_upsert_input_node(input_nodes, input_decl, unit=input_unit)
+                self._flow_add_edge(
+                    edges,
+                    FlowEdge(
+                        kind="consume",
+                        source_kind="input",
+                        source_module_parts=input_key[0],
+                        source_name=input_key[1],
+                        target_kind="agent",
+                        target_module_parts=agent_key[0],
+                        target_name=agent_key[1],
+                        label="consumes",
+                    ),
+                )
+
+            for output_key, (output_unit, output_decl) in sorted(agent_contract.outputs.items()):
+                self._flow_upsert_output_node(output_nodes, output_decl, unit=output_unit)
+                self._flow_add_edge(
+                    edges,
+                    FlowEdge(
+                        kind="produce",
+                        source_kind="agent",
+                        source_module_parts=agent_key[0],
+                        source_name=agent_key[1],
+                        target_kind="output",
+                        target_module_parts=output_key[0],
+                        target_name=output_key[1],
+                        label="produces",
+                    ),
+                )
+
+            for slot_state in self._resolve_agent_slots(agent, unit=unit):
+                if not isinstance(slot_state, ResolvedAgentSlot):
+                    continue
+                self._collect_flow_from_workflow_body(
+                    slot_state.body,
+                    workflow_unit=unit,
+                    agent_unit=unit,
+                    agent=agent,
+                    agent_contract=agent_contract,
+                    agent_nodes=agent_nodes,
+                    agent_notes=agent_notes,
+                    input_notes=input_notes,
+                    output_nodes=output_nodes,
+                    output_notes=output_notes,
+                    edges=edges,
+                    owner_label=f"agent {agent.name} slot {slot_state.key}",
+                    workflow_stack=(),
+                )
+
+        return FlowGraph(
+            agents=tuple(
+                FlowAgentNode(
+                    module_parts=node.module_parts,
+                    name=node.name,
+                    title=node.title,
+                    detail_lines=node.detail_lines,
+                    notes=tuple(agent_notes.get((node.module_parts, node.name), ())),
+                )
+                for node in sorted(
+                    agent_nodes.values(),
+                    key=lambda node: (node.module_parts, node.name),
+                )
+            ),
+            inputs=tuple(
+                FlowInputNode(
+                    module_parts=node.module_parts,
+                    name=node.name,
+                    title=node.title,
+                    detail_lines=node.detail_lines,
+                    notes=tuple(input_notes.get((node.module_parts, node.name), ())),
+                )
+                for node in sorted(
+                    input_nodes.values(),
+                    key=lambda node: (node.module_parts, node.name),
+                )
+            ),
+            outputs=tuple(
+                FlowOutputNode(
+                    module_parts=node.module_parts,
+                    name=node.name,
+                    title=node.title,
+                    detail_lines=node.detail_lines,
+                    trust_surface=node.trust_surface,
+                    notes=tuple(output_notes.get((node.module_parts, node.name), ())),
+                )
+                for node in sorted(
+                    output_nodes.values(),
+                    key=lambda node: (node.module_parts, node.name),
+                )
+            ),
+            edges=tuple(
+                sorted(
+                    edges.values(),
+                    key=lambda edge: (
+                        edge.kind,
+                        edge.source_kind,
+                        edge.source_module_parts,
+                        edge.source_name,
+                        edge.target_kind,
+                        edge.target_module_parts,
+                        edge.target_name,
+                        edge.label,
+                    ),
+                )
+            ),
+        )
+
+    def _collect_flow_from_workflow_body(
+        self,
+        workflow_body: ResolvedWorkflowBody,
+        *,
+        workflow_unit: IndexedUnit,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        agent_contract: AgentContract,
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        agent_notes: dict[FlowAgentKey, list[str]],
+        input_notes: dict[FlowArtifactKey, list[str]],
+        output_nodes: dict[FlowArtifactKey, FlowOutputNode],
+        output_notes: dict[FlowArtifactKey, list[str]],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+        owner_label: str,
+        workflow_stack: tuple[tuple[tuple[str, ...], str], ...],
+    ) -> None:
+        agent_key = (agent_unit.module_parts, agent.name)
+
+        for item in workflow_body.items:
+            if isinstance(item, ResolvedSectionItem):
+                self._collect_flow_from_section_items(
+                    item.items,
+                    agent_key=agent_key,
+                    agent_nodes=agent_nodes,
+                    edges=edges,
+                )
+                continue
+            if isinstance(item, ResolvedWorkflowSkillsItem):
+                continue
+
+            workflow_key = (item.target_unit.module_parts, item.workflow_decl.name)
+            if workflow_key in workflow_stack:
+                cycle = " -> ".join(
+                    ".".join(parts + (name,)) or name
+                    for parts, name in [*workflow_stack, workflow_key]
+                )
+                raise CompileError(f"Cyclic workflow composition: {cycle}")
+
+            self._collect_flow_from_workflow_body(
+                self._resolve_workflow_decl(item.workflow_decl, unit=item.target_unit),
+                workflow_unit=item.target_unit,
+                agent_unit=agent_unit,
+                agent=agent,
+                agent_contract=agent_contract,
+                agent_nodes=agent_nodes,
+                agent_notes=agent_notes,
+                input_notes=input_notes,
+                output_nodes=output_nodes,
+                output_notes=output_notes,
+                edges=edges,
+                owner_label=f"workflow {_dotted_decl_name(item.target_unit.module_parts, item.workflow_decl.name)}",
+                workflow_stack=(*workflow_stack, workflow_key),
+            )
+
+        if workflow_body.law is None:
+            return
+
+        flat_items = self._flatten_law_items(workflow_body.law, owner_label=owner_label)
+        self._validate_workflow_law(
+            flat_items,
+            unit=workflow_unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
+        branches = self._collect_law_leaf_branches(flat_items, unit=workflow_unit)
+        if not branches:
+            branches = (LawBranch(),)
+
+        for branch in branches:
+            current = branch.current_subjects[0] if branch.current_subjects else None
+            if isinstance(current, model.CurrentNoneStmt):
+                self._flow_append_note(
+                    agent_notes,
+                    agent_key,
+                    "May end with no current artifact",
+                )
+            elif isinstance(current, model.CurrentArtifactStmt):
+                target = self._validate_law_path_root(
+                    current.target,
+                    unit=workflow_unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label="current artifact",
+                    allowed_kinds=("input", "output"),
+                )
+                if target.remainder or target.wildcard:
+                    raise CompileError(
+                        "current artifact must stay rooted at one input or output artifact in "
+                        f"{owner_label}: {'.'.join(current.target.parts)}"
+                    )
+                carrier = self._validate_carrier_path(
+                    current.carrier,
+                    unit=workflow_unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label="current artifact",
+                )
+                target_label = self._display_readable_decl(target.decl)
+                carrier_label = self._flow_carrier_label(
+                    carrier,
+                    owner_label=owner_label,
+                )
+                self._flow_append_artifact_note(
+                    input_notes=input_notes,
+                    output_notes=output_notes,
+                    resolved=target,
+                    note=f"Current via {carrier_label}",
+                )
+                self._flow_append_note(
+                    output_notes,
+                    (carrier.unit.module_parts, carrier.decl.name),
+                    f"Carries current for {target_label}",
+                )
+
+            for invalidate in branch.invalidations:
+                target = self._validate_law_path_root(
+                    invalidate.target,
+                    unit=workflow_unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label="invalidate",
+                    allowed_kinds=("input", "output"),
+                )
+                if target.remainder or target.wildcard:
+                    raise CompileError(
+                        f"invalidate must name one full input or output artifact in {owner_label}: "
+                        f"{'.'.join(invalidate.target.parts)}"
+                    )
+                carrier = self._validate_carrier_path(
+                    invalidate.carrier,
+                    unit=workflow_unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label="invalidate",
+                )
+                target_label = self._display_readable_decl(target.decl)
+                carrier_label = self._flow_carrier_label(
+                    carrier,
+                    owner_label=owner_label,
+                )
+                self._flow_append_artifact_note(
+                    input_notes=input_notes,
+                    output_notes=output_notes,
+                    resolved=target,
+                    note=f"Invalidated via {carrier_label}",
+                )
+                self._flow_append_note(
+                    output_notes,
+                    (carrier.unit.module_parts, carrier.decl.name),
+                    f"Carries invalidation for {target_label}",
+                )
+
+            for route in branch.routes:
+                route_label = self._interpolate_authored_prose_string(
+                    route.label,
+                    unit=workflow_unit,
+                    owner_label=owner_label,
+                    surface_label="route labels",
+                )
+                target_unit, target_agent = self._resolve_agent_ref(route.target, unit=workflow_unit)
+                self._flow_upsert_agent_node(agent_nodes, target_agent, unit=target_unit)
+                self._flow_add_edge(
+                    edges,
+                    FlowEdge(
+                        kind="law_route",
+                        source_kind="agent",
+                        source_module_parts=agent_key[0],
+                        source_name=agent_key[1],
+                        target_kind="agent",
+                        target_module_parts=target_unit.module_parts,
+                        target_name=target_agent.name,
+                        label=route_label,
+                    ),
+                )
+
+        for output_key, (output_unit, output_decl) in sorted(agent_contract.outputs.items()):
+            if output_key not in output_nodes:
+                self._flow_upsert_output_node(output_nodes, output_decl, unit=output_unit)
+
+    def _collect_flow_from_section_items(
+        self,
+        items: tuple[ResolvedSectionBodyItem, ...],
+        *,
+        agent_key: FlowAgentKey,
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        for item in items:
+            if isinstance(item, ResolvedSectionItem):
+                self._collect_flow_from_section_items(
+                    item.items,
+                    agent_key=agent_key,
+                    agent_nodes=agent_nodes,
+                    edges=edges,
+                )
+                continue
+            if not isinstance(item, ResolvedRouteLine):
+                continue
+            target_unit = (
+                self._load_module(item.target_module_parts)
+                if item.target_module_parts
+                else self.root_unit
+            )
+            target_agent = target_unit.agents_by_name.get(item.target_name)
+            if target_agent is not None:
+                self._flow_upsert_agent_node(agent_nodes, target_agent, unit=target_unit)
+            self._flow_add_edge(
+                edges,
+                FlowEdge(
+                    kind="authored_route",
+                    source_kind="agent",
+                    source_module_parts=agent_key[0],
+                    source_name=agent_key[1],
+                    target_kind="agent",
+                    target_module_parts=item.target_module_parts,
+                    target_name=item.target_name,
+                    label=item.label,
+                ),
+            )
+
+    def _flow_upsert_agent_node(
+        self,
+        nodes: dict[FlowAgentKey, FlowAgentNode],
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        key = (unit.module_parts, agent.name)
+        if key in nodes:
+            return
+        nodes[key] = FlowAgentNode(
+            module_parts=unit.module_parts,
+            name=agent.name,
+            title=agent.name,
+            detail_lines=self._flow_agent_detail_lines(agent, unit=unit),
+        )
+
+    def _flow_upsert_input_node(
+        self,
+        nodes: dict[FlowArtifactKey, FlowInputNode],
+        decl: model.InputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        key = (unit.module_parts, decl.name)
+        if key in nodes:
+            return
+        nodes[key] = FlowInputNode(
+            module_parts=unit.module_parts,
+            name=decl.name,
+            title=decl.title,
+            detail_lines=self._flow_input_detail_lines(decl, unit=unit),
+        )
+
+    def _flow_upsert_output_node(
+        self,
+        nodes: dict[FlowArtifactKey, FlowOutputNode],
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        key = (unit.module_parts, decl.name)
+        if key in nodes:
+            return
+        nodes[key] = FlowOutputNode(
+            module_parts=unit.module_parts,
+            name=decl.name,
+            title=decl.title,
+            detail_lines=self._flow_output_detail_lines(decl, unit=unit),
+            trust_surface=self._flow_trust_surface_labels(decl, unit=unit),
+        )
+
+    def _flow_agent_detail_lines(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[str, ...]:
+        for field in agent.fields:
+            if isinstance(field, model.RoleScalar):
+                return (
+                    self._interpolate_authored_prose_string(
+                        field.text,
+                        unit=unit,
+                        owner_label=f"agent {agent.name}",
+                        surface_label="role prose",
+                    ),
+                )
+            if isinstance(field, model.RoleBlock):
+                if not field.lines:
+                    return (field.title,)
+                return (
+                    self._interpolate_authored_prose_string(
+                        field.lines[0].text if isinstance(field.lines[0], model.EmphasizedLine) else field.lines[0],
+                        unit=unit,
+                        owner_label=f"agent {agent.name}",
+                        surface_label="role prose",
+                    ),
+                )
+        return ()
+
+    def _flow_input_detail_lines(
+        self,
+        decl: model.InputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[str, ...]:
+        scalar_items, _section_items, _extras = self._split_record_items(
+            decl.items,
+            scalar_keys={"source", "shape", "requirement"},
+            owner_label=f"input {decl.name}",
+        )
+        source_item = scalar_items.get("source")
+        shape_item = scalar_items.get("shape")
+        requirement_item = scalar_items.get("requirement")
+        if source_item is None or not isinstance(source_item.value, model.NameRef):
+            raise CompileError(f"Input source must stay typed: {decl.name}")
+        if shape_item is None or requirement_item is None:
+            raise CompileError(f"Input is missing required fields: {decl.name}")
+
+        source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
+        lines = [f"Source: {source_spec.title}"]
+        lines.extend(
+            self._flow_config_lines(
+                source_item.body or (),
+                spec=source_spec,
+                unit=unit,
+                owner_label=f"input {decl.name} source",
+            )
+        )
+        lines.append(
+            f"Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+        )
+        lines.append(
+            f"Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+        )
+        return tuple(lines)
+
+    def _flow_output_detail_lines(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[str, ...]:
+        scalar_items, section_items, _extras = self._split_record_items(
+            decl.items,
+            scalar_keys={"target", "shape", "requirement"},
+            section_keys={"files"},
+            owner_label=f"output {decl.name}",
+        )
+        target_item = scalar_items.get("target")
+        shape_item = scalar_items.get("shape")
+        requirement_item = scalar_items.get("requirement")
+        files_section = section_items.get("files")
+
+        lines: list[str] = []
+        if files_section is not None:
+            lines.extend(
+                self._flow_output_files_detail_lines(
+                    files_section,
+                    unit=unit,
+                    output_name=decl.name,
+                )
+            )
+        else:
+            if target_item is None or not isinstance(target_item.value, model.NameRef):
+                raise CompileError(f"Output target must stay typed: {decl.name}")
+            if shape_item is None:
+                raise CompileError(f"Output must define a shape: {decl.name}")
+            target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
+            lines.append(f"Target: {target_spec.title}")
+            lines.extend(
+                self._flow_config_lines(
+                    target_item.body or (),
+                    spec=target_spec,
+                    unit=unit,
+                    owner_label=f"output {decl.name} target",
+                )
+            )
+            lines.append(
+                f"Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
+            )
+
+        if requirement_item is not None:
+            lines.append(
+                f"Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
+            )
+        return tuple(lines)
+
+    def _flow_output_files_detail_lines(
+        self,
+        section: model.RecordSection,
+        *,
+        unit: IndexedUnit,
+        output_name: str,
+    ) -> tuple[str, ...]:
+        lines: list[str] = ["Target: Files"]
+        for item in section.items:
+            if not isinstance(item, model.RecordSection):
+                raise CompileError(
+                    f"`files` entries must be titled sections in output {output_name}"
+                )
+            scalar_items, _section_items, _extras = self._split_record_items(
+                item.items,
+                scalar_keys={"path", "shape"},
+                owner_label=f"output {output_name} file {item.key}",
+            )
+            path_item = scalar_items.get("path")
+            shape_item = scalar_items.get("shape")
+            if path_item is None or not isinstance(path_item.value, str):
+                raise CompileError(
+                    f"Output file entry is missing string path in {output_name}: {item.key}"
+                )
+            if shape_item is None:
+                raise CompileError(
+                    f"Output file entry is missing shape in {output_name}: {item.key}"
+                )
+            lines.append(f"{item.title}: {path_item.value}")
+            lines.append(
+                f"{item.title} Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=f'output {output_name} file {item.key}', surface_label='output file fields')}"
+            )
+        return tuple(lines)
+
+    def _flow_config_lines(
+        self,
+        config_items: tuple[model.RecordItem, ...],
+        *,
+        spec: ConfigSpec,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[str, ...]:
+        lines: list[str] = []
+        seen_keys: set[str] = set()
+        allowed_keys = {**spec.required_keys, **spec.optional_keys}
+
+        for item in config_items:
+            if not isinstance(item, model.RecordScalar) or item.body is not None:
+                raise CompileError(f"Config entries must be scalar key/value lines in {owner_label}")
+            if item.key in seen_keys:
+                raise CompileError(f"Duplicate config key in {owner_label}: {item.key}")
+            seen_keys.add(item.key)
+            if item.key not in allowed_keys:
+                raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
+            lines.append(
+                f"{allowed_keys[item.key]}: {self._display_scalar_value(item.value, unit=unit, owner_label=f'{owner_label}.{item.key}', surface_label='config values').text}"
+            )
+
+        missing_required = [key for key in spec.required_keys if key not in seen_keys]
+        if missing_required:
+            missing = ", ".join(missing_required)
+            raise CompileError(f"Missing required config key in {owner_label}: {missing}")
+
+        return tuple(lines)
+
+    def _flow_trust_surface_labels(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[str, ...]:
+        if not decl.trust_surface:
+            return ()
+        section = self._compile_trust_surface_section(decl, unit=unit)
+        return tuple(
+            item[2:]
+            for item in section.body
+            if isinstance(item, str) and item.startswith("- ")
+        )
+
+    def _flow_carrier_label(
+        self,
+        resolved: ResolvedLawPath,
+        *,
+        owner_label: str,
+    ) -> str:
+        if not isinstance(resolved.decl, model.OutputDecl):
+            return self._display_readable_decl(resolved.decl)
+        field_node = self._resolve_output_field_node(
+            resolved.decl,
+            path=resolved.remainder,
+            unit=resolved.unit,
+            owner_label=owner_label,
+            surface_label="flow graph",
+        )
+        field_label = self._display_addressable_target_value(
+            field_node,
+            owner_label=owner_label,
+            surface_label="flow graph",
+        ).text
+        return f"{resolved.decl.title}.{field_label}"
+
+    def _flow_append_artifact_note(
+        self,
+        *,
+        input_notes: dict[FlowArtifactKey, list[str]],
+        output_notes: dict[FlowArtifactKey, list[str]],
+        resolved: ResolvedLawPath,
+        note: str,
+    ) -> None:
+        key = (resolved.unit.module_parts, resolved.decl.name)
+        if isinstance(resolved.decl, model.InputDecl):
+            self._flow_append_note(input_notes, key, note)
+            return
+        if isinstance(resolved.decl, model.OutputDecl):
+            self._flow_append_note(output_notes, key, note)
+
+    def _flow_append_note(
+        self,
+        notes_by_key: dict[tuple[tuple[str, ...], str], list[str]],
+        key: tuple[tuple[str, ...], str],
+        note: str,
+    ) -> None:
+        bucket = notes_by_key.setdefault(key, [])
+        if note not in bucket:
+            bucket.append(note)
+
+    def _flow_add_edge(
+        self,
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+        edge: FlowEdge,
+    ) -> None:
+        key = (
+            edge.kind,
+            edge.source_kind,
+            edge.source_module_parts,
+            edge.source_name,
+            edge.target_kind,
+            edge.target_module_parts,
+            edge.target_name,
+            edge.label,
+        )
+        edges.setdefault(key, edge)
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
         self._enforce_legacy_role_workflow_order(agent)
@@ -553,7 +1691,7 @@ class CompilationContext:
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
             )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
-        compiled_fields: list[CompiledField] = []
+        field_specs: list[AgentFieldCompileSpec] = []
         seen_role = False
         seen_typed_fields: set[str] = set()
 
@@ -561,37 +1699,15 @@ class CompilationContext:
             if isinstance(field, model.RoleScalar):
                 if seen_role:
                     raise CompileError(f"Duplicate role field in agent {agent.name}")
-                compiled_fields.append(
-                    model.RoleScalar(
-                        text=self._interpolate_authored_prose_string(
-                            field.text,
-                            unit=unit,
-                            owner_label=f"agent {agent.name}",
-                            surface_label="role prose",
-                        )
-                    )
-                )
                 seen_role = True
+                field_specs.append(AgentFieldCompileSpec(field=field))
                 continue
 
             if isinstance(field, model.RoleBlock):
                 if seen_role:
                     raise CompileError(f"Duplicate role field in agent {agent.name}")
-                compiled_fields.append(
-                    CompiledSection(
-                        title=field.title,
-                        body=tuple(
-                            self._interpolate_authored_prose_line(
-                                line,
-                                unit=unit,
-                                owner_label=f"agent {agent.name}",
-                                surface_label="role prose",
-                            )
-                            for line in field.lines
-                        ),
-                    )
-                )
                 seen_role = True
+                field_specs.append(AgentFieldCompileSpec(field=field))
                 continue
 
             if isinstance(
@@ -608,71 +1724,151 @@ class CompilationContext:
                     raise CompileError(
                         f"Internal compiler error: missing resolved authored slot in agent {agent.name}: {field.key}"
                     )
-                if field.key == "workflow":
-                    compiled_fields.append(
-                        self._compile_resolved_workflow(
-                            slot_body,
-                            unit=unit,
-                            agent_contract=agent_contract,
-                            owner_label=f"agent {agent.name} workflow",
-                        )
-                    )
-                else:
-                    compiled_fields.append(self._compile_resolved_workflow(slot_body))
+                field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
                 continue
 
             field_key = self._typed_field_key(field)
             if field_key in seen_typed_fields:
                 raise CompileError(f"Duplicate typed field in agent {agent.name}: {field_key}")
             seen_typed_fields.add(field_key)
-
-            if isinstance(field, model.InputsField):
-                compiled_fields.append(
-                    self._compile_inputs_field(
-                        field,
-                        unit=unit,
-                        owner_label=f"agent {agent.name}",
-                    )
-                )
-                continue
-            if isinstance(field, model.OutputsField):
-                compiled_fields.append(
-                    self._compile_outputs_field(
-                        field,
-                        unit=unit,
-                        owner_label=f"agent {agent.name}",
-                        review_output_contexts=review_output_contexts,
-                    )
-                )
-                continue
-            if isinstance(field, model.SkillsField):
-                compiled_fields.append(self._compile_skills_field(field, unit=unit))
-                continue
-            if isinstance(field, model.ReviewField):
-                review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
-                if review_decl.abstract:
-                    raise CompileError(
-                        "Concrete agents may not attach abstract reviews directly: "
-                        f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
-                    )
-                compiled_fields.append(
-                    self._compile_review_decl(
-                        review_decl,
-                        unit=review_unit,
-                        agent_contract=agent_contract,
-                        owner_label=f"agent {agent.name} review",
-                    )
-                )
-                continue
-
-            raise CompileError(
-                f"Unsupported agent field in {agent.name}: {type(field).__name__}"
-            )
+            field_specs.append(AgentFieldCompileSpec(field=field))
 
         if not seen_role:
             raise CompileError(f"Concrete agent is missing role field: {agent.name}")
 
-        return CompiledAgent(name=agent.name, fields=tuple(compiled_fields))
+        compiled_fields = self._compile_agent_fields(
+            field_specs,
+            agent_name=agent.name,
+            unit=unit,
+            agent_contract=agent_contract,
+            review_output_contexts=review_output_contexts,
+        )
+        return CompiledAgent(name=agent.name, fields=compiled_fields)
+
+    def _compile_agent_fields(
+        self,
+        specs: list[AgentFieldCompileSpec],
+        *,
+        agent_name: str,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+    ) -> tuple[CompiledField, ...]:
+        if len(specs) <= 1:
+            return tuple(
+                self._compile_agent_field(
+                    spec,
+                    agent_name=agent_name,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    review_output_contexts=review_output_contexts,
+                )
+                for spec in specs
+            )
+
+        with ThreadPoolExecutor(max_workers=_default_worker_count(len(specs))) as executor:
+            futures = [
+                executor.submit(
+                    self.session._compile_agent_field_task,
+                    spec,
+                    agent_name=agent_name,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    review_output_contexts=review_output_contexts,
+                )
+                for spec in specs
+            ]
+            return tuple(future.result() for future in futures)
+
+    def _compile_agent_field(
+        self,
+        spec: AgentFieldCompileSpec,
+        *,
+        agent_name: str,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+    ) -> CompiledField:
+        field = spec.field
+
+        if isinstance(field, model.RoleScalar):
+            return model.RoleScalar(
+                text=self._interpolate_authored_prose_string(
+                    field.text,
+                    unit=unit,
+                    owner_label=f"agent {agent_name}",
+                    surface_label="role prose",
+                )
+            )
+
+        if isinstance(field, model.RoleBlock):
+            return CompiledSection(
+                title=field.title,
+                body=tuple(
+                    self._interpolate_authored_prose_line(
+                        line,
+                        unit=unit,
+                        owner_label=f"agent {agent_name}",
+                        surface_label="role prose",
+                    )
+                    for line in field.lines
+                ),
+            )
+
+        if isinstance(
+            field,
+            (
+                model.AuthoredSlotField,
+                model.AuthoredSlotAbstract,
+                model.AuthoredSlotInherit,
+                model.AuthoredSlotOverride,
+            ),
+        ):
+            if spec.slot_body is None:
+                raise CompileError(
+                    f"Internal compiler error: missing resolved authored slot in agent {agent_name}"
+                )
+            if field.key == "workflow":
+                return self._compile_resolved_workflow(
+                    spec.slot_body,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=f"agent {agent_name} workflow",
+                )
+            return self._compile_resolved_workflow(spec.slot_body)
+
+        if isinstance(field, model.InputsField):
+            return self._compile_inputs_field(
+                field,
+                unit=unit,
+                owner_label=f"agent {agent_name}",
+            )
+        if isinstance(field, model.OutputsField):
+            return self._compile_outputs_field(
+                field,
+                unit=unit,
+                owner_label=f"agent {agent_name}",
+                review_output_contexts=review_output_contexts,
+            )
+        if isinstance(field, model.SkillsField):
+            return self._compile_skills_field(field, unit=unit)
+        if isinstance(field, model.ReviewField):
+            review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
+            if review_decl.abstract:
+                raise CompileError(
+                    "Concrete agents may not attach abstract reviews directly: "
+                    f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+                )
+            return self._compile_review_decl(
+                review_decl,
+                unit=review_unit,
+                agent_contract=agent_contract,
+                owner_label=f"agent {agent_name} review",
+            )
+
+        raise CompileError(
+            f"Unsupported agent field in {agent_name}: {type(field).__name__}"
+        )
 
     def _review_output_contexts_for_agent(
         self,
@@ -3246,6 +4442,202 @@ class CompilationContext:
             return None
         return enum_decl, member.value
 
+    def _compress_review_gate_branches_for_validation(
+        self,
+        gate_branches: tuple[ResolvedReviewGateBranch, ...],
+        *,
+        output_decl: model.OutputDecl,
+    ) -> tuple[ResolvedReviewGateBranch, ...]:
+        observation = self._review_gate_observation(output_decl)
+        deduped: dict[tuple[object, ...], ResolvedReviewGateBranch] = {}
+        for branch in gate_branches:
+            deduped.setdefault(
+                self._review_gate_branch_validation_key(
+                    branch,
+                    observation=observation,
+                ),
+                branch,
+            )
+        return tuple(deduped.values())
+
+    def _review_gate_branch_validation_key(
+        self,
+        branch: ResolvedReviewGateBranch,
+        *,
+        observation: ReviewGateObservation,
+    ) -> tuple[object, ...]:
+        contract_failed_gate_ids = tuple(
+            gate_id for gate_id in branch.failing_gate_ids if gate_id.startswith("contract.")
+        )
+        key: list[object] = [branch.verdict]
+
+        if observation.needs_failing_gates_value:
+            key.append(branch.failing_gate_ids)
+        elif observation.needs_failing_gates_presence:
+            key.append(bool(branch.failing_gate_ids))
+
+        if observation.needs_blocked_gate_value:
+            key.append(branch.blocked_gate_id)
+        elif observation.needs_blocked_gate_presence:
+            key.append(branch.blocked_gate_id is not None)
+
+        if observation.needs_contract_failed_gates_value:
+            key.append(contract_failed_gate_ids)
+        elif observation.needs_contract_first_failed_gate:
+            key.append(contract_failed_gate_ids[0] if contract_failed_gate_ids else None)
+        elif observation.needs_contract_passes:
+            key.append(not contract_failed_gate_ids)
+
+        if observation.referenced_contract_gate_ids:
+            key.append(
+                tuple(
+                    gate_id in contract_failed_gate_ids
+                    for gate_id in observation.referenced_contract_gate_ids
+                )
+            )
+
+        return tuple(key)
+
+    def _review_gate_observation(self, output_decl: model.OutputDecl) -> ReviewGateObservation:
+        flags = {
+            "needs_blocked_gate_presence": False,
+            "needs_blocked_gate_value": False,
+            "needs_failing_gates_presence": False,
+            "needs_failing_gates_value": False,
+            "needs_contract_failed_gates_value": False,
+            "needs_contract_first_failed_gate": False,
+            "needs_contract_passes": False,
+        }
+        referenced_contract_gate_ids: set[str] = set()
+
+        self._collect_review_gate_observation_from_output_items(
+            output_decl.items,
+            flags=flags,
+            referenced_contract_gate_ids=referenced_contract_gate_ids,
+        )
+        for item in output_decl.trust_surface:
+            if item.when_expr is None:
+                continue
+            self._collect_review_gate_observation_from_expr(
+                item.when_expr,
+                flags=flags,
+                referenced_contract_gate_ids=referenced_contract_gate_ids,
+            )
+
+        return ReviewGateObservation(
+            needs_blocked_gate_presence=flags["needs_blocked_gate_presence"],
+            needs_blocked_gate_value=flags["needs_blocked_gate_value"],
+            needs_failing_gates_presence=flags["needs_failing_gates_presence"],
+            needs_failing_gates_value=flags["needs_failing_gates_value"],
+            needs_contract_failed_gates_value=flags["needs_contract_failed_gates_value"],
+            needs_contract_first_failed_gate=flags["needs_contract_first_failed_gate"],
+            needs_contract_passes=flags["needs_contract_passes"],
+            referenced_contract_gate_ids=tuple(sorted(referenced_contract_gate_ids)),
+        )
+
+    def _collect_review_gate_observation_from_output_items(
+        self,
+        items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...],
+        *,
+        flags: dict[str, bool],
+        referenced_contract_gate_ids: set[str],
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.GuardedOutputSection):
+                self._collect_review_gate_observation_from_expr(
+                    item.when_expr,
+                    flags=flags,
+                    referenced_contract_gate_ids=referenced_contract_gate_ids,
+                )
+                self._collect_review_gate_observation_from_output_items(
+                    item.items,
+                    flags=flags,
+                    referenced_contract_gate_ids=referenced_contract_gate_ids,
+                )
+                continue
+            if isinstance(item, model.RecordSection):
+                self._collect_review_gate_observation_from_output_items(
+                    item.items,
+                    flags=flags,
+                    referenced_contract_gate_ids=referenced_contract_gate_ids,
+                )
+                continue
+            if isinstance(item, model.RecordScalar) and item.body is not None:
+                self._collect_review_gate_observation_from_output_items(
+                    item.body,
+                    flags=flags,
+                    referenced_contract_gate_ids=referenced_contract_gate_ids,
+                )
+
+    def _collect_review_gate_observation_from_expr(
+        self,
+        expr: model.Expr,
+        *,
+        flags: dict[str, bool],
+        referenced_contract_gate_ids: set[str],
+    ) -> None:
+        if isinstance(expr, model.ExprBinary):
+            self._collect_review_gate_observation_from_expr(
+                expr.left,
+                flags=flags,
+                referenced_contract_gate_ids=referenced_contract_gate_ids,
+            )
+            self._collect_review_gate_observation_from_expr(
+                expr.right,
+                flags=flags,
+                referenced_contract_gate_ids=referenced_contract_gate_ids,
+            )
+            return
+
+        if isinstance(expr, model.ExprSet):
+            for item in expr.items:
+                self._collect_review_gate_observation_from_expr(
+                    item,
+                    flags=flags,
+                    referenced_contract_gate_ids=referenced_contract_gate_ids,
+                )
+            return
+
+        if isinstance(expr, model.ExprCall):
+            if expr.name in {"present", "missing"} and len(expr.args) == 1:
+                field_name = (
+                    self._review_semantic_field_ref_name(expr.args[0])
+                    if isinstance(expr.args[0], model.ExprRef)
+                    else None
+                )
+                if field_name == "blocked_gate":
+                    flags["needs_blocked_gate_presence"] = True
+                elif field_name == "failing_gates":
+                    flags["needs_failing_gates_presence"] = True
+                return
+            if expr.name in {"failed", "passed"} and len(expr.args) == 1:
+                gate_identity = self._resolve_review_contract_gate_identity(expr.args[0])
+                if gate_identity is not None:
+                    referenced_contract_gate_ids.add(gate_identity)
+            for arg in expr.args:
+                self._collect_review_gate_observation_from_expr(
+                    arg,
+                    flags=flags,
+                    referenced_contract_gate_ids=referenced_contract_gate_ids,
+                )
+            return
+
+        if isinstance(expr, model.ExprRef):
+            field_name = self._review_semantic_field_ref_name(expr)
+            if field_name == "blocked_gate":
+                flags["needs_blocked_gate_value"] = True
+                return
+            if field_name == "failing_gates":
+                flags["needs_failing_gates_value"] = True
+                return
+            if len(expr.parts) == 2 and expr.parts[0] == "contract":
+                if expr.parts[1] == "failed_gates":
+                    flags["needs_contract_failed_gates_value"] = True
+                elif expr.parts[1] == "first_failed_gate":
+                    flags["needs_contract_first_failed_gate"] = True
+                elif expr.parts[1] == "passes":
+                    flags["needs_contract_passes"] = True
+
     def _validate_review_outcome_section(
         self,
         section: model.ReviewOutcomeSection,
@@ -3266,6 +4658,10 @@ class CompilationContext:
             section.items,
             unit=unit,
             owner_label=f"{owner_label}.{section.key}",
+        )
+        gate_branches = self._compress_review_gate_branches_for_validation(
+            gate_branches,
+            output_decl=comment_output_decl,
         )
         branches = self._collect_review_outcome_leaf_branches(section.items, unit=unit)
         if not branches:
@@ -7407,7 +8803,10 @@ class CompilationContext:
                     self._resolve_section_body_ref(item.ref, unit=unit, owner_label=owner_label)
                 )
                 continue
-            self._validate_route_target(item.target, unit=unit)
+            target_unit, target_agent = self._resolve_agent_ref(item.target, unit=unit)
+            if target_agent.abstract:
+                dotted_name = _dotted_ref_name(item.target)
+                raise CompileError(f"Route target must be a concrete agent: {dotted_name}")
             resolved.append(
                 ResolvedRouteLine(
                     label=self._interpolate_authored_prose_string(
@@ -7416,7 +8815,8 @@ class CompilationContext:
                         owner_label=owner_label,
                         surface_label="route labels",
                     ),
-                    target_name=item.target.declaration_name,
+                    target_module_parts=target_unit.module_parts,
+                    target_name=target_agent.name,
                 )
             )
         return tuple(resolved)
@@ -10282,177 +11682,19 @@ class CompilationContext:
         registry = getattr(target_unit, registry_name)
         return registry.get(ref.declaration_name) is not None
 
-    def _index_unit(
-        self, prompt_file: model.PromptFile, *, module_parts: tuple[str, ...]
-    ) -> IndexedUnit:
-        imports: list[model.ImportDecl] = []
-        workflows_by_name: dict[str, model.WorkflowDecl] = {}
-        reviews_by_name: dict[str, model.ReviewDecl] = {}
-        skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
-        inputs_blocks_by_name: dict[str, model.InputsDecl] = {}
-        inputs_by_name: dict[str, model.InputDecl] = {}
-        input_sources_by_name: dict[str, model.InputSourceDecl] = {}
-        outputs_blocks_by_name: dict[str, model.OutputsDecl] = {}
-        outputs_by_name: dict[str, model.OutputDecl] = {}
-        output_targets_by_name: dict[str, model.OutputTargetDecl] = {}
-        output_shapes_by_name: dict[str, model.OutputShapeDecl] = {}
-        json_schemas_by_name: dict[str, model.JsonSchemaDecl] = {}
-        skills_by_name: dict[str, model.SkillDecl] = {}
-        agents_by_name: dict[str, model.Agent] = {}
-        enums_by_name: dict[str, model.EnumDecl] = {}
-
-        for declaration in prompt_file.declarations:
-            if isinstance(declaration, model.ImportDecl):
-                imports.append(declaration)
-                continue
-            if isinstance(declaration, model.WorkflowDecl):
-                self._register_decl(workflows_by_name, declaration.name, module_parts)
-                workflows_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.ReviewDecl):
-                self._register_decl(reviews_by_name, declaration.name, module_parts)
-                reviews_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.SkillsDecl):
-                self._register_decl(skills_blocks_by_name, declaration.name, module_parts)
-                skills_blocks_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.InputsDecl):
-                self._register_decl(inputs_blocks_by_name, declaration.name, module_parts)
-                inputs_blocks_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.InputDecl):
-                self._register_decl(inputs_by_name, declaration.name, module_parts)
-                inputs_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.InputSourceDecl):
-                self._register_decl(input_sources_by_name, declaration.name, module_parts)
-                input_sources_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.OutputsDecl):
-                self._register_decl(outputs_blocks_by_name, declaration.name, module_parts)
-                outputs_blocks_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.OutputDecl):
-                self._register_decl(outputs_by_name, declaration.name, module_parts)
-                outputs_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.OutputTargetDecl):
-                self._register_decl(output_targets_by_name, declaration.name, module_parts)
-                output_targets_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.OutputShapeDecl):
-                self._register_decl(output_shapes_by_name, declaration.name, module_parts)
-                output_shapes_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.JsonSchemaDecl):
-                self._register_decl(json_schemas_by_name, declaration.name, module_parts)
-                json_schemas_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.SkillDecl):
-                self._register_decl(skills_by_name, declaration.name, module_parts)
-                skills_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.EnumDecl):
-                self._register_decl(enums_by_name, declaration.name, module_parts)
-                self._validate_enum_decl(
-                    declaration,
-                    owner_label=f"enum {_dotted_decl_name(module_parts, declaration.name)}",
-                )
-                enums_by_name[declaration.name] = declaration
-                continue
-            if isinstance(declaration, model.Agent):
-                self._register_decl(agents_by_name, declaration.name, module_parts)
-                agents_by_name[declaration.name] = declaration
-                continue
-            raise CompileError(f"Unsupported declaration type: {type(declaration).__name__}")
-
-        imported_units: dict[tuple[str, ...], IndexedUnit] = {}
-        for import_decl in imports:
-            resolved_module_parts = _resolve_import_path(import_decl.path, module_parts=module_parts)
-            try:
-                imported_units[resolved_module_parts] = self._load_module(resolved_module_parts)
-            except DoctrineError as exc:
-                importer_path = prompt_file.source_path
-                raise exc.prepend_trace(
-                    f"resolve import `{'.'.join(resolved_module_parts)}`",
-                    location=_path_location(importer_path),
-                )
-
-        return IndexedUnit(
-            module_parts=module_parts,
-            prompt_file=prompt_file,
-            imports=tuple(imports),
-            workflows_by_name=workflows_by_name,
-            reviews_by_name=reviews_by_name,
-            inputs_blocks_by_name=inputs_blocks_by_name,
-            inputs_by_name=inputs_by_name,
-            input_sources_by_name=input_sources_by_name,
-            outputs_blocks_by_name=outputs_blocks_by_name,
-            outputs_by_name=outputs_by_name,
-            output_targets_by_name=output_targets_by_name,
-            output_shapes_by_name=output_shapes_by_name,
-            json_schemas_by_name=json_schemas_by_name,
-            skills_by_name=skills_by_name,
-            skills_blocks_by_name=skills_blocks_by_name,
-            enums_by_name=enums_by_name,
-            agents_by_name=agents_by_name,
-            imported_units=imported_units,
-        )
-
-    def _register_decl(
-        self,
-        registry: dict[str, object],
-        name: str,
-        module_parts: tuple[str, ...],
-    ) -> None:
-        if name in registry:
-            dotted_name = ".".join((*module_parts, name)) or name
-            raise CompileError(f"Duplicate declaration name: {dotted_name}")
-
-    def _validate_enum_decl(self, decl: model.EnumDecl, *, owner_label: str) -> None:
-        seen_keys: set[str] = set()
-        for member in decl.members:
-            if member.key in seen_keys:
-                raise CompileError(f"Duplicate enum member key in {owner_label}: {member.key}")
-            seen_keys.add(member.key)
-
     def _load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
-        cached = self._module_cache.get(module_parts)
-        if cached is not None:
-            return cached
-
-        if module_parts in self._loading_modules:
-            raise CompileError(f"Cyclic import module: {'.'.join(module_parts)}")
-
-        module_path = self.prompt_root.joinpath(*module_parts).with_suffix(".prompt")
-        if not module_path.is_file():
-            raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
-
-        self._loading_modules.add(module_parts)
-        try:
-            try:
-                prompt_file = parse_file(module_path)
-                indexed = self._index_unit(prompt_file, module_parts=module_parts)
-            except DoctrineError as exc:
-                raise exc.prepend_trace(
-                    f"load import module `{'.'.join(module_parts)}`",
-                    location=_path_location(module_path),
-                ).ensure_location(path=module_path)
-            self._module_cache[module_parts] = indexed
-            return indexed
-        finally:
-            self._loading_modules.remove(module_parts)
+        return self.session.load_module(module_parts)
 
 
 def compile_prompt(prompt_file: model.PromptFile, agent_name: str) -> CompiledAgent:
-    try:
-        return CompilationContext(prompt_file).compile_agent(agent_name)
-    except DoctrineError as exc:
-        raise exc.prepend_trace(
-            f"compile agent `{agent_name}`",
-            location=_path_location(prompt_file.source_path),
-        ).ensure_location(path=prompt_file.source_path)
+    return CompilationSession(prompt_file).compile_agent(agent_name)
+
+
+def extract_target_flow_graph(
+    prompt_file: model.PromptFile,
+    agent_names: tuple[str, ...],
+) -> FlowGraph:
+    return CompilationSession(prompt_file).extract_target_flow_graph(agent_names)
 
 
 def _resolve_prompt_root(source_path: Path | None) -> Path:

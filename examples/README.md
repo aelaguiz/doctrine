@@ -1,136 +1,98 @@
 # Examples
 
-The examples are both the language teaching surface and the verification corpus.
+The examples are both the language teaching surface and the verification
+corpus.
 
 Each numbered example may contain:
 
 - `prompts/`: authored `.prompt` source
 - `cases.toml`: manifest-backed proof used by `doctrine.verify_corpus`
 - `ref/`: checked-in expected render or error output
-- `build_ref/`: checked-in emitted tree output when the emit pipeline matters
+- `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
+  including compiled Markdown trees and target-scoped `.flow.{d2,svg}`
+  artifacts
 
-Read the examples in numeric order. The sequence is intentional.
+## How To Read The Corpus
 
-For the shipped workflow-law model behind examples `30` through `52`, start
-with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped
-review model behind examples `43` through `49` plus `53`, start with
-[../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
-
-## Reading Order
-
-- `01` through `06`: core agent and workflow syntax, imports, inheritance, and
-  explicit patching
-- `07` through `14`: authored slots, routing, typed inputs and outputs, skills,
-  role-home composition, and handoff truth
-- `15` through `20`: readable refs, interpolation, and richer authored prose
-  surfaces
-- `21` through `26`: first-class block reuse, inheritance, and abstract
-  authored-slot requirements
-- `27` through `29`: addressable nested items, recursive workflow paths, and
-  enums for closed vocabularies
-- `30` through `52`: active workflow-law proof for route-only turns, portable
-  currentness, trust carriers, scope and preservation law, basis roles,
-  invalidation, law reuse, concrete-turn bound roots, output-owned guarded
-  readback, and the route-only handoff capstones
-- `43` through `49` plus `53`: first-class `review` support for verdict
-  coupling, blocked review, exact contract gates, portable current truth,
-  carried mode and trigger state, review inheritance, the full review
-  capstone, and bound review carriers
-
-## Workflow Law Ladder
-
-The route-only ladder is staged on purpose:
-
-- `30` introduces the narrow setup
-- `40` and `41` split the local and reroute ownership outcomes on whether the
-  next owner is still unknown
-- `42` combines them into the full route-only handoff capstone
-
-- `30_law_route_only_turns`: narrow route-only setup with `current none`,
-  `stop`, and explicit reroute
-- `31_currentness_and_trust_surface`: one current artifact plus emitted trust
-  carriers
-- `32_modes_and_match`: enum-backed modes, exhaustive `match`, and one current
-  subject per branch
-- `33_scope_and_exact_preservation`: narrow ownership with exact preservation
-  and overlap checks
-- `34_structure_mapping_and_vocabulary_preservation`: preserve non-exact truth
-  such as structure, mapping, and vocabulary
-- `35_basis_roles_and_rewrite_evidence`: comparison-only support and rewrite-
-  evidence exclusions
-- `36_invalidation_and_rebuild`: invalidation as a truth transition plus the
-  rebuild pattern
-- `37_law_reuse_and_patching`: named law subsections with explicit inheritance
-  and override rules
-- `38_metadata_polish_capstone`: the full integrated portable-truth model
-- `39_guarded_output_sections`: output-owned keyed guarded sections, nested
-  guarded readback, and output-guard namespace limits
-- `40_route_only_local_ownership`: local-ownership branch of the route-only
-  slice with `current none` when reroute is not justified
-- `41_route_only_reroute_handoff`: explicit reroute branch of the route-only
-  slice when the next owner is still unknown, paired with an emitted handoff
-  comment contract plus routed `next_owner` agreement proof
-- `42_route_only_handoff_capstone`: the full generic Slice A route-only
-  handoff model with guarded conditional readback plus `standalone_read`
-  guard-discipline proof
-- `50_bound_currentness_roots`: concrete-turn binding keys as first-class law
-  roots for `current artifact ... via ...`
-- `51_inherited_bound_io_roots`: inherited `inputs:` and `outputs:` keys stay
-  law-visible without local duplication
-- `52_bound_scope_and_preservation`: `own only`, `preserve exact`, and
-  preserved upstream truth normalize through bound roots
-
-Examples `40` through `42` intentionally omit `trust_surface`. They are
-route-only comment-schema readback for `current none` turns, not portable
-current-truth carriers.
-
-The route-only ladder now carries integrated structured proof for the two Slice
-A coupling rules:
-
-- `41` proves that a routed `next_owner` field must explicitly bind the routed
-  target
-- `42` proves that `standalone_read` cannot structurally reference guarded
-  output detail
-
-## Review Ladder
-
-The review ladder begins right after the workflow-law capstones:
-
-- `43_review_basic_verdict_and_route_coupling`: the smallest first-class
-  `review`, one reviewed subject, one shared review contract, guarded
-  `failing_gates`, and explicit accept/reject next-owner routing
-- `44_review_handoff_first_block_gates`: handoff-first `block` gates,
-  `blocked_gate`, and the rule that blocked review still emits one durable
-  `changes_requested` comment
-- `45_review_contract_gate_export_and_exact_failures`: exact exported
-  `contract.<gate>` identities and faithful shared-contract `failing_gates`
-- `46_review_current_truth_and_trust_surface`: review-owned `current artifact
-  ... via Output.field`, trusted current truth, and currentness diagnostics
-- `47_review_multi_subject_mode_and_trigger_carry`: subject sets, `subject_map`,
-  carried `active_mode`, carried `trigger_reason`, and one next owner with
-  different live current artifacts
-- `48_review_inheritance_and_explicit_patching`: `abstract review`, `inherit
-  fields`, inherited named review sections, and explicit child patching
-- `49_review_capstone`: blocked review, exact contract gates, `support_only`,
-  `ignore ... for rewrite_evidence`, `preserve`, multi-subject review,
-  carried state, portable current truth, and current-none blocked outcomes in
-  one capstone surface
-- `53_review_bound_carrier_roots`: bound subject roots plus bound comment-
-  output carriers for review currentness and carried review state
-
-That boundary is still honest. Doctrine validates structured interpolations and
-output structure here; it still does not parse arbitrary free prose.
-
-## Important Rules
-
-- A checked-in ref file is not proof on its own. The manifest is the proof
-  surface.
+- Read the examples in numeric order. The sequence is intentional.
+- The manifest is the proof surface. A checked-in ref file is not proof on its
+  own.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
-- Keep new examples narrow: one new idea at a time.
-- Do not add a new language primitive just to paper over a bad example.
-- Keep the corpus single-surface: shipped manifests should stay active proof,
-  not advisory review lanes.
+- Keep new examples narrow. One new idea per example is the design rule.
+
+## Learning Paths
+
+- `01` through `06`: core syntax, sections, imports, inheritance, and explicit
+  workflow patching
+- `07` through `29`: authored slots, routing, inputs, outputs, skills, refs,
+  interpolation, reusable blocks, addressable paths, and enums
+- `30` through `42`: workflow law, currentness, trust carriers, preservation,
+  invalidation, guarded output sections, and route-only turns
+- `43` through `49`: first-class `review`
+- `50` through `53`: bound roots for workflow law and review carriers
+
+For the shipped workflow-law reference, use
+[../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
+reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
+
+## Corpus Index
+
+| ID | Focus |
+| --- | --- |
+| `01_hello_world` | Smallest concrete agents, `role`, and inline `workflow` shapes. |
+| `02_sections` | Titled workflow sections and section-key validation. |
+| `03_imports` | Absolute and relative imports plus typed imported refs. |
+| `04_inheritance` | Basic agent and workflow inheritance. |
+| `05_workflow_merge` | Explicit inherited workflow patching and ordering. |
+| `06_nested_workflows` | Nested workflow structure and the boundary between inline and named workflows. |
+| `07_handoffs` | Authored workflow slots, next-owner routing, and explicit owner-change doctrine. |
+| `08_inputs` | Basic typed `input` declarations. |
+| `09_outputs` | Basic typed `output` declarations, targets, shapes, and `files` mode. |
+| `10_routing_and_stop_rules` | Ordinary routing and stop guidance before workflow law. |
+| `11_skills_and_tools` | First-class `skill` declarations and role-side skill references. |
+| `12_role_home_composition` | Composing larger role homes from reusable parts. |
+| `13_critic_protocol` | Structured critic-style doctrine before first-class `review`. |
+| `14_handoff_truth` | Exact handoff truth across split prompt modules and emitted outputs. |
+| `15_workflow_body_refs` | Readable declaration refs in workflow section bodies. |
+| `16_workflow_string_interpolation` | Interpolation inside authored workflow prose. |
+| `17_agent_mentions` | Concrete agent mentions and mention validation. |
+| `18_rich_io_buckets` | Richer I/O record structure and readable contract buckets. |
+| `19_emphasized_prose_lines` | `required`, `important`, `warning`, and `note` prose lines. |
+| `20_authored_prose_interpolation` | Interpolation across more authored prose surfaces. |
+| `21_first_class_skills_blocks` | Reusable top-level `skills` blocks. |
+| `22_skills_block_inheritance` | Inheritance and patching for `skills` blocks. |
+| `23_first_class_io_blocks` | Reusable top-level `inputs` and `outputs` blocks. |
+| `24_io_block_inheritance` | Inheritance and patching for I/O blocks. |
+| `25_abstract_agent_io_override` | Abstract agent I/O doctrine and concrete override rules. |
+| `26_abstract_authored_slots` | Required authored slots on abstract agents. |
+| `27_addressable_record_paths` | Addressable paths through record bodies. |
+| `28_addressable_workflow_paths` | Addressable paths through recursive workflow structure. |
+| `29_enums` | Closed vocabularies with top-level `enum`. |
+| `30_law_route_only_turns` | Narrow route-only workflow-law setup with `current none`. |
+| `31_currentness_and_trust_surface` | Portable current truth plus `trust_surface`. |
+| `32_modes_and_match` | Enum-backed `mode` plus exhaustive `match`. |
+| `33_scope_and_exact_preservation` | `own only`, `preserve exact`, and overlap checks. |
+| `34_structure_mapping_and_vocabulary_preservation` | Preserving structure, mapping, and vocabulary. |
+| `35_basis_roles_and_rewrite_evidence` | Comparison-only support and rewrite-evidence exclusions. |
+| `36_invalidation_and_rebuild` | Invalidation as a truth transition plus rebuild routing. |
+| `37_law_reuse_and_patching` | Named workflow-law subsections and explicit law patching. |
+| `38_metadata_polish_capstone` | Full workflow-law capstone with activation, currentness, preservation, invalidation, and reroute. |
+| `39_guarded_output_sections` | Guarded output sections and nested guarded readback. |
+| `40_route_only_local_ownership` | Route-only local-ownership branch with `current none`. |
+| `41_route_only_reroute_handoff` | Route-only reroute branch when the next owner is still unknown. |
+| `42_route_only_handoff_capstone` | Integrated route-only handoff capstone. |
+| `43_review_basic_verdict_and_route_coupling` | Smallest first-class `review`. |
+| `44_review_handoff_first_block_gates` | `block` gates and `blocked_gate`. |
+| `45_review_contract_gate_export_and_exact_failures` | Exact contract gate export and faithful `failing_gates`. |
+| `46_review_current_truth_and_trust_surface` | Review current truth on trusted output carriers. |
+| `47_review_multi_subject_mode_and_trigger_carry` | Multi-subject review plus carried mode and trigger reason. |
+| `48_review_inheritance_and_explicit_patching` | `abstract review` and explicit review patching. |
+| `49_review_capstone` | Full review capstone with blocked review, exact gates, carried state, and current truth. |
+| `50_bound_currentness_roots` | Bound roots for workflow-law currentness carriers. |
+| `51_inherited_bound_io_roots` | Inherited bound I/O roots staying visible to workflow law. |
+| `52_bound_scope_and_preservation` | Bound roots for ownership and preservation law. |
+| `53_review_bound_carrier_roots` | Bound review carriers and carried review state. |
 
 ## Useful Commands
 
@@ -151,4 +113,5 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_flow --target example_36_invalidation_and_rebuild
 ```

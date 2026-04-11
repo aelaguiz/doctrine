@@ -38,6 +38,8 @@ Doctrine's live documentation is anchored in the shipped implementation under
 - The example corpus is proof, not just illustration.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
+- The shared emit registry now drives both compiled Markdown trees and
+  target-scoped workflow data-flow artifacts.
 
 ## Not Part Of The Live Docs Path
 

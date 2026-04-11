@@ -1,0 +1,169 @@
+direction: down
+
+input_currenthandoff: {
+  label: "Current Handoff\nInput\nSource: Prompt\nShape: Json Object\nRequirement: Required"
+  shape: rectangle
+  style: {
+    fill: "#E8F1FF"
+    stroke: "#2F6FEB"
+  }
+}
+
+agent_blockedsectionreviewdemo: {
+  label: "BlockedSectionReviewDemo\nAgent\nDo not keep reviewing against\ninvalidated downstream truth.\nMay end with no current\nartifact"
+  shape: rectangle
+  style: {
+    fill: "#FFF7E6"
+    stroke: "#B54708"
+  }
+}
+
+agent_rebuildsectionreviewdemo: {
+  label: "RebuildSectionReviewDemo\nAgent\nRebuild invalidated review\nwork and reissue it as current\ntruth."
+  shape: rectangle
+  style: {
+    fill: "#FFF7E6"
+    stroke: "#B54708"
+  }
+}
+
+agent_routingowner: {
+  label: "RoutingOwner\nAgent\nOwn explicit reroutes when\nspecialist work cannot\ncontinue."
+  shape: rectangle
+  style: {
+    fill: "#FFF7E6"
+    stroke: "#B54708"
+  }
+}
+
+agent_structurechangedemo: {
+  label: "StructureChangeDemo\nAgent\nInvalidate downstream review\nwhen structure changes."
+  shape: rectangle
+  style: {
+    fill: "#FFF7E6"
+    stroke: "#B54708"
+  }
+}
+
+output_blockedreviewhandoff: {
+  label: "Blocked Review Handoff\nOutput\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nTrust: Invalidations"
+  shape: rectangle
+  style: {
+    fill: "#ECFDF3"
+    stroke: "#067647"
+  }
+}
+
+output_invalidationhandoff: {
+  label: "Invalidation Handoff\nOutput\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nTrust: Current Artifact,\nInvalidations\nCarries current for Section\nMetadata\nCarries invalidation for\nSection Review"
+  shape: rectangle
+  style: {
+    fill: "#ECFDF3"
+    stroke: "#067647"
+  }
+}
+
+output_rebuildhandoff: {
+  label: "Rebuild Handoff\nOutput\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nTrust: Current Artifact\nCarries current for Section\nReview"
+  shape: rectangle
+  style: {
+    fill: "#ECFDF3"
+    stroke: "#067647"
+  }
+}
+
+output_sectionmetadata: {
+  label: "Section Metadata\nOutput\nTarget: File\nPath: unit_root/_authoring/sec\ntion_metadata.json\nShape: Json Object\nRequirement: Required\nCurrent via Invalidation\nHandoff.Current Artifact"
+  shape: rectangle
+  style: {
+    fill: "#ECFDF3"
+    stroke: "#067647"
+  }
+}
+
+output_sectionreview: {
+  label: "Section Review\nOutput\nTarget: File\nPath: unit_root/_authoring/SEC\nTION_REVIEW.md\nShape: Markdown Document\nRequirement: Required\nInvalidated via Invalidation\nHandoff.Invalidations\nCurrent via Rebuild\nHandoff.Current Artifact"
+  shape: rectangle
+  style: {
+    fill: "#ECFDF3"
+    stroke: "#067647"
+  }
+}
+
+input_currenthandoff -> agent_blockedsectionreviewdemo: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+input_currenthandoff -> agent_rebuildsectionreviewdemo: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+input_currenthandoff -> agent_structurechangedemo: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+agent_blockedsectionreviewdemo -> agent_routingowner: {
+  label: "Route the same issue back to\nRoutingOwner until review is\nrebuilt."
+  style: {
+    stroke: "#D92D20"
+  }
+}
+
+agent_structurechangedemo -> agent_routingowner: {
+  label: "Route the same issue back to\nRoutingOwner for rebuild."
+  style: {
+    stroke: "#D92D20"
+  }
+}
+
+agent_blockedsectionreviewdemo -> output_blockedreviewhandoff: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_rebuildsectionreviewdemo -> output_rebuildhandoff: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_rebuildsectionreviewdemo -> output_sectionreview: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_structurechangedemo -> output_invalidationhandoff: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_structurechangedemo -> output_sectionmetadata: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}

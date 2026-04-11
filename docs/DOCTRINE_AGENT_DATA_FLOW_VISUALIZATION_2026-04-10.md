@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Agent Data Flow Visualization - Architecture Plan"
 date: 2026-04-10
-status: active
+status: complete
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -68,6 +68,57 @@ density.
   concrete agent semantics.
 - No framework surface that only works in this repo and not in ordinary Doctrine
   repos using prompt entrypoints.
+
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-11
+Verdict (code): COMPLETE
+Manual QA: completed for `examples/36_invalidation_and_rebuild/build/AGENTS.flow.{d2,svg}`
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None. The planned compiler, emitter, proof, and docs surfaces are present.
+  - Evidence anchors:
+    - `doctrine/compiler.py`
+    - `doctrine/emit_common.py`
+    - `doctrine/emit_flow.py`
+    - `doctrine/flow_renderer.py`
+    - `doctrine/diagnostic_smoke.py`
+    - `doctrine/verify_corpus.py`
+    - `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.d2`
+    - `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.svg`
+    - `README.md`
+    - `docs/README.md`
+    - `docs/AGENT_IO_DESIGN_NOTES.md`
+    - `examples/README.md`
+    - `AGENTS.md`
+  - Plan expects:
+    - `Phase 1` lands compiler-owned graph extraction from concrete-turn I/O,
+      authored routes, and workflow-law routes/currentness.
+    - `Phase 2` adds a sibling `emit_flow` command with deterministic `.flow.d2`
+      plus pinned same-command `.flow.svg`.
+    - `Phase 3` proves the feature on `example_36_invalidation_and_rebuild`
+      and updates live docs/instructions.
+  - Code reality:
+    - `CompilationContext` now extracts a target-scoped flow graph from
+      compiler-owned semantics; `emit_flow` reuses the shared emit target
+      registry and writes `.flow.d2` plus `.flow.svg`; the D2 dependency is
+      pinned in repo-local `package.json` / `package-lock.json`; the build
+      contract for example `36` now checks both flow artifacts; and the live
+      docs plus repo instructions describe the new command and `npm ci`
+      requirement.
+  - Fix:
+    - None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None required for this cut. The representative generated graph was checked
+  manually in both D2 source and rendered SVG form during the proof update.
+<!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -1397,3 +1448,34 @@ planning work, and treat the next move as `implement-loop`.
 ### Follow-ups
 
 - Next command: `Use $arch-step implement-loop docs/DOCTRINE_AGENT_DATA_FLOW_VISUALIZATION_2026-04-10.md`.
+
+## 2026-04-11 - Implement-loop finished the feature clean
+
+### Context
+
+The artifact was handed off to `implement-loop` with the phase plan already
+locked and with `example_36_invalidation_and_rebuild` chosen as the first
+proof target.
+
+### Options
+
+- Land only private compiler work and reopen before a public emitter.
+- Ship the full compiler -> emitter -> proof -> docs path in one bounded pass.
+
+### Decision
+
+Ship the full target-scoped visualization path in one pass: compiler-owned
+graph extraction, a shared-target `emit_flow` command, pinned same-command D2
+SVG rendering, checked proof on `example_36_invalidation_and_rebuild`, and
+live-doc/install updates.
+
+### Consequences
+
+- The plan's three implementation phases are now present in code and proof.
+- `make verify-examples` now proves the new flow artifacts without weakening
+  the existing Markdown emit path.
+- Repo setup now includes a pinned `npm ci` step for the SVG render surface.
+
+### Follow-ups
+
+- None. The final implementation audit marked the plan `COMPLETE`.

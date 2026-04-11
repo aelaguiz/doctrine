@@ -7,9 +7,10 @@ import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from doctrine.compiler import compile_prompt
+from doctrine.compiler import compile_prompt, extract_target_flow_graph
 from doctrine.diagnostics import diagnostic_to_dict
 from doctrine.emit_docs import main as emit_docs_main
+from doctrine.emit_flow import main as emit_flow_main
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -31,6 +32,8 @@ def main() -> int:
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
+    _check_flow_graph_extracts_routes_and_shared_io()
+    _check_emit_flow_uses_entrypoint_stem_for_output_name()
     _check_diagnostic_to_dict_is_json_safe()
     print("diagnostic smoke checks passed")
     return 0
@@ -291,6 +294,159 @@ output_dir = "build"
         soul_path = root / "build" / "demo" / "agents" / "demo_agent" / "SOUL.md"
         _expect(agents_path.is_file(), f"missing emitted AGENTS.md: {agents_path}")
         _expect(soul_path.is_file(), f"missing emitted SOUL.md: {soul_path}")
+
+
+def _check_flow_graph_extracts_routes_and_shared_io() -> None:
+    source = """input SharedInput: "Shared Input"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+output DurableArtifact: "Durable Artifact"
+    target: File
+        path: "artifact.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+output CarrierComment: "Carrier Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the current artifact."
+
+    trust_surface:
+        current_artifact
+
+agent RoutingOwner:
+    role: "Own reroutes."
+    workflow: "Routing"
+        "Take the issue back."
+
+agent WorkerA:
+    role: "Produce the durable artifact."
+    workflow: "Worker A"
+        routing: "Routing"
+            route "Escalate to RoutingOwner." -> RoutingOwner
+        law:
+            active when SharedInput.ready
+            current artifact DurableArtifact via CarrierComment.current_artifact
+            route "Return to RoutingOwner." -> RoutingOwner
+    inputs: "Inputs"
+        SharedInput
+    outputs: "Outputs"
+        DurableArtifact
+        CarrierComment
+
+agent WorkerB:
+    role: "Read the same shared input."
+    workflow: "Worker B"
+        "Observe the shared handoff."
+    inputs: "Inputs"
+        SharedInput
+    outputs: "Outputs"
+        CarrierComment
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        graph = extract_target_flow_graph(prompt, ("RoutingOwner", "WorkerA", "WorkerB"))
+        _expect(len(graph.inputs) == 1, f"expected 1 input node, got {len(graph.inputs)}")
+        _expect(len(graph.outputs) == 2, f"expected 2 output nodes, got {len(graph.outputs)}")
+
+        edges = {(edge.kind, edge.source_name, edge.target_name, edge.label) for edge in graph.edges}
+        _expect(
+            ("authored_route", "WorkerA", "RoutingOwner", "Escalate to RoutingOwner.") in edges,
+            f"missing authored route edge: {edges}",
+        )
+        _expect(
+            ("law_route", "WorkerA", "RoutingOwner", "Return to RoutingOwner.") in edges,
+            f"missing workflow-law route edge: {edges}",
+        )
+        _expect(
+            ("consume", "SharedInput", "WorkerA", "consumes") in edges,
+            f"missing shared input consume edge for WorkerA: {edges}",
+        )
+        _expect(
+            ("consume", "SharedInput", "WorkerB", "consumes") in edges,
+            f"missing shared input consume edge for WorkerB: {edges}",
+        )
+
+        carrier_comment = next(
+            (node for node in graph.outputs if node.name == "CarrierComment"),
+            None,
+        )
+        _expect(carrier_comment is not None, "missing CarrierComment output node")
+        _expect(
+            carrier_comment is not None
+            and "Current Artifact" in carrier_comment.trust_surface
+            and "Carries current for Durable Artifact" in carrier_comment.notes,
+            f"missing currentness carrier note on CarrierComment: {carrier_comment}",
+        )
+
+
+def _check_emit_flow_uses_entrypoint_stem_for_output_name() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "demo" / "agents" / "demo_agent"
+        prompts.mkdir(parents=True)
+        agents_prompt = prompts / "AGENTS.prompt"
+        soul_prompt = prompts / "SOUL.prompt"
+        source = """input SharedInput: "Shared Input"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+output SharedComment: "Shared Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+agent DemoAgent:
+    role: "Own the demo flow."
+    workflow: "Demo Flow"
+        "Read the shared input and leave one comment."
+    inputs: "Inputs"
+        SharedInput
+    outputs: "Outputs"
+        SharedComment
+"""
+        agents_prompt.write_text(source)
+        soul_prompt.write_text(source)
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo_agents"
+entrypoint = "prompts/demo/agents/demo_agent/AGENTS.prompt"
+output_dir = "build"
+
+[[tool.doctrine.emit.targets]]
+name = "demo_soul"
+entrypoint = "prompts/demo/agents/demo_agent/SOUL.prompt"
+output_dir = "build"
+"""
+        )
+        exit_code = emit_flow_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "demo_agents",
+                "--target",
+                "demo_soul",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        agents_d2 = root / "build" / "demo" / "agents" / "demo_agent" / "AGENTS.flow.d2"
+        agents_svg = root / "build" / "demo" / "agents" / "demo_agent" / "AGENTS.flow.svg"
+        soul_d2 = root / "build" / "demo" / "agents" / "demo_agent" / "SOUL.flow.d2"
+        soul_svg = root / "build" / "demo" / "agents" / "demo_agent" / "SOUL.flow.svg"
+        _expect(agents_d2.is_file(), f"missing emitted AGENTS.flow.d2: {agents_d2}")
+        _expect(agents_svg.is_file(), f"missing emitted AGENTS.flow.svg: {agents_svg}")
+        _expect(soul_d2.is_file(), f"missing emitted SOUL.flow.d2: {soul_d2}")
+        _expect(soul_svg.is_file(), f"missing emitted SOUL.flow.svg: {soul_svg}")
 
 
 def _check_diagnostic_to_dict_is_json_safe() -> None:

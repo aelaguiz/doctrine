@@ -1,0 +1,9 @@
+{
+  "name": "doctrine-flow-renderer",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Pinned D2 runtime for Doctrine flow emission.",
+  "dependencies": {
+    "@terrastruct/d2": "0.1.33"
+  }
+}

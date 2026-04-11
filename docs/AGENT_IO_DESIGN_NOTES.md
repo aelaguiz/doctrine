@@ -108,6 +108,9 @@ Carrier rules:
   that output
 - `standalone_read` explains the contract to humans, but it does not create a
   second trust channel
+- compiled `AGENTS.md` emission and target-scoped workflow-flow emission are
+  separate build layers configured outside the prompt language; they are not
+  `output target` declarations
 
 ## Guarded Output Sections
 
