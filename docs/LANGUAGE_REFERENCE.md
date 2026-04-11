@@ -32,6 +32,8 @@ A prompt file may contain imports and any mix of shipped declarations:
 The normal authoring entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The
 emit pipeline compiles each concrete agent in the entrypoint into a Markdown
 runtime artifact whose basename matches the entrypoint stem.
+For target configuration, output layout, and flow-diagram emission, use
+[EMIT_GUIDE.md](EMIT_GUIDE.md).
 
 ## Agents
 

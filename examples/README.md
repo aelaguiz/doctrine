@@ -115,3 +115,7 @@ uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 uv run --locked python -m doctrine.emit_flow --target example_36_invalidation_and_rebuild
 ```
+
+Example `36_invalidation_and_rebuild` is the canonical checked-in flow example.
+Its `build_ref/` tree includes both compiled Markdown and `AGENTS.flow.{d2,svg}`
+proof artifacts.

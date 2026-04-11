@@ -14,7 +14,9 @@ Use it when a turn needs any of these behaviors:
 
 For the full declaration overview, use
 [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md). For the numbered proof ladder,
-use [../examples/README.md](../examples/README.md).
+use [../examples/README.md](../examples/README.md). For the shipped
+flow-visualization CLI that renders these semantics, use
+[EMIT_GUIDE.md](EMIT_GUIDE.md).
 
 ## Core Split
 

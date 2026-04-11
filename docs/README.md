@@ -11,6 +11,8 @@ Doctrine's live documentation is anchored in the shipped implementation under
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
   the shipped declaration model, composition rules, refs, interpolation, and
   Markdown emission
+- [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
+  Markdown, generate workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 

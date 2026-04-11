@@ -139,6 +139,10 @@ deterministic `.flow.d2` plus same-command `.flow.svg`. Entrypoints may be
 either `AGENTS.prompt` or `SOUL.prompt`, and the emitted basename follows the
 entrypoint stem.
 
+Start with [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md) for prerequisites, target
+configuration, output layout, troubleshooting, and the exact `emit_flow`
+workflow.
+
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
@@ -151,6 +155,7 @@ Start with the live docs set:
 
 - [docs/README.md](docs/README.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
+- [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
 - [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)
 - [docs/REVIEW_SPEC.md](docs/REVIEW_SPEC.md)
 - [examples/README.md](examples/README.md)

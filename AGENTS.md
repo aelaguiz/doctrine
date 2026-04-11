@@ -51,6 +51,7 @@
 
 - `docs/README.md`: live docs index
 - `docs/WHY_DOCTRINE.md`: product story and motivating use case
+- `docs/EMIT_GUIDE.md`: canonical guide to emit targets, `emit_docs`, `emit_flow`, and output layout
 - `docs/LANGUAGE_DESIGN_NOTES.md`: current language decisions
 - `docs/AGENT_IO_DESIGN_NOTES.md`: shipped I/O model and non-goals
 - `docs/COMPILER_ERRORS.md`: canonical error catalog

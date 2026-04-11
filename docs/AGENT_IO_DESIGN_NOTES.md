@@ -8,7 +8,8 @@ trust.
 For the full declaration overview, use
 [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md). For workflow-law and review
 semantics, use [WORKFLOW_LAW.md](WORKFLOW_LAW.md) and
-[REVIEW_SPEC.md](REVIEW_SPEC.md).
+[REVIEW_SPEC.md](REVIEW_SPEC.md). For the shipped emit and flow-diagram CLI,
+use [EMIT_GUIDE.md](EMIT_GUIDE.md).
 
 ## Mental Model
 
