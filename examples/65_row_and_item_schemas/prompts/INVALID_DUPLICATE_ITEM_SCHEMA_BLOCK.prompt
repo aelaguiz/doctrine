@@ -1,0 +1,24 @@
+document LessonPlan: "Lesson Plan"
+    sequence read_order: "Read Order"
+        item_schema:
+            step_label: "Step Label"
+                "Say what the reader should do at this step."
+
+        item_schema:
+            teaching_job: "Teaching Job"
+                "This should fail."
+
+        first: "Read the learner goal."
+
+
+output LessonPlanFile: "Lesson Plan File"
+    target: File
+        path: "lesson_root/LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: LessonPlan
+
+
+agent InvalidDuplicateItemSchemaBlockDemo:
+    role: "Compile the broken lesson plan."
+    outputs: "Outputs"
+        LessonPlanFile

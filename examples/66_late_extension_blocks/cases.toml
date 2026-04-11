@@ -1,0 +1,107 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "late readable extension blocks stay explicit and render through structure"
+status = "active"
+kind = "render_contract"
+agent = "ReleaseAppendixDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep Capture the shipped proof links. and Release Appendix aligned.",
+  "",
+  "## Document",
+  "",
+  "Write the appendix.",
+  "",
+  "## Outputs",
+  "",
+  "### Release Appendix File",
+  "",
+  "- Target: File",
+  "- Path: `release_root/APPENDIX.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Structure: Release Appendix",
+  "",
+  "#### Structure: Release Appendix",
+  "",
+  "##### Appendix Markdown",
+  "",
+  "_Advisory · markdown_",
+  "",
+  "",
+  "## Appendix Notes",
+  "",
+  "Keep the appendix compact.",
+  "",
+  "##### Inline HTML",
+  "",
+  "_Optional · html_",
+  "",
+  "",
+  "<div class=\"release-note\">HTML stays explicit.</div>",
+  "",
+  "##### References",
+  "",
+  "_Optional · footnotes_",
+  "",
+  "[^note_a]: Capture the shipped proof links.",
+  "[^note_b]: Name the owner for the next update.",
+  "",
+  "##### Evidence",
+  "",
+  "_Optional · image_",
+  "",
+  "![Release checklist screenshot](https://example.com/release.png)",
+  "",
+  "Current release checklist snapshot.",
+  "",
+  "##### Follow-Up Matrix",
+  "",
+  "_Required · table_",
+  "",
+  "###### Release Note",
+  "",
+  "- Summary: Check the release note.",
+  "",
+  "####### Details",
+  "",
+  "######## Next Steps",
+  "",
+  "Confirm the release note matches the shipped proof.",
+  "",
+  "######## Proof Checks",
+  "",
+  "_table_",
+  "",
+  "| Check |",
+  "| --- |",
+  "| Link every claim to proof. |",
+]
+
+[[cases]]
+name = "raw markdown blocks require multiline text"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MARKDOWN_INLINE_TEXT.prompt"
+agent = "InvalidMarkdownInlineTextDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Raw markdown blocks must use a multiline string",
+  "ReleaseAppendix.appendix_markdown",
+]
+
+[[cases]]
+name = "inline table cells reject multiline text"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_TABLE_INLINE_MULTILINE_CELL.prompt"
+agent = "InvalidTableInlineMultilineCellDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Readable table inline cells must stay single-line",
+  "nested tables require structured cell bodies",
+]

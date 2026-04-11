@@ -13,6 +13,7 @@ start: prompt_file
 prompt_file: _NL* declaration+ _NL*
 
 ?declaration: import_decl
+            | render_profile_decl
             | analysis_decl
             | schema_decl
             | document_decl
@@ -34,6 +35,9 @@ prompt_file: _NL* declaration+ _NL*
             | agent
 
 import_decl: "import" import_path _NL
+render_profile_decl: "render_profile" CNAME _NL
+                   | "render_profile" CNAME ":" _NL _INDENT render_profile_rule+ _DEDENT
+render_profile_rule: dotted_name "->" CNAME _NL?
 
 analysis_decl: "analysis" CNAME inheritance? ":" string _NL _INDENT analysis_body _DEDENT
 schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DEDENT
@@ -216,10 +220,12 @@ outcome_route_stmt: "route" string "->" name_ref outcome_when_clause? _NL
 outcome_when_clause: "when" expr
 
 analysis_body: analysis_body_line+
-analysis_body_line: analysis_string
+analysis_body_line: analysis_render_profile_stmt
+                  | analysis_string
                   | analysis_section
                   | analysis_inherit
                   | analysis_override_section
+analysis_render_profile_stmt: "render_profile" ":" name_ref _NL?
 analysis_string: prose_line _NL?
 analysis_section: CNAME ":" string _NL _INDENT analysis_section_body _DEDENT
 analysis_inherit: "inherit" CNAME _NL?
@@ -238,7 +244,8 @@ compare_using_clause: "using" expr_set
 defend_stmt: "defend" string "using" path_set_expr _NL
 
 schema_body: schema_body_line+
-schema_body_line: schema_string
+schema_body_line: schema_render_profile_stmt
+                | schema_string
                 | schema_sections_block
                 | schema_gates_block
                 | schema_artifacts_block
@@ -248,6 +255,7 @@ schema_body_line: schema_string
                 | schema_override_gates
                 | schema_override_artifacts
                 | schema_override_groups
+schema_render_profile_stmt: "render_profile" ":" name_ref _NL?
 schema_string: prose_line _NL?
 schema_sections_block: "sections" ":" _NL _INDENT schema_section_item+ _DEDENT
 schema_gates_block: "gates" ":" _NL _INDENT schema_gate_item+ _DEDENT
@@ -274,10 +282,12 @@ schema_block_key: "sections" -> schema_block_key_sections
                 | "groups" -> schema_block_key_groups
 
 document_body: document_body_line+
-document_body_line: document_string
+document_body_line: document_render_profile_stmt
+                  | document_string
                   | document_readable_block
                   | document_inherit
                   | document_override_block
+document_render_profile_stmt: "render_profile" ":" name_ref _NL?
 document_string: prose_line _NL?
 document_readable_block: document_section_sugar
                        | document_section_block
@@ -295,61 +305,107 @@ document_section_block: "section" CNAME ":" string readable_requirement? readabl
 document_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
 
 readable_nonsection_block: readable_sequence_block
+                         | readable_properties_block
+                         | readable_inline_properties_block
+                         | readable_guard_shell_block
                          | readable_bullets_block
                          | readable_checklist_block
                          | readable_definitions_block
                          | readable_table_block
                          | readable_callout_block
                          | readable_code_block
+                         | readable_markdown_block
+                         | readable_html_block
+                         | readable_footnotes_block
+                         | readable_image_block
                          | readable_rule_block
 override_readable_nonsection_block: override_readable_sequence_block
+                                  | override_readable_properties_block
+                                  | override_readable_guard_shell_block
                                   | override_readable_bullets_block
                                   | override_readable_checklist_block
                                   | override_readable_definitions_block
                                   | override_readable_table_block
                                   | override_readable_callout_block
                                   | override_readable_code_block
+                                  | override_readable_markdown_block
+                                  | override_readable_html_block
+                                  | override_readable_footnotes_block
+                                  | override_readable_image_block
                                   | override_readable_rule_block
 
 readable_sequence_block: "sequence" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_properties_block: "properties" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_properties_body _DEDENT
+readable_inline_properties_block: "properties" ":" _NL _INDENT readable_properties_body _DEDENT
+readable_guard_shell_block: "guard" CNAME readable_guard _NL _INDENT shared_readable_body _DEDENT
 readable_bullets_block: "bullets" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_checklist_block: "checklist" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_definitions_block: "definitions" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
 readable_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
 readable_callout_block: "callout" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
 readable_code_block: "code" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
+readable_markdown_block: "markdown" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
+readable_html_block: "html" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
+readable_footnotes_block: "footnotes" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_footnotes_body _DEDENT
+readable_image_block: "image" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_image_body _DEDENT
 readable_rule_block: "rule" CNAME readable_requirement? readable_guard? _NL?
 
 override_readable_sequence_block: "override" "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+override_readable_properties_block: "override" "properties" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_properties_body _DEDENT
+override_readable_guard_shell_block: "override" "guard" CNAME readable_guard _NL _INDENT shared_readable_body _DEDENT
 override_readable_bullets_block: "override" "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 override_readable_checklist_block: "override" "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 override_readable_definitions_block: "override" "definitions" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
 override_readable_table_block: "override" "table" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
 override_readable_callout_block: "override" "callout" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
 override_readable_code_block: "override" "code" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
+override_readable_markdown_block: "override" "markdown" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
+override_readable_html_block: "override" "html" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
+override_readable_footnotes_block: "override" "footnotes" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_footnotes_body _DEDENT
+override_readable_image_block: "override" "image" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_image_body _DEDENT
 override_readable_rule_block: "override" "rule" CNAME readable_requirement? readable_guard? _NL?
 
-readable_list_body: readable_list_item+
+shared_readable_body: shared_readable_body_item+
+?shared_readable_body_item: prose_line _NL?
+                        | shared_readable_block
+shared_readable_block: shared_section_block
+                     | readable_nonsection_block
+shared_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT shared_readable_body _DEDENT
+
+readable_list_body: readable_list_body_line+
+?readable_list_body_line: readable_item_schema_block
+                        | readable_list_item
 ?readable_list_item: prose_line _NL?
                    | readable_list_keyed_item
 readable_list_keyed_item: CNAME ":" string _NL?
+readable_item_schema_block: "item_schema" ":" _NL _INDENT readable_inline_schema_item+ _DEDENT
+
+readable_properties_body: readable_property_item+
+readable_property_item: CNAME ":" string _NL readable_property_item_body?
+readable_property_item_body: _INDENT block_lines _DEDENT
 
 readable_definitions_body: readable_definition_item+
 readable_definition_item: CNAME ":" string _NL readable_definition_item_body?
 readable_definition_item_body: _INDENT block_lines _DEDENT
 
 readable_table_body: readable_table_body_line+
-?readable_table_body_line: readable_table_columns_block
+?readable_table_body_line: readable_row_schema_block
+                         | readable_table_columns_block
                          | readable_table_rows_block
                          | readable_table_notes_block
+readable_row_schema_block: "row_schema" ":" _NL _INDENT readable_inline_schema_item+ _DEDENT
 readable_table_columns_block: "columns" ":" _NL _INDENT readable_table_column+ _DEDENT
 readable_table_column: CNAME ":" string _NL readable_table_column_body?
 readable_table_column_body: _INDENT block_lines _DEDENT
 readable_table_rows_block: "rows" ":" _NL _INDENT readable_table_row+ _DEDENT
 readable_table_row: CNAME ":" _NL _INDENT readable_table_cell+ _DEDENT
-readable_table_cell: CNAME ":" string _NL?
+readable_table_cell: CNAME ":" string _NL?                                   -> readable_table_cell_text
+                   | CNAME ":" _NL _INDENT shared_readable_body _DEDENT      -> readable_table_cell_body
 readable_table_notes_block: "notes" ":" _NL _INDENT readable_table_note+ _DEDENT
 readable_table_note: prose_line _NL?
+
+readable_inline_schema_item: CNAME ":" string _NL readable_inline_schema_item_body?
+readable_inline_schema_item_body: _INDENT block_lines _DEDENT
 
 readable_callout_body: readable_callout_body_line+
 ?readable_callout_body_line: readable_callout_kind
@@ -361,6 +417,21 @@ readable_code_body: readable_code_body_line+
                         | readable_code_text
 readable_code_language: "language" ":" CNAME _NL?
 readable_code_text: "text" ":" string _NL?
+
+readable_raw_text_body: readable_raw_text_line+
+readable_raw_text_line: readable_raw_text_text
+readable_raw_text_text: "text" ":" string _NL?
+
+readable_footnotes_body: readable_footnote_item+
+readable_footnote_item: CNAME ":" string _NL?
+
+readable_image_body: readable_image_body_line+
+?readable_image_body_line: readable_image_src
+                         | readable_image_alt
+                         | readable_image_caption
+readable_image_src: "src" ":" string _NL?
+readable_image_alt: "alt" ":" string _NL?
+readable_image_caption: "caption" ":" string _NL?
 
 readable_requirement: "required" -> readable_requirement_required
                     | "advisory" -> readable_requirement_advisory
@@ -453,6 +524,7 @@ input_structure_stmt: "structure" ":" name_ref _NL?
 output_body: output_body_line+
 output_body_line: output_record_item
                 | trust_surface_block
+                | output_render_profile_stmt
                 | output_schema_stmt
                 | output_structure_stmt
 
@@ -461,6 +533,7 @@ output_body_line: output_record_item
 // own typed compiler path.
 output_schema_stmt: "schema" ":" name_ref _NL?
 output_structure_stmt: "structure" ":" name_ref _NL?
+output_render_profile_stmt: "render_profile" ":" name_ref _NL?
 
 ?output_record_item: record_text
                    | guarded_output_section

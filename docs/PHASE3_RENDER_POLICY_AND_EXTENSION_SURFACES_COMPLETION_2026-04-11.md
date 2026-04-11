@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Phase 3 Render Policy And Extension Surfaces Completion - Architecture Plan"
 date: 2026-04-11
-status: active
+status: complete
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -96,153 +96,70 @@ arch_skill:planning_passes
 deep_dive_pass_1: done 2026-04-11
 external_research_grounding: not run - repo evidence was sufficient on 2026-04-11
 deep_dive_pass_2: done 2026-04-11
-recommended_flow: implement-loop
-note: Auto-plan completed research, two deep-dive passes, and phase-plan from repo evidence only. The artifact is ready for implement-loop.
+recommended_flow: arch-docs
+note: Fresh audit-implementation on 2026-04-11 found the Phase 3 implementation code-complete. Use arch-docs only for broader docs consolidation or plan/worklog retirement.
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
 Worklog: `docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11_WORKLOG.md`
 
-Implementation status: broad Phase 3 code, proof, docs, and VS Code parity
-landed on 2026-04-11, and the core repo checks pass. Fresh
-`audit-implementation` found remaining code-completeness gaps in
-render-profile behavior and semantic-lowering proof, so the authoritative
-verdict below is `NOT COMPLETE` and the session-scoped loop state remains armed
-at `.codex/implement-loop-state.019d7eaf-b944-7103-a0ff-c7cb811a8c85.json`.
+Implementation status: fresh `audit-implementation` on 2026-04-11 found no
+remaining code-completeness blockers. Phase 3 implementation, manifest-backed
+proof, diagnostics, docs truth, and VS Code parity are complete; broader
+plan/worklog retirement belongs to `$arch-docs`.
 
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-11
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
+
+## Code-complete evidence (fresh audit)
+
+- Render-profile targets are now real render behavior, not inert validation:
+  `doctrine/renderer.py:27` defines built-in profile modes for properties,
+  guard shells, semantic targets, and identity display; `doctrine/renderer.py:185`
+  lowers `analysis.stages`; `doctrine/renderer.py:224` lowers
+  `control.invalidations`; and `doctrine/renderer.py:312` lowers
+  `review.contract_checks`.
+- Document-level profile attachment now survives `output structure:` lowering:
+  `doctrine/compiler.py:4188` resolves output-level overrides and
+  `doctrine/compiler.py:4270` carries either the explicit output profile or the
+  resolved document profile into the compiled structure section.
+- Profile-sensitive identity display now uses the active render profile:
+  `doctrine/compiler.py:12738` resolves identity modes and
+  `doctrine/compiler.py:12970` applies the profiled display before falling back
+  to the legacy title/key/wire projections.
+- The semantic and fail-loud proof ladder now covers the previously missing
+  surfaces: `examples/64_render_profiles_and_properties/cases.toml:4`,
+  `examples/64_render_profiles_and_properties/cases.toml:72`,
+  `examples/65_row_and_item_schemas/cases.toml:71`, and
+  `examples/67_semantic_profile_lowering/cases.toml:4`.
+- Live language docs now teach the shipped render-profile semantics instead of
+  ahead-of-code behavior: `docs/LANGUAGE_REFERENCE.md:260` through
+  `docs/LANGUAGE_REFERENCE.md:277`.
+- Verification passed on 2026-04-11: `uv sync`, `npm ci`,
+  `uv run --locked python -m doctrine.verify_corpus --manifest examples/67_semantic_profile_lowering/cases.toml`,
+  `make verify-examples`, `make verify-diagnostics`, and
+  `cd editors/vscode && make`.
 
 ## Code blockers (why code is not done)
 
-- Authored `render_profile` accepts identity, analysis, review, control, list,
-  table, and late-block targets that do not currently affect rendered output;
-  only `properties` and `guarded_sections` / `guard` are consumed by the
-  renderer.
-- Document-level `render_profile:` attachments are ignored when an output uses
-  `structure:` to lower a document into a markdown-bearing output.
-- The Phase 3 proof ladder is incomplete for the plan's analysis/review/control
-  lowering targets and some required compile-negative surfaces.
-- Live docs now claim the full render-profile identity display family as
-  shipped, but the compiler/renderer do not yet implement profile-sensitive
-  identity display.
+- None.
 
 ## Reopened phases (false-complete fixes)
 
-- Phase 2 (explicit guard shells and render profiles) — reopened because:
-  - profile resolution and validation landed, but several accepted profile
-    targets are inert at render time
-  - identity display still uses unconditional title/key/wire projections rather
-    than profile-sensitive defaults
-  - `document render_profile:` does not survive the common `output structure:`
-    lowering path
-- Phase 3 (semantic lowering targets and inline block schemas) — reopened
-  because:
-  - accepted `analysis.stages`, `review.contract_checks`, and
-    `control.invalidations` profile targets are not implemented as lowering
-    behavior
-  - the manifest-backed proof only covers row/item schema descendants, not the
-    planned analysis/review/control lowering targets
-- Phase 5 (proof ladder, truth convergence, VS Code parity, and closeout) —
-  reopened because:
-  - the full positive and compile-negative Phase 3 proof ladder is not present
-  - docs and editor parity passed for the implemented subset, but surviving docs
-    overstate profile behavior that code does not yet own
+- None. Earlier reopened Phase 2, Phase 3, and Phase 5 gaps are closed by the
+  current implementation and proof ladder.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
 
-- Render-profile target semantics
-  - Evidence anchors:
-    - doctrine/compiler.py:801
-    - doctrine/compiler.py:806
-    - doctrine/compiler.py:810
-    - doctrine/renderer.py:223
-    - doctrine/renderer.py:451
-    - doctrine/renderer.py:559
-    - doctrine/compiler.py:12691
-  - Plan expects:
-    - Phase 2 says the renderer consumes post-compilation profile policy so
-      shells, compactness, and identity defaults vary by profile.
-    - Phase 3 says analysis, review-shaped outputs, and concrete invalidation
-      expansion lower into typed markdown by profile.
-  - Code reality:
-    - `_KNOWN_RENDER_PROFILE_TARGETS` accepts `review.contract_checks`,
-      `analysis.stages`, `control.invalidations`, `identity.owner`,
-      `identity.debug`, `identity.enum_wire`, list/table, and late-block
-      targets, but `_resolve_profile_mode()` is only called by properties and
-      guard rendering.
-    - addressable identity display still returns title/key/wire values through
-      the existing projection path without any active profile parameter.
-  - Fix:
-    - Either implement the accepted profile targets that Phase 3 promises, or
-      fail loud / defer unsupported targets so authored profiles cannot appear
-      to ship behavior that the renderer ignores. At minimum, implement
-      profile-sensitive identity display and the planned analysis/review/control
-      lowering modes before claiming code completion.
-
-- Document profile attachment through output structure lowering
-  - Evidence anchors:
-    - doctrine/compiler.py:4208
-    - doctrine/compiler.py:4212
-    - doctrine/compiler.py:4214
-    - doctrine/compiler.py:14762
-  - Plan expects:
-    - Phase 2 says authored `render_profile` attaches to `document`,
-      `analysis`, `schema`, and markdown-bearing `output`.
-  - Code reality:
-    - `output structure:` resolves the document, compiles only its body, and
-      wraps it in a fresh `CompiledSection` without carrying the resolved
-      document `render_profile`.
-    - A document-level profile can be parsed and resolved, but it is ignored in
-      the common markdown-output structure path.
-  - Fix:
-    - Preserve the document's resolved profile when compiling structured output,
-      while keeping output-level profile override semantics explicit and
-      fail-loud.
-
-- Phase 3 proof ladder coverage
-  - Evidence anchors:
-    - examples/64_render_profiles_and_properties/cases.toml:4
-    - examples/64_render_profiles_and_properties/cases.toml:59
-    - examples/65_row_and_item_schemas/cases.toml:4
-    - examples/66_late_extension_blocks/cases.toml:83
-    - docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md:1240
-  - Plan expects:
-    - targeted manifest-backed examples for analysis/review/control-plane
-      lowering targets, `item_schema:` / `row_schema:`, and the full
-      compile-negative ladder from `docs/03_*`.
-  - Code reality:
-    - examples 64-66 prove compact `properties`, explicit guard-shell rendering,
-      row/item schema addressability, and late extensions.
-    - they do not prove analysis lowering by profile, review/control lowering
-      by profile, invalid guard source inside an explicit `guard` shell, or
-      malformed row/item schema cases beyond duplicate keys.
-  - Fix:
-    - Add the missing behavior first where it is absent, then add manifest cases
-      that exercise those exact lowering and negative surfaces.
-
-- Live-doc truth for profile behavior
-  - Evidence anchors:
-    - docs/LANGUAGE_REFERENCE.md:260
-    - docs/LANGUAGE_REFERENCE.md:263
-    - docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md:1292
-  - Plan expects:
-    - surviving live docs agree with the shipped Phase 3 boundary.
-  - Code reality:
-    - live docs now teach identity-display override support through
-      `render_profile`, but code only validates identity targets and does not
-      apply them to rendering.
-  - Fix:
-    - After the code behavior is real, keep the docs as shipped truth; otherwise
-      narrow the docs to the implemented subset and record the remaining targets
-      as deferred.
+- None.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 
-- None. The remaining blockers are code/proof/docs truth gaps, not manual QA.
+- None for manual QA. Use `$arch-docs` only for broader docs consolidation,
+  plan/worklog retirement, or archive cleanup after this clean code audit.
 <!-- arch_skill:block:implementation_audit:end -->
 
 # 0) Holistic North Star
@@ -1177,15 +1094,17 @@ Rendered intent:
 
 ## Phase 2 — explicit guard shells and render profiles
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETE (fresh audit verified code work)
 
-Missing (code):
-- Accepted `render_profile` targets beyond `properties` and
-  `guarded_sections` / `guard` are currently inert at render time.
-- Identity display does not vary by active profile even though identity profile
-  targets are accepted and documented.
-- `document render_profile:` is ignored when a markdown-bearing output lowers a
-  `structure:` document body.
+Completion evidence:
+- Profile-sensitive identity display and `document render_profile:` propagation
+  through `output structure:` now exist in the compiler path.
+- `examples/64_render_profiles_and_properties` and
+  `examples/67_semantic_profile_lowering` cover authored profiles, guard
+  shells, identity modes, semantic profile modes, and document-profile
+  structure lowering.
+- Fresh verification passed: `make verify-examples`,
+  `make verify-diagnostics`, and `cd editors/vscode && make`.
 
 * Goal:
   Add post-compilation render policy without changing meaning, visibility, or
@@ -1217,13 +1136,16 @@ Missing (code):
 
 ## Phase 3 — semantic lowering targets and inline block schemas
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETE (fresh audit verified code work)
 
-Missing (code):
-- Accepted `analysis.stages`, `review.contract_checks`, and
-  `control.invalidations` render-profile targets do not currently drive
-  lowering or rendering behavior.
-- Manifest proof is missing for analysis/review/control-plane lowering targets.
+Completion evidence:
+- `analysis.stages`, `review.contract_checks`, and `control.invalidations` now
+  drive shared renderer output under active render profiles.
+- `item_schema:` and `row_schema:` descendants remain addressable and repeated
+  schema blocks fail loud.
+- `examples/65_row_and_item_schemas` and
+  `examples/67_semantic_profile_lowering` cover the schema and semantic
+  lowering surfaces.
 
 * Goal:
   Let semantic producers target shared typed-markdown shapes and expose stable
@@ -1276,14 +1198,16 @@ Missing (code):
 
 ## Phase 5 — proof ladder, truth convergence, VS Code parity, and closeout
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETE (fresh audit verified code work)
 
-Missing (code):
-- The full positive and compile-negative Phase 3 proof ladder is not complete:
-  missing proof includes analysis/review/control lowering, invalid guard source
-  inside an explicit guard shell, and malformed row/item schemas beyond
-  duplicate-key checks.
-- Live docs currently overstate shipped render-profile identity behavior.
+Completion evidence:
+- Examples 64 through 67 now cover positive and compile-negative Phase 3
+  render-policy, guard-shell, row/item schema, late extension, semantic
+  lowering, and document-profile lowering surfaces.
+- Live docs, examples index, diagnostics catalog, and VS Code parity surfaces
+  match the shipped Phase 3 boundary.
+- Fresh verification passed: `uv sync`, `npm ci`, `make verify-examples`,
+  `make verify-diagnostics`, and `cd editors/vscode && make`.
 
 * Goal:
   Leave one honest shipped-truth story for Phase 3 across compiler, proof,

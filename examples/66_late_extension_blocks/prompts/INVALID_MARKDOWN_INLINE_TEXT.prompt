@@ -1,0 +1,19 @@
+document ReleaseAppendix: "Release Appendix"
+    markdown appendix_markdown: "Appendix Markdown"
+        text: "Inline markdown should fail."
+
+
+output ReleaseAppendixFile: "Release Appendix File"
+    target: File
+        path: "release_root/APPENDIX.md"
+    shape: MarkdownDocument
+    structure: ReleaseAppendix
+    requirement: Required
+
+
+agent InvalidMarkdownInlineTextDemo:
+    role: "Compile the broken appendix."
+    workflow: "Document"
+        "This should fail."
+    outputs: "Outputs"
+        ReleaseAppendixFile

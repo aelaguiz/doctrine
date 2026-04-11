@@ -1,0 +1,28 @@
+document ReleaseAppendix: "Release Appendix"
+    table follow_up_matrix: "Follow-Up Matrix"
+        columns:
+            details: "Details"
+                "Show the follow-up detail."
+
+        rows:
+            release_note:
+                details: """
+First line
+Second line
+"""
+
+
+output ReleaseAppendixFile: "Release Appendix File"
+    target: File
+        path: "release_root/APPENDIX.md"
+    shape: MarkdownDocument
+    structure: ReleaseAppendix
+    requirement: Required
+
+
+agent InvalidTableInlineMultilineCellDemo:
+    role: "Compile the broken appendix."
+    workflow: "Document"
+        "This should fail."
+    outputs: "Outputs"
+        ReleaseAppendixFile

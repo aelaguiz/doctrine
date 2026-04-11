@@ -69,6 +69,18 @@ Expr: TypeAlias = ExprRef | ExprCall | ExprSet | ExprBinary | str | int | bool
 
 
 @dataclass(slots=True, frozen=True)
+class RenderProfileRule:
+    target_parts: tuple[str, ...]
+    mode: str
+
+
+@dataclass(slots=True, frozen=True)
+class RenderProfileDecl:
+    name: str
+    rules: tuple[RenderProfileRule, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
 class LawPath:
     parts: tuple[str, ...]
     wildcard: bool = False
@@ -262,9 +274,34 @@ class ReadableDefinitionItem:
 
 
 @dataclass(slots=True, frozen=True)
+class ReadablePropertyItem:
+    key: str
+    title: str
+    body: tuple[ProseLine, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ReadablePropertiesData:
+    entries: tuple[ReadablePropertyItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableSchemaEntry:
+    key: str
+    title: str
+    body: tuple[ProseLine, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableInlineSchemaData:
+    entries: tuple[ReadableSchemaEntry, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class ReadableTableCell:
     key: str
-    text: str
+    text: str | None = None
+    body: tuple["ReadableSectionBodyItem", ...] | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -285,6 +322,7 @@ class ReadableTableData:
     columns: tuple[ReadableTableColumn, ...]
     rows: tuple[ReadableTableRow, ...] = ()
     notes: tuple[ProseLine, ...] = ()
+    row_schema: ReadableInlineSchemaData | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -299,14 +337,41 @@ class ReadableCodeData:
     text: str
 
 
+@dataclass(slots=True, frozen=True)
+class ReadableRawTextData:
+    text: str
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableFootnoteItem:
+    key: str
+    text: ProseLine
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableFootnotesData:
+    entries: tuple[ReadableFootnoteItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableImageData:
+    src: str
+    alt: str
+    caption: str | None = None
+
+
 ReadableSectionBodyItem: TypeAlias = ProseLine | "ReadableBlock"
 ReadablePayload: TypeAlias = (
     tuple[ReadableSectionBodyItem, ...]
     | tuple[ReadableListItem, ...]
     | tuple[ReadableDefinitionItem, ...]
+    | ReadablePropertiesData
     | ReadableTableData
     | ReadableCalloutData
     | ReadableCodeData
+    | ReadableRawTextData
+    | ReadableFootnotesData
+    | ReadableImageData
     | None
 )
 
@@ -319,6 +384,9 @@ class ReadableBlock:
     payload: ReadablePayload
     requirement: ReadableRequirement | None = None
     when_expr: Expr | None = None
+    item_schema: ReadableInlineSchemaData | None = None
+    row_schema: ReadableInlineSchemaData | None = None
+    anonymous: bool = False
     legacy_section: bool = False
 
 
@@ -562,6 +630,7 @@ class AnalysisDecl:
     name: str
     body: AnalysisBody
     parent_ref: NameRef | None = None
+    render_profile_ref: NameRef | None = None
 
     @property
     def title(self) -> str:
@@ -661,6 +730,7 @@ class SchemaDecl:
     name: str
     body: SchemaBody
     parent_ref: NameRef | None = None
+    render_profile_ref: NameRef | None = None
 
     @property
     def title(self) -> str:
@@ -675,6 +745,9 @@ class ReadableOverrideBlock:
     payload: ReadablePayload
     requirement: ReadableRequirement | None = None
     when_expr: Expr | None = None
+    item_schema: ReadableInlineSchemaData | None = None
+    row_schema: ReadableInlineSchemaData | None = None
+    anonymous: bool = False
 
 
 DocumentBlock = ReadableBlock
@@ -694,6 +767,7 @@ class DocumentDecl:
     name: str
     body: DocumentBody
     parent_ref: NameRef | None = None
+    render_profile_ref: NameRef | None = None
 
     @property
     def title(self) -> str:
@@ -1060,6 +1134,7 @@ class OutputDecl:
     items: tuple[OutputRecordItem, ...]
     schema: OutputSchemaConfig | None = None
     structure: OutputStructureConfig | None = None
+    render_profile_ref: NameRef | None = None
     trust_surface: tuple[TrustSurfaceItem, ...] = ()
 
     @property
@@ -1126,6 +1201,7 @@ class EnumDecl:
 
 Declaration: TypeAlias = (
     ImportDecl
+    | RenderProfileDecl
     | AnalysisDecl
     | SchemaDecl
     | DocumentDecl

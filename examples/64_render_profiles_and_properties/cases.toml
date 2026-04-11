@@ -1,0 +1,83 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "properties render through attached comment profiles and explicit guard shells"
+status = "active"
+kind = "render_contract"
+agent = "ReviewCommentDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use Verdict, section-author, and Project Lead when you write the compact review comment.",
+  "",
+  "## Review",
+  "",
+  "Write the review comment.",
+  "",
+  "## Outputs",
+  "",
+  "### Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Verdict: Use changes requested when the contract fails.",
+  "- Next Owner: Route back to section-author with Project Lead (`ProjectLead`).",
+  "",
+  "_Rendered only when section-author is section-author._",
+  "",
+  "- Escalation: Explain what still blocks the handoff.",
+]
+
+[[cases]]
+name = "properties reject duplicate local keys"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_PROPERTY_KEY.prompt"
+agent = "InvalidDuplicatePropertyKeyDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Duplicate properties entry key",
+  "verdict",
+]
+
+[[cases]]
+name = "render profiles reject unknown targets"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_RENDER_PROFILE_TARGET.prompt"
+agent = "InvalidRenderProfileTargetDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Unknown render_profile target",
+  "route_only",
+]
+
+[[cases]]
+name = "render profiles reject invalid identity modes"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_RENDER_PROFILE_IDENTITY_MODE.prompt"
+agent = "InvalidRenderProfileIdentityModeDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Invalid render_profile mode for identity.owner",
+  "wire_only",
+]
+
+[[cases]]
+name = "explicit guard shells keep readable guard source limits fail-loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_GUARD_SHELL_DISALLOWED_SOURCE.prompt"
+agent = "InvalidGuardShellSourceDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Readable guard reads disallowed source",
+  "BrokenComment.summary_present",
+]

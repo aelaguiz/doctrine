@@ -43,6 +43,7 @@ class OutputBodyParts:
     items: tuple[model.OutputRecordItem, ...]
     schema: model.OutputSchemaConfig | None
     structure: model.OutputStructureConfig | None
+    render_profile_ref: model.NameRef | None
     trust_surface: tuple[model.TrustSurfaceItem, ...]
 
 
@@ -55,18 +56,29 @@ class ReviewBodyParts:
 class AnalysisBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.AnalysisItem, ...]
+    render_profile_ref: model.NameRef | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class SchemaBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.SchemaItem, ...]
+    render_profile_ref: model.NameRef | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class DocumentBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.DocumentItem, ...]
+
+    render_profile_ref: model.NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ReadablePayloadParts:
+    payload: object
+    item_schema: model.ReadableInlineSchemaData | None = None
+    row_schema: model.ReadableInlineSchemaData | None = None
 
 
 class ToAst(Transformer):
@@ -127,6 +139,14 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def import_decl(self, path):
         return model.ImportDecl(path=path)
+
+    def render_profile_decl(self, items):
+        name = items[0]
+        return model.RenderProfileDecl(name=name, rules=tuple(items[1:]))
+
+    @v_args(inline=True)
+    def render_profile_rule(self, target_parts, mode):
+        return model.RenderProfileRule(target_parts=tuple(target_parts), mode=mode)
 
     @v_args(inline=True)
     def import_path(self, path):
@@ -302,6 +322,7 @@ class ToAst(Transformer):
                 items=analysis_body.items,
             ),
             parent_ref=parent_ref,
+            render_profile_ref=analysis_body.render_profile_ref,
         )
 
     @v_args(inline=True)
@@ -321,6 +342,7 @@ class ToAst(Transformer):
                 items=schema_body.items,
             ),
             parent_ref=parent_ref,
+            render_profile_ref=schema_body.render_profile_ref,
         )
 
     @v_args(inline=True)
@@ -340,6 +362,7 @@ class ToAst(Transformer):
                 items=document_body.items,
             ),
             parent_ref=parent_ref,
+            render_profile_ref=document_body.render_profile_ref,
         )
 
     @v_args(inline=True)
@@ -440,6 +463,7 @@ class ToAst(Transformer):
             items=body.items,
             schema=body.schema,
             structure=body.structure,
+            render_profile_ref=body.render_profile_ref,
             trust_surface=body.trust_surface,
         )
 
@@ -451,8 +475,17 @@ class ToAst(Transformer):
         record_items: list[model.OutputRecordItem] = []
         schema: model.OutputSchemaConfig | None = None
         structure: model.OutputStructureConfig | None = None
+        render_profile_ref: model.NameRef | None = None
         trust_surface: tuple[model.TrustSurfaceItem, ...] = ()
         for item in items:
+            if isinstance(item, tuple) and item and item[0] == "render_profile":
+                if render_profile_ref is not None:
+                    raise TransformParseFailure(
+                        "Output declarations may define `render_profile:` only once.",
+                        hints=("Keep exactly one `render_profile:` attachment per output declaration.",),
+                    )
+                render_profile_ref = item[1]
+                continue
             if isinstance(item, tuple) and item and isinstance(item[0], model.TrustSurfaceItem):
                 if trust_surface:
                     raise TransformParseFailure(
@@ -493,6 +526,7 @@ class ToAst(Transformer):
             items=tuple(record_items),
             schema=schema,
             structure=structure,
+            render_profile_ref=render_profile_ref,
             trust_surface=trust_surface,
         )
 
@@ -503,6 +537,10 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def output_structure_stmt(self, ref):
         return model.OutputStructureConfig(structure_ref=ref)
+
+    @v_args(inline=True)
+    def output_render_profile_stmt(self, ref):
+        return ("render_profile", ref)
 
     def output_record_body(self, items):
         return tuple(items)
@@ -522,10 +560,23 @@ class ToAst(Transformer):
     def analysis_body_line(self, value):
         return value
 
+    @v_args(inline=True)
+    def analysis_render_profile_stmt(self, ref):
+        return ("render_profile", ref)
+
     def analysis_body(self, items):
         preamble: list[model.ProseLine] = []
         analysis_items: list[model.AnalysisItem] = []
+        render_profile_ref: model.NameRef | None = None
         for item in items:
+            if isinstance(item, tuple) and item and item[0] == "render_profile":
+                if render_profile_ref is not None:
+                    raise TransformParseFailure(
+                        "Analysis declarations may define `render_profile:` only once.",
+                        hints=("Keep exactly one `render_profile:` attachment per analysis declaration.",),
+                    )
+                render_profile_ref = item[1]
+                continue
             if isinstance(item, (str, model.EmphasizedLine)):
                 if analysis_items:
                     raise TransformParseFailure(
@@ -537,7 +588,11 @@ class ToAst(Transformer):
                 preamble.append(item)
                 continue
             analysis_items.append(item)
-        return AnalysisBodyParts(preamble=tuple(preamble), items=tuple(analysis_items))
+        return AnalysisBodyParts(
+            preamble=tuple(preamble),
+            items=tuple(analysis_items),
+            render_profile_ref=render_profile_ref,
+        )
 
     def analysis_section_body(self, items):
         return tuple(items)
@@ -599,10 +654,23 @@ class ToAst(Transformer):
     def schema_body_line(self, value):
         return value
 
+    @v_args(inline=True)
+    def schema_render_profile_stmt(self, ref):
+        return ("render_profile", ref)
+
     def schema_body(self, items):
         preamble: list[model.ProseLine] = []
         schema_items: list[model.SchemaItem] = []
+        render_profile_ref: model.NameRef | None = None
         for item in items:
+            if isinstance(item, tuple) and item and item[0] == "render_profile":
+                if render_profile_ref is not None:
+                    raise TransformParseFailure(
+                        "Schema declarations may define `render_profile:` only once.",
+                        hints=("Keep exactly one `render_profile:` attachment per schema declaration.",),
+                    )
+                render_profile_ref = item[1]
+                continue
             if isinstance(item, (str, model.EmphasizedLine)):
                 if schema_items:
                     raise TransformParseFailure(
@@ -644,7 +712,11 @@ class ToAst(Transformer):
                     f"Schema declarations may account for `{block_key}` only once.",
                     hints=(hint,),
                 )
-        return SchemaBodyParts(preamble=tuple(preamble), items=tuple(schema_items))
+        return SchemaBodyParts(
+            preamble=tuple(preamble),
+            items=tuple(schema_items),
+            render_profile_ref=render_profile_ref,
+        )
 
     def schema_sections_block(self, items):
         return model.SchemaSectionsBlock(items=tuple(items))
@@ -743,10 +815,23 @@ class ToAst(Transformer):
     def document_body_line(self, value):
         return value
 
+    @v_args(inline=True)
+    def document_render_profile_stmt(self, ref):
+        return ("render_profile", ref)
+
     def document_body(self, items):
         preamble: list[model.ProseLine] = []
         document_items: list[model.DocumentItem] = []
+        render_profile_ref: model.NameRef | None = None
         for item in items:
+            if isinstance(item, tuple) and item and item[0] == "render_profile":
+                if render_profile_ref is not None:
+                    raise TransformParseFailure(
+                        "Document declarations may define `render_profile:` only once.",
+                        hints=("Keep exactly one `render_profile:` attachment per document declaration.",),
+                    )
+                render_profile_ref = item[1]
+                continue
             if isinstance(item, (str, model.EmphasizedLine)):
                 if document_items:
                     raise TransformParseFailure(
@@ -758,7 +843,11 @@ class ToAst(Transformer):
                 preamble.append(item)
                 continue
             document_items.append(item)
-        return DocumentBodyParts(preamble=tuple(preamble), items=tuple(document_items))
+        return DocumentBodyParts(
+            preamble=tuple(preamble),
+            items=tuple(document_items),
+            render_profile_ref=render_profile_ref,
+        )
 
     @v_args(inline=True)
     def document_readable_block(self, value):
@@ -783,7 +872,7 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def document_section_block(self, key, title, *parts):
-        requirement, when_expr, payload = self._split_readable_parts(parts)
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
         return model.ReadableBlock(
             kind="section",
             key=key,
@@ -791,6 +880,8 @@ class ToAst(Transformer):
             payload=tuple(payload),
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     @v_args(inline=True)
@@ -799,7 +890,7 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def document_override_section_block(self, key, *parts):
-        title, requirement, when_expr, payload = self._split_readable_override_parts(parts)
+        title, requirement, when_expr, item_schema, row_schema, payload = self._split_readable_override_parts(parts)
         return model.DocumentOverrideBlock(
             kind="section",
             key=key,
@@ -807,6 +898,8 @@ class ToAst(Transformer):
             payload=tuple(payload),
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     def readable_nonsection_block(self, items):
@@ -818,6 +911,29 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def readable_sequence_block(self, key, title, *parts):
         return self._readable_block("sequence", key, title, parts)
+
+    @v_args(inline=True)
+    def readable_properties_block(self, key, title, *parts):
+        return self._readable_block("properties", key, title, parts)
+
+    def readable_inline_properties_block(self, items):
+        return model.ReadableBlock(
+            kind="properties",
+            key="properties",
+            title=None,
+            payload=items[0],
+            anonymous=True,
+        )
+
+    @v_args(inline=True)
+    def readable_guard_shell_block(self, key, guard, body):
+        return model.ReadableBlock(
+            kind="guard",
+            key=key,
+            title=None,
+            payload=tuple(body),
+            when_expr=guard[1],
+        )
 
     @v_args(inline=True)
     def readable_bullets_block(self, key, title, *parts):
@@ -844,8 +960,24 @@ class ToAst(Transformer):
         return self._readable_block("code", key, title, parts)
 
     @v_args(inline=True)
+    def readable_markdown_block(self, key, title, *parts):
+        return self._readable_block("markdown", key, title, parts)
+
+    @v_args(inline=True)
+    def readable_html_block(self, key, title, *parts):
+        return self._readable_block("html", key, title, parts)
+
+    @v_args(inline=True)
+    def readable_footnotes_block(self, key, title, *parts):
+        return self._readable_block("footnotes", key, title, parts)
+
+    @v_args(inline=True)
+    def readable_image_block(self, key, title, *parts):
+        return self._readable_block("image", key, title, parts)
+
+    @v_args(inline=True)
     def readable_rule_block(self, key, *parts):
-        requirement, when_expr, _payload = self._split_readable_parts(parts)
+        requirement, when_expr, item_schema, row_schema, _payload = self._split_readable_parts(parts)
         return model.ReadableBlock(
             kind="rule",
             key=key,
@@ -853,11 +985,27 @@ class ToAst(Transformer):
             payload=None,
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     @v_args(inline=True)
     def override_readable_sequence_block(self, key, *parts):
         return self._readable_override_block("sequence", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_properties_block(self, key, *parts):
+        return self._readable_override_block("properties", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_guard_shell_block(self, key, guard, body):
+        return model.DocumentOverrideBlock(
+            kind="guard",
+            key=key,
+            title=None,
+            payload=tuple(body),
+            when_expr=guard[1],
+        )
 
     @v_args(inline=True)
     def override_readable_bullets_block(self, key, *parts):
@@ -884,8 +1032,24 @@ class ToAst(Transformer):
         return self._readable_override_block("code", key, parts)
 
     @v_args(inline=True)
+    def override_readable_markdown_block(self, key, *parts):
+        return self._readable_override_block("markdown", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_html_block(self, key, *parts):
+        return self._readable_override_block("html", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_footnotes_block(self, key, *parts):
+        return self._readable_override_block("footnotes", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_image_block(self, key, *parts):
+        return self._readable_override_block("image", key, parts)
+
+    @v_args(inline=True)
     def override_readable_rule_block(self, key, *parts):
-        title, requirement, when_expr, _payload = self._split_readable_override_parts(parts)
+        title, requirement, when_expr, item_schema, row_schema, _payload = self._split_readable_override_parts(parts)
         return model.DocumentOverrideBlock(
             kind="rule",
             key=key,
@@ -893,20 +1057,44 @@ class ToAst(Transformer):
             payload=None,
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     def readable_list_body(self, items):
         rendered_items: list[model.ReadableListItem] = []
+        item_schema: model.ReadableInlineSchemaData | None = None
         for item in items:
+            if isinstance(item, tuple) and item and item[0] == "item_schema":
+                if item_schema is not None:
+                    raise TransformParseFailure(
+                        "Readable list bodies may define `item_schema:` only once.",
+                        hints=("Keep exactly one `item_schema:` block per readable list.",),
+                    )
+                item_schema = item[1]
+                continue
             if isinstance(item, model.ReadableListItem):
                 rendered_items.append(item)
                 continue
             rendered_items.append(model.ReadableListItem(key=None, text=item))
-        return tuple(rendered_items)
+        return ReadablePayloadParts(payload=tuple(rendered_items), item_schema=item_schema)
 
     @v_args(inline=True)
     def readable_list_keyed_item(self, key, text):
         return model.ReadableListItem(key=key, text=text)
+
+    def readable_item_schema_block(self, items):
+        return ("item_schema", model.ReadableInlineSchemaData(entries=tuple(items)))
+
+    def readable_properties_body(self, items):
+        return model.ReadablePropertiesData(entries=tuple(items))
+
+    @v_args(inline=True)
+    def readable_property_item(self, key, title, body=None):
+        return model.ReadablePropertyItem(key=key, title=title, body=tuple(body or ()))
+
+    def readable_property_item_body(self, items):
+        return tuple(items[0])
 
     def readable_definitions_body(self, items):
         return tuple(items)
@@ -926,6 +1114,7 @@ class ToAst(Transformer):
         columns: tuple[model.ReadableTableColumn, ...] = ()
         rows: tuple[model.ReadableTableRow, ...] = ()
         notes: tuple[model.ProseLine, ...] = ()
+        row_schema: model.ReadableInlineSchemaData | None = None
         for block_kind, block_value in items:
             if block_kind == "columns":
                 columns = block_value
@@ -933,7 +1122,25 @@ class ToAst(Transformer):
                 rows = block_value
             elif block_kind == "notes":
                 notes = block_value
-        return model.ReadableTableData(columns=columns, rows=rows, notes=notes)
+            elif block_kind == "row_schema":
+                if row_schema is not None:
+                    raise TransformParseFailure(
+                        "Readable table bodies may define `row_schema:` only once.",
+                        hints=("Keep exactly one `row_schema:` block per readable table.",),
+                    )
+                row_schema = block_value
+        return ReadablePayloadParts(
+            payload=model.ReadableTableData(
+                columns=columns,
+                rows=rows,
+                notes=notes,
+                row_schema=row_schema,
+            ),
+            row_schema=row_schema,
+        )
+
+    def readable_row_schema_block(self, items):
+        return ("row_schema", model.ReadableInlineSchemaData(entries=tuple(items)))
 
     def readable_table_columns_block(self, items):
         return ("columns", tuple(items))
@@ -957,8 +1164,12 @@ class ToAst(Transformer):
         return model.ReadableTableRow(key=key, cells=tuple(cells))
 
     @v_args(inline=True)
-    def readable_table_cell(self, key, text):
+    def readable_table_cell_text(self, key, text):
         return model.ReadableTableCell(key=key, text=text)
+
+    @v_args(inline=True)
+    def readable_table_cell_body(self, key, body):
+        return model.ReadableTableCell(key=key, body=tuple(body))
 
     def readable_table_notes_block(self, items):
         return ("notes", tuple(items))
@@ -966,6 +1177,13 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def readable_table_note(self, value):
         return value
+
+    @v_args(inline=True)
+    def readable_inline_schema_item(self, key, title, body=None):
+        return model.ReadableSchemaEntry(key=key, title=title, body=tuple(body or ()))
+
+    def readable_inline_schema_item_body(self, items):
+        return tuple(items[0])
 
     def readable_callout_body(self, items):
         kind: str | None = None
@@ -999,6 +1217,78 @@ class ToAst(Transformer):
     def readable_code_text(self, text):
         return ("text", text)
 
+    def readable_raw_text_body(self, items):
+        text: str | None = None
+        for item in items:
+            if item[0] != "text":
+                continue
+            if text is not None:
+                raise TransformParseFailure(
+                    "Raw text readable blocks may define `text:` only once.",
+                    hints=("Keep exactly one `text:` field in the block body.",),
+                )
+            text = item[1]
+        return model.ReadableRawTextData(text="" if text is None else text)
+
+    def readable_raw_text_line(self, items):
+        return items[0]
+
+    @v_args(inline=True)
+    def readable_raw_text_text(self, text):
+        return ("text", text)
+
+    def readable_footnotes_body(self, items):
+        return model.ReadableFootnotesData(entries=tuple(items))
+
+    @v_args(inline=True)
+    def readable_footnote_item(self, key, text):
+        return model.ReadableFootnoteItem(key=key, text=text)
+
+    def readable_image_body(self, items):
+        src: str | None = None
+        alt: str | None = None
+        caption: str | None = None
+        for item in items:
+            if item[0] == "src":
+                if src is not None:
+                    raise TransformParseFailure(
+                        "Image readable blocks may define `src:` only once.",
+                        hints=("Keep exactly one `src:` field in the image block body.",),
+                    )
+                src = item[1]
+            elif item[0] == "alt":
+                if alt is not None:
+                    raise TransformParseFailure(
+                        "Image readable blocks may define `alt:` only once.",
+                        hints=("Keep exactly one `alt:` field in the image block body.",),
+                    )
+                alt = item[1]
+            elif item[0] == "caption":
+                if caption is not None:
+                    raise TransformParseFailure(
+                        "Image readable blocks may define `caption:` only once.",
+                        hints=("Keep exactly one `caption:` field in the image block body.",),
+                    )
+                caption = item[1]
+        if src is None or alt is None:
+            raise TransformParseFailure(
+                "Image readable blocks require both `src:` and `alt:`.",
+                hints=("Define both `src:` and `alt:` in the image block body.",),
+            )
+        return model.ReadableImageData(src=src, alt=alt, caption=caption)
+
+    @v_args(inline=True)
+    def readable_image_src(self, text):
+        return ("src", text)
+
+    @v_args(inline=True)
+    def readable_image_alt(self, text):
+        return ("alt", text)
+
+    @v_args(inline=True)
+    def readable_image_caption(self, text):
+        return ("caption", text)
+
     def readable_requirement_required(self, _items):
         return ("requirement", "required")
 
@@ -1011,6 +1301,27 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def readable_guard(self, expr):
         return ("guard", expr)
+
+    def shared_readable_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def shared_readable_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def shared_section_block(self, key, title, *parts):
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind="section",
+            key=key,
+            title=title,
+            payload=tuple(payload),
+            requirement=requirement,
+            when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
+        )
 
     @v_args(inline=True)
     def output_record_keyed_item(self, key, head, body=None):
@@ -1353,7 +1664,7 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def workflow_section_block(self, key, title, *parts):
-        requirement, when_expr, payload = self._split_readable_parts(parts)
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
         return model.ReadableBlock(
             kind="section",
             key=key,
@@ -1361,6 +1672,8 @@ class ToAst(Transformer):
             payload=tuple(payload),
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     @v_args(inline=True)
@@ -1814,7 +2127,7 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def record_section_block(self, key, title, *parts):
-        requirement, when_expr, payload = self._split_readable_parts(parts)
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
         return model.ReadableBlock(
             kind="section",
             key=key,
@@ -1822,6 +2135,8 @@ class ToAst(Transformer):
             payload=tuple(payload),
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     @v_args(inline=True)
@@ -1830,7 +2145,7 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def output_section_block(self, key, title, *parts):
-        requirement, when_expr, payload = self._split_readable_parts(parts)
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
         return model.ReadableBlock(
             kind="section",
             key=key,
@@ -1838,6 +2153,8 @@ class ToAst(Transformer):
             payload=tuple(payload),
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     def record_item_body(self, items):
@@ -1894,10 +2211,12 @@ class ToAst(Transformer):
         self,
         kind: str,
         key: str,
-        title: str,
+        title: str | None,
         parts: tuple[object, ...],
+        *,
+        anonymous: bool = False,
     ) -> model.ReadableBlock:
-        requirement, when_expr, payload = self._split_readable_parts(parts)
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
         return model.ReadableBlock(
             kind=kind,
             key=key,
@@ -1905,6 +2224,9 @@ class ToAst(Transformer):
             payload=payload,
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
+            anonymous=anonymous,
         )
 
     def _readable_override_block(
@@ -1913,7 +2235,7 @@ class ToAst(Transformer):
         key: str,
         parts: tuple[object, ...],
     ) -> model.DocumentOverrideBlock:
-        title, requirement, when_expr, payload = self._split_readable_override_parts(parts)
+        title, requirement, when_expr, item_schema, row_schema, payload = self._split_readable_override_parts(parts)
         return model.DocumentOverrideBlock(
             kind=kind,
             key=key,
@@ -1921,14 +2243,24 @@ class ToAst(Transformer):
             payload=payload,
             requirement=requirement,
             when_expr=when_expr,
+            item_schema=item_schema,
+            row_schema=row_schema,
         )
 
     def _split_readable_parts(
         self,
         parts: tuple[object, ...],
-    ) -> tuple[str | None, model.Expr | None, object]:
+    ) -> tuple[
+        str | None,
+        model.Expr | None,
+        model.ReadableInlineSchemaData | None,
+        model.ReadableInlineSchemaData | None,
+        object,
+    ]:
         requirement: str | None = None
         when_expr: model.Expr | None = None
+        item_schema: model.ReadableInlineSchemaData | None = None
+        row_schema: model.ReadableInlineSchemaData | None = None
         payload: object = ()
         for part in parts:
             if isinstance(part, tuple) and part and part[0] == "requirement":
@@ -1937,20 +2269,32 @@ class ToAst(Transformer):
             if isinstance(part, tuple) and part and part[0] == "guard":
                 when_expr = part[1]
                 continue
+            if isinstance(part, ReadablePayloadParts):
+                payload = part.payload
+                item_schema = part.item_schema
+                row_schema = part.row_schema
+                continue
             payload = part
-        return requirement, when_expr, payload
+        return requirement, when_expr, item_schema, row_schema, payload
 
     def _split_readable_override_parts(
         self,
         parts: tuple[object, ...],
-    ) -> tuple[str | None, str | None, model.Expr | None, object]:
+    ) -> tuple[
+        str | None,
+        str | None,
+        model.Expr | None,
+        model.ReadableInlineSchemaData | None,
+        model.ReadableInlineSchemaData | None,
+        object,
+    ]:
         title: str | None = None
         remainder = parts
         if remainder and isinstance(remainder[0], str):
             title = remainder[0]
             remainder = remainder[1:]
-        requirement, when_expr, payload = self._split_readable_parts(remainder)
-        return title, requirement, when_expr, payload
+        requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(remainder)
+        return title, requirement, when_expr, item_schema, row_schema, payload
 
 
 def build_lark_parser() -> Lark:
