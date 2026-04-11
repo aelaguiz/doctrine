@@ -1,0 +1,58 @@
+# This compile-negative proves that a concrete review must bind the required
+# semantic channels through `fields:`.
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Fix rejected draft defects."
+    workflow: "Revise"
+        "Revise the same draft when review requests changes."
+
+
+output DraftReviewComment: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: DraftReviewComment
+
+    start_review: "Start Review"
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+
+agent InvalidMissingFieldsDemo:
+    role: "Keep missing review fields from compiling."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        DraftReviewComment

@@ -1,0 +1,121 @@
+# This file adds the handoff-first block gate to the shipped review ladder.
+# The key point is that blocked review turns still live inside `review`, still
+# produce one durable comment, and still bind explicit failing-gate identity.
+
+# Declare the producer handoff that must be good enough before content review
+# can even start.
+input ProducerHandoff: "Producer Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the producer handoff that says whether the handoff is complete, whether it names the wrong current artifact, and what the next owner must repair first."
+
+
+# Declare the shared review contract that still governs the content review once
+# the handoff is good enough.
+workflow HandoffReviewContract: "Handoff Review Contract"
+    completeness: "Completeness"
+        "Confirm the handoff covers the required review basis."
+
+    clarity: "Clarity"
+        "Confirm the handoff says plainly what the next owner should do."
+
+
+# Declare the owner who receives accepted handoffs.
+agent ReviewLead:
+    role: "Own accepted handoff follow-up."
+    workflow: "Follow Up"
+        "Take the accepted handoff to the next planning step."
+
+
+# Declare the owner who receives blocked or rejected handoffs.
+agent DraftAuthor:
+    role: "Repair blocked or rejected producer handoffs."
+    workflow: "Revise"
+        "Repair the same producer handoff before content review can continue."
+
+
+# Declare the durable review comment for handoff-first review turns.
+output HandoffReviewComment: "Handoff Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This field states the compiler-owned verdict.
+    verdict: "Verdict"
+        "Say whether the review accepted the handoff or requested changes."
+
+    # This field names the artifact the review actually judged.
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact. When review blocks before content review starts, name the producer handoff instead of pretending the later content review happened."
+
+    # This field holds the human review analysis.
+    analysis_performed: "Analysis Performed"
+        "Summarize the handoff-first review analysis that led to the verdict."
+
+    # This field says what the next owner should read first.
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the producer handoff the next owner must read first."
+
+    # This field says who owns next under the review outcome.
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the handoff is accepted and {{DraftAuthor}} when the handoff is blocked or rejected."
+
+    # This guarded block appears only when the verdict requests changes.
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        blocked_gate: "Blocked Gate"
+            "Name the first blocking gate when the review stopped before content review started."
+
+        failing_gates: "Failing Gates"
+            "Name every failing review gate in authored order, including the blocked gate when review stopped before content review started."
+
+    # This block says what a downstream owner should understand from the
+    # review comment alone.
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that handoff quality is checked first, that blocked review still produces changes requested, what artifact was actually reviewed, who owns next, and what the next repair step is."
+
+
+# Declare the handoff-first review itself.
+review HandoffFirstReview: "Handoff-First Review"
+    subject: ProducerHandoff
+    contract: HandoffReviewContract
+    comment_output: HandoffReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        blocked_gate: failure_detail.blocked_gate
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    handoff_first: "Handoff First"
+        # This line keeps the stop line inside `review` instead of splitting it
+        # into a pre-review workflow.
+        block "The producer handoff is incomplete." when ProducerHandoff.incomplete
+
+        # This line still lets the same review reject a non-blocked but wrong
+        # handoff.
+        reject "The producer handoff names the wrong current artifact." when ProducerHandoff.names_wrong_current_artifact
+
+    contract_checks: "Contract Checks"
+        accept "The shared handoff review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted handoff returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Blocked or rejected handoff returns to DraftAuthor." -> DraftAuthor
+
+
+# Declare the concrete reviewer agent.
+agent HandoffFirstReviewDemo:
+    role: "Keep handoff-first review stops explicit and durable."
+    review: HandoffFirstReview
+    inputs: "Inputs"
+        ProducerHandoff
+    outputs: "Outputs"
+        HandoffReviewComment

@@ -221,6 +221,20 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "abstractReview",
+        ['abstract review SharedReview[shared.review.BaseReview]: "Review"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewDeclaration",
+        ['review DraftReview[SharedReview]: "Review"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "skillsDeclaration",
         ['skills SharedSkills[shared.skills.BaseSkills]: "Skills"'],
         should_match=True,
@@ -265,6 +279,64 @@ def main() -> int:
         repository,
         "skillsField",
         ['    skills: "Skills"', "    skills: shared.skills.SharedSkills"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewField",
+        ["    review: DraftReview"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewConfigFieldRef",
+        [
+            "    subject: DraftSpec",
+            "    contract: DraftReviewContract",
+            "    comment_output: DraftReviewComment",
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewSubjectMapField",
+        ["    subject_map:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewFieldsField",
+        ["    fields:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewOutcomeField",
+        ['    on_accept: "If Accepted"', "    on_reject:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewFieldBinding",
+        [
+            "        verdict: verdict",
+            "        reviewed_artifact: reviewed_artifact",
+            "        blocked_gate: failure_detail.blocked_gate",
+            "        active_mode: active_mode",
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewSemanticRef",
+        ["contract.completeness", "fields.reviewed_artifact"],
         should_match=True,
         errors=errors,
     )

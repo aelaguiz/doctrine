@@ -86,14 +86,17 @@
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^ source.doctrine
 #               ^^^^ source.doctrine keyword.control.doctrine
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                   ^^^^^^^^^^^^^^^^ source.doctrine
+#                                   ^^^^^^^ source.doctrine keyword.control.doctrine
 >
 >        # This block applies only when the condition is true inside the surrounding law context.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >        when CurrentHandoff.missing:
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^^^^^^^^^ source.doctrine
+#                            ^^^^^^^ source.doctrine keyword.control.doctrine
+#                                   ^^ source.doctrine
 >            # This line ends the turn with an explicit reason.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            # This stop line is fine on its own, but this active branch never declares any current subject before stopping.

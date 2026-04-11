@@ -1,0 +1,36 @@
+{
+  "output": {
+    "filePath": "repomix-doctrine-code-and-examples.md",
+    "style": "markdown",
+    "parsableStyle": false,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "topFilesLength": 20,
+    "showLineNumbers": false,
+    "copyToClipboard": false
+  },
+  "include": [
+    "doctrine/**/*.py",
+    "doctrine/**/*.lark",
+    "examples/**/*.md",
+    "examples/**/*.prompt",
+    "examples/**/cases.toml"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "example_agents/**",
+      "editors/vscode/tests/snap/**",
+      "**/__pycache__/**"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}

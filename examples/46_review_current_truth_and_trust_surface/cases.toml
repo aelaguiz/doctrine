@@ -1,0 +1,132 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "review current truth and trust surface stay coupled through the emitted comment"
+status = "active"
+kind = "render_contract"
+agent = "CurrentTruthReviewDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep review current truth explicit and trusted downstream.",
+  "",
+  "## Current Truth Review",
+  "",
+  "Review subject: Draft Spec.",
+  "Shared review contract: Current Truth Review Contract.",
+  "",
+  "### Current Truth Checks",
+  "",
+  "Reject: The draft still leaves the core decision unclear.",
+  "",
+  "Accept only if The shared review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "Current artifact: Draft Spec.",
+  "",
+  "Accepted draft returns to ReviewLead.",
+  "",
+  "### If Rejected",
+  "",
+  "Current artifact: Draft Spec.",
+  "",
+  "Rejected draft returns to DraftAuthor.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Spec",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/DRAFT_SPEC.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "Use the current draft specification as the reviewed artifact.",
+  "",
+  "## Outputs",
+  "",
+  "### Current Truth Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Verdict",
+  "",
+  "Say whether the review accepted the draft or requested changes.",
+  "",
+  "#### Reviewed Artifact",
+  "",
+  "Name the reviewed artifact this review judged.",
+  "",
+  "#### Analysis Performed",
+  "",
+  "Summarize the review analysis that led to the verdict.",
+  "",
+  "#### Output Contents That Matter",
+  "",
+  "Summarize the parts of the draft the next owner must read first.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the artifact that remains current after this review outcome.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name the failing review gates in authored order.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, what remains current now, who owns next, and which parts of the draft matter now.",
+]
+
+[[cases]]
+name = "review currentness requires a declared output carrier"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_ARTIFACT_BAD_CARRIER.prompt"
+agent = "InvalidCurrentArtifactBadCarrierDemo"
+exception_type = "CompileError"
+error_code = "E487"
+message_contains = [
+  "MissingReviewComment.current_artifact",
+  "declared output",
+]
+
+[[cases]]
+name = "review currentness carriers must be trusted explicitly"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CARRIER_NOT_IN_TRUST_SURFACE.prompt"
+agent = "InvalidCarrierNotInTrustSurfaceDemo"
+exception_type = "CompileError"
+error_code = "E488"
+message_contains = [
+  "trust_surface",
+  "current_artifact",
+]
+
+[[cases]]
+name = "review currentness cannot jump to an artifact outside the reviewed subjects"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_ARTIFACT_OUTSIDE_SUBJECT.prompt"
+agent = "InvalidCurrentArtifactOutsideSubjectDemo"
+exception_type = "CompileError"
+message_contains = [
+  "Review current artifact must stay rooted in a review subject or emitted output",
+  "OtherSpec",
+]

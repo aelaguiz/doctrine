@@ -1,0 +1,180 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "multi-subject review carries active mode and trigger reason through one durable comment"
+status = "active"
+kind = "render_contract"
+agent = "MultiSubjectReviewDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep multi-subject review current truth and carried state aligned.",
+  "",
+  "## Multi-Subject Review",
+  "",
+  "Review subjects: Draft Spec, and Metadata Record.",
+  "Shared review contract: Multi-Subject Review Contract.",
+  "",
+  "### Contract Checks",
+  "",
+  "Reject: The selected subject still needs changes.",
+  "",
+  "Accept only if The shared review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "Match ReviewFacts.selected_mode:",
+  "If draft-rewrite:",
+  "- Current artifact: Draft Spec.",
+  "- Carry active mode: draft-rewrite.",
+  "- Carry trigger reason: structure-gap.",
+  "- Accepted draft rewrite returns to RevisionOwner.",
+  "If metadata-refresh:",
+  "- Current artifact: Metadata Record.",
+  "- Carry active mode: metadata-refresh.",
+  "- Carry trigger reason: stale-metadata.",
+  "- Accepted metadata refresh returns to RevisionOwner.",
+  "",
+  "### If Rejected",
+  "",
+  "Match ReviewFacts.selected_mode:",
+  "If draft-rewrite:",
+  "- Current artifact: Draft Spec.",
+  "- Carry active mode: draft-rewrite.",
+  "- Carry trigger reason: structure-gap.",
+  "- Rejected draft rewrite returns to RevisionOwner.",
+  "If metadata-refresh:",
+  "- Current artifact: Metadata Record.",
+  "- Carry active mode: metadata-refresh.",
+  "- Carry trigger reason: stale-metadata.",
+  "- Rejected metadata refresh returns to RevisionOwner.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Spec",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/DRAFT_SPEC.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "Use the current draft specification when the review mode is draft rewrite.",
+  "",
+  "### Metadata Record",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/METADATA.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the current metadata record when the review mode is metadata refresh.",
+  "",
+  "### Review Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host facts that say which review mode is live and whether the selected subject still needs changes.",
+  "",
+  "## Outputs",
+  "",
+  "### Multi-Subject Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Verdict",
+  "",
+  "Say whether the review accepted the selected subject or requested changes.",
+  "",
+  "#### Reviewed Artifact",
+  "",
+  "Name the reviewed artifact this review judged.",
+  "",
+  "#### Analysis Performed",
+  "",
+  "Summarize the review analysis that led to the verdict.",
+  "",
+  "#### Output Contents That Matter",
+  "",
+  "Summarize the parts of the selected subject the next owner must read first.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner, including RevisionOwner under both review modes. This multi-subject review keeps the next owner the same while the live mode and current artifact change.",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the artifact that is current now under the selected review mode.",
+  "",
+  "#### Active Mode",
+  "",
+  "Rendered only when present(active_mode).",
+  "",
+  "Name the active review mode that selected the current artifact.",
+  "",
+  "#### Trigger Reason",
+  "",
+  "Rendered only when present(trigger_reason).",
+  "",
+  "Name the trigger reason that explains why this current artifact and mode are live.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name the failing review gates in authored order.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Active Mode when present(active_mode)",
+  "- Trigger Reason when present(trigger_reason)",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand which subject was reviewed, which artifact is current now, what active mode selected it, what trigger reason explains it, and who owns next.",
+]
+
+[[cases]]
+name = "multi-subject review requires disambiguation proof"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SUBJECT_SET_WITHOUT_DISAMBIGUATION.prompt"
+agent = "InvalidSubjectSetWithoutDisambiguationDemo"
+exception_type = "CompileError"
+error_code = "E489"
+message_contains = [
+  "Review subject set requires disambiguation",
+  "on_accept",
+]
+
+[[cases]]
+name = "carried active mode requires a bound review field"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_ACTIVE_MODE_BINDING.prompt"
+agent = "InvalidMissingActiveModeBindingDemo"
+exception_type = "CompileError"
+error_code = "E473"
+message_contains = [
+  "Review fields are incomplete",
+  "active_mode",
+]
+
+[[cases]]
+name = "carried trigger reason requires a bound review field"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_TRIGGER_REASON_BINDING.prompt"
+agent = "InvalidMissingTriggerReasonBindingDemo"
+exception_type = "CompileError"
+error_code = "E473"
+message_contains = [
+  "Review fields are incomplete",
+  "trigger_reason",
+]

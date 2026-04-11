@@ -1,0 +1,70 @@
+# SYNTAX TEST "source.doctrine" "review declarations, reserved fields, and semantic refs"
+
+abstract review BaseDraftReview[shared.review.BaseReview]: "Base Review"
+# <------ keyword.declaration.doctrine
+#        ^ keyword.declaration.doctrine
+#               ^ entity.name.type.doctrine
+#                               ^ entity.other.inherited-class.doctrine
+
+review DraftReview[BaseDraftReview]: "Draft Review"
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine
+#                  ^ entity.other.inherited-class.doctrine
+
+agent DraftReviewDemo:
+    review: DraftReview
+#   ^^^^^^ keyword.other.field.doctrine
+#         ^ punctuation.separator.key-value.doctrine
+#           ^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+review ReviewBodyDemo: "Review Body"
+    subject: DraftSpec
+#   ^^^^^^^ keyword.other.field.doctrine
+#          ^ punctuation.separator.key-value.doctrine
+#            ^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    contract: DraftReviewContract
+#   ^^^^^^^^ keyword.other.field.doctrine
+#           ^ punctuation.separator.key-value.doctrine
+#             ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    comment_output: DraftReviewComment
+#   ^^^^^^^^^^^^^^ keyword.other.field.doctrine
+#                 ^ punctuation.separator.key-value.doctrine
+#                   ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    subject_map:
+#   ^^^^^^^^^^^ keyword.other.field.doctrine
+#              ^ punctuation.separator.key-value.doctrine
+
+    fields:
+#   ^^^^^^ keyword.other.field.doctrine
+#         ^ punctuation.separator.key-value.doctrine
+
+        verdict: verdict
+#       ^^^^^^^ keyword.other.field.doctrine
+#              ^ punctuation.separator.key-value.doctrine
+#                ^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    shared_checks: "Shared Checks"
+#   ^^^^^^^^^^^^^ entity.name.section.doctrine
+
+    on_accept: "If Accepted"
+#   ^^^^^^^^^ keyword.other.field.doctrine
+#            ^ punctuation.separator.key-value.doctrine
+
+    on_reject:
+#   ^^^^^^^^^ keyword.other.field.doctrine
+#            ^ punctuation.separator.key-value.doctrine
+
+        accept "Ready" when contract.passes
+#       ^^^^^^ keyword.control.doctrine
+#                           ^^^^^^^^ keyword.other.field.doctrine
+#                                   ^ punctuation.separator.interpolation.doctrine
+#                                    ^^^^^^ variable.other.member.doctrine
+
+        carry active_mode = ReviewMode.rewrite
+#       ^^^^^ keyword.control.doctrine
+
+        "Read {{fields.reviewed_artifact}} before you reroute."
+#               ^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine

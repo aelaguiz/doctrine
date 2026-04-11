@@ -11,6 +11,7 @@ async function run() {
   await testDefinitionProvider();
   await testAddressableDefinitionProvider();
   await testWorkflowLawDefinitionProvider();
+  await testReviewDefinitionProvider();
   await testFullClickableSurface();
 }
 
@@ -460,6 +461,58 @@ async function testWorkflowLawDefinitionProvider() {
       'route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown',
     sourceText: "RoutingOwner",
     occurrence: 2,
+  });
+}
+
+async function testReviewDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: "review DraftReview",
+    expectedRelativeTargetPath:
+      "examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt",
+    sourceLineFragment: "review: DraftReview",
+    sourceText: "DraftReview",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "workflow DraftReviewContract",
+    expectedRelativeTargetPath:
+      "examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'accept "The shared draft review contract passes." when contract.passes',
+    sourceText: "contract",
+    occurrence: 2,
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:',
+    expectedRelativeTargetPath:
+      "examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt",
+    sourceLineFragment: "failing_gates: failure_detail.failing_gates",
+    sourceText: "failure_detail",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'clarity: "Clarity"',
+    expectedRelativeTargetPath: "examples/49_review_capstone/prompts/AGENTS.prompt",
+    relativePath: "examples/49_review_capstone/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
+    sourceText: "clarity",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'reviewed_artifact: "Reviewed Artifact"',
+    expectedRelativeTargetPath: "examples/49_review_capstone/prompts/AGENTS.prompt",
+    relativePath: "examples/49_review_capstone/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
+    sourceText: "reviewed_artifact",
   });
 }
 

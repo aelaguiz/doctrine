@@ -49,6 +49,9 @@ and anonymized drift examples.
 
 - concrete and abstract `agent` declarations
 - reusable and inherited `workflow` declarations
+- first-class `review` and `abstract review` declarations with review
+  contracts, exact gate export, carried mode and trigger state, portable
+  current truth, explicit inheritance, and output-agreement validation
 - typed `skill`, `input`, `output`, `input source`, `output target`,
   `output shape`, and `json schema` declarations
 - workflow law on `workflow` plus `trust_surface` on `output` for portable
@@ -56,13 +59,15 @@ and anonymized drift examples.
 - ordinary authored slots such as routing and stop rules
 - named `skills`, `inputs`, and `outputs` block reuse and inheritance
 - imports, dotted refs, agent mentions, and authored-prose interpolation
-- manifest-backed verification for examples `01` through `38`
+- manifest-backed verification for examples `01` through `49`
 
 The shipped implementation lives in `doctrine/`. The examples are design
 pressure plus proof, not the source of truth by themselves.
 
 For the shipped workflow-law model, start with
 [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md).
+For the shipped review model, start with
+[docs/REVIEW_SPEC.md](docs/REVIEW_SPEC.md).
 
 ## Quick Example
 
@@ -139,9 +144,11 @@ uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 ## VS Code Extension
 
 The repo-local VS Code extension lives in `editors/vscode/` and provides
-syntax highlighting plus full clickable follow-definition behavior for shipped
-Doctrine refs in `.prompt` files: imports, declaration refs, readable refs,
-interpolation roots, and structural inheritance keys.
+full colorization plus full Ctrl/Cmd-click follow-definition behavior for the
+shipped Doctrine surface in `.prompt` files: imports, declaration refs,
+readable refs, interpolation roots, structural inheritance keys, workflow-law
+refs, and first-class review refs such as `review:` slots, inherited review
+sections, `contract.*`, and `fields.*`.
 
 Build the installable VSIX:
 

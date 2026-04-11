@@ -21,7 +21,7 @@ const INHERITED_AGENT_RE = new RegExp(
   `^\\s*(?:abstract\\s+)?agent\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*$`,
 );
 const INHERITED_BLOCK_RE = new RegExp(
-  `^\\s*(workflow|skills|inputs|outputs)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
+  `^\\s*(review|workflow|skills|inputs|outputs)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
 );
 const PATCH_FIELD_RE = new RegExp(
   `^\\s*(inputs|outputs)\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*${STRING_PATTERN}\\s*$`,
@@ -68,6 +68,26 @@ const OVERRIDE_BODY_RE = new RegExp(
 );
 const LAW_FIELD_RE = /^\s*law\s*:\s*$/;
 const TRUST_SURFACE_FIELD_RE = /^\s*trust_surface\s*:\s*$/;
+const REVIEW_FIELDS_FIELD_RE = /^\s*fields\s*:\s*$/;
+const REVIEW_SUBJECT_MAP_FIELD_RE = /^\s*subject_map\s*:\s*$/;
+const REVIEW_OUTCOME_HEADER_RE = /^\s*(on_accept|on_reject)\s*:\s*(?:"(?:\\.|[^"\\])*")?\s*$/;
+const REVIEW_OVERRIDE_FIELDS_RE = /^\s*override\s+fields\s*:\s*$/;
+const REVIEW_OVERRIDE_OUTCOME_RE = /^\s*override\s+(on_accept|on_reject)\s*:\s*(?:"(?:\\.|[^"\\])*")?\s*$/;
+const REVIEW_CONFIG_REF_RE = new RegExp(
+  `^\\s*(subject|contract|comment_output)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+);
+const REVIEW_FIELD_BINDING_RE = new RegExp(
+  `^\\s*(verdict|reviewed_artifact|analysis|readback|failing_gates|blocked_gate|next_owner|active_mode|trigger_reason)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+);
+const REVIEW_SUBJECT_MAP_ENTRY_RE = new RegExp(
+  `^\\s*(${DOTTED_NAME_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+);
+const REVIEW_SECTION_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+);
+const REVIEW_OVERRIDE_SECTION_RE = new RegExp(
+  `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?\\s*$`,
+);
 const LAW_OVERRIDE_SECTION_RE = new RegExp(
   `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*$`,
 );
@@ -82,6 +102,7 @@ const GUARDED_OUTPUT_HEADER_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
 );
 const UPPERCASE_DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
+const REVIEW_SEMANTIC_REF_RE = /\b(contract|fields)\.([A-Za-z_][A-Za-z0-9_]*)\b/g;
 
 const PROSE_LINE_RE = /^\s*(?:(?:required|important|warning|note)\s+)?"(?:\\.|[^"\\])*"\s*$/;
 const ROLE_INLINE_RE = new RegExp(`^\\s*role\\s*:\\s*${STRING_PATTERN}\\s*$`);
@@ -89,7 +110,7 @@ const PURPOSE_OR_REASON_RE = new RegExp(
   `^\\s*(purpose|reason)\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
 
-const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "skills"]);
+const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "skills", "review"]);
 const READABLE_DECLARATION_KINDS = Object.freeze([
   "agent",
   "input",
@@ -104,6 +125,7 @@ const READABLE_DECLARATION_KINDS = Object.freeze([
 
 const DECLARATION_KIND = Object.freeze({
   AGENT: "agent",
+  REVIEW: "review",
   WORKFLOW: "workflow",
   SKILLS_BLOCK: "skills",
   INPUTS_BLOCK: "inputs",
@@ -137,6 +159,15 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     kind: DECLARATION_KIND.AGENT,
     regex: new RegExp(
       `^\\s*(abstract\\s+)?agent\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
+    ),
+    abstractGroup: 1,
+    nameGroup: 2,
+    parentGroup: 3,
+  },
+  {
+    kind: DECLARATION_KIND.REVIEW,
+    regex: new RegExp(
+      `^\\s*(abstract\\s+)?review\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
     ),
     abstractGroup: 1,
     nameGroup: 2,
@@ -225,6 +256,7 @@ const DECLARATION_DEFINITIONS = Object.freeze([
 ]);
 
 const INDEX_CACHE = new Map();
+const REVIEW_CONTEXT_CACHE = new Map();
 
 // Compiler semantics stay the policy owner. This file only adapts those
 // shipped import, declaration, readable-ref, and inheritance rules to VS Code.
@@ -280,6 +312,12 @@ async function provideDefinitionLinks(document, position, token) {
   if (site.type === "addressableRef") {
     return resolveAddressableDefinition(site, source);
   }
+  if (site.type === "reviewSemanticRef") {
+    return resolveReviewSemanticDefinition(site, source);
+  }
+  if (site.type === "reviewBoundOutputPathRef") {
+    return resolveReviewBoundOutputPathDefinition(site, source);
+  }
   return resolveStructuralDefinition(site, source);
 }
 
@@ -334,6 +372,30 @@ function classifyDefinitionSite(source, position) {
     case "agent_body":
       sites.push(...collectAgentBodySites(lineText, position.line));
       break;
+    case "review_body":
+      sites.push(...collectReviewBodySites(lineText, position.line));
+      break;
+    case "review_fields_body":
+      sites.push(...collectReviewFieldsBodySites(lineText, position.line));
+      break;
+    case "review_subject_map_body":
+      sites.push(...collectReviewSubjectMapBodySites(lineText, position.line));
+      break;
+    case "review_pre_outcome_body":
+      sites.push(...collectReviewPreOutcomeSites(lineText, position.line));
+      break;
+    case "review_outcome_body":
+      sites.push(...collectReviewOutcomeSites(lineText, position.line));
+      break;
+    case "review_match_body":
+      sites.push(
+        ...(
+          lineContext.container.owner === "review_outcome"
+            ? collectReviewOutcomeSites(lineText, position.line)
+            : collectReviewPreOutcomeSites(lineText, position.line)
+        ),
+      );
+      break;
     case "workflow_body":
       sites.push(...collectWorkflowBodySites(lineText, position.line));
       break;
@@ -377,7 +439,11 @@ function classifyDefinitionSite(source, position) {
   }
 
   for (const site of sites) {
-    if (site.type === "structuralKeyRef") {
+    if (
+      site.type === "structuralKeyRef"
+      || site.type === "reviewSemanticRef"
+      || site.type === "reviewBoundOutputPathRef"
+    ) {
       site.lineContext = lineContext;
     }
   }
@@ -387,6 +453,20 @@ function classifyDefinitionSite(source, position) {
 
 function collectAgentBodySites(lineText, lineNumber) {
   const sites = [];
+
+  const reviewField = lineText.match(
+    new RegExp(`^\\s*review\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`),
+  );
+  if (reviewField) {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.REVIEW,
+      range: createLastMatchRange(lineText, lineNumber, reviewField[1]),
+      ref: parseNameRef(reviewField[1]),
+      requireConcrete: false,
+    });
+    return sites;
+  }
 
   const abstractField = lineText.match(ABSTRACT_FIELD_RE);
   if (abstractField) {
@@ -422,6 +502,16 @@ function collectAgentBodySites(lineText, lineNumber) {
 
   const topLevelFieldRef = lineText.match(TOP_LEVEL_FIELD_REF_RE);
   if (topLevelFieldRef) {
+    if (topLevelFieldRef[1] === "review") {
+      sites.push({
+        type: "directDeclRef",
+        declarationKind: DECLARATION_KIND.REVIEW,
+        range: createLastMatchRange(lineText, lineNumber, topLevelFieldRef[2]),
+        ref: parseNameRef(topLevelFieldRef[2]),
+        requireConcrete: false,
+      });
+      return sites;
+    }
     sites.push({
       type: "directDeclRef",
       declarationKind: keyedFieldToDeclarationKind(topLevelFieldRef[1]),
@@ -443,6 +533,146 @@ function collectAgentBodySites(lineText, lineNumber) {
     });
   }
 
+  return sites;
+}
+
+function collectReviewBodySites(lineText, lineNumber) {
+  const sites = [];
+
+  const inheritItem = lineText.match(INHERIT_RE);
+  if (inheritItem) {
+    sites.push(createStructuralSite(lineText, lineNumber, inheritItem[1]));
+    return sites;
+  }
+
+  const overrideFields = lineText.match(REVIEW_OVERRIDE_FIELDS_RE);
+  if (overrideFields) {
+    sites.push(createStructuralSite(lineText, lineNumber, "fields"));
+    return sites;
+  }
+
+  const overrideOutcome = lineText.match(REVIEW_OVERRIDE_OUTCOME_RE);
+  if (overrideOutcome) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideOutcome[1]));
+    return sites;
+  }
+
+  const overrideSection = lineText.match(REVIEW_OVERRIDE_SECTION_RE);
+  if (overrideSection) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideSection[1]));
+    return sites;
+  }
+
+  if (REVIEW_FIELDS_FIELD_RE.test(lineText)) {
+    sites.push(createStructuralSite(lineText, lineNumber, "fields"));
+    return sites;
+  }
+
+  if (REVIEW_OUTCOME_HEADER_RE.test(lineText)) {
+    const key = lineText.trim().split(":")[0].trim();
+    sites.push(createStructuralSite(lineText, lineNumber, key));
+    return sites;
+  }
+
+  const configRef = lineText.match(REVIEW_CONFIG_REF_RE);
+  if (configRef) {
+    const declarationKind =
+      configRef[1] === "contract"
+        ? DECLARATION_KIND.WORKFLOW
+        : configRef[1] === "comment_output"
+          ? DECLARATION_KIND.OUTPUT
+          : undefined;
+    if (declarationKind) {
+      sites.push({
+        type: "directDeclRef",
+        declarationKind,
+        range: createLastMatchRange(lineText, lineNumber, configRef[2]),
+        ref: parseNameRef(configRef[2]),
+        requireConcrete: false,
+      });
+      return sites;
+    }
+  }
+
+  if (REVIEW_SUBJECT_MAP_FIELD_RE.test(lineText)) {
+    sites.push(createStructuralSite(lineText, lineNumber, "subject_map"));
+    return sites;
+  }
+
+  const localSection = lineText.match(REVIEW_SECTION_RE);
+  if (localSection) {
+    sites.push(createStructuralSite(lineText, lineNumber, localSection[1]));
+    return sites;
+  }
+
+  sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  return sites;
+}
+
+function collectReviewFieldsBodySites(lineText, lineNumber) {
+  const binding = lineText.match(REVIEW_FIELD_BINDING_RE);
+  if (!binding) {
+    return [];
+  }
+
+  return createReviewBoundOutputPathSites({
+    lineNumber,
+    pathText: binding[2],
+    startCharacter: lineText.lastIndexOf(binding[2]),
+  });
+}
+
+function collectReviewSubjectMapBodySites(lineText, lineNumber) {
+  const sites = [];
+  const entry = lineText.match(REVIEW_SUBJECT_MAP_ENTRY_RE);
+  if (!entry) {
+    return sites;
+  }
+
+  const leftText = entry[1];
+  const leftDot = leftText.indexOf(".");
+  if (leftDot !== -1) {
+    sites.push(
+      ...createAddressableRefSites({
+        lineNumber,
+        pathText: leftText.slice(leftDot + 1),
+        pathStartCharacter: lineText.indexOf(leftText) + leftDot + 1,
+        rootText: leftText.slice(0, leftDot),
+        startCharacter: lineText.indexOf(leftText),
+      }),
+    );
+  }
+
+  sites.push({
+    type: "readableDeclRef",
+    range: createLastMatchRange(lineText, lineNumber, entry[2]),
+    ref: parseNameRef(entry[2]),
+  });
+
+  return sites;
+}
+
+function collectReviewPreOutcomeSites(lineText, lineNumber) {
+  const sites = [];
+  sites.push(...collectReviewSemanticSites(lineText, lineNumber));
+  sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  return sites;
+}
+
+function collectReviewOutcomeSites(lineText, lineNumber) {
+  const sites = [];
+  const routeTarget = lineText.match(ROUTE_RE);
+  if (routeTarget) {
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.AGENT,
+      range: createLastMatchRange(lineText, lineNumber, routeTarget[4]),
+      ref: parseNameRef(routeTarget[4]),
+      requireConcrete: true,
+    });
+  }
+  sites.push(...collectReviewSemanticSites(lineText, lineNumber));
+  sites.push(...collectShippedLawRefSites(lineText, lineNumber));
   return sites;
 }
 
@@ -724,6 +954,36 @@ function collectInterpolationSites(lineText, lineNumber) {
     const pathText = expressionMatch[2];
     const expressionOffset = expression.indexOf(rootText);
     const rootStart = (match.index ?? 0) + 2 + expressionOffset;
+    const semanticMatch = rootText.match(/^(contract|fields)\.([A-Za-z_][A-Za-z0-9_]*)$/);
+    if (semanticMatch) {
+      sites.push({
+        type: "reviewSemanticRef",
+        lineContext: undefined,
+        memberName: semanticMatch[2],
+        range: new vscode.Range(
+          lineNumber,
+          rootStart,
+          lineNumber,
+          rootStart + semanticMatch[1].length,
+        ),
+        segmentIndex: -1,
+        semanticRoot: semanticMatch[1],
+      });
+      sites.push({
+        type: "reviewSemanticRef",
+        lineContext: undefined,
+        memberName: semanticMatch[2],
+        range: new vscode.Range(
+          lineNumber,
+          rootStart + semanticMatch[1].length + 1,
+          lineNumber,
+          rootStart + rootText.length,
+        ),
+        segmentIndex: 0,
+        semanticRoot: semanticMatch[1],
+      });
+      continue;
+    }
     if (pathText) {
       const pathOffset = expression.indexOf(pathText, expressionOffset + rootText.length);
       sites.push(
@@ -875,6 +1135,154 @@ async function resolveStructuralDefinition(site, source) {
   ];
 }
 
+async function resolveReviewSemanticDefinition(site, source) {
+  const context = await resolveReviewSemanticContext(site.lineContext, source);
+  if (!context) {
+    return undefined;
+  }
+
+  if (site.semanticRoot === "contract") {
+    if (!context.contractTarget) {
+      return undefined;
+    }
+    if (site.segmentIndex === -1) {
+      return [
+        createDeclarationLocationLink(
+          site.range,
+          context.contractTarget.source.document,
+          context.contractTarget.declaration.nameRange,
+        ),
+      ];
+    }
+    if (!context.contractGateKeys.has(site.memberName)) {
+      return undefined;
+    }
+    const target = await findAddressablePathTarget({
+      declaration: context.contractTarget.declaration,
+      pathSegments: [site.memberName],
+      source: context.contractTarget.source,
+    });
+    if (!target) {
+      return undefined;
+    }
+    return [
+      {
+        originSelectionRange: site.range,
+        targetUri: target.document.uri,
+        targetRange: new vscode.Range(
+          target.lineNumber,
+          0,
+          target.lineNumber,
+          target.document.lineAt(target.lineNumber).text.length,
+        ),
+        targetSelectionRange: target.selectionRange,
+      },
+    ];
+  }
+
+  if (site.semanticRoot === "fields") {
+    if (site.segmentIndex === -1) {
+      if (context.fieldsLineNumber === undefined || !context.fieldsSource) {
+        return undefined;
+      }
+      const targetDocument = context.fieldsSource.document;
+      const targetLine = targetDocument.lineAt(context.fieldsLineNumber).text;
+      return [
+        {
+          originSelectionRange: site.range,
+          targetUri: targetDocument.uri,
+          targetRange: new vscode.Range(
+            context.fieldsLineNumber,
+            0,
+            context.fieldsLineNumber,
+            targetLine.text.length,
+          ),
+          targetSelectionRange: createFirstMatchRange(
+            targetLine,
+            context.fieldsLineNumber,
+            "fields",
+          ),
+        },
+      ];
+    }
+
+    const pathSegments = context.fieldBindings.get(site.memberName);
+    if (!pathSegments || !context.outputTarget) {
+      return undefined;
+    }
+    const target = await findAddressablePathTarget({
+      declaration: context.outputTarget.declaration,
+      pathSegments,
+      source: context.outputTarget.source,
+    });
+    if (!target) {
+      return undefined;
+    }
+    return [
+      {
+        originSelectionRange: site.range,
+        targetUri: target.document.uri,
+        targetRange: new vscode.Range(
+          target.lineNumber,
+          0,
+          target.lineNumber,
+          target.document.lineAt(target.lineNumber).text.length,
+        ),
+        targetSelectionRange: target.selectionRange,
+      },
+    ];
+  }
+
+  return undefined;
+}
+
+async function resolveReviewBoundOutputPathDefinition(site, source) {
+  const context = await resolveReviewSemanticContext(site.lineContext, source);
+  if (!context || !context.outputTarget) {
+    return undefined;
+  }
+
+  const target = await findAddressablePathTarget({
+    declaration: context.outputTarget.declaration,
+    pathSegments: site.pathSegments.slice(0, site.segmentIndex + 1),
+    source: context.outputTarget.source,
+  });
+  if (!target) {
+    return undefined;
+  }
+
+  return [
+    {
+      originSelectionRange: site.range,
+      targetUri: target.document.uri,
+      targetRange: new vscode.Range(
+        target.lineNumber,
+        0,
+        target.lineNumber,
+        target.document.lineAt(target.lineNumber).text.length,
+      ),
+      targetSelectionRange: target.selectionRange,
+    },
+  ];
+}
+
+async function resolveReviewSemanticContext(lineContext, source) {
+  const { declaration } = lineContext;
+  if (!declaration) {
+    return undefined;
+  }
+
+  if (declaration.kind === DECLARATION_KIND.REVIEW) {
+    return getResolvedReviewContext(source, declaration);
+  }
+
+  if (declaration.kind === DECLARATION_KIND.OUTPUT) {
+    return findReviewContextForOutput(source, declaration);
+  }
+
+  return undefined;
+}
+
 async function resolveReferenceTarget(ref, source, declarationKind, requireConcrete) {
   const targetSource = await openReferencedDocument(ref, source);
   if (!targetSource) {
@@ -908,6 +1316,28 @@ async function resolveWorkflowParentBody(site, source) {
     declaration.parentRef,
     source,
     DECLARATION_KIND.WORKFLOW,
+    false,
+  );
+  if (!parent) {
+    return undefined;
+  }
+
+  return {
+    document: parent.document,
+    bodySpec: getDeclarationBodySpec(parent.declaration),
+  };
+}
+
+async function resolveReviewParentBody(site, source) {
+  const { declaration } = site.lineContext;
+  if (declaration.kind !== DECLARATION_KIND.REVIEW || !declaration.parentRef) {
+    return undefined;
+  }
+
+  const parent = await resolveReferenceTarget(
+    declaration.parentRef,
+    source,
+    DECLARATION_KIND.REVIEW,
     false,
   );
   if (!parent) {
@@ -981,6 +1411,26 @@ async function resolveImmediateParentBody(site, source) {
 
   if (container.type === "workflow_body") {
     return resolveWorkflowParentBody(site, source);
+  }
+
+  if (container.type === "review_body") {
+    return resolveReviewParentBody(site, source);
+  }
+
+  if (
+    container.type === "review_fields_body"
+    || container.type === "review_pre_outcome_body"
+    || container.type === "review_outcome_body"
+  ) {
+    const parentReviewBody = await resolveReviewParentBody(site, source);
+    if (!parentReviewBody) {
+      return undefined;
+    }
+
+    return {
+      document: parentReviewBody.document,
+      bodySpec: parentReviewBody.bodySpec,
+    };
   }
 
   if (container.type === "law_body") {
@@ -1156,6 +1606,8 @@ function findStructuralKeyTarget(parentBody, key) {
   switch (parentBody.bodySpec.type) {
     case "agent_body":
       return getAgentBodyItems(parentBody.document, parentBody.bodySpec).get(key);
+    case "review_body":
+      return getReviewBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "workflow_body":
       return getWorkflowBodyItems(parentBody.document, parentBody.bodySpec).get(key);
     case "law_body":
@@ -1201,6 +1653,206 @@ function getIndexedDocumentState(document) {
     importEntries: context ? collectImportEntries(document, context) : [],
     index,
   };
+}
+
+async function getResolvedReviewContext(source, declaration, seen = new Set()) {
+  const cacheKey = `${source.document.uri.toString()}#${declaration.name}`;
+  if (REVIEW_CONTEXT_CACHE.has(cacheKey)) {
+    return REVIEW_CONTEXT_CACHE.get(cacheKey);
+  }
+  if (seen.has(cacheKey)) {
+    return undefined;
+  }
+  seen.add(cacheKey);
+
+  const bodySpec = getDeclarationBodySpec(declaration);
+  if (!bodySpec || bodySpec.type !== "review_body") {
+    return undefined;
+  }
+
+  let inherited;
+  if (declaration.parentRef) {
+    const parent = await resolveReferenceTarget(
+      declaration.parentRef,
+      source,
+      DECLARATION_KIND.REVIEW,
+      false,
+    );
+    if (parent) {
+      inherited = await getResolvedReviewContext(
+        getIndexedDocumentState(parent.document),
+        parent.declaration,
+        seen,
+      );
+    }
+  }
+
+  const local = getLocalReviewConfig(source.document, bodySpec);
+  let fieldBindings = inherited?.fieldBindings;
+  let fieldsLineNumber = inherited?.fieldsLineNumber;
+  let fieldsSource = inherited?.fieldsSource;
+
+  if (local.fieldsMode === "set" || local.fieldsMode === "override") {
+    fieldBindings = local.fieldBindings;
+    fieldsLineNumber = local.fieldsLineNumber;
+    fieldsSource = source;
+  } else if (local.fieldsMode === "inherit" && inherited) {
+    fieldBindings = inherited.fieldBindings;
+    fieldsLineNumber = inherited.fieldsLineNumber;
+    fieldsSource = inherited.fieldsSource;
+  }
+
+  const contractRef = local.contractRef || inherited?.contractRef;
+  const commentOutputRef = local.commentOutputRef || inherited?.commentOutputRef;
+
+  const contractTarget =
+    contractRef
+      ? await resolveReferenceTarget(contractRef, source, DECLARATION_KIND.WORKFLOW, false)
+      : undefined;
+  const outputTarget =
+    commentOutputRef
+      ? await resolveReferenceTarget(commentOutputRef, source, DECLARATION_KIND.OUTPUT, false)
+      : undefined;
+
+  const context = {
+    contractGateKeys:
+      contractTarget
+        ? new Set([...getWorkflowBodyItems(
+          contractTarget.document,
+          getDeclarationBodySpec(contractTarget.declaration),
+        ).keys()])
+        : new Set(),
+    contractRef,
+    contractTarget: contractTarget
+      ? {
+          declaration: contractTarget.declaration,
+          source: getIndexedDocumentState(contractTarget.document),
+        }
+      : undefined,
+    fieldBindings: fieldBindings || new Map(),
+    fieldsLineNumber,
+    fieldsSource,
+    outputTarget: outputTarget
+      ? {
+          declaration: outputTarget.declaration,
+          source: getIndexedDocumentState(outputTarget.document),
+        }
+      : undefined,
+    reviewDeclaration: declaration,
+    source,
+  };
+
+  REVIEW_CONTEXT_CACHE.set(cacheKey, context);
+  return context;
+}
+
+async function findReviewContextForOutput(source, declaration) {
+  const reviews = source.index.byKind.get(DECLARATION_KIND.REVIEW);
+  if (!reviews) {
+    return undefined;
+  }
+
+  const matches = [];
+  for (const review of reviews.values()) {
+    const context = await getResolvedReviewContext(source, review);
+    if (!context || !context.outputTarget) {
+      continue;
+    }
+    if (
+      context.outputTarget.declaration.name === declaration.name
+      && context.outputTarget.source.document.uri.toString() === source.document.uri.toString()
+    ) {
+      matches.push(context);
+    }
+  }
+
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function getLocalReviewConfig(document, bodySpec) {
+  const config = {
+    commentOutputRef: undefined,
+    contractRef: undefined,
+    fieldBindings: new Map(),
+    fieldsLineNumber: undefined,
+    fieldsMode: undefined,
+  };
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return config;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const configRef = lineText.match(REVIEW_CONFIG_REF_RE);
+    if (configRef) {
+      if (configRef[1] === "contract") {
+        config.contractRef = parseNameRef(configRef[2]);
+      } else if (configRef[1] === "comment_output") {
+        config.commentOutputRef = parseNameRef(configRef[2]);
+      }
+      continue;
+    }
+
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem && inheritItem[1] === "fields") {
+      config.fieldsMode = "inherit";
+      config.fieldsLineNumber = lineNumber;
+      continue;
+    }
+
+    if (REVIEW_FIELDS_FIELD_RE.test(lineText) || REVIEW_OVERRIDE_FIELDS_RE.test(lineText)) {
+      const childBody = getReviewChildBodySpec(lineText, lineNumber);
+      config.fieldBindings = childBody
+        ? getReviewFieldBindings(
+          document,
+          {
+            ...childBody,
+            endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+          },
+        )
+        : new Map();
+      config.fieldsLineNumber = lineNumber;
+      config.fieldsMode = REVIEW_OVERRIDE_FIELDS_RE.test(lineText) ? "override" : "set";
+    }
+  }
+
+  return config;
+}
+
+function getReviewFieldBindings(document, bodySpec) {
+  const bindings = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return bindings;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const binding = lineText.match(REVIEW_FIELD_BINDING_RE);
+    if (!binding) {
+      continue;
+    }
+    bindings.set(binding[1], binding[2].split("."));
+  }
+
+  return bindings;
 }
 
 function getPromptIndex(document) {
@@ -1381,6 +2033,16 @@ function getDeclarationBodySpec(declaration) {
         indent: 0,
         lineNumber: declaration.lineNumber,
       };
+    case DECLARATION_KIND.REVIEW:
+      return {
+        type: "review_body",
+        declarationKind: declaration.kind,
+        declarationLine: declaration.lineNumber,
+        endLine: declaration.endLine,
+        indent: 0,
+        lineNumber: declaration.lineNumber,
+        owner: "review_decl",
+      };
     case DECLARATION_KIND.WORKFLOW:
       return {
         type: "workflow_body",
@@ -1465,6 +2127,22 @@ function getChildBodySpecForLine(document, declaration, container, lineNumber) {
   switch (container.type) {
     case "agent_body":
       childBody = getAgentChildBodySpec(lineText, lineNumber, declaration);
+      break;
+    case "review_body":
+      childBody = getReviewChildBodySpec(lineText, lineNumber);
+      break;
+    case "review_pre_outcome_body":
+      childBody = getReviewPreOutcomeChildBodySpec(lineText, lineNumber);
+      break;
+    case "review_outcome_body":
+      childBody = getReviewOutcomeChildBodySpec(lineText, lineNumber);
+      break;
+    case "review_match_body":
+      childBody = getReviewMatchBodyChildBodySpec(
+        lineText,
+        lineNumber,
+        container.owner,
+      );
       break;
     case "workflow_body":
       childBody = getWorkflowChildBodySpec(lineText, lineNumber);
@@ -1552,6 +2230,10 @@ function getAgentChildBodySpec(lineText, lineNumber) {
     };
   }
 
+  if (new RegExp(`^\\s*review\\s*:\\s*${DOTTED_NAME_PATTERN}\\s*$`).test(lineText)) {
+    return undefined;
+  }
+
   const overrideTitleMatch = lineText.match(
     new RegExp(
       `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
@@ -1583,6 +2265,117 @@ function getAgentChildBodySpec(lineText, lineNumber) {
   }
 
   return undefined;
+}
+
+function getReviewChildBodySpec(lineText, lineNumber) {
+  if (REVIEW_FIELDS_FIELD_RE.test(lineText) || REVIEW_OVERRIDE_FIELDS_RE.test(lineText)) {
+    return {
+      type: "review_fields_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_fields",
+    };
+  }
+
+  if (REVIEW_SUBJECT_MAP_FIELD_RE.test(lineText)) {
+    return {
+      type: "review_subject_map_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_subject_map",
+    };
+  }
+
+  const outcomeHeader = lineText.match(REVIEW_OUTCOME_HEADER_RE);
+  if (outcomeHeader) {
+    return {
+      type: "review_outcome_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: outcomeHeader[1],
+    };
+  }
+
+  const overrideOutcome = lineText.match(REVIEW_OVERRIDE_OUTCOME_RE);
+  if (overrideOutcome) {
+    return {
+      type: "review_outcome_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: overrideOutcome[1],
+    };
+  }
+
+  if (
+    (REVIEW_OVERRIDE_SECTION_RE.test(lineText) && !REVIEW_OVERRIDE_OUTCOME_RE.test(lineText))
+    || REVIEW_SECTION_RE.test(lineText)
+  ) {
+    return {
+      type: "review_pre_outcome_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_section",
+    };
+  }
+
+  return undefined;
+}
+
+function getReviewPreOutcomeChildBodySpec(lineText, lineNumber) {
+  if (LAW_MATCH_RE.test(lineText)) {
+    return {
+      type: "review_match_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_pre_outcome",
+    };
+  }
+
+  if (LAW_WHEN_RE.test(lineText)) {
+    return {
+      type: "review_pre_outcome_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_pre_outcome",
+    };
+  }
+
+  return undefined;
+}
+
+function getReviewOutcomeChildBodySpec(lineText, lineNumber) {
+  if (LAW_MATCH_RE.test(lineText)) {
+    return {
+      type: "review_match_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_outcome",
+    };
+  }
+
+  if (LAW_WHEN_RE.test(lineText)) {
+    return {
+      type: "review_outcome_body",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+      owner: "review_outcome",
+    };
+  }
+
+  return undefined;
+}
+
+function getReviewMatchBodyChildBodySpec(lineText, lineNumber, owner) {
+  if (!LAW_MATCH_ARM_RE.test(lineText)) {
+    return undefined;
+  }
+
+  return {
+    type: owner === "review_outcome" ? "review_outcome_body" : "review_pre_outcome_body",
+    indent: leadingSpaces(lineText),
+    lineNumber,
+    owner,
+  };
 }
 
 function getWorkflowChildBodySpec(lineText, lineNumber) {
@@ -2108,6 +2901,114 @@ function getWorkflowSectionBodyItems(document, bodySpec) {
   return items;
 }
 
+function getReviewBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      items.set(inheritItem[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, inheritItem[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    if (REVIEW_FIELDS_FIELD_RE.test(lineText) || REVIEW_OVERRIDE_FIELDS_RE.test(lineText)) {
+      const childBody = getReviewChildBodySpec(lineText, lineNumber);
+      items.set("fields", {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, "fields"),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const outcomeHeader = lineText.match(REVIEW_OUTCOME_HEADER_RE);
+    if (outcomeHeader) {
+      const childBody = getReviewChildBodySpec(lineText, lineNumber);
+      items.set(outcomeHeader[1], {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, outcomeHeader[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideOutcome = lineText.match(REVIEW_OVERRIDE_OUTCOME_RE);
+    if (overrideOutcome) {
+      const childBody = getReviewChildBodySpec(lineText, lineNumber);
+      items.set(overrideOutcome[1], {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideOutcome[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideSection = lineText.match(REVIEW_OVERRIDE_SECTION_RE);
+    if (overrideSection && !REVIEW_OVERRIDE_OUTCOME_RE.test(lineText)) {
+      const childBody = getReviewChildBodySpec(lineText, lineNumber);
+      items.set(overrideSection[1], {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideSection[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const localSection = lineText.match(REVIEW_SECTION_RE);
+    if (localSection) {
+      const childBody = getReviewChildBodySpec(lineText, lineNumber);
+      items.set(localSection[1], {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, localSection[1]),
+        lineNumber,
+      });
+    }
+  }
+
+  return items;
+}
+
 function getSkillsBodyItems(document, bodySpec) {
   const items = new Map();
   const baseIndent = findBodyBaseIndent(document, bodySpec);
@@ -2395,6 +3296,8 @@ function getEnumBodyItems(document, bodySpec) {
 
 function getAddressableBodyItems(document, bodySpec) {
   switch (bodySpec.type) {
+    case "review_body":
+      return getReviewBodyItems(document, bodySpec);
     case "workflow_body":
       return getWorkflowBodyItems(document, bodySpec);
     case "workflow_section_body":
@@ -2818,6 +3721,61 @@ function createAddressableRefSites({
   return sites;
 }
 
+function collectReviewSemanticSites(lineText, lineNumber) {
+  const sites = [];
+  const maskedLine = maskQuotedText(lineText);
+
+  for (const match of maskedLine.matchAll(REVIEW_SEMANTIC_REF_RE)) {
+    const rootText = match[1];
+    const memberName = match[2];
+    const rootStart = match.index ?? -1;
+    if (rootStart < 0) {
+      continue;
+    }
+
+    sites.push({
+      type: "reviewSemanticRef",
+      lineContext: undefined,
+      memberName,
+      range: createRangeFromStart(lineNumber, rootStart, rootText.length),
+      segmentIndex: -1,
+      semanticRoot: rootText,
+    });
+    sites.push({
+      type: "reviewSemanticRef",
+      lineContext: undefined,
+      memberName,
+      range: createRangeFromStart(
+        lineNumber,
+        rootStart + rootText.length + 1,
+        memberName.length,
+      ),
+      segmentIndex: 0,
+      semanticRoot: rootText,
+    });
+  }
+
+  return sites;
+}
+
+function createReviewBoundOutputPathSites({ lineNumber, pathText, startCharacter }) {
+  const pathSegments = pathText.split(".");
+  const sites = [];
+  let cursor = startCharacter;
+  for (let index = 0; index < pathSegments.length; index += 1) {
+    const segment = pathSegments[index];
+    sites.push({
+      type: "reviewBoundOutputPathRef",
+      lineContext: undefined,
+      pathSegments,
+      range: createRangeFromStart(lineNumber, cursor, segment.length),
+      segmentIndex: index,
+    });
+    cursor += segment.length + 1;
+  }
+  return sites;
+}
+
 function createStructuralSite(lineText, lineNumber, key) {
   return {
     type: "structuralKeyRef",
@@ -2910,6 +3868,8 @@ function allowsInterpolation(lineText) {
 
 function inheritanceKindToDeclarationKind(kind) {
   switch (kind) {
+    case "review":
+      return DECLARATION_KIND.REVIEW;
     case "workflow":
       return DECLARATION_KIND.WORKFLOW;
     case "skills":

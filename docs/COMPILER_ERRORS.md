@@ -32,7 +32,8 @@ Stability rules:
 | --- | --- |
 | `E001`-`E099` | reserved canonical language-rule errors |
 | `E100`-`E199` | parse errors |
-| `E200`-`E499` | semantic compile errors |
+| `E200`-`E469` | semantic compile errors |
+| `E470`-`E499` | review-specific parse and compile errors |
 | `E500`-`E699` | emit and build-target errors |
 | `E900`-`E999` | internal compiler bugs or invariant failures |
 
@@ -125,6 +126,41 @@ Stability rules:
 | `E382` | Duplicate inherited law subsection | An inherited workflow-law block accounted for the same parent subsection more than once. |
 | `E383` | Missing inherited law subsection | An inherited workflow-law block omitted one or more required parent subsections. |
 | `E384` | Cannot override undefined law subsection | `override <section_key>:` targeted a law subsection the parent workflow does not define. |
+
+### Review codes
+
+| Code | Stage | Summary | Notes |
+| --- | --- | --- | --- |
+| `E470` | compile | Invalid review declaration shape | Review inheritance or explicit review patching used an invalid structural shape, such as a review cycle or a kind-mismatched override. |
+| `E471` | parse | Illegal statement placement in review body | A review statement appeared in the wrong section family, such as `block` inside `on_accept` or `route` inside a pre-outcome review section. |
+| `E472` | parse | Invalid guarded match head | A review `match` head used an invalid guarded fallback shape, such as `else when ...`. |
+| `E473` | compile | Review fields surface is invalid or incomplete | The required `fields:` binding surface is missing or does not bind every required semantic channel. |
+| `E474` | compile | Review is missing subject | A concrete review omitted `subject:`. |
+| `E475` | compile | Review subject has the wrong kind | `subject:` must resolve only to declared `input` or `output` roots. |
+| `E476` | compile | Review is missing contract | A concrete review omitted `contract:`. |
+| `E477` | compile | Review contract target or gate ref is invalid | The referenced contract workflow uses unsupported workflow features or the review names an unknown `contract.<gate>` identity. |
+| `E478` | compile | Review is missing comment_output | A concrete review omitted `comment_output:`. |
+| `E479` | compile | Review comment_output is not emitted | The concrete agent does not emit the review's declared `comment_output`. |
+| `E480` | compile | Concrete agent defines both workflow and review | A concrete agent may not attach both `workflow:` and `review:`. |
+| `E481` | compile | Review is missing accept | A concrete review must define exactly one `accept` gate, and none were found. |
+| `E482` | compile | Review has multiple accept gates | A concrete review defined more than one `accept` gate. |
+| `E483` | compile | Review is missing a reserved outcome section | A concrete review is missing `on_accept` or `on_reject`. |
+| `E484` | compile | Review outcome is not total | A review outcome branch or review `match` does not cover every reachable path. |
+| `E485` | compile | Review outcome resolves more than one route | One terminal review outcome branch leaves more than one route live. |
+| `E486` | compile | Review outcome resolves more than one currentness result | One terminal review outcome branch leaves more than one currentness result live. |
+| `E487` | compile | Review currentness requires a valid carrier | `current artifact ... via ...` must carry through a declared output field. |
+| `E488` | compile | Review current carrier is missing from trust surface | The review currentness carrier field is not listed in `trust_surface`. |
+| `E489` | compile | Review subject set requires disambiguation | A multi-subject review branch does not prove exactly one live reviewed subject. |
+| `E490` | compile | Missing inherited review entry | A child review failed to account for an inherited review surface such as `fields` or a named pre-outcome section. |
+| `E491` | compile | Duplicate review item key | A review body repeats the same reserved or named review item key. |
+| `E492` | compile | Review override requires an inherited review | `override` was used on a review body that does not inherit a parent review. |
+| `E493` | compile | Carried review field is missing a binding | A carried semantic channel such as `active_mode` or `trigger_reason` has no `fields:` binding. |
+| `E494` | compile | Concrete agent may not attach abstract review directly | A concrete agent pointed `review:` at an `abstract review`. |
+| `E495` | compile | Review verdict does not match the bound output field | The bound verdict field is not guaranteed to receive the resolved semantic verdict. |
+| `E496` | compile | Review next owner does not match the bound output field | The bound `next_owner` field does not stay aligned with the resolved routed owner. |
+| `E497` | compile | Review currentness does not match the declared carrier field | The declared currentness carrier field is not guaranteed to reflect the resolved review currentness. |
+| `E498` | compile | Required carried review field is omitted when semantic value exists | A carried semantic field can be live on a branch without the bound output field also being live. |
+| `E499` | compile | Required conditional review output section is missing after its guard resolves true | A review-bound conditional output field or section does not stay aligned with the resolved review semantics. |
 
 ### Emit codes
 

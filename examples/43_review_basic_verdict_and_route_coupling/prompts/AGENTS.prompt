@@ -1,0 +1,111 @@
+# This file introduces the smallest shipped first-class review.
+# The point is to prove that `review` is its own semantic surface rather than
+# workflow prose with a renamed heading.
+
+# Declare the draft specification this reviewer is judging.
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+# Declare the shared review contract whose first-level sections export review
+# gate identities.
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+    clarity: "Clarity"
+        "Confirm the draft states the next action clearly."
+
+
+# Declare the owner who receives accepted drafts.
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+# Declare the owner who receives rejected drafts.
+agent DraftAuthor:
+    role: "Fix rejected draft defects."
+    workflow: "Revise"
+        "Revise the same draft when review requests changes."
+
+
+# Declare the durable review comment this turn emits.
+output DraftReviewComment: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    # This field states the compiler-owned verdict.
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    # This field names the artifact the review judged.
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    # This field holds the human review analysis.
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    # This field says what a downstream owner should read first.
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    # This field says who owns next under the review outcome.
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when the draft is rejected."
+
+    # This guarded section appears only when the verdict requests changes.
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    # This block says what a downstream owner should understand from the
+    # review comment alone.
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now."
+
+
+# Declare the smallest concrete review.
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: DraftReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    start_review: "Start Review"
+        reject "The draft still leaves the core decision unclear." when DraftSpec.decision_unclear
+
+    contract_checks: "Contract Checks"
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+
+# Declare the concrete reviewer agent.
+agent DraftReviewDemo:
+    role: "Keep review verdicts, failing gates, and next-owner routing aligned."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        DraftReviewComment

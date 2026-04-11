@@ -334,10 +334,13 @@ Doctrine intentionally does not ship these features in workflow law today:
 - nominal artifact typing as a separate declaration kind
 - basis roles beyond `truth`, `comparison`, and `rewrite_evidence`
 - `let`
-- a separate `review` primitive
 
 If those ideas return later, they need to strengthen the same core model rather
 than open a second coordination language.
+
+First-class `review` is now shipped separately; see
+[REVIEW_SPEC.md](REVIEW_SPEC.md) and the review ladder in
+[../examples/README.md](../examples/README.md).
 
 ## Related Docs
 

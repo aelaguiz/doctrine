@@ -1,0 +1,160 @@
+# This file adds multi-subject review with carried mode and trigger reason.
+# The same next owner can receive different current artifacts, different
+# active modes, and different trigger reasons without inventing route payloads.
+
+# Declare the mode that picks one reviewed subject member.
+enum ReviewMode: "Review Mode"
+    draft_rewrite: "draft-rewrite"
+    metadata_refresh: "metadata-refresh"
+
+
+# Declare the trigger reason carried on the durable review comment.
+enum TriggerReason: "Trigger Reason"
+    structure_gap: "structure-gap"
+    stale_metadata: "stale-metadata"
+
+
+# Declare the two reviewed subject artifacts.
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification when the review mode is draft rewrite."
+
+
+input MetadataRecord: "Metadata Record"
+    source: File
+        path: "unit_root/METADATA.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the current metadata record when the review mode is metadata refresh."
+
+
+# Declare the host facts that pick the live review mode and whether the review
+# must reject.
+input ReviewFacts: "Review Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host facts that say which review mode is live and whether the selected subject still needs changes."
+
+
+# Declare the shared review contract.
+workflow MultiSubjectReviewContract: "Multi-Subject Review Contract"
+    completeness: "Completeness"
+        "Confirm the selected subject covers the required review basis."
+
+
+# Declare the owner who receives the next pass under either mode.
+agent RevisionOwner:
+    role: "Own the next revision pass after multi-subject review."
+    workflow: "Revise"
+        "Take the selected current artifact to the next revision step."
+
+
+# Declare the durable review comment with carried mode and trigger reason.
+output MultiSubjectReviewComment: "Multi-Subject Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the selected subject or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the selected subject the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{RevisionOwner}} under both review modes. This multi-subject review keeps the next owner the same while the live mode and current artifact change."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that is current now under the selected review mode."
+
+    active_mode: "Active Mode" when present(active_mode):
+        "Name the active review mode that selected the current artifact."
+
+    trigger_reason: "Trigger Reason" when present(trigger_reason):
+        "Name the trigger reason that explains why this current artifact and mode are live."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand which subject was reviewed, which artifact is current now, what active mode selected it, what trigger reason explains it, and who owns next."
+
+    trust_surface:
+        current_artifact
+        active_mode when present(active_mode)
+        trigger_reason when present(trigger_reason)
+
+
+# Declare the review with a subject set plus subject_map.
+review MultiSubjectReview: "Multi-Subject Review"
+    subject: {DraftSpec, MetadataRecord}
+    subject_map:
+        ReviewMode.draft_rewrite: DraftSpec
+        ReviewMode.metadata_refresh: MetadataRecord
+    contract: MultiSubjectReviewContract
+    comment_output: MultiSubjectReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+        active_mode: active_mode
+        trigger_reason: trigger_reason
+
+    contract_checks: "Contract Checks"
+        reject "The selected subject still needs changes." when ReviewFacts.force_reject
+        accept "The shared review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        match ReviewFacts.selected_mode:
+            ReviewMode.draft_rewrite:
+                current artifact DraftSpec via MultiSubjectReviewComment.current_artifact
+                carry active_mode = ReviewMode.draft_rewrite
+                carry trigger_reason = TriggerReason.structure_gap
+                route "Accepted draft rewrite returns to RevisionOwner." -> RevisionOwner
+
+            ReviewMode.metadata_refresh:
+                current artifact MetadataRecord via MultiSubjectReviewComment.current_artifact
+                carry active_mode = ReviewMode.metadata_refresh
+                carry trigger_reason = TriggerReason.stale_metadata
+                route "Accepted metadata refresh returns to RevisionOwner." -> RevisionOwner
+
+    on_reject: "If Rejected"
+        match ReviewFacts.selected_mode:
+            ReviewMode.draft_rewrite:
+                current artifact DraftSpec via MultiSubjectReviewComment.current_artifact
+                carry active_mode = ReviewMode.draft_rewrite
+                carry trigger_reason = TriggerReason.structure_gap
+                route "Rejected draft rewrite returns to RevisionOwner." -> RevisionOwner
+
+            ReviewMode.metadata_refresh:
+                current artifact MetadataRecord via MultiSubjectReviewComment.current_artifact
+                carry active_mode = ReviewMode.metadata_refresh
+                carry trigger_reason = TriggerReason.stale_metadata
+                route "Rejected metadata refresh returns to RevisionOwner." -> RevisionOwner
+
+
+# Declare the concrete reviewer agent.
+agent MultiSubjectReviewDemo:
+    role: "Keep multi-subject review current truth and carried state aligned."
+    review: MultiSubjectReview
+    inputs: "Inputs"
+        DraftSpec
+        MetadataRecord
+        ReviewFacts
+    outputs: "Outputs"
+        MultiSubjectReviewComment

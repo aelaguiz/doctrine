@@ -1,0 +1,114 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "review contract gates stay exact and readable in output"
+status = "active"
+kind = "render_contract"
+agent = "ExactGateReviewDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep exact shared-contract gate identities visible in review output.",
+  "",
+  "## Exact Gate Review",
+  "",
+  "Review subject: Draft Spec.",
+  "Shared review contract: Exact Gate Review Contract.",
+  "",
+  "### Contract Gate Checks",
+  "",
+  "Reject: Clarity.",
+  "",
+  "Reject: Handoff Truth.",
+  "",
+  "Accept only if The shared review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Accepted draft returns to ReviewLead.",
+  "",
+  "### If Rejected",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Rejected draft returns to DraftAuthor.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Spec",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/DRAFT_SPEC.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "Use the current draft specification as the reviewed artifact.",
+  "",
+  "## Outputs",
+  "",
+  "### Exact Gate Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Verdict",
+  "",
+  "Say whether the review accepted the draft or requested changes.",
+  "",
+  "#### Reviewed Artifact",
+  "",
+  "Name the reviewed artifact this review judged.",
+  "",
+  "#### Analysis Performed",
+  "",
+  "Summarize the review analysis that led to the verdict.",
+  "",
+  "#### Output Contents That Matter",
+  "",
+  "Summarize the parts of the draft the next owner must read first.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name the exact exported shared-contract gate identities in authored order, including Completeness, Clarity, and Handoff Truth when they fail.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand what Reviewed Artifact was reviewed, what verdict landed, who owns next, and which shared contract gates failed.",
+]
+
+[[cases]]
+name = "contract gate refs must name exported review-contract gates"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_CONTRACT_GATE.prompt"
+agent = "InvalidUnknownContractGateDemo"
+exception_type = "CompileError"
+error_code = "E477"
+message_contains = [
+  "contract.missing_gate",
+  "Unknown review contract gate",
+]
+
+[[cases]]
+name = "review contracts may not target operational workflows with law"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CONTRACT_TARGET_WITH_LAW.prompt"
+agent = "InvalidContractTargetWithLawDemo"
+exception_type = "CompileError"
+error_code = "E477"
+message_contains = [
+  "unsupported workflow features",
+  "OperationalWorkflow",
+]

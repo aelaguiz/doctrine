@@ -1,0 +1,107 @@
+# This file proves that review inheritance uses the same explicit accounting
+# model as workflow inheritance: no hidden merge, no silent parent drop, and
+# no direct concrete use of `abstract review`.
+
+# Declare the reviewed draft.
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+# Declare the shared contract.
+workflow PatchedDraftReviewContract: "Patched Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+# Declare the owners who receive accepted and rejected drafts.
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Repair rejected draft defects."
+    workflow: "Revise"
+        "Revise the same draft when review requests changes."
+
+
+# Declare the durable review comment shared by the abstract base and the
+# concrete child.
+output InheritedReviewComment: "Inherited Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when the draft is rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now."
+
+
+# Declare the abstract base review. It owns shared output bindings plus one
+# shared review section, but it does not yet name the subject or contract.
+abstract review BaseDraftReview: "Base Draft Review"
+    comment_output: InheritedReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    shared_checks: "Shared Checks"
+        reject "The draft still lacks the shared context." when DraftSpec.context_missing
+
+
+# Declare the concrete child review. It must account for every inherited
+# section explicitly, and its child-only section stays in authored order.
+review PatchedDraftReview[BaseDraftReview]: "Patched Draft Review"
+    subject: DraftSpec
+    contract: PatchedDraftReviewContract
+    inherit fields
+    inherit shared_checks
+
+    child_specifics: "Child Specifics"
+        accept "The patched draft review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+
+# Declare the concrete reviewer agent.
+agent PatchedDraftReviewDemo:
+    role: "Keep inherited review surfaces explicit and accounted for."
+    review: PatchedDraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        InheritedReviewComment

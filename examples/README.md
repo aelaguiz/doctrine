@@ -12,7 +12,9 @@ Each numbered example may contain:
 Read the examples in numeric order. The sequence is intentional.
 
 For the shipped workflow-law model behind examples `30` through `42`, start
-with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md).
+with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped
+review model behind examples `43` through `49`, start with
+[../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 
 ## Reading Order
 
@@ -30,6 +32,9 @@ with [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md).
   currentness, trust carriers, scope and preservation law, basis roles,
   invalidation, law reuse, output-owned guarded readback, and the route-only
   handoff capstones
+- `43` through `49`: first-class `review` support for verdict coupling,
+  blocked review, exact contract gates, portable current truth, carried mode
+  and trigger state, review inheritance, and the full review capstone
 
 ## Workflow Law Ladder
 
@@ -79,6 +84,30 @@ A coupling rules:
   target
 - `42` proves that `standalone_read` cannot structurally reference guarded
   output detail
+
+## Review Ladder
+
+The review ladder begins right after the workflow-law capstones:
+
+- `43_review_basic_verdict_and_route_coupling`: the smallest first-class
+  `review`, one reviewed subject, one shared review contract, guarded
+  `failing_gates`, and explicit accept/reject next-owner routing
+- `44_review_handoff_first_block_gates`: handoff-first `block` gates,
+  `blocked_gate`, and the rule that blocked review still emits one durable
+  `changes_requested` comment
+- `45_review_contract_gate_export_and_exact_failures`: exact exported
+  `contract.<gate>` identities and faithful shared-contract `failing_gates`
+- `46_review_current_truth_and_trust_surface`: review-owned `current artifact
+  ... via Output.field`, trusted current truth, and currentness diagnostics
+- `47_review_multi_subject_mode_and_trigger_carry`: subject sets, `subject_map`,
+  carried `active_mode`, carried `trigger_reason`, and one next owner with
+  different live current artifacts
+- `48_review_inheritance_and_explicit_patching`: `abstract review`, `inherit
+  fields`, inherited named review sections, and explicit child patching
+- `49_review_capstone`: blocked review, exact contract gates, `support_only`,
+  `ignore ... for rewrite_evidence`, `preserve`, multi-subject review,
+  carried state, portable current truth, and current-none blocked outcomes in
+  one capstone surface
 
 That boundary is still honest. Doctrine validates structured interpolations and
 output structure here; it still does not parse arbitrary free prose.

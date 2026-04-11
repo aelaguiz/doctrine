@@ -8,7 +8,8 @@ the language decisions we have made so far, why we made them, and how we
 currently expect the parser to behave.
 
 The shipped surface now runs through the workflow-law family in
-`examples/30_*` through `examples/42_*`, not only through `29_enums`.
+`examples/30_*` through `examples/42_*` and the first-class review ladder in
+`examples/43_*` through `examples/49_*`, not only through `29_enums`.
 
 ## Design Approach
 
@@ -312,11 +313,18 @@ The current examples are intentionally pushing on these rules so we can validate
   declarations and `outputs` refs must resolve to `output` declarations.
 - `11_skills_and_tools` is intentionally skill-first.
 - reusable capabilities should be modeled as `skill` declarations.
-- `30_law_route_only_turns` through `38_metadata_polish_capstone` are active
-  shipped proof, not planned-only review examples.
+- `30_law_route_only_turns` through `42_route_only_handoff_capstone` are
+  active shipped workflow-law proof, not planned-only examples.
+- `43_review_basic_verdict_and_route_coupling` through
+  `49_review_capstone` are active shipped review proof, not draft proposal
+  examples.
 - workflow law is now the shipped way to express route-only turns, portable
   currentness, trust carriers, scope/preservation law, basis roles,
   invalidation, and named law reuse.
+- `review` and `abstract review` are now shipped declaration families for
+  shared review contracts, exact failing gates, carried mode and trigger
+  state, blocked review turns, review inheritance, and portable review-owned
+  current truth.
 - `law` on workflows and `trust_surface` on outputs are reserved typed
   surfaces, not generic prose or generic record fallbacks.
 - `12_role_home_composition` has already earned the basic role-home shell by
@@ -374,15 +382,17 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 38
+## Shipped Through 49
 
-The shipped language subset now covers examples `01` through `38`, including
-workflow law on existing `workflow` and `output` owners rather than through
-new top-level declaration kinds.
+The shipped language subset now covers examples `01` through `49`, including
+workflow law on existing `workflow` and `output` owners plus first-class
+`review` on its own shipped declaration family.
 
 Current shipped declaration kinds:
 - `import`
 - `workflow`
+- `review`
+- `abstract review`
 - `skills`
 - `inputs`
 - `outputs`

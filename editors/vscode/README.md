@@ -5,9 +5,12 @@ Repo-local VS Code language support for `.prompt` files.
 ## What this extension does
 
 - registers `*.prompt` as the `doctrine` language
-- adds TextMate syntax highlighting for the shipped Doctrine grammar
-- supports Go to Definition and click navigation on raw `import` paths
-- supports Go to Definition across the full shipped clickable surface:
+- adds full TextMate colorization for the shipped Doctrine grammar, including
+  first-class `review` declarations and review-local semantic refs
+- supports Go to Definition and Ctrl/Cmd-click navigation on raw `import`
+  paths
+- supports Go to Definition and Ctrl/Cmd-click across the full shipped
+  clickable surface:
   parent declaration refs, authored-slot refs and overrides, workflow `use`
   refs, workflow `skills` refs and override refs, route targets, `skills`,
   `inputs`, `outputs`, patch-parent refs, `source`, `target`, `shape`,
@@ -20,7 +23,12 @@ Repo-local VS Code language support for `.prompt` files.
   trust-surface surfaces such as law carrier refs, trust-surface field items,
   enum-backed mode refs, law-section `inherit` / `override` keys, guarded
   output-section paths, and route targets inside `law` branches, including
-  conditional `route "..." -> Agent when ...` forms
+  conditional `route "..." -> Agent when ...` forms, plus review surfaces such
+  as top-level `review` / `abstract review` declarations, agent `review:`
+  slots, review-section `inherit` / `override` keys, `subject`, `contract`,
+  `comment_output`, `subject_map`, `fields` bindings, outcome carrier paths,
+  and review semantic refs such as `contract.<gate>` and
+  `fields.<semantic_field>`
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
 
@@ -33,6 +41,13 @@ Workflow-law support here uses the same vocabulary as
 items, enum-backed mode refs, named law subsection `inherit` / `override`
 keys, and route targets inside `law` branches, including conditional route
 lines.
+
+Review support here uses the same vocabulary as
+[../../docs/REVIEW_SPEC.md](../../docs/REVIEW_SPEC.md): `review`,
+`abstract review`, `review:` agent slots, `subject`, `subject_map`,
+`contract`, `comment_output`, `fields`, named review sections, outcome
+sections, carried `active_mode` / `trigger_reason`, and semantic refs on the
+review comment surface.
 
 ## What it does not do yet
 
@@ -91,7 +106,7 @@ uv run --locked python scripts/validate_lark_alignment.py
 
 ## Check highlighting or clicking in a live editor
 
-If an import path still looks unstyled or Cmd-click does nothing, verify the
+If an import path still looks unstyled or Ctrl/Cmd-click does nothing, verify the
 local editor is actually running the newest VSIX before changing the grammar.
 
 1. Re-run `make`.
@@ -100,7 +115,7 @@ local editor is actually running the newest VSIX before changing the grammar.
 4. Open `examples/03_imports/prompts/AGENTS.prompt`.
 5. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
    the emitted scopes and the theme rule that matched.
-6. Try Cmd-click on a raw import path and Go to Definition on one supported
+6. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
    import path, one readable ref, one addressable path segment, one
    addressable `title` segment, one enum member, and one structural
    inheritance key.
@@ -111,6 +126,14 @@ local editor is actually running the newest VSIX before changing the grammar.
    `next_owner` interpolation clicks, and
    `examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt` for
    conditional route target clicks.
+8. For the review ladder, smoke-check:
+   `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
+   for `review:` slot clicks and top-level review colorization,
+   `examples/47_review_multi_subject_mode_and_trigger_carry/prompts/AGENTS.prompt`
+   for `subject_map` and carried-state colorization, and
+   `examples/49_review_capstone/prompts/AGENTS.prompt` for Ctrl/Cmd-click on
+   `contract.clarity`, `fields.*`, inherited review keys, and review outcome
+   carrier paths.
 
 ## Development only: Extension Development Host
 
