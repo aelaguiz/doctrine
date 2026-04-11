@@ -1,0 +1,37 @@
+# This example shows the owner-aware `schema:` split:
+# - `output shape.schema` still means `json schema`
+# - `output.schema` now means Doctrine `schema`
+
+json schema DeliveryJsonSchema: "Delivery JSON Schema"
+    profile: OpenAIStructuredOutput
+    file: "schemas/delivery.schema.json"
+
+
+output shape DeliveryPayload: "Delivery Payload"
+    kind: JsonObject
+    schema: DeliveryJsonSchema
+
+
+schema DeliveryInventory: "Delivery Inventory"
+    sections:
+        summary: "Summary"
+            "Include a short summary."
+
+        artifacts: "Artifacts"
+            "List the produced artifacts."
+
+
+output DeliveryPlan: "Delivery Plan"
+    target: File
+        path: "unit_root/DELIVERY_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    schema: DeliveryInventory
+
+
+agent OwnerAwareSchemaDemo:
+    role: "Check {{DeliveryPayload:schema.title}} before you publish {{DeliveryPlan:title}}."
+    workflow: "Publish"
+        "Produce the file with the reusable inventory schema attached."
+    outputs: "Outputs"
+        DeliveryPlan

@@ -173,10 +173,14 @@ AddressableTarget: TypeAlias = (
     | model.RecordScalar
     | model.RecordSection
     | model.GuardedOutputSection
+    | model.SchemaSection
+    | model.SchemaGate
+    | model.DocumentBlock
     | model.EnumMember
     | "ReviewSemanticFieldTarget"
     | "ReviewSemanticContractFactTarget"
     | "ReviewSemanticContractGateTarget"
+    | "ResolvedAnalysisSection"
     | "ResolvedSectionItem"
     | "ResolvedUseItem"
     | "ResolvedWorkflowSkillsItem"
@@ -268,6 +272,46 @@ class ResolvedSkillsBody:
     title: str
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedSkillsItem, ...]
+
+
+ResolvedAnalysisSectionItem: TypeAlias = (
+    model.ProseLine
+    | ResolvedSectionRef
+    | model.DeriveStmt
+    | model.ClassifyStmt
+    | model.CompareStmt
+    | model.DefendStmt
+)
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedAnalysisSection:
+    unit: IndexedUnit
+    key: str
+    title: str
+    items: tuple[ResolvedAnalysisSectionItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedAnalysisBody:
+    title: str
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[ResolvedAnalysisSection, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedSchemaBody:
+    title: str
+    preamble: tuple[model.ProseLine, ...]
+    sections: tuple[model.SchemaSection, ...]
+    gates: tuple[model.SchemaGate, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedDocumentBody:
+    title: str
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.DocumentBlock, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -382,9 +426,8 @@ class ReviewContractGate:
 
 @dataclass(slots=True, frozen=True)
 class ReviewContractSpec:
-    workflow_unit: IndexedUnit
-    workflow_decl: model.WorkflowDecl
-    workflow_body: ResolvedWorkflowBody
+    kind: str
+    title: str
     gates: tuple[ReviewContractGate, ...]
 
 
@@ -564,7 +607,7 @@ _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 # authored workflow slot, with one legacy carve-out: the old `workflow` field
 # still preserves 01-06 body inheritance semantics instead of switching to a
 # second slot-patching dialect.
-_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "skills", "review"}
+_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "analysis", "skills", "review"}
 
 _BUILTIN_INPUT_SOURCES = {
     "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
@@ -993,6 +1036,9 @@ class CompilationContext:
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._analysis_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._schema_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._document_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._review_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
@@ -1006,6 +1052,9 @@ class CompilationContext:
         ] = []
         self._agent_slot_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._resolved_workflow_cache: dict[tuple[tuple[str, ...], str], ResolvedWorkflowBody] = {}
+        self._resolved_analysis_cache: dict[tuple[tuple[str, ...], str], ResolvedAnalysisBody] = {}
+        self._resolved_schema_cache: dict[tuple[tuple[str, ...], str], ResolvedSchemaBody] = {}
+        self._resolved_document_cache: dict[tuple[tuple[str, ...], str], ResolvedDocumentBody] = {}
         self._resolved_review_cache: dict[tuple[tuple[str, ...], str], ResolvedReviewBody] = {}
         self._addressable_workflow_cache: dict[
             tuple[tuple[str, ...], str], ResolvedWorkflowBody
@@ -1543,6 +1592,9 @@ class CompilationContext:
         lines.append(
             f"Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
         )
+        if decl.structure_ref is not None:
+            _document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+            lines.append(f"Structure: {document_decl.title}")
         return tuple(lines)
 
     def _flow_output_detail_lines(
@@ -1594,6 +1646,12 @@ class CompilationContext:
             lines.append(
                 f"Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
             )
+        if decl.schema_ref is not None:
+            _schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
+            lines.append(f"Schema: {schema_decl.title}")
+        if decl.structure_ref is not None:
+            _document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+            lines.append(f"Structure: {document_decl.title}")
         return tuple(lines)
 
     def _flow_output_files_detail_lines(
@@ -1939,6 +1997,9 @@ class CompilationContext:
                 owner_label=f"agent {agent_name}",
                 review_output_contexts=review_output_contexts,
             )
+        if isinstance(field, model.AnalysisField):
+            analysis_unit, analysis_decl = self._resolve_analysis_ref(field.value, unit=unit)
+            return self._compile_analysis_decl(analysis_decl, unit=analysis_unit)
         if isinstance(field, model.SkillsField):
             return self._compile_skills_field(field, unit=unit)
         if isinstance(field, model.ReviewField):
@@ -1981,7 +2042,7 @@ class CompilationContext:
             if resolved.contract is not None:
                 try:
                     contract_gates = self._resolve_review_contract_spec(
-                        resolved.contract.workflow_ref,
+                        resolved.contract.contract_ref,
                         unit=review_unit,
                         owner_label=f"review {_dotted_decl_name(review_unit.module_parts, review_decl.name)}",
                     ).gates
@@ -2135,6 +2196,8 @@ class CompilationContext:
             return "inputs"
         if isinstance(field, model.OutputsField):
             return "outputs"
+        if isinstance(field, model.AnalysisField):
+            return "analysis"
         if isinstance(field, model.SkillsField):
             return "skills"
         if isinstance(field, model.ReviewField):
@@ -3337,6 +3400,150 @@ class CompilationContext:
 
         return CompiledSection(title=skill_decl.title, body=tuple(body))
 
+    def _compile_analysis_decl(
+        self,
+        decl: model.AnalysisDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        resolved = self._resolve_analysis_decl(decl, unit=unit)
+        body: list[CompiledBodyItem] = list(resolved.preamble)
+        for item in resolved.items:
+            if body and body[-1] != "":
+                body.append("")
+            body.append(
+                CompiledSection(
+                    title=item.title,
+                    body=self._compile_analysis_section_body(item.items, unit=item.unit),
+                )
+            )
+        return CompiledSection(title=resolved.title, body=tuple(body))
+
+    def _compile_analysis_section_body(
+        self,
+        items: tuple[ResolvedAnalysisSectionItem, ...],
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[CompiledBodyItem, ...]:
+        body: list[CompiledBodyItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                body.append(item)
+                continue
+            if isinstance(item, ResolvedSectionRef):
+                body.append(f"- {item.label}")
+                continue
+            if isinstance(item, model.DeriveStmt):
+                body.append(
+                    f"Derive {item.target_title} from {self._render_analysis_basis(item.basis, unit=unit)}."
+                )
+                continue
+            if isinstance(item, model.ClassifyStmt):
+                _enum_unit, enum_decl = self._resolve_enum_ref(item.enum_ref, unit=unit)
+                body.append(f"Classify {item.target_title} using {enum_decl.title}.")
+                continue
+            if isinstance(item, model.CompareStmt):
+                sentence = (
+                    f"Compare {item.target_title} against {self._render_analysis_basis(item.basis, unit=unit)}."
+                )
+                if item.using_expr is not None:
+                    sentence += (
+                        f" Use {self._render_analysis_using_expr(item.using_expr, unit=unit)} as the comparison basis."
+                    )
+                body.append(sentence)
+                continue
+            if isinstance(item, model.DefendStmt):
+                body.append(
+                    f"Defend {item.target_title} using {self._render_analysis_basis(item.basis, unit=unit)}."
+                )
+                continue
+            raise CompileError(
+                f"Internal compiler error: unsupported analysis item {type(item).__name__}"
+            )
+        return tuple(body)
+
+    def _compile_schema_decl(
+        self,
+        decl: model.SchemaDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        resolved = self._resolve_schema_decl(decl, unit=unit)
+        body: list[CompiledBodyItem] = list(resolved.preamble)
+        body.append(self._compile_schema_sections_block(resolved))
+        if resolved.gates:
+            body.append("")
+            body.append(self._compile_schema_gates_block(resolved))
+        return CompiledSection(title=resolved.title, body=tuple(body))
+
+    def _compile_schema_sections_block(
+        self,
+        schema_body: ResolvedSchemaBody,
+    ) -> CompiledSection:
+        return CompiledSection(
+            title="Required Sections",
+            body=tuple(
+                CompiledSection(title=item.title, body=item.body) for item in schema_body.sections
+            ),
+        )
+
+    def _compile_schema_gates_block(
+        self,
+        schema_body: ResolvedSchemaBody,
+    ) -> CompiledSection:
+        return CompiledSection(
+            title="Contract Gates",
+            body=tuple(
+                CompiledSection(title=item.title, body=item.body) for item in schema_body.gates
+            ),
+        )
+
+    def _compile_document_decl(
+        self,
+        decl: model.DocumentDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        resolved = self._resolve_document_decl(decl, unit=unit)
+        return CompiledSection(
+            title=resolved.title,
+            body=self._compile_document_body(resolved),
+        )
+
+    def _compile_document_body(
+        self,
+        document_body: ResolvedDocumentBody,
+    ) -> tuple[CompiledBodyItem, ...]:
+        body: list[CompiledBodyItem] = list(document_body.preamble)
+        for item in document_body.items:
+            if body and body[-1] != "":
+                body.append("")
+            body.append(self._compile_document_block(item))
+        return tuple(body)
+
+    def _compile_document_block(self, block: model.DocumentBlock) -> CompiledReadableBlock:
+        if block.kind == "section":
+            return CompiledSection(title=block.title, body=block.items)
+        if block.kind == "sequence":
+            return CompiledSequenceBlock(title=block.title, body=block.items)
+        if block.kind == "bullets":
+            return CompiledBulletsBlock(title=block.title, body=block.items)
+        if block.kind == "checklist":
+            return CompiledChecklistBlock(title=block.title, body=block.items)
+        if block.kind == "definitions":
+            return CompiledDefinitionsBlock(title=block.title, body=block.items)
+        if block.kind == "table":
+            return CompiledTableBlock(title=block.title, body=block.items)
+        if block.kind == "callout":
+            return CompiledCalloutBlock(title=block.title, body=block.items)
+        if block.kind == "code":
+            return CompiledCodeBlock(title=block.title, body=block.items)
+        if block.kind == "rule":
+            return CompiledRuleBlock(title=block.title, body=block.items)
+        raise CompileError(
+            f"Internal compiler error: unsupported document block kind {block.kind}"
+        )
+
     def _compile_input_decl(self, decl: model.InputDecl, *, unit: IndexedUnit) -> CompiledSection:
         scalar_items, _section_items, extras = self._split_record_items(
             decl.items,
@@ -3371,6 +3578,22 @@ class CompilationContext:
         body.append(
             f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
         )
+        if decl.structure_ref is not None:
+            document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+            if not self._is_markdown_shape_value(shape_item.value, unit=unit):
+                raise CompileError(
+                    f"Input structure requires a markdown-bearing shape in input {decl.name}"
+                )
+            body.append(f"- Structure: {document_decl.title}")
+            body.append("")
+            body.append(
+                CompiledSection(
+                    title=f"Structure: {document_decl.title}",
+                    body=self._compile_document_body(
+                        self._resolve_document_decl(document_decl, unit=document_unit)
+                    ),
+                )
+            )
 
         if extras:
             body.append("")
@@ -3451,6 +3674,35 @@ class CompilationContext:
             body.append(
                 f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
             )
+        if decl.schema_ref is not None:
+            schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
+            body.append(f"- Schema: {schema_decl.title}")
+            body.append("")
+            body.append(
+                self._compile_schema_sections_block(
+                    self._resolve_schema_decl(schema_decl, unit=schema_unit)
+                )
+            )
+        if decl.structure_ref is not None:
+            if files_section is not None:
+                raise CompileError(
+                    f"Output structure requires one markdown-bearing output artifact in {decl.name}"
+                )
+            if shape_item is None or not self._is_markdown_shape_value(shape_item.value, unit=unit):
+                raise CompileError(
+                    f"Output structure requires a markdown-bearing shape in output {decl.name}"
+                )
+            document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+            body.append(f"- Structure: {document_decl.title}")
+            body.append("")
+            body.append(
+                CompiledSection(
+                    title=f"Structure: {document_decl.title}",
+                    body=self._compile_document_body(
+                        self._resolve_document_decl(document_decl, unit=document_unit)
+                    ),
+                )
+            )
 
         trust_surface_section = (
             self._compile_trust_surface_section(decl, unit=unit)
@@ -3516,7 +3768,7 @@ class CompilationContext:
             (subject_unit.module_parts, subject_decl.name) for subject_unit, subject_decl in subjects
         }
         contract_spec = self._resolve_review_contract_spec(
-            resolved.contract.workflow_ref,
+            resolved.contract.contract_ref,
             unit=unit,
             owner_label=owner_label,
         )
@@ -3549,6 +3801,7 @@ class CompilationContext:
             raise CompileError(f"Review is missing on_reject: {review_decl.name}")
 
         section_titles = {section.key: section.title for section in pre_sections}
+        gate_observation = self._review_gate_observation(comment_output_decl)
         accept_gate_count = 0
         any_block_gates = False
         for section in pre_sections:
@@ -3572,6 +3825,7 @@ class CompilationContext:
             contract_spec=contract_spec,
             section_titles=section_titles,
             owner_label=owner_label,
+            gate_observation=gate_observation,
         )
         accept_gate_branches = tuple(
             branch for branch in pre_outcome_branches if branch.verdict == _REVIEW_VERDICT_TEXT["accept"]
@@ -3637,7 +3891,7 @@ class CompilationContext:
 
         body: list[CompiledBodyItem] = [
             self._render_review_subject_summary(subjects),
-            f"Shared review contract: {contract_spec.workflow_body.title}.",
+            f"Shared review contract: {contract_spec.title}.",
         ]
         for section in pre_sections:
             if body and body[-1] != "":
@@ -3712,21 +3966,55 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
     ) -> ReviewContractSpec:
-        contract_unit, workflow_decl = self._resolve_workflow_ref(ref, unit=unit)
-        workflow_body = self._resolve_workflow_decl(workflow_decl, unit=contract_unit)
-        gates = self._collect_review_contract_gates(
-            workflow_body,
-            owner_label=f"{owner_label} contract {_dotted_decl_name(contract_unit.module_parts, workflow_decl.name)}",
-        )
-        if not gates:
-            raise CompileError(
-                f"Review contract must export at least one gate in {owner_label}: {workflow_decl.name}"
+        contract_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        workflow_decl = contract_unit.workflows_by_name.get(ref.declaration_name)
+        schema_decl = contract_unit.schemas_by_name.get(ref.declaration_name)
+        dotted_name = _dotted_ref_name(ref)
+
+        if workflow_decl is not None and schema_decl is not None:
+            raise CompileError(f"Ambiguous review contract in {owner_label}: {dotted_name}")
+
+        if workflow_decl is not None:
+            workflow_body = self._resolve_workflow_decl(workflow_decl, unit=contract_unit)
+            gates = self._collect_review_contract_gates(
+                workflow_body,
+                owner_label=(
+                    f"{owner_label} contract "
+                    f"{_dotted_decl_name(contract_unit.module_parts, workflow_decl.name)}"
+                ),
             )
-        return ReviewContractSpec(
-            workflow_unit=contract_unit,
-            workflow_decl=workflow_decl,
-            workflow_body=workflow_body,
-            gates=gates,
+            if not gates:
+                raise CompileError(
+                    f"Review contract must export at least one gate in {owner_label}: {workflow_decl.name}"
+                )
+            return ReviewContractSpec(
+                kind="workflow",
+                title=workflow_body.title,
+                gates=gates,
+            )
+
+        if schema_decl is not None:
+            schema_body = self._resolve_schema_decl(schema_decl, unit=contract_unit)
+            gates = self._collect_schema_review_contract_gates(
+                schema_body,
+                owner_label=(
+                    f"{owner_label} contract "
+                    f"{_dotted_decl_name(contract_unit.module_parts, schema_decl.name)}"
+                ),
+            )
+            if not gates:
+                raise CompileError(
+                    f"Review contract must export at least one gate in {owner_label}: {schema_decl.name}"
+                )
+            return ReviewContractSpec(
+                kind="schema",
+                title=schema_body.title,
+                gates=gates,
+            )
+
+        raise CompileError(
+            f"Review contract must resolve to a workflow or schema declaration in {owner_label}: "
+            f"{dotted_name}"
         )
 
     def _collect_review_contract_gates(
@@ -3760,6 +4048,23 @@ class CompilationContext:
                     )
                 seen.add(gate.key)
                 gates.append(gate)
+        return tuple(gates)
+
+    def _collect_schema_review_contract_gates(
+        self,
+        schema_body: ResolvedSchemaBody,
+        *,
+        owner_label: str,
+    ) -> tuple[ReviewContractGate, ...]:
+        gates: list[ReviewContractGate] = []
+        seen: set[str] = set()
+        for item in schema_body.gates:
+            if item.key in seen:
+                raise CompileError(
+                    f"Duplicate review contract gate in {owner_label}: {item.key}"
+                )
+            seen.add(item.key)
+            gates.append(ReviewContractGate(key=item.key, title=item.title))
         return tuple(gates)
 
     def _validate_review_field_bindings(
@@ -3942,6 +4247,7 @@ class CompilationContext:
         contract_spec: ReviewContractSpec,
         section_titles: dict[str, str],
         owner_label: str,
+        gate_observation: ReviewGateObservation,
     ) -> tuple[ResolvedReviewGateBranch, ...]:
         pre_branches = (ReviewPreOutcomeBranch(),)
         for section in sections:
@@ -3975,6 +4281,7 @@ class CompilationContext:
                     branch,
                     unit=unit,
                     contract_spec=contract_spec,
+                    gate_observation=gate_observation,
                 )
             )
         return tuple(resolved)
@@ -4197,6 +4504,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         contract_spec: ReviewContractSpec,
+        gate_observation: ReviewGateObservation,
     ) -> tuple[ResolvedReviewGateBranch, ...]:
         block_states = [tuple[str, ...]()]
         for check in branch.block_checks:
@@ -4250,14 +4558,13 @@ class CompilationContext:
                     assertion_states = next_assertion_states
 
                 for assertion_failed_gate_ids in assertion_states:
-                    contract_states = [tuple[str, ...]()]
-                    for gate in contract_spec.gates:
-                        identity = f"contract.{gate.key}"
-                        next_contract_states: list[tuple[str, ...]] = []
-                        for state in contract_states:
-                            next_contract_states.append((*state, identity))
-                            next_contract_states.append(state)
-                        contract_states = next_contract_states
+                    contract_states = self._review_contract_failure_states(
+                        contract_spec,
+                        observation=self._review_gate_observation_with_accept_checks(
+                            gate_observation,
+                            accept_checks=branch.accept_checks,
+                        ),
+                    )
 
                     for contract_failed_gate_ids in contract_states:
                         earlier_failures = (
@@ -4296,6 +4603,106 @@ class CompilationContext:
                         resolved.extend(accept_states)
 
         return tuple(resolved)
+
+    def _review_gate_observation_with_accept_checks(
+        self,
+        observation: ReviewGateObservation,
+        *,
+        accept_checks: tuple[ReviewGateCheck, ...],
+    ) -> ReviewGateObservation:
+        flags = {
+            "needs_blocked_gate_presence": observation.needs_blocked_gate_presence,
+            "needs_blocked_gate_value": observation.needs_blocked_gate_value,
+            "needs_failing_gates_presence": observation.needs_failing_gates_presence,
+            "needs_failing_gates_value": observation.needs_failing_gates_value,
+            "needs_contract_failed_gates_value": observation.needs_contract_failed_gates_value,
+            "needs_contract_first_failed_gate": observation.needs_contract_first_failed_gate,
+            "needs_contract_passes": observation.needs_contract_passes,
+        }
+        referenced_contract_gate_ids = set(observation.referenced_contract_gate_ids)
+        for check in accept_checks:
+            self._collect_review_gate_observation_from_expr(
+                check.expr,
+                flags=flags,
+                referenced_contract_gate_ids=referenced_contract_gate_ids,
+            )
+        return ReviewGateObservation(
+            needs_blocked_gate_presence=flags["needs_blocked_gate_presence"],
+            needs_blocked_gate_value=flags["needs_blocked_gate_value"],
+            needs_failing_gates_presence=flags["needs_failing_gates_presence"],
+            needs_failing_gates_value=flags["needs_failing_gates_value"],
+            needs_contract_failed_gates_value=flags["needs_contract_failed_gates_value"],
+            needs_contract_first_failed_gate=flags["needs_contract_first_failed_gate"],
+            needs_contract_passes=flags["needs_contract_passes"],
+            referenced_contract_gate_ids=tuple(sorted(referenced_contract_gate_ids)),
+        )
+
+    def _review_contract_failure_states(
+        self,
+        contract_spec: ReviewContractSpec,
+        *,
+        observation: ReviewGateObservation,
+    ) -> tuple[tuple[str, ...], ...]:
+        gate_ids = tuple(f"contract.{gate.key}" for gate in contract_spec.gates)
+        if not gate_ids:
+            return ((),)
+
+        # Full failed-gates tuple observation is the one remaining surface that
+        # genuinely needs every contract subset. Keep the exact behavior there.
+        if observation.needs_contract_failed_gates_value:
+            return self._enumerate_review_contract_failure_states(gate_ids)
+
+        referenced = set(observation.referenced_contract_gate_ids)
+        referenced_gate_ids = tuple(gate_id for gate_id in gate_ids if gate_id in referenced)
+        unreferenced_gate_ids = tuple(gate_id for gate_id in gate_ids if gate_id not in referenced)
+
+        states: list[tuple[str, ...]] = [()]
+        seen = {()}
+
+        def add(state: tuple[str, ...]) -> None:
+            if state in seen:
+                return
+            seen.add(state)
+            states.append(state)
+
+        # For explicit failed()/passed() checks, enumerate only the referenced
+        # gate subset, not the whole contract.
+        for state in self._enumerate_review_contract_failure_states(referenced_gate_ids):
+            if state:
+                add(state)
+
+        # Preserve generic "some other contract gate failed" behavior so
+        # contract.passes and implicit full-contract failure still validate.
+        if unreferenced_gate_ids:
+            add((unreferenced_gate_ids[0],))
+
+        # first_failed_gate needs one representative state per gate so callers
+        # can distinguish which gate was first.
+        if observation.needs_contract_first_failed_gate:
+            for gate_id in gate_ids:
+                add((gate_id,))
+
+        # contract.passes needs at least one failing contract state.
+        if observation.needs_contract_passes and len(states) == 1:
+            add((gate_ids[0],))
+
+        if len(states) == 1:
+            add((gate_ids[0],))
+
+        return tuple(states)
+
+    def _enumerate_review_contract_failure_states(
+        self,
+        gate_ids: tuple[str, ...],
+    ) -> tuple[tuple[str, ...], ...]:
+        states: list[tuple[str, ...]] = [()]
+        for gate_id in gate_ids:
+            next_states: list[tuple[str, ...]] = []
+            for state in states:
+                next_states.append(state)
+                next_states.append((*state, gate_id))
+            states = next_states
+        return tuple(states)
 
     def _evaluate_review_gate_condition(
         self,
@@ -6978,6 +7385,34 @@ class CompilationContext:
             return local_decl.title
         return _humanize_key(value.declaration_name)
 
+    def _is_markdown_shape_value(
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        markdown_shape_names = {"MarkdownDocument", "AgentOutputDocument"}
+        if isinstance(value, model.AddressableRef):
+            return False
+        if isinstance(value, str):
+            return value in markdown_shape_names
+        if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
+            shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+            kind_item = next(
+                (
+                    item
+                    for item in shape_decl.items
+                    if isinstance(item, model.RecordScalar)
+                    and item.key == "kind"
+                    and item.body is None
+                ),
+                None,
+            )
+            if kind_item is None:
+                return shape_decl.name in markdown_shape_names
+            return self._is_markdown_shape_value(kind_item.value, unit=shape_unit)
+        return value.declaration_name in markdown_shape_names
+
     def _display_symbol_value(
         self,
         value: model.RecordScalarValue,
@@ -7587,6 +8022,129 @@ class CompilationContext:
         finally:
             self._skills_addressable_resolution_stack.pop()
 
+    def _resolve_analysis_decl(
+        self, analysis_decl: model.AnalysisDecl, *, unit: IndexedUnit
+    ) -> ResolvedAnalysisBody:
+        analysis_key = (unit.module_parts, analysis_decl.name)
+        cached = self._resolved_analysis_cache.get(analysis_key)
+        if cached is not None:
+            return cached
+
+        if analysis_key in self._analysis_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._analysis_resolution_stack, analysis_key]
+            )
+            raise CompileError(f"Cyclic analysis inheritance: {cycle}")
+
+        self._analysis_resolution_stack.append(analysis_key)
+        try:
+            parent_analysis: ResolvedAnalysisBody | None = None
+            parent_label: str | None = None
+            if analysis_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_analysis_decl(
+                    analysis_decl,
+                    unit=unit,
+                )
+                parent_analysis = self._resolve_analysis_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"analysis {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_analysis_body(
+                analysis_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, analysis_decl.name),
+                parent_analysis=parent_analysis,
+                parent_label=parent_label,
+            )
+            self._resolved_analysis_cache[analysis_key] = resolved
+            return resolved
+        finally:
+            self._analysis_resolution_stack.pop()
+
+    def _resolve_schema_decl(
+        self, schema_decl: model.SchemaDecl, *, unit: IndexedUnit
+    ) -> ResolvedSchemaBody:
+        schema_key = (unit.module_parts, schema_decl.name)
+        cached = self._resolved_schema_cache.get(schema_key)
+        if cached is not None:
+            return cached
+
+        if schema_key in self._schema_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._schema_resolution_stack, schema_key]
+            )
+            raise CompileError(f"Cyclic schema inheritance: {cycle}")
+
+        self._schema_resolution_stack.append(schema_key)
+        try:
+            parent_schema: ResolvedSchemaBody | None = None
+            parent_label: str | None = None
+            if schema_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_schema_decl(
+                    schema_decl,
+                    unit=unit,
+                )
+                parent_schema = self._resolve_schema_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"schema {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_schema_body(
+                schema_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, schema_decl.name),
+                parent_schema=parent_schema,
+                parent_label=parent_label,
+            )
+            self._resolved_schema_cache[schema_key] = resolved
+            return resolved
+        finally:
+            self._schema_resolution_stack.pop()
+
+    def _resolve_document_decl(
+        self, document_decl: model.DocumentDecl, *, unit: IndexedUnit
+    ) -> ResolvedDocumentBody:
+        document_key = (unit.module_parts, document_decl.name)
+        cached = self._resolved_document_cache.get(document_key)
+        if cached is not None:
+            return cached
+
+        if document_key in self._document_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._document_resolution_stack, document_key]
+            )
+            raise CompileError(f"Cyclic document inheritance: {cycle}")
+
+        self._document_resolution_stack.append(document_key)
+        try:
+            parent_document: ResolvedDocumentBody | None = None
+            parent_label: str | None = None
+            if document_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_document_decl(
+                    document_decl,
+                    unit=unit,
+                )
+                parent_document = self._resolve_document_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"document {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_document_body(
+                document_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, document_decl.name),
+                parent_document=parent_document,
+                parent_label=parent_label,
+            )
+            self._resolved_document_cache[document_key] = resolved
+            return resolved
+        finally:
+            self._document_resolution_stack.pop()
+
     def _resolve_inputs_decl(
         self, inputs_decl: model.InputsDecl, *, unit: IndexedUnit
     ) -> ResolvedIoBody:
@@ -7982,6 +8540,537 @@ class CompilationContext:
             title=skills_body.title,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
+        )
+
+    def _resolve_analysis_body(
+        self,
+        analysis_body: model.AnalysisBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_analysis: ResolvedAnalysisBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedAnalysisBody:
+        resolved_preamble = tuple(
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="analysis prose",
+                ambiguous_label="analysis prose interpolation ref",
+            )
+            for line in analysis_body.preamble
+        )
+        if parent_analysis is None:
+            resolved_items = self._resolve_non_inherited_analysis_items(
+                analysis_body.items,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            return ResolvedAnalysisBody(
+                title=analysis_body.title,
+                preamble=resolved_preamble,
+                items=resolved_items,
+            )
+
+        parent_items_by_key = {item.key: item for item in parent_analysis.items}
+        resolved_items: list[ResolvedAnalysisSection] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in analysis_body.items:
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate analysis section key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.AnalysisSection):
+                if key in parent_items_by_key:
+                    raise CompileError(
+                        f"Inherited analysis requires `override {key}` in {owner_label}"
+                    )
+                resolved_items.append(
+                    ResolvedAnalysisSection(
+                        unit=unit,
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_analysis_section_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined analysis entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined analysis entry in {parent_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            resolved_items.append(
+                ResolvedAnalysisSection(
+                    unit=unit,
+                    key=key,
+                    title=item.title if item.title is not None else parent_item.title,
+                    items=self._resolve_analysis_section_items(
+                        item.items,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{key}",
+                    ),
+                )
+            )
+
+        missing_keys = [
+            parent_item.key for parent_item in parent_analysis.items if parent_item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited analysis entry in {owner_label}: {missing}"
+            )
+
+        return ResolvedAnalysisBody(
+            title=analysis_body.title,
+            preamble=resolved_preamble,
+            items=tuple(resolved_items),
+        )
+
+    def _resolve_non_inherited_analysis_items(
+        self,
+        items: tuple[model.AnalysisItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ResolvedAnalysisSection, ...]:
+        resolved_items: list[ResolvedAnalysisSection] = []
+        seen_keys: set[str] = set()
+        for item in items:
+            if isinstance(item, model.AnalysisSection):
+                if item.key in seen_keys:
+                    raise CompileError(f"Duplicate analysis section key in {owner_label}: {item.key}")
+                seen_keys.add(item.key)
+                resolved_items.append(
+                    ResolvedAnalysisSection(
+                        unit=unit,
+                        key=item.key,
+                        title=item.title,
+                        items=self._resolve_analysis_section_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{item.key}",
+                        ),
+                    )
+                )
+                continue
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited analysis declaration in {owner_label}: {item.key}"
+            )
+        return tuple(resolved_items)
+
+    def _resolve_analysis_section_items(
+        self,
+        items: tuple[model.AnalysisSectionItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ResolvedAnalysisSectionItem, ...]:
+        resolved: list[ResolvedAnalysisSectionItem] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                resolved.append(
+                    self._interpolate_authored_prose_line(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label="analysis prose",
+                        ambiguous_label="analysis prose interpolation ref",
+                    )
+                )
+                continue
+            if isinstance(item, model.SectionBodyRef):
+                display = self._resolve_addressable_ref_value(
+                    item.ref,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label="analysis refs",
+                    ambiguous_label="analysis ref",
+                    missing_local_label="analysis",
+                )
+                resolved.append(ResolvedSectionRef(label=display.text))
+                continue
+            if isinstance(item, (model.DeriveStmt, model.CompareStmt, model.DefendStmt)):
+                basis = self._coerce_path_set(item.basis)
+                if not basis.paths:
+                    raise CompileError(f"Analysis basis may not be empty in {owner_label}")
+                self._validate_path_set_roots(
+                    basis,
+                    unit=unit,
+                    agent_contract=None,
+                    owner_label=owner_label,
+                    statement_label="analysis basis",
+                    allowed_kinds=("input", "output", "enum"),
+                )
+                resolved.append(replace(item, basis=basis))
+                continue
+            if isinstance(item, model.ClassifyStmt):
+                self._resolve_enum_ref(item.enum_ref, unit=unit)
+                resolved.append(item)
+                continue
+            raise CompileError(
+                f"Unsupported analysis item in {owner_label}: {type(item).__name__}"
+            )
+        return tuple(resolved)
+
+    def _resolve_schema_body(
+        self,
+        schema_body: model.SchemaBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_schema: ResolvedSchemaBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedSchemaBody:
+        resolved_preamble = tuple(
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="schema prose",
+                ambiguous_label="schema prose interpolation ref",
+            )
+            for line in schema_body.preamble
+        )
+        sections_mode, sections_items = self._schema_body_action(schema_body.items, block_key="sections")
+        gates_mode, gates_items = self._schema_body_action(schema_body.items, block_key="gates")
+
+        if parent_schema is None:
+            if sections_mode not in {"define", None}:
+                raise CompileError(
+                    f"{sections_mode} requires an inherited schema declaration in {owner_label}: sections"
+                )
+            if gates_mode not in {"define", None}:
+                raise CompileError(
+                    f"{gates_mode} requires an inherited schema declaration in {owner_label}: gates"
+                )
+            resolved_sections = self._resolve_schema_sections(
+                sections_items,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            resolved_gates = self._resolve_schema_gates(
+                gates_items,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        else:
+            resolved_sections = self._resolve_schema_block_with_parent(
+                block_key="sections",
+                mode=sections_mode,
+                items=sections_items,
+                parent_items=parent_schema.sections,
+                unit=unit,
+                owner_label=owner_label,
+                parent_label=parent_label,
+            )
+            resolved_gates = self._resolve_schema_block_with_parent(
+                block_key="gates",
+                mode=gates_mode,
+                items=gates_items,
+                parent_items=parent_schema.gates,
+                unit=unit,
+                owner_label=owner_label,
+                parent_label=parent_label,
+            )
+
+        if not resolved_sections:
+            raise CompileError(f"Schema must export at least one section in {owner_label}")
+
+        return ResolvedSchemaBody(
+            title=schema_body.title,
+            preamble=resolved_preamble,
+            sections=resolved_sections,
+            gates=resolved_gates,
+        )
+
+    def _schema_body_action(
+        self,
+        items: tuple[model.SchemaItem, ...],
+        *,
+        block_key: str,
+    ) -> tuple[str | None, tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...]]:
+        for item in items:
+            if isinstance(item, model.InheritItem) and item.key == block_key:
+                return "inherit", ()
+            if block_key == "sections" and isinstance(item, model.SchemaSectionsBlock):
+                return "define", item.items
+            if block_key == "gates" and isinstance(item, model.SchemaGatesBlock):
+                return "define", item.items
+            if block_key == "sections" and isinstance(item, model.SchemaOverrideSectionsBlock):
+                return "override", item.items
+            if block_key == "gates" and isinstance(item, model.SchemaOverrideGatesBlock):
+                return "override", item.items
+        return None, ()
+
+    def _resolve_schema_block_with_parent(
+        self,
+        *,
+        block_key: str,
+        mode: str | None,
+        items: tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...],
+        parent_items: tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...],
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_label: str | None,
+    ) -> tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...]:
+        if parent_items:
+            if mode == "inherit":
+                return parent_items
+            if mode == "override":
+                return (
+                    self._resolve_schema_sections(items, unit=unit, owner_label=owner_label)
+                    if block_key == "sections"
+                    else self._resolve_schema_gates(items, unit=unit, owner_label=owner_label)
+                )
+            if mode == "define":
+                raise CompileError(
+                    f"Inherited schema must use `override {block_key}:` in {owner_label}"
+                )
+            raise CompileError(f"E003 Missing inherited schema block in {owner_label}: {block_key}")
+
+        if mode == "inherit":
+            raise CompileError(
+                f"Cannot inherit undefined schema block in {parent_label}: {block_key}"
+            )
+        if mode == "override":
+            raise CompileError(
+                f"E001 Cannot override undefined schema block in {parent_label}: {block_key}"
+            )
+        if block_key == "sections":
+            return self._resolve_schema_sections(items, unit=unit, owner_label=owner_label)
+        return self._resolve_schema_gates(items, unit=unit, owner_label=owner_label)
+
+    def _resolve_schema_sections(
+        self,
+        items: tuple[model.SchemaSection, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.SchemaSection, ...]:
+        seen: set[str] = set()
+        resolved: list[model.SchemaSection] = []
+        for item in items:
+            if item.key in seen:
+                raise CompileError(f"Duplicate schema section key in {owner_label}: {item.key}")
+            seen.add(item.key)
+            resolved.append(
+                replace(
+                    item,
+                    body=tuple(
+                        self._interpolate_authored_prose_line(
+                            line,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{item.key}",
+                            surface_label="schema section prose",
+                            ambiguous_label="schema prose interpolation ref",
+                        )
+                        for line in item.body
+                    ),
+                )
+            )
+        return tuple(resolved)
+
+    def _resolve_schema_gates(
+        self,
+        items: tuple[model.SchemaGate, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.SchemaGate, ...]:
+        seen: set[str] = set()
+        resolved: list[model.SchemaGate] = []
+        for item in items:
+            if item.key in seen:
+                raise CompileError(f"Duplicate schema gate key in {owner_label}: {item.key}")
+            seen.add(item.key)
+            resolved.append(
+                replace(
+                    item,
+                    body=tuple(
+                        self._interpolate_authored_prose_line(
+                            line,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{item.key}",
+                            surface_label="schema gate prose",
+                            ambiguous_label="schema prose interpolation ref",
+                        )
+                        for line in item.body
+                    ),
+                )
+            )
+        return tuple(resolved)
+
+    def _resolve_document_body(
+        self,
+        document_body: model.DocumentBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_document: ResolvedDocumentBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedDocumentBody:
+        resolved_preamble = tuple(
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="document prose",
+                ambiguous_label="document prose interpolation ref",
+            )
+            for line in document_body.preamble
+        )
+        if parent_document is None:
+            return ResolvedDocumentBody(
+                title=document_body.title,
+                preamble=resolved_preamble,
+                items=self._resolve_non_inherited_document_items(
+                    document_body.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                ),
+            )
+
+        parent_items_by_key = {item.key: item for item in parent_document.items}
+        resolved_items: list[model.DocumentBlock] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in document_body.items:
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate document block key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.DocumentBlock):
+                if key in parent_items_by_key:
+                    raise CompileError(
+                        f"Inherited document requires `override {key}` in {owner_label}"
+                    )
+                resolved_items.append(
+                    self._resolve_document_block(
+                        item,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{key}",
+                    )
+                )
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined document entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined document entry in {parent_label}: {key}"
+                )
+            if item.kind != parent_item.kind:
+                raise CompileError(
+                    f"Override kind mismatch for document entry in {owner_label}: {key}"
+                )
+            accounted_keys.add(key)
+            resolved_items.append(
+                self._resolve_document_block(
+                    model.DocumentBlock(
+                        kind=item.kind,
+                        key=item.key,
+                        title=item.title if item.title is not None else parent_item.title,
+                        items=item.items,
+                    ),
+                    unit=unit,
+                    owner_label=f"{owner_label}.{key}",
+                )
+            )
+
+        missing_keys = [
+            parent_item.key for parent_item in parent_document.items if parent_item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited document entry in {owner_label}: {missing}"
+            )
+
+        return ResolvedDocumentBody(
+            title=document_body.title,
+            preamble=resolved_preamble,
+            items=tuple(resolved_items),
+        )
+
+    def _resolve_non_inherited_document_items(
+        self,
+        items: tuple[model.DocumentItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.DocumentBlock, ...]:
+        resolved: list[model.DocumentBlock] = []
+        seen_keys: set[str] = set()
+        for item in items:
+            if isinstance(item, model.DocumentBlock):
+                if item.key in seen_keys:
+                    raise CompileError(f"Duplicate document block key in {owner_label}: {item.key}")
+                seen_keys.add(item.key)
+                resolved.append(
+                    self._resolve_document_block(
+                        item,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                    )
+                )
+                continue
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited document declaration in {owner_label}: {item.key}"
+            )
+        return tuple(resolved)
+
+    def _resolve_document_block(
+        self,
+        item: model.DocumentBlock,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> model.DocumentBlock:
+        return replace(
+            item,
+            items=tuple(
+                self._interpolate_authored_prose_line(
+                    line,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label="document prose",
+                    ambiguous_label="document prose interpolation ref",
+                )
+                for line in item.items
+            ),
         )
 
     def _resolve_workflow_body(
@@ -9334,6 +10423,9 @@ class CompilationContext:
         if isinstance(
             target,
             (
+                model.AnalysisDecl,
+                model.SchemaDecl,
+                model.DocumentDecl,
                 model.InputDecl,
                 model.InputSourceDecl,
                 model.OutputDecl,
@@ -9343,6 +10435,28 @@ class CompilationContext:
                 model.SkillDecl,
             ),
         ):
+            if isinstance(target, model.AnalysisDecl):
+                analysis_body = self._resolve_analysis_decl(target, unit=node.unit)
+                return {
+                    item.key: AddressableNode(
+                        unit=item.unit,
+                        root_decl=node.root_decl,
+                        target=item,
+                    )
+                    for item in analysis_body.items
+                }
+            if isinstance(target, model.SchemaDecl):
+                return self._schema_items_to_addressable_children(
+                    self._resolve_schema_decl(target, unit=node.unit),
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                )
+            if isinstance(target, model.DocumentDecl):
+                return self._document_items_to_addressable_children(
+                    self._resolve_document_decl(target, unit=node.unit).items,
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                )
             return self._record_items_to_addressable_children(
                 target.items,
                 unit=node.unit,
@@ -9424,6 +10538,8 @@ class CompilationContext:
                 unit=node.unit,
                 root_decl=node.root_decl,
             )
+        if isinstance(target, (ResolvedAnalysisSection, model.SchemaSection, model.SchemaGate, model.DocumentBlock)):
+            return None
         if isinstance(target, model.EnumDecl):
             return {
                 member.key: AddressableNode(
@@ -9510,6 +10626,42 @@ class CompilationContext:
                 )
         return children
 
+    def _schema_items_to_addressable_children(
+        self,
+        schema_body: ResolvedSchemaBody,
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in (*schema_body.sections, *schema_body.gates):
+            if item.key in children:
+                raise CompileError(
+                    f"Ambiguous schema child key in addressable path resolution: {item.key}"
+                )
+            children[item.key] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=item,
+            )
+        return children
+
+    def _document_items_to_addressable_children(
+        self,
+        items: tuple[model.DocumentBlock, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            children[item.key] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=item,
+            )
+        return children
+
     def _display_addressable_target_value(
         self,
         node: AddressableNode,
@@ -9542,6 +10694,12 @@ class CompilationContext:
             return DisplayValue(text=target.gate.title, kind="title")
         if isinstance(target, model.Agent):
             return DisplayValue(text=target.name, kind="symbol")
+        if isinstance(target, model.AnalysisDecl):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.SchemaDecl):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.DocumentDecl):
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.WorkflowDecl):
             return DisplayValue(text=target.body.title, kind="title")
         if isinstance(target, model.SkillsDecl):
@@ -9592,6 +10750,14 @@ class CompilationContext:
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, ResolvedSkillEntry):
             return DisplayValue(text=target.skill_decl.title, kind="title")
+        if isinstance(target, ResolvedAnalysisSection):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.SchemaSection):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.SchemaGate):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.DocumentBlock):
+            return DisplayValue(text=target.title, kind="title")
         raise CompileError(
             f"Internal compiler error: unsupported addressable target {type(target).__name__}"
         )
@@ -10097,6 +11263,24 @@ class CompilationContext:
                 self._render_law_path(path) for path in target.except_paths
             )
         return rendered
+
+    def _render_analysis_basis(
+        self,
+        basis: model.LawPathSet,
+        *,
+        unit: IndexedUnit,
+    ) -> str:
+        if len(basis.paths) == 1 and not basis.except_paths and not basis.paths[0].wildcard:
+            return self._display_law_path_root(basis.paths[0], unit=unit)
+        return self._render_path_set(basis)
+
+    def _render_analysis_using_expr(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> str:
+        return self._render_expr(expr, unit=unit)
 
     def _render_law_path(self, path: model.LawPath) -> str:
         text = ".".join(path.parts)
@@ -11531,6 +12715,46 @@ class CompilationContext:
             missing_label="skills declaration",
         )
 
+    def _resolve_analysis_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.AnalysisDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="analyses_by_name",
+            missing_label="analysis declaration",
+        )
+
+    def _resolve_schema_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.SchemaDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="schemas_by_name",
+            missing_label="schema declaration",
+        )
+
+    def _resolve_document_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.DocumentDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="documents_by_name",
+            missing_label="document declaration",
+        )
+
+    def _resolve_enum_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.EnumDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="enums_by_name",
+            missing_label="enum declaration",
+        )
+
     def _resolve_inputs_block_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.InputsDecl]:
@@ -11570,6 +12794,66 @@ class CompilationContext:
                 )
             return unit, parent_decl
         return self._resolve_workflow_ref(parent_ref, unit=unit)
+
+    def _resolve_parent_analysis_decl(
+        self,
+        analysis_decl: model.AnalysisDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.AnalysisDecl]:
+        parent_ref = analysis_decl.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: analysis has no parent ref: {analysis_decl.name}"
+            )
+        if not parent_ref.module_parts:
+            parent_decl = unit.analyses_by_name.get(parent_ref.declaration_name)
+            if parent_decl is None:
+                raise CompileError(
+                    f"Missing parent analysis for {analysis_decl.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_decl
+        return self._resolve_analysis_ref(parent_ref, unit=unit)
+
+    def _resolve_parent_schema_decl(
+        self,
+        schema_decl: model.SchemaDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.SchemaDecl]:
+        parent_ref = schema_decl.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: schema has no parent ref: {schema_decl.name}"
+            )
+        if not parent_ref.module_parts:
+            parent_decl = unit.schemas_by_name.get(parent_ref.declaration_name)
+            if parent_decl is None:
+                raise CompileError(
+                    f"Missing parent schema for {schema_decl.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_decl
+        return self._resolve_schema_ref(parent_ref, unit=unit)
+
+    def _resolve_parent_document_decl(
+        self,
+        document_decl: model.DocumentDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.DocumentDecl]:
+        parent_ref = document_decl.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: document has no parent ref: {document_decl.name}"
+            )
+        if not parent_ref.module_parts:
+            parent_decl = unit.documents_by_name.get(parent_ref.declaration_name)
+            if parent_decl is None:
+                raise CompileError(
+                    f"Missing parent document for {document_decl.name}: {parent_ref.declaration_name}"
+                )
+            return unit, parent_decl
+        return self._resolve_document_ref(parent_ref, unit=unit)
 
     def _resolve_parent_skills_decl(
         self,

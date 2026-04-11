@@ -35,6 +35,8 @@ class IoBodyParts:
 @dataclass(slots=True, frozen=True)
 class OutputBodyParts:
     items: tuple[model.OutputRecordItem, ...]
+    schema_ref: model.NameRef | None
+    structure_ref: model.NameRef | None
     trust_surface: tuple[model.TrustSurfaceItem, ...]
 
 
@@ -183,6 +185,10 @@ class ToAst(Transformer):
             value=self._io_body(title, body),
             parent_ref=parent_ref,
         )
+
+    @v_args(inline=True)
+    def analysis_field(self, ref):
+        return model.AnalysisField(value=ref)
 
     @v_args(inline=True)
     def skills_field(self, title_or_ref, body=None):
@@ -381,7 +387,16 @@ class ToAst(Transformer):
 
     @v_args(inline=True)
     def input_decl(self, name, title, items):
-        return model.InputDecl(name=name, title=title, items=tuple(items))
+        structure_ref, remaining_items = self._extract_structure_attachment(
+            tuple(items),
+            owner_label=f"input {name}",
+        )
+        return model.InputDecl(
+            name=name,
+            title=title,
+            items=remaining_items,
+            structure_ref=structure_ref,
+        )
 
     @v_args(inline=True)
     def input_source_decl(self, name, title, items):
@@ -393,6 +408,8 @@ class ToAst(Transformer):
             name=name,
             title=title,
             items=body.items,
+            schema_ref=body.schema_ref,
+            structure_ref=body.structure_ref,
             trust_surface=body.trust_surface,
         )
 
@@ -402,6 +419,8 @@ class ToAst(Transformer):
 
     def output_body(self, items):
         record_items: list[model.OutputRecordItem] = []
+        schema_ref: model.NameRef | None = None
+        structure_ref: model.NameRef | None = None
         trust_surface: tuple[model.TrustSurfaceItem, ...] = ()
         for item in items:
             if isinstance(item, tuple) and item and isinstance(item[0], model.TrustSurfaceItem):
@@ -409,11 +428,51 @@ class ToAst(Transformer):
                     raise TransformParseFailure(
                         "Output declarations may define `trust_surface` only once.",
                         hints=("Keep exactly one `trust_surface:` block per output declaration.",),
-                    )
+                )
                 trust_surface = tuple(item)
                 continue
+            if isinstance(item, model.RecordScalar) and item.key == "schema":
+                if schema_ref is not None:
+                    raise TransformParseFailure(
+                        "Output declarations may define `schema:` only once.",
+                        hints=("Keep exactly one `schema:` attachment per output declaration.",),
+                    )
+                schema_ref = self._extract_name_ref_attachment(
+                    item,
+                    owner_label="output attachment",
+                    key="schema",
+                )
+                continue
+            if isinstance(item, model.RecordScalar) and item.key == "structure":
+                if structure_ref is not None:
+                    raise TransformParseFailure(
+                        "Output declarations may define `structure:` only once.",
+                        hints=("Keep exactly one `structure:` attachment per output declaration.",),
+                    )
+                structure_ref = self._extract_name_ref_attachment(
+                    item,
+                    owner_label="output attachment",
+                    key="structure",
+                )
+                continue
             record_items.append(item)
-        return OutputBodyParts(items=tuple(record_items), trust_surface=trust_surface)
+        if schema_ref is not None and any(
+            isinstance(item, model.RecordSection) and item.key == "must_include"
+            for item in record_items
+        ):
+            raise TransformParseFailure(
+                "Outputs may not define both `schema:` and `must_include:`.",
+                hints=(
+                    "Pick one inventory owner per output declaration.",
+                    "Use `schema:` for reusable inventory ownership or keep local `must_include:` prose, not both.",
+                ),
+            )
+        return OutputBodyParts(
+            items=tuple(record_items),
+            schema_ref=schema_ref,
+            structure_ref=structure_ref,
+            trust_surface=trust_surface,
+        )
 
     def output_record_body(self, items):
         return tuple(items)
@@ -450,6 +509,9 @@ class ToAst(Transformer):
             analysis_items.append(item)
         return AnalysisBodyParts(preamble=tuple(preamble), items=tuple(analysis_items))
 
+    def analysis_section_body(self, items):
+        return tuple(items)
+
     @v_args(inline=True)
     def analysis_section(self, key, title, items):
         return model.AnalysisSection(key=key, title=title, items=tuple(items))
@@ -472,6 +534,34 @@ class ToAst(Transformer):
         )
 
     @v_args(inline=True)
+    def analysis_section_item(self, value):
+        return value
+
+    @v_args(inline=True)
+    def derive_stmt(self, target_title, basis):
+        return model.DeriveStmt(target_title=target_title, basis=basis)
+
+    @v_args(inline=True)
+    def classify_stmt(self, target_title, enum_ref):
+        return model.ClassifyStmt(target_title=target_title, enum_ref=enum_ref)
+
+    @v_args(inline=True)
+    def compare_stmt(self, target_title, basis, using_expr=None):
+        return model.CompareStmt(
+            target_title=target_title,
+            basis=basis,
+            using_expr=using_expr,
+        )
+
+    @v_args(inline=True)
+    def compare_using_clause(self, using_expr):
+        return using_expr
+
+    @v_args(inline=True)
+    def defend_stmt(self, target_title, basis):
+        return model.DefendStmt(target_title=target_title, basis=basis)
+
+    @v_args(inline=True)
     def schema_string(self, value):
         return value
 
@@ -486,44 +576,87 @@ class ToAst(Transformer):
             if isinstance(item, (str, model.EmphasizedLine)):
                 if schema_items:
                     raise TransformParseFailure(
-                        "Schema prose lines must appear before keyed schema entries.",
+                        "Schema prose lines must appear before typed schema blocks.",
                         hints=(
-                            "Move prose lines to the top of the schema body or put them inside a schema section.",
+                            "Move prose lines to the top of the schema body or put them inside a schema section or gate body.",
                         ),
                     )
                 preamble.append(item)
                 continue
             schema_items.append(item)
+        section_blocks = [
+            item
+            for item in schema_items
+            if isinstance(
+                item,
+                (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock),
+            )
+        ]
+        gate_blocks = [
+            item
+            for item in schema_items
+            if isinstance(item, (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock))
+        ]
+        inherited_keys = {item.key for item in schema_items if isinstance(item, model.InheritItem)}
+        if len(section_blocks) > 1 or ("sections" in inherited_keys and section_blocks):
+            raise TransformParseFailure(
+                "Schema declarations may account for `sections` only once.",
+                hints=(
+                    "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
+                ),
+            )
+        if len(gate_blocks) > 1 or ("gates" in inherited_keys and gate_blocks):
+            raise TransformParseFailure(
+                "Schema declarations may account for `gates` only once.",
+                hints=(
+                    "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
+                ),
+            )
         return SchemaBodyParts(preamble=tuple(preamble), items=tuple(schema_items))
 
-    @v_args(inline=True)
-    def schema_section(self, key, title, items):
-        return model.SchemaSection(key=key, title=title, items=tuple(items))
+    def schema_sections_block(self, items):
+        return model.SchemaSectionsBlock(items=tuple(items))
+
+    def schema_gates_block(self, items):
+        return model.SchemaGatesBlock(items=tuple(items))
 
     @v_args(inline=True)
-    def schema_gate(self, key, title):
-        return model.SchemaGate(key=key, title=title)
+    def schema_section_item(self, key, title, body=None):
+        return model.SchemaSection(
+            key=key,
+            title=title,
+            body=tuple(body or ()),
+        )
+
+    def schema_section_body(self, items):
+        return tuple(items[0])
+
+    @v_args(inline=True)
+    def schema_gate_item(self, key, title, body=None):
+        return model.SchemaGate(
+            key=key,
+            title=title,
+            body=tuple(body or ()),
+        )
+
+    def schema_gate_body(self, items):
+        return tuple(items[0])
 
     @v_args(inline=True)
     def schema_inherit(self, key):
         return model.InheritItem(key=key)
 
-    @v_args(inline=True)
-    def schema_override_section(self, key, title_or_items, items=None):
-        title: str | None = None
-        section_items = title_or_items
-        if items is not None:
-            title = title_or_items
-            section_items = items
-        return model.SchemaOverrideSection(
-            key=key,
-            title=title,
-            items=tuple(section_items),
-        )
+    def schema_override_sections(self, items):
+        return model.SchemaOverrideSectionsBlock(items=tuple(items))
 
-    @v_args(inline=True)
-    def schema_override_gate(self, key, title):
-        return model.SchemaOverrideGate(key=key, title=title)
+    def schema_override_gates(self, items):
+        return model.SchemaOverrideGatesBlock(items=tuple(items))
+
+    def schema_block_key_sections(self, _items):
+        return "sections"
+
+    def schema_block_key_gates(self, _items):
+        return "gates"
 
     @v_args(inline=True)
     def document_string(self, value):
@@ -686,7 +819,7 @@ class ToAst(Transformer):
         return ref
 
     @v_args(inline=True)
-    def workflow_ref(self, ref):
+    def contract_ref(self, ref):
         return ref
 
     @v_args(inline=True)
@@ -708,8 +841,8 @@ class ToAst(Transformer):
         )
 
     @v_args(inline=True)
-    def contract_stmt(self, workflow_ref):
-        return model.ReviewContractConfig(workflow_ref=workflow_ref)
+    def contract_stmt(self, contract_ref):
+        return model.ReviewContractConfig(contract_ref=contract_ref)
 
     @v_args(inline=True)
     def comment_output_stmt(self, output_ref):
@@ -1366,6 +1499,49 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def record_ref_item(self, ref, body=None):
         return model.RecordRef(ref=ref, body=None if body is None else tuple(body))
+
+    def _extract_structure_attachment(
+        self,
+        items: tuple[model.RecordItem, ...],
+        *,
+        owner_label: str,
+    ) -> tuple[model.NameRef | None, tuple[model.RecordItem, ...]]:
+        structure_ref: model.NameRef | None = None
+        remaining_items: list[model.RecordItem] = []
+        for item in items:
+            if isinstance(item, model.RecordScalar) and item.key == "structure":
+                if structure_ref is not None:
+                    raise TransformParseFailure(
+                        f"{owner_label} may define `structure:` only once.",
+                        hints=("Keep exactly one `structure:` attachment per declaration.",),
+                    )
+                structure_ref = self._extract_name_ref_attachment(
+                    item,
+                    owner_label=owner_label,
+                    key="structure",
+                )
+                continue
+            remaining_items.append(item)
+        return structure_ref, tuple(remaining_items)
+
+    def _extract_name_ref_attachment(
+        self,
+        item: model.RecordScalar,
+        *,
+        owner_label: str,
+        key: str,
+    ) -> model.NameRef:
+        if item.body is not None:
+            raise TransformParseFailure(
+                f"{owner_label} `{key}:` attachments may not define an inline body.",
+                hints=(f"Keep `{key}:` as a single declaration ref.",),
+            )
+        if not isinstance(item.value, model.NameRef):
+            raise TransformParseFailure(
+                f"{owner_label} `{key}:` attachments must reference a named declaration.",
+                hints=(f"Use `{key}: SomeDeclaration`.",),
+            )
+        return item.value
 
     def skills_body(self, items):
         preamble: list[model.ProseLine] = []

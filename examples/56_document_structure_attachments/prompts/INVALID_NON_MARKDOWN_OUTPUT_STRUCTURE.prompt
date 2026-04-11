@@ -1,0 +1,18 @@
+document LessonPlan: "Lesson Plan"
+    section overview: "Overview"
+        "Start with the plan overview."
+
+
+output InvalidCommentOutput: "Invalid Comment Output"
+    target: TurnResponse
+    shape: Comment
+    structure: LessonPlan
+    requirement: Required
+
+
+agent InvalidNonMarkdownOutputStructure:
+    role: "This agent attaches structure to a non-markdown output."
+    workflow: "Reply"
+        "The workflow body is otherwise ordinary."
+    outputs: "Outputs"
+        InvalidCommentOutput
