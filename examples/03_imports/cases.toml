@@ -124,3 +124,16 @@ message_contains = [
   "load import module `broken.syntax`",
   "broken/syntax.prompt",
 ]
+
+[[cases]]
+name = "sibling import cycles fail loud instead of hanging import resolution"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SIBLING_IMPORT_CYCLE.prompt"
+agent = "SiblingImportCycleDemo"
+exception_type = "CompileError"
+error_code = "E289"
+message_contains = [
+  "Cyclic import module",
+  "cyclic_siblings.alpha",
+]

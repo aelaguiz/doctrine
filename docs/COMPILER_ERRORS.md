@@ -56,6 +56,7 @@ Stability rules:
 | `E103` | Unexpected end of file | The file ended before the current declaration or block was complete. |
 | `E104` | Indentation-sensitive parse failure | The parser saw an unexpected indent or dedent. |
 | `E105` | Invalid authored slot body | A referenced authored workflow slot was given an inline body instead of either a named workflow ref or an inline workflow body. |
+| `E106` | Invalid string literal | A quoted string token could not be decoded because its escapes or delimiters were invalid. |
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
 | `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |

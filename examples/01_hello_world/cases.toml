@@ -55,3 +55,15 @@ error_code = "E206"
 message_contains = [
   "expected `role` followed by `workflow`",
 ]
+
+[[cases]]
+name = "invalid string literal fails in parse stage"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_STRING_LITERAL.prompt"
+exception_type = "ParseError"
+error_code = "E106"
+message_contains = [
+  "Invalid string literal",
+  "truncated \\xXX escape",
+]

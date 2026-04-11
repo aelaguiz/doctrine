@@ -164,6 +164,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     manifest_errors: list[str] = []
+    case_results: list[CaseResult] = []
+    ref_diffs: list[RefDiff] = []
     surfaced_inconsistencies: list[str] = []
 
     try:

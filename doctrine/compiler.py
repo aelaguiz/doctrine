@@ -910,30 +910,10 @@ class CompilationSession:
             (_resolve_import_path(import_decl.path, module_parts=module_parts), import_decl)
             for import_decl in imports
         ]
-
-        if allow_parallel_imports and len(resolved_imports) > 1:
-            futures: dict[tuple[str, ...], object] = {}
-            with ThreadPoolExecutor(max_workers=_default_worker_count(len(resolved_imports))) as executor:
-                for resolved_module_parts, _import_decl in resolved_imports:
-                    if resolved_module_parts in futures:
-                        continue
-                    futures[resolved_module_parts] = executor.submit(
-                        self._load_module,
-                        resolved_module_parts,
-                        ancestry=ancestry,
-                    )
-
-                for resolved_module_parts, _import_decl in resolved_imports:
-                    try:
-                        imported_units[resolved_module_parts] = futures[
-                            resolved_module_parts
-                        ].result()
-                    except DoctrineError as exc:
-                        raise exc.prepend_trace(
-                            f"resolve import `{'.'.join(resolved_module_parts)}`",
-                            location=_path_location(importer_path),
-                        )
-            return imported_units
+        # Import loading stays sequential. Parallel sibling loads can deadlock
+        # on cyclic imports before ancestry-based cycle detection gets a chance
+        # to surface the truthful E289 compile error.
+        _ = allow_parallel_imports
 
         for resolved_module_parts, _import_decl in resolved_imports:
             try:
