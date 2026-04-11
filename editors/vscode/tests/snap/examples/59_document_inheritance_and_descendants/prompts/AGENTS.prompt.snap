@@ -1,0 +1,270 @@
+># This example shows document inheritance plus descendant refs on keyed items.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>document LessonPlan: "Lesson Plan"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                      ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    section overview: "Overview"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "Start with the current lesson goal."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    sequence read_order: "Read Order" required
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                     ^^^^^^^^^^ source.doctrine
+>        first: "Read the brief."
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        second: "Read the current lesson plan."
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    table step_arc: "Step Arc" required
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^ source.doctrine
+#          ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
+#                              ^^^^^^^^^^ source.doctrine
+>        columns:
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+>            step: "Step"
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^ source.doctrine string.quoted.double.doctrine
+>                "Step identifier."
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>            coaching_level: "Coaching Level"
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>                "How much help the step gives."
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        rows:
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+>            step_1:
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+>                step: "1"
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^ source.doctrine string.quoted.double.doctrine
+>                coaching_level: "High"
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>document AdaptedLessonPlan[LessonPlan]: "Adapted Lesson Plan"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                           ^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                     ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                       ^ source.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                         ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    inherit overview
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>
+>    override sequence read_order: "Read Order" advisory
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^ source.doctrine keyword.control.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                 ^ source.doctrine
+#                                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                   ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                              ^ source.doctrine
+#                                               ^^^^^^^^ source.doctrine keyword.control.doctrine
+>        first: "Read the learner goal."
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        second: "Read the current lesson plan."
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        third: "Read the prior feedback."
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    inherit step_arc
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>
+>
+>output AdaptedLessonPlanFile: "Adapted Lesson Plan File"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.separator.key-value.doctrine
+#                             ^ source.doctrine
+#                              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                               ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "lesson_root/ADAPTED_LESSON_PLAN.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    structure: AdaptedLessonPlan
+#^^^^ source.doctrine
+#    ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent AdaptedLessonPlanDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Keep {{AdaptedLessonPlan:read_order.first}}, {{AdaptedLessonPlan:step_arc.columns.coaching_level.title}}, and {{AdaptedLessonPlan:step_arc.rows.step_1}} aligned in {{AdaptedLessonPlan:title}}."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^ source.doctrine string.quoted.double.doctrine
+#                ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                  ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                   ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                    ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                    ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                      ^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                          ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                           ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                                 ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                   ^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                                                                           ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                                                                            ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                                                                                             ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                                                                                 ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                                                                   ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                               ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                                                                                                                                 ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                                                                                                                                  ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                                                                                                                                                   ^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                                                                                                                        ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                                                                                                          ^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Adapt"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Write the adapted lesson plan using the inherited document."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        AdaptedLessonPlanFile
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

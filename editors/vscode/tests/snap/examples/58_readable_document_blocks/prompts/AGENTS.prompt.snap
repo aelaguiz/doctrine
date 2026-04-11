@@ -1,0 +1,257 @@
+># This example renders the richer document block kinds through `structure:`.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>document ReleaseGuide: "Release Guide"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                        ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                     ^ source.doctrine punctuation.definition.string.end.doctrine
+>    callout durable_truth: "Durable Truth" required
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                            ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                          ^^^^^^^^^^ source.doctrine
+>        kind: important
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        "This file owns the current release checklist."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    section summary: "Summary"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                      ^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "Lead with the release goal and the current shipment boundary."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    definitions must_include: "Must Include" required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                            ^ source.doctrine punctuation.separator.key-value.doctrine
+#                             ^ source.doctrine
+#                              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                               ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                            ^^^^^^^^^^ source.doctrine
+>        verdict: "Verdict"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Say whether the release is ready."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        next_owner: "Next Owner"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Name who owns the next action."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    table release_gates: "Release Gates" required
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^ source.doctrine
+#          ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                        ^^^^^^^^^^ source.doctrine
+>        columns:
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+>            gate: "Gate"
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^ source.doctrine string.quoted.double.doctrine
+>                "What must pass before shipment."
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>            evidence: "Evidence"
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>                "What proves the gate passed."
+#^^^^^^^^^^^^^^^^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>        notes:
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+>            "List one row per release gate."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    checklist checks: "Checks" advisory
+#^^^^ source.doctrine
+#    ^^^^^^^^^ source.doctrine keyword.control.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
+#                              ^ source.doctrine
+#                               ^^^^^^^^ source.doctrine keyword.control.doctrine
+>        lint: "Run lint."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        tests: "Run tests."
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    rule divider
+#^^^^^^^^^^^^^^^^^ source.doctrine
+>
+>
+>output ReleaseGuideFile: "Release Guide File"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "release_root/RELEASE_GUIDE.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    structure: ReleaseGuide
+#^^^^ source.doctrine
+#    ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent ReleaseGuideDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Keep {{ReleaseGuide:must_include.verdict}} and {{ReleaseGuide:release_gates.columns.evidence.title}} aligned in {{ReleaseGuide:title}}."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^ source.doctrine string.quoted.double.doctrine
+#                ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                  ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                              ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                               ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                   ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                     ^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                          ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                            ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                        ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                             ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                               ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                           ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                                                                             ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                                                                         ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                                                                                                                          ^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                                                                                                               ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                                                                                 ^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Publish"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Write the release guide using the attached document structure."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        ReleaseGuideFile
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

@@ -983,7 +983,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(derive|classify|compare|defend|from|against|using|sections)\\b"
+      "match": "\\b(derive|classify|compare|defend|from|against|using|sections|advisory|optional|columns|rows|notes|kind|language|text)\\b"
     },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",

@@ -92,6 +92,69 @@ VS Code extension onto the same shipped truth.
 - Do not add raw-markdown escape hatches, HTML-specific constructs, images,
   footnotes, or nested tables when the spec explicitly rejects them in v1.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-11
+Verdict (code): NOT COMPLETE
+Manual QA: pending (non-blocking)
+
+## Code blockers (why code is not done)
+- Phase 5 remains false-complete. Fresh audit evidence shows the repo-root
+  proof signals are green from this worktree, but the VS Code package path is
+  still red: `make` in `editors/vscode/` exits non-zero after
+  `test:integration` aborts with `SIGABRT` on all four startup attempts.
+
+## Reopened phases (false-complete fixes)
+- Phase 5 (Proof, docs, diagnostics, and editor parity cutover) — reopened
+  because:
+  - fresh `.venv/bin/python -m doctrine.verify_corpus` passes the full shipped
+    corpus through `examples/61_multiline_code_and_readable_failures`, and
+    fresh `.venv/bin/python -m doctrine.diagnostic_smoke` passes, so the
+    earlier repo-root D2 blocker is no longer real in this worktree
+  - fresh `make` evidence in `editors/vscode/` passes `npm install`,
+    `test:unit`, and `test:snap`, resolves cached VS Code `1.115.0` after the
+    version lookup falls back from `ENOTFOUND`, then still exits non-zero after
+    four `SIGABRT` retries in `test:integration`, so alignment validation,
+    VSIX packaging, and `cd editors/vscode && make` are not green end to end
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- VS Code extension-host integration still does not pass from fresh audit
+  context
+  - Evidence anchors:
+    - `editors/vscode/package.json:24`
+    - `editors/vscode/package.json:28`
+    - `editors/vscode/package.json:29`
+    - `editors/vscode/tests/integration/run.js:12`
+    - `editors/vscode/tests/integration/run.js:138`
+    - `editors/vscode/tests/integration/run.js:157`
+  - Plan expects:
+    - Phase 5 ends with a passing `cd editors/vscode && make` so editor
+      behavior, integration coverage, alignment validation, and VSIX packaging
+      are proved against the shipped readable-markdown surface.
+  - Code reality:
+    - Fresh `make verify-examples` and `make verify-diagnostics` are not usable
+      in this sandbox because `uv run --locked ...` fails before Python starts,
+      so this audit used the equivalent direct `.venv/bin/python -m ...`
+      surfaces for repo-root proof.
+    - Fresh `.venv/bin/python -m doctrine.verify_corpus` passes the full
+      shipped corpus, and fresh `.venv/bin/python -m doctrine.diagnostic_smoke`
+      passes.
+    - Fresh `make` in `editors/vscode/` passes `npm install`, `test:unit`, and
+      `test:snap`.
+    - The same `make` run reuses cached VS Code `1.115.0` from the short temp
+      cache after version lookup falls back from `ENOTFOUND`, then
+      `npm run test:integration` exits with `SIGABRT` on four consecutive
+      startup attempts, so alignment validation, VSIX packaging, and
+      `cd editors/vscode && make` remain red end to end.
+  - Fix:
+    - Make the extension-host integration run reliable from fresh audit
+      context, then rerun `npm test` and `cd editors/vscode && make`.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- Run the live-editor smoke ladder from `editors/vscode/README.md` after Phase
+  5 is green again.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
@@ -2202,6 +2265,8 @@ To keep the feature elegant instead of sprawling:
 
 ## Phase 1 - Normalize the authored readable grammar and AST
 
+Status: COMPLETED
+
 Goal:
 Make the full readable-markdown contract directly representable in the language
 surface instead of leaving it split across shell-style blocks and spec prose.
@@ -2243,6 +2308,8 @@ Rollback:
   mixed shell-plus-typed authored state
 
 ## Phase 2 - Resolve typed readable semantics in the compiler
+
+Status: COMPLETED
 
 Goal:
 Move readable semantics, inheritance, guards, and validation into the canonical
@@ -2287,6 +2354,8 @@ Rollback:
 
 ## Phase 3 - Renderer and addressability cutover
 
+Status: COMPLETED
+
 Goal:
 Ship one readable markdown rendering contract and one readable descendant lookup
 contract.
@@ -2330,6 +2399,8 @@ Rollback:
 
 ## Phase 4 - Shared readable sublanguage rollout across intended bodies
 
+Status: COMPLETED
+
 Goal:
 Move readable markdown beyond `document` into the intended readable Doctrine
 surfaces without inventing parallel contract or workflow dialects.
@@ -2371,6 +2442,21 @@ Rollback:
   shadow readable language
 
 ## Phase 5 - Proof, docs, diagnostics, and editor parity cutover
+
+Status: REOPENED (audit found missing code work)
+
+Missing (code):
+
+- fresh `.venv/bin/python -m doctrine.verify_corpus` and
+  `.venv/bin/python -m doctrine.diagnostic_smoke` are green from this
+  worktree, but `make` in `editors/vscode/` still exits non-zero because
+  `npm run test:integration` aborts with `SIGABRT` after four startup attempts
+  before alignment validation or VSIX packaging can run
+
+Manual QA (non-blocking):
+
+- run the live-editor smoke ladder from `editors/vscode/README.md` after the
+  extension-host suite is green again
 
 Goal:
 Make proof, live docs, diagnostics, and the extension describe the same shipped

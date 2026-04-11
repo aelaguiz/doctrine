@@ -709,53 +709,256 @@ class ToAst(Transformer):
         return DocumentBodyParts(preamble=tuple(preamble), items=tuple(document_items))
 
     @v_args(inline=True)
-    def document_block(self, kind, key, title, items):
-        return model.DocumentBlock(kind=kind, key=key, title=title, items=tuple(items))
+    def document_readable_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def document_override_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def document_section_sugar(self, key, title, items):
+        return model.ReadableBlock(
+            kind="section",
+            key=key,
+            title=title,
+            payload=tuple(items),
+            legacy_section=True,
+        )
+
+    def document_section_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def document_section_block(self, key, title, *parts):
+        requirement, when_expr, payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind="section",
+            key=key,
+            title=title,
+            payload=tuple(payload),
+            requirement=requirement,
+            when_expr=when_expr,
+        )
 
     @v_args(inline=True)
     def document_inherit(self, key):
         return model.InheritItem(key=key)
 
     @v_args(inline=True)
-    def document_override_block(self, kind, key, title_or_items, items=None):
-        title: str | None = None
-        block_items = title_or_items
-        if items is not None:
-            title = title_or_items
-            block_items = items
+    def document_override_section_block(self, key, *parts):
+        title, requirement, when_expr, payload = self._split_readable_override_parts(parts)
         return model.DocumentOverrideBlock(
-            kind=kind,
+            kind="section",
             key=key,
             title=title,
-            items=tuple(block_items),
+            payload=tuple(payload),
+            requirement=requirement,
+            when_expr=when_expr,
         )
 
-    def document_block_kind_section(self, _items):
-        return "section"
+    def readable_nonsection_block(self, items):
+        return items[0]
 
-    def document_block_kind_sequence(self, _items):
-        return "sequence"
+    def override_readable_nonsection_block(self, items):
+        return items[0]
 
-    def document_block_kind_bullets(self, _items):
-        return "bullets"
+    @v_args(inline=True)
+    def readable_sequence_block(self, key, title, *parts):
+        return self._readable_block("sequence", key, title, parts)
 
-    def document_block_kind_checklist(self, _items):
-        return "checklist"
+    @v_args(inline=True)
+    def readable_bullets_block(self, key, title, *parts):
+        return self._readable_block("bullets", key, title, parts)
 
-    def document_block_kind_definitions(self, _items):
-        return "definitions"
+    @v_args(inline=True)
+    def readable_checklist_block(self, key, title, *parts):
+        return self._readable_block("checklist", key, title, parts)
 
-    def document_block_kind_table(self, _items):
-        return "table"
+    @v_args(inline=True)
+    def readable_definitions_block(self, key, title, *parts):
+        return self._readable_block("definitions", key, title, parts)
 
-    def document_block_kind_callout(self, _items):
-        return "callout"
+    @v_args(inline=True)
+    def readable_table_block(self, key, title, *parts):
+        return self._readable_block("table", key, title, parts)
 
-    def document_block_kind_code(self, _items):
-        return "code"
+    @v_args(inline=True)
+    def readable_callout_block(self, key, title, *parts):
+        return self._readable_block("callout", key, title, parts)
 
-    def document_block_kind_rule(self, _items):
-        return "rule"
+    @v_args(inline=True)
+    def readable_code_block(self, key, title, *parts):
+        return self._readable_block("code", key, title, parts)
+
+    @v_args(inline=True)
+    def readable_rule_block(self, key, *parts):
+        requirement, when_expr, _payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind="rule",
+            key=key,
+            title=None,
+            payload=None,
+            requirement=requirement,
+            when_expr=when_expr,
+        )
+
+    @v_args(inline=True)
+    def override_readable_sequence_block(self, key, *parts):
+        return self._readable_override_block("sequence", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_bullets_block(self, key, *parts):
+        return self._readable_override_block("bullets", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_checklist_block(self, key, *parts):
+        return self._readable_override_block("checklist", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_definitions_block(self, key, *parts):
+        return self._readable_override_block("definitions", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_table_block(self, key, *parts):
+        return self._readable_override_block("table", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_callout_block(self, key, *parts):
+        return self._readable_override_block("callout", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_code_block(self, key, *parts):
+        return self._readable_override_block("code", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_rule_block(self, key, *parts):
+        title, requirement, when_expr, _payload = self._split_readable_override_parts(parts)
+        return model.DocumentOverrideBlock(
+            kind="rule",
+            key=key,
+            title=title,
+            payload=None,
+            requirement=requirement,
+            when_expr=when_expr,
+        )
+
+    def readable_list_body(self, items):
+        rendered_items: list[model.ReadableListItem] = []
+        for item in items:
+            if isinstance(item, model.ReadableListItem):
+                rendered_items.append(item)
+                continue
+            rendered_items.append(model.ReadableListItem(key=None, text=item))
+        return tuple(rendered_items)
+
+    @v_args(inline=True)
+    def readable_list_keyed_item(self, key, text):
+        return model.ReadableListItem(key=key, text=text)
+
+    def readable_definitions_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def readable_definition_item(self, key, title, body=None):
+        return model.ReadableDefinitionItem(
+            key=key,
+            title=title,
+            body=tuple(body or ()),
+        )
+
+    def readable_definition_item_body(self, items):
+        return tuple(items[0])
+
+    def readable_table_body(self, items):
+        columns: tuple[model.ReadableTableColumn, ...] = ()
+        rows: tuple[model.ReadableTableRow, ...] = ()
+        notes: tuple[model.ProseLine, ...] = ()
+        for block_kind, block_value in items:
+            if block_kind == "columns":
+                columns = block_value
+            elif block_kind == "rows":
+                rows = block_value
+            elif block_kind == "notes":
+                notes = block_value
+        return model.ReadableTableData(columns=columns, rows=rows, notes=notes)
+
+    def readable_table_columns_block(self, items):
+        return ("columns", tuple(items))
+
+    @v_args(inline=True)
+    def readable_table_column(self, key, title, body=None):
+        return model.ReadableTableColumn(
+            key=key,
+            title=title,
+            body=tuple(body or ()),
+        )
+
+    def readable_table_column_body(self, items):
+        return tuple(items[0])
+
+    def readable_table_rows_block(self, items):
+        return ("rows", tuple(items))
+
+    @v_args(inline=True)
+    def readable_table_row(self, key, *cells):
+        return model.ReadableTableRow(key=key, cells=tuple(cells))
+
+    @v_args(inline=True)
+    def readable_table_cell(self, key, text):
+        return model.ReadableTableCell(key=key, text=text)
+
+    def readable_table_notes_block(self, items):
+        return ("notes", tuple(items))
+
+    @v_args(inline=True)
+    def readable_table_note(self, value):
+        return value
+
+    def readable_callout_body(self, items):
+        kind: str | None = None
+        body: list[model.ProseLine] = []
+        for item in items:
+            if isinstance(item, tuple) and item[0] == "kind":
+                kind = item[1]
+                continue
+            body.append(item)
+        return model.ReadableCalloutData(kind=kind, body=tuple(body))
+
+    @v_args(inline=True)
+    def readable_callout_kind(self, kind):
+        return ("kind", kind)
+
+    def readable_code_body(self, items):
+        language: str | None = None
+        text: str | None = None
+        for item in items:
+            if item[0] == "language":
+                language = item[1]
+            elif item[0] == "text":
+                text = item[1]
+        return model.ReadableCodeData(language=language, text="" if text is None else text)
+
+    @v_args(inline=True)
+    def readable_code_language(self, language):
+        return ("language", language)
+
+    @v_args(inline=True)
+    def readable_code_text(self, text):
+        return ("text", text)
+
+    def readable_requirement_required(self, _items):
+        return ("requirement", "required")
+
+    def readable_requirement_advisory(self, _items):
+        return ("requirement", "advisory")
+
+    def readable_requirement_optional(self, _items):
+        return ("requirement", "optional")
+
+    @v_args(inline=True)
+    def readable_guard(self, expr):
+        return ("guard", expr)
 
     @v_args(inline=True)
     def output_record_keyed_item(self, key, head, body=None):
@@ -1067,6 +1270,22 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def local_section(self, key, title, items):
         return model.LocalSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def workflow_readable_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def workflow_section_block(self, key, title, *parts):
+        requirement, when_expr, payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind="section",
+            key=key,
+            title=title,
+            payload=tuple(payload),
+            requirement=requirement,
+            when_expr=when_expr,
+        )
 
     @v_args(inline=True)
     def workflow_use(self, key, target):
@@ -1513,6 +1732,38 @@ class ToAst(Transformer):
     def record_text(self, value):
         return value
 
+    @v_args(inline=True)
+    def record_readable_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def record_section_block(self, key, title, *parts):
+        requirement, when_expr, payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind="section",
+            key=key,
+            title=title,
+            payload=tuple(payload),
+            requirement=requirement,
+            when_expr=when_expr,
+        )
+
+    @v_args(inline=True)
+    def output_readable_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def output_section_block(self, key, title, *parts):
+        requirement, when_expr, payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind="section",
+            key=key,
+            title=title,
+            payload=tuple(payload),
+            requirement=requirement,
+            when_expr=when_expr,
+        )
+
     def record_item_body(self, items):
         return tuple(items[0])
 
@@ -1562,6 +1813,68 @@ class ToAst(Transformer):
 
     def block_lines(self, items):
         return tuple(items)
+
+    def _readable_block(
+        self,
+        kind: str,
+        key: str,
+        title: str,
+        parts: tuple[object, ...],
+    ) -> model.ReadableBlock:
+        requirement, when_expr, payload = self._split_readable_parts(parts)
+        return model.ReadableBlock(
+            kind=kind,
+            key=key,
+            title=title,
+            payload=payload,
+            requirement=requirement,
+            when_expr=when_expr,
+        )
+
+    def _readable_override_block(
+        self,
+        kind: str,
+        key: str,
+        parts: tuple[object, ...],
+    ) -> model.DocumentOverrideBlock:
+        title, requirement, when_expr, payload = self._split_readable_override_parts(parts)
+        return model.DocumentOverrideBlock(
+            kind=kind,
+            key=key,
+            title=title,
+            payload=payload,
+            requirement=requirement,
+            when_expr=when_expr,
+        )
+
+    def _split_readable_parts(
+        self,
+        parts: tuple[object, ...],
+    ) -> tuple[str | None, model.Expr | None, object]:
+        requirement: str | None = None
+        when_expr: model.Expr | None = None
+        payload: object = ()
+        for part in parts:
+            if isinstance(part, tuple) and part and part[0] == "requirement":
+                requirement = part[1]
+                continue
+            if isinstance(part, tuple) and part and part[0] == "guard":
+                when_expr = part[1]
+                continue
+            payload = part
+        return requirement, when_expr, payload
+
+    def _split_readable_override_parts(
+        self,
+        parts: tuple[object, ...],
+    ) -> tuple[str | None, str | None, model.Expr | None, object]:
+        title: str | None = None
+        remainder = parts
+        if remainder and isinstance(remainder[0], str):
+            title = remainder[0]
+            remainder = remainder[1:]
+        requirement, when_expr, payload = self._split_readable_parts(remainder)
+        return title, requirement, when_expr, payload
 
 
 def build_lark_parser() -> Lark:

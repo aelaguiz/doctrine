@@ -58,8 +58,11 @@ and semantic refs on the review comment surface.
 Second-wave support here also follows the shipped language guides: top-level
 `analysis`, `schema`, and `document` declarations, agent `analysis:` slots,
 typed `schema:` / `structure:` attachments, addressable analysis or document
-paths such as `Decl:section.title`, and schema-backed `review contract:`
-references.
+paths such as `Decl:section.title`, keyed readable descendants such as
+`LessonPlan:read_order.first` and
+`LessonPlan:step_arc.columns.coaching_level.title`, shared readable block
+headers on workflow, record, and skill-entry bodies, and schema-backed
+`review contract:` references.
 
 ## What it does not do yet
 
@@ -160,7 +163,14 @@ local editor is actually running the newest VSIX before changing the grammar.
    `examples/56_document_structure_attachments/prompts/AGENTS.prompt` for
    `structure:` clicks on markdown-bearing inputs and outputs, and
    `examples/57_schema_review_contracts/prompts/AGENTS.prompt` for
-   schema-backed `contract:` clicks.
+   schema-backed `contract:` clicks,
+   `examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt`
+   for keyed readable descendants on list items, table columns, and table
+   rows,
+   `examples/60_shared_readable_bodies/prompts/AGENTS.prompt` for skill-entry
+   and output-body readable descendants, and
+   `examples/61_multiline_code_and_readable_failures/prompts/AGENTS.prompt`
+   for output-body readable code-block clicks.
 
 ## Development only: Extension Development Host
 

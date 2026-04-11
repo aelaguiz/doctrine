@@ -1,0 +1,16 @@
+output BrokenComment: "Broken Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    callout warning_box: "Warning Box"
+        kind: urgent
+        "This should fail."
+
+
+agent InvalidCalloutKindDemo:
+    role: "Compile the broken comment."
+    workflow: "Warn"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenComment

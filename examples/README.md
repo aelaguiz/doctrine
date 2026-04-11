@@ -36,8 +36,10 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `57`: second-wave integration surfaces for `analysis`, typed
-  `schema:` / `structure:` attachments, and schema-backed review contracts
+- `54` through `61`: second-wave integration surfaces for `analysis`,
+  owner-aware `schema:` / `structure:` attachments, readable markdown
+  documents and descendants, shared readable block reuse, multiline code
+  blocks, and schema-backed review contracts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -104,6 +106,10 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `55_owner_aware_schema_attachments` | Owner-aware split between `output shape.schema` and `output.schema`. |
 | `56_document_structure_attachments` | Typed `structure:` attachments on markdown-bearing inputs and outputs. |
 | `57_schema_review_contracts` | Schema-backed `review contract:` with exported schema gates. |
+| `58_readable_document_blocks` | Rich readable document blocks render natively through `structure:`. |
+| `59_document_inheritance_and_descendants` | Document inheritance plus keyed readable descendants on lists and tables. |
+| `60_shared_readable_bodies` | Shared readable blocks on workflow sections, skill-entry bodies, and output bodies. |
+| `61_multiline_code_and_readable_failures` | Multiline readable code blocks plus compile-negative readable validation. |
 
 ## Useful Commands
 

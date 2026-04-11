@@ -28,6 +28,8 @@ def main() -> int:
     _check_reserved_analysis_slot_key_is_rejected()
     _check_output_schema_attachment_renders()
     _check_input_structure_attachment_renders()
+    _check_readable_guard_rejects_output_owned_refs()
+    _check_readable_table_requires_columns()
     _check_output_schema_owner_conflict_surfaces_as_parse_error()
     _check_review_illegal_statement_placement_has_specific_code()
     _check_review_invalid_guarded_match_head_has_specific_code()
@@ -134,6 +136,36 @@ def _check_input_structure_attachment_renders() -> None:
         _expect("- Structure: Lesson Plan" in rendered, rendered)
         _expect("### Structure: Lesson Plan" in rendered, rendered)
         _expect("#### Summary" in rendered, rendered)
+
+
+def _check_readable_guard_rejects_output_owned_refs() -> None:
+    source = _invalid_readable_guard_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ReadableGuardDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect("Readable guard reads disallowed source" in str(exc), str(exc))
+            _expect("BrokenComment.summary_present" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for readable guard source, but compilation succeeded")
+
+
+def _check_readable_table_requires_columns() -> None:
+    source = _invalid_readable_table_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ReadableTableDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect("Readable table must declare at least one column" in str(exc), str(exc))
+            _expect("BrokenGuide.release_gates" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for readable table without columns, but compilation succeeded")
 
 
 def _check_output_schema_owner_conflict_surfaces_as_parse_error() -> None:
@@ -713,6 +745,43 @@ agent InputDemo:
     role: "Keep the structure attachment visible."
     inputs: "Inputs"
         DraftSpec
+"""
+
+
+def _invalid_readable_guard_source() -> str:
+    return """output BrokenComment: "Broken Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    callout scope: "Scope" when BrokenComment.summary_present
+        kind: note
+        "This should fail."
+
+agent ReadableGuardDemo:
+    role: "Keep readable guards honest."
+    outputs: "Outputs"
+        BrokenComment
+"""
+
+
+def _invalid_readable_table_source() -> str:
+    return """document BrokenGuide: "Broken Guide"
+    table release_gates: "Release Gates"
+        notes:
+            "This should fail."
+
+output BrokenGuideFile: "Broken Guide File"
+    target: File
+        path: "broken.md"
+    shape: MarkdownDocument
+    requirement: Required
+    structure: BrokenGuide
+
+agent ReadableTableDemo:
+    role: "Keep readable tables honest."
+    outputs: "Outputs"
+        BrokenGuideFile
 """
 
 

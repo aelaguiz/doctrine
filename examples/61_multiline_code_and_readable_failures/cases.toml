@@ -1,0 +1,102 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "multiline code blocks render through the shared readable path"
+status = "active"
+kind = "render_contract"
+agent = "ManifestGuideDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Reuse Example Manifest when you draft the manifest guide.",
+  "",
+  "## Draft",
+  "",
+  "Write the guide and keep the example manifest in sync.",
+  "",
+  "## Outputs",
+  "",
+  "### Manifest Guide",
+  "",
+  "- Target: File",
+  "- Path: `release_root/MANIFEST_GUIDE.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "#### Example Manifest",
+  "",
+  "_Advisory · code · json_",
+  "",
+  "```json",
+  "",
+  "{",
+  '  "title": "PLACEHOLDER: Release title",',
+  '  "steps": []',
+  "}",
+  "```",
+]
+
+[[cases]]
+name = "callout kind must stay in the closed readable set"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CALLOUT_UNKNOWN_KIND.prompt"
+agent = "InvalidCalloutKindDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Unknown callout kind",
+  "urgent",
+]
+
+[[cases]]
+name = "code block text must use multiline string form"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CODE_BLOCK_WITHOUT_MULTILINE_STRING.prompt"
+agent = "InvalidCodeBlockDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Code block text must use a multiline string",
+  "output BrokenGuide",
+]
+
+[[cases]]
+name = "document block keys must stay unique"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DOCUMENT_DUPLICATE_BLOCK_KEY.prompt"
+agent = "InvalidDuplicateDocumentKeyDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Duplicate document block key",
+  "summary",
+]
+
+[[cases]]
+name = "readable guards reject output-owned refs"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_READABLE_GUARD_SOURCE.prompt"
+agent = "InvalidReadableGuardDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Readable guard reads disallowed source",
+  "BrokenComment.summary_present",
+]
+
+[[cases]]
+name = "tables must declare at least one column"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_TABLE_WITHOUT_COLUMNS.prompt"
+agent = "InvalidTableWithoutColumnsDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Readable table must declare at least one column",
+  "BrokenGuide.release_gates",
+]

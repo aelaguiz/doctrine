@@ -1,0 +1,38 @@
+# This example reuses readable blocks in workflow, skill-entry, and output bodies.
+
+skill GroundingSkill: "Grounding Skill"
+    purpose: "Ground the current claim before you write."
+
+
+skills ReleaseSkills: "Release Skills"
+    can_run: "Can Run"
+        skill grounding: GroundingSkill
+            callout usage_note: "Usage Note"
+                kind: note
+                "Use this before you summarize evidence."
+
+
+output ReleaseComment: "Release Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    definitions must_include: "Must Include"
+        summary: "Summary"
+            "Summarize the release outcome."
+
+        next_owner: "Next Owner"
+            "Name who owns the next action."
+
+
+agent SharedReadableBodiesDemo:
+    role: "Use {{ReleaseComment:must_include.summary.title}} and {{ReleaseSkills:can_run.grounding.usage_note.title}} before you route the release."
+    workflow: "Review"
+        summary: "Summary"
+            bullets evidence: "Evidence"
+                current_status: "Read the current status."
+                validation: "Read the latest validation notes."
+            "Do not route without evidence."
+    skills: ReleaseSkills
+    outputs: "Outputs"
+        ReleaseComment

@@ -106,7 +106,9 @@ Important rules:
 - Bare workflow roots are composed with `use`; they do not render as readable
   refs inside ordinary workflow section bodies.
 - Titled workflow section bodies may contain prose, route lines, local nested
-  sections, and readable declaration refs.
+  sections, readable declaration refs, and readable block kinds such as
+  `section`, `sequence`, `bullets`, `checklist`, `definitions`, `table`,
+  `callout`, `code`, and `rule`.
 
 ### Workflow Inheritance
 
@@ -195,11 +197,19 @@ Important rules:
 - `document` supports readable block kinds such as `section`, `sequence`,
   `bullets`, `checklist`, `definitions`, `table`, `callout`, `code`, and
   `rule`.
+- Block headers may carry `required`, `advisory`, or `optional`, plus
+  descriptive `when <expr>` metadata.
+- `document` inheritance uses the same explicit accounting model as workflows:
+  `inherit key` keeps a parent block, `override <kind> key` replaces it in
+  place, and changing block kind fails loudly.
 - `structure:` on `input` or `output` points at a named `document`.
 - `structure:` requires a markdown-bearing shape such as `MarkdownDocument` or
   `AgentOutputDocument`.
-- Document blocks are addressable by authored key, for example
-  `LessonPlan:overview.title`.
+- Document blocks are addressable by authored key, and keyed descendants stay
+  addressable where the block shape defines them:
+  `LessonPlan:overview.title`, `LessonPlan:read_order.first`,
+  `LessonPlan:step_arc.columns.coaching_level.title`, and
+  `LessonPlan:step_arc.rows.step_1`.
 
 ## Skills
 
@@ -220,6 +230,8 @@ Skill relationships are authored where they are used:
 
 - `skill local_key: SkillRef`
 - relationship metadata such as `requirement` or `reason`
+- relationship bodies may reuse ordinary record-body readable blocks such as
+  `definitions`, `callout`, or `code`
 - inherited `skills` blocks with the same explicit patching model used
   elsewhere
 
@@ -246,6 +258,8 @@ Important rules:
   `EnvVar`.
 - Custom sources can be declared with `input source`.
 - `structure:` may attach a named `document` to a markdown-bearing input.
+- Ordinary record bodies may also reuse readable block kinds such as
+  `definitions`, `table`, `callout`, and `code`.
 - `inputs` blocks group and bind inputs with local keys for a concrete turn.
 
 ### Outputs
@@ -271,6 +285,8 @@ Important rules:
   `json schema`.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
+- Output record bodies may reuse the same readable block family that `document`
+  uses, including `definitions`, `table`, `callout`, and `code`.
 - `json schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
@@ -320,6 +336,8 @@ Examples:
 - `ReviewComment`
 - `MetadataContract:files.summary`
 - `ReleaseAnalysis:stages.title`
+- `LessonPlan:read_order.first`
+- `LessonPlan:step_arc.columns.coaching_level.title`
 
 ### Addressable paths
 
@@ -329,9 +347,11 @@ Nested keyed items can be addressed explicitly:
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
 - `LessonPlan:overview.title`
+- `LessonPlan:step_arc.rows.step_1`
 
 Paths follow authored keyed structure only. Trying to descend past a scalar
-leaf fails loudly.
+leaf fails loudly. Keyed list items, keyed definition items, table columns,
+and table rows are addressable; anonymous list items are not.
 
 ### Authored interpolation
 

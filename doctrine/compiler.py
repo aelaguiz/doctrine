@@ -17,54 +17,73 @@ from doctrine.parser import parse_file
 class CompiledSection:
     title: str
     body: tuple[CompiledBodyItem, ...]
+    requirement: str | None = None
+    when_text: str | None = None
+    emit_metadata: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledSequenceBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    items: tuple[model.ProseLine, ...]
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledBulletsBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    items: tuple[model.ProseLine, ...]
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledChecklistBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    items: tuple[model.ProseLine, ...]
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledDefinitionsBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    items: tuple[model.ReadableDefinitionItem, ...]
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledTableBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    table: model.ReadableTableData
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledCalloutBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    body: tuple[model.ProseLine, ...]
+    kind: str | None = None
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledCodeBlock:
     title: str
-    body: tuple["CompiledBodyItem", ...]
+    text: str
+    language: str | None = None
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledRuleBlock:
-    title: str
-    body: tuple["CompiledBodyItem", ...]
+    requirement: str | None = None
+    when_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -176,7 +195,13 @@ AddressableTarget: TypeAlias = (
     | model.SchemaSection
     | model.SchemaGate
     | model.DocumentBlock
+    | model.ReadableListItem
+    | model.ReadableDefinitionItem
+    | model.ReadableTableColumn
+    | model.ReadableTableRow
     | model.EnumMember
+    | "ReadableColumnsTarget"
+    | "ReadableRowsTarget"
     | "ReviewSemanticFieldTarget"
     | "ReviewSemanticContractFactTarget"
     | "ReviewSemanticContractGateTarget"
@@ -227,7 +252,11 @@ class ResolvedSectionRef:
 
 
 ResolvedSectionBodyItem: TypeAlias = (
-    model.ProseLine | ResolvedRouteLine | ResolvedSectionRef | "ResolvedSectionItem"
+    model.ProseLine
+    | ResolvedRouteLine
+    | ResolvedSectionRef
+    | "ResolvedSectionItem"
+    | model.ReadableBlock
 )
 
 
@@ -464,6 +493,16 @@ class ReviewSemanticContractFactTarget:
 @dataclass(slots=True, frozen=True)
 class ReviewSemanticContractGateTarget:
     gate: ReviewContractGate
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableColumnsTarget:
+    columns: tuple[model.ReadableTableColumn, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableRowsTarget:
+    rows: tuple[model.ReadableTableRow, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -3507,42 +3546,165 @@ class CompilationContext:
         resolved = self._resolve_document_decl(decl, unit=unit)
         return CompiledSection(
             title=resolved.title,
-            body=self._compile_document_body(resolved),
+            body=self._compile_document_body(resolved, unit=unit),
         )
 
     def _compile_document_body(
         self,
         document_body: ResolvedDocumentBody,
+        *,
+        unit: IndexedUnit,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = list(document_body.preamble)
         for item in document_body.items:
             if body and body[-1] != "":
                 body.append("")
-            body.append(self._compile_document_block(item))
+            body.append(self._compile_document_block(item, unit=unit))
         return tuple(body)
 
-    def _compile_document_block(self, block: model.DocumentBlock) -> CompiledReadableBlock:
+    def _compile_document_block(
+        self,
+        block: model.DocumentBlock,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledReadableBlock:
         if block.kind == "section":
-            return CompiledSection(title=block.title, body=block.items)
+            return CompiledSection(
+                title=block.title or _humanize_key(block.key),
+                body=self._compile_document_section_payload(block.payload, unit=unit),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+                emit_metadata=block.requirement is not None or block.when_expr is not None,
+            )
         if block.kind == "sequence":
-            return CompiledSequenceBlock(title=block.title, body=block.items)
+            return CompiledSequenceBlock(
+                title=block.title or _humanize_key(block.key),
+                items=self._compile_readable_list_payload(block.payload),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "bullets":
-            return CompiledBulletsBlock(title=block.title, body=block.items)
+            return CompiledBulletsBlock(
+                title=block.title or _humanize_key(block.key),
+                items=self._compile_readable_list_payload(block.payload),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "checklist":
-            return CompiledChecklistBlock(title=block.title, body=block.items)
+            return CompiledChecklistBlock(
+                title=block.title or _humanize_key(block.key),
+                items=self._compile_readable_list_payload(block.payload),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "definitions":
-            return CompiledDefinitionsBlock(title=block.title, body=block.items)
+            return CompiledDefinitionsBlock(
+                title=block.title or _humanize_key(block.key),
+                items=self._compile_readable_definitions_payload(block.payload),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "table":
-            return CompiledTableBlock(title=block.title, body=block.items)
+            return CompiledTableBlock(
+                title=block.title or _humanize_key(block.key),
+                table=self._compile_readable_table_payload(block.payload),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "callout":
-            return CompiledCalloutBlock(title=block.title, body=block.items)
+            payload = self._compile_readable_callout_payload(block.payload)
+            return CompiledCalloutBlock(
+                title=block.title or _humanize_key(block.key),
+                body=payload.body,
+                kind=payload.kind,
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "code":
-            return CompiledCodeBlock(title=block.title, body=block.items)
+            payload = self._compile_readable_code_payload(block.payload)
+            return CompiledCodeBlock(
+                title=block.title or _humanize_key(block.key),
+                text=payload.text,
+                language=payload.language,
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         if block.kind == "rule":
-            return CompiledRuleBlock(title=block.title, body=block.items)
+            return CompiledRuleBlock(
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            )
         raise CompileError(
             f"Internal compiler error: unsupported document block kind {block.kind}"
         )
+
+    def _compile_document_section_payload(
+        self,
+        payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[CompiledBodyItem, ...]:
+        if not isinstance(payload, tuple):
+            raise CompileError("Document section payload must stay block-like.")
+        body: list[CompiledBodyItem] = []
+        for item in payload:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                body.append(item)
+                continue
+            body.append(self._compile_document_block(item, unit=unit))
+        return tuple(body)
+
+    def _compile_readable_list_payload(
+        self,
+        payload: model.ReadablePayload,
+    ) -> tuple[model.ProseLine, ...]:
+        if not isinstance(payload, tuple):
+            raise CompileError("Readable list payload must stay list-shaped.")
+        items: list[model.ProseLine] = []
+        for item in payload:
+            if not isinstance(item, model.ReadableListItem):
+                raise CompileError("Readable list payload contains an invalid item.")
+            items.append(item.text)
+        return tuple(items)
+
+    def _compile_readable_definitions_payload(
+        self,
+        payload: model.ReadablePayload,
+    ) -> tuple[model.ReadableDefinitionItem, ...]:
+        if not isinstance(payload, tuple):
+            raise CompileError("Readable definitions payload must stay definition-shaped.")
+        items: list[model.ReadableDefinitionItem] = []
+        for item in payload:
+            if not isinstance(item, model.ReadableDefinitionItem):
+                raise CompileError("Readable definitions payload contains an invalid item.")
+            items.append(item)
+        return tuple(items)
+
+    def _compile_readable_table_payload(
+        self,
+        payload: model.ReadablePayload,
+    ) -> model.ReadableTableData:
+        if not isinstance(payload, model.ReadableTableData):
+            raise CompileError("Readable table payload must stay table-shaped.")
+        if not payload.columns:
+            raise CompileError("Readable table must declare at least one column.")
+        return payload
+
+    def _compile_readable_callout_payload(
+        self,
+        payload: model.ReadablePayload,
+    ) -> model.ReadableCalloutData:
+        if not isinstance(payload, model.ReadableCalloutData):
+            raise CompileError("Readable callout payload must stay callout-shaped.")
+        return payload
+
+    def _compile_readable_code_payload(
+        self,
+        payload: model.ReadablePayload,
+    ) -> model.ReadableCodeData:
+        if not isinstance(payload, model.ReadableCodeData):
+            raise CompileError("Readable code payload must stay code-shaped.")
+        return payload
 
     def _compile_input_decl(self, decl: model.InputDecl, *, unit: IndexedUnit) -> CompiledSection:
         scalar_items, _section_items, extras = self._split_record_items(
@@ -3590,7 +3752,8 @@ class CompilationContext:
                 CompiledSection(
                     title=f"Structure: {document_decl.title}",
                     body=self._compile_document_body(
-                        self._resolve_document_decl(document_decl, unit=document_unit)
+                        self._resolve_document_decl(document_decl, unit=document_unit),
+                        unit=document_unit,
                     ),
                 )
             )
@@ -3699,7 +3862,8 @@ class CompilationContext:
                 CompiledSection(
                     title=f"Structure: {document_decl.title}",
                     body=self._compile_document_body(
-                        self._resolve_document_decl(document_decl, unit=document_unit)
+                        self._resolve_document_decl(document_decl, unit=document_unit),
+                        unit=document_unit,
                     ),
                 )
             )
@@ -7173,6 +7337,24 @@ class CompilationContext:
                 ),
             )
 
+        if isinstance(item, model.ReadableBlock):
+            return (
+                self._compile_authored_readable_block(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    section_body_compiler=lambda payload, nested_owner_label: self._compile_record_support_items(
+                        payload,
+                        unit=unit,
+                        owner_label=nested_owner_label,
+                        surface_label=surface_label,
+                        review_semantics=review_semantics,
+                    ),
+                ),
+            )
+
         if isinstance(item, model.GuardedOutputSection):
             condition = self._render_condition_expr(item.when_expr, unit=unit)
             body: list[CompiledBodyItem] = [f"Rendered only when {condition}."]
@@ -7249,6 +7431,229 @@ class CompilationContext:
             )
         )
         return (CompiledSection(title=label, body=tuple(body)),)
+
+    def _compile_authored_readable_block(
+        self,
+        block: model.ReadableBlock,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        section_body_compiler,
+        review_semantics: ReviewSemanticContext | None = None,
+    ) -> CompiledReadableBlock:
+        if block.when_expr is not None:
+            self._validate_readable_guard_expr(
+                block.when_expr,
+                unit=unit,
+                owner_label=owner_label,
+                allow_review_semantics=review_semantics is not None,
+                review_semantics=review_semantics,
+            )
+        when_text = self._readable_guard_text(block.when_expr, unit=unit)
+        title = block.title or _humanize_key(block.key)
+        if block.kind == "section":
+            payload = self._require_tuple_payload(
+                block.payload,
+                owner_label=owner_label,
+                kind="section",
+            )
+            return CompiledSection(
+                title=title,
+                body=section_body_compiler(payload, f"{owner_label}.{block.key}"),
+                requirement=block.requirement,
+                when_text=when_text,
+                emit_metadata=True,
+            )
+        if block.kind in {"sequence", "bullets", "checklist"}:
+            items: list[model.ProseLine] = []
+            seen_keys: set[str] = set()
+            for list_item in self._require_tuple_payload(
+                block.payload,
+                owner_label=owner_label,
+                kind=block.kind,
+            ):
+                if not isinstance(list_item, model.ReadableListItem):
+                    raise CompileError(
+                        f"Readable {block.kind} items must stay list entries in {owner_label}"
+                    )
+                if list_item.key is not None:
+                    if list_item.key in seen_keys:
+                        raise CompileError(
+                            f"Duplicate {block.kind} item key in {owner_label}: {list_item.key}"
+                        )
+                    seen_keys.add(list_item.key)
+                items.append(
+                    self._interpolate_authored_prose_line(
+                        list_item.text,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label=f"{block.kind} item prose",
+                        ambiguous_label=f"{block.kind} item interpolation ref",
+                        review_semantics=review_semantics,
+                    )
+                )
+            compiled_cls = {
+                "sequence": CompiledSequenceBlock,
+                "bullets": CompiledBulletsBlock,
+                "checklist": CompiledChecklistBlock,
+            }[block.kind]
+            return compiled_cls(
+                title=title,
+                items=tuple(items),
+                requirement=block.requirement,
+                when_text=when_text,
+            )
+        if block.kind == "definitions":
+            definitions: list[model.ReadableDefinitionItem] = []
+            seen_keys: set[str] = set()
+            for definition in self._require_tuple_payload(
+                block.payload,
+                owner_label=owner_label,
+                kind="definitions",
+            ):
+                if not isinstance(definition, model.ReadableDefinitionItem):
+                    raise CompileError(
+                        f"Readable definitions entries must stay definition items in {owner_label}"
+                    )
+                if definition.key in seen_keys:
+                    raise CompileError(
+                        f"Duplicate definitions item key in {owner_label}: {definition.key}"
+                    )
+                seen_keys.add(definition.key)
+                definitions.append(
+                    replace(
+                        definition,
+                        body=tuple(
+                            self._interpolate_authored_prose_line(
+                                line,
+                                unit=unit,
+                                owner_label=f"{owner_label}.{definition.key}",
+                                surface_label="definitions prose",
+                                ambiguous_label="definitions prose interpolation ref",
+                                review_semantics=review_semantics,
+                            )
+                            for line in definition.body
+                        ),
+                    )
+                )
+            return CompiledDefinitionsBlock(
+                title=title,
+                items=tuple(definitions),
+                requirement=block.requirement,
+                when_text=when_text,
+            )
+        if block.kind == "table":
+            if not isinstance(block.payload, model.ReadableTableData):
+                raise CompileError(f"Readable table payload must stay table-shaped in {owner_label}")
+            resolved_columns: list[model.ReadableTableColumn] = []
+            column_keys: set[str] = set()
+            for column in block.payload.columns:
+                if column.key in column_keys:
+                    raise CompileError(f"Duplicate table column key in {owner_label}: {column.key}")
+                column_keys.add(column.key)
+                resolved_columns.append(
+                    replace(
+                        column,
+                        body=tuple(
+                            self._interpolate_authored_prose_line(
+                                line,
+                                unit=unit,
+                                owner_label=f"{owner_label}.columns.{column.key}",
+                                surface_label="table column prose",
+                                ambiguous_label="table column interpolation ref",
+                                review_semantics=review_semantics,
+                            )
+                            for line in column.body
+                        ),
+                    )
+                )
+            if not resolved_columns:
+                raise CompileError(f"Readable table must declare at least one column in {owner_label}")
+            resolved_rows: list[model.ReadableTableRow] = []
+            row_keys: set[str] = set()
+            for row in block.payload.rows:
+                if row.key in row_keys:
+                    raise CompileError(f"Duplicate table row key in {owner_label}: {row.key}")
+                row_keys.add(row.key)
+                cell_keys: set[str] = set()
+                for cell in row.cells:
+                    if cell.key not in column_keys:
+                        raise CompileError(
+                            f"Table row references an unknown column in {owner_label}: {cell.key}"
+                        )
+                    if cell.key in cell_keys:
+                        raise CompileError(
+                            f"Duplicate table row cell in {owner_label}.{row.key}: {cell.key}"
+                        )
+                    cell_keys.add(cell.key)
+                resolved_rows.append(row)
+            resolved_notes = tuple(
+                self._interpolate_authored_prose_line(
+                    line,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label="table notes",
+                    ambiguous_label="table note interpolation ref",
+                    review_semantics=review_semantics,
+                )
+                for line in block.payload.notes
+            )
+            return CompiledTableBlock(
+                title=title,
+                table=model.ReadableTableData(
+                    columns=tuple(resolved_columns),
+                    rows=tuple(resolved_rows),
+                    notes=resolved_notes,
+                ),
+                requirement=block.requirement,
+                when_text=when_text,
+            )
+        if block.kind == "callout":
+            if not isinstance(block.payload, model.ReadableCalloutData):
+                raise CompileError(f"Readable callout payload must stay callout-shaped in {owner_label}")
+            if block.payload.kind is not None and block.payload.kind not in {
+                "required",
+                "important",
+                "warning",
+                "note",
+            }:
+                raise CompileError(f"Unknown callout kind in {owner_label}: {block.payload.kind}")
+            return CompiledCalloutBlock(
+                title=title,
+                kind=block.payload.kind,
+                body=tuple(
+                    self._interpolate_authored_prose_line(
+                        line,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label="callout prose",
+                        ambiguous_label="callout interpolation ref",
+                        review_semantics=review_semantics,
+                    )
+                    for line in block.payload.body
+                ),
+                requirement=block.requirement,
+                when_text=when_text,
+            )
+        if block.kind == "code":
+            if not isinstance(block.payload, model.ReadableCodeData):
+                raise CompileError(f"Readable code payload must stay code-shaped in {owner_label}")
+            if "\n" not in block.payload.text:
+                raise CompileError(f"Code block text must use a multiline string in {owner_label}")
+            return CompiledCodeBlock(
+                title=title,
+                text=block.payload.text,
+                language=block.payload.language,
+                requirement=block.requirement,
+                when_text=when_text,
+            )
+        if block.kind == "rule":
+            return CompiledRuleBlock(
+                requirement=block.requirement,
+                when_text=when_text,
+            )
+        raise CompileError(f"Unsupported readable block kind in {owner_label}: {block.kind}")
 
     def _compile_config_lines(
         self,
@@ -9002,7 +9407,14 @@ class CompilationContext:
                         kind=item.kind,
                         key=item.key,
                         title=item.title if item.title is not None else parent_item.title,
-                        items=item.items,
+                        payload=item.payload,
+                        requirement=(
+                            item.requirement
+                            if item.requirement is not None
+                            else parent_item.requirement
+                        ),
+                        when_expr=item.when_expr if item.when_expr is not None else parent_item.when_expr,
+                        legacy_section=parent_item.legacy_section,
                     ),
                     unit=unit,
                     owner_label=f"{owner_label}.{key}",
@@ -9059,19 +9471,283 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
     ) -> model.DocumentBlock:
-        return replace(
-            item,
-            items=tuple(
+        if item.when_expr is not None:
+            self._validate_readable_guard_expr(
+                item.when_expr,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        if item.kind == "section":
+            return replace(
+                item,
+                payload=tuple(
+                    self._interpolate_authored_prose_line(
+                        child,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label="document prose",
+                        ambiguous_label="document prose interpolation ref",
+                    )
+                    if isinstance(child, (str, model.EmphasizedLine))
+                    else self._resolve_document_block(
+                        child,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{child.key}",
+                    )
+                    for child in self._require_tuple_payload(
+                        item.payload,
+                        owner_label=owner_label,
+                        kind="section",
+                    )
+                ),
+            )
+        if item.kind in {"sequence", "bullets", "checklist"}:
+            resolved_items: list[model.ReadableListItem] = []
+            seen_keys: set[str] = set()
+            for list_item in self._require_tuple_payload(
+                item.payload,
+                owner_label=owner_label,
+                kind=item.kind,
+            ):
+                if not isinstance(list_item, model.ReadableListItem):
+                    raise CompileError(
+                        f"Readable {item.kind} items must stay list entries in {owner_label}"
+                    )
+                if list_item.key is not None:
+                    if list_item.key in seen_keys:
+                        raise CompileError(
+                            f"Duplicate {item.kind} item key in {owner_label}: {list_item.key}"
+                        )
+                    seen_keys.add(list_item.key)
+                resolved_items.append(
+                    replace(
+                        list_item,
+                        text=self._interpolate_authored_prose_line(
+                            list_item.text,
+                            unit=unit,
+                            owner_label=owner_label,
+                            surface_label=f"{item.kind} item prose",
+                            ambiguous_label=f"{item.kind} item interpolation ref",
+                        ),
+                    )
+                )
+            return replace(item, payload=tuple(resolved_items))
+        if item.kind == "definitions":
+            resolved_items: list[model.ReadableDefinitionItem] = []
+            seen_keys: set[str] = set()
+            for definition in self._require_tuple_payload(
+                item.payload,
+                owner_label=owner_label,
+                kind="definitions",
+            ):
+                if not isinstance(definition, model.ReadableDefinitionItem):
+                    raise CompileError(
+                        f"Readable definitions entries must stay definition items in {owner_label}"
+                    )
+                if definition.key in seen_keys:
+                    raise CompileError(
+                        f"Duplicate definitions item key in {owner_label}: {definition.key}"
+                    )
+                seen_keys.add(definition.key)
+                resolved_items.append(
+                    replace(
+                        definition,
+                        body=tuple(
+                            self._interpolate_authored_prose_line(
+                                line,
+                                unit=unit,
+                                owner_label=f"{owner_label}.{definition.key}",
+                                surface_label="definitions prose",
+                                ambiguous_label="definitions prose interpolation ref",
+                            )
+                            for line in definition.body
+                        ),
+                    )
+                )
+            return replace(item, payload=tuple(resolved_items))
+        if item.kind == "table":
+            if not isinstance(item.payload, model.ReadableTableData):
+                raise CompileError(f"Readable table payload must stay table-shaped in {owner_label}")
+            resolved_columns: list[model.ReadableTableColumn] = []
+            column_keys: set[str] = set()
+            for column in item.payload.columns:
+                if column.key in column_keys:
+                    raise CompileError(f"Duplicate table column key in {owner_label}: {column.key}")
+                column_keys.add(column.key)
+                resolved_columns.append(
+                    replace(
+                        column,
+                        body=tuple(
+                            self._interpolate_authored_prose_line(
+                                line,
+                                unit=unit,
+                                owner_label=f"{owner_label}.columns.{column.key}",
+                                surface_label="table column prose",
+                                ambiguous_label="table column interpolation ref",
+                            )
+                            for line in column.body
+                        ),
+                    )
+                )
+            if not resolved_columns:
+                raise CompileError(f"Readable table must declare at least one column in {owner_label}")
+            resolved_rows: list[model.ReadableTableRow] = []
+            row_keys: set[str] = set()
+            for row in item.payload.rows:
+                if row.key in row_keys:
+                    raise CompileError(f"Duplicate table row key in {owner_label}: {row.key}")
+                row_keys.add(row.key)
+                cell_keys: set[str] = set()
+                resolved_cells: list[model.ReadableTableCell] = []
+                for cell in row.cells:
+                    if cell.key not in column_keys:
+                        raise CompileError(
+                            f"Table row references an unknown column in {owner_label}: {cell.key}"
+                        )
+                    if cell.key in cell_keys:
+                        raise CompileError(
+                            f"Duplicate table row cell in {owner_label}.{row.key}: {cell.key}"
+                        )
+                    cell_keys.add(cell.key)
+                    resolved_cells.append(cell)
+                resolved_rows.append(replace(row, cells=tuple(resolved_cells)))
+            resolved_notes = tuple(
                 self._interpolate_authored_prose_line(
                     line,
                     unit=unit,
                     owner_label=owner_label,
-                    surface_label="document prose",
-                    ambiguous_label="document prose interpolation ref",
+                    surface_label="table notes",
+                    ambiguous_label="table note interpolation ref",
                 )
-                for line in item.items
+                for line in item.payload.notes
+            )
+            return replace(
+                item,
+                payload=model.ReadableTableData(
+                    columns=tuple(resolved_columns),
+                    rows=tuple(resolved_rows),
+                    notes=resolved_notes,
+                ),
+            )
+        if item.kind == "callout":
+            if not isinstance(item.payload, model.ReadableCalloutData):
+                raise CompileError(f"Readable callout payload must stay callout-shaped in {owner_label}")
+            if item.payload.kind is not None and item.payload.kind not in {
+                "required",
+                "important",
+                "warning",
+                "note",
+            }:
+                raise CompileError(f"Unknown callout kind in {owner_label}: {item.payload.kind}")
+            return replace(
+                item,
+                payload=model.ReadableCalloutData(
+                    kind=item.payload.kind,
+                    body=tuple(
+                        self._interpolate_authored_prose_line(
+                            line,
+                            unit=unit,
+                            owner_label=owner_label,
+                            surface_label="callout prose",
+                            ambiguous_label="callout interpolation ref",
+                        )
+                        for line in item.payload.body
+                    ),
+                ),
+            )
+        if item.kind == "code":
+            if not isinstance(item.payload, model.ReadableCodeData):
+                raise CompileError(f"Readable code payload must stay code-shaped in {owner_label}")
+            if "\n" not in item.payload.text:
+                raise CompileError(f"Code block text must use a multiline string in {owner_label}")
+            return item
+        if item.kind == "rule":
+            return item
+        return replace(
+            item,
+            payload=self._require_tuple_payload(
+                item.payload,
+                owner_label=owner_label,
+                kind=item.kind,
             ),
         )
+
+    def _require_tuple_payload(
+        self,
+        payload: model.ReadablePayload,
+        *,
+        owner_label: str,
+        kind: str,
+    ) -> tuple[object, ...]:
+        if not isinstance(payload, tuple):
+            raise CompileError(f"Readable {kind} payload must stay block-shaped in {owner_label}")
+        return payload
+
+    def _validate_readable_guard_expr(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
+    ) -> None:
+        if isinstance(expr, model.ExprRef):
+            if self._output_guard_ref_allowed(
+                expr,
+                unit=unit,
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
+            ):
+                return
+            raise CompileError(
+                f"Readable guard reads disallowed source in {owner_label}: {'.'.join(expr.parts)}"
+            )
+        if isinstance(expr, model.ExprBinary):
+            self._validate_readable_guard_expr(
+                expr.left,
+                unit=unit,
+                owner_label=owner_label,
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
+            )
+            self._validate_readable_guard_expr(
+                expr.right,
+                unit=unit,
+                owner_label=owner_label,
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
+            )
+            return
+        if isinstance(expr, model.ExprCall):
+            for arg in expr.args:
+                self._validate_readable_guard_expr(
+                    arg,
+                    unit=unit,
+                    owner_label=owner_label,
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
+                )
+            return
+        if isinstance(expr, model.ExprSet):
+            for item in expr.items:
+                self._validate_readable_guard_expr(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
+                )
+
+    def _readable_guard_text(
+        self,
+        expr: model.Expr | None,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        if expr is None:
+            return None
+        return self._render_condition_expr(expr, unit=unit)
 
     def _resolve_workflow_body(
         self,
@@ -9976,6 +10652,9 @@ class CompilationContext:
                     )
                 )
                 continue
+            if isinstance(item, model.ReadableBlock):
+                resolved.append(item)
+                continue
             if isinstance(item, model.SectionBodyRef):
                 resolved.append(
                     self._resolve_section_body_ref(item.ref, unit=unit, owner_label=owner_label)
@@ -10462,6 +11141,12 @@ class CompilationContext:
                 unit=node.unit,
                 root_decl=node.root_decl,
             )
+        if isinstance(target, model.DocumentBlock):
+            return self._readable_block_to_addressable_children(
+                target,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
         if isinstance(target, model.RecordScalar):
             if target.body is None:
                 return None
@@ -10538,7 +11223,25 @@ class CompilationContext:
                 unit=node.unit,
                 root_decl=node.root_decl,
             )
-        if isinstance(target, (ResolvedAnalysisSection, model.SchemaSection, model.SchemaGate, model.DocumentBlock)):
+        if isinstance(target, ReadableColumnsTarget):
+            return {
+                column.key: AddressableNode(
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                    target=column,
+                )
+                for column in target.columns
+            }
+        if isinstance(target, ReadableRowsTarget):
+            return {
+                row.key: AddressableNode(
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                    target=row,
+                )
+                for row in target.rows
+            }
+        if isinstance(target, (ResolvedAnalysisSection, model.SchemaSection, model.SchemaGate)):
             return None
         if isinstance(target, model.EnumDecl):
             return {
@@ -10560,7 +11263,15 @@ class CompilationContext:
     ) -> dict[str, AddressableNode]:
         children: dict[str, AddressableNode] = {}
         for item in items:
-            if isinstance(item, (model.RecordScalar, model.RecordSection, model.GuardedOutputSection)):
+            if isinstance(
+                item,
+                (
+                    model.RecordScalar,
+                    model.RecordSection,
+                    model.GuardedOutputSection,
+                    model.ReadableBlock,
+                ),
+            ):
                 children[item.key] = AddressableNode(
                     unit=unit,
                     root_decl=root_decl,
@@ -10662,6 +11373,63 @@ class CompilationContext:
             )
         return children
 
+    def _readable_block_to_addressable_children(
+        self,
+        block: model.DocumentBlock,
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode] | None:
+        if block.kind == "section":
+            payload = block.payload if isinstance(block.payload, tuple) else ()
+            children: dict[str, AddressableNode] = {}
+            for item in payload:
+                if isinstance(item, model.ReadableBlock):
+                    children[item.key] = AddressableNode(
+                        unit=unit,
+                        root_decl=root_decl,
+                        target=item,
+                    )
+            return children or None
+        if block.kind in {"sequence", "bullets", "checklist"}:
+            payload = block.payload if isinstance(block.payload, tuple) else ()
+            children: dict[str, AddressableNode] = {}
+            for item in payload:
+                if isinstance(item, model.ReadableListItem) and item.key is not None:
+                    children[item.key] = AddressableNode(
+                        unit=unit,
+                        root_decl=root_decl,
+                        target=item,
+                    )
+            return children or None
+        if block.kind == "definitions":
+            payload = block.payload if isinstance(block.payload, tuple) else ()
+            children: dict[str, AddressableNode] = {}
+            for item in payload:
+                if isinstance(item, model.ReadableDefinitionItem):
+                    children[item.key] = AddressableNode(
+                        unit=unit,
+                        root_decl=root_decl,
+                        target=item,
+                    )
+            return children or None
+        if block.kind == "table" and isinstance(block.payload, model.ReadableTableData):
+            children: dict[str, AddressableNode] = {}
+            if block.payload.columns:
+                children["columns"] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=ReadableColumnsTarget(columns=block.payload.columns),
+                )
+            if block.payload.rows:
+                children["rows"] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=ReadableRowsTarget(rows=block.payload.rows),
+                )
+            return children or None
+        return None
+
     def _display_addressable_target_value(
         self,
         node: AddressableNode,
@@ -10757,7 +11525,23 @@ class CompilationContext:
         if isinstance(target, model.SchemaGate):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentBlock):
+            return DisplayValue(
+                text=(target.title or _humanize_key(target.key)),
+                kind="title",
+            )
+        if isinstance(target, model.ReadableListItem):
+            text = target.text.text if isinstance(target.text, model.EmphasizedLine) else target.text
+            return DisplayValue(text=text, kind="symbol")
+        if isinstance(target, model.ReadableDefinitionItem):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.ReadableTableColumn):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.ReadableTableRow):
+            return DisplayValue(text=_humanize_key(target.key), kind="title")
+        if isinstance(target, ReadableColumnsTarget):
+            return DisplayValue(text="Columns", kind="title")
+        if isinstance(target, ReadableRowsTarget):
+            return DisplayValue(text="Rows", kind="title")
         raise CompileError(
             f"Internal compiler error: unsupported addressable target {type(target).__name__}"
         )
@@ -10771,6 +11555,8 @@ class CompilationContext:
     ) -> str | None:
         target = node.target
         if isinstance(target, model.Agent):
+            return None
+        if isinstance(target, model.ReadableListItem):
             return None
         if isinstance(target, model.RecordScalar):
             return self._display_record_scalar_title(
@@ -10924,7 +11710,11 @@ class CompilationContext:
                 body.append(
                     CompiledSection(
                         title=item.title,
-                        body=self._compile_section_body(item.items),
+                        body=self._compile_section_body(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{item.key}",
+                        ),
                     )
                 )
                 continue
@@ -12628,6 +13418,9 @@ class CompilationContext:
     def _compile_section_body(
         self,
         items: tuple[ResolvedSectionBodyItem, ...],
+        *,
+        unit: IndexedUnit | None = None,
+        owner_label: str | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
         previous_kind: str | None = None
@@ -12644,7 +13437,35 @@ class CompilationContext:
                 body.append(
                     CompiledSection(
                         title=item.title,
-                        body=self._compile_section_body(item.items),
+                        body=self._compile_section_body(
+                            item.items,
+                            unit=unit,
+                            owner_label=(
+                                f"{owner_label}.{item.key}" if owner_label is not None else None
+                            ),
+                        ),
+                    )
+                )
+            elif isinstance(item, model.ReadableBlock):
+                if unit is None or owner_label is None:
+                    raise CompileError(
+                        "Internal compiler error: workflow readable block compilation requires unit and owner label"
+                    )
+                body.append(
+                    self._compile_authored_readable_block(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        surface_label="workflow section bodies",
+                        section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
+                            self._resolve_section_body_items(
+                                payload,
+                                unit=unit,
+                                owner_label=nested_owner_label,
+                            ),
+                            unit=unit,
+                            owner_label=nested_owner_label,
+                        ),
                     )
                 )
             elif isinstance(item, ResolvedRouteLine):

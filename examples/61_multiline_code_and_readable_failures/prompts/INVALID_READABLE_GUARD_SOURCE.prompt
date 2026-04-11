@@ -1,0 +1,16 @@
+output BrokenComment: "Broken Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    callout scope: "Scope" when BrokenComment.summary_present
+        kind: note
+        "This should fail."
+
+
+agent InvalidReadableGuardDemo:
+    role: "Compile the broken comment."
+    workflow: "Warn"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenComment

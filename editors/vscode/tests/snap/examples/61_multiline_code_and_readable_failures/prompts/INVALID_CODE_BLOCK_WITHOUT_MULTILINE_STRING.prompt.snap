@@ -1,0 +1,92 @@
+>output BrokenGuide: "Broken Guide"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "release_root/BROKEN_GUIDE.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    code example_manifest: "Example Manifest"
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.control.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                            ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>        language: json
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        text: "not multiline"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>agent InvalidCodeBlockDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Compile the broken guide."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Draft"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "This should fail."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        BrokenGuide
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

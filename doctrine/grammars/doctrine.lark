@@ -259,22 +259,97 @@ schema_block_key: "sections" -> schema_block_key_sections
 
 document_body: document_body_line+
 document_body_line: document_string
-                  | document_block
+                  | document_readable_block
                   | document_inherit
                   | document_override_block
 document_string: prose_line _NL?
-document_block: document_block_kind CNAME ":" string _NL _INDENT block_lines _DEDENT
+document_readable_block: document_section_sugar
+                       | document_section_block
+                       | readable_nonsection_block
+document_section_sugar: CNAME ":" string _NL _INDENT document_section_body _DEDENT
 document_inherit: "inherit" CNAME _NL?
-document_override_block: "override" document_block_kind CNAME ":" string? _NL _INDENT block_lines _DEDENT
-document_block_kind: "section" -> document_block_kind_section
-                   | "sequence" -> document_block_kind_sequence
-                   | "bullets" -> document_block_kind_bullets
-                   | "checklist" -> document_block_kind_checklist
-                   | "definitions" -> document_block_kind_definitions
-                   | "table" -> document_block_kind_table
-                   | "callout" -> document_block_kind_callout
-                   | "code" -> document_block_kind_code
-                   | "rule" -> document_block_kind_rule
+document_override_block: document_override_section_block
+                       | override_readable_nonsection_block
+
+document_section_body: document_section_item+
+?document_section_item: prose_line _NL?
+                      | document_readable_block
+
+document_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
+document_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
+
+readable_nonsection_block: readable_sequence_block
+                         | readable_bullets_block
+                         | readable_checklist_block
+                         | readable_definitions_block
+                         | readable_table_block
+                         | readable_callout_block
+                         | readable_code_block
+                         | readable_rule_block
+override_readable_nonsection_block: override_readable_sequence_block
+                                  | override_readable_bullets_block
+                                  | override_readable_checklist_block
+                                  | override_readable_definitions_block
+                                  | override_readable_table_block
+                                  | override_readable_callout_block
+                                  | override_readable_code_block
+                                  | override_readable_rule_block
+
+readable_sequence_block: "sequence" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_bullets_block: "bullets" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_checklist_block: "checklist" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_definitions_block: "definitions" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
+readable_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+readable_callout_block: "callout" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
+readable_code_block: "code" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
+readable_rule_block: "rule" CNAME readable_requirement? readable_guard? _NL?
+
+override_readable_sequence_block: "override" "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+override_readable_bullets_block: "override" "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+override_readable_checklist_block: "override" "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+override_readable_definitions_block: "override" "definitions" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
+override_readable_table_block: "override" "table" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+override_readable_callout_block: "override" "callout" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
+override_readable_code_block: "override" "code" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
+override_readable_rule_block: "override" "rule" CNAME readable_requirement? readable_guard? _NL?
+
+readable_list_body: readable_list_item+
+?readable_list_item: prose_line _NL?
+                   | readable_list_keyed_item
+readable_list_keyed_item: CNAME ":" string _NL?
+
+readable_definitions_body: readable_definition_item+
+readable_definition_item: CNAME ":" string _NL readable_definition_item_body?
+readable_definition_item_body: _INDENT block_lines _DEDENT
+
+readable_table_body: readable_table_body_line+
+?readable_table_body_line: readable_table_columns_block
+                         | readable_table_rows_block
+                         | readable_table_notes_block
+readable_table_columns_block: "columns" ":" _NL _INDENT readable_table_column+ _DEDENT
+readable_table_column: CNAME ":" string _NL readable_table_column_body?
+readable_table_column_body: _INDENT block_lines _DEDENT
+readable_table_rows_block: "rows" ":" _NL _INDENT readable_table_row+ _DEDENT
+readable_table_row: CNAME ":" _NL _INDENT readable_table_cell+ _DEDENT
+readable_table_cell: CNAME ":" string _NL?
+readable_table_notes_block: "notes" ":" _NL _INDENT readable_table_note+ _DEDENT
+readable_table_note: prose_line _NL?
+
+readable_callout_body: readable_callout_body_line+
+?readable_callout_body_line: readable_callout_kind
+                           | prose_line _NL?
+readable_callout_kind: "kind" ":" CNAME _NL?
+
+readable_code_body: readable_code_body_line+
+?readable_code_body_line: readable_code_language
+                        | readable_code_text
+readable_code_language: "language" ":" CNAME _NL?
+readable_code_text: "text" ":" string _NL?
+
+readable_requirement: "required" -> readable_requirement_required
+                    | "advisory" -> readable_requirement_advisory
+                    | "optional" -> readable_requirement_optional
+readable_guard: "when" expr
 
 workflow_body: workflow_body_line+
 
@@ -307,9 +382,14 @@ workflow_section_body: workflow_section_item+
 ?workflow_section_item: prose_line _NL?
                       | route_stmt
                       | local_section
+                      | workflow_readable_block
                       | workflow_section_ref_item
 workflow_section_ref_item: path_ref _NL?
                          | name_ref _NL?
+
+workflow_readable_block: workflow_section_block
+                       | readable_nonsection_block
+workflow_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT workflow_section_body _DEDENT
 
 skills_body: skills_body_line+
 
@@ -368,6 +448,7 @@ output_structure_stmt: "structure" ":" name_ref _NL?
 
 ?output_record_item: record_text
                    | guarded_output_section
+                   | output_readable_block
                    | output_record_keyed_item
                    | output_record_ref_item
 
@@ -383,8 +464,17 @@ trust_surface_when: "when" expr
 
 record_body: record_item+
 ?record_item: record_text
+            | record_readable_block
             | record_keyed_item
             | record_ref_item
+
+record_readable_block: record_section_block
+                     | readable_nonsection_block
+record_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT record_body _DEDENT
+
+output_readable_block: output_section_block
+                     | readable_nonsection_block
+output_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
 
 record_text: prose_line _NL?
 record_keyed_item: CNAME ":" record_head _NL record_item_body?
@@ -515,8 +605,8 @@ emphasized_line: REQUIRED_KEYWORD string -> required_line
                | WARNING_KEYWORD string -> warning_line
                | NOTE_KEYWORD string -> note_line
 
-?string: ESCAPED_STRING
-       | MULTILINE_STRING
+?string: MULTILINE_STRING
+       | ESCAPED_STRING
 
 REQUIRED_KEYWORD.2: /required(?=[ \t]*")/
 IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
@@ -524,7 +614,7 @@ WARNING_KEYWORD.2: /warning(?=[ \t]*")/
 NOTE_KEYWORD.2: /note(?=[ \t]*")/
 PATH_REF: /[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
 LAW_WILDCARD: ".*"
-MULTILINE_STRING: /""".*?"""/s
+MULTILINE_STRING.2: /""".*?"""/s
 
 DOTS: /\.+/
 

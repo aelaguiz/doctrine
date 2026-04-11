@@ -1,0 +1,49 @@
+# This example shows document inheritance plus descendant refs on keyed items.
+
+document LessonPlan: "Lesson Plan"
+    section overview: "Overview"
+        "Start with the current lesson goal."
+
+    sequence read_order: "Read Order" required
+        first: "Read the brief."
+        second: "Read the current lesson plan."
+
+    table step_arc: "Step Arc" required
+        columns:
+            step: "Step"
+                "Step identifier."
+
+            coaching_level: "Coaching Level"
+                "How much help the step gives."
+
+        rows:
+            step_1:
+                step: "1"
+                coaching_level: "High"
+
+
+document AdaptedLessonPlan[LessonPlan]: "Adapted Lesson Plan"
+    inherit overview
+
+    override sequence read_order: "Read Order" advisory
+        first: "Read the learner goal."
+        second: "Read the current lesson plan."
+        third: "Read the prior feedback."
+
+    inherit step_arc
+
+
+output AdaptedLessonPlanFile: "Adapted Lesson Plan File"
+    target: File
+        path: "lesson_root/ADAPTED_LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: AdaptedLessonPlan
+    requirement: Required
+
+
+agent AdaptedLessonPlanDemo:
+    role: "Keep {{AdaptedLessonPlan:read_order.first}}, {{AdaptedLessonPlan:step_arc.columns.coaching_level.title}}, and {{AdaptedLessonPlan:step_arc.rows.step_1}} aligned in {{AdaptedLessonPlan:title}}."
+    workflow: "Adapt"
+        "Write the adapted lesson plan using the inherited document."
+    outputs: "Outputs"
+        AdaptedLessonPlanFile

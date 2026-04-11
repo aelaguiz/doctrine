@@ -1,0 +1,113 @@
+># This example shows multiline readable `code` blocks on ordinary output bodies.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>output ManifestGuide: "Manifest Guide"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                     ^ source.doctrine
+#                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                       ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                     ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "release_root/MANIFEST_GUIDE.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    code example_manifest: "Example Manifest" advisory
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.control.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                            ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                             ^ source.doctrine
+#                                              ^^^^^^^^ source.doctrine keyword.control.doctrine
+>        language: json
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        text: """
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^ source.doctrine punctuation.definition.string.begin.doctrine
+>{
+#^^ source.doctrine string.quoted.multi.doctrine
+>  "title": "PLACEHOLDER: Release title",
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.multi.doctrine
+>  "steps": []
+#^^^^^^^^^^^^^^ source.doctrine string.quoted.multi.doctrine
+>}
+#^^ source.doctrine string.quoted.multi.doctrine
+>"""
+#^^^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent ManifestGuideDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Reuse {{ManifestGuide:example_manifest.title}} when you draft the manifest guide."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^ source.doctrine string.quoted.double.doctrine
+#                 ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                   ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                ^ source.doctrine string.quoted.double.doctrine punctuation.separator.interpolation.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine variable.other.member.doctrine
+#                                                       ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Draft"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Write the guide and keep the example manifest in sync."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        ManifestGuide
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

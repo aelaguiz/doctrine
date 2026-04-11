@@ -74,6 +74,17 @@ same cutover.
 5. Bring `editors/vscode/` to full parity with the shipped language and verify
    the full repo with the project-owned commands.
 
+## Historical Note
+
+This umbrella plan is retained as implementation history for the broader
+integration wave. Do not read its baseline problem statements as current repo
+reality for readable markdown or typed `structure:` attachments.
+
+Readable markdown, typed `structure:` attachments, their example proof, and
+editor/docs convergence now ship through
+`docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and the
+evergreen docs it updated.
+
 ## Non-negotiables
 
 - No narrowing below the intended `INTEGRATION_SURFACES_SPEC.md` end state.
@@ -89,41 +100,16 @@ same cutover.
   and editor cannot support honestly.
 
 <!-- arch_skill:block:implementation_audit:start -->
-# Implementation Audit (authoritative)
+# Historical Audit Snapshot (superseded)
 Date: 2026-04-11
-Verdict (code): COMPLETE
-Manual QA: pending (non-blocking)
 
-## Code blockers (why code is not done)
-- None. Fresh repo-owned verification is green and the plan's implementation
-  obligations are satisfied in code, examples, evergreen docs, and the VS Code
-  extension.
+This umbrella doc is retained as historical planning context. Its old audit
+snapshot is not the current authority for readable-markdown completion or
+editor parity.
 
-## Reopened phases (false-complete fixes)
-- None. The fresh audit found no missing code work that requires reopening a
-  completed phase.
-
-## Missing items (code gaps; evidence-anchored; no tables)
-- None. Fresh audit evidence:
-  - `doctrine/grammars/doctrine.lark:89`
-  - `doctrine/grammars/doctrine.lark:248`
-  - `doctrine/model.py:857`
-  - `doctrine/compiler.py:3403`
-  - `doctrine/compiler.py:3962`
-  - `docs/README.md:40`
-  - `docs/REVIEW_SPEC.md:43`
-  - `examples/README.md:103`
-  - `editors/vscode/resolver.js:799`
-  - `editors/vscode/tests/integration/suite/index.js:634`
-  - `make verify-examples` — PASS on 2026-04-11
-  - `cd editors/vscode && make` — PASS on 2026-04-11
-
-## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- Use `$arch-docs` for broader docs consolidation, evergreen cleanup, and final
-  plan/worklog retirement now that the code verdict is clean.
-- Optional live-editor smoke check: open the post-53 ladder and confirm
-  highlighting plus Ctrl/Cmd-click on `analysis:`, owner-aware `schema:`,
-  `structure:`, and schema-backed `contract:`.
+Current authoritative audit state for readable markdown lives in
+`docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`. Do not
+treat prior pass/fail notes here as current repo truth.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -301,7 +287,7 @@ Behavior-preservation evidence:
 
 # 2) Problem Statement (existing architecture + why change)
 
-## 2.1 What exists today
+## 2.1 Historical baseline when this umbrella plan was opened
 
 - Doctrine ships strong workflow-law, review, output, and `trust_surface`
   semantics with manifest-backed examples through `53_review_bound_carrier_roots`.
@@ -316,15 +302,17 @@ Behavior-preservation evidence:
 
 ## 2.2 What’s broken / missing (concrete)
 
-- The intended typed output and readable-output integration seams are not yet
-  shipped end to end.
-- Review contracts remain workflow-only even though the integration spec intends
-  schema-backed review coupling.
-- Some second-wave declarations exist in parser/indexing form without the
-  richer companion-spec shapes or full readable/rendered/addressable support.
-- Examples and evergreen docs do not yet provide one shipped, fully integrated
-  story for these surfaces.
-- VS Code parity for the intended integrated surfaces is incomplete.
+- At plan open, the intended typed output and readable-output integration seams
+  were not yet shipped end to end.
+- At plan open, review contracts remained workflow-only even though the
+  integration spec intended schema-backed review coupling.
+- At plan open, some second-wave declarations existed in parser/indexing form
+  without the richer companion-spec shapes or full
+  readable/rendered/addressable support.
+- At plan open, examples and evergreen docs did not yet provide one shipped,
+  fully integrated story for these surfaces.
+- At plan open, VS Code parity for the intended integrated surfaces was
+  incomplete.
 
 ## 2.3 Constraints implied by the problem
 
@@ -348,22 +336,23 @@ Behavior-preservation evidence:
   Doctrine's intended second-wave surfaces onto Doctrine's existing owners
   rather than cargo-culting another system.
 
-## 3.2 Internal ground truth (code as spec)
+## 3.2 Historical internal baseline at plan open (code as spec)
 
 - Authoritative behavior anchors (do not reinvent):
-  - `doctrine/grammars/doctrine.lark` - declares top-level `analysis`,
-    `schema`, and `document`, but agent reserved fields remain `role`,
-    `inputs`, `outputs`, `skills`, and `review`; `output_body` still only knows
-    generic record items plus `trust_surface`; review `contract:` is still a
-    `workflow_ref`.
-  - `doctrine/parser.py` - parses the second-wave declarations into placeholder
-    bodies and only splits `trust_surface` out of `output`; there is no typed
-    `analysis:` agent field or typed `schema:` / `structure:` attachment parse
-    path today.
-  - `doctrine/model.py` - stores `AnalysisDecl`, `SchemaDecl`, and
-    `DocumentDecl`, but those bodies are still generic keyed-item containers;
-    `InputDecl` and `OutputDecl` do not yet have dedicated attachment slots.
-  - `doctrine/compiler.py` - indexes second-wave declarations through
+  - `doctrine/grammars/doctrine.lark` - at plan open, it declared top-level
+    `analysis`, `schema`, and `document`, but agent reserved fields remained
+    `role`, `inputs`, `outputs`, `skills`, and `review`; `output_body` still
+    only knew generic record items plus `trust_surface`; review `contract:` was
+    still a `workflow_ref`.
+  - `doctrine/parser.py` - at plan open, it parsed the second-wave
+    declarations into placeholder bodies and only split `trust_surface` out of
+    `output`; there was no typed `analysis:` agent field or typed `schema:` /
+    `structure:` attachment parse path yet.
+  - `doctrine/model.py` - at plan open, it stored `AnalysisDecl`,
+    `SchemaDecl`, and `DocumentDecl`, but those bodies were still generic
+    keyed-item containers; `InputDecl` and `OutputDecl` did not yet have
+    dedicated attachment slots.
+  - `doctrine/compiler.py` - at plan open, it indexed second-wave declarations through
     `_READABLE_DECL_REGISTRIES` and `_ADDRESSABLE_ROOT_REGISTRIES`, compiles the
     shipped I/O and review surfaces, but `_compile_output_decl()` still treats
     second-wave attachment candidates as generic extras, `_resolve_review_contract_spec()`
@@ -432,9 +421,9 @@ Behavior-preservation evidence:
     `output shape.schema` as a `json schema` attachment, so introducing
     `output.schema` as a Doctrine `schema` attachment requires explicit
     context-sensitive resolution rather than a global `schema` rewrite.
-  - `editors/vscode/resolver.js` - globally maps keyed `schema:` refs to
-    `json schema` today, which will drift immediately unless owner-aware
-    resolution replaces it.
+  - `editors/vscode/resolver.js` - at plan open, it globally mapped keyed
+    `schema:` refs to `json schema`, which would drift immediately unless
+    owner-aware resolution replaced it.
 - Capability-first opportunities before new tooling:
   - Extend the existing readable-declaration lookup and addressable-node graph
     instead of adding a second ref resolver.
