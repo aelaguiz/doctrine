@@ -160,7 +160,7 @@ Stability rules:
 | `E494` | compile | Concrete agent may not attach abstract review directly | A concrete agent pointed `review:` at an `abstract review`. |
 | `E495` | compile | Review verdict does not match the bound output field | The bound verdict field is not guaranteed to receive the resolved semantic verdict. |
 | `E496` | compile | Review next owner does not match the bound output field | The bound `next_owner` field does not stay aligned with the resolved routed owner. |
-| `E497` | compile | Review currentness does not match the declared carrier field | The declared currentness carrier field is not guaranteed to reflect the resolved review currentness. |
+| `E497` | compile | Review currentness does not match the declared carrier field | The declared currentness carrier field is not guaranteed to reflect the resolved review currentness, including branches that resolve `current none`. |
 | `E498` | compile | Required carried review field is omitted when semantic value exists | A carried semantic field can be live on a branch without the bound output field also being live. |
 | `E499` | compile | Required conditional review output section is missing after its guard resolves true | A review-bound conditional output field or section does not stay aligned with the resolved review semantics. |
 

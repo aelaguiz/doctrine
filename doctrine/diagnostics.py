@@ -1680,6 +1680,18 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
+            r"^Review current artifact carrier field stays live without semantic currentness in (?P<owner>.+): (?P<path>.+)$"
+        ),
+        "E497",
+        "Review currentness does not match the declared carrier field",
+        lambda match: (
+            f"Carrier field `{match.group('path')}` stays live even though the review resolves "
+            f"`current none` in {match.group('owner')}."
+        ),
+        (),
+    ),
+    (
+        re.compile(
             r"^Review carried field is not live when semantic value exists in (?P<owner>.+): (?P<field>.+) -> (?P<path>.+)$"
         ),
         "E498",

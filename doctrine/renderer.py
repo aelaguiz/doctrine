@@ -64,8 +64,12 @@ def render_markdown(agent: CompiledAgent) -> str:
         if isinstance(field, RoleScalar):
             sections.append(field.text)
             continue
-        sections.append(_render_block(field, depth=2, profile=_DEFAULT_PROFILE))
+        sections.append(render_readable_block(field, depth=2))
     return "\n\n".join(section for section in sections if section) + "\n"
+
+
+def render_readable_block(block: CompiledReadableBlock, *, depth: int = 2) -> str:
+    return _render_block(block, depth=depth, profile=_DEFAULT_PROFILE)
 
 
 def _render_block(

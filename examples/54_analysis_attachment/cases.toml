@@ -46,3 +46,54 @@ message_contains = [
   "analysis declaration",
   "MissingAnalysis",
 ]
+
+[[cases]]
+name = "analysis compare using and multi-basis prose render naturally"
+status = "active"
+kind = "render_contract"
+agent = "ReleaseComparisonAnalysisDemo"
+assertion = "exact_lines"
+approx_ref = "ref/release_comparison_analysis_demo/AGENTS.md"
+expected_lines = [
+  "Follow Stages from Release Comparison Analysis.",
+  "",
+  "## Ship",
+  "",
+  "Use the attached comparison analysis before you finalize the release plan.",
+  "",
+  "## Release Comparison Analysis",
+  "",
+  "### Stages",
+  "",
+  "Derive Release plan from Current Plan and Prior Plan.",
+  "Compare Coverage against Current Plan and Prior Plan. Use Same Route and Similar Burden as the comparison basis.",
+  "Defend Recommendation using Current Plan and Prior Plan.",
+  "",
+  "## Inputs",
+  "",
+  "### Current Plan",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/CURRENT_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Prior Plan",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/PRIOR_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "analysis field is rejected inside authored slot override bodies"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_ANALYSIS_IN_OVERRIDE_SLOT.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected token",
+  "ReleaseAnalysis",
+]

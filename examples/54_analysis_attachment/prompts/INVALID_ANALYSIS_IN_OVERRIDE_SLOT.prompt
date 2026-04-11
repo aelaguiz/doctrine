@@ -1,0 +1,20 @@
+analysis ReleaseAnalysis: "Release Analysis"
+    stages: "Stages"
+        compare "Coverage" against {CurrentPlan}
+
+
+input CurrentPlan: "Current Plan"
+    source: File
+        path: "unit_root/CURRENT_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+abstract agent BaseRole:
+    abstract handoff
+
+
+agent InvalidAnalysisPlacement[BaseRole]:
+    role: "This should fail because `analysis:` is only legal on concrete agents."
+    override handoff: "Handoff"
+        analysis: ReleaseAnalysis

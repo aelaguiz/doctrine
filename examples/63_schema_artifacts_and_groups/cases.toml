@@ -33,6 +33,45 @@ expected_lines = [
 ]
 
 [[cases]]
+name = "standalone schema render includes gates artifacts and groups"
+status = "active"
+kind = "render_declaration"
+declaration_kind = "schema"
+declaration_name = "BuildSurfaceSchema"
+assertion = "exact_lines"
+approx_ref = "ref/build_surface_schema/SCHEMA.md"
+expected_lines = [
+  "## Build Surface Schema",
+  "",
+  "### Required Sections",
+  "",
+  "#### Summary",
+  "",
+  "Summarize the shipped surface.",
+  "",
+  "### Contract Gates",
+  "",
+  "#### Evidence Grounded",
+  "",
+  "Confirm the evidence is cited.",
+  "",
+  "### Artifact Inventory",
+  "",
+  "_unordered list_",
+  "",
+  "- Outline File",
+  "- Review Comment",
+  "- Manifest File",
+  "",
+  "### Surface Groups",
+  "",
+  "- Downstream Rebuild",
+  "  - Outline File",
+  "  - Review Comment",
+  "  - Manifest File",
+]
+
+[[cases]]
 name = "schema artifact refs must resolve to concrete input or output roots"
 status = "active"
 kind = "compile_fail"

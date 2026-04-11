@@ -235,3 +235,29 @@ message_contains = [
   "Output guard reads disallowed source",
   "BrokenCapstoneReviewComment.next_owner",
 ]
+
+[[cases]]
+name = "review capstone keeps carried active mode guarded when some outcomes omit it"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNGUARDED_ACTIVE_MODE.prompt"
+agent = "InvalidUnguardedActiveModeDemo"
+exception_type = "CompileError"
+error_code = "E499"
+message_contains = [
+  "active_mode",
+  "CarryModeReviewComment.active_mode",
+]
+
+[[cases]]
+name = "review capstone keeps blocked_gate guarded when some reject branches do not block"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNGUARDED_BLOCKED_GATE.prompt"
+agent = "InvalidUnguardedBlockedGateDemo"
+exception_type = "CompileError"
+error_code = "E499"
+message_contains = [
+  "blocked_gate",
+  "BlockedGateReviewComment.failure_detail.blocked_gate",
+]

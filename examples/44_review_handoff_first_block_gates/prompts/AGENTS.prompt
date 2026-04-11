@@ -63,7 +63,7 @@ output HandoffReviewComment: "Handoff Review Comment"
 
     # This guarded block appears only when the verdict requests changes.
     failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
-        blocked_gate: "Blocked Gate"
+        blocked_gate: "Blocked Gate" when present(blocked_gate):
             "Name the first blocking gate when the review stopped before content review started."
 
         failing_gates: "Failing Gates"
