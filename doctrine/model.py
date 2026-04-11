@@ -583,6 +583,20 @@ class SchemaGate:
 
 
 @dataclass(slots=True, frozen=True)
+class SchemaArtifact:
+    key: str
+    title: str
+    ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaGroup:
+    key: str
+    title: str
+    members: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
 class SchemaSectionsBlock:
     items: tuple[SchemaSection, ...]
 
@@ -590,6 +604,16 @@ class SchemaSectionsBlock:
 @dataclass(slots=True, frozen=True)
 class SchemaGatesBlock:
     items: tuple[SchemaGate, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaArtifactsBlock:
+    items: tuple[SchemaArtifact, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaGroupsBlock:
+    items: tuple[SchemaGroup, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -602,12 +626,26 @@ class SchemaOverrideGatesBlock:
     items: tuple[SchemaGate, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class SchemaOverrideArtifactsBlock:
+    items: tuple[SchemaArtifact, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaOverrideGroupsBlock:
+    items: tuple[SchemaGroup, ...]
+
+
 SchemaItem: TypeAlias = (
     SchemaSectionsBlock
     | SchemaGatesBlock
+    | SchemaArtifactsBlock
+    | SchemaGroupsBlock
     | InheritItem
     | SchemaOverrideSectionsBlock
     | SchemaOverrideGatesBlock
+    | SchemaOverrideArtifactsBlock
+    | SchemaOverrideGroupsBlock
 )
 
 

@@ -103,12 +103,16 @@ const ANALYSIS_OVERRIDE_SECTION_RE = new RegExp(
 const ANALYSIS_CLASSIFY_RE = new RegExp(
   `^\\s*classify\\s+${STRING_PATTERN}\\s+as\\s+(${DOTTED_NAME_PATTERN})\\s*$`,
 );
-const SCHEMA_BLOCK_FIELD_RE = /^\s*(sections|gates)\s*:\s*$/;
-const SCHEMA_INHERIT_BLOCK_RE = /^\s*inherit\s+(sections|gates)\s*$/;
-const SCHEMA_OVERRIDE_BLOCK_RE = /^\s*override\s+(sections|gates)\s*:\s*$/;
+const SCHEMA_BLOCK_FIELD_RE = /^\s*(sections|gates|artifacts|groups)\s*:\s*$/;
+const SCHEMA_INHERIT_BLOCK_RE = /^\s*inherit\s+(sections|gates|artifacts|groups)\s*$/;
+const SCHEMA_OVERRIDE_BLOCK_RE = /^\s*override\s+(sections|gates|artifacts|groups)\s*:\s*$/;
 const SCHEMA_ITEM_RE = new RegExp(
-  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${STRING_PATTERN})\\s*$`,
 );
+const SCHEMA_ARTIFACT_REF_RE = new RegExp(
+  `^\\s*ref\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+);
+const SCHEMA_GROUP_MEMBER_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*$`);
 const DOCUMENT_BLOCK_RE = new RegExp(
   `^\\s*(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}(?:\\s+.+)?\\s*$`,
 );
@@ -867,6 +871,22 @@ function collectSchemaBodySites(lineText, lineNumber) {
   const schemaItem = lineText.match(SCHEMA_ITEM_RE);
   if (schemaItem) {
     sites.push(createStructuralSite(lineText, lineNumber, schemaItem[1]));
+    return sites;
+  }
+
+  const artifactRef = lineText.match(SCHEMA_ARTIFACT_REF_RE);
+  if (artifactRef) {
+    sites.push({
+      type: "readableDeclRef",
+      range: createLastMatchRange(lineText, lineNumber, artifactRef[1]),
+      ref: parseNameRef(artifactRef[1]),
+    });
+    return sites;
+  }
+
+  const groupMember = lineText.match(SCHEMA_GROUP_MEMBER_RE);
+  if (groupMember) {
+    sites.push(createStructuralSite(lineText, lineNumber, groupMember[1]));
   }
 
   return sites;
@@ -4454,6 +4474,7 @@ function getSchemaBlockItems(document, lineNumber, endLine) {
       key: schemaItem[1],
       keyRange: createFirstMatchRange(lineText, childLineNumber, schemaItem[1]),
       lineNumber: childLineNumber,
+      titleRange: createLastMatchRange(lineText, childLineNumber, schemaItem[2]),
     });
   }
 
@@ -4495,11 +4516,20 @@ function getSchemaBodyItems(document, bodySpec) {
       items.set(blockKey, {
         keyRange: createFirstMatchRange(lineText, lineNumber, blockKey),
         lineNumber,
+        bodySpec: {
+          type: "schema_block_body",
+          blockKey,
+          indent: leadingSpaces(lineText),
+          lineNumber,
+          endLine: blockEndLine,
+        },
       });
       for (const item of getSchemaBlockItems(document, lineNumber, blockEndLine)) {
         items.set(item.key, {
           keyRange: item.keyRange,
           lineNumber: item.lineNumber,
+          titleRange: item.titleRange,
+          nestedOnly: true,
         });
       }
       continue;
@@ -4852,6 +4882,13 @@ function getAddressableBodyItems(document, bodySpec) {
       return getAnalysisBodyItems(document, bodySpec);
     case "schema_body":
       return getSchemaBodyItems(document, bodySpec);
+    case "schema_block_body":
+      return new Map(
+        getSchemaBlockItems(document, bodySpec.lineNumber, bodySpec.endLine).map((item) => [
+          item.key,
+          item,
+        ]),
+      );
     case "document_body":
       return getDocumentBodyItems(document, bodySpec);
     case "readable_section_body":
@@ -4918,7 +4955,7 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
 
     const items = getAddressableBodyItems(currentSource.document, currentBody);
     const target = items.get(segment);
-    if (!target) {
+    if (!target || (currentBody.type === "schema_body" && target.nestedOnly)) {
       return undefined;
     }
     currentTarget = target;

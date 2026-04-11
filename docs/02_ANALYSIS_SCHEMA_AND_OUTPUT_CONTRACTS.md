@@ -21,6 +21,13 @@ The phase leaves review/control-plane consumers for later, but it ships the
 declarations, diagnostics, output contract semantics, artifact inventories, and
 reusable surface groups those later integrations depend on.
 
+> Status note (2026-04-11): The Phase 2 core described here now ships in
+> `doctrine/` and the active corpus, including first-class schema
+> `artifacts:` / `groups:` in
+> `examples/63_schema_artifacts_and_groups`. Later schema-backed review
+> consumers now ship separately, but the boundary below still records what
+> Phase 2 itself owned.
+
 ## Assumed Shipped Baseline
 
 This phase assumes phase 1 is available:
@@ -380,34 +387,22 @@ Primary implementation files:
 
 ## Diagnostics And Invariants
 
-Reserved phase-2 ranges:
+Shipped diagnostics now follow [COMPILER_ERRORS.md](COMPILER_ERRORS.md), not the
+older reserved-range sketch that originally lived in this phase doc.
 
-- `E501-E519` for `analysis`
-- `E520-E539` for `schema`
+Current shipped behavior for this phase includes:
 
-Minimum `analysis` diagnostics:
+- `E199` parse failures for structural authoring conflicts such as `output`
+  declaring both Doctrine `schema:` and local `must_include:`
+- existing addressability codes such as `E273`, `E274`, and `E276` when schema
+  paths or refs miss on already-coded surfaces
+- generic `E299` compile failures for schema-core validation that does not yet
+  have a narrower dedicated code, including bad schema artifact roots, unknown
+  group members, empty groups, output-attached schemas with no sections, and
+  schema-backed review contracts with no gates
 
-- `E501` unknown analysis enum target
-- `E502` non-addressable or unresolved analysis basis path
-- `E503` invalid analysis inheritance target
-- `E504` duplicate analysis section key
-- `E505` analysis used in unsupported surface
-- `E506` empty basis in derive, compare, or defend
-
-Minimum `schema` diagnostics:
-
-- `E520` output schema ref unresolved
-- `E521` duplicate schema section key
-- `E522` duplicate schema gate key
-- `E523` output declares both Doctrine `schema:` and local `must_include:`
-- `E524` unknown schema gate in later consumers
-- `E525` schema used in unsupported surface
-- `E526` output-attached schema missing sections
-- `E527` duplicate schema artifact key
-- `E528` duplicate schema group key
-- `E529` schema artifact `ref:` unresolved or not a concrete artifact root
-- `E530` schema group member unknown
-- `E531` empty schema group
+If narrower schema-specific codes are added later, they must fit the current
+canonical error bands instead of reviving the old `E520-E531` proposal.
 
 Phase invariants:
 

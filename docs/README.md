@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/62_identity_titles_keys_and_wire`.
+`examples/63_schema_artifacts_and_groups`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -47,8 +47,8 @@ needs, and groups the work that should be built together.
   phase 1 typed-markdown foundation, first-class `document`, the readable block
   family, multiline strings, `structure:`, and the base renderer conversion
 - [02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md):
-  phase 2 `analysis`, `schema`, owner-aware `schema:` rules, output contracts,
-  diagnostics, and proof ordering
+  phase 2 `analysis`, `schema`, owner-aware `schema:` rules, schema
+  artifacts/groups, output contracts, diagnostics, and proof ordering
 - [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md):
   phase 3 advanced readable-markdown surfaces such as `properties`, explicit
   guard shells, `render_profile`, typed row/item schemas, and later block

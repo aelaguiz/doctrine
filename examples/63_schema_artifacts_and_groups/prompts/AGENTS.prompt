@@ -1,0 +1,59 @@
+# This example introduces first-class schema artifacts, reusable groups, and
+# family-namespaced schema addressability.
+
+input OutlineFile: "Outline File"
+    source: File
+        path: "unit_root/OUTLINE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output ReviewCommentFile: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+
+output ManifestFile: "Manifest File"
+    target: File
+        path: "unit_root/MANIFEST.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+schema BuildSurfaceSchema: "Build Surface Schema"
+    sections:
+        summary: "Summary"
+            "Summarize the shipped surface."
+
+    artifacts:
+        outline_file: "Outline File"
+            ref: OutlineFile
+
+        review_comment: "Review Comment"
+            ref: ReviewCommentFile
+
+        manifest_file: "Manifest File"
+            ref: ManifestFile
+
+    groups:
+        downstream_rebuild: "Downstream Rebuild"
+            outline_file
+            review_comment
+            manifest_file
+
+
+output BuildPlan: "Build Plan"
+    target: File
+        path: "unit_root/BUILD_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    schema: BuildSurfaceSchema
+
+
+agent SchemaArtifactsAndGroupsDemo:
+    role: "Keep {{BuildSurfaceSchema:sections.summary.title}} aligned with {{BuildSurfaceSchema:artifacts.manifest_file.title}} in {{BuildSurfaceSchema:groups.downstream_rebuild.title}}."
+    workflow: "Ship"
+        "Use the schema inventory to reason about downstream rebuild surfaces."
+    outputs: "Outputs"
+        BuildPlan

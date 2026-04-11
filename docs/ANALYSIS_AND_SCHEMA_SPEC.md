@@ -1,9 +1,12 @@
 # Analysis And Schema Language Surfaces
 
-> Status note (2026-04-11): We believe the `analysis` and `schema` surfaces
-> described in this document are fully implemented in the current repo. If this
-> spec and the shipped implementation ever drift, trust `doctrine/` and the
-> manifest-backed examples.
+> Status note (2026-04-11): The shipped `analysis` and `schema` core now lives
+> in `doctrine/` and the manifest-backed examples, including first-class schema
+> `artifacts:` / `groups:` in `examples/63_schema_artifacts_and_groups`. This
+> document remains useful background design history, but some later phase
+> splits and example numbers below are legacy notes rather than current shipped
+> truth. When this document and the repo disagree, trust `doctrine/`,
+> `docs/02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md`, and the active examples.
 
 This document defines the two new core semantic declaration families that the
 language expansion is centered on:
@@ -900,97 +903,29 @@ Reject: Stable Route Skeleton.
 Accept only if The lesson plan schema passes.
 ```
 
-### Diagnostics
+### Legacy diagnostics and example-ladder notes (superseded)
 
-Reserve `E520-E539` for `schema`.
+The rest of this section is preserved as design history only. It is not the
+current shipped diagnostics or corpus map.
 
-Minimum diagnostics:
+Current shipped truth:
 
-- `E520` output schema ref unresolved
-- `E521` duplicate schema section key
-- `E522` duplicate schema gate key
-- `E523` output declares both schema and `must_include` in phase 1
-- `E524` review contract references unknown schema gate
-- `E525` schema used in unsupported surface
-- `E526` schema missing sections
+- Trust `docs/COMPILER_ERRORS.md` for the live diagnostic catalog and stable
+  error-band policy. The older proposed `E520-E539` schema band below was a
+  planning allocation and is not the current shipped code story.
+- Trust `docs/02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md`,
+  `docs/LANGUAGE_REFERENCE.md`, and the manifest-backed corpus for the live
+  Phase 2 surface.
+- Trust `examples/54_analysis_attachment`,
+  `examples/55_owner_aware_schema_attachments`,
+  `examples/57_schema_review_contracts`, and
+  `examples/63_schema_artifacts_and_groups` for the shipped schema/analysis
+  proof ladder.
 
-### Example ladder entries for schema
+Legacy planning note:
 
-Example 56 - `56_schema_output_contract`
-
-Goal:
-Add schema declarations and output attachment.
-
-What it proves:
-
-- parser accepts `schema`
-- output can declare `schema:`
-- renderer emits required sections from schema
-- output cannot simultaneously own `must_include`
-
-Prompt sketch:
-
-```prompt
-schema LessonPlanSchema: "Lesson Plan Schema"
-    sections:
-        lesson_promise: "Lesson Promise"
-            "State what this lesson owns now."
-        step_order: "Step Order"
-            "State the step order and what each step is there to teach."
-
-output LessonPlanFile: "Lesson Plan File"
-    target: File
-        path: "lesson_root/_authoring/LESSON_PLAN.md"
-    shape: MarkdownDocument
-    requirement: Required
-    schema: LessonPlanSchema
-```
-
-Example 57 - `57_schema_inheritance`
-
-Goal:
-Prove route- or mode-specific schema extension without adding conditional
-schema logic.
-
-What it proves:
-
-- schema inheritance works
-- separate variants are cleaner than dynamic conditional sections in v1
-
-Prompt sketch:
-
-```prompt
-schema BaseLessonPlanSchema: "Lesson Plan Schema"
-    sections:
-        lesson_promise: "Lesson Promise"
-            "State what this lesson owns now."
-        step_order: "Step Order"
-            "State the step order."
-
-schema WalkthroughLessonPlanSchema[BaseLessonPlanSchema]: "Lesson Plan Schema"
-    inherit sections
-
-    override sections:
-        lesson_promise: "Lesson Promise"
-            "State what this lesson owns now."
-        step_order: "Step Order"
-            "State the step order."
-        guided_walkthrough_beat_count_table: "Guided-Walkthrough Beat-Count Table"
-            "Make walkthrough beat precedent explicit."
-```
-
-Example 60 - `60_schema_review_contract`
-
-Optional second-wave example.
-
-Goal:
-Let `review contract:` target schemas with `gates:`.
-
-What it proves:
-
-- schema gate export integrates cleanly with first-class review
-- critic can reject on `contract.some_gate`
-- gate titles remain exact and readable
-
-Do not build `60_schema_review_contract` until the preceding analysis and schema
-examples are green.
+- Earlier drafts in this file used an older schema example ladder starting from
+  `56_schema_output_contract`, `57_schema_inheritance`, and an optional
+  `60_schema_review_contract`, plus a reserved `E520-E539` schema band. Those
+  notes remain useful only as background for how the phase was originally
+  sketched; they should not be read as the current repo contract.

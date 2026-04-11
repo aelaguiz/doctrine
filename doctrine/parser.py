@@ -614,34 +614,36 @@ class ToAst(Transformer):
                 preamble.append(item)
                 continue
             schema_items.append(item)
-        section_blocks = [
-            item
-            for item in schema_items
-            if isinstance(
-                item,
-                (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock),
-            )
-        ]
-        gate_blocks = [
-            item
-            for item in schema_items
-            if isinstance(item, (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock))
-        ]
         inherited_keys = {item.key for item in schema_items if isinstance(item, model.InheritItem)}
-        if len(section_blocks) > 1 or ("sections" in inherited_keys and section_blocks):
-            raise TransformParseFailure(
-                "Schema declarations may account for `sections` only once.",
-                hints=(
-                    "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
-                ),
-            )
-        if len(gate_blocks) > 1 or ("gates" in inherited_keys and gate_blocks):
-            raise TransformParseFailure(
-                "Schema declarations may account for `gates` only once.",
-                hints=(
-                    "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
-                ),
-            )
+        block_specs = (
+            (
+                "sections",
+                (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock),
+                "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
+            ),
+            (
+                "gates",
+                (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock),
+                "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
+            ),
+            (
+                "artifacts",
+                (model.SchemaArtifactsBlock, model.SchemaOverrideArtifactsBlock),
+                "Use exactly one of `artifacts:`, `inherit artifacts`, or `override artifacts:`.",
+            ),
+            (
+                "groups",
+                (model.SchemaGroupsBlock, model.SchemaOverrideGroupsBlock),
+                "Use exactly one of `groups:`, `inherit groups`, or `override groups:`.",
+            ),
+        )
+        for block_key, block_types, hint in block_specs:
+            blocks = [item for item in schema_items if isinstance(item, block_types)]
+            if len(blocks) > 1 or (block_key in inherited_keys and blocks):
+                raise TransformParseFailure(
+                    f"Schema declarations may account for `{block_key}` only once.",
+                    hints=(hint,),
+                )
         return SchemaBodyParts(preamble=tuple(preamble), items=tuple(schema_items))
 
     def schema_sections_block(self, items):
@@ -649,6 +651,12 @@ class ToAst(Transformer):
 
     def schema_gates_block(self, items):
         return model.SchemaGatesBlock(items=tuple(items))
+
+    def schema_artifacts_block(self, items):
+        return model.SchemaArtifactsBlock(items=tuple(items))
+
+    def schema_groups_block(self, items):
+        return model.SchemaGroupsBlock(items=tuple(items))
 
     @v_args(inline=True)
     def schema_section_item(self, key, title, body=None):
@@ -673,6 +681,33 @@ class ToAst(Transformer):
         return tuple(items[0])
 
     @v_args(inline=True)
+    def schema_artifact_item(self, key, title, body=None):
+        refs = tuple(body or ())
+        if len(refs) != 1:
+            raise TransformParseFailure(
+                f"Schema artifact `{key}` must define exactly one `ref:` entry.",
+                hints=("Define one `ref:` line inside each schema artifact entry.",),
+            )
+        return model.SchemaArtifact(key=key, title=title, ref=refs[0])
+
+    def schema_artifact_body(self, items):
+        return tuple(items)
+
+    def schema_artifact_ref(self, items):
+        return items[0]
+
+    @v_args(inline=True)
+    def schema_group_item(self, key, title, body=None):
+        return model.SchemaGroup(key=key, title=title, members=tuple(body or ()))
+
+    def schema_group_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def schema_group_member(self, key):
+        return key
+
+    @v_args(inline=True)
     def schema_inherit(self, key):
         return model.InheritItem(key=key)
 
@@ -682,11 +717,23 @@ class ToAst(Transformer):
     def schema_override_gates(self, items):
         return model.SchemaOverrideGatesBlock(items=tuple(items))
 
+    def schema_override_artifacts(self, items):
+        return model.SchemaOverrideArtifactsBlock(items=tuple(items))
+
+    def schema_override_groups(self, items):
+        return model.SchemaOverrideGroupsBlock(items=tuple(items))
+
     def schema_block_key_sections(self, _items):
         return "sections"
 
     def schema_block_key_gates(self, _items):
         return "gates"
+
+    def schema_block_key_artifacts(self, _items):
+        return "artifacts"
+
+    def schema_block_key_groups(self, _items):
+        return "groups"
 
     @v_args(inline=True)
     def document_string(self, value):

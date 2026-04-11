@@ -88,6 +88,10 @@ Important rules:
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` still attaches a `json schema`; the field name is
   owner-aware rather than globally retyped.
+- Doctrine `schema` declarations may now own reusable `sections:`, optional
+  `gates:`, first-class `artifacts:`, and reusable `groups:`.
+- Output-attached schemas must still expose at least one section even when the
+  same schema also owns reusable artifacts or groups.
 - `structure:` may attach a named `document` to a markdown-bearing output.
 - Ordinary output record bodies may reuse readable block kinds such as
   `definitions`, `table`, `callout`, and `code`.
@@ -227,6 +231,7 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `55`: owner-aware output `schema:` attachments
 - `56`: typed `structure:` attachments on markdown-bearing inputs and outputs
 - `57`: schema-backed review contracts on ordinary output carriers
+- `63`: first-class schema `artifacts:` / `groups:` plus namespaced schema paths
 - `58` and `59`: document blocks, inheritance, and addressable readable descendants
 - `60`: shared readable blocks on workflow, skill-entry, and output bodies
 - `61`: multiline readable code blocks and fail-loud readable validation

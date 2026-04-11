@@ -1,0 +1,10 @@
+schema BrokenArtifactSchema: "Broken Artifact Schema"
+    artifacts:
+        schema_ref: "Schema Ref"
+            ref: BrokenArtifactSchema
+
+
+agent BrokenArtifactSchemaDemo:
+    role: "Check {{BrokenArtifactSchema:artifacts.schema_ref.title}}."
+    workflow: "Ship"
+        "This should fail because schema artifact refs must point at input or output roots."

@@ -1,0 +1,85 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "schema artifacts and groups render through namespaced schema paths"
+status = "active"
+kind = "render_contract"
+agent = "SchemaArtifactsAndGroupsDemo"
+assertion = "exact_lines"
+approx_ref = "ref/schema_artifacts_and_groups_demo/AGENTS.md"
+expected_lines = [
+  "Keep Summary aligned with Manifest File in Downstream Rebuild.",
+  "",
+  "## Ship",
+  "",
+  "Use the schema inventory to reason about downstream rebuild surfaces.",
+  "",
+  "## Outputs",
+  "",
+  "### Build Plan",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/BUILD_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Schema: Build Surface Schema",
+  "",
+  "#### Required Sections",
+  "",
+  "##### Summary",
+  "",
+  "Summarize the shipped surface.",
+]
+
+[[cases]]
+name = "schema artifact refs must resolve to concrete input or output roots"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SCHEMA_ARTIFACT_REF_NOT_ROOT.prompt"
+agent = "BrokenArtifactSchemaDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Schema artifact refs must resolve to input or output declarations",
+  "BrokenArtifactSchema",
+]
+
+[[cases]]
+name = "schema groups reject unknown local artifact keys"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SCHEMA_GROUP_UNKNOWN_MEMBER.prompt"
+agent = "UnknownGroupMemberDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Unknown schema group member",
+  "downstream_rebuild.missing_file",
+]
+
+[[cases]]
+name = "schema groups may not be empty"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SCHEMA_GROUP_EMPTY.prompt"
+agent = "EmptyGroupDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Schema groups may not be empty",
+  "downstream_rebuild",
+]
+
+[[cases]]
+name = "output-attached schemas must still export a section"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OUTPUT_SCHEMA_WITHOUT_SECTIONS.prompt"
+agent = "ArtifactOnlySchemaDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Output-attached schema must export at least one section",
+  "BuildPlan",
+]

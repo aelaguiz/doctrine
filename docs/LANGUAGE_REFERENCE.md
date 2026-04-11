@@ -162,10 +162,18 @@ Important rules:
 `schema` declares a reusable artifact inventory and optional gate catalog.
 
 ```prompt
-schema DeliveryInventory: "Delivery Inventory"
+schema BuildSurfaceSchema: "Build Surface Schema"
     sections:
         summary: "Summary"
             "Include a short summary."
+
+    artifacts:
+        manifest_file: "Manifest File"
+            ref: ManifestFile
+
+    groups:
+        downstream_rebuild: "Downstream Rebuild"
+            manifest_file
 
     gates:
         evidence_grounded: "Evidence Grounded"
@@ -174,11 +182,17 @@ schema DeliveryInventory: "Delivery Inventory"
 
 Important rules:
 
-- `schema` owns artifact inventory sections and optional named `gates:`.
+- `schema` owns reusable `sections:`, optional named `gates:`, first-class
+  `artifacts:`, and reusable `groups:`.
+- A schema must declare at least one `sections:` or `artifacts:` block.
 - On `output`, `schema:` points at a Doctrine `schema` declaration.
 - On `output shape`, `schema:` remains the owner-aware attachment point for
   `json schema`.
-- Schema sections and gates are addressable by authored key.
+- Output-attached schemas must still expose at least one section.
+- Schema addressability is family-namespaced by authored key:
+  `BuildSurfaceSchema:sections.summary.title`,
+  `BuildSurfaceSchema:artifacts.manifest_file.title`, and
+  `BuildSurfaceSchema:groups.downstream_rebuild.title`.
 - `review contract:` may point at either a `workflow` or a `schema`.
 
 ### Documents
@@ -341,6 +355,8 @@ Examples:
 - `ProjectLead:title`
 - `ProjectLead:key`
 - `ReleaseAnalysis:stages.title`
+- `BuildSurfaceSchema:sections.summary.title`
+- `BuildSurfaceSchema:artifacts.manifest_file.title`
 - `LessonPlan:read_order.first`
 - `LessonPlan:step_arc.columns.coaching_level.title`
 - `NextOwner:section_author.wire`
@@ -353,6 +369,7 @@ Nested keyed items can be addressed explicitly:
 - `ProjectLead:key`
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
+- `BuildSurfaceSchema:groups.downstream_rebuild.title`
 - `LessonPlan:overview.title`
 - `LessonPlan:step_arc.rows.step_1`
 - `NextOwner:section_author.wire`

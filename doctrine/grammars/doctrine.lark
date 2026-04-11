@@ -241,21 +241,37 @@ schema_body: schema_body_line+
 schema_body_line: schema_string
                 | schema_sections_block
                 | schema_gates_block
+                | schema_artifacts_block
+                | schema_groups_block
                 | schema_inherit
                 | schema_override_sections
                 | schema_override_gates
+                | schema_override_artifacts
+                | schema_override_groups
 schema_string: prose_line _NL?
 schema_sections_block: "sections" ":" _NL _INDENT schema_section_item+ _DEDENT
 schema_gates_block: "gates" ":" _NL _INDENT schema_gate_item+ _DEDENT
+schema_artifacts_block: "artifacts" ":" _NL _INDENT schema_artifact_item+ _DEDENT
+schema_groups_block: "groups" ":" _NL _INDENT schema_group_item+ _DEDENT
 schema_section_item: CNAME ":" string _NL schema_section_body?
 schema_gate_item: CNAME ":" string _NL schema_gate_body?
+schema_artifact_item: CNAME ":" string _NL schema_artifact_body?
+schema_group_item: CNAME ":" string _NL schema_group_body?
 schema_section_body: _INDENT block_lines _DEDENT
 schema_gate_body: _INDENT block_lines _DEDENT
+schema_artifact_body: _INDENT schema_artifact_ref* _DEDENT
+schema_group_body: _INDENT schema_group_member* _DEDENT
+schema_artifact_ref: "ref" ":" name_ref _NL?
+schema_group_member: CNAME _NL?
 schema_inherit: "inherit" schema_block_key _NL?
 schema_override_sections: "override" "sections" ":" _NL _INDENT schema_section_item+ _DEDENT
 schema_override_gates: "override" "gates" ":" _NL _INDENT schema_gate_item+ _DEDENT
+schema_override_artifacts: "override" "artifacts" ":" _NL _INDENT schema_artifact_item+ _DEDENT
+schema_override_groups: "override" "groups" ":" _NL _INDENT schema_group_item+ _DEDENT
 schema_block_key: "sections" -> schema_block_key_sections
                 | "gates" -> schema_block_key_gates
+                | "artifacts" -> schema_block_key_artifacts
+                | "groups" -> schema_block_key_groups
 
 document_body: document_body_line+
 document_body_line: document_string
