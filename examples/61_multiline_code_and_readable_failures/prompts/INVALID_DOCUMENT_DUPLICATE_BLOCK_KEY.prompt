@@ -1,0 +1,22 @@
+document BrokenGuide: "Broken Guide"
+    section summary: "Summary"
+        "Start with the current goal."
+
+    section summary: "Summary Again"
+        "This should fail."
+
+
+output BrokenGuideFile: "Broken Guide File"
+    target: File
+        path: "release_root/BROKEN_GUIDE.md"
+    shape: MarkdownDocument
+    structure: BrokenGuide
+    requirement: Required
+
+
+agent InvalidDuplicateDocumentKeyDemo:
+    role: "Compile the broken guide."
+    workflow: "Draft"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenGuideFile

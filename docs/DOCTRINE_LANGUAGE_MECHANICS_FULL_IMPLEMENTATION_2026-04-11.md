@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Language Mechanics Full Implementation - Architecture Plan"
 date: 2026-04-11
-status: active
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -78,6 +78,18 @@ code collisions, and keep one compiler path plus one editor parity path.
    keeping manifest-backed proof and deterministic diagnostics.
 5. Update evergreen docs so the shipped language reference, error catalog,
    examples guide, and editor docs describe the same reality as the compiler.
+
+## Historical Note
+
+This umbrella plan is retained as implementation history for the broader
+mechanics wave. Do not read its baseline sections as current shipped truth for
+readable markdown or `structure:` attachments.
+
+Readable markdown, typed `structure:` attachments, their post-53 proof ladder,
+and VS Code parity now ship through
+`docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` plus the
+evergreen docs in `docs/README.md`, `docs/LANGUAGE_REFERENCE.md`, and
+`docs/AGENT_IO_DESIGN_NOTES.md`.
 6. Bring the VS Code extension to full parity with the shipped language and
    verify the whole cutover with repo-owned checks.
 
@@ -188,8 +200,8 @@ spec prose.
 - The enhancement-spec docs are either updated to match shipped reality or
   clearly demoted from live-shipped truth so the repo does not keep competing
   explanations.
-- `editors/vscode/` fully supports the shipped language surface and
-  `cd editors/vscode && make` passes.
+- For plan closure, `editors/vscode/` must support the shipped language surface
+  and `cd editors/vscode && make` must pass.
 - Repo verification passes at the appropriate checkpoints, including:
   - `make verify-examples`
   - `make verify-diagnostics` when diagnostics change
@@ -268,26 +280,27 @@ Behavior-preservation evidence:
 
 # 2) Problem Statement (existing architecture + why change)
 
-## 2.1 What exists today
+## 2.1 Historical baseline when this umbrella plan was opened
 
-The repo has a real split between shipped language truth and intended next-wave
-design. The split specs exist under `docs/`, but the shipped language reference
-still describes the pre-wave surface, the core grammar/model/compiler do not
-implement the new declarations, the example corpus stops at `53`, and the VS
-Code extension only mirrors the currently shipped language.
+When this umbrella plan was opened, the repo had a real split between shipped
+language truth and intended next-wave design. The split specs existed under
+`docs/`, but the shipped language reference still described the pre-wave
+surface, the core grammar/model/compiler did not yet implement the full new
+declaration set, the example corpus stopped at `53`, and the VS Code extension
+only mirrored the then-shipped language.
 
-## 2.2 What’s broken / missing (concrete)
+## 2.2 Historical gaps at plan open (concrete)
 
-- Authors cannot actually declare the mechanics-spec surfaces in shipped
-  Doctrine.
-- The spec set currently describes behaviors that the compiler, diagnostics,
-  examples, and editor do not prove.
-- The current readable rendering architecture is too narrow for the full
-  `document` / rich-block design.
-- Diagnostic numbering proposed by the spec is not aligned with current shipped
-  emit code usage.
-- The post-`53` example wave is not shipped, so the language growth is not yet
-  example-first in Doctrine’s own standard.
+- At plan open, authors could not yet declare the full mechanics-spec surfaces
+  in shipped Doctrine.
+- At plan open, the spec set described behaviors that the compiler,
+  diagnostics, examples, and editor did not yet prove.
+- At plan open, the readable rendering architecture was too narrow for the
+  full `document` / rich-block design.
+- At plan open, diagnostic numbering proposed by the spec was not aligned with
+  then-current shipped emit code usage.
+- At plan open, the post-`53` example wave was not shipped, so the language
+  growth was not yet example-first in Doctrine’s own standard.
 
 ## 2.3 Constraints implied by the problem
 
@@ -308,41 +321,43 @@ the requested behavior rather than optional polish.
   design without weakening the current spec set or expanding the public
   language surface.
 
-## 3.2 Internal ground truth (code as spec)
+## 3.2 Historical internal baseline at plan open (code as spec)
 
 - Authoritative behavior anchors (do not reinvent):
-  - `doctrine/grammars/doctrine.lark` — shipped declaration surface still stops
-    at the current pre-`analysis` / pre-`schema` / pre-`document` language,
+  - `doctrine/grammars/doctrine.lark` — at plan open, the shipped declaration
+    surface still stopped at the pre-`analysis` / pre-`schema` /
+    pre-`document` language,
     with `workflow`, `review`, typed IO, `skill`, and `enum` as top-level
     declarations.
-  - `doctrine/model.py` — shipped AST and IR model still has no
+  - `doctrine/model.py` — at plan open, the shipped AST and IR model still had
+    no
     `AnalysisDecl`, `SchemaDecl`, `DocumentDecl`, or multiline-string node.
-  - `doctrine/compiler.py` — shipped compilation still resolves inheritance and
-    addressability through the current workflow / skills / IO / review
-    machinery and still compiles readable output through a `CompiledSection`
-    tree.
-  - `doctrine/renderer.py` — shipped Markdown emission is still a
-    heading-recursive `CompiledSection` renderer, so the full readable-block
-    wave needs a foundational render-model expansion instead of ad hoc block
+  - `doctrine/compiler.py` — at plan open, shipped compilation still resolved
+    inheritance and addressability through the current workflow / skills / IO /
+    review machinery and still compiled readable output through a
+    `CompiledSection` tree.
+  - `doctrine/renderer.py` — at plan open, shipped Markdown emission was still
+    a heading-recursive `CompiledSection` renderer, so the full readable-block
+    wave needed a foundational render-model expansion instead of ad hoc block
     hacks.
   - `doctrine/diagnostics.py` and `docs/COMPILER_ERRORS.md` — shipped emit
     diagnostics already occupy `E501` through `E516`, so the mechanics-spec
     proposal to reserve `E501-E519` for `analysis` collides with current live
     meanings and must be renumbered rather than reused.
-  - `examples/README.md` and `doctrine/verify_corpus.py` — the live proof
-    corpus currently ends at `53_review_bound_carrier_roots`, and manifests are
-    the proof surface. Any new language wave has to extend that corpus with
-    manifest-backed proof rather than with unchecked examples alone.
-  - `docs/README.md` — the live docs explicitly classify the mechanics/spec
-    documents as implementation-grade design specs, not shipped language truth,
-    so the cutover must either promote the shipped docs to cover the new
-    surface fully or demote competing design prose cleanly.
+  - `examples/README.md` and `doctrine/verify_corpus.py` — at plan open, the
+    live proof corpus ended at `53_review_bound_carrier_roots`, and manifests
+    were the proof surface. Any new language wave had to extend that corpus
+    with manifest-backed proof rather than with unchecked examples alone.
+  - `docs/README.md` — at plan open, the live docs explicitly classified the
+    mechanics/spec documents as implementation-grade design specs, not shipped
+    language truth, so the cutover had to either promote the shipped docs to
+    cover the new surface fully or demote competing design prose cleanly.
   - `editors/vscode/resolver.js`,
     `editors/vscode/syntaxes/doctrine.tmLanguage.json`, and
-    `editors/vscode/scripts/validate_lark_alignment.py` — the VS Code extension
-    is a hand-maintained shipped mirror of grammar keywords, clickable surfaces,
-    and structural parsing. It must be updated in the same wave as the
-    compiler.
+    `editors/vscode/scripts/validate_lark_alignment.py` — at plan open, the VS
+    Code extension was a hand-maintained shipped mirror of grammar keywords,
+    clickable surfaces, and structural parsing. It had to be updated in the
+    same wave as the compiler.
   - `~/.codex/hooks.json` plus
     `~/.agents/skills/arch-step/scripts/implement_loop_stop_hook.py` — the
     installed automatic controller path for `auto-plan` / `implement-loop`,
@@ -522,8 +537,10 @@ not bypass them:
   conflicts with live shipped meanings and cannot survive as written
 - `make verify-examples` and manifest-backed refs are the primary proof surface
 - `make verify-diagnostics` exists when diagnostic wording or bands change
-- `cd editors/vscode && make` already packages the extension through unit,
-  snapshot, integration, and Lark-alignment checks
+- The intended extension-level closure signal for this plan is
+  `cd editors/vscode && make`, which packages the extension through unit,
+  snapshot, integration, and Lark-alignment checks once the editor wave is
+  green
 - one real current drift point already exists:
   `editors/vscode/resolver.js` treats `schema:` as a clickable keyed ref even
   though the shipped compiler grammar does not yet admit `output schema:`
@@ -839,9 +856,9 @@ Completed work:
   `resolver.js`, and `scripts/validate_lark_alignment.py` now recognize the
   new declaration headers, readable-block keywords, and multiline string
   surface.
-- Verification for this pass is green:
-  `uv sync`, `npm ci`, `make verify-examples`, and `cd editors/vscode && make`
-  all passed on 2026-04-11.
+- Historical note: this pass recorded green verification when it originally
+  landed, but current editor-package truth is owned by the dedicated
+  readable-markdown plan and its authoritative audit block.
 
 * Goal:
   Establish the one-path parser/compiler/render foundation for the mechanics

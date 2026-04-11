@@ -3,7 +3,9 @@ const path = require("node:path");
 
 const vscode = require("vscode");
 
-const REPO_ROOT = path.resolve(__dirname, "../../../../../");
+const REPO_ROOT = process.env.DOCTRINE_REPO_ROOT
+  ? path.resolve(process.env.DOCTRINE_REPO_ROOT)
+  : path.resolve(__dirname, "../../../../../");
 
 async function run() {
   await activateDoctrineExtension();
@@ -491,6 +493,70 @@ async function testWorkflowLawDefinitionProvider() {
       'route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown',
     sourceText: "RoutingOwner",
     occurrence: 2,
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'override sequence read_order: "Read Order" advisory',
+    expectedRelativeTargetPath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{AdaptedLessonPlan:read_order.first}}, {{AdaptedLessonPlan:step_arc.columns.coaching_level.title}}, and {{AdaptedLessonPlan:step_arc.rows.step_1}} aligned in {{AdaptedLessonPlan:title}}.',
+    sourceText: "read_order",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'first: "Read the learner goal."',
+    expectedRelativeTargetPath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{AdaptedLessonPlan:read_order.first}}, {{AdaptedLessonPlan:step_arc.columns.coaching_level.title}}, and {{AdaptedLessonPlan:step_arc.rows.step_1}} aligned in {{AdaptedLessonPlan:title}}.',
+    sourceText: "first",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'coaching_level: "Coaching Level"',
+    expectedRelativeTargetPath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{AdaptedLessonPlan:read_order.first}}, {{AdaptedLessonPlan:step_arc.columns.coaching_level.title}}, and {{AdaptedLessonPlan:step_arc.rows.step_1}} aligned in {{AdaptedLessonPlan:title}}.',
+    sourceText: "coaching_level",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "step_1:",
+    expectedRelativeTargetPath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/59_document_inheritance_and_descendants/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Keep {{AdaptedLessonPlan:read_order.first}}, {{AdaptedLessonPlan:step_arc.columns.coaching_level.title}}, and {{AdaptedLessonPlan:step_arc.rows.step_1}} aligned in {{AdaptedLessonPlan:title}}.',
+    sourceText: "step_1",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'callout usage_note: "Usage Note"',
+    expectedRelativeTargetPath: "examples/60_shared_readable_bodies/prompts/AGENTS.prompt",
+    relativePath: "examples/60_shared_readable_bodies/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Use {{ReleaseComment:must_include.summary.title}} and {{ReleaseSkills:can_run.grounding.usage_note.title}} before you route the release.',
+    sourceText: "usage_note",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'code example_manifest: "Example Manifest" advisory',
+    expectedRelativeTargetPath:
+      "examples/61_multiline_code_and_readable_failures/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/61_multiline_code_and_readable_failures/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'Reuse {{ManifestGuide:example_manifest.title}} when you draft the manifest guide.',
+    sourceText: "example_manifest",
   });
 }
 

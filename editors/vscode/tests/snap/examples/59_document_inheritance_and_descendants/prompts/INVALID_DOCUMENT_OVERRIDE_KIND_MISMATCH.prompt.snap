@@ -1,0 +1,134 @@
+>document LessonPlan: "Lesson Plan"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                      ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    sequence read_order: "Read Order"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>        first: "Read the brief."
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>document BrokenLessonPlan[LessonPlan]: "Broken Lesson Plan"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                         ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                          ^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                    ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                      ^ source.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                        ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>    override definitions read_order: "Read Order"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^ source.doctrine keyword.control.doctrine
+#                        ^ source.doctrine
+#                         ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                    ^ source.doctrine
+#                                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                      ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>        first: "Read the brief."
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>output BrokenLessonPlanFile: "Broken Lesson Plan File"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                           ^ source.doctrine punctuation.separator.key-value.doctrine
+#                            ^ source.doctrine
+#                             ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                              ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "lesson_root/BROKEN_LESSON_PLAN.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    structure: BrokenLessonPlan
+#^^^^ source.doctrine
+#    ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent BrokenLessonPlanDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Compile the broken lesson plan."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Adapt"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "This should fail."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        BrokenLessonPlanFile
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

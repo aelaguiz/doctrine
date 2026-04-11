@@ -1,0 +1,17 @@
+output BrokenGuide: "Broken Guide"
+    target: File
+        path: "release_root/BROKEN_GUIDE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+    code example_manifest: "Example Manifest"
+        language: json
+        text: "not multiline"
+
+
+agent InvalidCodeBlockDemo:
+    role: "Compile the broken guide."
+    workflow: "Draft"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenGuide

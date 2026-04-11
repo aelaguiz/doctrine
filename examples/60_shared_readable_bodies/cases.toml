@@ -1,0 +1,54 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "workflow skill entry and output bodies share the readable block model"
+status = "active"
+kind = "render_contract"
+agent = "SharedReadableBodiesDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use Summary and Usage Note before you route the release.",
+  "",
+  "## Review",
+  "",
+  "### Summary",
+  "",
+  "#### Evidence",
+  "",
+  "_unordered list_",
+  "",
+  "- Read the current status.",
+  "- Read the latest validation notes.",
+  "",
+  "Do not route without evidence.",
+  "",
+  "## Release Skills",
+  "",
+  "### Can Run",
+  "",
+  "#### Grounding Skill",
+  "",
+  "##### Purpose",
+  "",
+  "Ground the current claim before you write.",
+  "",
+  "> **NOTE — Usage Note**",
+  "> _callout_",
+  "> Use this before you summarize evidence.",
+  "",
+  "## Outputs",
+  "",
+  "### Release Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Must Include",
+  "",
+  "_definitions_",
+  "",
+  "- **Summary** — Summarize the release outcome.",
+  "- **Next Owner** — Name who owns the next action.",
+]

@@ -1,0 +1,49 @@
+# This example renders the richer document block kinds through `structure:`.
+
+document ReleaseGuide: "Release Guide"
+    callout durable_truth: "Durable Truth" required
+        kind: important
+        "This file owns the current release checklist."
+
+    section summary: "Summary"
+        "Lead with the release goal and the current shipment boundary."
+
+    definitions must_include: "Must Include" required
+        verdict: "Verdict"
+            "Say whether the release is ready."
+
+        next_owner: "Next Owner"
+            "Name who owns the next action."
+
+    table release_gates: "Release Gates" required
+        columns:
+            gate: "Gate"
+                "What must pass before shipment."
+
+            evidence: "Evidence"
+                "What proves the gate passed."
+
+        notes:
+            "List one row per release gate."
+
+    checklist checks: "Checks" advisory
+        lint: "Run lint."
+        tests: "Run tests."
+
+    rule divider
+
+
+output ReleaseGuideFile: "Release Guide File"
+    target: File
+        path: "release_root/RELEASE_GUIDE.md"
+    shape: MarkdownDocument
+    structure: ReleaseGuide
+    requirement: Required
+
+
+agent ReleaseGuideDemo:
+    role: "Keep {{ReleaseGuide:must_include.verdict}} and {{ReleaseGuide:release_gates.columns.evidence.title}} aligned in {{ReleaseGuide:title}}."
+    workflow: "Publish"
+        "Write the release guide using the attached document structure."
+    outputs: "Outputs"
+        ReleaseGuideFile

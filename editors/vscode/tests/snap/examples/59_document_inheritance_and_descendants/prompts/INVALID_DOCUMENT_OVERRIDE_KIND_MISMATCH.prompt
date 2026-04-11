@@ -1,0 +1,24 @@
+document LessonPlan: "Lesson Plan"
+    sequence read_order: "Read Order"
+        first: "Read the brief."
+
+
+document BrokenLessonPlan[LessonPlan]: "Broken Lesson Plan"
+    override definitions read_order: "Read Order"
+        first: "Read the brief."
+
+
+output BrokenLessonPlanFile: "Broken Lesson Plan File"
+    target: File
+        path: "lesson_root/BROKEN_LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: BrokenLessonPlan
+    requirement: Required
+
+
+agent BrokenLessonPlanDemo:
+    role: "Compile the broken lesson plan."
+    workflow: "Adapt"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenLessonPlanFile

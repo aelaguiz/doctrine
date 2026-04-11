@@ -1,0 +1,61 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "document inheritance keeps descendant refs addressable"
+status = "active"
+kind = "render_contract"
+agent = "AdaptedLessonPlanDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep Read the learner goal., Coaching Level, and Step 1 aligned in Adapted Lesson Plan.",
+  "",
+  "## Adapt",
+  "",
+  "Write the adapted lesson plan using the inherited document.",
+  "",
+  "## Outputs",
+  "",
+  "### Adapted Lesson Plan File",
+  "",
+  "- Target: File",
+  "- Path: `lesson_root/ADAPTED_LESSON_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Structure: Adapted Lesson Plan",
+  "",
+  "#### Structure: Adapted Lesson Plan",
+  "",
+  "##### Overview",
+  "",
+  "Start with the current lesson goal.",
+  "",
+  "##### Read Order",
+  "",
+  "_Advisory · ordered list_",
+  "",
+  "1. Read the learner goal.",
+  "2. Read the current lesson plan.",
+  "3. Read the prior feedback.",
+  "",
+  "##### Step Arc",
+  "",
+  "_Required · table_",
+  "",
+  "| Step | Coaching Level |",
+  "| --- | --- |",
+  "| 1 | High |",
+]
+
+[[cases]]
+name = "document overrides fail when the child changes block kind"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DOCUMENT_OVERRIDE_KIND_MISMATCH.prompt"
+agent = "BrokenLessonPlanDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Override kind mismatch for document entry",
+  "read_order",
+]

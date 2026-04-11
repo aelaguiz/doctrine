@@ -24,6 +24,9 @@ This keeps the split clean:
 
 - output contracts are still the emitted contract surface
 - typed `schema:` / `structure:` attachments stay on inputs or outputs
+- shared readable blocks such as `definitions`, `table`, `callout`, and
+  `code` may still appear on ordinary record bodies without becoming a second
+  structure system
 - compiler-owned semantics still live in `workflow law` or `review`
 - downstream trust still flows through declared output fields, not through
   hidden side channels
@@ -49,6 +52,8 @@ Important rules:
 - Input bodies hold source-specific configuration plus authored explanatory
   prose.
 - `structure:` may attach a named `document` to a markdown-bearing input shape.
+- Input record bodies may also use ordinary readable blocks such as
+  `definitions`, `table`, `callout`, and `code`.
 - `inputs` blocks group inputs and optionally bind them under local keys for a
   concrete turn.
 
@@ -84,6 +89,8 @@ Important rules:
 - `schema:` on `output shape` still attaches a `json schema`; the field name is
   owner-aware rather than globally retyped.
 - `structure:` may attach a named `document` to a markdown-bearing output.
+- Ordinary output record bodies may reuse readable block kinds such as
+  `definitions`, `table`, `callout`, and `code`.
 - `json schema` still attaches beneath `output shape`; it does not replace
   `output`.
 - `outputs` blocks group outputs and may bind them under local keys for a
@@ -93,6 +100,7 @@ Output bodies can include:
 
 - authored fields and sections
 - readable declaration refs
+- readable block kinds such as `definitions`, `table`, `callout`, and `code`
 - guarded sections
 - `standalone_read`
 - `trust_surface`
@@ -219,3 +227,6 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `55`: owner-aware output `schema:` attachments
 - `56`: typed `structure:` attachments on markdown-bearing inputs and outputs
 - `57`: schema-backed review contracts on ordinary output carriers
+- `58` and `59`: document blocks, inheritance, and addressable readable descendants
+- `60`: shared readable blocks on workflow, skill-entry, and output bodies
+- `61`: multiline readable code blocks and fail-loud readable validation

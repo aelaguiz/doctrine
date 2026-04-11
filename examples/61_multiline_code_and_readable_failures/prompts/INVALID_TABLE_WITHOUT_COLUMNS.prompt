@@ -1,0 +1,20 @@
+document BrokenGuide: "Broken Guide"
+    table release_gates: "Release Gates"
+        notes:
+            "This should fail."
+
+
+output BrokenGuideFile: "Broken Guide File"
+    target: File
+        path: "release_root/BROKEN_GUIDE.md"
+    shape: MarkdownDocument
+    structure: BrokenGuide
+    requirement: Required
+
+
+agent InvalidTableWithoutColumnsDemo:
+    role: "Compile the broken guide."
+    workflow: "Draft"
+        "This should fail."
+    outputs: "Outputs"
+        BrokenGuideFile

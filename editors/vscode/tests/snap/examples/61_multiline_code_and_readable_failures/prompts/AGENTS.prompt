@@ -1,0 +1,24 @@
+# This example shows multiline readable `code` blocks on ordinary output bodies.
+
+output ManifestGuide: "Manifest Guide"
+    target: File
+        path: "release_root/MANIFEST_GUIDE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+    code example_manifest: "Example Manifest" advisory
+        language: json
+        text: """
+{
+  "title": "PLACEHOLDER: Release title",
+  "steps": []
+}
+"""
+
+
+agent ManifestGuideDemo:
+    role: "Reuse {{ManifestGuide:example_manifest.title}} when you draft the manifest guide."
+    workflow: "Draft"
+        "Write the guide and keep the example manifest in sync."
+    outputs: "Outputs"
+        ManifestGuide

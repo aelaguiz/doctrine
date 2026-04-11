@@ -245,7 +245,84 @@ class SectionBodyRef:
     ref: AddressableRef
 
 
-SectionBodyItem: TypeAlias = ProseLine | RouteLine | SectionBodyRef | "LocalSection"
+ReadableRequirement: TypeAlias = str
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableListItem:
+    key: str | None
+    text: ProseLine
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableDefinitionItem:
+    key: str
+    title: str
+    body: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableTableCell:
+    key: str
+    text: str
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableTableColumn:
+    key: str
+    title: str
+    body: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableTableRow:
+    key: str
+    cells: tuple[ReadableTableCell, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableTableData:
+    columns: tuple[ReadableTableColumn, ...]
+    rows: tuple[ReadableTableRow, ...] = ()
+    notes: tuple[ProseLine, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableCalloutData:
+    kind: str | None
+    body: tuple[ProseLine, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableCodeData:
+    language: str | None
+    text: str
+
+
+ReadableSectionBodyItem: TypeAlias = ProseLine | "ReadableBlock"
+ReadablePayload: TypeAlias = (
+    tuple[ReadableSectionBodyItem, ...]
+    | tuple[ReadableListItem, ...]
+    | tuple[ReadableDefinitionItem, ...]
+    | ReadableTableData
+    | ReadableCalloutData
+    | ReadableCodeData
+    | None
+)
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableBlock:
+    kind: str
+    key: str
+    title: str | None
+    payload: ReadablePayload
+    requirement: ReadableRequirement | None = None
+    when_expr: Expr | None = None
+    legacy_section: bool = False
+
+
+SectionBodyItem: TypeAlias = ProseLine | RouteLine | SectionBodyRef | "LocalSection" | ReadableBlock
 
 
 @dataclass(slots=True, frozen=True)
@@ -310,7 +387,7 @@ class RecordRef:
     body: tuple["AnyRecordItem", ...] | None = None
 
 
-RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef
+RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
 AnyRecordItem: TypeAlias = RecordItem | GuardedOutputSection
 OutputRecordItem: TypeAlias = RecordItem | GuardedOutputSection
 
@@ -553,22 +630,18 @@ class SchemaDecl:
 
 
 @dataclass(slots=True, frozen=True)
-class DocumentBlock:
-    kind: str
-    key: str
-    title: str
-    items: tuple[ProseLine, ...]
-
-
-@dataclass(slots=True, frozen=True)
-class DocumentOverrideBlock:
+class ReadableOverrideBlock:
     kind: str
     key: str
     title: str | None
-    items: tuple[ProseLine, ...]
+    payload: ReadablePayload
+    requirement: ReadableRequirement | None = None
+    when_expr: Expr | None = None
 
 
-DocumentItem: TypeAlias = ProseLine | DocumentBlock | InheritItem | DocumentOverrideBlock
+DocumentBlock = ReadableBlock
+DocumentOverrideBlock = ReadableOverrideBlock
+DocumentItem: TypeAlias = ProseLine | ReadableBlock | InheritItem | ReadableOverrideBlock
 
 
 @dataclass(slots=True, frozen=True)

@@ -104,11 +104,16 @@ const SCHEMA_ITEM_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
 const DOCUMENT_BLOCK_RE = new RegExp(
-  `^\\s*(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+  `^\\s*(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}(?:\\s+.+)?\\s*$`,
 );
 const DOCUMENT_OVERRIDE_BLOCK_RE = new RegExp(
-  `^\\s*override\\s+(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?\\s*$`,
+  `^\\s*override\\s+(section|sequence|bullets|checklist|definitions|table|callout|code|rule)\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?(?:\\s+.+)?\\s*$`,
 );
+const READABLE_KEYED_STRING_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+);
+const READABLE_TABLE_CONTAINER_RE = /^\s*(columns|rows)\s*:\s*$/;
+const READABLE_TABLE_ROW_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*$`);
 const LAW_OVERRIDE_SECTION_RE = new RegExp(
   `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*$`,
 );
@@ -3228,6 +3233,44 @@ function getChildBodySpecForLine(document, declaration, container, lineNumber) {
   return childBody;
 }
 
+function getReadableChildBodySpec(document, kind, lineText, lineNumber, endLine) {
+  const indent = leadingSpaces(lineText);
+  switch (kind) {
+    case "section":
+      return {
+        type: "readable_section_body",
+        endLine: findBodyEndLine(document, lineNumber, endLine),
+        indent,
+        lineNumber,
+      };
+    case "sequence":
+    case "bullets":
+    case "checklist":
+      return {
+        type: "readable_list_body",
+        endLine: findBodyEndLine(document, lineNumber, endLine),
+        indent,
+        lineNumber,
+      };
+    case "definitions":
+      return {
+        type: "readable_definitions_body",
+        endLine: findBodyEndLine(document, lineNumber, endLine),
+        indent,
+        lineNumber,
+      };
+    case "table":
+      return {
+        type: "readable_table_body",
+        endLine: findBodyEndLine(document, lineNumber, endLine),
+        indent,
+        lineNumber,
+      };
+    default:
+      return undefined;
+  }
+}
+
 function getAgentChildBodySpec(lineText, lineNumber) {
   const inlineIoField = lineText.match(
     new RegExp(`^\\s*(inputs|outputs)\\s*:\\s*${STRING_PATTERN}\\s*$`),
@@ -3913,6 +3956,22 @@ function getWorkflowSectionBodyItems(document, bodySpec) {
       continue;
     }
 
+    const readableBlock = lineText.match(DOCUMENT_BLOCK_RE);
+    if (readableBlock) {
+      items.set(readableBlock[2], {
+        bodySpec: getReadableChildBodySpec(
+          document,
+          readableBlock[1],
+          lineText,
+          lineNumber,
+          bodySpec.endLine,
+        ),
+        keyRange: createFirstMatchRange(lineText, lineNumber, readableBlock[2]),
+        lineNumber,
+      });
+      continue;
+    }
+
     const localSection = lineText.match(
       new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`),
     );
@@ -4259,6 +4318,22 @@ function getRecordBodyItems(document, bodySpec) {
       continue;
     }
 
+    const readableBlock = lineText.match(DOCUMENT_BLOCK_RE);
+    if (readableBlock) {
+      items.set(readableBlock[2], {
+        bodySpec: getReadableChildBodySpec(
+          document,
+          readableBlock[1],
+          lineText,
+          lineNumber,
+          bodySpec.endLine,
+        ),
+        keyRange: createFirstMatchRange(lineText, lineNumber, readableBlock[2]),
+        lineNumber,
+      });
+      continue;
+    }
+
     const keyedItem = lineText.match(
       new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:`),
     );
@@ -4458,6 +4533,7 @@ function getDocumentBodyItems(document, bodySpec) {
     const inheritItem = lineText.match(INHERIT_RE);
     if (inheritItem) {
       items.set(inheritItem[1], {
+        inherited: true,
         keyRange: createFirstMatchRange(lineText, lineNumber, inheritItem[1]),
         lineNumber,
       });
@@ -4467,6 +4543,13 @@ function getDocumentBodyItems(document, bodySpec) {
     const overrideBlock = lineText.match(DOCUMENT_OVERRIDE_BLOCK_RE);
     if (overrideBlock) {
       items.set(overrideBlock[2], {
+        bodySpec: getReadableChildBodySpec(
+          document,
+          overrideBlock[1],
+          lineText,
+          lineNumber,
+          bodySpec.endLine,
+        ),
         keyRange: createFirstMatchRange(lineText, lineNumber, overrideBlock[2]),
         lineNumber,
       });
@@ -4474,17 +4557,194 @@ function getDocumentBodyItems(document, bodySpec) {
     }
 
     const localBlock = lineText.match(DOCUMENT_BLOCK_RE);
-    if (!localBlock) {
+    if (localBlock) {
+      items.set(localBlock[2], {
+        bodySpec: getReadableChildBodySpec(
+          document,
+          localBlock[1],
+          lineText,
+          lineNumber,
+          bodySpec.endLine,
+        ),
+        keyRange: createFirstMatchRange(lineText, lineNumber, localBlock[2]),
+        lineNumber,
+      });
       continue;
     }
 
-    items.set(localBlock[2], {
-      keyRange: createFirstMatchRange(lineText, lineNumber, localBlock[2]),
+    const localSection = lineText.match(READABLE_KEYED_STRING_RE);
+    if (!localSection) {
+      continue;
+    }
+
+    items.set(localSection[1], {
+      bodySpec: {
+        type: "readable_section_body",
+        endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+        indent: leadingSpaces(lineText),
+        lineNumber,
+      },
+      keyRange: createFirstMatchRange(lineText, lineNumber, localSection[1]),
       lineNumber,
     });
   }
 
   return items;
+}
+
+function getReadableSectionBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const readableBlock = lineText.match(DOCUMENT_BLOCK_RE);
+    if (!readableBlock) {
+      continue;
+    }
+
+    items.set(readableBlock[2], {
+      bodySpec: getReadableChildBodySpec(
+        document,
+        readableBlock[1],
+        lineText,
+        lineNumber,
+        bodySpec.endLine,
+      ),
+      keyRange: createFirstMatchRange(lineText, lineNumber, readableBlock[2]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getReadableListBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const keyedItem = lineText.match(READABLE_KEYED_STRING_RE);
+    if (!keyedItem) {
+      continue;
+    }
+
+    items.set(keyedItem[1], {
+      keyRange: createFirstMatchRange(lineText, lineNumber, keyedItem[1]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getReadableDefinitionsBodyItems(document, bodySpec) {
+  return getReadableListBodyItems(document, bodySpec);
+}
+
+function getReadableTableBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const container = lineText.match(READABLE_TABLE_CONTAINER_RE);
+    if (!container) {
+      continue;
+    }
+
+    items.set(container[1], {
+      bodySpec: {
+        type: container[1] === "columns" ? "readable_table_columns_body" : "readable_table_rows_body",
+        endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+        indent: leadingSpaces(lineText),
+        lineNumber,
+      },
+      keyRange: createFirstMatchRange(lineText, lineNumber, container[1]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getReadableTableColumnsBodyItems(document, bodySpec) {
+  return getReadableDefinitionsBodyItems(document, bodySpec);
+}
+
+function getReadableTableRowsBodyItems(document, bodySpec) {
+  const items = new Map();
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return items;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const row = lineText.match(READABLE_TABLE_ROW_RE);
+    if (!row) {
+      continue;
+    }
+
+    items.set(row[1], {
+      bodySpec: {
+        type: "readable_table_row_body",
+        endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+        indent: leadingSpaces(lineText),
+        lineNumber,
+      },
+      keyRange: createFirstMatchRange(lineText, lineNumber, row[1]),
+      lineNumber,
+    });
+  }
+
+  return items;
+}
+
+function getReadableTableRowBodyItems(document, bodySpec) {
+  return getReadableDefinitionsBodyItems(document, bodySpec);
 }
 
 function getEnumBodyItems(document, bodySpec) {
@@ -4530,6 +4790,20 @@ function getAddressableBodyItems(document, bodySpec) {
       return getSchemaBodyItems(document, bodySpec);
     case "document_body":
       return getDocumentBodyItems(document, bodySpec);
+    case "readable_section_body":
+      return getReadableSectionBodyItems(document, bodySpec);
+    case "readable_list_body":
+      return getReadableListBodyItems(document, bodySpec);
+    case "readable_definitions_body":
+      return getReadableDefinitionsBodyItems(document, bodySpec);
+    case "readable_table_body":
+      return getReadableTableBodyItems(document, bodySpec);
+    case "readable_table_columns_body":
+      return getReadableTableColumnsBodyItems(document, bodySpec);
+    case "readable_table_rows_body":
+      return getReadableTableRowsBodyItems(document, bodySpec);
+    case "readable_table_row_body":
+      return getReadableTableRowBodyItems(document, bodySpec);
     case "workflow_body":
       return getWorkflowBodyItems(document, bodySpec);
     case "workflow_section_body":
@@ -4599,6 +4873,43 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
     }
 
     if (!target.bodySpec) {
+      if (
+        target.inherited
+        && currentBody.type === "document_body"
+        && declaration.kind === DECLARATION_KIND.DOCUMENT
+        && declaration.parentRef
+      ) {
+        const parentSource = await openReferencedDocument(declaration.parentRef, currentSource);
+        if (!parentSource) {
+          return undefined;
+        }
+
+        const parentDeclaration = findDeclarationByKind(
+          parentSource.index,
+          DECLARATION_KIND.DOCUMENT,
+          declaration.parentRef.declarationName,
+          { requireConcrete: false },
+        );
+        if (!parentDeclaration) {
+          return undefined;
+        }
+
+        const parentBody = getDeclarationBodySpec(parentDeclaration);
+        if (!parentBody) {
+          return undefined;
+        }
+
+        const parentTarget = getDocumentBodyItems(parentSource.document, parentBody).get(segment);
+        if (!parentTarget || !parentTarget.bodySpec) {
+          return undefined;
+        }
+
+        currentSource = parentSource;
+        currentBody = parentTarget.bodySpec;
+        currentTarget = parentTarget;
+        continue;
+      }
+
       if (!target.valueRef || !target.declarationKind) {
         return undefined;
       }
