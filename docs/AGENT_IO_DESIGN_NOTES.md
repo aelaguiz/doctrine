@@ -24,9 +24,10 @@ This keeps the split clean:
 
 - output contracts are still the emitted contract surface
 - typed `schema:` / `structure:` attachments stay on inputs or outputs
-- shared readable blocks such as `definitions`, `table`, `callout`, and
-  `code` may still appear on ordinary record bodies without becoming a second
-  structure system
+- shared readable blocks such as `definitions`, `properties`, `table`,
+  explicit `guard` shells, `callout`, `code`, raw `markdown`, raw `html`,
+  `footnotes`, and `image` may still appear on ordinary record bodies without
+  becoming a second structure system
 - compiler-owned semantics still live in `workflow law` or `review`
 - downstream trust still flows through declared output fields, not through
   hidden side channels
@@ -93,12 +94,26 @@ Important rules:
 - Output-attached schemas must still expose at least one section even when the
   same schema also owns reusable artifacts or groups.
 - `structure:` may attach a named `document` to a markdown-bearing output.
+- `render_profile:` may attach a named markdown presentation policy to a
+  markdown-bearing output.
 - Ordinary output record bodies may reuse readable block kinds such as
-  `definitions`, `table`, `callout`, and `code`.
+  `definitions`, `properties`, `table`, explicit `guard` shells, `callout`,
+  `code`, raw `markdown`, raw `html`, `footnotes`, and `image`.
 - `json schema` still attaches beneath `output shape`; it does not replace
   `output`.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
+
+Shipped markdown render defaults:
+
+- `Comment` and `CommentText` outputs default to `CommentMarkdown`
+- other markdown-bearing outputs default to `ArtifactMarkdown`
+- authored `render_profile` declarations may override supported readable
+  rendering targets such as `properties`, guarded shells, and the shipped
+  semantic lowering targets
+- if a markdown-bearing `output` uses `structure:` without its own
+  `render_profile:`, an attached `document render_profile:` still governs the
+  lowered readable body
 
 Output bodies can include:
 
@@ -235,3 +250,8 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `58` and `59`: document blocks, inheritance, and addressable readable descendants
 - `60`: shared readable blocks on workflow, skill-entry, and output bodies
 - `61`: multiline readable code blocks and fail-loud readable validation
+- `64`: authored `render_profile`, `properties`, and explicit readable guard shells
+- `65`: typed `item_schema:` / `row_schema:` descendants on readable blocks
+- `66`: explicit raw `markdown` / `html`, `footnotes`, `image`, and structured nested table cells
+- `67`: semantic render-profile lowering targets plus `document render_profile:`
+  surviving `output structure:` lowering

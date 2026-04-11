@@ -102,7 +102,7 @@ Stability rules:
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
 | `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
 | `E294` | Duplicate enum member wire | One `enum` body repeats the same host-facing `wire` value. |
-| `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. This currently includes readable-markdown validation failures such as duplicate document block keys, readable-guard source violations, unknown callout kinds, empty tables, and code blocks that omit multiline string form. |
+| `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. This currently includes readable-markdown validation failures such as duplicate document block keys, duplicate `properties` or row/item schema keys, readable-guard source violations, invalid `render_profile` targets or modes, unknown callout kinds, empty tables, raw markdown blocks that omit multiline string form, and inline table cells that try to spill into nested content without a structured cell body. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |

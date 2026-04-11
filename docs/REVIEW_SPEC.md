@@ -271,7 +271,8 @@ semantics:
 Review does not invent a second trust channel.
 Because `comment_output` is still an ordinary `output`, review comments may
 also use the shared readable block kinds that ordinary outputs ship, such as
-`definitions`, `callout`, or `code`, alongside guarded sections.
+`definitions`, `properties`, explicit `guard` shells, `callout`, or `code`,
+alongside guarded sections.
 
 ## Multi-Subject Review And Carried State
 

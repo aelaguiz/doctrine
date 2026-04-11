@@ -47,6 +47,10 @@ That shipped surface includes:
   schema-backed review contracts
 - title-bearing concrete-agent heads plus enum-member key/title/wire identity
   projections
+- authored `render_profile`, compact `properties`, explicit readable guard
+  shells, profile-sensitive semantic lowering targets, typed `item_schema:` /
+  `row_schema:`, and explicit late readable extensions such as raw
+  `markdown`, `html`, `footnotes`, `image`, and structured nested table cells
 
 ## Current Non-Goals
 
