@@ -108,12 +108,17 @@ class ToAst(Transformer):
     def _agent(self, items, *, abstract: bool):
         name = items[0]
         parent_ref: model.NameRef | None = None
+        title: str | None = None
         fields_start = 1
         if len(items) > 1 and isinstance(items[1], model.NameRef):
             parent_ref = items[1]
             fields_start = 2
+        if not abstract and len(items) > fields_start and isinstance(items[fields_start], str):
+            title = items[fields_start]
+            fields_start += 1
         return model.Agent(
             name=name,
+            title=title,
             fields=tuple(items[fields_start:]),
             abstract=abstract,
             parent_ref=parent_ref,
@@ -1029,8 +1034,32 @@ class ToAst(Transformer):
         return tuple(items)
 
     @v_args(inline=True)
-    def enum_member(self, key, value):
-        return model.EnumMember(key=key, value=value)
+    def enum_member(self, key, title, body=None):
+        wire: str | None = None
+        for field_key, field_value in body or ():
+            if field_key != "wire":
+                raise TransformParseFailure(
+                    f"Unknown enum member field: {field_key}",
+                    hints=("Only `wire:` is legal inside an enum-member body.",),
+                )
+            if wire is not None:
+                raise TransformParseFailure(
+                    "Enum member may declare `wire` at most once.",
+                    hints=("Keep one `wire:` field per enum member.",),
+                )
+            wire = field_value
+        return model.EnumMember(key=key, title=title, wire=wire)
+
+    def enum_member_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def enum_member_body_line(self, value):
+        return value
+
+    @v_args(inline=True)
+    def enum_member_wire_stmt(self, value):
+        return ("wire", value)
 
     def review_body(self, items):
         return ReviewBodyParts(items=tuple(items))

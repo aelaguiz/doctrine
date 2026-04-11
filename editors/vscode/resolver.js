@@ -18,7 +18,13 @@ const IMPORT_LINE_RE = new RegExp(
   `^\\s*import\\s+(${IMPORT_PATH_PATTERN})\\s*$`,
 );
 const INHERITED_AGENT_RE = new RegExp(
-  `^\\s*(?:abstract\\s+)?agent\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*$`,
+  `^\\s*(?:abstract\\s+)?agent\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*${STRING_OR_EMPTY_PATTERN}\\s*$`,
+);
+const ENUM_MEMBER_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${STRING_PATTERN})\\s*$`,
+);
+const ENUM_MEMBER_WIRE_RE = new RegExp(
+  `^\\s*wire\\s*:\\s*(${STRING_PATTERN})\\s*$`,
 );
 const INHERITED_BLOCK_RE = new RegExp(
   `^\\s*(review|analysis|schema|document|workflow|skills|inputs|outputs)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
@@ -4764,20 +4770,78 @@ function getEnumBodyItems(document, bodySpec) {
       continue;
     }
 
-    const enumMember = lineText.match(
-      new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`),
-    );
+    const enumMember = lineText.match(ENUM_MEMBER_RE);
     if (!enumMember) {
       continue;
     }
 
-    items.set(enumMember[1], {
+    const memberEndLine = findBodyEndLine(document, lineNumber, bodySpec.endLine);
+    const item = {
+      bodySpec: undefined,
       keyRange: createFirstMatchRange(lineText, lineNumber, enumMember[1]),
       lineNumber,
-    });
+      titleRange: createLastMatchRange(lineText, lineNumber, enumMember[2]),
+      wireLineNumber: lineNumber,
+      wireRange: createLastMatchRange(lineText, lineNumber, enumMember[2]),
+    };
+
+    const nextContent = findNextSignificantLine(document, lineNumber + 1, memberEndLine);
+    if (nextContent && nextContent.indent > leadingSpaces(lineText)) {
+      item.bodySpec = {
+        type: "enum_member_body",
+        endLine: memberEndLine,
+        indent: leadingSpaces(lineText),
+        keyRange: item.keyRange,
+        lineNumber,
+        titleRange: item.titleRange,
+        wireLineNumber: item.wireLineNumber,
+        wireRange: item.wireRange,
+      };
+
+      for (
+        let bodyLineNumber = lineNumber + 1;
+        bodyLineNumber <= memberEndLine;
+        bodyLineNumber += 1
+      ) {
+        const bodyLineText = document.lineAt(bodyLineNumber).text;
+        if (isIgnorableLine(bodyLineText) || leadingSpaces(bodyLineText) !== nextContent.indent) {
+          continue;
+        }
+        const wireMatch = bodyLineText.match(ENUM_MEMBER_WIRE_RE);
+        if (!wireMatch) {
+          continue;
+        }
+        item.wireLineNumber = bodyLineNumber;
+        item.wireRange = createLastMatchRange(bodyLineText, bodyLineNumber, wireMatch[1]);
+        item.bodySpec.wireLineNumber = item.wireLineNumber;
+        item.bodySpec.wireRange = item.wireRange;
+        break;
+      }
+    }
+
+    items.set(enumMember[1], item);
   }
 
   return items;
+}
+
+function getEnumMemberBodyItems(_document, bodySpec) {
+  return new Map([
+    [
+      "key",
+      {
+        keyRange: bodySpec.keyRange,
+        lineNumber: bodySpec.lineNumber,
+      },
+    ],
+    [
+      "wire",
+      {
+        keyRange: bodySpec.wireRange,
+        lineNumber: bodySpec.wireLineNumber,
+      },
+    ],
+  ]);
 }
 
 function getAddressableBodyItems(document, bodySpec) {
@@ -4816,6 +4880,8 @@ function getAddressableBodyItems(document, bodySpec) {
       return getRecordBodyItems(document, bodySpec);
     case "enum_body":
       return getEnumBodyItems(document, bodySpec);
+    case "enum_member_body":
+      return getEnumMemberBodyItems(document, bodySpec);
     default:
       return new Map();
   }
@@ -4823,14 +4889,7 @@ function getAddressableBodyItems(document, bodySpec) {
 
 async function findAddressablePathTarget({ declaration, pathSegments, source }) {
   if (declaration.kind === DECLARATION_KIND.AGENT) {
-    if (pathSegments.length === 1 && pathSegments[0] === "name") {
-      return {
-        document: source.document,
-        lineNumber: declaration.lineNumber,
-        selectionRange: declaration.nameRange,
-      };
-    }
-    return undefined;
+    return findAgentPathTarget(declaration, pathSegments, source);
   }
 
   let currentSource = source;
@@ -4966,10 +5025,52 @@ async function resolveAddressableTitleTarget({ source, target }) {
     };
   }
 
+  if (target.titleRange) {
+    return {
+      document: source.document,
+      lineNumber: target.lineNumber,
+      selectionRange: target.titleRange,
+    };
+  }
+
   return {
     document: source.document,
     lineNumber: target.lineNumber,
     selectionRange: target.keyRange,
+  };
+}
+
+function findAgentPathTarget(declaration, pathSegments, source) {
+  if (pathSegments.length !== 1) {
+    return undefined;
+  }
+
+  const segment = pathSegments[0];
+  if (segment === "name" || segment === "key") {
+    return {
+      document: source.document,
+      lineNumber: declaration.lineNumber,
+      selectionRange: declaration.nameRange,
+    };
+  }
+  if (segment !== "title") {
+    return undefined;
+  }
+
+  const lineText = source.document.lineAt(declaration.lineNumber).text;
+  const match = lineText.match(
+    new RegExp(
+      `^\\s*agent\\s+${IDENTIFIER_PATTERN}(?:\\s*\\[${DOTTED_NAME_PATTERN}\\])?\\s*:\\s*(${STRING_PATTERN})\\s*$`,
+    ),
+  );
+  if (!match) {
+    return undefined;
+  }
+
+  return {
+    document: source.document,
+    lineNumber: declaration.lineNumber,
+    selectionRange: createLastMatchRange(lineText, declaration.lineNumber, match[1]),
   };
 }
 

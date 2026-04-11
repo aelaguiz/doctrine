@@ -1037,6 +1037,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Duplicate enum member wire in (?P<owner>[^:]+): (?P<wire>.+)$"),
+        "E294",
+        "Duplicate enum member wire",
+        lambda match: f"Enum `{match.group('owner')}` repeats wire value `{match.group('wire')}`.",
+        (),
+    ),
+    (
         re.compile(r"^Cyclic import module: (?P<detail>.+)$"),
         "E289",
         "Cyclic import module",

@@ -1172,7 +1172,7 @@
       }
     },
     "typedField": {
-      "match": "^(\\s*)(role|inputs|outputs)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
+      "match": "^(\\s*)(role|inputs|outputs|wire)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.other.field.doctrine"

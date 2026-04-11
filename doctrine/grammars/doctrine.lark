@@ -53,7 +53,7 @@ json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDE
 skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
-agent: "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
+agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
 inheritance: "[" name_ref "]"
 
@@ -484,7 +484,10 @@ record_item_body: _INDENT record_body _DEDENT
 ?record_head: string | path_ref | name_ref
 
 enum_body: enum_member+
-enum_member: CNAME ":" string _NL?
+enum_member: CNAME ":" string _NL? enum_member_body?
+enum_member_body: _INDENT enum_member_body_line+ _DEDENT
+enum_member_body_line: enum_member_wire_stmt
+enum_member_wire_stmt: "wire" ":" string _NL?
 
 ref_list: ref_item+
 ref_item: name_ref _NL?

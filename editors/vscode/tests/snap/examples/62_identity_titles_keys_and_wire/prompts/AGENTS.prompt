@@ -1,0 +1,34 @@
+# This example adds one narrow Phase 1 identity step:
+# concrete agents may carry human-facing head titles, and enum members may
+# split structural key, human-facing title, and host-facing wire value.
+#
+# Bare readable refs default to title when the target exposes one.
+# `:key` keeps the structural identity visible, and enum members additionally
+# expose `.wire` for external or serialized surfaces.
+
+enum NextOwner: "Next Owner"
+    section_author: "Section Author"
+        wire: "section-author"
+
+    copy_editor: "Copy Editor"
+        wire: "copy-editor"
+
+
+workflow IdentityStrings: "Identity Strings"
+    owner_labels: "Owner Labels"
+        "Route blocked work back to {{ProjectLead}}."
+        "Use {{ProjectLead:key}} when the structural owner key must stay visible."
+        "The agent title is {{ProjectLead:title}}."
+        "The handoff title is {{NextOwner:section_author}}."
+        "The handoff key is {{NextOwner:section_author.key}}."
+        "The handoff wire is {{NextOwner:section_author.wire}}."
+
+
+agent ProjectLead: "Project Lead"
+    role: "Keep owner identity readable without losing structural keys."
+
+
+agent IdentityTitlesDemo:
+    role: "Keep owner identity readable without losing structural keys."
+
+    read_first: IdentityStrings
