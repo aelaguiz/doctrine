@@ -1,15 +1,17 @@
 # Agent I/O Design Notes
 
-This document now records the shipped I/O model through examples `08` to `42`.
+This document now records the shipped I/O model through examples `08` to `49`.
 
 The goal is to describe the turn-level contract the language already supports,
 and the explicit non-goals that keep it from drifting into packet or
 root-binding machinery too early.
 
 For the language-level workflow-law reference, use
-[WORKFLOW_LAW.md](WORKFLOW_LAW.md). This document focuses on the I/O boundary:
-what outputs emit, what fields are trusted carriers, and how downstream readers
-learn what is current now.
+[WORKFLOW_LAW.md](WORKFLOW_LAW.md). For the language-level review reference,
+use [REVIEW_SPEC.md](REVIEW_SPEC.md). This document focuses on the I/O
+boundary: what outputs emit, what fields are trusted carriers, how downstream
+readers learn what is current now, and how review-bound outputs stay aligned
+with compiler-owned review semantics.
 
 ## Why This Exists
 
@@ -23,6 +25,10 @@ The shipped language can now say useful things about:
 - typed inputs and typed input sources
 - typed outputs, output targets, output shapes, and JSON schemas
 - portable currentness and invalidation carried through trusted outputs
+- review-owned currentness and carried review state carried through trusted
+  `comment_output` fields
+- review output-agreement checks that keep semantic verdict, next owner,
+  currentness, and carried review state aligned with emitted output fields
 - authored routing and stop guidance
 - skill-first capability references
 
@@ -68,6 +74,15 @@ Current shipped boundaries:
   output fields, or undeclared runtime names
 - workflow law may bind `current artifact ... via ...` and `invalidate ... via ...`
   only through declared output fields
+- review may bind `current artifact ... via ...` only through the declared
+  `comment_output` field on the emitted review comment
+- review may carry `active_mode` and `trigger_reason` only through bound
+  review-comment fields that stay live on the output contract and in
+  `trust_surface`
+- review-bound guarded output sections may read resolved semantic review names
+  such as `verdict`, `contract.*`, and `fields.*` only after review
+  resolution; those names do not become general output-guard inputs outside
+  the review-bound surface
 - trusted carrier fields must actually be emitted by the concrete turn
 - path conventions such as `section_root/...` stay plain strings explained by
   surrounding guidance
@@ -107,6 +122,39 @@ This keeps the turn contract explicit:
 - `output` still says what the turn emits
 - `trust_surface` says which emitted fields carry portable downstream truth
 - workflow law says when those trusted fields are active and what they mean
+- review says when a trusted `comment_output` field carries current truth,
+  carried review state, exact failing gates, or routed ownership
+
+## Review Output Contracts And Agreement
+
+First-class review widened the shipped I/O boundary without adding a second
+produced-contract primitive.
+
+Current shipped rules:
+- `comment_output` must still be an ordinary emitted `output`
+- review currentness uses the same portable carrier rule as workflow law:
+  `current artifact ... via Output.field`
+- blocked review turns may use `current none` instead of pretending a later
+  reviewed artifact became current
+- review-owned carried state such as `active_mode` and `trigger_reason` moves
+  through bound `fields:` entries on the emitted review comment, not through
+  route payloads or hidden carrier aliases
+- the review output contract may use ordinary guarded output sections such as
+  `failure_detail`, and those guards may read resolved review semantic names
+  only because the output is review-bound
+- review output agreement is compiler-owned and fail-loud: verdict, next
+  owner, currentness carriers, carried review fields, and conditional
+  failure-detail sections must stay structurally aligned with the resolved
+  review branch semantics
+- `trust_surface` remains the downstream trust contract even on review-bound
+  comments; review does not invent a second trust channel
+
+This keeps the shipped I/O model coherent through the review ladder:
+- examples `08` through `42` prove the base input/output and workflow-law
+  carrier model
+- examples `43` through `49` prove how first-class `review` reuses that same
+  `output` boundary for review comments, current truth, carried review state,
+  and exact output agreement
 
 ## Current Framing
 

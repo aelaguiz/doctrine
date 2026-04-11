@@ -142,7 +142,9 @@
 #        ^^^^^^ source.doctrine keyword.control.doctrine
 #              ^ source.doctrine
 #               ^^^^ source.doctrine keyword.control.doctrine
-#                   ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                   ^^^^^^^^^^^^^^^^ source.doctrine
+#                                   ^^^^^^^ source.doctrine keyword.control.doctrine
+#                                          ^ source.doctrine
 #                                           ^^ source.doctrine keyword.control.doctrine
 #                                             ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
 >
@@ -151,7 +153,9 @@
 >        when CurrentHandoff.missing:
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine keyword.control.doctrine
-#            ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^^^^^^^^^ source.doctrine
+#                            ^^^^^^^ source.doctrine keyword.control.doctrine
+#                                   ^^ source.doctrine
 >            # This line says the branch carries no durable artifact forward.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >            current none

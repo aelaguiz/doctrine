@@ -13,6 +13,12 @@
       "include": "#workflow"
     },
     {
+      "include": "#abstractReview"
+    },
+    {
+      "include": "#reviewDeclaration"
+    },
+    {
       "include": "#skillsDeclaration"
     },
     {
@@ -97,6 +103,9 @@
       "include": "#route"
     },
     {
+      "include": "#reviewSemanticRef"
+    },
+    {
       "include": "#abstractField"
     },
     {
@@ -112,6 +121,9 @@
       "include": "#skillsField"
     },
     {
+      "include": "#reviewField"
+    },
+    {
       "include": "#ioPatchField"
     },
     {
@@ -119,6 +131,21 @@
     },
     {
       "include": "#typedField"
+    },
+    {
+      "include": "#reviewConfigFieldRef"
+    },
+    {
+      "include": "#reviewSubjectMapField"
+    },
+    {
+      "include": "#reviewFieldsField"
+    },
+    {
+      "include": "#reviewOutcomeField"
+    },
+    {
+      "include": "#reviewFieldBinding"
     },
     {
       "include": "#keyValueRef"
@@ -197,6 +224,55 @@
     },
     "workflow": {
       "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "6": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "9": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "abstractReview": {
+      "match": "^(\\s*)(abstract)(\\s+)(review)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.doctrine"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "8": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "9": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "11": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "reviewDeclaration": {
+      "match": "^(\\s*)(review)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -717,7 +793,7 @@
       }
     },
     "lawKeyword": {
-      "match": "\\b(active|and|artifact|as|comparison|current|decisions|else|exact|except|false|for|forbid|ignore|in|invalidate|mapping|match|mode|must|none|only|or|own|preserve|rewrite_evidence|stop|structure|support_only|true|truth|via|vocabulary|when)\\b",
+      "match": "\\b(accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|stop|structure|support_only|true|truth|via|vocabulary|when)\\b",
       "name": "keyword.control.doctrine"
     },
     "elseMatchArm": {
@@ -762,6 +838,20 @@
           "include": "#stringInterpolation"
         }
       ]
+    },
+    "reviewSemanticRef": {
+      "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "2": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "3": {
+          "name": "variable.other.member.doctrine"
+        }
+      }
     },
     "abstractField": {
       "match": "^(\\s*)(abstract)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
@@ -839,6 +929,20 @@
         }
       }
     },
+    "reviewField": {
+      "match": "^(\\s*)(review)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
     "ioPatchField": {
       "match": "^(\\s*)(inputs|outputs)(\\s*)(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\])(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
       "captures": {
@@ -887,6 +991,70 @@
         },
         "6": {
           "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "reviewConfigFieldRef": {
+      "match": "^(\\s*)(subject|contract|comment_output)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
+    "reviewSubjectMapField": {
+      "match": "^(\\s*)(subject_map)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "reviewFieldsField": {
+      "match": "^(\\s*)(fields)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "reviewOutcomeField": {
+      "match": "^(\\s*)(on_accept|on_reject)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "reviewFieldBinding": {
+      "match": "^(\\s*)(verdict|reviewed_artifact|analysis|readback|failing_gates|blocked_gate|next_owner|active_mode|trigger_reason)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine"
         }
       }
     },

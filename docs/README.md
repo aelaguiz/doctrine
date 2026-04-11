@@ -7,6 +7,9 @@ Start here if you are new to the repo:
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): canonical shipped reference for `law`,
   `trust_surface`, guarded output sections, conditional routes, carriers,
   currentness, invalidation, and law reuse
+- [REVIEW_SPEC.md](REVIEW_SPEC.md): canonical shipped reference for first-class
+  `review`, shared review contracts, exact failing gates, carried review
+  state, and review inheritance
 - [../examples/README.md](../examples/README.md): how to read the numbered
   example corpus and its manifests
 - [../example_agents/README.md](../example_agents/README.md): external
@@ -28,7 +31,7 @@ anchored in `doctrine/`, the manifest-backed examples, and this docs index.
 Historical proposal, planning, and worklog material lives under
 [archive/](archive/README.md) and is not part of the live docs path. The
 shipped numbered corpus now runs through
-`examples/42_route_only_handoff_capstone`, including the workflow-law cutover,
-the staged route-only setup ladder, the guarded route-only handoff capstone,
-and manifest-backed proof for routed `next_owner` binding plus structured
-`standalone_read` guard discipline.
+`examples/49_review_capstone`, including the workflow-law cutover, the staged
+route-only setup ladder, the guarded route-only handoff capstone, and the full
+first-class `review` ladder through blocked review, exact contract gates,
+current truth, carried mode and trigger state, inheritance, and the capstone.

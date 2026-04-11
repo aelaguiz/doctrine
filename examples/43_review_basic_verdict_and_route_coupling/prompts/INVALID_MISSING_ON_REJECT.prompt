@@ -1,0 +1,74 @@
+# This compile-negative proves that a concrete review must define `on_reject`.
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+output DraftReviewComment: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the draft is accepted."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: DraftReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    start_review: "Start Review"
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+
+agent InvalidMissingOnRejectDemo:
+    role: "Keep missing on_reject from compiling."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        DraftReviewComment

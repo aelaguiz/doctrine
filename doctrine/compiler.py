@@ -35,13 +35,22 @@ ReadableDecl: TypeAlias = (
     | model.SkillDecl
     | model.EnumDecl
 )
-AddressableRootDecl: TypeAlias = ReadableDecl | model.WorkflowDecl | model.SkillsDecl
+AddressableRootDecl: TypeAlias = (
+    ReadableDecl
+    | model.WorkflowDecl
+    | model.SkillsDecl
+    | "ReviewSemanticFieldsRoot"
+    | "ReviewSemanticContractRoot"
+)
 AddressableTarget: TypeAlias = (
     AddressableRootDecl
     | model.RecordScalar
     | model.RecordSection
     | model.GuardedOutputSection
     | model.EnumMember
+    | "ReviewSemanticFieldTarget"
+    | "ReviewSemanticContractFactTarget"
+    | "ReviewSemanticContractGateTarget"
     | "ResolvedSectionItem"
     | "ResolvedUseItem"
     | "ResolvedWorkflowSkillsItem"
@@ -56,6 +65,7 @@ class IndexedUnit:
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
     workflows_by_name: dict[str, model.WorkflowDecl]
+    reviews_by_name: dict[str, model.ReviewDecl]
     inputs_blocks_by_name: dict[str, model.InputsDecl]
     inputs_by_name: dict[str, model.InputDecl]
     input_sources_by_name: dict[str, model.InputSourceDecl]
@@ -191,6 +201,121 @@ class LawBranch:
 
 
 @dataclass(slots=True, frozen=True)
+class ReviewContractGate:
+    key: str
+    title: str
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewContractSpec:
+    workflow_unit: IndexedUnit
+    workflow_decl: model.WorkflowDecl
+    workflow_body: ResolvedWorkflowBody
+    gates: tuple[ReviewContractGate, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSemanticContext:
+    output_module_parts: tuple[str, ...]
+    output_name: str
+    field_bindings: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    contract_gates: tuple[ReviewContractGate, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSemanticFieldsRoot:
+    context: ReviewSemanticContext
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSemanticContractRoot:
+    context: ReviewSemanticContext
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSemanticFieldTarget:
+    field_name: str
+    field_path: tuple[str, ...]
+    context: ReviewSemanticContext
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSemanticContractFactTarget:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSemanticContractGateTarget:
+    gate: ReviewContractGate
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedReviewBody:
+    title: str
+    subject: model.ReviewSubjectConfig | None = None
+    subject_map: model.ReviewSubjectMapConfig | None = None
+    contract: model.ReviewContractConfig | None = None
+    comment_output: model.ReviewCommentOutputConfig | None = None
+    fields: model.ReviewFieldsConfig | None = None
+    items: tuple[model.ReviewSection | model.ReviewOutcomeSection, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutcomeBranch:
+    currents: tuple[model.ReviewCurrentArtifactStmt | model.ReviewCurrentNoneStmt, ...] = ()
+    carries: tuple[model.ReviewCarryStmt, ...] = ()
+    routes: tuple[model.ReviewOutcomeRouteStmt, ...] = ()
+    route_selected: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewGateCheck:
+    identity: str
+    expr: model.Expr
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewPreSectionBranch:
+    block_checks: tuple[ReviewGateCheck, ...] = ()
+    reject_checks: tuple[ReviewGateCheck, ...] = ()
+    accept_checks: tuple[ReviewGateCheck, ...] = ()
+    has_assertions: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewPreOutcomeBranch:
+    block_checks: tuple[ReviewGateCheck, ...] = ()
+    reject_checks: tuple[ReviewGateCheck, ...] = ()
+    accept_checks: tuple[ReviewGateCheck, ...] = ()
+    assertion_gate_ids: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedReviewGateBranch:
+    verdict: str
+    failing_gate_ids: tuple[str, ...] = ()
+    blocked_gate_id: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedReviewAgreementBranch:
+    section_key: str
+    verdict: str
+    route: model.ReviewOutcomeRouteStmt
+    current: model.ReviewCurrentArtifactStmt | model.ReviewCurrentNoneStmt
+    current_subject_key: tuple[tuple[str, ...], str] | None = None
+    reviewed_subject_key: tuple[tuple[str, ...], str] | None = None
+    carries: tuple[model.ReviewCarryStmt, ...] = ()
+    requires_failure_detail: bool = False
+    blocked_gate_required: bool = False
+    failing_gate_ids: tuple[str, ...] = ()
+    blocked_gate_id: str | None = None
+
+
+OutputDeclKey = tuple[tuple[str, ...], str]
+
+
+@dataclass(slots=True, frozen=True)
 class ResolvedLawPath:
     unit: IndexedUnit
     decl: model.InputDecl | model.OutputDecl | model.EnumDecl
@@ -244,7 +369,7 @@ _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 # authored workflow slot, with one legacy carve-out: the old `workflow` field
 # still preserves 01-06 body inheritance semantics instead of switching to a
 # second slot-patching dialect.
-_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "skills"}
+_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "skills", "review"}
 
 _BUILTIN_INPUT_SOURCES = {
     "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
@@ -275,6 +400,25 @@ _ADDRESSABLE_ROOT_REGISTRIES = (
     ("skills block", "skills_blocks_by_name"),
 )
 
+_REVIEW_REQUIRED_FIELD_NAMES = frozenset(
+    {
+        "verdict",
+        "reviewed_artifact",
+        "analysis",
+        "readback",
+        "failing_gates",
+        "next_owner",
+    }
+)
+_REVIEW_OPTIONAL_FIELD_NAMES = frozenset({"blocked_gate", "active_mode", "trigger_reason"})
+_REVIEW_FIELD_NAMES = _REVIEW_REQUIRED_FIELD_NAMES | _REVIEW_OPTIONAL_FIELD_NAMES
+_REVIEW_GUARD_FIELD_NAMES = _REVIEW_FIELD_NAMES | frozenset({"current_artifact"})
+_REVIEW_VERDICT_TEXT = {
+    "accept": "accepted",
+    "changes_requested": "changes requested",
+}
+_REVIEW_CONTRACT_FACT_KEYS = ("passes", "failed_gates", "first_failed_gate")
+
 
 class CompilationContext:
     def __init__(self, prompt_file: model.PromptFile):
@@ -284,12 +428,20 @@ class CompilationContext:
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._review_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._inputs_resolution_stack: list[tuple[tuple[str, ...], str]] = []
-        self._outputs_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._outputs_resolution_stack: list[
+            tuple[
+                tuple[str, ...],
+                str,
+                frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+            ]
+        ] = []
         self._agent_slot_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._resolved_workflow_cache: dict[tuple[tuple[str, ...], str], ResolvedWorkflowBody] = {}
+        self._resolved_review_cache: dict[tuple[tuple[str, ...], str], ResolvedReviewBody] = {}
         self._addressable_workflow_cache: dict[
             tuple[tuple[str, ...], str], ResolvedWorkflowBody
         ] = {}
@@ -298,7 +450,14 @@ class CompilationContext:
             tuple[tuple[str, ...], str], ResolvedSkillsBody
         ] = {}
         self._resolved_inputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
-        self._resolved_outputs_cache: dict[tuple[tuple[str, ...], str], ResolvedIoBody] = {}
+        self._resolved_outputs_cache: dict[
+            tuple[
+                tuple[str, ...],
+                str,
+                frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+            ],
+            ResolvedIoBody,
+        ] = {}
         self._resolved_agent_slot_cache: dict[
             tuple[tuple[str, ...], str],
             tuple[ResolvedAgentSlotState, ...],
@@ -332,6 +491,15 @@ class CompilationContext:
             for slot in resolved_slot_states
             if isinstance(slot, ResolvedAgentSlot)
         }
+        has_workflow_slot = "workflow" in resolved_slots
+        review_fields = [
+            field for field in agent.fields if isinstance(field, model.ReviewField)
+        ]
+        if has_workflow_slot and review_fields:
+            raise CompileError(
+                f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
+            )
+        review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
         compiled_fields: list[CompiledField] = []
         seen_role = False
         seen_typed_fields: set[str] = set()
@@ -420,11 +588,28 @@ class CompilationContext:
                         field,
                         unit=unit,
                         owner_label=f"agent {agent.name}",
+                        review_output_contexts=review_output_contexts,
                     )
                 )
                 continue
             if isinstance(field, model.SkillsField):
                 compiled_fields.append(self._compile_skills_field(field, unit=unit))
+                continue
+            if isinstance(field, model.ReviewField):
+                review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
+                if review_decl.abstract:
+                    raise CompileError(
+                        "Concrete agents may not attach abstract reviews directly: "
+                        f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+                    )
+                compiled_fields.append(
+                    self._compile_review_decl(
+                        review_decl,
+                        unit=review_unit,
+                        agent_contract=agent_contract,
+                        owner_label=f"agent {agent.name} review",
+                    )
+                )
                 continue
 
             raise CompileError(
@@ -436,6 +621,177 @@ class CompilationContext:
 
         return CompiledAgent(name=agent.name, fields=tuple(compiled_fields))
 
+    def _review_output_contexts_for_agent(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+    ) -> frozenset[tuple[OutputDeclKey, ReviewSemanticContext]]:
+        output_contexts: set[tuple[OutputDeclKey, ReviewSemanticContext]] = set()
+        for field in agent.fields:
+            if not isinstance(field, model.ReviewField):
+                continue
+            review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
+            resolved = self._resolve_review_decl(review_decl, unit=review_unit)
+            if resolved.comment_output is None:
+                continue
+            output_unit, output_decl = self._resolve_output_decl(
+                resolved.comment_output.output_ref,
+                unit=review_unit,
+            )
+            contract_gates: tuple[ReviewContractGate, ...] = ()
+            if resolved.contract is not None:
+                try:
+                    contract_gates = self._resolve_review_contract_spec(
+                        resolved.contract.workflow_ref,
+                        unit=review_unit,
+                        owner_label=f"review {_dotted_decl_name(review_unit.module_parts, review_decl.name)}",
+                    ).gates
+                except CompileError:
+                    contract_gates = ()
+            field_bindings: list[tuple[str, tuple[str, ...]]] = []
+            seen_bindings: set[str] = set()
+            if resolved.fields is not None:
+                for binding in resolved.fields.bindings:
+                    if binding.semantic_field in seen_bindings:
+                        continue
+                    seen_bindings.add(binding.semantic_field)
+                    field_bindings.append((binding.semantic_field, binding.field_path))
+            output_contexts.add(
+                (
+                    (output_unit.module_parts, output_decl.name),
+                    ReviewSemanticContext(
+                        output_module_parts=output_unit.module_parts,
+                        output_name=output_decl.name,
+                        field_bindings=tuple(field_bindings),
+                        contract_gates=contract_gates,
+                    ),
+                )
+            )
+        return frozenset(output_contexts)
+
+    def _review_output_context_for_key(
+        self,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        output_key: OutputDeclKey,
+    ) -> ReviewSemanticContext | None:
+        for key, context in review_output_contexts:
+            if key == output_key:
+                return context
+        return None
+
+    def _review_semantic_field_path(
+        self,
+        review_semantics: ReviewSemanticContext,
+        field_name: str,
+    ) -> tuple[str, ...] | None:
+        for name, path in review_semantics.field_bindings:
+            if name == field_name:
+                return path
+        return None
+
+    def _review_semantic_contract_gate(
+        self,
+        review_semantics: ReviewSemanticContext,
+        gate_key: str,
+    ) -> ReviewContractGate | None:
+        for gate in review_semantics.contract_gates:
+            if gate.key == gate_key:
+                return gate
+        return None
+
+    def _review_semantic_addressable_parts(
+        self,
+        ref: model.AddressableRef,
+    ) -> tuple[str, ...] | None:
+        parts = (*ref.root.module_parts, ref.root.declaration_name, *ref.path)
+        if len(parts) < 2 or parts[0] not in {"contract", "fields"}:
+            return None
+        return parts
+
+    def _resolve_review_semantic_output_decl(
+        self,
+        review_semantics: ReviewSemanticContext,
+    ) -> tuple[IndexedUnit, model.OutputDecl]:
+        if review_semantics.output_module_parts:
+            output_unit = self._load_module(review_semantics.output_module_parts)
+        else:
+            output_unit = self.root_unit
+        output_decl = output_unit.outputs_by_name.get(review_semantics.output_name)
+        if output_decl is None:
+            raise CompileError(
+                "Internal compiler error: missing review comment output while resolving "
+                f"review semantics: {review_semantics.output_name}"
+            )
+        return output_unit, output_decl
+
+    def _review_semantic_root_node(
+        self,
+        root_key: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> AddressableNode | None:
+        if root_key == "fields":
+            root = ReviewSemanticFieldsRoot(review_semantics)
+        elif root_key == "contract":
+            root = ReviewSemanticContractRoot(review_semantics)
+        else:
+            return None
+        output_unit, _output_decl = self._resolve_review_semantic_output_decl(review_semantics)
+        return AddressableNode(
+            unit=output_unit,
+            root_decl=root,
+            target=root,
+        )
+
+    def _resolve_review_semantic_root_decl(
+        self,
+        ref: model.NameRef,
+        *,
+        review_semantics: ReviewSemanticContext | None,
+    ) -> ReviewSemanticFieldsRoot | ReviewSemanticContractRoot | None:
+        if review_semantics is None or ref.module_parts:
+            return None
+        node = self._review_semantic_root_node(ref.declaration_name, review_semantics)
+        if node is None:
+            return None
+        target = node.target
+        if isinstance(target, (ReviewSemanticFieldsRoot, ReviewSemanticContractRoot)):
+            return target
+        return None
+
+    def _resolve_review_semantic_node(
+        self,
+        ref: model.AddressableRef,
+        *,
+        review_semantics: ReviewSemanticContext | None,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+    ) -> AddressableNode | None:
+        if review_semantics is None:
+            return None
+        parts = self._review_semantic_addressable_parts(ref)
+        if parts is None:
+            return None
+        root_node = self._review_semantic_root_node(parts[0], review_semantics)
+        if root_node is None:
+            return None
+        return self._resolve_addressable_path_node(
+            root_node,
+            parts[1:],
+            owner_label=owner_label,
+            surface_label=surface_label,
+            ref_label=ref_label,
+        )
+
+    def _output_path_has_guarded_section(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        path: tuple[str, ...],
+    ) -> bool:
+        return bool(self._output_path_guards(output_decl.items, path=path))
+
     def _typed_field_key(self, field: model.Field) -> str:
         if isinstance(field, model.InputsField):
             return "inputs"
@@ -443,6 +799,8 @@ class CompilationContext:
             return "outputs"
         if isinstance(field, model.SkillsField):
             return "skills"
+        if isinstance(field, model.ReviewField):
+            return "review"
         return type(field).__name__
 
     def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
@@ -832,12 +1190,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> CompiledSection:
         return self._compile_io_field(
             field=field,
             unit=unit,
             field_kind="outputs",
             owner_label=owner_label,
+            review_output_contexts=review_output_contexts,
         )
 
     def _compile_io_field(
@@ -847,6 +1207,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> CompiledSection:
         if field.parent_ref is not None:
             resolved = self._resolve_io_field_patch(
@@ -854,6 +1215,7 @@ class CompilationContext:
                 unit=unit,
                 field_kind=field_kind,
                 owner_label=owner_label,
+                review_output_contexts=review_output_contexts,
             )
             return self._compile_resolved_io_body(resolved)
 
@@ -869,6 +1231,7 @@ class CompilationContext:
                     unit=unit,
                     field_kind=field_kind,
                     owner_label=f"{field_kind} field `{field.title}`",
+                    review_output_contexts=review_output_contexts,
                 ),
             )
 
@@ -877,6 +1240,7 @@ class CompilationContext:
                 field.value,
                 unit=unit,
                 field_kind=field_kind,
+                review_output_contexts=review_output_contexts,
             )
             return self._compile_resolved_io_body(resolved)
 
@@ -897,6 +1261,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         field_kind: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoBody:
         if field_kind == "inputs":
             if self._ref_exists_in_registry(
@@ -921,7 +1286,11 @@ class CompilationContext:
                 f"{_dotted_ref_name(ref)}"
             )
         target_unit, outputs_decl = self._resolve_outputs_block_ref(ref, unit=unit)
-        return self._resolve_outputs_decl(outputs_decl, unit=target_unit)
+        return self._resolve_outputs_decl(
+            outputs_decl,
+            unit=target_unit,
+            review_output_contexts=review_output_contexts,
+        )
 
     def _resolve_io_field_patch(
         self,
@@ -930,6 +1299,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoBody:
         parent_ref = field.parent_ref
         if parent_ref is None:
@@ -964,7 +1334,11 @@ class CompilationContext:
                     f"{_dotted_ref_name(parent_ref)}"
                 )
             parent_unit, parent_decl = self._resolve_outputs_block_ref(parent_ref, unit=unit)
-            parent_body = self._resolve_outputs_decl(parent_decl, unit=parent_unit)
+            parent_body = self._resolve_outputs_decl(
+                parent_decl,
+                unit=parent_unit,
+                review_output_contexts=review_output_contexts,
+            )
 
         return self._resolve_io_body(
             field.value,
@@ -973,6 +1347,7 @@ class CompilationContext:
             owner_label=owner_label,
             parent_io=parent_body,
             parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
+            review_output_contexts=review_output_contexts,
         )
 
     def _compile_skills_field(
@@ -993,6 +1368,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
         for item in items:
@@ -1016,6 +1392,7 @@ class CompilationContext:
                             unit=unit,
                             field_kind=field_kind,
                             owner_label=f"{field_kind} section `{item.title}`",
+                            review_output_contexts=review_output_contexts,
                         ),
                     )
                 )
@@ -1028,6 +1405,7 @@ class CompilationContext:
                         unit=unit,
                         field_kind=field_kind,
                         owner_label=owner_label,
+                        review_output_contexts=review_output_contexts,
                     )
                 )
                 continue
@@ -1050,6 +1428,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> CompiledSection:
         if item.body is not None:
             raise CompileError(
@@ -1072,7 +1451,16 @@ class CompilationContext:
                 f"{_dotted_ref_name(item.ref)}"
             )
         target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
-        return self._compile_output_decl(decl, unit=target_unit)
+        review_semantics = self._review_output_context_for_key(
+            review_output_contexts,
+            (target_unit.module_parts, decl.name),
+        )
+        return self._compile_output_decl(
+            decl,
+            unit=target_unit,
+            allow_review_semantics=review_semantics is not None,
+            review_semantics=review_semantics,
+        )
 
     def _compile_resolved_skills(self, skills_body: ResolvedSkillsBody) -> CompiledSection:
         body: list[CompiledBodyItem] = list(skills_body.preamble)
@@ -1237,9 +1625,19 @@ class CompilationContext:
         return CompiledSection(title=decl.title, body=tuple(body))
 
     def _compile_output_decl(
-        self, decl: model.OutputDecl, *, unit: IndexedUnit
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> CompiledSection:
-        self._validate_output_guard_sections(decl, unit=unit)
+        self._validate_output_guard_sections(
+            decl,
+            unit=unit,
+            allow_review_semantics=allow_review_semantics,
+            review_semantics=review_semantics,
+        )
         scalar_items, section_items, extras = self._split_record_items(
             decl.items,
             scalar_keys={"target", "shape", "requirement"},
@@ -1263,7 +1661,14 @@ class CompilationContext:
 
         body: list[CompiledBodyItem] = []
         if files_section is not None:
-            body.extend(self._compile_output_files(files_section, unit=unit, output_name=decl.name))
+            body.extend(
+                self._compile_output_files(
+                    files_section,
+                    unit=unit,
+                    output_name=decl.name,
+                    review_semantics=review_semantics,
+                )
+            )
         else:
             if not isinstance(target_item.value, model.NameRef):
                 raise CompileError(f"Output target must stay typed: {decl.name}")
@@ -1310,6 +1715,7 @@ class CompilationContext:
                         unit=unit,
                         owner_label=f"output {decl.name}",
                         surface_label="output prose",
+                        review_semantics=review_semantics,
                     )
                 )
             if trust_surface_section is not None and not rendered_trust_surface:
@@ -1322,19 +1728,2530 @@ class CompilationContext:
 
         return CompiledSection(title=decl.title, body=tuple(body))
 
+    def _compile_review_decl(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> CompiledSection:
+        resolved = self._resolve_review_decl(review_decl, unit=unit)
+        if resolved.subject is None:
+            raise CompileError(f"Review is missing subject: {review_decl.name}")
+        if resolved.contract is None:
+            raise CompileError(f"Review is missing contract: {review_decl.name}")
+        if resolved.comment_output is None:
+            raise CompileError(f"Review is missing comment_output: {review_decl.name}")
+        if resolved.fields is None:
+            raise CompileError(f"Review is missing fields: {review_decl.name}")
+
+        subjects = self._resolve_review_subjects(
+            resolved.subject,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        subject_keys = {
+            (subject_unit.module_parts, subject_decl.name) for subject_unit, subject_decl in subjects
+        }
+        contract_spec = self._resolve_review_contract_spec(
+            resolved.contract.workflow_ref,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        comment_output_unit, comment_output_decl = self._resolve_output_decl(
+            resolved.comment_output.output_ref,
+            unit=unit,
+        )
+        comment_output_key = (comment_output_unit.module_parts, comment_output_decl.name)
+        if comment_output_key not in agent_contract.outputs:
+            raise CompileError(
+                f"Review comment_output must be emitted by the concrete turn in {owner_label}: "
+                f"{comment_output_decl.name}"
+            )
+
+        pre_sections: list[model.ReviewSection] = []
+        on_accept: model.ReviewOutcomeSection | None = None
+        on_reject: model.ReviewOutcomeSection | None = None
+        for item in resolved.items:
+            if isinstance(item, model.ReviewSection):
+                pre_sections.append(item)
+                continue
+            if item.key == "on_accept":
+                on_accept = item
+            elif item.key == "on_reject":
+                on_reject = item
+
+        if on_accept is None:
+            raise CompileError(f"Review is missing on_accept: {review_decl.name}")
+        if on_reject is None:
+            raise CompileError(f"Review is missing on_reject: {review_decl.name}")
+
+        section_titles = {section.key: section.title for section in pre_sections}
+        accept_gate_count = 0
+        any_block_gates = False
+        for section in pre_sections:
+            accept_gate_count += self._count_review_accept_stmts(section.items)
+            any_block_gates = any_block_gates or self._review_items_contain_blocks(section.items)
+            self._validate_review_pre_outcome_items(
+                section.items,
+                unit=unit,
+                owner_label=f"{owner_label}.{section.key}",
+                contract_spec=contract_spec,
+                section_titles=section_titles,
+            )
+        if accept_gate_count != 1:
+            raise CompileError(
+                f"Review must define exactly one accept gate in {owner_label}: found {accept_gate_count}"
+            )
+        pre_outcome_branches = self._resolve_review_pre_outcome_branches(
+            pre_sections,
+            unit=unit,
+            contract_spec=contract_spec,
+            section_titles=section_titles,
+            owner_label=owner_label,
+        )
+        accept_gate_branches = tuple(
+            branch for branch in pre_outcome_branches if branch.verdict == _REVIEW_VERDICT_TEXT["accept"]
+        )
+        reject_gate_branches = tuple(
+            branch
+            for branch in pre_outcome_branches
+            if branch.verdict == _REVIEW_VERDICT_TEXT["changes_requested"]
+        )
+
+        carried_fields = {
+            field_name
+            for field_name in (
+                *self._collect_review_carried_fields(on_accept.items),
+                *self._collect_review_carried_fields(on_reject.items),
+            )
+        }
+        field_bindings = self._validate_review_field_bindings(
+            resolved.fields,
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+            require_blocked_gate=any_block_gates,
+            require_active_mode="active_mode" in carried_fields,
+            require_trigger_reason="trigger_reason" in carried_fields,
+        )
+        review_semantics = ReviewSemanticContext(
+            output_module_parts=comment_output_unit.module_parts,
+            output_name=comment_output_decl.name,
+            field_bindings=tuple(field_bindings.items()),
+            contract_gates=contract_spec.gates,
+        )
+
+        accept_branches = self._validate_review_outcome_section(
+            on_accept,
+            unit=unit,
+            owner_label=owner_label,
+            agent_contract=agent_contract,
+            comment_output_decl=comment_output_decl,
+            comment_output_unit=comment_output_unit,
+            next_owner_field_path=field_bindings["next_owner"],
+            field_bindings=field_bindings,
+            subject_keys=subject_keys,
+            subject_map=resolved.subject_map,
+            blocked_gate_required=any_block_gates,
+            gate_branches=accept_gate_branches,
+        )
+        reject_branches = self._validate_review_outcome_section(
+            on_reject,
+            unit=unit,
+            owner_label=owner_label,
+            agent_contract=agent_contract,
+            comment_output_decl=comment_output_decl,
+            comment_output_unit=comment_output_unit,
+            next_owner_field_path=field_bindings["next_owner"],
+            field_bindings=field_bindings,
+            subject_keys=subject_keys,
+            subject_map=resolved.subject_map,
+            blocked_gate_required=any_block_gates,
+            gate_branches=reject_gate_branches,
+        )
+        _ = accept_branches, reject_branches
+
+        body: list[CompiledBodyItem] = [
+            self._render_review_subject_summary(subjects),
+            f"Shared review contract: {contract_spec.workflow_body.title}.",
+        ]
+        for section in pre_sections:
+            if body and body[-1] != "":
+                body.append("")
+            body.append(
+                CompiledSection(
+                    title=section.title,
+                    body=self._compile_review_pre_outcome_section_body(
+                        section.items,
+                        unit=unit,
+                        contract_spec=contract_spec,
+                        section_titles=section_titles,
+                        owner_label=f"{owner_label}.{section.key}",
+                        review_semantics=review_semantics,
+                    ),
+                )
+            )
+
+        for key, section in (("on_accept", on_accept), ("on_reject", on_reject)):
+            if body and body[-1] != "":
+                body.append("")
+            body.append(
+                CompiledSection(
+                    title=section.title or ("If Accepted" if key == "on_accept" else "If Rejected"),
+                    body=self._compile_review_outcome_section_body(
+                        section.items,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{key}",
+                        review_semantics=review_semantics,
+                    ),
+                )
+            )
+
+        return CompiledSection(title=resolved.title, body=tuple(body))
+
+    def _resolve_review_subjects(
+        self,
+        subject: model.ReviewSubjectConfig,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[tuple[IndexedUnit, model.InputDecl | model.OutputDecl], ...]:
+        resolved: list[tuple[IndexedUnit, model.InputDecl | model.OutputDecl]] = []
+        seen: set[tuple[tuple[str, ...], str]] = set()
+        for ref in subject.subjects:
+            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
+            output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+            if input_decl is not None and output_decl is not None:
+                raise CompileError(
+                    f"Ambiguous review subject in {owner_label}: {_dotted_ref_name(ref)}"
+                )
+            if input_decl is None and output_decl is None:
+                raise CompileError(
+                    f"Review subject must resolve to an input or output declaration in {owner_label}: "
+                    f"{_dotted_ref_name(ref)}"
+                )
+            decl = input_decl if input_decl is not None else output_decl
+            key = (target_unit.module_parts, decl.name)
+            if key in seen:
+                raise CompileError(
+                    f"Duplicate review subject in {owner_label}: {_dotted_ref_name(ref)}"
+                )
+            seen.add(key)
+            resolved.append((target_unit, decl))
+        return tuple(resolved)
+
+    def _resolve_review_contract_spec(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ReviewContractSpec:
+        contract_unit, workflow_decl = self._resolve_workflow_ref(ref, unit=unit)
+        workflow_body = self._resolve_workflow_decl(workflow_decl, unit=contract_unit)
+        gates = self._collect_review_contract_gates(
+            workflow_body,
+            owner_label=f"{owner_label} contract {_dotted_decl_name(contract_unit.module_parts, workflow_decl.name)}",
+        )
+        if not gates:
+            raise CompileError(
+                f"Review contract must export at least one gate in {owner_label}: {workflow_decl.name}"
+            )
+        return ReviewContractSpec(
+            workflow_unit=contract_unit,
+            workflow_decl=workflow_decl,
+            workflow_body=workflow_body,
+            gates=gates,
+        )
+
+    def _collect_review_contract_gates(
+        self,
+        workflow_body: ResolvedWorkflowBody,
+        *,
+        owner_label: str,
+    ) -> tuple[ReviewContractGate, ...]:
+        if workflow_body.law is not None:
+            raise CompileError(f"Review contract may not define workflow law in {owner_label}")
+
+        gates: list[ReviewContractGate] = []
+        seen: set[str] = set()
+        for item in workflow_body.items:
+            if isinstance(item, ResolvedWorkflowSkillsItem):
+                raise CompileError(f"Review contract may not define skills in {owner_label}")
+            if isinstance(item, ResolvedSectionItem):
+                if item.key in seen:
+                    raise CompileError(f"Duplicate review contract gate in {owner_label}: {item.key}")
+                seen.add(item.key)
+                gates.append(ReviewContractGate(key=item.key, title=item.title))
+                continue
+            nested = self._collect_review_contract_gates(
+                self._resolve_workflow_decl(item.workflow_decl, unit=item.target_unit),
+                owner_label=owner_label,
+            )
+            for gate in nested:
+                if gate.key in seen:
+                    raise CompileError(
+                        f"Duplicate review contract gate in {owner_label}: {gate.key}"
+                    )
+                seen.add(gate.key)
+                gates.append(gate)
+        return tuple(gates)
+
+    def _validate_review_field_bindings(
+        self,
+        fields: model.ReviewFieldsConfig,
+        *,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        owner_label: str,
+        require_blocked_gate: bool,
+        require_active_mode: bool,
+        require_trigger_reason: bool,
+    ) -> dict[str, tuple[str, ...]]:
+        bindings: dict[str, tuple[str, ...]] = {}
+        for binding in fields.bindings:
+            if binding.semantic_field in bindings:
+                raise CompileError(
+                    f"Duplicate review field binding in {owner_label}: {binding.semantic_field}"
+                )
+            self._resolve_output_field_node(
+                output_decl,
+                path=binding.field_path,
+                unit=output_unit,
+                owner_label=owner_label,
+                surface_label="review field binding",
+            )
+            bindings[binding.semantic_field] = binding.field_path
+
+        required = set(_REVIEW_REQUIRED_FIELD_NAMES)
+        if require_blocked_gate:
+            required.add("blocked_gate")
+        if require_active_mode:
+            required.add("active_mode")
+        if require_trigger_reason:
+            required.add("trigger_reason")
+        missing = sorted(required - set(bindings))
+        if missing:
+            raise CompileError(
+                f"Review fields are incomplete in {owner_label}: {', '.join(missing)}"
+            )
+        return bindings
+
+    def _count_review_accept_stmts(
+        self,
+        items: tuple[model.ReviewPreOutcomeStmt, ...],
+    ) -> int:
+        count = 0
+        for item in items:
+            if isinstance(item, model.ReviewAcceptStmt):
+                count += 1
+            elif isinstance(item, model.ReviewPreOutcomeWhenStmt):
+                count += self._count_review_accept_stmts(item.items)
+            elif isinstance(item, model.ReviewPreOutcomeMatchStmt):
+                for case in item.cases:
+                    count += self._count_review_accept_stmts(case.items)
+        return count
+
+    def _review_items_contain_blocks(
+        self,
+        items: tuple[model.ReviewPreOutcomeStmt, ...],
+    ) -> bool:
+        for item in items:
+            if isinstance(item, model.ReviewBlockStmt):
+                return True
+            if isinstance(item, model.ReviewPreOutcomeWhenStmt) and self._review_items_contain_blocks(
+                item.items
+            ):
+                return True
+            if isinstance(item, model.ReviewPreOutcomeMatchStmt):
+                for case in item.cases:
+                    if self._review_items_contain_blocks(case.items):
+                        return True
+        return False
+
+    def _collect_review_carried_fields(
+        self,
+        items: tuple[model.ReviewOutcomeStmt, ...],
+    ) -> tuple[str, ...]:
+        fields: list[str] = []
+        for item in items:
+            if isinstance(item, model.ReviewCarryStmt):
+                fields.append(item.field_name)
+                continue
+            if isinstance(item, model.ReviewOutcomeWhenStmt):
+                fields.extend(self._collect_review_carried_fields(item.items))
+                continue
+            if isinstance(item, model.ReviewOutcomeMatchStmt):
+                for case in item.cases:
+                    fields.extend(self._collect_review_carried_fields(case.items))
+        return tuple(fields)
+
+    def _validate_review_pre_outcome_items(
+        self,
+        items: tuple[model.ReviewPreOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.ReviewPreOutcomeWhenStmt):
+                self._validate_review_pre_outcome_items(
+                    item.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                )
+                continue
+            if isinstance(item, model.ReviewPreOutcomeMatchStmt):
+                self._validate_review_match_cases(
+                    item.cases,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                for case in item.cases:
+                    self._validate_review_pre_outcome_items(
+                        case.items,
+                        unit=unit,
+                        owner_label=owner_label,
+                        contract_spec=contract_spec,
+                        section_titles=section_titles,
+                    )
+                continue
+            if isinstance(item, (model.ReviewBlockStmt, model.ReviewRejectStmt, model.ReviewAcceptStmt)):
+                self._validate_review_gate_label(
+                    item.gate,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                    owner_label=owner_label,
+                )
+                continue
+            if isinstance(item, (model.SupportOnlyStmt, model.IgnoreStmt)):
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    owner_label=owner_label,
+                    statement_label=self._law_stmt_name(item),
+                    allowed_kinds=("input", "output"),
+                )
+                continue
+            if isinstance(item, model.PreserveStmt):
+                allowed_kinds = ("enum",) if item.kind == "vocabulary" else ("input", "output")
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    owner_label=owner_label,
+                    statement_label=f"preserve {item.kind}",
+                    allowed_kinds=allowed_kinds,
+                )
+
+    def _validate_review_gate_label(
+        self,
+        gate: model.ReviewGateLabel,
+        *,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+    ) -> None:
+        if isinstance(gate, model.ContractGateRef):
+            if gate.key not in {item.key for item in contract_spec.gates}:
+                raise CompileError(
+                    f"Unknown review contract gate in {owner_label}: contract.{gate.key}"
+                )
+            return
+        if isinstance(gate, model.SectionGateRef) and gate.key not in section_titles:
+            raise CompileError(f"Unknown review section gate in {owner_label}: {gate.key}")
+
+    def _resolve_review_pre_outcome_branches(
+        self,
+        sections: list[model.ReviewSection],
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+    ) -> tuple[ResolvedReviewGateBranch, ...]:
+        pre_branches = (ReviewPreOutcomeBranch(),)
+        for section in sections:
+            section_branches = self._collect_review_pre_section_branches(
+                section,
+                unit=unit,
+                contract_spec=contract_spec,
+                section_titles=section_titles,
+                owner_label=f"{owner_label}.{section.key}",
+            )
+            next_branches: list[ReviewPreOutcomeBranch] = []
+            for branch in pre_branches:
+                for section_branch in section_branches:
+                    next_branches.append(
+                        ReviewPreOutcomeBranch(
+                            block_checks=(*branch.block_checks, *section_branch.block_checks),
+                            reject_checks=(*branch.reject_checks, *section_branch.reject_checks),
+                            accept_checks=(*branch.accept_checks, *section_branch.accept_checks),
+                            assertion_gate_ids=(
+                                *branch.assertion_gate_ids,
+                                *((section.key,) if section_branch.has_assertions else ()),
+                            ),
+                        )
+                    )
+            pre_branches = tuple(next_branches)
+
+        resolved: list[ResolvedReviewGateBranch] = []
+        for branch in pre_branches:
+            resolved.extend(
+                self._resolve_review_gate_branch(
+                    branch,
+                    unit=unit,
+                    contract_spec=contract_spec,
+                )
+            )
+        return tuple(resolved)
+
+    def _collect_review_pre_section_branches(
+        self,
+        section: model.ReviewSection,
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+    ) -> tuple[ReviewPreSectionBranch, ...]:
+        return self._collect_review_pre_outcome_leaf_branches(
+            section.items,
+            unit=unit,
+            contract_spec=contract_spec,
+            section_titles=section_titles,
+            owner_label=owner_label,
+        )
+
+    def _collect_review_pre_outcome_leaf_branches(
+        self,
+        items: tuple[model.ReviewPreOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+        branch: ReviewPreSectionBranch | None = None,
+    ) -> tuple[ReviewPreSectionBranch, ...]:
+        branches = (branch or ReviewPreSectionBranch(),)
+        index = 0
+        while index < len(items):
+            item = items[index]
+            if isinstance(item, model.ReviewPreOutcomeWhenStmt):
+                next_branches: list[ReviewPreSectionBranch] = []
+                for current_branch in branches:
+                    condition = self._evaluate_review_condition(
+                        item.expr,
+                        unit=unit,
+                        branch=ReviewOutcomeBranch(),
+                    )
+                    if condition is not False:
+                        next_branches.extend(
+                            self._collect_review_pre_outcome_leaf_branches(
+                                item.items,
+                                unit=unit,
+                                contract_spec=contract_spec,
+                                section_titles=section_titles,
+                                owner_label=owner_label,
+                                branch=current_branch,
+                            )
+                        )
+                    if condition is not True:
+                        next_branches.append(current_branch)
+                branches = tuple(next_branches)
+                index += 1
+                continue
+            if isinstance(item, model.ReviewPreOutcomeMatchStmt):
+                next_branches: list[ReviewPreSectionBranch] = []
+                for current_branch in branches:
+                    next_branches.extend(
+                        self._collect_review_pre_match_branches(
+                            item,
+                            unit=unit,
+                            contract_spec=contract_spec,
+                            section_titles=section_titles,
+                            owner_label=owner_label,
+                            branch=current_branch,
+                        )
+                    )
+                branches = tuple(next_branches)
+                index += 1
+                continue
+
+            next_branches = []
+            for current_branch in branches:
+                next_branches.append(
+                    self._branch_with_review_pre_outcome_stmt(
+                        current_branch,
+                        item,
+                        contract_spec=contract_spec,
+                        section_titles=section_titles,
+                    )
+                )
+            branches = tuple(next_branches)
+            index += 1
+        return branches
+
+    def _collect_review_pre_match_branches(
+        self,
+        stmt: model.ReviewPreOutcomeMatchStmt,
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+        branch: ReviewPreSectionBranch,
+    ) -> tuple[ReviewPreSectionBranch, ...]:
+        selected: list[ReviewPreSectionBranch] = []
+        pending = [branch]
+        empty_branch = ReviewOutcomeBranch()
+
+        for case in stmt.cases:
+            next_pending: list[ReviewPreSectionBranch] = []
+            for current_branch in pending:
+                if case.head is None:
+                    selected.extend(
+                        self._collect_review_pre_outcome_leaf_branches(
+                            case.items,
+                            unit=unit,
+                            contract_spec=contract_spec,
+                            section_titles=section_titles,
+                            owner_label=owner_label,
+                            branch=current_branch,
+                        )
+                    )
+                    continue
+                condition = self._review_match_head_matches(
+                    stmt.expr,
+                    case.head,
+                    unit=unit,
+                    branch=empty_branch,
+                )
+                if condition is not False:
+                    selected.extend(
+                        self._collect_review_pre_outcome_leaf_branches(
+                            case.items,
+                            unit=unit,
+                            contract_spec=contract_spec,
+                            section_titles=section_titles,
+                            owner_label=owner_label,
+                            branch=current_branch,
+                        )
+                    )
+                if condition is not True:
+                    next_pending.append(current_branch)
+            pending = next_pending
+
+        if pending and not self._review_pre_match_is_exhaustive(stmt, unit=unit):
+            selected.extend(pending)
+        return tuple(selected)
+
+    def _review_pre_match_is_exhaustive(
+        self,
+        stmt: model.ReviewPreOutcomeMatchStmt,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        outcome_stmt = model.ReviewOutcomeMatchStmt(
+            expr=stmt.expr,
+            cases=tuple(
+                model.ReviewOutcomeMatchArm(head=case.head, items=())
+                for case in stmt.cases
+            ),
+        )
+        return self._review_match_is_exhaustive(outcome_stmt, unit=unit)
+
+    def _branch_with_review_pre_outcome_stmt(
+        self,
+        branch: ReviewPreSectionBranch,
+        stmt: model.ReviewPreOutcomeStmt,
+        *,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+    ) -> ReviewPreSectionBranch:
+        if isinstance(stmt, model.ReviewBlockStmt):
+            return replace(
+                branch,
+                block_checks=(
+                    *branch.block_checks,
+                    ReviewGateCheck(
+                        identity=self._review_gate_identity(
+                            stmt.gate,
+                            contract_spec=contract_spec,
+                            section_titles=section_titles,
+                        ),
+                        expr=stmt.expr,
+                    ),
+                ),
+            )
+        if isinstance(stmt, model.ReviewRejectStmt):
+            return replace(
+                branch,
+                reject_checks=(
+                    *branch.reject_checks,
+                    ReviewGateCheck(
+                        identity=self._review_gate_identity(
+                            stmt.gate,
+                            contract_spec=contract_spec,
+                            section_titles=section_titles,
+                        ),
+                        expr=stmt.expr,
+                    ),
+                ),
+            )
+        if isinstance(stmt, model.ReviewAcceptStmt):
+            return replace(
+                branch,
+                accept_checks=(
+                    *branch.accept_checks,
+                    ReviewGateCheck(
+                        identity=self._review_gate_identity(
+                            stmt.gate,
+                            contract_spec=contract_spec,
+                            section_titles=section_titles,
+                        ),
+                        expr=stmt.expr,
+                    ),
+                ),
+            )
+        if isinstance(stmt, (model.PreserveStmt, model.SupportOnlyStmt, model.IgnoreStmt)):
+            return replace(branch, has_assertions=True)
+        return branch
+
+    def _resolve_review_gate_branch(
+        self,
+        branch: ReviewPreOutcomeBranch,
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+    ) -> tuple[ResolvedReviewGateBranch, ...]:
+        block_states = [tuple[str, ...]()]
+        for check in branch.block_checks:
+            next_states: list[tuple[str, ...]] = []
+            for state in block_states:
+                result = self._evaluate_review_gate_condition(
+                    check.expr,
+                    unit=unit,
+                    contract_failed_gate_ids=(),
+                )
+                if result is not False:
+                    next_states.append((*state, check.identity))
+                if result is not True:
+                    next_states.append(state)
+            block_states = next_states
+
+        resolved: list[ResolvedReviewGateBranch] = []
+        for block_failed_gate_ids in block_states:
+            if block_failed_gate_ids:
+                resolved.append(
+                    ResolvedReviewGateBranch(
+                        verdict=_REVIEW_VERDICT_TEXT["changes_requested"],
+                        failing_gate_ids=tuple(block_failed_gate_ids),
+                        blocked_gate_id=block_failed_gate_ids[0],
+                    )
+                )
+                continue
+
+            reject_states = [tuple[str, ...]()]
+            for check in branch.reject_checks:
+                next_reject_states: list[tuple[str, ...]] = []
+                for state in reject_states:
+                    result = self._evaluate_review_gate_condition(
+                        check.expr,
+                        unit=unit,
+                        contract_failed_gate_ids=(),
+                    )
+                    if result is not False:
+                        next_reject_states.append((*state, check.identity))
+                    if result is not True:
+                        next_reject_states.append(state)
+                reject_states = next_reject_states
+
+            for reject_failed_gate_ids in reject_states:
+                assertion_states = [tuple[str, ...]()]
+                for assertion_gate_id in branch.assertion_gate_ids:
+                    next_assertion_states: list[tuple[str, ...]] = []
+                    for state in assertion_states:
+                        next_assertion_states.append((*state, assertion_gate_id))
+                        next_assertion_states.append(state)
+                    assertion_states = next_assertion_states
+
+                for assertion_failed_gate_ids in assertion_states:
+                    contract_states = [tuple[str, ...]()]
+                    for gate in contract_spec.gates:
+                        identity = f"contract.{gate.key}"
+                        next_contract_states: list[tuple[str, ...]] = []
+                        for state in contract_states:
+                            next_contract_states.append((*state, identity))
+                            next_contract_states.append(state)
+                        contract_states = next_contract_states
+
+                    for contract_failed_gate_ids in contract_states:
+                        earlier_failures = (
+                            *reject_failed_gate_ids,
+                            *assertion_failed_gate_ids,
+                            *contract_failed_gate_ids,
+                        )
+                        if earlier_failures:
+                            resolved.append(
+                                ResolvedReviewGateBranch(
+                                    verdict=_REVIEW_VERDICT_TEXT["changes_requested"],
+                                    failing_gate_ids=tuple(earlier_failures),
+                                )
+                            )
+                            continue
+
+                        accept_states = [ResolvedReviewGateBranch(verdict=_REVIEW_VERDICT_TEXT["accept"])]
+                        for check in branch.accept_checks:
+                            next_accept_states: list[ResolvedReviewGateBranch] = []
+                            for state in accept_states:
+                                result = self._evaluate_review_gate_condition(
+                                    check.expr,
+                                    unit=unit,
+                                    contract_failed_gate_ids=contract_failed_gate_ids,
+                                )
+                                if result is not False:
+                                    next_accept_states.append(state)
+                                if result is not True:
+                                    next_accept_states.append(
+                                        ResolvedReviewGateBranch(
+                                            verdict=_REVIEW_VERDICT_TEXT["changes_requested"],
+                                            failing_gate_ids=(check.identity,),
+                                        )
+                                    )
+                            accept_states = next_accept_states
+                        resolved.extend(accept_states)
+
+        return tuple(resolved)
+
+    def _evaluate_review_gate_condition(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        contract_failed_gate_ids: tuple[str, ...],
+    ) -> bool | None:
+        return self._evaluate_review_gate_condition_with_branch(
+            expr,
+            unit=unit,
+            branch=ReviewOutcomeBranch(),
+            contract_failed_gate_ids=contract_failed_gate_ids,
+        )
+
+    def _evaluate_review_gate_condition_with_branch(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch,
+        contract_failed_gate_ids: tuple[str, ...],
+    ) -> bool | None:
+        if isinstance(expr, model.ExprBinary):
+            if expr.op == "and":
+                left = self._evaluate_review_gate_condition_with_branch(
+                    expr.left,
+                    unit=unit,
+                    branch=branch,
+                    contract_failed_gate_ids=contract_failed_gate_ids,
+                )
+                right = self._evaluate_review_gate_condition_with_branch(
+                    expr.right,
+                    unit=unit,
+                    branch=branch,
+                    contract_failed_gate_ids=contract_failed_gate_ids,
+                )
+                if left is False or right is False:
+                    return False
+                if left is True and right is True:
+                    return True
+                return None
+            if expr.op == "or":
+                left = self._evaluate_review_gate_condition_with_branch(
+                    expr.left,
+                    unit=unit,
+                    branch=branch,
+                    contract_failed_gate_ids=contract_failed_gate_ids,
+                )
+                right = self._evaluate_review_gate_condition_with_branch(
+                    expr.right,
+                    unit=unit,
+                    branch=branch,
+                    contract_failed_gate_ids=contract_failed_gate_ids,
+                )
+                if left is True or right is True:
+                    return True
+                if left is False and right is False:
+                    return False
+                return None
+
+        left = self._resolve_review_gate_expr_constant(
+            expr,
+            unit=unit,
+            branch=branch,
+            contract_failed_gate_ids=contract_failed_gate_ids,
+        )
+        if isinstance(left, bool):
+            return left
+        if not isinstance(expr, model.ExprBinary):
+            return None
+        left = self._resolve_review_gate_expr_constant(
+            expr.left,
+            unit=unit,
+            branch=branch,
+            contract_failed_gate_ids=contract_failed_gate_ids,
+        )
+        right = self._resolve_review_gate_expr_constant(
+            expr.right,
+            unit=unit,
+            branch=branch,
+            contract_failed_gate_ids=contract_failed_gate_ids,
+        )
+        if left is None or right is None:
+            return None
+        if expr.op == "==":
+            return left == right
+        if expr.op == "!=":
+            return left != right
+        if expr.op == "in":
+            return self._review_membership_contains(right, left)
+        if expr.op == "not in":
+            return not self._review_membership_contains(right, left)
+        if expr.op == ">":
+            return left > right
+        if expr.op == ">=":
+            return left >= right
+        if expr.op == "<":
+            return left < right
+        if expr.op == "<=":
+            return left <= right
+        return None
+
+    def _resolve_review_gate_expr_constant(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch,
+        contract_failed_gate_ids: tuple[str, ...],
+    ) -> str | int | bool | tuple[str | int | bool, ...] | None:
+        if isinstance(expr, (str, int, bool)):
+            return expr
+        if isinstance(expr, model.ExprSet):
+            values: list[str | int | bool] = []
+            for item in expr.items:
+                value = self._resolve_review_gate_expr_constant(
+                    item,
+                    unit=unit,
+                    branch=branch,
+                    contract_failed_gate_ids=contract_failed_gate_ids,
+                )
+                if value is None or isinstance(value, tuple):
+                    return None
+                values.append(value)
+            return tuple(values)
+        if isinstance(expr, model.ExprCall):
+            if expr.name in {"failed", "passed"} and len(expr.args) == 1:
+                gate_identity = self._resolve_review_contract_gate_identity(expr.args[0])
+                if gate_identity is None:
+                    return None
+                is_failed = gate_identity in contract_failed_gate_ids
+                return is_failed if expr.name == "failed" else not is_failed
+            if (
+                expr.name in {"present", "missing"}
+                and len(expr.args) == 1
+                and isinstance(expr.args[0], model.ExprRef)
+                and len(expr.args[0].parts) == 1
+            ):
+                field_name = expr.args[0].parts[0]
+                is_present = any(carry.field_name == field_name for carry in branch.carries)
+                return is_present if expr.name == "present" else not is_present
+            return None
+        if isinstance(expr, model.ExprRef):
+            contract_value = self._resolve_review_contract_expr_constant(
+                expr,
+                contract_failed_gate_ids=contract_failed_gate_ids,
+            )
+            if contract_value is not None:
+                return contract_value
+            return self._resolve_review_expr_constant(expr, unit=unit, branch=branch)
+        if isinstance(expr, model.ExprBinary):
+            return self._evaluate_review_gate_condition_with_branch(
+                expr,
+                unit=unit,
+                branch=branch,
+                contract_failed_gate_ids=contract_failed_gate_ids,
+            )
+        return None
+
+    def _resolve_review_contract_gate_identity(self, expr: model.Expr) -> str | None:
+        if not isinstance(expr, model.ExprRef):
+            return None
+        if len(expr.parts) != 2 or expr.parts[0] != "contract":
+            return None
+        return f"contract.{expr.parts[1]}"
+
+    def _resolve_review_contract_expr_constant(
+        self,
+        expr: model.ExprRef,
+        *,
+        contract_failed_gate_ids: tuple[str, ...],
+    ) -> str | bool | tuple[str, ...] | None:
+        if len(expr.parts) < 2 or expr.parts[0] != "contract":
+            return None
+        if expr.parts[1] == "passes" and len(expr.parts) == 2:
+            return not contract_failed_gate_ids
+        if expr.parts[1] == "failed_gates" and len(expr.parts) == 2:
+            return contract_failed_gate_ids
+        if expr.parts[1] == "first_failed_gate" and len(expr.parts) == 2:
+            return contract_failed_gate_ids[0] if contract_failed_gate_ids else None
+        return None
+
+    def _validate_review_match_cases(
+        self,
+        cases: tuple[model.ReviewPreOutcomeMatchArm | model.ReviewOutcomeMatchArm, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if any(case.head is None for case in cases):
+            return
+
+        enum_decl: model.EnumDecl | None = None
+        seen_members: set[str] = set()
+        for case in cases:
+            if case.head is None:
+                continue
+            for option in case.head.options:
+                resolved = self._resolve_review_match_option(option, unit=unit)
+                if resolved is None:
+                    return
+                option_enum_decl, member_value = resolved
+                if enum_decl is None:
+                    enum_decl = option_enum_decl
+                elif enum_decl.name != option_enum_decl.name:
+                    return
+                seen_members.add(member_value)
+
+        if enum_decl is None:
+            return
+
+        expected_members = {member.value for member in enum_decl.members}
+        if seen_members != expected_members:
+            raise CompileError(
+                f"Review match must be exhaustive or include else in {owner_label}"
+            )
+
+    def _resolve_review_match_option(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[model.EnumDecl, str] | None:
+        if not isinstance(expr, model.ExprRef) or len(expr.parts) < 2:
+            return None
+        enum_ref = _name_ref_from_dotted_name(".".join(expr.parts[:-1]))
+        enum_decl = self._try_resolve_enum_decl(enum_ref, unit=unit)
+        if enum_decl is None:
+            return None
+        member = next((member for member in enum_decl.members if member.key == expr.parts[-1]), None)
+        if member is None:
+            return None
+        return enum_decl, member.value
+
+    def _validate_review_outcome_section(
+        self,
+        section: model.ReviewOutcomeSection,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        agent_contract: AgentContract,
+        comment_output_decl: model.OutputDecl,
+        comment_output_unit: IndexedUnit,
+        next_owner_field_path: tuple[str, ...],
+        field_bindings: dict[str, tuple[str, ...]],
+        subject_keys: set[tuple[tuple[str, ...], str]],
+        subject_map: model.ReviewSubjectMapConfig | None,
+        blocked_gate_required: bool,
+        gate_branches: tuple[ResolvedReviewGateBranch, ...],
+    ) -> tuple[ResolvedReviewAgreementBranch, ...]:
+        self._validate_review_outcome_items(
+            section.items,
+            unit=unit,
+            owner_label=f"{owner_label}.{section.key}",
+        )
+        branches = self._collect_review_outcome_leaf_branches(section.items, unit=unit)
+        if not branches:
+            raise CompileError(f"Review outcome is not total in {owner_label}: {section.key}")
+
+        resolved_branches: list[ResolvedReviewAgreementBranch] = []
+        for branch in branches:
+            if not branch.currents or not branch.routes:
+                raise CompileError(
+                    f"Review outcome is not total in {owner_label}: {section.key}"
+                )
+            if len(branch.routes) > 1:
+                raise CompileError(
+                    f"Review outcome resolves more than one route in {owner_label}: {section.key}"
+                )
+            if len(branch.currents) > 1:
+                raise CompileError(
+                    f"Review outcome resolves more than one currentness result in {owner_label}: {section.key}"
+                )
+
+            for gate_branch in gate_branches:
+                resolved_branch = self._resolve_review_agreement_branch(
+                    branch,
+                    section_key=section.key,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{section.key}",
+                    agent_contract=agent_contract,
+                    comment_output_decl=comment_output_decl,
+                    comment_output_unit=comment_output_unit,
+                    field_bindings=field_bindings,
+                    subject_keys=subject_keys,
+                    subject_map=subject_map,
+                    blocked_gate_required=blocked_gate_required,
+                    gate_branch=gate_branch,
+                )
+
+                branch_proves_subject = self._review_branch_proves_subject(
+                    branch,
+                    unit=unit,
+                    subject_keys=subject_keys,
+                    subject_map=subject_map,
+                    current_subject_key=resolved_branch.current_subject_key,
+                    reviewed_subject_key=resolved_branch.reviewed_subject_key,
+                )
+                blocked_before_subject_review = (
+                    (
+                        resolved_branch.blocked_gate_id is not None
+                        or (section.key == "on_reject" and blocked_gate_required)
+                    )
+                    and isinstance(resolved_branch.current, model.ReviewCurrentNoneStmt)
+                )
+                if len(subject_keys) > 1 and not branch_proves_subject and not blocked_before_subject_review:
+                    raise CompileError(
+                        f"Review subject set requires disambiguation in {owner_label}: {section.key}"
+                    )
+
+                self._validate_review_output_agreement_branch(
+                    resolved_branch,
+                    unit=unit,
+                    output_decl=comment_output_decl,
+                    output_unit=comment_output_unit,
+                    next_owner_field_path=next_owner_field_path,
+                    field_bindings=field_bindings,
+                    owner_label=f"{owner_label}.{section.key}",
+                )
+                resolved_branches.append(resolved_branch)
+
+        return tuple(resolved_branches)
+
+    def _resolve_review_agreement_branch(
+        self,
+        branch: ReviewOutcomeBranch,
+        *,
+        section_key: str,
+        unit: IndexedUnit,
+        owner_label: str,
+        agent_contract: AgentContract,
+        comment_output_decl: model.OutputDecl,
+        comment_output_unit: IndexedUnit,
+        field_bindings: dict[str, tuple[str, ...]],
+        subject_keys: set[tuple[tuple[str, ...], str]],
+        subject_map: model.ReviewSubjectMapConfig | None,
+        blocked_gate_required: bool,
+        gate_branch: ResolvedReviewGateBranch,
+    ) -> ResolvedReviewAgreementBranch:
+        route = branch.routes[0]
+        self._validate_route_target(route.target, unit=unit)
+
+        current = branch.currents[0]
+        current_subject_key: tuple[tuple[str, ...], str] | None = None
+        if isinstance(current, model.ReviewCurrentArtifactStmt):
+            synthetic_current = model.CurrentArtifactStmt(
+                target=_law_path_from_name_ref(current.artifact_ref),
+                carrier=model.LawPath(parts=current.carrier.parts),
+            )
+            current_subject_key = self._validate_current_artifact_stmt(
+                synthetic_current,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+            )
+            if (
+                current_subject_key not in subject_keys
+                and current_subject_key not in agent_contract.outputs
+            ):
+                raise CompileError(
+                    "Review current artifact must stay rooted in a review subject or emitted "
+                    f"output in {owner_label}: {_dotted_ref_name(current.artifact_ref)}"
+                )
+
+        carried_values: dict[str, model.ReviewCarryStmt] = {}
+        for carry in branch.carries:
+            if carry.field_name in carried_values:
+                raise CompileError(
+                    f"Duplicate carried review field in {owner_label}: {carry.field_name}"
+                )
+            carried_values[carry.field_name] = carry
+            if carry.field_name not in field_bindings:
+                raise CompileError(
+                    f"Carried review field is missing a binding in {owner_label}: {carry.field_name}"
+                )
+
+        return ResolvedReviewAgreementBranch(
+            section_key=section_key,
+            verdict=gate_branch.verdict,
+            route=route,
+            current=current,
+            current_subject_key=current_subject_key,
+            reviewed_subject_key=self._resolve_reviewed_artifact_subject_key(
+                current_subject_key=current_subject_key,
+                subject_keys=subject_keys,
+                subject_map=subject_map,
+                branch=branch,
+                output_decl=comment_output_decl,
+                output_unit=comment_output_unit,
+                field_path=field_bindings["reviewed_artifact"],
+                owner_label=owner_label,
+            ),
+            carries=tuple(carried_values.values()),
+            requires_failure_detail=bool(gate_branch.failing_gate_ids),
+            blocked_gate_required=blocked_gate_required and section_key == "on_reject",
+            failing_gate_ids=gate_branch.failing_gate_ids,
+            blocked_gate_id=gate_branch.blocked_gate_id,
+        )
+
+    def _resolve_reviewed_artifact_subject_key(
+        self,
+        *,
+        current_subject_key: tuple[tuple[str, ...], str] | None,
+        subject_keys: set[tuple[tuple[str, ...], str]],
+        subject_map: model.ReviewSubjectMapConfig | None,
+        branch: ReviewOutcomeBranch,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        field_path: tuple[str, ...],
+        owner_label: str,
+    ) -> tuple[tuple[str, ...], str] | None:
+        if current_subject_key in subject_keys:
+            return current_subject_key
+        if len(subject_keys) == 1:
+            return next(iter(subject_keys))
+        if subject_map is not None:
+            mapped = self._review_subject_key_from_subject_map(
+                branch,
+                unit=output_unit,
+                subject_keys=subject_keys,
+                subject_map=subject_map,
+            )
+            if mapped is not None:
+                return mapped
+
+        field_node = self._resolve_output_field_node(
+            output_decl,
+            path=field_path,
+            unit=output_unit,
+            owner_label=owner_label,
+            surface_label="reviewed_artifact binding",
+        )
+        referenced_subjects = self._record_item_subject_keys(
+            field_node.target,
+            subject_keys=subject_keys,
+            unit=output_unit,
+            owner_label=owner_label,
+        )
+        if len(referenced_subjects) == 1:
+            return referenced_subjects[0]
+        return None
+
+    def _review_subject_key_from_subject_map(
+        self,
+        branch: ReviewOutcomeBranch,
+        *,
+        unit: IndexedUnit,
+        subject_keys: set[tuple[tuple[str, ...], str]],
+        subject_map: model.ReviewSubjectMapConfig,
+    ) -> tuple[tuple[str, ...], str] | None:
+        active_mode = next((carry for carry in branch.carries if carry.field_name == "active_mode"), None)
+        if active_mode is None:
+            return None
+        member_value = self._resolve_constant_enum_member(active_mode.expr, unit=unit)
+        if member_value is None:
+            return None
+
+        mapping: dict[str, tuple[tuple[str, ...], str]] = {}
+        for entry in subject_map.entries:
+            resolved = self._resolve_review_match_option(
+                model.ExprRef(parts=(*entry.enum_member_ref.module_parts, entry.enum_member_ref.declaration_name)),
+                unit=unit,
+            )
+            if resolved is None:
+                return None
+            _enum_decl, enum_member_value = resolved
+            subject_unit, subject_decl = self._resolve_review_subjects(
+                model.ReviewSubjectConfig(subjects=(entry.artifact_ref,)),
+                unit=unit,
+                owner_label="review subject_map",
+            )[0]
+            mapping[enum_member_value] = (subject_unit.module_parts, subject_decl.name)
+        mapped = mapping.get(member_value)
+        if mapped in subject_keys:
+            return mapped
+        return None
+
+    def _record_item_subject_keys(
+        self,
+        item: AddressableTarget,
+        *,
+        subject_keys: set[tuple[tuple[str, ...], str]],
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[tuple[tuple[str, ...], str], ...]:
+        referenced: list[tuple[tuple[str, ...], str]] = []
+        seen: set[tuple[tuple[str, ...], str]] = set()
+
+        def add_subject_key(key: tuple[tuple[str, ...], str] | None) -> None:
+            if key is None or key not in subject_keys or key in seen:
+                return
+            seen.add(key)
+            referenced.append(key)
+
+        if isinstance(item, model.RecordScalar):
+            if isinstance(item.value, model.NameRef):
+                add_subject_key(
+                    self._review_subject_key_from_name_ref(
+                        item.value,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                )
+            elif isinstance(item.value, model.AddressableRef):
+                add_subject_key(
+                    self._review_subject_key_from_addressable_ref(
+                        item.value,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                )
+        for ref in self._iter_record_item_interpolation_refs(item):
+            add_subject_key(
+                self._review_subject_key_from_addressable_ref(
+                    ref,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            )
+        return tuple(referenced)
+
+    def _review_subject_key_from_name_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[tuple[str, ...], str] | None:
+        try:
+            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        except CompileError:
+            return None
+        input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
+        output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+        if input_decl is None and output_decl is None:
+            return None
+        if input_decl is not None and output_decl is not None:
+            _ = owner_label
+            return None
+        decl = input_decl if input_decl is not None else output_decl
+        return (target_unit.module_parts, decl.name)
+
+    def _review_subject_key_from_addressable_ref(
+        self,
+        ref: model.AddressableRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[tuple[str, ...], str] | None:
+        try:
+            root_unit, root_decl = self._resolve_addressable_root_decl(
+                ref.root,
+                unit=unit,
+                owner_label=owner_label,
+                ambiguous_label="reviewed_artifact interpolation ref",
+                missing_local_label="reviewed_artifact",
+            )
+        except CompileError:
+            return None
+        if not isinstance(root_decl, (model.InputDecl, model.OutputDecl)):
+            return None
+        if ref.path and ref.path not in {("name",), ("title",)}:
+            return None
+        return (root_unit.module_parts, root_decl.name)
+
+    def _validate_review_output_agreement_branch(
+        self,
+        branch: ResolvedReviewAgreementBranch,
+        *,
+        unit: IndexedUnit,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        next_owner_field_path: tuple[str, ...],
+        field_bindings: dict[str, tuple[str, ...]],
+        owner_label: str,
+    ) -> None:
+        verdict_path = field_bindings["verdict"]
+        if not self._review_output_path_is_live(
+            output_decl,
+            path=verdict_path,
+            unit=output_unit,
+            branch=branch,
+        ):
+            raise CompileError(
+                "Review verdict field is not live for semantic verdict in "
+                f"{owner_label}: {output_decl.name}.{'.'.join(verdict_path)}"
+            )
+
+        if not self._review_output_path_is_live(
+            output_decl,
+            path=next_owner_field_path,
+            unit=output_unit,
+            branch=branch,
+        ):
+            raise CompileError(
+                "Review next_owner field is not live for routed target in "
+                f"{owner_label}: {output_decl.name}.{'.'.join(next_owner_field_path)} -> "
+                f"{branch.route.target.declaration_name}"
+            )
+        self._validate_review_next_owner_binding(
+            branch.route,
+            output_decl=output_decl,
+            output_unit=output_unit,
+            field_path=next_owner_field_path,
+            owner_label=owner_label,
+        )
+
+        if isinstance(branch.current, model.ReviewCurrentArtifactStmt) and not self._review_output_path_is_live(
+            output_decl,
+            path=branch.current.carrier.parts,
+            unit=output_unit,
+            branch=branch,
+        ):
+            raise CompileError(
+                "Review current artifact carrier field is not live for semantic currentness in "
+                f"{owner_label}: {output_decl.name}.{'.'.join(branch.current.carrier.parts)}"
+            )
+
+        for carry in branch.carries:
+            bound_path = field_bindings[carry.field_name]
+            if not self._review_output_path_is_live(
+                output_decl,
+                path=bound_path,
+                unit=output_unit,
+                branch=branch,
+            ) or not self._review_trust_surface_path_is_live(
+                output_decl,
+                path=bound_path,
+                unit=output_unit,
+                branch=branch,
+            ):
+                raise CompileError(
+                    "Review carried field is not live when semantic value exists in "
+                    f"{owner_label}: {carry.field_name} -> {output_decl.name}.{'.'.join(bound_path)}"
+                )
+
+        failing_gates_path = field_bindings["failing_gates"]
+        if branch.requires_failure_detail:
+            if not self._review_output_path_has_matching_failure_guard(
+                output_decl,
+                path=failing_gates_path,
+                unit=output_unit,
+                branch=branch,
+            ):
+                raise CompileError(
+                    "Review conditional output field is not aligned with resolved review semantics "
+                    f"in {owner_label}: failing_gates -> {output_decl.name}.{'.'.join(failing_gates_path)}"
+                )
+            if branch.blocked_gate_required:
+                blocked_gate_path = field_bindings["blocked_gate"]
+                if not self._review_output_path_has_matching_failure_guard(
+                    output_decl,
+                    path=blocked_gate_path,
+                    unit=output_unit,
+                    branch=branch,
+                ):
+                    raise CompileError(
+                        "Review conditional output field is not aligned with resolved review semantics "
+                        f"in {owner_label}: blocked_gate -> {output_decl.name}.{'.'.join(blocked_gate_path)}"
+                    )
+        elif self._review_output_path_is_live(
+            output_decl,
+            path=failing_gates_path,
+            unit=output_unit,
+            branch=branch,
+        ):
+            raise CompileError(
+                "Review conditional output field is not aligned with resolved review semantics "
+                f"in {owner_label}: failing_gates -> {output_decl.name}.{'.'.join(failing_gates_path)}"
+            )
+
+    def _review_output_path_is_live(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> bool:
+        status, _has_guards = self._review_output_path_guard_status(
+            output_decl,
+            path=path,
+            unit=unit,
+            branch=branch,
+        )
+        return status is True
+
+    def _review_output_path_has_matching_failure_guard(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> bool:
+        status, has_guards = self._review_output_path_guard_status(
+            output_decl,
+            path=path,
+            unit=unit,
+            branch=branch,
+        )
+        return has_guards and status is True
+
+    def _review_trust_surface_path_is_live(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> bool:
+        statuses: list[bool | None] = []
+        for item in output_decl.trust_surface:
+            if item.path != path:
+                continue
+            if item.when_expr is None:
+                return True
+            statuses.append(
+                self._evaluate_review_semantic_guard(
+                    item.when_expr,
+                    unit=unit,
+                    branch=branch,
+                )
+            )
+        if not statuses:
+            return False
+        if any(status is True for status in statuses):
+            return True
+        return False
+
+    def _review_output_path_guard_status(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> tuple[bool | None, bool]:
+        guards = self._output_path_guards(output_decl.items, path=path)
+        if not guards:
+            return True, False
+        seen_unknown = False
+        for guard in guards:
+            status = self._evaluate_review_semantic_guard(
+                guard,
+                unit=unit,
+                branch=branch,
+            )
+            if status is False:
+                return False, True
+            if status is None:
+                seen_unknown = True
+        return (None if seen_unknown else True), True
+
+    def _output_path_guards(
+        self,
+        items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...],
+        *,
+        path: tuple[str, ...],
+    ) -> tuple[model.Expr, ...]:
+        guards: list[model.Expr] = []
+        current_items: tuple[model.OutputRecordItem, ...] | tuple[model.AnyRecordItem, ...] = items
+        for segment in path:
+            matched_item: model.AnyRecordItem | None = None
+            for item in current_items:
+                if isinstance(item, (model.RecordSection, model.GuardedOutputSection, model.RecordScalar)):
+                    if item.key == segment:
+                        matched_item = item
+                        break
+            if matched_item is None:
+                break
+            if isinstance(matched_item, model.GuardedOutputSection):
+                guards.append(matched_item.when_expr)
+                current_items = matched_item.items
+                continue
+            if isinstance(matched_item, model.RecordSection):
+                current_items = matched_item.items
+                continue
+            if isinstance(matched_item, model.RecordScalar) and matched_item.body is not None:
+                current_items = matched_item.body
+                continue
+            current_items = ()
+        return tuple(guards)
+
+    def _evaluate_review_semantic_guard(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> bool | None:
+        if isinstance(expr, model.ExprBinary):
+            if expr.op == "and":
+                left = self._evaluate_review_semantic_guard(expr.left, unit=unit, branch=branch)
+                right = self._evaluate_review_semantic_guard(expr.right, unit=unit, branch=branch)
+                if left is False or right is False:
+                    return False
+                if left is True and right is True:
+                    return True
+                return None
+            if expr.op == "or":
+                left = self._evaluate_review_semantic_guard(expr.left, unit=unit, branch=branch)
+                right = self._evaluate_review_semantic_guard(expr.right, unit=unit, branch=branch)
+                if left is True or right is True:
+                    return True
+                if left is False and right is False:
+                    return False
+                return None
+
+        if not isinstance(expr, model.ExprBinary):
+            constant = self._resolve_review_semantic_expr_constant(expr, unit=unit, branch=branch)
+            if isinstance(constant, bool):
+                return constant
+            return None
+
+        left = self._resolve_review_semantic_expr_constant(expr.left, unit=unit, branch=branch)
+        right = self._resolve_review_semantic_expr_constant(expr.right, unit=unit, branch=branch)
+        if left is None or right is None:
+            return None
+        if expr.op == "==":
+            return left == right
+        if expr.op == "!=":
+            return left != right
+        if expr.op == "in":
+            return self._review_membership_contains(right, left)
+        if expr.op == "not in":
+            return not self._review_membership_contains(right, left)
+        return None
+
+    def _resolve_review_semantic_expr_constant(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> str | int | bool | tuple[str | int | bool, ...] | None:
+        if isinstance(expr, (str, int, bool)):
+            return expr
+        if isinstance(expr, model.ExprSet):
+            values: list[str | int | bool] = []
+            for item in expr.items:
+                value = self._resolve_review_semantic_expr_constant(
+                    item,
+                    unit=unit,
+                    branch=branch,
+                )
+                if value is None or isinstance(value, tuple):
+                    return None
+                values.append(value)
+            return tuple(values)
+        if isinstance(expr, model.ExprCall):
+            if expr.name in {"present", "missing"} and len(expr.args) == 1 and isinstance(
+                expr.args[0], model.ExprRef
+            ):
+                field_name = self._review_semantic_field_ref_name(expr.args[0])
+                if field_name is not None:
+                    present = self._review_semantic_field_present(
+                        field_name,
+                        unit=unit,
+                        branch=branch,
+                    )
+                    if present is None:
+                        return None
+                    return present if expr.name == "present" else not present
+            if expr.name in {"failed", "passed"} and len(expr.args) == 1:
+                gate_identity = self._resolve_review_contract_gate_identity(expr.args[0])
+                if gate_identity is None:
+                    return None
+                contract_failed_gate_ids = tuple(
+                    gate_id
+                    for gate_id in branch.failing_gate_ids
+                    if gate_id.startswith("contract.")
+                )
+                is_failed = gate_identity in contract_failed_gate_ids
+                return is_failed if expr.name == "failed" else not is_failed
+            return None
+        if isinstance(expr, model.ExprRef):
+            contract_failed_gate_ids = tuple(
+                gate_id
+                for gate_id in branch.failing_gate_ids
+                if gate_id.startswith("contract.")
+            )
+            contract_value = self._resolve_review_contract_expr_constant(
+                expr,
+                contract_failed_gate_ids=contract_failed_gate_ids,
+            )
+            if contract_value is not None:
+                return contract_value
+            field_name = self._review_semantic_field_ref_name(expr)
+            if field_name is not None:
+                return self._review_semantic_ref_value(
+                    field_name,
+                    unit=unit,
+                    branch=branch,
+                )
+            return self._resolve_constant_enum_member(expr, unit=unit)
+        if isinstance(expr, model.ExprBinary):
+            return self._evaluate_review_semantic_guard(expr, unit=unit, branch=branch)
+        return None
+
+    def _review_semantic_field_present(
+        self,
+        field_name: str,
+        *,
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> bool | None:
+        if field_name == "current_artifact":
+            return isinstance(branch.current, model.ReviewCurrentArtifactStmt)
+        if field_name == "blocked_gate":
+            return branch.blocked_gate_required
+        return self._review_semantic_ref_value(
+            field_name,
+            unit=unit,
+            branch=branch,
+        ) is not None
+
+    def _review_semantic_field_ref_name(self, ref: model.ExprRef) -> str | None:
+        if len(ref.parts) == 1:
+            return ref.parts[0]
+        if len(ref.parts) == 2 and ref.parts[0] == "fields":
+            return ref.parts[1]
+        return None
+
+    def _review_semantic_ref_value(
+        self,
+        field_name: str,
+        *,
+        unit: IndexedUnit,
+        branch: ResolvedReviewAgreementBranch,
+    ) -> str | None:
+        if field_name == "verdict":
+            return branch.verdict
+        if field_name == "next_owner":
+            return branch.route.target.declaration_name
+        if field_name == "current_artifact":
+            if branch.current_subject_key is None:
+                return None
+            module_parts, decl_name = branch.current_subject_key
+            return _dotted_decl_name(module_parts, decl_name)
+        if field_name == "reviewed_artifact":
+            if branch.reviewed_subject_key is None:
+                return None
+            module_parts, decl_name = branch.reviewed_subject_key
+            return _dotted_decl_name(module_parts, decl_name)
+        if field_name == "failing_gates":
+            return ",".join(branch.failing_gate_ids) if branch.failing_gate_ids else None
+        if field_name == "blocked_gate":
+            return branch.blocked_gate_id
+        for carry in reversed(branch.carries):
+            if carry.field_name == field_name:
+                if isinstance(carry.expr, model.ExprRef):
+                    return self._resolve_constant_enum_member(carry.expr, unit=unit) or ".".join(carry.expr.parts)
+                resolved = self._resolve_constant_enum_member(carry.expr, unit=unit)
+                if resolved is not None:
+                    return resolved
+                if isinstance(carry.expr, str):
+                    return carry.expr
+        return None
+
+    def _validate_review_outcome_items(
+        self,
+        items: tuple[model.ReviewOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        for item in items:
+            if isinstance(item, model.ReviewOutcomeWhenStmt):
+                self._validate_review_outcome_items(
+                    item.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                continue
+            if isinstance(item, model.ReviewOutcomeMatchStmt):
+                self._validate_review_match_cases(
+                    item.cases,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                for case in item.cases:
+                    self._validate_review_outcome_items(
+                        case.items,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                continue
+            if isinstance(item, model.ReviewOutcomeRouteStmt):
+                self._validate_route_target(item.target, unit=unit)
+
+    def _collect_review_outcome_leaf_branches(
+        self,
+        items: tuple[model.ReviewOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch | None = None,
+    ) -> tuple[ReviewOutcomeBranch, ...]:
+        branches = (branch or ReviewOutcomeBranch(),)
+        index = 0
+        while index < len(items):
+            item = items[index]
+            if isinstance(item, model.ReviewOutcomeWhenStmt):
+                next_branches: list[ReviewOutcomeBranch] = []
+                for current_branch in branches:
+                    condition = self._evaluate_review_condition(
+                        item.expr,
+                        unit=unit,
+                        branch=current_branch,
+                    )
+                    if condition is not False:
+                        next_branches.extend(
+                            self._collect_review_outcome_leaf_branches(
+                                item.items,
+                                unit=unit,
+                                branch=current_branch,
+                            )
+                        )
+                    if condition is not True:
+                        next_branches.append(current_branch)
+                branches = tuple(next_branches)
+            elif isinstance(item, model.ReviewOutcomeMatchStmt):
+                next_branches: list[ReviewOutcomeBranch] = []
+                for current_branch in branches:
+                    next_branches.extend(
+                        self._collect_review_outcome_match_branches(
+                            item,
+                            unit=unit,
+                            branch=current_branch,
+                        )
+                    )
+                branches = tuple(next_branches)
+            else:
+                next_branches = []
+                for current_branch in branches:
+                    next_branches.extend(
+                        self._branch_with_review_outcome_stmt(
+                            current_branch,
+                            item,
+                            unit=unit,
+                        )
+                    )
+                branches = tuple(next_branches)
+            index += 1
+        return branches
+
+    def _branch_with_review_outcome_stmt(
+        self,
+        branch: ReviewOutcomeBranch,
+        stmt: model.ReviewOutcomeStmt,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[ReviewOutcomeBranch, ...]:
+        if isinstance(stmt, (model.ReviewCurrentArtifactStmt, model.ReviewCurrentNoneStmt)):
+            return (replace(branch, currents=(*branch.currents, stmt)),)
+        if isinstance(stmt, model.ReviewCarryStmt):
+            return (replace(branch, carries=(*branch.carries, stmt)),)
+        if isinstance(stmt, model.ReviewOutcomeRouteStmt):
+            if branch.route_selected:
+                return (branch,)
+            if stmt.when_expr is None:
+                return (
+                    replace(
+                        branch,
+                        routes=(*branch.routes, stmt),
+                        route_selected=True,
+                    ),
+                )
+            condition = self._evaluate_review_condition(
+                stmt.when_expr,
+                unit=unit,
+                branch=branch,
+            )
+            if condition is True:
+                return (
+                    replace(
+                        branch,
+                        routes=(*branch.routes, stmt),
+                        route_selected=True,
+                    ),
+                )
+            if condition is False:
+                return (branch,)
+            return (
+                replace(
+                    branch,
+                    routes=(*branch.routes, stmt),
+                    route_selected=True,
+                ),
+                branch,
+            )
+        return (branch,)
+
+    def _collect_review_outcome_match_branches(
+        self,
+        stmt: model.ReviewOutcomeMatchStmt,
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch,
+    ) -> tuple[ReviewOutcomeBranch, ...]:
+        selected: list[ReviewOutcomeBranch] = []
+        pending = [branch]
+
+        for case in stmt.cases:
+            next_pending: list[ReviewOutcomeBranch] = []
+            for current_branch in pending:
+                if case.head is None:
+                    selected.extend(
+                        self._collect_review_outcome_leaf_branches(
+                            case.items,
+                            unit=unit,
+                            branch=current_branch,
+                        )
+                    )
+                    continue
+
+                condition = self._review_match_head_matches(
+                    stmt.expr,
+                    case.head,
+                    unit=unit,
+                    branch=current_branch,
+                )
+                if condition is not False:
+                    selected.extend(
+                        self._collect_review_outcome_leaf_branches(
+                            case.items,
+                            unit=unit,
+                            branch=current_branch,
+                        )
+                    )
+                if condition is not True:
+                    next_pending.append(current_branch)
+            pending = next_pending
+
+        if pending and not self._review_match_is_exhaustive(stmt, unit=unit):
+            selected.extend(pending)
+        return tuple(selected)
+
+    def _review_match_head_matches(
+        self,
+        expr: model.Expr,
+        head: model.ReviewMatchHead,
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch,
+    ) -> bool | None:
+        subject_value = self._resolve_review_expr_constant(expr, unit=unit, branch=branch)
+        matched = False
+        saw_unknown_option = False
+        if subject_value is None:
+            option_result: bool | None = None
+        else:
+            option_result = False
+            for option in head.options:
+                option_value = self._resolve_review_expr_constant(option, unit=unit, branch=branch)
+                if option_value is None:
+                    saw_unknown_option = True
+                    continue
+                if subject_value == option_value:
+                    matched = True
+                    option_result = True
+                    break
+            if not matched and saw_unknown_option:
+                option_result = None
+        if option_result is False:
+            return False
+        if head.when_expr is None:
+            return option_result
+        guard_result = self._evaluate_review_condition(
+            head.when_expr,
+            unit=unit,
+            branch=branch,
+        )
+        return self._combine_review_condition(option_result, guard_result)
+
+    def _review_match_is_exhaustive(
+        self,
+        stmt: model.ReviewOutcomeMatchStmt,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        if any(case.head is None for case in stmt.cases):
+            return True
+
+        enum_decl: model.EnumDecl | None = None
+        seen_members: set[str] = set()
+        for case in stmt.cases:
+            if case.head is None or case.head.when_expr is not None:
+                return False
+            for option in case.head.options:
+                resolved = self._resolve_review_match_option(option, unit=unit)
+                if resolved is None:
+                    return False
+                option_enum_decl, member_value = resolved
+                if enum_decl is None:
+                    enum_decl = option_enum_decl
+                elif enum_decl.name != option_enum_decl.name:
+                    return False
+                seen_members.add(member_value)
+
+        if enum_decl is None:
+            return False
+        return seen_members == {member.value for member in enum_decl.members}
+
+    def _evaluate_review_condition(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch,
+    ) -> bool | None:
+        constant = self._resolve_review_expr_constant(expr, unit=unit, branch=branch)
+        if isinstance(constant, bool):
+            return constant
+        if not isinstance(expr, model.ExprBinary):
+            return None
+
+        if expr.op == "and":
+            left = self._evaluate_review_condition(expr.left, unit=unit, branch=branch)
+            right = self._evaluate_review_condition(expr.right, unit=unit, branch=branch)
+            if left is False or right is False:
+                return False
+            if left is True and right is True:
+                return True
+            return None
+        if expr.op == "or":
+            left = self._evaluate_review_condition(expr.left, unit=unit, branch=branch)
+            right = self._evaluate_review_condition(expr.right, unit=unit, branch=branch)
+            if left is True or right is True:
+                return True
+            if left is False and right is False:
+                return False
+            return None
+
+        left = self._resolve_review_expr_constant(expr.left, unit=unit, branch=branch)
+        right = self._resolve_review_expr_constant(expr.right, unit=unit, branch=branch)
+        if left is None or right is None:
+            return None
+
+        if expr.op == "==":
+            return left == right
+        if expr.op == "!=":
+            return left != right
+        if expr.op == "in":
+            return self._review_membership_contains(right, left)
+        if expr.op == "not in":
+            return not self._review_membership_contains(right, left)
+        if expr.op == ">":
+            return left > right
+        if expr.op == ">=":
+            return left >= right
+        if expr.op == "<":
+            return left < right
+        if expr.op == "<=":
+            return left <= right
+        return None
+
+    def _resolve_review_expr_constant(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        branch: ReviewOutcomeBranch,
+    ) -> str | int | bool | tuple[str | int | bool, ...] | None:
+        if isinstance(expr, (str, int, bool)):
+            return expr
+        if isinstance(expr, model.ExprRef):
+            for carry in reversed(branch.carries):
+                if len(expr.parts) == 1 and carry.field_name == expr.parts[0]:
+                    return self._resolve_review_expr_constant(
+                        carry.expr,
+                        unit=unit,
+                        branch=branch,
+                    )
+            return self._resolve_constant_enum_member(expr, unit=unit)
+        if isinstance(expr, model.ExprSet):
+            values: list[str | int | bool] = []
+            for item in expr.items:
+                value = self._resolve_review_expr_constant(item, unit=unit, branch=branch)
+                if value is None or isinstance(value, tuple):
+                    return None
+                values.append(value)
+            return tuple(values)
+        if (
+            isinstance(expr, model.ExprCall)
+            and expr.name in {"present", "missing"}
+            and len(expr.args) == 1
+            and isinstance(expr.args[0], model.ExprRef)
+            and len(expr.args[0].parts) == 1
+        ):
+            field_name = expr.args[0].parts[0]
+            is_present = any(carry.field_name == field_name for carry in branch.carries)
+            return is_present if expr.name == "present" else not is_present
+        if isinstance(expr, model.ExprBinary):
+            return self._evaluate_review_condition(expr, unit=unit, branch=branch)
+        return None
+
+    def _combine_review_condition(
+        self,
+        left: bool | None,
+        right: bool | None,
+    ) -> bool | None:
+        if left is False or right is False:
+            return False
+        if left is True and right is True:
+            return True
+        return None
+
+    def _review_membership_contains(
+        self,
+        container: str | int | bool | tuple[str | int | bool, ...],
+        value: str | int | bool,
+    ) -> bool:
+        if isinstance(container, tuple):
+            return value in container
+        return value == container
+
+    def _review_branch_proves_subject(
+        self,
+        branch: ReviewOutcomeBranch,
+        *,
+        unit: IndexedUnit,
+        subject_keys: set[tuple[tuple[str, ...], str]],
+        subject_map: model.ReviewSubjectMapConfig | None,
+        current_subject_key: tuple[tuple[str, ...], str] | None,
+        reviewed_subject_key: tuple[tuple[str, ...], str] | None,
+    ) -> bool:
+        if current_subject_key is not None and current_subject_key in subject_keys:
+            return True
+        if reviewed_subject_key is not None and reviewed_subject_key in subject_keys:
+            return True
+        if subject_map is None:
+            return False
+        return (
+            self._review_subject_key_from_subject_map(
+                branch,
+                unit=unit,
+                subject_keys=subject_keys,
+                subject_map=subject_map,
+            )
+            in subject_keys
+        )
+
+    def _validate_review_next_owner_binding(
+        self,
+        route: model.ReviewOutcomeRouteStmt,
+        *,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        field_path: tuple[str, ...],
+        owner_label: str,
+    ) -> None:
+        route_unit, route_agent = self._resolve_agent_ref(route.target, unit=output_unit)
+        field_node = self._resolve_output_field_node(
+            output_decl,
+            path=field_path,
+            unit=output_unit,
+            owner_label=owner_label,
+            surface_label="review next_owner binding",
+        )
+        target = field_node.target
+        if not isinstance(
+            target,
+            (model.RecordScalar, model.RecordSection, model.GuardedOutputSection),
+        ):
+            raise CompileError(
+                f"Review next_owner binding must point at an output field in {owner_label}: "
+                f"{output_decl.name}.{'.'.join(field_path)}"
+            )
+        if not self._record_item_mentions_agent(
+            target,
+            target_unit=route_unit,
+            target_agent_name=route_agent.name,
+            unit=output_unit,
+            owner_label=f"output {output_decl.name}.{'.'.join(field_path)}",
+        ):
+            raise CompileError(
+                f"Review next_owner field must structurally bind the routed target in {owner_label}: "
+                f"{output_decl.name}.{'.'.join(field_path)} -> {route_agent.name}"
+            )
+
+    def _render_review_subject_summary(
+        self,
+        subjects: tuple[tuple[IndexedUnit, model.InputDecl | model.OutputDecl], ...],
+    ) -> str:
+        titles = [decl.title for _unit, decl in subjects]
+        if len(titles) == 1:
+            return f"Review subject: {titles[0]}."
+        return "Review subjects: " + ", ".join(titles[:-1]) + f", and {titles[-1]}."
+
+    def _compile_review_pre_outcome_section_body(
+        self,
+        items: tuple[model.ReviewPreOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> tuple[CompiledBodyItem, ...]:
+        lines: list[CompiledBodyItem] = []
+        for item in items:
+            rendered = self._render_review_pre_outcome_item(
+                item,
+                unit=unit,
+                contract_spec=contract_spec,
+                section_titles=section_titles,
+                owner_label=owner_label,
+                review_semantics=review_semantics,
+            )
+            if not rendered:
+                continue
+            if lines and lines[-1] != "":
+                lines.append("")
+            lines.extend(rendered)
+        return tuple(lines)
+
+    def _render_review_pre_outcome_item(
+        self,
+        item: model.ReviewPreOutcomeStmt,
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> list[CompiledBodyItem]:
+        if isinstance(item, (str, model.EmphasizedLine)):
+            return [
+                self._interpolate_authored_prose_line(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label="review prose",
+                    review_semantics=review_semantics,
+                )
+            ]
+        if isinstance(item, model.ReviewPreOutcomeWhenStmt):
+            lines: list[CompiledBodyItem] = [
+                f"If {self._render_condition_expr(item.expr, unit=unit)}:"
+            ]
+            for child in item.items:
+                rendered = self._render_review_pre_outcome_item(
+                    child,
+                    unit=unit,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                    owner_label=owner_label,
+                    review_semantics=review_semantics,
+                )
+                lines.extend(
+                    f"- {line}" if isinstance(line, str) else line
+                    for line in rendered
+                    if isinstance(line, str)
+                )
+            return lines
+        if isinstance(item, model.ReviewPreOutcomeMatchStmt):
+            return self._render_review_pre_outcome_match_stmt(
+                item,
+                unit=unit,
+                contract_spec=contract_spec,
+                section_titles=section_titles,
+                owner_label=owner_label,
+                review_semantics=review_semantics,
+            )
+        if isinstance(item, model.ReviewBlockStmt):
+            return [
+                self._review_gate_sentence(
+                    "Block",
+                    item.gate,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                )
+            ]
+        if isinstance(item, model.ReviewRejectStmt):
+            return [
+                self._review_gate_sentence(
+                    "Reject",
+                    item.gate,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                )
+            ]
+        if isinstance(item, model.ReviewAcceptStmt):
+            return [
+                self._review_gate_sentence(
+                    "Accept only if",
+                    item.gate,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                )
+            ]
+        return list(
+            self._render_law_stmt_lines(
+                item,
+                unit=unit,
+                owner_label=owner_label,
+                bullet=False,
+            )
+        )
+
+    def _render_review_pre_outcome_match_stmt(
+        self,
+        stmt: model.ReviewPreOutcomeMatchStmt,
+        *,
+        unit: IndexedUnit,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+        owner_label: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> list[CompiledBodyItem]:
+        lines: list[CompiledBodyItem] = [f"Match {self._render_expr(stmt.expr, unit=unit)}:"]
+        for case in stmt.cases:
+            heading = "Else:" if case.head is None else f"If {self._render_review_match_head(case.head, unit=unit)}:"
+            lines.append(heading)
+            for item in case.items:
+                rendered = self._render_review_pre_outcome_item(
+                    item,
+                    unit=unit,
+                    contract_spec=contract_spec,
+                    section_titles=section_titles,
+                    owner_label=owner_label,
+                    review_semantics=review_semantics,
+                )
+                lines.extend(f"- {line}" for line in rendered if isinstance(line, str))
+        return lines
+
+    def _compile_review_outcome_section_body(
+        self,
+        items: tuple[model.ReviewOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> tuple[CompiledBodyItem, ...]:
+        lines: list[CompiledBodyItem] = []
+        for item in items:
+            rendered = self._render_review_outcome_item(
+                item,
+                unit=unit,
+                owner_label=owner_label,
+                review_semantics=review_semantics,
+            )
+            if not rendered:
+                continue
+            if lines and lines[-1] != "":
+                lines.append("")
+            lines.extend(rendered)
+        return tuple(lines)
+
+    def _render_review_outcome_item(
+        self,
+        item: model.ReviewOutcomeStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> list[CompiledBodyItem]:
+        if isinstance(item, (str, model.EmphasizedLine)):
+            return [
+                self._interpolate_authored_prose_line(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label="review prose",
+                    review_semantics=review_semantics,
+                )
+            ]
+        if isinstance(item, model.ReviewOutcomeWhenStmt):
+            lines: list[CompiledBodyItem] = [
+                f"If {self._render_condition_expr(item.expr, unit=unit)}:"
+            ]
+            for child in item.items:
+                rendered = self._render_review_outcome_item(
+                    child,
+                    unit=unit,
+                    owner_label=owner_label,
+                    review_semantics=review_semantics,
+                )
+                lines.extend(f"- {line}" for line in rendered if isinstance(line, str))
+            return lines
+        if isinstance(item, model.ReviewOutcomeMatchStmt):
+            return self._render_review_outcome_match_stmt(
+                item,
+                unit=unit,
+                owner_label=owner_label,
+                review_semantics=review_semantics,
+            )
+        if isinstance(item, model.ReviewCurrentArtifactStmt):
+            return [f"Current artifact: {self._display_ref(item.artifact_ref)}."]
+        if isinstance(item, model.ReviewCurrentNoneStmt):
+            return ["There is no current artifact for this outcome."]
+        if isinstance(item, model.ReviewCarryStmt):
+            return [
+                f"Carry {_humanize_key(item.field_name).lower()}: {self._render_expr(item.expr, unit=unit)}."
+            ]
+        if isinstance(item, model.ReviewOutcomeRouteStmt):
+            text = self._interpolate_authored_prose_string(
+                item.label,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="review prose",
+                review_semantics=review_semantics,
+            )
+            text = text if text.endswith(".") else f"{text}."
+            return [text]
+        return []
+
+    def _render_review_outcome_match_stmt(
+        self,
+        stmt: model.ReviewOutcomeMatchStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        review_semantics: ReviewSemanticContext,
+    ) -> list[CompiledBodyItem]:
+        lines: list[CompiledBodyItem] = [f"Match {self._render_expr(stmt.expr, unit=unit)}:"]
+        for case in stmt.cases:
+            heading = "Else:" if case.head is None else f"If {self._render_review_match_head(case.head, unit=unit)}:"
+            lines.append(heading)
+            for item in case.items:
+                rendered = self._render_review_outcome_item(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    review_semantics=review_semantics,
+                )
+                lines.extend(f"- {line}" for line in rendered if isinstance(line, str))
+        return lines
+
+    def _render_review_match_head(
+        self,
+        head: model.ReviewMatchHead,
+        *,
+        unit: IndexedUnit,
+    ) -> str:
+        options = " or ".join(self._render_expr(option, unit=unit) for option in head.options)
+        if head.when_expr is None:
+            return options
+        return f"{options} when {self._render_condition_expr(head.when_expr, unit=unit)}"
+
+    def _review_gate_sentence(
+        self,
+        prefix: str,
+        gate: model.ReviewGateLabel,
+        *,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+    ) -> str:
+        gate_text = self._review_gate_text(
+            gate,
+            contract_spec=contract_spec,
+            section_titles=section_titles,
+        )
+        gate_text = gate_text.rstrip(".")
+        if prefix.endswith("if"):
+            return f"{prefix} {gate_text}."
+        return f"{prefix}: {gate_text}."
+
+    def _review_gate_text(
+        self,
+        gate: model.ReviewGateLabel,
+        *,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+    ) -> str:
+        if isinstance(gate, str):
+            return gate
+        if isinstance(gate, model.ContractGateRef):
+            for item in contract_spec.gates:
+                if item.key == gate.key:
+                    return item.title
+            return f"contract.{gate.key}"
+        return section_titles.get(gate.key, gate.key)
+
+    def _review_gate_identity(
+        self,
+        gate: model.ReviewGateLabel,
+        *,
+        contract_spec: ReviewContractSpec,
+        section_titles: dict[str, str],
+    ) -> str:
+        if isinstance(gate, str):
+            return gate
+        if isinstance(gate, model.ContractGateRef):
+            _ = contract_spec
+            return f"contract.{gate.key}"
+        _ = section_titles
+        return gate.key
+
     def _validate_output_guard_sections(
         self,
         decl: model.OutputDecl,
         *,
         unit: IndexedUnit,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> None:
         self._validate_output_record_items(
             decl.items,
             decl=decl,
             unit=unit,
             owner_label=f"output {decl.name}",
+            allow_review_semantics=allow_review_semantics,
+            review_semantics=review_semantics,
         )
-        self._validate_standalone_read_guard_contract(decl, unit=unit)
+        for item in decl.trust_surface:
+            if item.when_expr is None:
+                continue
+            self._validate_output_guard_expr(
+                item.when_expr,
+                decl=decl,
+                unit=unit,
+                owner_label=f"output {decl.name}.trust_surface",
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
+            )
+        self._validate_standalone_read_guard_contract(
+            decl,
+            unit=unit,
+            review_semantics=review_semantics,
+        )
 
     def _validate_output_record_items(
         self,
@@ -1343,6 +4260,8 @@ class CompilationContext:
         decl: model.OutputDecl,
         unit: IndexedUnit,
         owner_label: str,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> None:
         for item in items:
             if isinstance(item, model.GuardedOutputSection):
@@ -1351,12 +4270,16 @@ class CompilationContext:
                     decl=decl,
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
                 self._validate_output_record_items(
                     item.items,
                     decl=decl,
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
                 continue
             if isinstance(item, model.RecordSection):
@@ -1365,6 +4288,8 @@ class CompilationContext:
                     decl=decl,
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
                 continue
             if isinstance(item, model.RecordScalar) and item.body is not None:
@@ -1373,6 +4298,8 @@ class CompilationContext:
                     decl=decl,
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
                 continue
             if isinstance(item, model.RecordRef) and item.body is not None:
@@ -1381,6 +4308,8 @@ class CompilationContext:
                     decl=decl,
                     unit=unit,
                     owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
 
     def _validate_output_guard_expr(
@@ -1390,6 +4319,8 @@ class CompilationContext:
         decl: model.OutputDecl,
         unit: IndexedUnit,
         owner_label: str,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> None:
         if isinstance(expr, model.ExprRef):
             self._validate_output_guard_ref(
@@ -1397,6 +4328,8 @@ class CompilationContext:
                 decl=decl,
                 unit=unit,
                 owner_label=owner_label,
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
             )
             return
         if isinstance(expr, model.ExprBinary):
@@ -1405,12 +4338,16 @@ class CompilationContext:
                 decl=decl,
                 unit=unit,
                 owner_label=owner_label,
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
             )
             self._validate_output_guard_expr(
                 expr.right,
                 decl=decl,
                 unit=unit,
                 owner_label=owner_label,
+                allow_review_semantics=allow_review_semantics,
+                review_semantics=review_semantics,
             )
             return
         if isinstance(expr, model.ExprCall):
@@ -1420,6 +4357,8 @@ class CompilationContext:
                     decl=decl,
                     unit=unit,
                     owner_label=owner_label,
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
             return
         if isinstance(expr, model.ExprSet):
@@ -1429,6 +4368,8 @@ class CompilationContext:
                     decl=decl,
                     unit=unit,
                     owner_label=owner_label,
+                    allow_review_semantics=allow_review_semantics,
+                    review_semantics=review_semantics,
                 )
 
     def _validate_output_guard_ref(
@@ -1438,8 +4379,15 @@ class CompilationContext:
         decl: model.OutputDecl,
         unit: IndexedUnit,
         owner_label: str,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> None:
-        if self._output_guard_ref_allowed(ref, unit=unit):
+        if self._output_guard_ref_allowed(
+            ref,
+            unit=unit,
+            allow_review_semantics=allow_review_semantics,
+            review_semantics=review_semantics,
+        ):
             return
         raise CompileError(
             f"Output guard reads disallowed source in {owner_label}: {'.'.join(ref.parts)}"
@@ -1450,10 +4398,23 @@ class CompilationContext:
         ref: model.ExprRef,
         *,
         unit: IndexedUnit,
+        allow_review_semantics: bool = False,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> bool:
-        return self._expr_ref_matches_input_decl(ref, unit=unit) or self._expr_ref_matches_enum_member(
-            ref,
-            unit=unit,
+        return (
+            self._expr_ref_matches_input_decl(ref, unit=unit)
+            or self._expr_ref_matches_enum_member(ref, unit=unit)
+            or (
+                allow_review_semantics
+                and (
+                    self._expr_ref_matches_review_field(ref)
+                    or self._expr_ref_matches_review_semantic_ref(
+                        ref,
+                        review_semantics=review_semantics,
+                    )
+                    or self._expr_ref_matches_review_verdict(ref)
+                )
+            )
         )
 
     def _validate_standalone_read_guard_contract(
@@ -1461,6 +4422,7 @@ class CompilationContext:
         decl: model.OutputDecl,
         *,
         unit: IndexedUnit,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> None:
         for path, item in self._iter_output_items_with_paths(decl.items):
             if not path or path[-1] != "standalone_read":
@@ -1471,6 +4433,7 @@ class CompilationContext:
                     ref,
                     unit=unit,
                     owner_label=owner_label,
+                    review_semantics=review_semantics,
                 ):
                     raise CompileError(
                         "standalone_read cannot interpolate guarded output detail "
@@ -1580,7 +4543,22 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> bool:
+        semantic_parts = self._review_semantic_addressable_parts(ref)
+        if (
+            review_semantics is not None
+            and semantic_parts is not None
+            and semantic_parts[0] == "fields"
+        ):
+            field_path = self._review_semantic_field_path(review_semantics, semantic_parts[1])
+            if field_path is None:
+                return False
+            _output_unit, output_decl = self._resolve_review_semantic_output_decl(review_semantics)
+            return self._output_path_has_guarded_section(
+                output_decl,
+                path=(*field_path, *semantic_parts[2:]),
+            )
         try:
             target_unit, root_decl = self._resolve_addressable_root_decl(
                 ref.root,
@@ -1588,6 +4566,7 @@ class CompilationContext:
                 owner_label=owner_label,
                 ambiguous_label="standalone_read interpolation ref",
                 missing_local_label="standalone_read",
+                review_semantics=review_semantics,
             )
         except CompileError:
             return False
@@ -1620,6 +4599,35 @@ class CompilationContext:
             _target_unit, _decl = self._resolve_input_decl(root, unit=unit)
             return True
         return False
+
+    def _expr_ref_matches_review_field(self, ref: model.ExprRef) -> bool:
+        return len(ref.parts) == 1 and ref.parts[0] in _REVIEW_GUARD_FIELD_NAMES
+
+    def _expr_ref_matches_review_semantic_ref(
+        self,
+        ref: model.ExprRef,
+        *,
+        review_semantics: ReviewSemanticContext | None,
+    ) -> bool:
+        if review_semantics is None or len(ref.parts) < 2:
+            return False
+        if ref.parts[0] == "fields":
+            return self._review_semantic_field_path(review_semantics, ref.parts[1]) is not None
+        if ref.parts[0] == "contract":
+            if ref.parts[1] in _REVIEW_CONTRACT_FACT_KEYS and len(ref.parts) == 2:
+                return True
+            return (
+                len(ref.parts) == 2
+                and self._review_semantic_contract_gate(review_semantics, ref.parts[1]) is not None
+            )
+        return False
+
+    def _expr_ref_matches_review_verdict(self, ref: model.ExprRef) -> bool:
+        return (
+            len(ref.parts) == 2
+            and ref.parts[0] == "ReviewVerdict"
+            and ref.parts[1] in _REVIEW_VERDICT_TEXT
+        )
 
     def _expr_ref_matches_enum_member(
         self,
@@ -1692,6 +4700,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         output_name: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
         for item in section.items:
@@ -1728,6 +4737,7 @@ class CompilationContext:
                             unit=unit,
                             owner_label=f"output {output_name} file {item.key}",
                             surface_label="output file prose",
+                            review_semantics=review_semantics,
                         ),
                     )
                 )
@@ -1740,6 +4750,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
         for item in items:
@@ -1749,6 +4760,7 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     surface_label=surface_label,
+                    review_semantics=review_semantics,
                 )
             )
         return tuple(body)
@@ -1760,6 +4772,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         if isinstance(item, (str, model.EmphasizedLine)):
             return (
@@ -1768,6 +4781,7 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     surface_label=surface_label,
+                    review_semantics=review_semantics,
                 ),
             )
 
@@ -1780,6 +4794,7 @@ class CompilationContext:
                         unit=unit,
                         owner_label=f"{owner_label}.{item.key}",
                         surface_label=surface_label,
+                        review_semantics=review_semantics,
                     ),
                 ),
             )
@@ -1792,6 +4807,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=f"{owner_label}.{item.key}",
                 surface_label=surface_label,
+                review_semantics=review_semantics,
             )
             if compiled_items:
                 body.append("")
@@ -1804,6 +4820,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
                 surface_label=surface_label,
+                review_semantics=review_semantics,
             )
 
         if isinstance(item, model.RecordRef):
@@ -1813,6 +4830,7 @@ class CompilationContext:
                     unit=unit,
                     owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
                     surface_label=surface_label,
+                    review_semantics=review_semantics,
                 )
                 if item.body is not None
                 else ()
@@ -1833,6 +4851,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         label = _humanize_key(item.key)
         value = self._format_scalar_value(
@@ -1840,6 +4859,7 @@ class CompilationContext:
             unit=unit,
             owner_label=f"{owner_label}.{item.key}",
             surface_label=surface_label,
+            review_semantics=review_semantics,
         )
         if item.body is None:
             return (f"- {label}: {value}",)
@@ -1851,6 +4871,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=f"{owner_label}.{item.key}",
                 surface_label=surface_label,
+                review_semantics=review_semantics,
             )
         )
         return (CompiledSection(title=label, body=tuple(body)),)
@@ -2012,12 +5033,14 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str | None = None,
         surface_label: str | None = None,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> str:
         display = self._display_scalar_value(
             value,
             unit=unit,
             owner_label=owner_label,
             surface_label=surface_label,
+            review_semantics=review_semantics,
         )
         if display.kind == "string_literal":
             return f"`{display.text}`"
@@ -2030,6 +5053,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str | None = None,
         surface_label: str | None = None,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> DisplayValue:
         if isinstance(value, str):
             return DisplayValue(text=value, kind="string_literal")
@@ -2049,6 +5073,7 @@ class CompilationContext:
             surface_label=surface_label,
             ambiguous_label=f"{surface_label} addressable ref",
             missing_local_label=surface_label,
+            review_semantics=review_semantics,
         )
 
     def _value_to_symbol(
@@ -2124,6 +5149,313 @@ class CompilationContext:
             return resolved
         finally:
             self._workflow_resolution_stack.pop()
+
+    def _resolve_review_decl(
+        self, review_decl: model.ReviewDecl, *, unit: IndexedUnit
+    ) -> ResolvedReviewBody:
+        review_key = (unit.module_parts, review_decl.name)
+        cached = self._resolved_review_cache.get(review_key)
+        if cached is not None:
+            return cached
+
+        if review_key in self._review_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._review_resolution_stack, review_key]
+            )
+            raise CompileError(f"Cyclic review inheritance: {cycle}")
+
+        self._review_resolution_stack.append(review_key)
+        try:
+            parent_review: ResolvedReviewBody | None = None
+            parent_label: str | None = None
+            if review_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_decl_ref(
+                    review_decl.parent_ref,
+                    unit=unit,
+                    registry_name="reviews_by_name",
+                    missing_label="review declaration",
+                )
+                parent_review = self._resolve_review_decl(parent_decl, unit=parent_unit)
+                parent_label = (
+                    f"review {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_review_body(
+                review_decl.body,
+                unit=unit,
+                owner_label=_dotted_decl_name(unit.module_parts, review_decl.name),
+                parent_review=parent_review,
+                parent_label=parent_label,
+            )
+            self._resolved_review_cache[review_key] = resolved
+            return resolved
+        finally:
+            self._review_resolution_stack.pop()
+
+    def _resolve_review_body(
+        self,
+        review_body: model.ReviewBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        parent_review: ResolvedReviewBody | None = None,
+        parent_label: str | None = None,
+    ) -> ResolvedReviewBody:
+        subject = parent_review.subject if parent_review is not None else None
+        subject_map = parent_review.subject_map if parent_review is not None else None
+        contract = parent_review.contract if parent_review is not None else None
+        comment_output = parent_review.comment_output if parent_review is not None else None
+        fields = parent_review.fields if parent_review is not None else None
+
+        if parent_review is None:
+            fields_accounted = True
+            parent_items_by_key: dict[str, model.ReviewSection | model.ReviewOutcomeSection] = {}
+        else:
+            fields_accounted = parent_review.fields is None
+            parent_items_by_key = {item.key: item for item in parent_review.items}
+
+        resolved_items: list[model.ReviewSection | model.ReviewOutcomeSection] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in review_body.items:
+            if isinstance(item, model.ReviewSubjectConfig):
+                subject = item
+                continue
+            if isinstance(item, model.ReviewSubjectMapConfig):
+                subject_map = item
+                continue
+            if isinstance(item, model.ReviewContractConfig):
+                contract = item
+                continue
+            if isinstance(item, model.ReviewCommentOutputConfig):
+                comment_output = item
+                continue
+            if isinstance(item, model.ReviewFieldsConfig):
+                if parent_review is not None and parent_review.fields is not None:
+                    raise CompileError(
+                        f"Inherited review fields require `inherit fields` or `override fields` in {owner_label}"
+                    )
+                fields = item
+                fields_accounted = True
+                continue
+
+            if isinstance(item, model.InheritItem) and item.key == "fields":
+                if parent_review is None or parent_review.fields is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined review entry in {parent_label or owner_label}: fields"
+                    )
+                fields = parent_review.fields
+                fields_accounted = True
+                continue
+
+            if isinstance(item, model.ReviewOverrideFields):
+                if parent_review is None or parent_review.fields is None:
+                    raise CompileError(
+                        f"`override` requires an inherited review in {owner_label}: fields"
+                    )
+                fields = model.ReviewFieldsConfig(bindings=item.bindings)
+                fields_accounted = True
+                continue
+
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate review item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.ReviewSection):
+                resolved_items.append(
+                    model.ReviewSection(
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_review_pre_outcome_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.ReviewOutcomeSection):
+                resolved_items.append(
+                    model.ReviewOutcomeSection(
+                        key=key,
+                        title=item.title,
+                        items=self._resolve_review_outcome_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined review entry in {parent_label or owner_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"`override` requires an inherited review in {owner_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            if isinstance(item, model.ReviewOverrideSection):
+                if not isinstance(parent_item, model.ReviewSection):
+                    raise CompileError(
+                        f"Override kind mismatch for review entry in {owner_label}: {key}"
+                    )
+                resolved_items.append(
+                    model.ReviewSection(
+                        key=key,
+                        title=item.title if item.title is not None else parent_item.title,
+                        items=self._resolve_review_pre_outcome_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{key}",
+                        ),
+                    )
+                )
+                continue
+
+            if not isinstance(parent_item, model.ReviewOutcomeSection):
+                raise CompileError(
+                    f"Override kind mismatch for review entry in {owner_label}: {key}"
+                )
+            resolved_items.append(
+                model.ReviewOutcomeSection(
+                    key=key,
+                    title=item.title if item.title is not None else parent_item.title,
+                    items=self._resolve_review_outcome_items(
+                        item.items,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{key}",
+                    ),
+                )
+            )
+
+        if parent_review is not None:
+            missing_keys = [
+                parent_item.key
+                for parent_item in parent_review.items
+                if parent_item.key not in accounted_keys
+            ]
+            if missing_keys:
+                raise CompileError(
+                    f"Missing inherited review entry in {owner_label}: {', '.join(missing_keys)}"
+                )
+            if parent_review.fields is not None and not fields_accounted:
+                raise CompileError(
+                    f"Missing inherited review entry in {owner_label}: fields"
+                )
+
+        return ResolvedReviewBody(
+            title=review_body.title,
+            subject=subject,
+            subject_map=subject_map,
+            contract=contract,
+            comment_output=comment_output,
+            fields=fields,
+            items=tuple(resolved_items),
+        )
+
+    def _resolve_review_pre_outcome_items(
+        self,
+        items: tuple[model.ReviewPreOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.ReviewPreOutcomeStmt, ...]:
+        resolved: list[model.ReviewPreOutcomeStmt] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                resolved.append(item)
+                continue
+            if isinstance(item, model.ReviewPreOutcomeWhenStmt):
+                resolved.append(
+                    model.ReviewPreOutcomeWhenStmt(
+                        expr=item.expr,
+                        items=self._resolve_review_pre_outcome_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=owner_label,
+                        ),
+                    )
+                )
+                continue
+            if isinstance(item, model.ReviewPreOutcomeMatchStmt):
+                resolved.append(
+                    model.ReviewPreOutcomeMatchStmt(
+                        expr=item.expr,
+                        cases=tuple(
+                            model.ReviewPreOutcomeMatchArm(
+                                head=case.head,
+                                items=self._resolve_review_pre_outcome_items(
+                                    case.items,
+                                    unit=unit,
+                                    owner_label=owner_label,
+                                ),
+                            )
+                            for case in item.cases
+                        ),
+                    )
+                )
+                continue
+            resolved.append(item)
+        return tuple(resolved)
+
+    def _resolve_review_outcome_items(
+        self,
+        items: tuple[model.ReviewOutcomeStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.ReviewOutcomeStmt, ...]:
+        resolved: list[model.ReviewOutcomeStmt] = []
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                resolved.append(item)
+                continue
+            if isinstance(item, model.ReviewOutcomeWhenStmt):
+                resolved.append(
+                    model.ReviewOutcomeWhenStmt(
+                        expr=item.expr,
+                        items=self._resolve_review_outcome_items(
+                            item.items,
+                            unit=unit,
+                            owner_label=owner_label,
+                        ),
+                    )
+                )
+                continue
+            if isinstance(item, model.ReviewOutcomeMatchStmt):
+                resolved.append(
+                    model.ReviewOutcomeMatchStmt(
+                        expr=item.expr,
+                        cases=tuple(
+                            model.ReviewOutcomeMatchArm(
+                                head=case.head,
+                                items=self._resolve_review_outcome_items(
+                                    case.items,
+                                    unit=unit,
+                                    owner_label=owner_label,
+                                ),
+                            )
+                            for case in item.cases
+                        ),
+                    )
+                )
+                continue
+            resolved.append(item)
+        return tuple(resolved)
 
     def _resolve_skills_decl(
         self, skills_decl: model.SkillsDecl, *, unit: IndexedUnit
@@ -2331,9 +5663,13 @@ class CompilationContext:
             self._inputs_resolution_stack.pop()
 
     def _resolve_outputs_decl(
-        self, outputs_decl: model.OutputsDecl, *, unit: IndexedUnit
+        self,
+        outputs_decl: model.OutputsDecl,
+        *,
+        unit: IndexedUnit,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoBody:
-        outputs_key = (unit.module_parts, outputs_decl.name)
+        outputs_key = (unit.module_parts, outputs_decl.name, review_output_contexts)
         cached = self._resolved_outputs_cache.get(outputs_key)
         if cached is not None:
             return cached
@@ -2341,7 +5677,7 @@ class CompilationContext:
         if outputs_key in self._outputs_resolution_stack:
             cycle = " -> ".join(
                 ".".join(parts + (name,)) or name
-                for parts, name in [*self._outputs_resolution_stack, outputs_key]
+                for parts, name, _review_keys in [*self._outputs_resolution_stack, outputs_key]
             )
             raise CompileError(f"Cyclic outputs inheritance: {cycle}")
 
@@ -2354,10 +5690,12 @@ class CompilationContext:
                     outputs_decl,
                     unit=unit,
                 )
-                parent_io = self._resolve_outputs_decl(parent_decl, unit=parent_unit)
-                parent_label = (
-                    f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                parent_io = self._resolve_outputs_decl(
+                    parent_decl,
+                    unit=parent_unit,
+                    review_output_contexts=review_output_contexts,
                 )
+                parent_label = f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
             resolved = self._resolve_io_body(
                 outputs_decl.body,
@@ -2366,6 +5704,7 @@ class CompilationContext:
                 owner_label=_dotted_decl_name(unit.module_parts, outputs_decl.name),
                 parent_io=parent_io,
                 parent_label=parent_label,
+                review_output_contexts=review_output_contexts,
             )
             self._resolved_outputs_cache[outputs_key] = resolved
             return resolved
@@ -2413,6 +5752,7 @@ class CompilationContext:
         owner_label: str,
         parent_io: ResolvedIoBody | None = None,
         parent_label: str | None = None,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoBody:
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
@@ -2433,6 +5773,7 @@ class CompilationContext:
                     unit=unit,
                     field_kind=field_kind,
                     owner_label=owner_label,
+                    review_output_contexts=review_output_contexts,
                 ),
             )
 
@@ -2511,6 +5852,7 @@ class CompilationContext:
                             owner_label=(
                                 f"{field_kind} section `{item.title if item.title is not None else parent_item.section.title}`"
                             ),
+                            review_output_contexts=review_output_contexts,
                         ),
                     ),
                 )
@@ -3367,6 +6709,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> tuple[ResolvedIoItem, ...]:
         resolved_items: list[ResolvedIoItem] = []
         seen_keys: set[str] = set()
@@ -3379,6 +6722,7 @@ class CompilationContext:
                         unit=unit,
                         field_kind=field_kind,
                         owner_label=owner_label,
+                        review_output_contexts=review_output_contexts,
                     )
                 )
                 continue
@@ -3394,6 +6738,7 @@ class CompilationContext:
                         item,
                         unit=unit,
                         field_kind=field_kind,
+                        review_output_contexts=review_output_contexts,
                     )
                 )
                 continue
@@ -3411,6 +6756,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         field_kind: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoSection:
         return ResolvedIoSection(
             key=item.key,
@@ -3421,6 +6767,7 @@ class CompilationContext:
                     unit=unit,
                     field_kind=field_kind,
                     owner_label=f"{field_kind} section `{item.title}`",
+                    review_output_contexts=review_output_contexts,
                 ),
             ),
         )
@@ -3432,6 +6779,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoRef:
         return ResolvedIoRef(
             section=self._compile_contract_bucket_ref(
@@ -3439,6 +6787,7 @@ class CompilationContext:
                 unit=unit,
                 field_kind=field_kind,
                 owner_label=owner_label,
+                review_output_contexts=review_output_contexts,
             )
         )
 
@@ -3603,6 +6952,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         ambiguous_label: str | None = None,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> str:
         if "{{" not in value and "}}" not in value:
             return value
@@ -3623,6 +6973,7 @@ class CompilationContext:
                     owner_label=owner_label,
                     surface_label=surface_label,
                     ambiguous_label=ambiguous_label,
+                    review_semantics=review_semantics,
                 )
             )
             cursor = match.end()
@@ -3643,6 +6994,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         ambiguous_label: str | None = None,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
             return self._interpolate_authored_prose_string(
@@ -3651,6 +7003,7 @@ class CompilationContext:
                 owner_label=owner_label,
                 surface_label=surface_label,
                 ambiguous_label=ambiguous_label,
+                review_semantics=review_semantics,
             )
         return model.EmphasizedLine(
             kind=value.kind,
@@ -3660,6 +7013,7 @@ class CompilationContext:
                 owner_label=owner_label,
                 surface_label=surface_label,
                 ambiguous_label=ambiguous_label,
+                review_semantics=review_semantics,
             ),
         )
 
@@ -3671,6 +7025,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         ambiguous_label: str | None = None,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> str:
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
         if match is None:
@@ -3689,6 +7044,7 @@ class CompilationContext:
             surface_label=surface_label,
             ambiguous_label=ambiguous_label or f"{surface_label} interpolation ref",
             missing_local_label=surface_label,
+            review_semantics=review_semantics,
         ).text
 
     def _resolve_readable_decl(
@@ -3747,8 +7103,22 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str,
         missing_local_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> DisplayValue:
         ref_label = _display_addressable_ref(ref)
+        semantic_node = self._resolve_review_semantic_node(
+            ref,
+            review_semantics=review_semantics,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            ref_label=ref_label,
+        )
+        if semantic_node is not None:
+            return self._display_addressable_target_value(
+                semantic_node,
+                owner_label=owner_label,
+                surface_label=surface_label,
+            )
         if not ref.path:
             target_unit, decl = self._resolve_readable_decl(
                 ref.root,
@@ -3770,6 +7140,7 @@ class CompilationContext:
             owner_label=owner_label,
             ambiguous_label=ambiguous_label,
             missing_local_label=missing_local_label,
+            review_semantics=review_semantics,
         )
         return self._resolve_addressable_path_value(
             AddressableNode(unit=target_unit, root_decl=decl, target=decl),
@@ -3787,7 +7158,15 @@ class CompilationContext:
         owner_label: str,
         ambiguous_label: str,
         missing_local_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[IndexedUnit, AddressableRootDecl]:
+        semantic_root = self._resolve_review_semantic_root_decl(
+            ref,
+            review_semantics=review_semantics,
+        )
+        if semantic_root is not None and review_semantics is not None:
+            output_unit, _output_decl = self._resolve_review_semantic_output_decl(review_semantics)
+            return output_unit, semantic_root
         target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
         matches = self._find_addressable_root_matches(
             ref.declaration_name,
@@ -3896,6 +7275,57 @@ class CompilationContext:
         node: AddressableNode,
     ) -> dict[str, AddressableNode] | None:
         target = node.target
+        if isinstance(target, ReviewSemanticFieldsRoot):
+            children: dict[str, AddressableNode] = {}
+            output_unit, _output_decl = self._resolve_review_semantic_output_decl(target.context)
+            for field_name, field_path in target.context.field_bindings:
+                children[field_name] = AddressableNode(
+                    unit=output_unit,
+                    root_decl=node.root_decl,
+                    target=ReviewSemanticFieldTarget(
+                        field_name=field_name,
+                        field_path=field_path,
+                        context=target.context,
+                    ),
+                )
+            return children
+        if isinstance(target, ReviewSemanticContractRoot):
+            output_unit, _output_decl = self._resolve_review_semantic_output_decl(target.context)
+            children = {
+                key: AddressableNode(
+                    unit=output_unit,
+                    root_decl=node.root_decl,
+                    target=ReviewSemanticContractFactTarget(key=key),
+                )
+                for key in _REVIEW_CONTRACT_FACT_KEYS
+            }
+            for gate in target.context.contract_gates:
+                children[gate.key] = AddressableNode(
+                    unit=output_unit,
+                    root_decl=node.root_decl,
+                    target=ReviewSemanticContractGateTarget(gate=gate),
+                )
+            return children
+        if isinstance(target, ReviewSemanticFieldTarget):
+            output_unit, output_decl = self._resolve_review_semantic_output_decl(target.context)
+            field_node = self._resolve_output_field_node(
+                output_decl,
+                path=target.field_path,
+                unit=output_unit,
+                owner_label=f"review field {target.field_name}",
+                surface_label="review fields",
+            )
+            children = self._get_addressable_children(field_node)
+            if children is None:
+                return None
+            return {
+                key: AddressableNode(
+                    unit=child.unit,
+                    root_decl=node.root_decl,
+                    target=child.target,
+                )
+                for key, child in children.items()
+            }
         if isinstance(
             target,
             (
@@ -4083,6 +7513,28 @@ class CompilationContext:
         surface_label: str,
     ) -> DisplayValue:
         target = node.target
+        if isinstance(target, ReviewSemanticFieldsRoot):
+            return DisplayValue(text="Review Fields", kind="title")
+        if isinstance(target, ReviewSemanticContractRoot):
+            return DisplayValue(text="Review Contract", kind="title")
+        if isinstance(target, ReviewSemanticFieldTarget):
+            output_unit, output_decl = self._resolve_review_semantic_output_decl(target.context)
+            field_node = self._resolve_output_field_node(
+                output_decl,
+                path=target.field_path,
+                unit=output_unit,
+                owner_label=f"review field {target.field_name}",
+                surface_label=surface_label,
+            )
+            return self._display_addressable_target_value(
+                field_node,
+                owner_label=owner_label,
+                surface_label=surface_label,
+            )
+        if isinstance(target, ReviewSemanticContractFactTarget):
+            return DisplayValue(text=f"contract.{target.key}", kind="symbol")
+        if isinstance(target, ReviewSemanticContractGateTarget):
+            return DisplayValue(text=target.gate.title, kind="title")
         if isinstance(target, model.Agent):
             return DisplayValue(text=target.name, kind="symbol")
         if isinstance(target, model.WorkflowDecl):
@@ -4766,6 +8218,8 @@ class CompilationContext:
     ) -> str | None:
         if isinstance(expr, str):
             return expr
+        if isinstance(expr, model.ExprRef) and self._expr_ref_matches_review_verdict(expr):
+            return _REVIEW_VERDICT_TEXT[expr.parts[1]]
         if not isinstance(expr, model.ExprRef) or len(expr.parts) < 2:
             return None
         name_ref = _name_ref_from_dotted_name(".".join(expr.parts[:-1]))
@@ -5752,6 +9206,16 @@ class CompilationContext:
             missing_label="workflow declaration",
         )
 
+    def _resolve_review_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.ReviewDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="reviews_by_name",
+            missing_label="review declaration",
+        )
+
     def _resolve_skills_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.SkillsDecl]:
@@ -6007,6 +9471,7 @@ class CompilationContext:
     ) -> IndexedUnit:
         imports: list[model.ImportDecl] = []
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
+        reviews_by_name: dict[str, model.ReviewDecl] = {}
         skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
         inputs_blocks_by_name: dict[str, model.InputsDecl] = {}
         inputs_by_name: dict[str, model.InputDecl] = {}
@@ -6027,6 +9492,10 @@ class CompilationContext:
             if isinstance(declaration, model.WorkflowDecl):
                 self._register_decl(workflows_by_name, declaration.name, module_parts)
                 workflows_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.ReviewDecl):
+                self._register_decl(reviews_by_name, declaration.name, module_parts)
+                reviews_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.SkillsDecl):
                 self._register_decl(skills_blocks_by_name, declaration.name, module_parts)
@@ -6099,6 +9568,7 @@ class CompilationContext:
             prompt_file=prompt_file,
             imports=tuple(imports),
             workflows_by_name=workflows_by_name,
+            reviews_by_name=reviews_by_name,
             inputs_blocks_by_name=inputs_blocks_by_name,
             inputs_by_name=inputs_by_name,
             input_sources_by_name=input_sources_by_name,
@@ -6210,6 +9680,10 @@ def _dotted_ref_name(ref: model.NameRef) -> str:
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
     parts = tuple(dotted_name.split("."))
     return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
+
+
+def _law_path_from_name_ref(ref: model.NameRef) -> model.LawPath:
+    return model.LawPath(parts=(*ref.module_parts, ref.declaration_name))
 
 
 def _path_location(path: Path | None) -> DiagnosticLocation | None:

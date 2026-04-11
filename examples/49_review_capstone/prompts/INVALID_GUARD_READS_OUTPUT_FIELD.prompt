@@ -1,0 +1,82 @@
+# This compile-negative proves that review-bound output guards still may not
+# read emitted output fields directly.
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification."
+
+
+workflow CapstoneReviewContract: "Capstone Review Contract"
+    completeness: "Completeness"
+        "Confirm the selected subject covers the required review basis."
+
+
+agent DraftAuthor:
+    role: "Repair draft defects after review."
+    workflow: "Draft Revision"
+        "Revise the current draft."
+
+
+output BrokenCapstoneReviewComment: "Broken Capstone Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the selected subject or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the exact artifact identity this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the exact contents the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{DraftAuthor}}."
+
+    broken_snapshot: "Broken Snapshot" when BrokenCapstoneReviewComment.next_owner:
+        "This field is invalid because guarded review output still may not read emitted output fields."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name every failing review gate in authored order."
+
+
+review BrokenCapstoneReview: "Broken Capstone Review"
+    subject: DraftSpec
+    contract: CapstoneReviewContract
+    comment_output: BrokenCapstoneReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    start_review: "Start Review"
+        accept "The shared capstone review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted draft rewrite returns to DraftAuthor." -> DraftAuthor
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected draft rewrite returns to DraftAuthor." -> DraftAuthor
+
+
+agent InvalidGuardReadsOutputFieldDemo:
+    role: "Keep emitted output fields out of review output-guard conditions."
+    review: BrokenCapstoneReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        BrokenCapstoneReviewComment

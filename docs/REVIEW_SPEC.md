@@ -1311,22 +1311,257 @@ review InvalidMetadataReview: "Invalid Metadata Review"
 
 ---
 
-## 16. Example proof set
+## 16. Corpus build plan
 
-If you extend the numbered corpus, this is the proof set to use for review
-support:
+This is the ladder to actually check in.
 
-* `39_review_basic_verdict_and_output_coupling`
-* `40_review_block_gates_and_handoff_first`
-* `41_review_contract_gate_export_and_exact_failures`
-* `42_review_outcome_routing_and_mode_carry`
-* `43_review_current_truth_and_present_missing_guards`
-* `44_review_inheritance_and_patching`
-* `45_review_capstone`
+It is deliberately shaped like the existing `30` through `42` workflow-law and
+guarded-output corpus: each example proves **one new review idea at a time**,
+keeps public examples generic rather than product-specific, keeps `output` as
+the produced-contract primitive, and makes the new `review` surface carry real
+compiler-owned semantics instead of merely renaming prose.
 
-That proof set is the natural parallel to the portable-truth example ladder you
-already assembled for `law` / `trust_surface` / `current artifact ... via ...`
-/ `invalidate ... via ...`.
+One planning correction matters here: the repo already ships `39` through `42`,
+so the review ladder should use the next free range. This plan therefore maps
+the new review corpus to `43` through `49`.
+
+### 16.1 Fixed conventions for the whole ladder
+
+These examples assume the following decisions are frozen:
+
+* `review` is a top-level declaration and a reserved agent slot.
+* `contract:` points to a review-contract workflow: a top-level `workflow` whose first-level keyed sections export gate identities.
+* `fields:` binds compiler-owned review channels to concrete paths on `comment_output`.
+* `ReviewVerdict.accept` and `ReviewVerdict.changes_requested` are hard language verdicts.
+* `current artifact ... via Output.field` is reused exactly as the portable-currentness carrier form.
+* guarded output sections may read bound semantic fields such as `verdict` or `active_mode`, but only after review resolution.
+* `on_accept` and `on_reject` are mandatory outcome sections.
+* outcome routing is first-match-wins and must be total.
+* `output` still owns the readable downstream contract: exact fields, trust surface, standalone-read promise, and conditional failure sections.
+* each rung should ship with targeted `INVALID_*` negatives that prove the new validation surface added by that rung.
+
+### 16.2 Example `43_review_basic_verdict_and_route_coupling`
+
+What this proves:
+
+* the smallest first-class `review`
+* one reviewed subject
+* one shared review contract
+* one accept gate
+* one reject gate
+* one `comment_output`
+* verdict, failing-gates, and next-owner coupling
+
+Minimum prompt shape:
+
+* one generic contract workflow with two exported gates such as `completeness` and `clarity`
+* one file input such as `DraftSpec`
+* one comment output that binds `verdict`, `reviewed_artifact`, `analysis_performed`, `output_contents_that_matter`, `next_owner`, and guarded `failure_detail.failing_gates`
+* one producer owner and one accepted-work owner
+* one `review` that rejects an obviously bad local condition and accepts on `contract.passes`
+
+Minimum render commitments:
+
+* the rendered review must read like a real reviewer instruction surface, not a compiler dump
+* the rendered output contract must show `Failure Detail` only conditionally on `ReviewVerdict.changes_requested`
+* the rendered prose must make the accept and reject next-owner consequences visible
+
+Required negatives:
+
+* missing required `fields:` binding
+* missing `on_accept`
+* missing `on_reject`
+
+### 16.3 Example `44_review_handoff_first_block_gates`
+
+What this proves:
+
+* `block`
+* blocked review turns live inside `review`
+* `blocked_gate`
+* handoff-first stop line before content review
+
+Minimum prompt shape:
+
+* add `ProducerHandoff`
+* add a guarded `failing_gate_if_blocked` field under `failure_detail`
+* block on incomplete producer handoff
+* reject if the handoff names the wrong current artifact
+* still use one durable review comment output
+
+Minimum render commitments:
+
+* the review prose must say clearly that handoff quality is checked first
+* the output contract must explain that blocked review still produces `changes_requested`
+* the output contract must explain that `reviewed_artifact` names the handoff comment when content review never started
+
+Required negatives:
+
+* missing `blocked_gate` binding when a `block` gate exists
+* illegal `block` placement inside `on_accept` / `on_reject`
+
+### 16.4 Example `45_review_contract_gate_export_and_exact_failures`
+
+What this proves:
+
+* `contract.some_check_key`
+* exported contract gate identities
+* exact failing-gate naming from the shared contract family
+
+Minimum prompt shape:
+
+* one contract workflow with at least three exported keyed sections
+* one review that explicitly rejects on `contract.<gate>`
+* one output whose `failing_gates` field promises exact exported contract-gate identities
+
+Minimum render commitments:
+
+* the review prose should surface the named contract gates as actual checks, not opaque contract plumbing
+* the output prose must make it clear that shared-contract failures use exported gate identities
+
+Required negatives:
+
+* unknown `contract.some_check_key`
+* contract target that is not a review-contract workflow
+
+### 16.5 Example `46_review_current_truth_and_trust_surface`
+
+What this proves:
+
+* `current artifact ... via Output.field`
+* `trust_surface`
+* semantically coupled current artifact readback on the review output
+
+Minimum prompt shape:
+
+* one review comment output with a dedicated carrier field such as `use_now` or `current_artifact`
+* that carrier field listed in `trust_surface`
+* both `on_accept` and `on_reject` bind the current artifact through the review output
+
+Minimum render commitments:
+
+* the review prose must say what remains current after accept and reject
+* the output render must show the trusted carrier field under `trust_surface`
+* the standalone-read promise must name current truth explicitly
+
+Required negatives:
+
+* currentness with an invalid carrier path
+* carrier field not listed in `trust_surface`
+* current artifact rooted outside declared review subjects / emitted outputs
+
+### 16.6 Example `47_review_multi_subject_mode_and_trigger_carry`
+
+What this proves:
+
+* subject sets
+* branch disambiguation through `subject_map` and `match`
+* carried `active_mode`
+* carried `trigger_reason`
+* same next owner, different live mode
+
+Minimum prompt shape:
+
+* one mode enum
+* one trigger-reason enum
+* two reviewed subject artifacts
+* `subject_map` tying the mode enum to the subject set
+* one review output with optional `active_mode` and `trigger_reason` fields in `trust_surface` using `present(...)`
+* accept and reject branches that carry different combinations of mode and trigger
+
+Minimum render commitments:
+
+* the prose must show how each mode selects a different current artifact
+* the output render must show that `active_mode` and `trigger_reason` are trusted only when present
+
+Required negatives:
+
+* subject set without disambiguation proof
+* carried `active_mode` without a bound `fields:` entry
+* carried `trigger_reason` without a bound `fields:` entry
+
+### 16.7 Example `48_review_inheritance_and_explicit_patching`
+
+What this proves:
+
+* `abstract review`
+* explicit `inherit`
+* explicit child sections
+* no hidden merge model
+
+Minimum prompt shape:
+
+* one `abstract review` base with `comment_output`, `fields`, and shared gates
+* one concrete child review with `subject`, `contract`, `inherit fields`, and inherited common gates
+* one local child-only section plus concrete `on_accept` / `on_reject`
+
+Minimum render commitments:
+
+* the final render must read like one coherent review surface
+* inherited shared review gates must appear exactly once in the final render
+* local child law must appear in authored order, not hidden-parent order
+
+Required negatives:
+
+* missing inherited review section
+* duplicate inherited review section accounting
+* illegal concrete use of `abstract review`
+
+### 16.8 Example `49_review_capstone`
+
+What this proves:
+
+* blocked review turns live inside `review`
+* exact contract gates
+* `support_only`
+* `ignore ... for rewrite_evidence`
+* `preserve`
+* multi-subject review
+* carried `active_mode`
+* carried `trigger_reason`
+* `current artifact ... via Output.field`
+* `current none` for blocked handoff-first outcomes
+* one durable review comment output that stays readable and trusted downstream
+
+Minimum prompt shape:
+
+* a multi-subject metadata-like family with one review-contract workflow
+* `ProducerHandoff`, `ReviewState`, current subject artifacts, one preserved upstream structure input, and one comparison-only advisory input
+* one review output with verdict, reviewed artifact, analysis, readback, current artifact, next owner, active mode, trigger reason, and guarded failure detail
+* block on invalid handoff or unclear mode
+* reject on contract gates and local scope violations
+* `support_only` comparison help and `ignore ... for rewrite_evidence` branches
+* `on_accept` branches that carry current artifact plus typed downstream state
+* `on_reject` branches that either route blocked work with `current none` or route concrete defects with current artifact still explicit
+
+Minimum render commitments:
+
+* the render must read like one coherent reviewer surface, not like pasted sections from unrelated features
+* blocked branches must clearly state that no durable artifact is current
+* accepted and rejected branches must clearly state what remains current, what mode is active, and who owns next
+* the output contract must remain readable on its own and faithful to the trust surface
+
+Required negatives:
+
+* illegal mixture of `current none` and `current artifact` in one terminal branch
+* illegal use of pre-outcome statements inside outcome sections
+* guarded review-output section that reads a disallowed name
+
+### 16.9 Why this ladder is the right progression
+
+This is the right order to implement and prove:
+
+* `43` proves that `review` is real and not just workflow prose with a new name.
+* `44` proves blocked turns live inside `review`.
+* `45` proves contract gate exposure and exact `failing_gates`.
+* `46` proves review reuses the shipped portable-currentness carrier rule.
+* `47` proves mode-carry and multi-subject disambiguation.
+* `48` proves reuse and explicit patching.
+* `49` proves the full bundle together.
+
+That mirrors the example-first design discipline already explicit in Doctrine:
+prove one idea at a time, keep the runtime Markdown natural, and only widen the
+language where the compiler actually owns the meaning.
 
 ## 17. The one-sentence version
 
@@ -1348,21 +1583,24 @@ The current audit pressure is now answered directly in the spec:
 * optional carried state uses `present(...)` / `missing(...)` instead of implicit `_present` booleans
 * semantic-to-output agreement is explicit and staged
 
-## 19. Remaining holes
+## 19. Shipped reference status
 
-There are no longer any **big semantic holes** in this draft. The remaining
-work is implementation-facing and documentation-facing rather than feature-shape
-ambiguity.
+This document is now the live shipped review reference, not a proposal draft.
+The language shape above is the implementation contract for first-class
+`review` in Doctrine.
 
-Implementation-facing follow-through:
+Maintenance notes for future changes:
 
-* the compiler and renderer need one executable flattening algorithm for exported review-contract gates after workflow inheritance/composition
-* the host/runtime needs a small contract for normalizing incoming artifact references into Doctrine artifact identities before review evaluation starts
-* the verifier and error catalog need the final concrete mapping from this spec's review semantics onto checked examples, parser/compiler ownership, and emitted mismatch checks
+* keep exported review-contract gate flattening aligned with ordinary workflow
+  inheritance and composition rather than introducing a review-only contract
+  path
+* keep artifact-identity normalization explicit at the host/runtime boundary
+  before review evaluation starts instead of hiding it inside ad hoc parser or
+  renderer behavior
+* keep parser, compiler, verifier, error catalog, examples, and editor support
+  aligned whenever the review surface changes
+* keep public examples generic and avoid drifting back to product-specific
+  names in the shipped review ladder
 
-Documentation-facing follow-through:
-
-* keep public examples generic and avoid drifting back to product-specific names once this spec is published as live reference
-
-Those are real implementation tasks, but they are no longer large unresolved
-language-design questions.
+These are ordinary shipped-surface maintenance constraints, not unresolved
+language-design holes.

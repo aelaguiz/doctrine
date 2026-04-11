@@ -1,0 +1,90 @@
+# This compile-negative proves that any review with a `block` gate must bind
+# the compiler-owned `blocked_gate` semantic channel.
+
+input ProducerHandoff: "Producer Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the producer handoff that says whether the handoff is complete."
+
+
+workflow HandoffReviewContract: "Handoff Review Contract"
+    completeness: "Completeness"
+        "Confirm the handoff covers the required review basis."
+
+
+agent ReviewLead:
+    role: "Own accepted handoff follow-up."
+    workflow: "Follow Up"
+        "Take the accepted handoff to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Repair blocked or rejected producer handoffs."
+    workflow: "Revise"
+        "Repair the same producer handoff before content review can continue."
+
+
+output HandoffReviewComment: "Handoff Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the handoff or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the handoff-first review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the producer handoff the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        blocked_gate: "Blocked Gate"
+            "Name the first blocking gate when the review stopped before content review started."
+
+        failing_gates: "Failing Gates"
+            "Name every failing review gate in authored order."
+
+
+review HandoffFirstReview: "Handoff-First Review"
+    subject: ProducerHandoff
+    contract: HandoffReviewContract
+    comment_output: HandoffReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    handoff_first: "Handoff First"
+        block "The producer handoff is incomplete." when ProducerHandoff.incomplete
+
+    contract_checks: "Contract Checks"
+        accept "The shared handoff review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted handoff returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Blocked or rejected handoff returns to DraftAuthor." -> DraftAuthor
+
+
+agent InvalidMissingBlockedGateDemo:
+    role: "Keep missing blocked_gate review bindings from compiling."
+    review: HandoffFirstReview
+    inputs: "Inputs"
+        ProducerHandoff
+    outputs: "Outputs"
+        HandoffReviewComment

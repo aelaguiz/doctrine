@@ -32,13 +32,13 @@
   },
   "onEnterRules": [
     {
-      "beforeText": "^\\s*(?:(?:law|trust_surface)\\s*:|(?:when|match)\\b.*:|[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s+when\\b.*:|(?:override\\s+)?(?:else|[A-Za-z_][A-Za-z0-9_.]*)\\s*:)\\s*$",
+      "beforeText": "^\\s*(?:(?:law|trust_surface|fields|subject_map|on_accept|on_reject)\\s*:|(?:when|match)\\b.*:|[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s+when\\b.*:|(?:override\\s+)?(?:else|[A-Za-z_][A-Za-z0-9_.]*)\\s*:)\\s*$",
       "action": {
         "indent": "indent"
       }
     },
     {
-      "beforeText": "^\\s*(?:(?:abstract\\s+agent|agent|workflow|skills|input\\s+source|input|output\\s+target|output\\s+shape|output|json\\s+schema|skill)\\b.*:\\s*|(?:role|inputs|outputs|skills)\\s*:\\s*(?:\"(?:\\\\.|[^\"\\\\])*\"\\s*)?|(?:skill\\s+[A-Za-z_][A-Za-z0-9_]*|override\\s+[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s*|skill\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*)$",
+      "beforeText": "^\\s*(?:(?:abstract\\s+agent|agent|abstract\\s+review|review|workflow|skills|input\\s+source|input|output\\s+target|output\\s+shape|output|json\\s+schema|skill)\\b.*:\\s*|(?:role|inputs|outputs|skills)\\s*:\\s*(?:\"(?:\\\\.|[^\"\\\\])*\"\\s*)?|(?:skill\\s+[A-Za-z_][A-Za-z0-9_]*|override\\s+[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*\"(?:\\\\.|[^\"\\\\])*\"\\s*|skill\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*[A-Za-z_][A-Za-z0-9_.]*\\s*)$",
       "action": {
         "indent": "indent"
       }

@@ -1,0 +1,118 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "handoff-first review keeps block gates inside review and emits one durable comment"
+status = "active"
+kind = "render_contract"
+agent = "HandoffFirstReviewDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep handoff-first review stops explicit and durable.",
+  "",
+  "## Handoff-First Review",
+  "",
+  "Review subject: Producer Handoff.",
+  "Shared review contract: Handoff Review Contract.",
+  "",
+  "### Handoff First",
+  "",
+  "Block: The producer handoff is incomplete.",
+  "",
+  "Reject: The producer handoff names the wrong current artifact.",
+  "",
+  "### Contract Checks",
+  "",
+  "Accept only if The shared handoff review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Accepted handoff returns to ReviewLead.",
+  "",
+  "### If Rejected",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Blocked or rejected handoff returns to DraftAuthor.",
+  "",
+  "## Inputs",
+  "",
+  "### Producer Handoff",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the producer handoff that says whether the handoff is complete, whether it names the wrong current artifact, and what the next owner must repair first.",
+  "",
+  "## Outputs",
+  "",
+  "### Handoff Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Verdict",
+  "",
+  "Say whether the review accepted the handoff or requested changes.",
+  "",
+  "#### Reviewed Artifact",
+  "",
+  "Name the reviewed artifact. When review blocks before content review starts, name the producer handoff instead of pretending the later content review happened.",
+  "",
+  "#### Analysis Performed",
+  "",
+  "Summarize the handoff-first review analysis that led to the verdict.",
+  "",
+  "#### Output Contents That Matter",
+  "",
+  "Summarize the parts of the producer handoff the next owner must read first.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner, including ReviewLead when the handoff is accepted and DraftAuthor when the handoff is blocked or rejected.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "##### Blocked Gate",
+  "",
+  "Name the first blocking gate when the review stopped before content review started.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name every failing review gate in authored order, including the blocked gate when review stopped before content review started.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand that handoff quality is checked first, that blocked review still produces changes requested, what artifact was actually reviewed, who owns next, and what the next repair step is.",
+]
+
+[[cases]]
+name = "block-gate reviews require a blocked_gate binding"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_BLOCKED_GATE.prompt"
+agent = "InvalidMissingBlockedGateDemo"
+exception_type = "CompileError"
+error_code = "E473"
+message_contains = [
+  "blocked_gate",
+  "Review fields are incomplete",
+]
+
+[[cases]]
+name = "review rejects block statements inside on_reject"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_BLOCK_INSIDE_ON_REJECT.prompt"
+exception_type = "ParseError"
+error_code = "E471"
+message_contains = [
+  "Illegal statement placement",
+  "review body",
+]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -10,6 +11,7 @@ from doctrine.compiler import compile_prompt
 from doctrine.diagnostics import diagnostic_to_dict
 from doctrine.emit_docs import main as emit_docs_main
 from doctrine.parser import parse_file
+from doctrine.renderer import render_markdown
 
 
 class SmokeFailure(RuntimeError):
@@ -19,6 +21,13 @@ class SmokeFailure(RuntimeError):
 def main() -> int:
     _check_transform_errors_surface_as_parse_errors()
     _check_compile_missing_role_has_specific_code()
+    _check_review_illegal_statement_placement_has_specific_code()
+    _check_review_invalid_guarded_match_head_has_specific_code()
+    _check_review_multiple_currentness_has_specific_code()
+    _check_review_outcome_not_total_has_specific_code()
+    _check_review_next_owner_alignment_has_specific_code()
+    _check_review_failure_detail_guard_has_specific_code()
+    _check_review_semantic_addressability_renders()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
@@ -66,6 +75,139 @@ def _check_compile_missing_role_has_specific_code() -> None:
             _expect("missing role field" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for missing role field, but compilation succeeded")
+
+
+def _check_review_illegal_statement_placement_has_specific_code() -> None:
+    source = _review_smoke_source(
+        on_accept_body="""
+        block "Do not block inside on_accept." when DraftSpec.needs_follow_up
+""",
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        try:
+            parse_file(prompt_path)
+        except Exception as exc:
+            _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E471", f"expected E471, got {getattr(exc, 'code', None)}")
+            _expect("Illegal statement placement" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected parse failure for illegal review statement placement, but parsing succeeded")
+
+
+def _check_review_invalid_guarded_match_head_has_specific_code() -> None:
+    source = _review_invalid_guarded_match_head_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        try:
+            parse_file(prompt_path)
+        except Exception as exc:
+            _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E472", f"expected E472, got {getattr(exc, 'code', None)}")
+            _expect("Invalid guarded match head" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected parse failure for invalid guarded review match head, but parsing succeeded")
+
+
+def _check_review_multiple_currentness_has_specific_code() -> None:
+    source = _review_smoke_source(
+        on_accept_body="""
+        current none
+        current none
+        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+""",
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ReviewDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E486", f"expected E486, got {getattr(exc, 'code', None)}")
+            _expect("more than one currentness result" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for duplicate review currentness, but compilation succeeded")
+
+
+def _check_review_outcome_not_total_has_specific_code() -> None:
+    source = _review_smoke_source(
+        on_accept_body="""
+        when DraftSpec.needs_follow_up:
+            current none
+            route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+""",
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ReviewDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E484", f"expected E484, got {getattr(exc, 'code', None)}")
+            _expect("not total" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for non-total review outcome, but compilation succeeded")
+
+
+def _check_review_next_owner_alignment_has_specific_code() -> None:
+    source = _review_smoke_source(
+        on_accept_body="""
+        current none
+        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+""",
+        next_owner_text='"Name the next owner without naming the routed owner."',
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ReviewDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E496", f"expected E496, got {getattr(exc, 'code', None)}")
+            _expect("next owner" in str(exc).lower(), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for review next_owner mismatch, but compilation succeeded")
+
+
+def _check_review_failure_detail_guard_has_specific_code() -> None:
+    source = _review_smoke_source(
+        on_accept_body="""
+        current none
+        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+""",
+        failure_detail_guard="verdict == ReviewVerdict.accept",
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ReviewDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E499", f"expected E499, got {getattr(exc, 'code', None)}")
+            _expect("conditional" in str(exc).lower(), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for review failure-detail guard mismatch, but compilation succeeded")
+
+
+def _check_review_semantic_addressability_renders() -> None:
+    source = _review_smoke_source(
+        on_accept_body="""
+        current none
+        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+""",
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "ReviewDemo"))
+        _expect("{{fields." not in rendered, rendered)
+        _expect("{{contract." not in rendered, rendered)
+        _expect("Use Completeness before you route Next Owner." in rendered, rendered)
+        _expect("compare Reviewed Artifact against Completeness." in rendered, rendered)
 
 
 def _check_emit_docs_handles_invalid_toml_without_traceback() -> None:
@@ -170,6 +312,158 @@ def _write_prompt(tmp_dir: str, source: str) -> Path:
     prompt_path = prompts / "AGENTS.prompt"
     prompt_path.write_text(source)
     return prompt_path
+
+
+def _review_smoke_source(
+    *,
+    on_accept_body: str,
+    next_owner_text: str = '"Name the next owner, including {{AcceptOwner}} when the draft is accepted and {{RejectOwner}} when the draft is rejected."',
+    failure_detail_guard: str = "fields.verdict == ReviewVerdict.changes_requested",
+) -> str:
+    return f"""input DraftSpec: "Draft Spec"
+    source: File
+        path: "draft.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+agent AcceptOwner:
+    role: "Own accepted drafts."
+    workflow: "Accept"
+        "Handle the accepted draft."
+
+agent RejectOwner:
+    role: "Own rejected drafts."
+    workflow: "Reject"
+        "Handle the rejected draft."
+
+output DraftReviewComment: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict and compare {{{{fields.reviewed_artifact}}}} against {{{{contract.completeness}}}}."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    next_owner: "Next Owner"
+        {next_owner_text}
+
+    failure_detail: "Failure Detail" when {failure_detail_guard}:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: DraftReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_checks: "Contract Checks"
+        "Use {{{{contract.completeness}}}} before you route {{{{fields.next_owner}}}}."
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept:
+{_indent_block(on_accept_body, 8)}
+
+    on_reject:
+        current none
+        route "Rejected draft returns to RejectOwner." -> RejectOwner
+
+agent ReviewDemo:
+    role: "Keep review routing aligned."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        DraftReviewComment
+"""
+
+
+def _review_invalid_guarded_match_head_source() -> str:
+    return """input DraftSpec: "Draft Spec"
+    source: File
+        path: "draft.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+output DraftReviewComment: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: DraftReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    checks: "Checks"
+        match DraftSpec.status:
+            else when DraftSpec.needs_follow_up:
+                accept "The shared draft review contract passes." when contract.passes
+
+    on_accept:
+        current none
+        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+
+    on_reject:
+        current none
+        route "Rejected draft returns to RejectOwner." -> RejectOwner
+
+agent AcceptOwner:
+    role: "Own accepted drafts."
+    workflow: "Accept"
+        "Handle the accepted draft."
+
+agent RejectOwner:
+    role: "Own rejected drafts."
+    workflow: "Reject"
+        "Handle the rejected draft."
+
+agent ReviewDemo:
+    role: "Keep review routing aligned."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        DraftReviewComment
+"""
+
+
+def _indent_block(text: str, spaces: int) -> str:
+    prefix = " " * spaces
+    normalized = textwrap.dedent(text).strip("\n")
+    return "\n".join(f"{prefix}{line}" if line else "" for line in normalized.splitlines())
 
 
 def _expect(condition: bool, message: str) -> None:

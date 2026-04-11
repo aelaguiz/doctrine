@@ -426,6 +426,231 @@ class SkillsDecl:
     parent_ref: NameRef | None = None
 
 
+@dataclass(slots=True, frozen=True)
+class ReviewSubjectConfig:
+    subjects: tuple[NameRef, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSubjectMapEntry:
+    enum_member_ref: NameRef
+    artifact_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSubjectMapConfig:
+    entries: tuple[ReviewSubjectMapEntry, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewContractConfig:
+    workflow_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewCommentOutputConfig:
+    output_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewFieldBinding:
+    semantic_field: str
+    field_path: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewFieldsConfig:
+    bindings: tuple[ReviewFieldBinding, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ContractGateRef:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class SectionGateRef:
+    key: str
+
+
+ReviewGateLabel: TypeAlias = str | ContractGateRef | SectionGateRef
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewBlockStmt:
+    gate: ReviewGateLabel
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewRejectStmt:
+    gate: ReviewGateLabel
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewAcceptStmt:
+    gate: ReviewGateLabel
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutputFieldRef:
+    parts: tuple[str, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewCurrentArtifactStmt:
+    artifact_ref: NameRef
+    carrier: ReviewOutputFieldRef
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewCurrentNoneStmt:
+    pass
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewCarryStmt:
+    field_name: str
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutcomeRouteStmt:
+    label: str
+    target: NameRef
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewMatchHead:
+    options: tuple[Expr, ...]
+    when_expr: Expr | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewPreOutcomeWhenStmt:
+    expr: Expr
+    items: tuple["ReviewPreOutcomeStmt", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutcomeWhenStmt:
+    expr: Expr
+    items: tuple["ReviewOutcomeStmt", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewPreOutcomeMatchArm:
+    head: ReviewMatchHead | None
+    items: tuple["ReviewPreOutcomeStmt", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutcomeMatchArm:
+    head: ReviewMatchHead | None
+    items: tuple["ReviewOutcomeStmt", ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewPreOutcomeMatchStmt:
+    expr: Expr
+    cases: tuple[ReviewPreOutcomeMatchArm, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutcomeMatchStmt:
+    expr: Expr
+    cases: tuple[ReviewOutcomeMatchArm, ...]
+
+
+ReviewPreOutcomeStmt: TypeAlias = (
+    ReviewBlockStmt
+    | ReviewRejectStmt
+    | ReviewAcceptStmt
+    | PreserveStmt
+    | SupportOnlyStmt
+    | IgnoreStmt
+    | ReviewPreOutcomeWhenStmt
+    | ReviewPreOutcomeMatchStmt
+    | ProseLine
+)
+
+
+ReviewOutcomeStmt: TypeAlias = (
+    ReviewCurrentArtifactStmt
+    | ReviewCurrentNoneStmt
+    | ReviewCarryStmt
+    | ReviewOutcomeRouteStmt
+    | ReviewOutcomeWhenStmt
+    | ReviewOutcomeMatchStmt
+    | ProseLine
+)
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewSection:
+    key: str
+    title: str
+    items: tuple[ReviewPreOutcomeStmt, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOutcomeSection:
+    key: str
+    title: str | None
+    items: tuple[ReviewOutcomeStmt, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOverrideFields:
+    bindings: tuple[ReviewFieldBinding, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOverrideSection:
+    key: str
+    title: str | None
+    items: tuple[ReviewPreOutcomeStmt, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewOverrideOutcomeSection:
+    key: str
+    title: str | None
+    items: tuple[ReviewOutcomeStmt, ...]
+
+
+ReviewItem: TypeAlias = (
+    ReviewSubjectConfig
+    | ReviewSubjectMapConfig
+    | ReviewContractConfig
+    | ReviewCommentOutputConfig
+    | ReviewFieldsConfig
+    | ReviewSection
+    | ReviewOutcomeSection
+    | InheritItem
+    | ReviewOverrideFields
+    | ReviewOverrideSection
+    | ReviewOverrideOutcomeSection
+)
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewBody:
+    title: str
+    items: tuple[ReviewItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewDecl:
+    name: str
+    body: ReviewBody
+    abstract: bool = False
+    parent_ref: NameRef | None = None
+
+
 WorkflowSlotValue: TypeAlias = WorkflowBody | NameRef
 
 
@@ -470,6 +695,11 @@ class SkillsField:
     value: SkillsValue
 
 
+@dataclass(slots=True, frozen=True)
+class ReviewField:
+    value: NameRef
+
+
 Field: TypeAlias = (
     RoleScalar
     | RoleBlock
@@ -480,6 +710,7 @@ Field: TypeAlias = (
     | InputsField
     | OutputsField
     | SkillsField
+    | ReviewField
 )
 
 
@@ -571,6 +802,7 @@ class EnumDecl:
 Declaration: TypeAlias = (
     ImportDecl
     | WorkflowDecl
+    | ReviewDecl
     | SkillsDecl
     | Agent
     | InputsDecl

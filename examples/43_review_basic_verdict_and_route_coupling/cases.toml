@@ -1,0 +1,152 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "basic review verdict and route coupling renders as a first-class review surface"
+status = "active"
+kind = "render_contract"
+agent = "DraftReviewDemo"
+assertion = "exact_lines"
+approx_ref = "ref/draft_review_demo/AGENTS.md"
+expected_lines = [
+  "Keep review verdicts, failing gates, and next-owner routing aligned.",
+  "",
+  "## Draft Review",
+  "",
+  "Review subject: Draft Spec.",
+  "Shared review contract: Draft Review Contract.",
+  "",
+  "### Start Review",
+  "",
+  "Reject: The draft still leaves the core decision unclear.",
+  "",
+  "### Contract Checks",
+  "",
+  "Accept only if The shared draft review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Accepted draft returns to ReviewLead.",
+  "",
+  "### If Rejected",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Rejected draft returns to DraftAuthor.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Spec",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/DRAFT_SPEC.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "Use the current draft specification as the reviewed artifact.",
+  "",
+  "## Outputs",
+  "",
+  "### Draft Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Verdict",
+  "",
+  "Say whether the review accepted the draft or requested changes.",
+  "",
+  "#### Reviewed Artifact",
+  "",
+  "Name the reviewed artifact this review judged.",
+  "",
+  "#### Analysis Performed",
+  "",
+  "Summarize the review analysis that led to the verdict.",
+  "",
+  "#### Output Contents That Matter",
+  "",
+  "Summarize the parts of the draft the next owner must read first.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name the failing review gates in authored order.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.",
+]
+
+[[cases]]
+name = "review requires the fields binding surface"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_FIELDS.prompt"
+agent = "InvalidMissingFieldsDemo"
+exception_type = "CompileError"
+error_code = "E473"
+message_contains = [
+  "Review",
+  "fields",
+]
+
+[[cases]]
+name = "review requires on_accept"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_ON_ACCEPT.prompt"
+agent = "InvalidMissingOnAcceptDemo"
+exception_type = "CompileError"
+error_code = "E483"
+message_contains = [
+  "missing",
+  "on_accept",
+]
+
+[[cases]]
+name = "review requires on_reject"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_ON_REJECT.prompt"
+agent = "InvalidMissingOnRejectDemo"
+exception_type = "CompileError"
+error_code = "E483"
+message_contains = [
+  "missing",
+  "on_reject",
+]
+
+[[cases]]
+name = "review rejects pre-outcome checks inside on_accept"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_BLOCK_INSIDE_ON_ACCEPT.prompt"
+exception_type = "ParseError"
+error_code = "E471"
+message_contains = [
+  "Illegal statement placement",
+  "review body",
+]
+
+[[cases]]
+name = "review rejects guarded else match heads"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/INVALID_ELSE_GUARDED_MATCH_HEAD.prompt"
+exception_type = "ParseError"
+error_code = "E472"
+message_contains = [
+  "Invalid guarded match head",
+  "else",
+]

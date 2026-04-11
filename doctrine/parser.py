@@ -38,6 +38,11 @@ class OutputBodyParts:
     trust_surface: tuple[model.TrustSurfaceItem, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class ReviewBodyParts:
+    items: tuple[model.ReviewItem, ...]
+
+
 class ToAst(Transformer):
     def CNAME(self, token):
         return str(token)
@@ -163,6 +168,10 @@ class ToAst(Transformer):
         return model.SkillsField(value=self._skills_value(title_or_ref, body))
 
     @v_args(inline=True)
+    def review_field(self, ref):
+        return model.ReviewField(value=ref)
+
+    @v_args(inline=True)
     def agent_slot_field(self, key, value, body=None):
         return model.AuthoredSlotField(key=key, value=self._workflow_slot_value(value, body))
 
@@ -215,6 +224,28 @@ class ToAst(Transformer):
 
     def slot_body(self, items):
         return items[0]
+
+    def abstract_review_decl(self, items):
+        return self._review_decl(items, abstract=True)
+
+    def review_decl(self, items):
+        return self._review_decl(items, abstract=False)
+
+    def _review_decl(self, items, *, abstract: bool):
+        name = items[0]
+        parent_ref: model.NameRef | None = None
+        title = items[1]
+        review_body = items[2]
+        if len(items) == 4:
+            parent_ref = items[1]
+            title = items[2]
+            review_body = items[3]
+        return model.ReviewDecl(
+            name=name,
+            body=model.ReviewBody(title=title, items=review_body.items),
+            abstract=abstract,
+            parent_ref=parent_ref,
+        )
 
     @v_args(inline=True)
     def workflow_decl(self, name, parent_ref_or_title, title_or_body, body=None):
@@ -387,6 +418,163 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def enum_member(self, key, value):
         return model.EnumMember(key=key, value=value)
+
+    def review_body(self, items):
+        return ReviewBodyParts(items=tuple(items))
+
+    def artifact_subject_expr(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def artifact_ref(self, ref):
+        return ref
+
+    @v_args(inline=True)
+    def enum_member_ref(self, ref):
+        return ref
+
+    @v_args(inline=True)
+    def workflow_ref(self, ref):
+        return ref
+
+    @v_args(inline=True)
+    def output_ref(self, ref):
+        return ref
+
+    @v_args(inline=True)
+    def subject_stmt(self, subjects):
+        return model.ReviewSubjectConfig(subjects=tuple(subjects))
+
+    def subject_map_stmt(self, items):
+        return model.ReviewSubjectMapConfig(entries=tuple(items))
+
+    @v_args(inline=True)
+    def subject_map_entry(self, enum_member_ref, artifact_ref):
+        return model.ReviewSubjectMapEntry(
+            enum_member_ref=enum_member_ref,
+            artifact_ref=artifact_ref,
+        )
+
+    @v_args(inline=True)
+    def contract_stmt(self, workflow_ref):
+        return model.ReviewContractConfig(workflow_ref=workflow_ref)
+
+    @v_args(inline=True)
+    def comment_output_stmt(self, output_ref):
+        return model.ReviewCommentOutputConfig(output_ref=output_ref)
+
+    def fields_stmt(self, items):
+        return model.ReviewFieldsConfig(bindings=tuple(items))
+
+    @v_args(inline=True)
+    def semantic_field_binding(self, semantic_field, field_path):
+        return model.ReviewFieldBinding(
+            semantic_field=semantic_field,
+            field_path=tuple(field_path),
+        )
+
+    def review_semantic_field_verdict(self, _items):
+        return "verdict"
+
+    def review_semantic_field_reviewed_artifact(self, _items):
+        return "reviewed_artifact"
+
+    def review_semantic_field_analysis(self, _items):
+        return "analysis"
+
+    def review_semantic_field_readback(self, _items):
+        return "readback"
+
+    def review_semantic_field_failing_gates(self, _items):
+        return "failing_gates"
+
+    def review_semantic_field_blocked_gate(self, _items):
+        return "blocked_gate"
+
+    def review_semantic_field_next_owner(self, _items):
+        return "next_owner"
+
+    def review_semantic_field_active_mode(self, _items):
+        return "active_mode"
+
+    def review_semantic_field_trigger_reason(self, _items):
+        return "trigger_reason"
+
+    @v_args(inline=True)
+    def pre_outcome_review_section(self, key, title, *items):
+        return model.ReviewSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def on_accept_review_section_titled(self, title, *items):
+        return model.ReviewOutcomeSection(key="on_accept", title=title, items=tuple(items))
+
+    def on_accept_review_section_untitled(self, items):
+        return model.ReviewOutcomeSection(key="on_accept", title=None, items=tuple(items))
+
+    @v_args(inline=True)
+    def on_reject_review_section_titled(self, title, *items):
+        return model.ReviewOutcomeSection(key="on_reject", title=title, items=tuple(items))
+
+    def on_reject_review_section_untitled(self, items):
+        return model.ReviewOutcomeSection(key="on_reject", title=None, items=tuple(items))
+
+    @v_args(inline=True)
+    def review_inherit(self, key):
+        return model.InheritItem(key=key)
+
+    @v_args(inline=True)
+    def review_item_key(self, key):
+        return str(key)
+
+    def review_item_key_fields(self, _items):
+        return "fields"
+
+    def review_item_key_on_accept(self, _items):
+        return "on_accept"
+
+    def review_item_key_on_reject(self, _items):
+        return "on_reject"
+
+    def review_override_fields(self, items):
+        return model.ReviewOverrideFields(bindings=tuple(items))
+
+    @v_args(inline=True)
+    def review_override_pre_outcome_section_titled(self, key, title, *items):
+        return model.ReviewOverrideSection(key=key, title=title, items=tuple(items))
+
+    @v_args(inline=True)
+    def review_override_pre_outcome_section_untitled(self, key, *items):
+        return model.ReviewOverrideSection(key=key, title=None, items=tuple(items))
+
+    @v_args(inline=True)
+    def review_override_on_accept_titled(self, title, *items):
+        return model.ReviewOverrideOutcomeSection(
+            key="on_accept",
+            title=title,
+            items=tuple(items),
+        )
+
+    def review_override_on_accept_untitled(self, items):
+        return model.ReviewOverrideOutcomeSection(
+            key="on_accept",
+            title=None,
+            items=tuple(items),
+        )
+
+    @v_args(inline=True)
+    def review_override_on_reject_titled(self, title, *items):
+        return model.ReviewOverrideOutcomeSection(
+            key="on_reject",
+            title=title,
+            items=tuple(items),
+        )
+
+    def review_override_on_reject_untitled(self, items):
+        return model.ReviewOverrideOutcomeSection(
+            key="on_reject",
+            title=None,
+            items=tuple(items),
+        )
 
     def workflow_preamble(self, items):
         return tuple(items)
@@ -614,6 +802,93 @@ class ToAst(Transformer):
     def law_route_stmt(self, label, target, when_expr=None):
         return model.LawRouteStmt(label=label, target=target, when_expr=when_expr)
 
+    @v_args(inline=True)
+    def block_stmt(self, gate, expr):
+        return model.ReviewBlockStmt(gate=gate, expr=expr)
+
+    @v_args(inline=True)
+    def reject_stmt(self, gate, expr):
+        return model.ReviewRejectStmt(gate=gate, expr=expr)
+
+    @v_args(inline=True)
+    def accept_stmt(self, gate, expr):
+        return model.ReviewAcceptStmt(gate=gate, expr=expr)
+
+    @v_args(inline=True)
+    def contract_gate_ref(self, key):
+        return model.ContractGateRef(key=key)
+
+    @v_args(inline=True)
+    def section_gate_ref(self, key):
+        return model.SectionGateRef(key=key)
+
+    @v_args(inline=True)
+    def current_review_artifact_stmt(self, artifact_ref, carrier):
+        return model.ReviewCurrentArtifactStmt(artifact_ref=artifact_ref, carrier=carrier)
+
+    def current_review_none_stmt(self, _items):
+        return model.ReviewCurrentNoneStmt()
+
+    @v_args(inline=True)
+    def carry_stmt(self, field_name, expr):
+        return model.ReviewCarryStmt(field_name=field_name, expr=expr)
+
+    def carried_field_active_mode(self, _items):
+        return "active_mode"
+
+    def carried_field_trigger_reason(self, _items):
+        return "trigger_reason"
+
+    @v_args(inline=True)
+    def output_field_ref(self, parts):
+        return model.ReviewOutputFieldRef(parts=tuple(parts))
+
+    def pre_outcome_when_stmt(self, items):
+        return model.ReviewPreOutcomeWhenStmt(expr=items[0], items=tuple(items[1:]))
+
+    def outcome_when_stmt(self, items):
+        return model.ReviewOutcomeWhenStmt(expr=items[0], items=tuple(items[1:]))
+
+    @v_args(inline=True)
+    def pre_outcome_match_stmt(self, expr, *cases):
+        return model.ReviewPreOutcomeMatchStmt(expr=expr, cases=tuple(cases))
+
+    @v_args(inline=True)
+    def outcome_match_stmt(self, expr, *cases):
+        return model.ReviewOutcomeMatchStmt(expr=expr, cases=tuple(cases))
+
+    def pre_outcome_match_case(self, items):
+        head = items[0]
+        if head == "__ELSE__":
+            head = None
+        return model.ReviewPreOutcomeMatchArm(head=head, items=tuple(items[1:]))
+
+    def outcome_match_case(self, items):
+        head = items[0]
+        if head == "__ELSE__":
+            head = None
+        return model.ReviewOutcomeMatchArm(head=head, items=tuple(items[1:]))
+
+    def review_match_head(self, items):
+        options = items[0]
+        when_expr: model.Expr | None = items[1] if len(items) > 1 else None
+        return model.ReviewMatchHead(options=tuple(options), when_expr=when_expr)
+
+    @v_args(inline=True)
+    def review_match_when(self, expr):
+        return expr
+
+    def union_expr(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def outcome_route_stmt(self, label, target, when_expr=None):
+        return model.ReviewOutcomeRouteStmt(label=label, target=target, when_expr=when_expr)
+
+    @v_args(inline=True)
+    def outcome_when_clause(self, expr):
+        return expr
+
     def preserve_exact(self, _items):
         return "exact"
 
@@ -732,6 +1007,10 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def expr_in(self, left, right):
         return model.ExprBinary(op="in", left=left, right=right)
+
+    @v_args(inline=True)
+    def expr_not_in(self, left, right):
+        return model.ExprBinary(op="not in", left=left, right=right)
 
     @v_args(inline=True)
     def skill_entry(self, key, target, body=None):
