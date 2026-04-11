@@ -194,6 +194,9 @@ AddressableTarget: TypeAlias = (
     | model.GuardedOutputSection
     | model.SchemaSection
     | model.SchemaGate
+    | "ResolvedSchemaArtifact"
+    | "ResolvedSchemaGroup"
+    | "SchemaFamilyTarget"
     | model.DocumentBlock
     | model.ReadableListItem
     | model.ReadableDefinitionItem
@@ -330,11 +333,40 @@ class ResolvedAnalysisBody:
 
 
 @dataclass(slots=True, frozen=True)
+class ResolvedSchemaArtifact:
+    key: str
+    title: str
+    ref: model.NameRef
+    artifact: "ContractArtifact"
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedSchemaGroup:
+    key: str
+    title: str
+    members: tuple[str, ...]
+
+
+SchemaAddressableItem: TypeAlias = (
+    model.SchemaSection | model.SchemaGate | ResolvedSchemaArtifact | ResolvedSchemaGroup
+)
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaFamilyTarget:
+    family_key: str
+    title: str
+    items: tuple[SchemaAddressableItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class ResolvedSchemaBody:
     title: str
     preamble: tuple[model.ProseLine, ...]
     sections: tuple[model.SchemaSection, ...]
     gates: tuple[model.SchemaGate, ...]
+    artifacts: tuple[ResolvedSchemaArtifact, ...]
+    groups: tuple[ResolvedSchemaGroup, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -686,6 +718,12 @@ _ADDRESSABLE_ROOT_REGISTRIES = (
     ("workflow declaration", "workflows_by_name"),
     ("skills block", "skills_blocks_by_name"),
 )
+_SCHEMA_FAMILY_TITLES = {
+    "sections": "Required Sections",
+    "gates": "Contract Gates",
+    "artifacts": "Artifact Inventory",
+    "groups": "Surface Groups",
+}
 
 _REVIEW_REQUIRED_FIELD_NAMES = frozenset(
     {
@@ -3500,10 +3538,21 @@ class CompilationContext:
     ) -> CompiledSection:
         resolved = self._resolve_schema_decl(decl, unit=unit)
         body: list[CompiledBodyItem] = list(resolved.preamble)
-        body.append(self._compile_schema_sections_block(resolved))
+        blocks: list[CompiledReadableBlock] = []
+        if resolved.sections:
+            blocks.append(self._compile_schema_sections_block(resolved))
         if resolved.gates:
-            body.append("")
-            body.append(self._compile_schema_gates_block(resolved))
+            blocks.append(self._compile_schema_gates_block(resolved))
+        if resolved.artifacts:
+            blocks.append(self._compile_schema_artifacts_block(resolved))
+        if resolved.groups:
+            blocks.append(self._compile_schema_groups_block(resolved))
+        for index, block in enumerate(blocks):
+            if body and index == 0:
+                body.append("")
+            elif index > 0:
+                body.append("")
+            body.append(block)
         return CompiledSection(title=resolved.title, body=tuple(body))
 
     def _compile_schema_sections_block(
@@ -3527,6 +3576,27 @@ class CompilationContext:
                 CompiledSection(title=item.title, body=item.body) for item in schema_body.gates
             ),
         )
+
+    def _compile_schema_artifacts_block(
+        self,
+        schema_body: ResolvedSchemaBody,
+    ) -> CompiledBulletsBlock:
+        return CompiledBulletsBlock(
+            title="Artifact Inventory",
+            items=tuple(item.title for item in schema_body.artifacts),
+        )
+
+    def _compile_schema_groups_block(
+        self,
+        schema_body: ResolvedSchemaBody,
+    ) -> CompiledSection:
+        artifact_titles = {item.key: item.title for item in schema_body.artifacts}
+        body: list[str] = []
+        for group in schema_body.groups:
+            body.append(f"- {group.title}")
+            for member_key in group.members:
+                body.append(f"  - {artifact_titles[member_key]}")
+        return CompiledSection(title="Surface Groups", body=tuple(body))
 
     def _compile_document_decl(
         self,
@@ -3830,13 +3900,14 @@ class CompilationContext:
             )
         if decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
+            resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
+            if not resolved_schema.sections:
+                raise CompileError(
+                    f"Output-attached schema must export at least one section in output {decl.name}: {schema_decl.name}"
+                )
             body.append(f"- Schema: {schema_decl.title}")
             body.append("")
-            body.append(
-                self._compile_schema_sections_block(
-                    self._resolve_schema_decl(schema_decl, unit=schema_unit)
-                )
-            )
+            body.append(self._compile_schema_sections_block(resolved_schema))
         if decl.structure_ref is not None:
             if files_section is not None:
                 raise CompileError(
@@ -9151,26 +9222,31 @@ class CompilationContext:
         )
         sections_mode, sections_items = self._schema_body_action(schema_body.items, block_key="sections")
         gates_mode, gates_items = self._schema_body_action(schema_body.items, block_key="gates")
+        artifacts_mode, artifacts_items = self._schema_body_action(
+            schema_body.items,
+            block_key="artifacts",
+        )
+        groups_mode, groups_items = self._schema_body_action(schema_body.items, block_key="groups")
 
         if parent_schema is None:
-            if sections_mode not in {"define", None}:
-                raise CompileError(
-                    f"{sections_mode} requires an inherited schema declaration in {owner_label}: sections"
-                )
-            if gates_mode not in {"define", None}:
-                raise CompileError(
-                    f"{gates_mode} requires an inherited schema declaration in {owner_label}: gates"
-                )
-            resolved_sections = self._resolve_schema_sections(
-                sections_items,
+            for block_key, mode in (
+                ("sections", sections_mode),
+                ("gates", gates_mode),
+                ("artifacts", artifacts_mode),
+                ("groups", groups_mode),
+            ):
+                if mode not in {"define", None}:
+                    raise CompileError(
+                        f"{mode} requires an inherited schema declaration in {owner_label}: {block_key}"
+                    )
+            resolved_sections = self._resolve_schema_sections(sections_items, unit=unit, owner_label=owner_label)
+            resolved_gates = self._resolve_schema_gates(gates_items, unit=unit, owner_label=owner_label)
+            resolved_artifacts = self._resolve_schema_artifacts(
+                artifacts_items,
                 unit=unit,
                 owner_label=owner_label,
             )
-            resolved_gates = self._resolve_schema_gates(
-                gates_items,
-                unit=unit,
-                owner_label=owner_label,
-            )
+            resolved_groups = self._resolve_schema_groups(groups_items, owner_label=owner_label)
         else:
             resolved_sections = self._resolve_schema_block_with_parent(
                 block_key="sections",
@@ -9190,15 +9266,42 @@ class CompilationContext:
                 owner_label=owner_label,
                 parent_label=parent_label,
             )
+            resolved_artifacts = self._resolve_schema_block_with_parent(
+                block_key="artifacts",
+                mode=artifacts_mode,
+                items=artifacts_items,
+                parent_items=parent_schema.artifacts,
+                unit=unit,
+                owner_label=owner_label,
+                parent_label=parent_label,
+            )
+            resolved_groups = self._resolve_schema_block_with_parent(
+                block_key="groups",
+                mode=groups_mode,
+                items=groups_items,
+                parent_items=parent_schema.groups,
+                unit=unit,
+                owner_label=owner_label,
+                parent_label=parent_label,
+            )
 
-        if not resolved_sections:
-            raise CompileError(f"Schema must export at least one section in {owner_label}")
+        if not resolved_sections and not resolved_artifacts:
+            raise CompileError(
+                f"Schema must export at least one `sections:` or `artifacts:` block in {owner_label}"
+            )
+        self._validate_schema_group_members(
+            resolved_groups,
+            artifacts=resolved_artifacts,
+            owner_label=owner_label,
+        )
 
         return ResolvedSchemaBody(
             title=schema_body.title,
             preamble=resolved_preamble,
             sections=resolved_sections,
             gates=resolved_gates,
+            artifacts=resolved_artifacts,
+            groups=resolved_groups,
         )
 
     def _schema_body_action(
@@ -9206,7 +9309,7 @@ class CompilationContext:
         items: tuple[model.SchemaItem, ...],
         *,
         block_key: str,
-    ) -> tuple[str | None, tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...]]:
+    ) -> tuple[str | None, tuple[object, ...]]:
         for item in items:
             if isinstance(item, model.InheritItem) and item.key == block_key:
                 return "inherit", ()
@@ -9214,9 +9317,17 @@ class CompilationContext:
                 return "define", item.items
             if block_key == "gates" and isinstance(item, model.SchemaGatesBlock):
                 return "define", item.items
+            if block_key == "artifacts" and isinstance(item, model.SchemaArtifactsBlock):
+                return "define", item.items
+            if block_key == "groups" and isinstance(item, model.SchemaGroupsBlock):
+                return "define", item.items
             if block_key == "sections" and isinstance(item, model.SchemaOverrideSectionsBlock):
                 return "override", item.items
             if block_key == "gates" and isinstance(item, model.SchemaOverrideGatesBlock):
+                return "override", item.items
+            if block_key == "artifacts" and isinstance(item, model.SchemaOverrideArtifactsBlock):
+                return "override", item.items
+            if block_key == "groups" and isinstance(item, model.SchemaOverrideGroupsBlock):
                 return "override", item.items
         return None, ()
 
@@ -9225,20 +9336,21 @@ class CompilationContext:
         *,
         block_key: str,
         mode: str | None,
-        items: tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...],
-        parent_items: tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...],
+        items: tuple[object, ...],
+        parent_items: tuple[object, ...],
         unit: IndexedUnit,
         owner_label: str,
         parent_label: str | None,
-    ) -> tuple[model.SchemaSection, ...] | tuple[model.SchemaGate, ...]:
+    ) -> tuple[object, ...]:
         if parent_items:
             if mode == "inherit":
                 return parent_items
             if mode == "override":
-                return (
-                    self._resolve_schema_sections(items, unit=unit, owner_label=owner_label)
-                    if block_key == "sections"
-                    else self._resolve_schema_gates(items, unit=unit, owner_label=owner_label)
+                return self._resolve_schema_block_items(
+                    block_key=block_key,
+                    items=items,
+                    unit=unit,
+                    owner_label=owner_label,
                 )
             if mode == "define":
                 raise CompileError(
@@ -9254,13 +9366,48 @@ class CompilationContext:
             raise CompileError(
                 f"E001 Cannot override undefined schema block in {parent_label}: {block_key}"
             )
+        return self._resolve_schema_block_items(
+            block_key=block_key,
+            items=items,
+            unit=unit,
+            owner_label=owner_label,
+        )
+
+    def _resolve_schema_block_items(
+        self,
+        *,
+        block_key: str,
+        items: tuple[object, ...],
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[object, ...]:
         if block_key == "sections":
-            return self._resolve_schema_sections(items, unit=unit, owner_label=owner_label)
-        return self._resolve_schema_gates(items, unit=unit, owner_label=owner_label)
+            return self._resolve_schema_sections(
+                items,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        if block_key == "gates":
+            return self._resolve_schema_gates(
+                items,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        if block_key == "artifacts":
+            return self._resolve_schema_artifacts(
+                items,
+                unit=unit,
+                owner_label=owner_label,
+            )
+        if block_key == "groups":
+            return self._resolve_schema_groups(items, owner_label=owner_label)
+        raise CompileError(
+            f"Internal compiler error: unsupported schema block key in {owner_label}: {block_key}"
+        )
 
     def _resolve_schema_sections(
         self,
-        items: tuple[model.SchemaSection, ...],
+        items: tuple[object, ...],
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -9268,6 +9415,10 @@ class CompilationContext:
         seen: set[str] = set()
         resolved: list[model.SchemaSection] = []
         for item in items:
+            if not isinstance(item, model.SchemaSection):
+                raise CompileError(
+                    f"Internal compiler error: unsupported schema section item in {owner_label}: {type(item).__name__}"
+                )
             if item.key in seen:
                 raise CompileError(f"Duplicate schema section key in {owner_label}: {item.key}")
             seen.add(item.key)
@@ -9290,7 +9441,7 @@ class CompilationContext:
 
     def _resolve_schema_gates(
         self,
-        items: tuple[model.SchemaGate, ...],
+        items: tuple[object, ...],
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -9298,6 +9449,10 @@ class CompilationContext:
         seen: set[str] = set()
         resolved: list[model.SchemaGate] = []
         for item in items:
+            if not isinstance(item, model.SchemaGate):
+                raise CompileError(
+                    f"Internal compiler error: unsupported schema gate item in {owner_label}: {type(item).__name__}"
+                )
             if item.key in seen:
                 raise CompileError(f"Duplicate schema gate key in {owner_label}: {item.key}")
             seen.add(item.key)
@@ -9317,6 +9472,108 @@ class CompilationContext:
                 )
             )
         return tuple(resolved)
+
+    def _resolve_schema_artifacts(
+        self,
+        items: tuple[object, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ResolvedSchemaArtifact, ...]:
+        seen: set[str] = set()
+        resolved: list[ResolvedSchemaArtifact] = []
+        for item in items:
+            if not isinstance(item, model.SchemaArtifact):
+                raise CompileError(
+                    f"Internal compiler error: unsupported schema artifact item in {owner_label}: {type(item).__name__}"
+                )
+            if item.key in seen:
+                raise CompileError(f"Duplicate schema artifact key in {owner_label}: {item.key}")
+            seen.add(item.key)
+            resolved.append(
+                ResolvedSchemaArtifact(
+                    key=item.key,
+                    title=item.title,
+                    ref=item.ref,
+                    artifact=self._resolve_schema_artifact_ref(
+                        item.ref,
+                        unit=unit,
+                        owner_label=owner_label,
+                    ),
+                )
+            )
+        return tuple(resolved)
+
+    def _resolve_schema_artifact_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ContractArtifact:
+        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        if (decl := target_unit.inputs_by_name.get(ref.declaration_name)) is not None:
+            return ContractArtifact(kind="input", unit=target_unit, decl=decl)
+        if (decl := target_unit.outputs_by_name.get(ref.declaration_name)) is not None:
+            return ContractArtifact(kind="output", unit=target_unit, decl=decl)
+
+        dotted_name = _dotted_ref_name(ref)
+        if ref.module_parts:
+            if self._find_readable_decl_matches(ref.declaration_name, unit=target_unit):
+                raise CompileError(
+                    f"Schema artifact refs must resolve to input or output declarations in {owner_label}: {dotted_name}"
+                )
+            raise CompileError(f"Missing imported declaration: {dotted_name}")
+
+        if self._find_readable_decl_matches(ref.declaration_name, unit=target_unit):
+            raise CompileError(
+                f"Schema artifact refs must resolve to input or output declarations in {owner_label}: {ref.declaration_name}"
+            )
+        raise CompileError(
+            f"Missing local declaration ref in schema artifact {owner_label}: {ref.declaration_name}"
+        )
+
+    def _resolve_schema_groups(
+        self,
+        items: tuple[object, ...],
+        *,
+        owner_label: str,
+    ) -> tuple[ResolvedSchemaGroup, ...]:
+        seen: set[str] = set()
+        resolved: list[ResolvedSchemaGroup] = []
+        for item in items:
+            if not isinstance(item, model.SchemaGroup):
+                raise CompileError(
+                    f"Internal compiler error: unsupported schema group item in {owner_label}: {type(item).__name__}"
+                )
+            if item.key in seen:
+                raise CompileError(f"Duplicate schema group key in {owner_label}: {item.key}")
+            if not item.members:
+                raise CompileError(f"Schema groups may not be empty in {owner_label}: {item.key}")
+            seen.add(item.key)
+            resolved.append(
+                ResolvedSchemaGroup(
+                    key=item.key,
+                    title=item.title,
+                    members=item.members,
+                )
+            )
+        return tuple(resolved)
+
+    def _validate_schema_group_members(
+        self,
+        groups: tuple[ResolvedSchemaGroup, ...],
+        *,
+        artifacts: tuple[ResolvedSchemaArtifact, ...],
+        owner_label: str,
+    ) -> None:
+        artifact_keys = {item.key for item in artifacts}
+        for group in groups:
+            for member_key in group.members:
+                if member_key not in artifact_keys:
+                    raise CompileError(
+                        f"Unknown schema group member in {owner_label}: {group.key}.{member_key}"
+                    )
 
     def _resolve_document_body(
         self,
@@ -11243,6 +11500,12 @@ class CompilationContext:
                 unit=node.unit,
                 root_decl=node.root_decl,
             )
+        if isinstance(target, SchemaFamilyTarget):
+            return self._schema_family_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
         if isinstance(target, ReadableColumnsTarget):
             return {
                 column.key: AddressableNode(
@@ -11261,7 +11524,16 @@ class CompilationContext:
                 )
                 for row in target.rows
             }
-        if isinstance(target, (ResolvedAnalysisSection, model.SchemaSection, model.SchemaGate)):
+        if isinstance(
+            target,
+            (
+                ResolvedAnalysisSection,
+                model.SchemaSection,
+                model.SchemaGate,
+                ResolvedSchemaArtifact,
+                ResolvedSchemaGroup,
+            ),
+        ):
             return None
         if isinstance(target, model.EnumDecl):
             return {
@@ -11364,12 +11636,38 @@ class CompilationContext:
         unit: IndexedUnit,
         root_decl: AddressableRootDecl,
     ) -> dict[str, AddressableNode]:
+        # Schema families stay namespace-first so similarly keyed items never
+        # collide across sections, gates, artifacts, and groups.
+        families: tuple[tuple[str, tuple[SchemaAddressableItem, ...]], ...] = (
+            ("sections", schema_body.sections),
+            ("gates", schema_body.gates),
+            ("artifacts", schema_body.artifacts),
+            ("groups", schema_body.groups),
+        )
         children: dict[str, AddressableNode] = {}
-        for item in (*schema_body.sections, *schema_body.gates):
-            if item.key in children:
-                raise CompileError(
-                    f"Ambiguous schema child key in addressable path resolution: {item.key}"
-                )
+        for family_key, items in families:
+            if not items:
+                continue
+            children[family_key] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=SchemaFamilyTarget(
+                    family_key=family_key,
+                    title=_SCHEMA_FAMILY_TITLES[family_key],
+                    items=items,
+                ),
+            )
+        return children
+
+    def _schema_family_items_to_addressable_children(
+        self,
+        items: tuple[SchemaAddressableItem, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
             children[item.key] = AddressableNode(
                 unit=unit,
                 root_decl=root_decl,
@@ -11544,9 +11842,15 @@ class CompilationContext:
             return DisplayValue(text=target.skill_decl.title, kind="title")
         if isinstance(target, ResolvedAnalysisSection):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, SchemaFamilyTarget):
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaSection):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaGate):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, ResolvedSchemaArtifact):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, ResolvedSchemaGroup):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentBlock):
             return DisplayValue(

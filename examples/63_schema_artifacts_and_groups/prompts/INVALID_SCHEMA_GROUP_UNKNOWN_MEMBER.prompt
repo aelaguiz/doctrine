@@ -1,0 +1,22 @@
+input OutlineFile: "Outline File"
+    source: File
+        path: "unit_root/OUTLINE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+schema UnknownGroupMemberSchema: "Unknown Group Member Schema"
+    artifacts:
+        outline_file: "Outline File"
+            ref: OutlineFile
+
+    groups:
+        downstream_rebuild: "Downstream Rebuild"
+            outline_file
+            missing_file
+
+
+agent UnknownGroupMemberDemo:
+    role: "Check {{UnknownGroupMemberSchema:groups.downstream_rebuild.title}}."
+    workflow: "Ship"
+        "This should fail because every schema group member must name a local artifact key."

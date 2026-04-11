@@ -756,6 +756,33 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
+    declarationSnippet: 'summary: "Summary"',
+    expectedRelativeTargetPath:
+      "examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt",
+    relativePath: "examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt",
+    sourceLineFragment: "{{BuildSurfaceSchema:sections.summary.title}}",
+    sourceText: "summary",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'manifest_file: "Manifest File"',
+    expectedRelativeTargetPath:
+      "examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt",
+    relativePath: "examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt",
+    sourceLineFragment: "{{BuildSurfaceSchema:artifacts.manifest_file.title}}",
+    sourceText: "manifest_file",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'downstream_rebuild: "Downstream Rebuild"',
+    expectedRelativeTargetPath:
+      "examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt",
+    relativePath: "examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt",
+    sourceLineFragment: "{{BuildSurfaceSchema:groups.downstream_rebuild.title}}",
+    sourceText: "downstream_rebuild",
+  });
+
+  await assertDefinitionTarget({
     declarationSnippet: "document LessonPlan",
     expectedRelativeTargetPath:
       "examples/56_document_structure_attachments/prompts/AGENTS.prompt",

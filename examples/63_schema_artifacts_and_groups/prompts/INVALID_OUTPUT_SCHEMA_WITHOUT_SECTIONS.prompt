@@ -1,0 +1,27 @@
+input OutlineFile: "Outline File"
+    source: File
+        path: "unit_root/OUTLINE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+schema ArtifactOnlySchema: "Artifact Only Schema"
+    artifacts:
+        outline_file: "Outline File"
+            ref: OutlineFile
+
+
+output BuildPlan: "Build Plan"
+    target: File
+        path: "unit_root/BUILD_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    schema: ArtifactOnlySchema
+
+
+agent ArtifactOnlySchemaDemo:
+    role: "Check {{ArtifactOnlySchema:artifacts.outline_file.title}}."
+    workflow: "Ship"
+        "This should fail because output-attached schemas must still expose a section."
+    outputs: "Outputs"
+        BuildPlan
