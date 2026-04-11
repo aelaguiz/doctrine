@@ -2,7 +2,8 @@
 
 Doctrine is a Python-like DSL and compiler for authoring reusable agent
 doctrine as code and emitting runtime Markdown that existing coding-agent tools
-can read today.
+can read today, with a compiler built to stay practical on large prompt
+graphs.
 
 It replaces copied, hand-maintained `AGENTS.md` prose with named declarations,
 explicit inheritance, typed I/O contracts, workflow law, and first-class
@@ -25,6 +26,9 @@ That split matters in practice:
   emitted Markdown file
 - shared policy changes land once and compile consistently into every concrete
   agent
+- compile, emit, and verification work can reuse one indexed prompt graph and
+  parallelize safe batch work by default, so large agent families stay
+  tractable
 - reviewers can inspect intent in source and verify the exact downstream
   runtime artifact beside it
 
@@ -59,6 +63,8 @@ For the motivating use case and the runtime rationale, read
   route-only turns
 - review contracts, exact failing gates, carried mode and trigger state,
   current truth, inheritance, and bound review carriers
+- session-based compilation, once-per-session import loading, and deterministic
+  default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
   `examples/53_review_bound_carrier_roots`
 - a repo-local emit pipeline for compiled Markdown plus target-scoped workflow
@@ -138,6 +144,10 @@ writes a compiled Markdown tree for each concrete agent in the entrypoint.
 deterministic `.flow.d2` plus same-command `.flow.svg`. Entrypoints may be
 either `AGENTS.prompt` or `SOUL.prompt`, and the emitted basename follows the
 entrypoint stem.
+
+Both emit and verification surfaces reuse shared compilation sessions so
+Doctrine can batch larger entrypoints quickly without giving up deterministic
+output ordering.
 
 Start with [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md) for prerequisites, target
 configuration, output layout, troubleshooting, and the exact `emit_flow`

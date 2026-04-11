@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import ast
+import threading
 from dataclasses import dataclass, replace
-from functools import lru_cache
 from pathlib import Path
 
 from lark import Lark, Transformer, v_args
@@ -1153,17 +1153,20 @@ class ToAst(Transformer):
         return tuple(items)
 
 
-@lru_cache(maxsize=1)
 def build_lark_parser() -> Lark:
-    return Lark.open(
-        "grammars/doctrine.lark",
-        rel_to=__file__,
-        parser="lalr",
-        lexer="contextual",
-        postlex=DoctrineIndenter(),
-        strict=True,
-        maybe_placeholders=False,
-    )
+    parser = getattr(_THREAD_LOCAL_STATE, "lark_parser", None)
+    if parser is None:
+        parser = Lark.open(
+            "grammars/doctrine.lark",
+            rel_to=__file__,
+            parser="lalr",
+            lexer="contextual",
+            postlex=DoctrineIndenter(),
+            strict=True,
+            maybe_placeholders=False,
+        )
+        _THREAD_LOCAL_STATE.lark_parser = parser
+    return parser
 
 
 def parse_text(source: str, *, source_path: str | Path | None = None) -> model.PromptFile:
@@ -1189,3 +1192,6 @@ def parse_file(path: str | Path) -> model.PromptFile:
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
     parts = tuple(dotted_name.split("."))
     return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
+
+
+_THREAD_LOCAL_STATE = threading.local()

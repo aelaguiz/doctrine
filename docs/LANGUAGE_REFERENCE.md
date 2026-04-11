@@ -2,7 +2,9 @@
 
 Doctrine prompt files compile structured source into runtime Markdown. The
 authoring surface is a small set of named declarations plus explicit
-composition and fail-loud compiler rules.
+composition and fail-loud compiler rules. The shipped compiler reuses loaded
+prompt graphs so larger prompt families remain practical, not just toy-sized
+examples.
 
 For the motivation behind the project, start with [WHY_DOCTRINE.md](WHY_DOCTRINE.md).
 For the numbered teaching corpus, use [../examples/README.md](../examples/README.md).
@@ -32,6 +34,9 @@ A prompt file may contain imports and any mix of shipped declarations:
 The normal authoring entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The
 emit pipeline compiles each concrete agent in the entrypoint into a Markdown
 runtime artifact whose basename matches the entrypoint stem.
+Doctrine does that work through a shared compilation session, so module loading
+and indexing happen once per entrypoint and batch emit or verification surfaces
+can fan out safely while preserving deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md).
 
