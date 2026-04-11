@@ -17,3 +17,8 @@ Current archived sets:
 
 - `workflow_law/`: original workflow-law spec, cutover plan, and worklog from
   the 2026-04-10 implementation pass
+- [PRO_PROPOSAL_2026-04-10.md](PRO_PROPOSAL_2026-04-10.md): historical product
+  and language-shape proposal kept for design pressure and old links
+- [LESSONS_METADATA_PORT_BLOCKER_NOTE_2026-04-10.md](LESSONS_METADATA_PORT_BLOCKER_NOTE_2026-04-10.md):
+  Doctrine-side note on the Paperclip Lessons metadata-port blocker and the
+  external failed implementation reference

@@ -8,34 +8,34 @@ Active mode: section-summary.
 
 Current artifact: Section Metadata.
 
-Must CurrentHandoff.preserve_basis == ApprovedStructure.
+Must current_handoff.preserve_basis == approved_structure.
 
-Own only {`SectionMetadata.name`, `SectionMetadata.description`}.
+Own only {`section_metadata.name`, `section_metadata.description`}.
 
-Preserve exact `SectionMetadata.*` except `SectionMetadata.name`, `SectionMetadata.description`.
+Preserve exact `section_metadata.*` except `section_metadata.name`, `section_metadata.description`.
 
-Preserve decisions `ApprovedStructure`.
+Preserve decisions `approved_structure`.
 
-Do not modify {`SectionMetadata.taxonomy`, `SectionMetadata.flags`}.
+Do not modify {`section_metadata.taxonomy`, `section_metadata.flags`}.
 
 Accepted Peer Set is comparison-only support.
 
-When pass_mode is manifest-title and CurrentHandoff.rewrite_regime is rewrite, ignore `PrimaryManifest.title` for rewrite evidence.
+When pass_mode is section-summary and current_handoff.rewrite_regime is rewrite, ignore {`section_metadata.name`, `section_metadata.description`} for rewrite evidence.
 
-When pass_mode is section-summary and CurrentHandoff.rewrite_regime is rewrite, ignore {`SectionMetadata.name`, `SectionMetadata.description`} for rewrite evidence.
+If unclear(pass_mode, current_handoff.preserve_basis):
+- Stop: Mode or preserve basis is unclear.
+- Route the same issue back to RoutingOwner.
 
 If structure changed:
 - Section Review is no longer current.
 - Stop: Structure moved; downstream review is no longer current.
 - Route the same issue back to RoutingOwner for rebuild.
 
-If unclear(pass_mode, CurrentHandoff.preserve_basis):
-- Stop: Mode or preserve basis is unclear.
-- Route the same issue back to RoutingOwner.
-
 ## Inputs
 
-### Current Handoff
+### Current Handoff Binding
+
+#### Current Handoff
 
 - Source: Prompt
 - Shape: Json Object
@@ -43,21 +43,27 @@ If unclear(pass_mode, CurrentHandoff.preserve_basis):
 
 Use the host-provided handoff facts that say whether metadata polish is owed, which mode is active, which preserve basis remains authoritative, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
 
-### Approved Plan
+### Approved Plan Binding
+
+#### Approved Plan
 
 - Source: File
 - Path: `unit_root/_authoring/APPROVED_PLAN.md`
 - Shape: Markdown Document
 - Requirement: Required
 
-### Approved Structure
+### Approved Structure Binding
+
+#### Approved Structure
 
 - Source: File
 - Path: `unit_root/_authoring/APPROVED_STRUCTURE.md`
 - Shape: Markdown Document
 - Requirement: Required
 
-### Accepted Peer Set
+### Accepted Peer Set Binding
+
+#### Accepted Peer Set
 
 - Source: File
 - Path: `catalog/accepted_peers.json`
@@ -66,44 +72,48 @@ Use the host-provided handoff facts that say whether metadata polish is owed, wh
 
 ## Outputs
 
-### Section Metadata
+### Section Metadata Binding
+
+#### Section Metadata
 
 - Target: File
 - Path: `unit_root/_authoring/section_metadata.json`
 - Shape: Json Object
 - Requirement: Required
 
-### Rewrite-Aware Coordination Handoff
+### Coordination Handoff Binding
+
+#### Rewrite-Aware Coordination Handoff
 
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
+##### Current Artifact
 
 Name the one artifact that is current now.
 
-#### Active Mode
+##### Active Mode
 
 Name the one active mode for this pass.
 
-#### Preserve Basis
+##### Preserve Basis
 
 Name the upstream declaration whose decisions remain authoritative.
 
-#### Comparison Basis
+##### Comparison Basis
 
 Name any comparison-only artifacts used in this pass.
 
-#### Rewrite Evidence Exclusions
+##### Rewrite Evidence Exclusions
 
 Name any fields whose old values do not count as rewrite evidence.
 
-#### Invalidations
+##### Invalidations
 
 Name any artifacts that are no longer current.
 
-#### Trust Surface
+##### Trust Surface
 
 - Current Artifact
 - Active Mode
@@ -112,6 +122,6 @@ Name any artifacts that are no longer current.
 - Rewrite Evidence Exclusions on rewrite passes
 - Invalidations when structure changed
 
-#### Standalone Read
+##### Standalone Read
 
 A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed.

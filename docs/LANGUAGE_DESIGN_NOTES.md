@@ -313,14 +313,14 @@ The current examples are intentionally pushing on these rules so we can validate
   declarations and `outputs` refs must resolve to `output` declarations.
 - `11_skills_and_tools` is intentionally skill-first.
 - reusable capabilities should be modeled as `skill` declarations.
-- `30_law_route_only_turns` through `42_route_only_handoff_capstone` are
+- `30_law_route_only_turns` through `52_bound_scope_and_preservation` are
   active shipped workflow-law proof, not planned-only examples.
 - `43_review_basic_verdict_and_route_coupling` through
-  `49_review_capstone` are active shipped review proof, not draft proposal
-  examples.
+  `49_review_capstone` plus `53_review_bound_carrier_roots` are active shipped
+  review proof, not draft proposal examples.
 - workflow law is now the shipped way to express route-only turns, portable
   currentness, trust carriers, scope/preservation law, basis roles,
-  invalidation, and named law reuse.
+  invalidation, named law reuse, and concrete-turn bound roots.
 - `review` and `abstract review` are now shipped declaration families for
   shared review contracts, exact failing gates, carried mode and trigger
   state, blocked review turns, review inheritance, and portable review-owned
@@ -382,9 +382,9 @@ The current examples are intentionally pushing on these rules so we can validate
 - the indentation-sensitive bootstrap grammar supports standalone `#` comment
   lines through the newline token rather than as separately ignored trivia
 
-## Shipped Through 49
+## Shipped Through 53
 
-The shipped language subset now covers examples `01` through `49`, including
+The shipped language subset now covers examples `01` through `53`, including
 workflow law on existing `workflow` and `output` owners plus first-class
 `review` on its own shipped declaration family.
 
@@ -424,6 +424,13 @@ Current shipped agent field families:
 - `outputs` as either a rich inline bucket, a direct ref to a named outputs
   block, or an explicit patch of a named outputs block
 - `skills`
+
+Current shipped workflow-law root model:
+- direct declared `input`, `output`, or `enum` names remain legal roots where
+  the statement kind allows them
+- keyed concrete-turn `inputs:` and `outputs:` leaves are now also first-class
+  workflow-law roots; they normalize to the underlying declared artifact
+- this did not add a new root-binding declaration family
 
 Current shipped boundaries:
 - the renderer stays role-first; there is no H1 agent-name mode in the shipped

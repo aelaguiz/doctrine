@@ -1120,13 +1120,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^current artifact target must resolve to a declared input or output in (?P<owner>.+): (?P<name>.+)$"
+            r"^current artifact target must resolve to a (?:declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output) in (?P<owner>.+): (?P<name>.+)$"
         ),
         "E335",
         "Current artifact target has wrong kind",
         lambda match: (
-            f"Current-artifact target `{match.group('name')}` must resolve to a declared input "
-            f"or output in {match.group('owner')}."
+            f"Current-artifact target `{match.group('name')}` must resolve to a declared or "
+            f"bound concrete-turn input or output in {match.group('owner')}."
         ),
         (),
     ),
@@ -1231,13 +1231,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^own only target must resolve to a declared input or output in (?P<owner>.+): (?P<path>.+)$"
+            r"^own only target must resolve to a (?:declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output) in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E352",
         "Owned scope target is unknown",
         lambda match: (
-            f"Owned scope target `{match.group('path')}` must resolve to a declared input or output "
-            f"in {match.group('owner')}."
+            f"Owned scope target `{match.group('path')}` must resolve to a declared or bound "
+            f"concrete-turn input or output in {match.group('owner')}."
         ),
         (),
     ),
@@ -1261,13 +1261,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^preserve (?P<kind>structure|mapping|vocabulary) target must resolve to a declared (?P<label>input or output|enum) in (?P<owner>.+): (?P<path>.+)$"
+            r"^preserve (?P<kind>structure|mapping|vocabulary) target must resolve to a (?P<label>declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared enum) in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E355",
         "Preserve target is unknown",
         lambda match: (
             f"`preserve {match.group('kind')}` target `{match.group('path')}` must resolve to a "
-            f"declared {match.group('label')} in {match.group('owner')}."
+            f"{match.group('label')} in {match.group('owner')}."
         ),
         (),
     ),
@@ -1535,13 +1535,13 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^current artifact carrier target must resolve to a declared output in (?P<owner>.+review.+): (?P<name>.+)$"
+            r"^current artifact carrier target must resolve to a (?:declared output|declared or bound concrete-turn output) in (?P<owner>.+review.+): (?P<name>.+)$"
         ),
         "E487",
         "Review currentness requires a valid carrier",
         lambda match: (
-            f"Review currentness carrier `{match.group('name')}` must resolve to a declared "
-            f"output in {match.group('owner')}."
+            f"Review currentness carrier `{match.group('name')}` must resolve to a declared or "
+            f"bound concrete-turn output in {match.group('owner')}."
         ),
         (),
     ),

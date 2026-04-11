@@ -110,6 +110,8 @@ Key rules:
 `current artifact ... via ...` means two things at once:
 
 - the named input or output is authoritative now for the active branch
+- that root may be either a declared input/output name or a keyed concrete-turn
+  `inputs:` or `outputs:` binding that normalizes to one declared artifact
 - the `Output.field` carrier tells the next owner that this is true
 
 ```prompt
@@ -142,6 +144,8 @@ Currentness rules:
 
 - every active leaf branch must resolve exactly one current-subject form
 - that form must be either `current artifact ... via ...` or `current none`
+- workflow-law roots may resolve either through direct declaration names or
+  through keyed concrete-turn input/output bindings
 - the carrier side must point at an emitted output field
 - that field must be listed in the output's `trust_surface`
 - if the current artifact is itself an output root, the concrete turn must emit
@@ -175,6 +179,8 @@ Compiler-owned checks keep this honest:
 
 - owned paths must stay rooted in the current artifact
 - owned paths must stay addressable
+- overlap and invalidation checks compare canonical artifact identity, not only
+  the authored root text
 - owned scope cannot overlap exact preservation without an explicit `except`
 - owned scope cannot overlap forbidden scope
 
@@ -312,6 +318,12 @@ The route-only story is staged on purpose:
   contract
 - `42_route_only_handoff_capstone`: the full generic Slice A route-only
   handoff model with conditional reroute and guarded output readback
+- `50_bound_currentness_roots`: concrete-turn binding keys as first-class
+  currentness and carrier roots
+- `51_inherited_bound_io_roots`: inherited bound roots through named `inputs:`
+  and `outputs:` blocks
+- `52_bound_scope_and_preservation`: bound-root scope, exact preservation, and
+  preserved upstream truth
 
 The route-only ladder now proves both remaining Slice A structured couplings:
 

@@ -101,8 +101,57 @@ const TRUST_SURFACE_ITEM_RE = new RegExp(
 const GUARDED_OUTPUT_HEADER_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
 );
+const DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
 const UPPERCASE_DOTTED_TOKEN_RE = new RegExp(`\\b${DOTTED_NAME_PATTERN}\\b`, "g");
 const REVIEW_SEMANTIC_REF_RE = /\b(contract|fields)\.([A-Za-z_][A-Za-z0-9_]*)\b/g;
+const NON_BINDING_LAW_TOKENS = new Set([
+  "accept",
+  "active",
+  "and",
+  "artifact",
+  "as",
+  "block",
+  "carry",
+  "comparison",
+  "current",
+  "decisions",
+  "else",
+  "exact",
+  "except",
+  "failed",
+  "false",
+  "for",
+  "forbid",
+  "ignore",
+  "in",
+  "invalidate",
+  "mapping",
+  "match",
+  "missing",
+  "mode",
+  "must",
+  "none",
+  "not",
+  "only",
+  "or",
+  "own",
+  "passed",
+  "passes",
+  "present",
+  "preserve",
+  "reject",
+  "rewrite_evidence",
+  "route",
+  "stop",
+  "structure",
+  "support_only",
+  "true",
+  "truth",
+  "unclear",
+  "via",
+  "vocabulary",
+  "when",
+]);
 
 const PROSE_LINE_RE = /^\s*(?:(?:required|important|warning|note)\s+)?"(?:\\.|[^"\\])*"\s*$/;
 const ROLE_INLINE_RE = new RegExp(`^\\s*role\\s*:\\s*${STRING_PATTERN}\\s*$`);
@@ -257,6 +306,7 @@ const DECLARATION_DEFINITIONS = Object.freeze([
 
 const INDEX_CACHE = new Map();
 const REVIEW_CONTEXT_CACHE = new Map();
+const AGENT_BINDING_CACHE = new Map();
 
 // Compiler semantics stay the policy owner. This file only adapts those
 // shipped import, declaration, readable-ref, and inheritance rules to VS Code.
@@ -317,6 +367,9 @@ async function provideDefinitionLinks(document, position, token) {
   }
   if (site.type === "reviewBoundOutputPathRef") {
     return resolveReviewBoundOutputPathDefinition(site, source);
+  }
+  if (site.type === "boundLawPathRef") {
+    return resolveBoundLawPathDefinition(site, source);
   }
   return resolveStructuralDefinition(site, source);
 }
@@ -443,6 +496,7 @@ function classifyDefinitionSite(source, position) {
       site.type === "structuralKeyRef"
       || site.type === "reviewSemanticRef"
       || site.type === "reviewBoundOutputPathRef"
+      || site.type === "boundLawPathRef"
     ) {
       site.lineContext = lineContext;
     }
@@ -656,6 +710,7 @@ function collectReviewPreOutcomeSites(lineText, lineNumber) {
   const sites = [];
   sites.push(...collectReviewSemanticSites(lineText, lineNumber));
   sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  sites.push(...collectBoundLawPathSites(lineText, lineNumber));
   return sites;
 }
 
@@ -673,6 +728,7 @@ function collectReviewOutcomeSites(lineText, lineNumber) {
   }
   sites.push(...collectReviewSemanticSites(lineText, lineNumber));
   sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  sites.push(...collectBoundLawPathSites(lineText, lineNumber));
   return sites;
 }
 
@@ -760,11 +816,15 @@ function collectLawBodySites(lineText, lineNumber, allowStructural) {
   }
 
   sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  sites.push(...collectBoundLawPathSites(lineText, lineNumber));
   return sites;
 }
 
 function collectLawMatchBodySites(lineText, lineNumber) {
-  return collectShippedLawRefSites(lineText, lineNumber);
+  return [
+    ...collectShippedLawRefSites(lineText, lineNumber),
+    ...collectBoundLawPathSites(lineText, lineNumber),
+  ];
 }
 
 function collectWorkflowSectionSites(lineText, lineNumber) {
@@ -813,6 +873,7 @@ function collectTrustSurfaceBodySites(lineText, lineNumber) {
     sites.push(createStructuralSite(lineText, lineNumber, trustSurfaceItem[1]));
   }
   sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+  sites.push(...collectBoundLawPathSites(lineText, lineNumber));
   return sites;
 }
 
@@ -1264,6 +1325,709 @@ async function resolveReviewBoundOutputPathDefinition(site, source) {
       targetSelectionRange: target.selectionRange,
     },
   ];
+}
+
+function createResolvedTargetLink(originRange, target) {
+  return {
+    originSelectionRange: originRange,
+    targetUri: target.document.uri,
+    targetRange: new vscode.Range(
+      target.lineNumber,
+      0,
+      target.lineNumber,
+      target.document.lineAt(target.lineNumber).text.length,
+    ),
+    targetSelectionRange: target.selectionRange,
+  };
+}
+
+function sameDeclarationIdentity(leftSource, leftDeclaration, rightSource, rightDeclaration) {
+  return (
+    leftSource.document.uri.toString() === rightSource.document.uri.toString()
+    && leftDeclaration.kind === rightDeclaration.kind
+    && leftDeclaration.name === rightDeclaration.name
+  );
+}
+
+function bindingPathKey(pathSegments) {
+  return pathSegments.join(".");
+}
+
+function pathStartsWith(pathSegments, prefixSegments) {
+  if (prefixSegments.length > pathSegments.length) {
+    return false;
+  }
+  for (let index = 0; index < prefixSegments.length; index += 1) {
+    if (pathSegments[index] !== prefixSegments[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function removeBindingSubtree(bindings, prefixSegments) {
+  for (const key of [...bindings.keys()]) {
+    const binding = bindings.get(key);
+    if (binding && pathStartsWith(binding.bindingPath, prefixSegments)) {
+      bindings.delete(key);
+    }
+  }
+}
+
+function copyBindingSubtree(sourceBindings, prefixSegments, targetBindings) {
+  for (const [key, binding] of sourceBindings.entries()) {
+    if (pathStartsWith(binding.bindingPath, prefixSegments)) {
+      targetBindings.set(key, binding);
+    }
+  }
+}
+
+async function resolveBoundLawPathDefinition(site, source) {
+  const context = await resolveBoundLawSiteContext(site.lineContext, source);
+  if (!context) {
+    return undefined;
+  }
+
+  const match = findLongestBoundBindingMatch(context.bindings, site.pathSegments);
+  if (!match) {
+    return undefined;
+  }
+
+  if (site.segmentIndex < match.binding.bindingPath.length) {
+    const target = match.binding.prefixTargets[site.segmentIndex];
+    return target ? [createResolvedTargetLink(site.range, target)] : undefined;
+  }
+
+  const target = await findAddressablePathTarget({
+    declaration: match.binding.declaration,
+    pathSegments: site.pathSegments.slice(
+      match.binding.bindingPath.length,
+      site.segmentIndex + 1,
+    ),
+    source: match.binding.source,
+  });
+  if (!target) {
+    return undefined;
+  }
+
+  return [createResolvedTargetLink(site.range, target)];
+}
+
+function findLongestBoundBindingMatch(bindings, pathSegments) {
+  let bestMatch;
+  for (const binding of bindings.values()) {
+    if (!pathStartsWith(pathSegments, binding.bindingPath)) {
+      continue;
+    }
+    if (
+      !bestMatch
+      || binding.bindingPath.length > bestMatch.binding.bindingPath.length
+    ) {
+      bestMatch = { binding };
+    }
+  }
+  return bestMatch;
+}
+
+async function resolveBoundLawSiteContext(lineContext, source) {
+  if (!lineContext?.declaration) {
+    return undefined;
+  }
+
+  const agentTarget = await resolveConcreteAgentOwner(lineContext.declaration, source);
+  if (!agentTarget) {
+    return undefined;
+  }
+
+  const agentSource = getIndexedDocumentState(agentTarget.document);
+  const inputBindings = await getResolvedAgentBindings(
+    agentSource,
+    agentTarget.declaration,
+    "inputs",
+  );
+  const outputBindings = await getResolvedAgentBindings(
+    agentSource,
+    agentTarget.declaration,
+    "outputs",
+  );
+  const bindings = new Map();
+  const ambiguous = new Set();
+
+  for (const bindingMap of [inputBindings, outputBindings]) {
+    for (const [key, binding] of bindingMap.entries()) {
+      const existing = bindings.get(key);
+      if (!existing) {
+        bindings.set(key, binding);
+        continue;
+      }
+      if (
+        !sameDeclarationIdentity(
+          existing.source,
+          existing.declaration,
+          binding.source,
+          binding.declaration,
+        )
+      ) {
+        ambiguous.add(key);
+      }
+    }
+  }
+
+  for (const key of ambiguous) {
+    bindings.delete(key);
+  }
+
+  return bindings.size ? { bindings } : undefined;
+}
+
+async function resolveConcreteAgentOwner(declaration, source) {
+  if (declaration.kind === DECLARATION_KIND.AGENT && !declaration.abstract) {
+    return { declaration, document: source.document };
+  }
+
+  if (declaration.kind === DECLARATION_KIND.WORKFLOW) {
+    return findUniqueConcreteAgentUsingWorkflow(source, declaration);
+  }
+
+  if (declaration.kind === DECLARATION_KIND.REVIEW) {
+    return findUniqueConcreteAgentUsingReview(source, declaration);
+  }
+
+  if (declaration.kind === DECLARATION_KIND.OUTPUT) {
+    return findUniqueConcreteAgentEmittingOutput(source, declaration);
+  }
+
+  return undefined;
+}
+
+function getConcreteAgents(source) {
+  return [...(source.index.byKind.get(DECLARATION_KIND.AGENT)?.values() || [])].filter(
+    (declaration) => !declaration.abstract,
+  );
+}
+
+async function findUniqueConcreteAgentUsingWorkflow(source, workflowDeclaration) {
+  const matches = [];
+  for (const agentDeclaration of getConcreteAgents(source)) {
+    const target = await resolveDeclaredWorkflowForAgent(source, agentDeclaration);
+    if (
+      target
+      && sameDeclarationIdentity(
+        getIndexedDocumentState(target.document),
+        target.declaration,
+        source,
+        workflowDeclaration,
+      )
+    ) {
+      matches.push(targetAgentReference(source, agentDeclaration));
+    }
+  }
+
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+async function findUniqueConcreteAgentUsingReview(source, reviewDeclaration) {
+  const matches = [];
+  for (const agentDeclaration of getConcreteAgents(source)) {
+    const target = await resolveDeclaredReviewForAgent(source, agentDeclaration);
+    if (
+      target
+      && sameDeclarationIdentity(
+        getIndexedDocumentState(target.document),
+        target.declaration,
+        source,
+        reviewDeclaration,
+      )
+    ) {
+      matches.push(targetAgentReference(source, agentDeclaration));
+    }
+  }
+
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+async function findUniqueConcreteAgentEmittingOutput(source, outputDeclaration) {
+  const matches = [];
+  for (const agentDeclaration of getConcreteAgents(source)) {
+    const bindings = await getResolvedAgentBindings(source, agentDeclaration, "outputs");
+    const usesOutput = [...bindings.values()].some((binding) =>
+      sameDeclarationIdentity(binding.source, binding.declaration, source, outputDeclaration),
+    );
+    if (usesOutput) {
+      matches.push(targetAgentReference(source, agentDeclaration));
+    }
+  }
+
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function targetAgentReference(source, declaration) {
+  return { declaration, document: source.document };
+}
+
+async function resolveDeclaredWorkflowForAgent(source, declaration, seen = new Set()) {
+  const cacheKey = `${source.document.uri.toString()}#${declaration.name}#workflow`;
+  if (seen.has(cacheKey)) {
+    return undefined;
+  }
+  seen.add(cacheKey);
+
+  const field = findAgentReservedField(source.document, declaration, "workflow");
+  if (field?.type === "ref") {
+    return resolveReferenceTarget(field.ref, source, DECLARATION_KIND.WORKFLOW, false);
+  }
+
+  if (!field && declaration.parentRef) {
+    const parent = await resolveReferenceTarget(
+      declaration.parentRef,
+      source,
+      DECLARATION_KIND.AGENT,
+      false,
+    );
+    if (!parent) {
+      return undefined;
+    }
+    return resolveDeclaredWorkflowForAgent(
+      getIndexedDocumentState(parent.document),
+      parent.declaration,
+      seen,
+    );
+  }
+
+  return undefined;
+}
+
+async function resolveDeclaredReviewForAgent(source, declaration, seen = new Set()) {
+  const cacheKey = `${source.document.uri.toString()}#${declaration.name}#review`;
+  if (seen.has(cacheKey)) {
+    return undefined;
+  }
+  seen.add(cacheKey);
+
+  const field = findAgentReservedField(source.document, declaration, "review");
+  if (field?.type === "ref") {
+    return resolveReferenceTarget(field.ref, source, DECLARATION_KIND.REVIEW, false);
+  }
+
+  if (!field && declaration.parentRef) {
+    const parent = await resolveReferenceTarget(
+      declaration.parentRef,
+      source,
+      DECLARATION_KIND.AGENT,
+      false,
+    );
+    if (!parent) {
+      return undefined;
+    }
+    return resolveDeclaredReviewForAgent(
+      getIndexedDocumentState(parent.document),
+      parent.declaration,
+      seen,
+    );
+  }
+
+  return undefined;
+}
+
+function findAgentReservedField(document, declaration, fieldKey) {
+  const bodySpec = getDeclarationBodySpec(declaration);
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return undefined;
+  }
+
+  for (
+    let lineNumber = declaration.lineNumber + 1;
+    lineNumber <= declaration.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    if (fieldKey === "workflow") {
+      const refMatch = lineText.match(
+        new RegExp(`^\\s*workflow\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`),
+      );
+      if (refMatch) {
+        return { ref: parseNameRef(refMatch[1]), type: "ref" };
+      }
+      if (new RegExp(`^\\s*workflow\\s*:\\s*${STRING_PATTERN}\\s*$`).test(lineText)) {
+        return { type: "inline" };
+      }
+      continue;
+    }
+
+    if (fieldKey === "review") {
+      const refMatch = lineText.match(
+        new RegExp(`^\\s*review\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`),
+      );
+      if (refMatch) {
+        return { ref: parseNameRef(refMatch[1]), type: "ref" };
+      }
+      continue;
+    }
+
+    const directRef = lineText.match(
+      new RegExp(`^\\s*(${fieldKey})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`),
+    );
+    if (directRef) {
+      return { ref: parseNameRef(directRef[2]), type: "ref" };
+    }
+
+    if (
+      new RegExp(`^\\s*${fieldKey}\\s*:\\s*${STRING_PATTERN}\\s*$`).test(lineText)
+    ) {
+      return {
+        bodySpec: {
+          type: "record_body",
+          fieldKind: fieldKey,
+          indent: leadingSpaces(lineText),
+          lineNumber,
+          endLine: findBodyEndLine(document, lineNumber, declaration.endLine),
+        },
+        type: "inline",
+      };
+    }
+
+    const patchMatch = lineText.match(PATCH_FIELD_RE);
+    if (patchMatch && patchMatch[1] === fieldKey) {
+      return {
+        bodySpec: {
+          type: "io_body",
+          fieldKind: fieldKey,
+          indent: leadingSpaces(lineText),
+          lineNumber,
+          endLine: findBodyEndLine(document, lineNumber, declaration.endLine),
+          owner: "patch",
+          parentRef: parseNameRef(patchMatch[2]),
+        },
+        type: "patch",
+      };
+    }
+  }
+
+  return undefined;
+}
+
+async function getResolvedAgentBindings(source, declaration, fieldKind, seen = new Set()) {
+  const cacheKey = `${source.document.uri.toString()}#${declaration.name}#${fieldKind}`;
+  if (AGENT_BINDING_CACHE.has(cacheKey)) {
+    return AGENT_BINDING_CACHE.get(cacheKey);
+  }
+  if (seen.has(cacheKey)) {
+    return new Map();
+  }
+  seen.add(cacheKey);
+
+  const root = await resolveConcreteAgentIoRoot(source, declaration, fieldKind, seen);
+  if (!root) {
+    const emptyBindings = new Map();
+    AGENT_BINDING_CACHE.set(cacheKey, emptyBindings);
+    return emptyBindings;
+  }
+
+  const parentBindings = await resolveParentBindings(root, fieldKind, seen);
+  const bindings = await resolveBindingsFromBody({
+    bodySpec: root.bodySpec,
+    declaration: root.declaration,
+    fieldKind,
+    parentBindings,
+    pathPrefix: [],
+    prefixTargets: [],
+    source: root.source,
+  });
+  AGENT_BINDING_CACHE.set(cacheKey, bindings);
+  return bindings;
+}
+
+async function resolveConcreteAgentIoRoot(source, declaration, fieldKind, seen) {
+  const field = findAgentReservedField(source.document, declaration, fieldKind);
+  if (field?.type === "ref") {
+    const declarationKind =
+      fieldKind === "inputs"
+        ? DECLARATION_KIND.INPUTS_BLOCK
+        : DECLARATION_KIND.OUTPUTS_BLOCK;
+    const target = await resolveReferenceTarget(field.ref, source, declarationKind, false);
+    if (!target) {
+      return undefined;
+    }
+    return {
+      bodySpec: getDeclarationBodySpec(target.declaration),
+      declaration: target.declaration,
+      source: getIndexedDocumentState(target.document),
+    };
+  }
+
+  if (field?.bodySpec) {
+    return {
+      bodySpec: field.bodySpec,
+      declaration,
+      source,
+    };
+  }
+
+  if (declaration.parentRef) {
+    const parent = await resolveReferenceTarget(
+      declaration.parentRef,
+      source,
+      DECLARATION_KIND.AGENT,
+      false,
+    );
+    if (!parent) {
+      return undefined;
+    }
+    return resolveConcreteAgentIoRoot(
+      getIndexedDocumentState(parent.document),
+      parent.declaration,
+      fieldKind,
+      seen,
+    );
+  }
+
+  return undefined;
+}
+
+async function resolveParentBindings(root, fieldKind, seen) {
+  let parentRef;
+  if (root.bodySpec.owner === "patch") {
+    parentRef = root.bodySpec.parentRef;
+  } else if (
+    (root.declaration.kind === DECLARATION_KIND.INPUTS_BLOCK
+      || root.declaration.kind === DECLARATION_KIND.OUTPUTS_BLOCK)
+    && root.declaration.parentRef
+  ) {
+    parentRef = root.declaration.parentRef;
+  }
+
+  if (!parentRef) {
+    return new Map();
+  }
+
+  const declarationKind =
+    fieldKind === "inputs"
+      ? DECLARATION_KIND.INPUTS_BLOCK
+      : DECLARATION_KIND.OUTPUTS_BLOCK;
+  const parent = await resolveReferenceTarget(parentRef, root.source, declarationKind, false);
+  if (!parent) {
+    return new Map();
+  }
+
+  return resolveBindingsFromBlockDeclaration(
+    getIndexedDocumentState(parent.document),
+    parent.declaration,
+    fieldKind,
+    seen,
+  );
+}
+
+async function resolveBindingsFromBlockDeclaration(source, declaration, fieldKind, seen) {
+  const parentBindings = declaration.parentRef
+    ? await resolveParentBindings(
+      {
+        bodySpec: getDeclarationBodySpec(declaration),
+        declaration,
+        source,
+      },
+      fieldKind,
+      seen,
+    )
+    : new Map();
+
+  return resolveBindingsFromBody({
+    bodySpec: getDeclarationBodySpec(declaration),
+    declaration,
+    fieldKind,
+    parentBindings,
+    pathPrefix: [],
+    prefixTargets: [],
+    source,
+  });
+}
+
+async function resolveBindingsFromBody({
+  bodySpec,
+  declaration,
+  fieldKind,
+  parentBindings,
+  pathPrefix,
+  prefixTargets,
+  source,
+}) {
+  const bindings = new Map();
+  const entries = scanBindingBodyEntries(source.document, bodySpec, fieldKind);
+
+  for (const entry of entries) {
+    if (entry.type === "inherit") {
+      const inheritedPrefix = [...pathPrefix, entry.key];
+      removeBindingSubtree(bindings, inheritedPrefix);
+      copyBindingSubtree(parentBindings, inheritedPrefix, bindings);
+      continue;
+    }
+
+    if (entry.type !== "section" || !entry.bodySpec) {
+      continue;
+    }
+
+    const sectionPrefix = [...pathPrefix, entry.key];
+    const sectionTargets = [
+      ...prefixTargets,
+      {
+        document: source.document,
+        lineNumber: entry.lineNumber,
+        selectionRange: entry.keyRange,
+      },
+    ];
+
+    removeBindingSubtree(bindings, sectionPrefix);
+
+    const childEntries = scanBindingBodyEntries(
+      source.document,
+      entry.bodySpec,
+      fieldKind,
+    );
+    if (childEntries.length === 1 && childEntries[0].type === "ref") {
+      const resolved = await resolveBoundLeafDeclaration(
+        childEntries[0].ref,
+        source,
+        fieldKind,
+      );
+      if (resolved) {
+        bindings.set(bindingPathKey(sectionPrefix), {
+          bindingPath: sectionPrefix,
+          declaration: resolved.declaration,
+          prefixTargets: sectionTargets,
+          source: resolved.source,
+        });
+      }
+      continue;
+    }
+
+    const childBindings = await resolveBindingsFromBody({
+      bodySpec: entry.bodySpec,
+      declaration,
+      fieldKind,
+      parentBindings,
+      pathPrefix: sectionPrefix,
+      prefixTargets: sectionTargets,
+      source,
+    });
+    for (const [key, binding] of childBindings.entries()) {
+      bindings.set(key, binding);
+    }
+  }
+
+  return bindings;
+}
+
+function scanBindingBodyEntries(document, bodySpec, fieldKind) {
+  const entries = [];
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return entries;
+  }
+
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      entries.push({
+        type: "inherit",
+        key: inheritItem[1],
+      });
+      continue;
+    }
+
+    const overrideBody = lineText.match(OVERRIDE_BODY_RE);
+    if (overrideBody && !OVERRIDE_REF_RE.test(lineText)) {
+      entries.push({
+        type: "section",
+        bodySpec: createBindingChildBodySpec(
+          document,
+          bodySpec,
+          lineNumber,
+          lineText,
+          fieldKind,
+        ),
+        key: overrideBody[1],
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideBody[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const sectionLine = lineText.match(
+      new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`),
+    );
+    if (sectionLine) {
+      entries.push({
+        type: "section",
+        bodySpec: createBindingChildBodySpec(
+          document,
+          bodySpec,
+          lineNumber,
+          lineText,
+          fieldKind,
+        ),
+        key: sectionLine[1],
+        keyRange: createFirstMatchRange(lineText, lineNumber, sectionLine[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const standaloneRef = lineText.match(STANDALONE_REF_RE);
+    if (standaloneRef) {
+      entries.push({
+        ref: parseNameRef(standaloneRef[1]),
+        type: "ref",
+      });
+    }
+  }
+
+  return entries;
+}
+
+function createBindingChildBodySpec(document, bodySpec, lineNumber, lineText, fieldKind) {
+  const rawBody =
+    bodySpec.type === "io_body"
+      ? getIoChildBodySpec(lineText, lineNumber, fieldKind)
+      : getRecordChildBodySpec(lineText, lineNumber, fieldKind);
+  if (!rawBody) {
+    return undefined;
+  }
+
+  return {
+    ...rawBody,
+    endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+  };
+}
+
+async function resolveBoundLeafDeclaration(ref, source, fieldKind) {
+  if (!ref) {
+    return undefined;
+  }
+
+  const declarationKind =
+    fieldKind === "inputs" ? DECLARATION_KIND.INPUT : DECLARATION_KIND.OUTPUT;
+  const target = await resolveReferenceTarget(ref, source, declarationKind, false);
+  if (!target) {
+    return undefined;
+  }
+
+  return {
+    declaration: target.declaration,
+    source: getIndexedDocumentState(target.document),
+  };
 }
 
 async function resolveReviewSemanticContext(lineContext, source) {
@@ -3674,6 +4438,52 @@ function collectShippedLawRefSites(lineText, lineNumber) {
       range: createRangeFromStart(lineNumber, tokenStart, split.rootText.length),
       ref,
     });
+  }
+
+  return sites;
+}
+
+function createBoundLawPathSites({ lineNumber, pathText, startCharacter }) {
+  const pathSegments = pathText.split(".");
+  const sites = [];
+  let cursor = startCharacter;
+  for (let index = 0; index < pathSegments.length; index += 1) {
+    const segment = pathSegments[index];
+    sites.push({
+      type: "boundLawPathRef",
+      pathSegments,
+      range: createRangeFromStart(lineNumber, cursor, segment.length),
+      segmentIndex: index,
+      lineContext: undefined,
+    });
+    cursor += segment.length + 1;
+  }
+  return sites;
+}
+
+function collectBoundLawPathSites(lineText, lineNumber) {
+  const maskedLine = maskQuotedText(lineText);
+  const sites = [];
+
+  for (const match of maskedLine.matchAll(DOTTED_TOKEN_RE)) {
+    const rawToken = match[0];
+    const tokenStart = match.index ?? -1;
+    if (tokenStart < 0) {
+      continue;
+    }
+
+    const rootSegment = rawToken.split(".")[0];
+    if (/^[A-Z]/.test(rootSegment) || NON_BINDING_LAW_TOKENS.has(rootSegment)) {
+      continue;
+    }
+
+    sites.push(
+      ...createBoundLawPathSites({
+        lineNumber,
+        pathText: rawToken,
+        startCharacter: tokenStart,
+      }),
+    );
   }
 
   return sites;

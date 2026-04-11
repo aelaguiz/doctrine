@@ -144,11 +144,14 @@ class ResolvedSkillsBody:
 class ResolvedIoSection:
     key: str
     section: CompiledSection
+    artifacts: tuple["ContractArtifact", ...] = ()
+    bindings: tuple["ContractBinding", ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
 class ResolvedIoRef:
     section: CompiledSection
+    artifact: "ContractArtifact"
 
 
 ResolvedIoItem = ResolvedIoSection | ResolvedIoRef
@@ -159,6 +162,8 @@ class ResolvedIoBody:
     title: str
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedIoItem, ...]
+    artifacts: tuple["ContractArtifact", ...] = ()
+    bindings: tuple["ContractBinding", ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -179,9 +184,48 @@ class ResolvedWorkflowBody:
 
 
 @dataclass(slots=True, frozen=True)
+class ContractArtifact:
+    kind: str
+    unit: IndexedUnit
+    decl: model.InputDecl | model.OutputDecl
+
+
+@dataclass(slots=True, frozen=True)
+class ContractBinding:
+    binding_path: tuple[str, ...]
+    artifact: ContractArtifact
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedContractBucket:
+    body: tuple[CompiledBodyItem, ...]
+    artifacts: tuple[ContractArtifact, ...]
+    bindings: tuple[ContractBinding, ...]
+    direct_artifacts: tuple[ContractArtifact, ...] = ()
+    has_keyed_children: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class ContractSectionSummary:
+    key: str
+    artifacts: tuple[ContractArtifact, ...]
+    bindings: tuple[ContractBinding, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class ContractBodySummary:
+    keyed_items: tuple[ContractSectionSummary, ...]
+    unkeyed_artifacts: tuple[ContractArtifact, ...]
+    artifacts: tuple[ContractArtifact, ...]
+    bindings: tuple[ContractBinding, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class AgentContract:
     inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]]
+    input_bindings_by_path: dict[tuple[str, ...], ContractBinding]
     outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]]
+    output_bindings_by_path: dict[tuple[str, ...], ContractBinding]
 
 
 @dataclass(slots=True, frozen=True)
@@ -317,6 +361,15 @@ OutputDeclKey = tuple[tuple[str, ...], str]
 
 @dataclass(slots=True, frozen=True)
 class ResolvedLawPath:
+    unit: IndexedUnit
+    decl: model.InputDecl | model.OutputDecl | model.EnumDecl
+    remainder: tuple[str, ...]
+    wildcard: bool = False
+    binding_path: tuple[str, ...] | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CanonicalLawPath:
     unit: IndexedUnit
     decl: model.InputDecl | model.OutputDecl | model.EnumDecl
     remainder: tuple[str, ...]
@@ -805,161 +858,531 @@ class CompilationContext:
 
     def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
         inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]] = {}
+        input_bindings_by_path: dict[tuple[str, ...], ContractBinding] = {}
         outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]] = {}
+        output_bindings_by_path: dict[tuple[str, ...], ContractBinding] = {}
 
         for field in agent.fields:
             if isinstance(field, model.InputsField):
-                self._collect_input_decls_from_io_value(field.value, unit=unit, sink=inputs)
+                summary = self._summarize_contract_field(
+                    field,
+                    unit=unit,
+                    field_kind="inputs",
+                    owner_label=f"agent {agent.name}",
+                )
+                self._merge_contract_summary(
+                    summary,
+                    decls_sink=inputs,
+                    bindings_sink=input_bindings_by_path,
+                )
             elif isinstance(field, model.OutputsField):
-                self._collect_output_decls_from_io_value(field.value, unit=unit, sink=outputs)
+                summary = self._summarize_contract_field(
+                    field,
+                    unit=unit,
+                    field_kind="outputs",
+                    owner_label=f"agent {agent.name}",
+                )
+                self._merge_contract_summary(
+                    summary,
+                    decls_sink=outputs,
+                    bindings_sink=output_bindings_by_path,
+                )
 
-        return AgentContract(inputs=inputs, outputs=outputs)
+        return AgentContract(
+            inputs=inputs,
+            input_bindings_by_path=input_bindings_by_path,
+            outputs=outputs,
+            output_bindings_by_path=output_bindings_by_path,
+        )
 
-    def _collect_input_decls_from_io_value(
+    def _summarize_contract_field(
         self,
-        value: model.IoFieldValue,
+        field: model.InputsField | model.OutputsField,
         *,
         unit: IndexedUnit,
-        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]],
-    ) -> None:
-        if isinstance(value, tuple):
-            self._collect_input_decls_from_record_items(value, unit=unit, sink=sink)
-            return
-        if isinstance(value, model.IoBody):
-            self._collect_input_decls_from_io_items(value.items, unit=unit, sink=sink)
-            return
-        if self._ref_exists_in_registry(
-            value,
-            unit=unit,
-            registry_name="outputs_blocks_by_name",
-        ):
-            raise CompileError(
-                "Inputs fields must resolve to inputs blocks, not outputs blocks: "
-                f"{_dotted_ref_name(value)}"
+        field_kind: str,
+        owner_label: str,
+    ) -> ContractBodySummary:
+        if field.parent_ref is not None:
+            return self._summarize_contract_field_patch(
+                field,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=owner_label,
             )
-        target_unit, decl = self._resolve_inputs_block_ref(value, unit=unit)
-        self._collect_input_decls_from_io_items(decl.body.items, unit=target_unit, sink=sink)
+        if isinstance(field.value, tuple):
+            inline_owner_label = (
+                f"{field_kind} field `{field.title}`" if field.title is not None else owner_label
+            )
+            return self._summarize_non_inherited_contract_items(
+                field.value,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=inline_owner_label,
+            )
+        if isinstance(field.value, model.IoBody):
+            inline_owner_label = (
+                f"{field_kind} field `{field.title}`" if field.title is not None else owner_label
+            )
+            return self._summarize_contract_io_body(
+                field.value,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=inline_owner_label,
+            )
+        if isinstance(field.value, model.NameRef):
+            return self._summarize_contract_field_ref(
+                field.value,
+                unit=unit,
+                field_kind=field_kind,
+            )
+        raise CompileError(
+            f"Internal compiler error: unsupported {field_kind} field value in {owner_label}: "
+            f"{type(field.value).__name__}"
+        )
 
-    def _collect_output_decls_from_io_value(
+    def _merge_contract_summary(
         self,
-        value: model.IoFieldValue,
+        body: ContractBodySummary,
+        *,
+        decls_sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl | model.OutputDecl]],
+        bindings_sink: dict[tuple[str, ...], ContractBinding],
+    ) -> None:
+        for artifact in body.artifacts:
+            decls_sink[(artifact.unit.module_parts, artifact.decl.name)] = (
+                artifact.unit,
+                artifact.decl,
+            )
+        for binding in body.bindings:
+            existing = bindings_sink.get(binding.binding_path)
+            if existing is None:
+                bindings_sink[binding.binding_path] = binding
+                continue
+            if (
+                existing.artifact.kind != binding.artifact.kind
+                or existing.artifact.unit.module_parts != binding.artifact.unit.module_parts
+                or existing.artifact.decl.name != binding.artifact.decl.name
+            ):
+                raise CompileError(
+                    "Conflicting concrete-turn binding roots resolve different artifacts: "
+                    f"{'.'.join(binding.binding_path)}"
+                )
+
+    def _summarize_contract_field_ref(
+        self,
+        ref: model.NameRef,
         *,
         unit: IndexedUnit,
-        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]],
-    ) -> None:
-        if isinstance(value, tuple):
-            self._collect_output_decls_from_record_items(value, unit=unit, sink=sink)
-            return
-        if isinstance(value, model.IoBody):
-            self._collect_output_decls_from_io_items(value.items, unit=unit, sink=sink)
-            return
+        field_kind: str,
+    ) -> ContractBodySummary:
+        if field_kind == "inputs":
+            if self._ref_exists_in_registry(
+                ref,
+                unit=unit,
+                registry_name="outputs_blocks_by_name",
+            ):
+                raise CompileError(
+                    "Inputs fields must resolve to inputs blocks, not outputs blocks: "
+                    f"{_dotted_ref_name(ref)}"
+                )
+            target_unit, inputs_decl = self._resolve_inputs_block_ref(ref, unit=unit)
+            return self._summarize_contract_io_body(
+                inputs_decl.body,
+                unit=target_unit,
+                field_kind=field_kind,
+                owner_label=_dotted_decl_name(target_unit.module_parts, inputs_decl.name),
+                parent_ref=inputs_decl.parent_ref,
+            )
+
         if self._ref_exists_in_registry(
-            value,
+            ref,
             unit=unit,
             registry_name="inputs_blocks_by_name",
         ):
             raise CompileError(
                 "Outputs fields must resolve to outputs blocks, not inputs blocks: "
-                f"{_dotted_ref_name(value)}"
+                f"{_dotted_ref_name(ref)}"
             )
-        target_unit, decl = self._resolve_outputs_block_ref(value, unit=unit)
-        self._collect_output_decls_from_io_items(decl.body.items, unit=target_unit, sink=sink)
+        target_unit, outputs_decl = self._resolve_outputs_block_ref(ref, unit=unit)
+        return self._summarize_contract_io_body(
+            outputs_decl.body,
+            unit=target_unit,
+            field_kind=field_kind,
+            owner_label=_dotted_decl_name(target_unit.module_parts, outputs_decl.name),
+            parent_ref=outputs_decl.parent_ref,
+        )
 
-    def _collect_input_decls_from_io_items(
+    def _summarize_contract_field_patch(
         self,
-        items: tuple[model.IoItem, ...],
+        field: model.InputsField | model.OutputsField,
         *,
         unit: IndexedUnit,
-        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]],
-    ) -> None:
-        for item in items:
-            if isinstance(item, model.RecordSection):
-                self._collect_input_decls_from_record_items(item.items, unit=unit, sink=sink)
-            elif isinstance(item, model.RecordRef):
-                if self._ref_exists_in_registry(
-                    item.ref,
-                    unit=unit,
-                    registry_name="outputs_by_name",
-                ):
-                    raise CompileError(
-                        "Inputs refs must resolve to input declarations, not output declarations: "
-                        f"{_dotted_ref_name(item.ref)}"
-                    )
-                target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
-                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
-            elif isinstance(item, model.OverrideIoSection):
-                self._collect_input_decls_from_record_items(item.items, unit=unit, sink=sink)
+        field_kind: str,
+        owner_label: str,
+    ) -> ContractBodySummary:
+        parent_ref = field.parent_ref
+        if parent_ref is None:
+            raise CompileError(
+                f"Internal compiler error: {field_kind} patch field is missing parent ref in {owner_label}"
+            )
+        if not isinstance(field.value, model.IoBody):
+            raise CompileError(
+                f"Internal compiler error: {field_kind} patch field is missing body in {owner_label}"
+            )
 
-    def _collect_output_decls_from_io_items(
+        if field_kind == "inputs":
+            if self._ref_exists_in_registry(
+                parent_ref,
+                unit=unit,
+                registry_name="outputs_blocks_by_name",
+            ):
+                raise CompileError(
+                    "Inputs patch fields must inherit from inputs blocks, not outputs blocks: "
+                    f"{_dotted_ref_name(parent_ref)}"
+                )
+        else:
+            if self._ref_exists_in_registry(
+                parent_ref,
+                unit=unit,
+                registry_name="inputs_blocks_by_name",
+            ):
+                raise CompileError(
+                    "Outputs patch fields must inherit from outputs blocks, not inputs blocks: "
+                    f"{_dotted_ref_name(parent_ref)}"
+                )
+        return self._summarize_contract_io_body(
+            field.value,
+            unit=unit,
+            field_kind=field_kind,
+            owner_label=owner_label,
+            parent_ref=parent_ref,
+        )
+
+    def _summarize_contract_io_body(
         self,
-        items: tuple[model.IoItem, ...],
+        io_body: model.IoBody,
         *,
         unit: IndexedUnit,
-        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]],
-    ) -> None:
-        for item in items:
-            if isinstance(item, model.RecordSection):
-                self._collect_output_decls_from_record_items(item.items, unit=unit, sink=sink)
-            elif isinstance(item, model.RecordRef):
-                if self._ref_exists_in_registry(
-                    item.ref,
-                    unit=unit,
-                    registry_name="inputs_by_name",
-                ):
-                    raise CompileError(
-                        "Outputs refs must resolve to output declarations, not input declarations: "
-                        f"{_dotted_ref_name(item.ref)}"
-                    )
-                target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
-                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
-            elif isinstance(item, model.OverrideIoSection):
-                self._collect_output_decls_from_record_items(item.items, unit=unit, sink=sink)
+        field_kind: str,
+        owner_label: str,
+        parent_ref: model.NameRef | None = None,
+    ) -> ContractBodySummary:
+        if parent_ref is None:
+            return self._summarize_non_inherited_contract_items(
+                io_body.items,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=owner_label,
+            )
 
-    def _collect_input_decls_from_record_items(
+        parent_summary: ContractBodySummary
+        parent_label: str
+        if field_kind == "inputs":
+            parent_unit, parent_decl = self._resolve_inputs_block_ref(parent_ref, unit=unit)
+            parent_summary = self._summarize_contract_io_body(
+                parent_decl.body,
+                unit=parent_unit,
+                field_kind=field_kind,
+                owner_label=_dotted_decl_name(parent_unit.module_parts, parent_decl.name),
+                parent_ref=parent_decl.parent_ref,
+            )
+            parent_label = f"inputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+        else:
+            parent_unit, parent_decl = self._resolve_outputs_block_ref(parent_ref, unit=unit)
+            parent_summary = self._summarize_contract_io_body(
+                parent_decl.body,
+                unit=parent_unit,
+                field_kind=field_kind,
+                owner_label=_dotted_decl_name(parent_unit.module_parts, parent_decl.name),
+                parent_ref=parent_decl.parent_ref,
+            )
+            parent_label = f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+
+        if parent_summary.unkeyed_artifacts:
+            details = ", ".join(
+                self._display_readable_decl(artifact.decl)
+                for artifact in parent_summary.unkeyed_artifacts
+            )
+            raise CompileError(
+                f"Cannot inherit {field_kind} block with unkeyed top-level refs in {parent_label}: {details}"
+            )
+
+        parent_items_by_key = {item.key: item for item in parent_summary.keyed_items}
+        resolved_items: list[ContractSectionSummary] = []
+        unkeyed_artifacts: list[ContractArtifact] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in io_body.items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                continue
+            if isinstance(item, model.RecordRef):
+                unkeyed_artifacts.append(
+                    self._resolve_contract_artifact_ref(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
+            key = item.key
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            if isinstance(item, model.RecordSection):
+                resolved_items.append(
+                    self._summarize_contract_section(
+                        key=key,
+                        items=item.items,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=f"{field_kind} section `{item.title}`",
+                        binding_path=(key,),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.RecordScalar):
+                raise CompileError(
+                    f"Scalar keyed items are not allowed in {owner_label}: {item.key}"
+                )
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined {field_kind} entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if parent_item is None:
+                raise CompileError(
+                    f"E001 Cannot override undefined {field_kind} entry in {parent_label}: {key}"
+                )
+
+            accounted_keys.add(key)
+            if not isinstance(item, model.OverrideIoSection):
+                raise CompileError(
+                    f"Internal compiler error: unsupported {field_kind} override in {owner_label}: {type(item).__name__}"
+                )
+            resolved_items.append(
+                self._summarize_contract_section(
+                    key=key,
+                    items=item.items,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=(
+                        f"{field_kind} section `{item.title if item.title is not None else key}`"
+                    ),
+                    binding_path=(key,),
+                )
+            )
+
+        missing_keys = [
+            item.key for item in parent_summary.keyed_items if item.key not in accounted_keys
+        ]
+        if missing_keys:
+            missing = ", ".join(missing_keys)
+            raise CompileError(
+                f"E003 Missing inherited {field_kind} entry in {owner_label}: {missing}"
+            )
+
+        artifacts = [*unkeyed_artifacts]
+        bindings: list[ContractBinding] = []
+        for item in resolved_items:
+            artifacts.extend(item.artifacts)
+            bindings.extend(item.bindings)
+        return ContractBodySummary(
+            keyed_items=tuple(resolved_items),
+            unkeyed_artifacts=tuple(unkeyed_artifacts),
+            artifacts=tuple(artifacts),
+            bindings=tuple(bindings),
+        )
+
+    def _summarize_non_inherited_contract_items(
         self,
+        io_items: tuple[model.IoItem, ...] | tuple[model.RecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+    ) -> ContractBodySummary:
+        resolved_items: list[ContractSectionSummary] = []
+        unkeyed_artifacts: list[ContractArtifact] = []
+        seen_keys: set[str] = set()
+
+        for item in io_items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                continue
+            if isinstance(item, model.RecordRef):
+                unkeyed_artifacts.append(
+                    self._resolve_contract_artifact_ref(
+                        item,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
+            key = item.key
+            if key in seen_keys:
+                raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
+            seen_keys.add(key)
+
+            if isinstance(item, model.RecordSection):
+                resolved_items.append(
+                    self._summarize_contract_section(
+                        key=key,
+                        items=item.items,
+                        unit=unit,
+                        field_kind=field_kind,
+                        owner_label=f"{field_kind} section `{item.title}`",
+                        binding_path=(key,),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.RecordScalar):
+                raise CompileError(
+                    f"Scalar keyed items are not allowed in {owner_label}: {item.key}"
+                )
+
+            item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
+            raise CompileError(
+                f"{item_label} requires an inherited {field_kind} block in {owner_label}: {key}"
+            )
+
+        artifacts = [*unkeyed_artifacts]
+        bindings: list[ContractBinding] = []
+        for item in resolved_items:
+            artifacts.extend(item.artifacts)
+            bindings.extend(item.bindings)
+        return ContractBodySummary(
+            keyed_items=tuple(resolved_items),
+            unkeyed_artifacts=tuple(unkeyed_artifacts),
+            artifacts=tuple(artifacts),
+            bindings=tuple(bindings),
+        )
+
+    def _summarize_contract_section(
+        self,
+        *,
+        key: str,
         items: tuple[model.RecordItem, ...],
-        *,
         unit: IndexedUnit,
-        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]],
-    ) -> None:
-        for item in items:
-            if isinstance(item, model.RecordSection):
-                self._collect_input_decls_from_record_items(item.items, unit=unit, sink=sink)
-            elif isinstance(item, model.RecordRef):
-                if self._ref_exists_in_registry(
-                    item.ref,
-                    unit=unit,
-                    registry_name="outputs_by_name",
-                ):
-                    raise CompileError(
-                        "Inputs refs must resolve to input declarations, not output declarations: "
-                        f"{_dotted_ref_name(item.ref)}"
-                    )
-                target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
-                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
+        field_kind: str,
+        owner_label: str,
+        binding_path: tuple[str, ...],
+    ) -> ContractSectionSummary:
+        artifacts: list[ContractArtifact] = []
+        bindings: list[ContractBinding] = []
+        direct_artifacts: list[ContractArtifact] = []
+        has_keyed_children = False
 
-    def _collect_output_decls_from_record_items(
+        for item in items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                continue
+            if isinstance(item, model.RecordSection):
+                has_keyed_children = True
+                child = self._summarize_contract_section(
+                    key=item.key,
+                    items=item.items,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=f"{field_kind} section `{item.title}`",
+                    binding_path=(*binding_path, item.key),
+                )
+                artifacts.extend(child.artifacts)
+                bindings.extend(child.bindings)
+                continue
+            if isinstance(item, model.RecordRef):
+                artifact = self._resolve_contract_artifact_ref(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=owner_label,
+                )
+                artifacts.append(artifact)
+                direct_artifacts.append(artifact)
+                continue
+            if isinstance(item, model.RecordScalar):
+                raise CompileError(
+                    f"Scalar keyed items are not allowed in {owner_label}: {item.key}"
+                )
+            raise CompileError(
+                f"Unsupported {field_kind} bucket item in {owner_label}: {type(item).__name__}"
+            )
+
+        if not has_keyed_children and len(direct_artifacts) == 1:
+            bindings.append(
+                ContractBinding(
+                    binding_path=binding_path,
+                    artifact=direct_artifacts[0],
+                )
+            )
+        return ContractSectionSummary(
+            key=key,
+            artifacts=tuple(artifacts),
+            bindings=tuple(bindings),
+        )
+
+    def _resolve_contract_artifact_ref(
         self,
-        items: tuple[model.RecordItem, ...],
+        item: model.RecordRef,
         *,
         unit: IndexedUnit,
-        sink: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]],
-    ) -> None:
+        field_kind: str,
+        owner_label: str,
+    ) -> ContractArtifact:
+        if item.body is not None:
+            raise CompileError(
+                f"Declaration refs cannot define inline bodies in {owner_label}: "
+                f"{_dotted_ref_name(item.ref)}"
+            )
+        if field_kind == "inputs":
+            if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
+                raise CompileError(
+                    "Inputs refs must resolve to input declarations, not output declarations: "
+                    f"{_dotted_ref_name(item.ref)}"
+                )
+            target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
+            return ContractArtifact(kind="input", unit=target_unit, decl=decl)
+
+        if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="inputs_by_name"):
+            raise CompileError(
+                "Outputs refs must resolve to output declarations, not input declarations: "
+                f"{_dotted_ref_name(item.ref)}"
+            )
+        target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+        return ContractArtifact(kind="output", unit=target_unit, decl=decl)
+
+    def _resolved_io_body_artifacts(
+        self,
+        items: tuple[ResolvedIoItem, ...],
+    ) -> tuple[ContractArtifact, ...]:
+        artifacts: list[ContractArtifact] = []
         for item in items:
-            if isinstance(item, model.RecordSection):
-                self._collect_output_decls_from_record_items(item.items, unit=unit, sink=sink)
-            elif isinstance(item, model.RecordRef):
-                if self._ref_exists_in_registry(
-                    item.ref,
-                    unit=unit,
-                    registry_name="inputs_by_name",
-                ):
-                    raise CompileError(
-                        "Outputs refs must resolve to output declarations, not input declarations: "
-                        f"{_dotted_ref_name(item.ref)}"
-                    )
-                target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
-                sink[(target_unit.module_parts, decl.name)] = (target_unit, decl)
+            if isinstance(item, ResolvedIoSection):
+                artifacts.extend(item.artifacts)
+            else:
+                artifacts.append(item.artifact)
+        return tuple(artifacts)
+
+    def _resolved_io_body_bindings(
+        self,
+        items: tuple[ResolvedIoItem, ...],
+    ) -> tuple[ContractBinding, ...]:
+        bindings: list[ContractBinding] = []
+        for item in items:
+            if isinstance(item, ResolvedIoSection):
+                bindings.extend(item.bindings)
+        return tuple(bindings)
 
     def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
         if len(agent.fields) != 2:
@@ -1370,7 +1793,30 @@ class CompilationContext:
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> tuple[CompiledBodyItem, ...]:
+        return self._resolve_contract_bucket_items(
+            items,
+            unit=unit,
+            field_kind=field_kind,
+            owner_label=owner_label,
+            review_output_contexts=review_output_contexts,
+        ).body
+
+    def _resolve_contract_bucket_items(
+        self,
+        items: tuple[model.RecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        path_prefix: tuple[str, ...] = (),
+    ) -> ResolvedContractBucket:
         body: list[CompiledBodyItem] = []
+        artifacts: list[ContractArtifact] = []
+        bindings: list[ContractBinding] = []
+        direct_artifacts: list[ContractArtifact] = []
+        has_keyed_children = False
+
         for item in items:
             if isinstance(item, (str, model.EmphasizedLine)):
                 body.append(
@@ -1384,30 +1830,30 @@ class CompilationContext:
                 continue
 
             if isinstance(item, model.RecordSection):
-                body.append(
-                    CompiledSection(
-                        title=item.title,
-                        body=self._compile_contract_bucket_items(
-                            item.items,
-                            unit=unit,
-                            field_kind=field_kind,
-                            owner_label=f"{field_kind} section `{item.title}`",
-                            review_output_contexts=review_output_contexts,
-                        ),
-                    )
+                has_keyed_children = True
+                resolved_section = self._resolve_io_section_item(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    binding_path=(*path_prefix, item.key),
+                    review_output_contexts=review_output_contexts,
                 )
+                body.append(resolved_section.section)
+                artifacts.extend(resolved_section.artifacts)
+                bindings.extend(resolved_section.bindings)
                 continue
 
             if isinstance(item, model.RecordRef):
-                body.append(
-                    self._compile_contract_bucket_ref(
-                        item,
-                        unit=unit,
-                        field_kind=field_kind,
-                        owner_label=owner_label,
-                        review_output_contexts=review_output_contexts,
-                    )
+                compiled_section, artifact = self._resolve_contract_bucket_ref_entry(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=owner_label,
+                    review_output_contexts=review_output_contexts,
                 )
+                body.append(compiled_section)
+                artifacts.append(artifact)
+                direct_artifacts.append(artifact)
                 continue
 
             if isinstance(item, model.RecordScalar):
@@ -1419,7 +1865,13 @@ class CompilationContext:
                 f"Unsupported {field_kind} bucket item in {owner_label}: {type(item).__name__}"
             )
 
-        return tuple(body)
+        return ResolvedContractBucket(
+            body=tuple(body),
+            artifacts=tuple(artifacts),
+            bindings=tuple(bindings),
+            direct_artifacts=tuple(direct_artifacts),
+            has_keyed_children=has_keyed_children,
+        )
 
     def _compile_contract_bucket_ref(
         self,
@@ -1430,6 +1882,24 @@ class CompilationContext:
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> CompiledSection:
+        section, _artifact = self._resolve_contract_bucket_ref_entry(
+            item,
+            unit=unit,
+            field_kind=field_kind,
+            owner_label=owner_label,
+            review_output_contexts=review_output_contexts,
+        )
+        return section
+
+    def _resolve_contract_bucket_ref_entry(
+        self,
+        item: model.RecordRef,
+        *,
+        unit: IndexedUnit,
+        field_kind: str,
+        owner_label: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+    ) -> tuple[CompiledSection, ContractArtifact]:
         if item.body is not None:
             raise CompileError(
                 f"Declaration refs cannot define inline bodies in {owner_label}: "
@@ -1443,7 +1913,10 @@ class CompilationContext:
                     f"{_dotted_ref_name(item.ref)}"
                 )
             target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
-            return self._compile_input_decl(decl, unit=target_unit)
+            return (
+                self._compile_input_decl(decl, unit=target_unit),
+                ContractArtifact(kind="input", unit=target_unit, decl=decl),
+            )
 
         if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="inputs_by_name"):
             raise CompileError(
@@ -1455,11 +1928,14 @@ class CompilationContext:
             review_output_contexts,
             (target_unit.module_parts, decl.name),
         )
-        return self._compile_output_decl(
-            decl,
-            unit=target_unit,
-            allow_review_semantics=review_semantics is not None,
-            review_semantics=review_semantics,
+        return (
+            self._compile_output_decl(
+                decl,
+                unit=target_unit,
+                allow_review_semantics=review_semantics is not None,
+                review_semantics=review_semantics,
+            ),
+            ContractArtifact(kind="output", unit=target_unit, decl=decl),
         )
 
     def _compile_resolved_skills(self, skills_body: ResolvedSkillsBody) -> CompiledSection:
@@ -1799,6 +2275,7 @@ class CompilationContext:
                 owner_label=f"{owner_label}.{section.key}",
                 contract_spec=contract_spec,
                 section_titles=section_titles,
+                agent_contract=agent_contract,
             )
         if accept_gate_count != 1:
             raise CompileError(
@@ -2097,6 +2574,7 @@ class CompilationContext:
         owner_label: str,
         contract_spec: ReviewContractSpec,
         section_titles: dict[str, str],
+        agent_contract: AgentContract,
     ) -> None:
         for item in items:
             if isinstance(item, model.ReviewPreOutcomeWhenStmt):
@@ -2106,6 +2584,7 @@ class CompilationContext:
                     owner_label=owner_label,
                     contract_spec=contract_spec,
                     section_titles=section_titles,
+                    agent_contract=agent_contract,
                 )
                 continue
             if isinstance(item, model.ReviewPreOutcomeMatchStmt):
@@ -2121,6 +2600,7 @@ class CompilationContext:
                         owner_label=owner_label,
                         contract_spec=contract_spec,
                         section_titles=section_titles,
+                        agent_contract=agent_contract,
                     )
                 continue
             if isinstance(item, (model.ReviewBlockStmt, model.ReviewRejectStmt, model.ReviewAcceptStmt)):
@@ -2135,6 +2615,7 @@ class CompilationContext:
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=self._law_stmt_name(item),
                     allowed_kinds=("input", "output"),
@@ -2145,6 +2626,7 @@ class CompilationContext:
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=f"preserve {item.kind}",
                     allowed_kinds=allowed_kinds,
@@ -5765,16 +6247,19 @@ class CompilationContext:
             for line in io_body.preamble
         )
         if parent_io is None:
+            resolved_items = self._resolve_non_inherited_io_items(
+                io_body.items,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=owner_label,
+                review_output_contexts=review_output_contexts,
+            )
             return ResolvedIoBody(
                 title=io_body.title,
                 preamble=resolved_preamble,
-                items=self._resolve_non_inherited_io_items(
-                    io_body.items,
-                    unit=unit,
-                    field_kind=field_kind,
-                    owner_label=owner_label,
-                    review_output_contexts=review_output_contexts,
-                ),
+                items=resolved_items,
+                artifacts=self._resolved_io_body_artifacts(resolved_items),
+                bindings=self._resolved_io_body_bindings(resolved_items),
             )
 
         unkeyed_parent_titles = [
@@ -5816,6 +6301,7 @@ class CompilationContext:
                         item,
                         unit=unit,
                         field_kind=field_kind,
+                        binding_path=(item.key,),
                     )
                 )
                 continue
@@ -5840,21 +6326,33 @@ class CompilationContext:
                 raise CompileError(
                     f"Internal compiler error: unsupported {field_kind} override in {owner_label}: {type(item).__name__}"
                 )
+            resolved_bucket = self._resolve_contract_bucket_items(
+                item.items,
+                unit=unit,
+                field_kind=field_kind,
+                owner_label=(
+                    f"{field_kind} section `{item.title if item.title is not None else parent_item.section.title}`"
+                ),
+                review_output_contexts=review_output_contexts,
+                path_prefix=(key,),
+            )
+            bindings = list(resolved_bucket.bindings)
+            if not resolved_bucket.has_keyed_children and len(resolved_bucket.direct_artifacts) == 1:
+                bindings.append(
+                    ContractBinding(
+                        binding_path=(key,),
+                        artifact=resolved_bucket.direct_artifacts[0],
+                    )
+                )
             resolved_items.append(
                 ResolvedIoSection(
                     key=key,
                     section=CompiledSection(
                         title=item.title if item.title is not None else parent_item.section.title,
-                        body=self._compile_contract_bucket_items(
-                            item.items,
-                            unit=unit,
-                            field_kind=field_kind,
-                            owner_label=(
-                                f"{field_kind} section `{item.title if item.title is not None else parent_item.section.title}`"
-                            ),
-                            review_output_contexts=review_output_contexts,
-                        ),
+                        body=resolved_bucket.body,
                     ),
+                    artifacts=resolved_bucket.artifacts,
+                    bindings=tuple(bindings),
                 )
             )
 
@@ -5871,6 +6369,8 @@ class CompilationContext:
             title=io_body.title,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
+            artifacts=self._resolved_io_body_artifacts(tuple(resolved_items)),
+            bindings=self._resolved_io_body_bindings(tuple(resolved_items)),
         )
 
     def _resolve_skills_body(
@@ -6738,6 +7238,7 @@ class CompilationContext:
                         item,
                         unit=unit,
                         field_kind=field_kind,
+                        binding_path=(item.key,),
                         review_output_contexts=review_output_contexts,
                     )
                 )
@@ -6756,20 +7257,33 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         field_kind: str,
+        binding_path: tuple[str, ...],
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoSection:
+        resolved_bucket = self._resolve_contract_bucket_items(
+            item.items,
+            unit=unit,
+            field_kind=field_kind,
+            owner_label=f"{field_kind} section `{item.title}`",
+            review_output_contexts=review_output_contexts,
+            path_prefix=binding_path,
+        )
+        bindings = list(resolved_bucket.bindings)
+        if not resolved_bucket.has_keyed_children and len(resolved_bucket.direct_artifacts) == 1:
+            bindings.append(
+                ContractBinding(
+                    binding_path=binding_path,
+                    artifact=resolved_bucket.direct_artifacts[0],
+                )
+            )
         return ResolvedIoSection(
             key=item.key,
             section=CompiledSection(
                 title=item.title,
-                body=self._compile_contract_bucket_items(
-                    item.items,
-                    unit=unit,
-                    field_kind=field_kind,
-                    owner_label=f"{field_kind} section `{item.title}`",
-                    review_output_contexts=review_output_contexts,
-                ),
+                body=resolved_bucket.body,
             ),
+            artifacts=resolved_bucket.artifacts,
+            bindings=tuple(bindings),
         )
 
     def _resolve_io_ref_item(
@@ -6781,14 +7295,16 @@ class CompilationContext:
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
     ) -> ResolvedIoRef:
+        section, artifact = self._resolve_contract_bucket_ref_entry(
+            item,
+            unit=unit,
+            field_kind=field_kind,
+            owner_label=owner_label,
+            review_output_contexts=review_output_contexts,
+        )
         return ResolvedIoRef(
-            section=self._compile_contract_bucket_ref(
-                item,
-                unit=unit,
-                field_kind=field_kind,
-                owner_label=owner_label,
-                review_output_contexts=review_output_contexts,
-            )
+            section=section,
+            artifact=artifact,
         )
 
     def _resolve_skills_section_body_items(
@@ -7806,6 +8322,7 @@ class CompilationContext:
                     self._render_match_stmt(
                         item,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
                     )
@@ -7815,6 +8332,7 @@ class CompilationContext:
                     self._render_when_stmt(
                         item,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
                     )
@@ -7824,6 +8342,7 @@ class CompilationContext:
                     self._render_law_stmt_lines(
                         item,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         bullet=False,
                     )
@@ -7860,6 +8379,7 @@ class CompilationContext:
         stmt: model.MatchStmt,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
         owner_label: str,
         mode_bindings: dict[str, model.ModeStmt],
     ) -> list[str]:
@@ -7875,6 +8395,7 @@ class CompilationContext:
                     return self._render_law_stmt_block(
                         case.items,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         bullet=False,
                     )
@@ -7897,6 +8418,7 @@ class CompilationContext:
                 self._render_law_stmt_block(
                     case.items,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     bullet=True,
                 )
@@ -7908,6 +8430,7 @@ class CompilationContext:
         stmt: model.WhenStmt,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
         owner_label: str,
         mode_bindings: dict[str, model.ModeStmt],
     ) -> list[str]:
@@ -7916,6 +8439,7 @@ class CompilationContext:
             self._render_law_stmt_block(
                 stmt.items,
                 unit=unit,
+                agent_contract=agent_contract,
                 owner_label=owner_label,
                 bullet=True,
                 mode_bindings=mode_bindings,
@@ -7928,6 +8452,7 @@ class CompilationContext:
         items: tuple[model.LawStmt, ...],
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
         owner_label: str,
         bullet: bool,
         mode_bindings: dict[str, model.ModeStmt] | None = None,
@@ -7941,6 +8466,7 @@ class CompilationContext:
                 rendered = self._render_match_stmt(
                     item,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=mode_bindings,
                 )
@@ -7948,6 +8474,7 @@ class CompilationContext:
                 rendered = self._render_when_stmt(
                     item,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=mode_bindings,
                 )
@@ -7955,6 +8482,7 @@ class CompilationContext:
                 rendered = self._render_law_stmt_lines(
                     item,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     bullet=bullet,
                 )
@@ -7976,11 +8504,12 @@ class CompilationContext:
         stmt: model.LawStmt,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
         owner_label: str,
         bullet: bool,
     ) -> list[str]:
         if isinstance(stmt, model.CurrentArtifactStmt):
-            text = f"Current artifact: {self._display_law_path_root(stmt.target, unit=unit)}."
+            text = f"Current artifact: {self._display_law_path_root(stmt.target, unit=unit, agent_contract=agent_contract)}."
         elif isinstance(stmt, model.CurrentNoneStmt):
             text = "There is no current artifact for this turn."
         elif isinstance(stmt, model.MustStmt):
@@ -7991,14 +8520,14 @@ class CompilationContext:
             text = f"Preserve {stmt.kind} {self._render_path_set(stmt.target)}."
         elif isinstance(stmt, model.SupportOnlyStmt):
             text = (
-                f"{self._render_path_set_subject(stmt.target, unit=unit)} is comparison-only support."
+                f"{self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} is comparison-only support."
             )
         elif isinstance(stmt, model.IgnoreStmt):
-            text = self._render_ignore_stmt(stmt, unit=unit)
+            text = self._render_ignore_stmt(stmt, unit=unit, agent_contract=agent_contract)
         elif isinstance(stmt, model.ForbidStmt):
             text = f"Do not modify {self._render_path_set(stmt.target)}."
         elif isinstance(stmt, model.InvalidateStmt):
-            text = f"{self._display_law_path_root(stmt.target, unit=unit)} is no longer current."
+            text = f"{self._display_law_path_root(stmt.target, unit=unit, agent_contract=agent_contract)} is no longer current."
         elif isinstance(stmt, model.StopStmt):
             message = stmt.message or ""
             if message and not message.endswith("."):
@@ -8034,7 +8563,13 @@ class CompilationContext:
             return f"Must {self._render_expr(stmt.expr.left, unit=unit)} == {self._render_expr(stmt.expr.right, unit=unit)}."
         return f"Must {self._render_expr(stmt.expr, unit=unit)}."
 
-    def _render_ignore_stmt(self, stmt: model.IgnoreStmt, *, unit: IndexedUnit) -> str:
+    def _render_ignore_stmt(
+        self,
+        stmt: model.IgnoreStmt,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
+    ) -> str:
         target = self._render_path_set(stmt.target)
         if stmt.bases == ("rewrite_evidence",):
             prefix = "Ignore"
@@ -8042,7 +8577,7 @@ class CompilationContext:
                 prefix = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, ignore"
             return f"{prefix} {target} for rewrite evidence."
         if stmt.bases == ("truth",) or not stmt.bases:
-            return f"{self._render_path_set_subject(stmt.target, unit=unit)} does not count as truth for this pass."
+            return f"{self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} does not count as truth for this pass."
         return f"Ignore {target} for {', '.join(stmt.bases)}."
 
     def _render_path_set_subject(
@@ -8050,12 +8585,13 @@ class CompilationContext:
         target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
     ) -> str:
         target = self._coerce_path_set(target)
         if len(target.paths) == 1 and not target.except_paths:
             path = target.paths[0]
             if not path.wildcard:
-                return self._display_law_path_root(path, unit=unit)
+                return self._display_law_path_root(path, unit=unit, agent_contract=agent_contract)
         return self._render_path_set(target)
 
     def _render_path_set(
@@ -8242,6 +8778,7 @@ class CompilationContext:
         self._validate_law_stmt_tree(
             items,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
         )
         branches = self._collect_law_leaf_branches(items, unit=unit)
@@ -8284,11 +8821,19 @@ class CompilationContext:
                     self._validate_owned_scope(
                         own,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         current_target=current,
                     )
                 for invalidate in branch.invalidations:
-                    if self._law_paths_match(current.target, invalidate.target):
+                    if self._law_paths_match(
+                        current.target,
+                        invalidate.target,
+                        unit=unit,
+                        agent_contract=agent_contract,
+                        owner_label=owner_label,
+                        statement_label="workflow law",
+                    ):
                         raise CompileError(
                             f"The current artifact cannot be invalidated in the same active branch in {owner_label}"
                         )
@@ -8304,6 +8849,10 @@ class CompilationContext:
                     if "comparison" in ignore.bases and self._path_sets_overlap(
                         support.target,
                         ignore.target,
+                        unit=unit,
+                        agent_contract=agent_contract,
+                        owner_label=owner_label,
+                        statement_label="workflow law",
                     ):
                         raise CompileError(
                             f"support_only and ignore for comparison contradict in {owner_label}"
@@ -8313,6 +8862,10 @@ class CompilationContext:
                     if ("truth" in ignore.bases or not ignore.bases) and self._path_set_contains_path(
                         ignore.target,
                         current.target,
+                        unit=unit,
+                        agent_contract=agent_contract,
+                        owner_label=owner_label,
+                        statement_label="workflow law",
                     ):
                         raise CompileError(
                             f"The current artifact cannot be ignored for truth in {owner_label}"
@@ -8320,13 +8873,27 @@ class CompilationContext:
             for own in branch.owns:
                 own_target = self._coerce_path_set(own.target)
                 for forbid in branch.forbids:
-                    if self._path_sets_overlap(own_target, forbid.target):
+                    if self._path_sets_overlap(
+                        own_target,
+                        forbid.target,
+                        unit=unit,
+                        agent_contract=agent_contract,
+                        owner_label=owner_label,
+                        statement_label="workflow law",
+                    ):
                         raise CompileError(
                             f"Owned and forbidden scope overlap in {owner_label}"
                         )
                 for preserve in branch.preserves:
                     if preserve.kind == "exact" and any(
-                        self._path_set_contains_path(preserve.target, path)
+                        self._path_set_contains_path(
+                            preserve.target,
+                            path,
+                            unit=unit,
+                            agent_contract=agent_contract,
+                            owner_label=owner_label,
+                            statement_label="workflow law",
+                        )
                         for path in own_target.paths
                     ):
                         raise CompileError(
@@ -8474,6 +9041,7 @@ class CompilationContext:
         items: tuple[model.LawStmt, ...],
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract,
         owner_label: str,
         mode_bindings: dict[str, model.ModeStmt] | None = None,
     ) -> None:
@@ -8494,6 +9062,7 @@ class CompilationContext:
                     self._validate_law_stmt_tree(
                         case.items,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         mode_bindings=local_mode_bindings,
                     )
@@ -8502,6 +9071,7 @@ class CompilationContext:
                 self._validate_law_stmt_tree(
                     item.items,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=local_mode_bindings,
                 )
@@ -8510,6 +9080,7 @@ class CompilationContext:
                 self._validate_law_path_root(
                     item.target,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="current artifact",
                     allowed_kinds=("input", "output"),
@@ -8519,6 +9090,7 @@ class CompilationContext:
                 self._validate_law_path_root(
                     item.target,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="invalidate",
                     allowed_kinds=("input", "output"),
@@ -8528,6 +9100,7 @@ class CompilationContext:
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=self._law_stmt_name(item),
                     allowed_kinds=("input", "output"),
@@ -8538,6 +9111,7 @@ class CompilationContext:
                     self._validate_path_set_roots(
                         item.target,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label="preserve vocabulary",
                         allowed_kinds=("enum",),
@@ -8546,6 +9120,7 @@ class CompilationContext:
                     self._validate_path_set_roots(
                         item.target,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label=f"preserve {item.kind}",
                         allowed_kinds=("input", "output"),
@@ -8772,6 +9347,7 @@ class CompilationContext:
         target = self._validate_law_path_root(
             stmt.target,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="current artifact",
             allowed_kinds=("input", "output"),
@@ -8809,6 +9385,7 @@ class CompilationContext:
         target = self._validate_law_path_root(
             stmt.target,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="invalidate",
             allowed_kinds=("input", "output"),
@@ -8838,6 +9415,7 @@ class CompilationContext:
         resolved = self._validate_law_path_root(
             carrier,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label=f"{statement_label} carrier",
             allowed_kinds=("output",),
@@ -8877,6 +9455,7 @@ class CompilationContext:
         stmt: model.OwnOnlyStmt,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract,
         owner_label: str,
         current_target: model.CurrentArtifactStmt,
     ) -> None:
@@ -8884,6 +9463,7 @@ class CompilationContext:
         current_root = self._validate_law_path_root(
             current_target.target,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="current artifact",
             allowed_kinds=("input", "output"),
@@ -8892,6 +9472,7 @@ class CompilationContext:
             resolved = self._validate_law_path_root(
                 path,
                 unit=unit,
+                agent_contract=agent_contract,
                 owner_label=owner_label,
                 statement_label="own only",
                 allowed_kinds=("input", "output"),
@@ -8910,6 +9491,7 @@ class CompilationContext:
         target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None,
         owner_label: str,
         statement_label: str,
         allowed_kinds: tuple[str, ...],
@@ -8919,6 +9501,7 @@ class CompilationContext:
             self._validate_law_path_root(
                 path,
                 unit=unit,
+                agent_contract=agent_contract,
                 owner_label=owner_label,
                 statement_label=statement_label,
                 allowed_kinds=allowed_kinds,
@@ -8929,6 +9512,7 @@ class CompilationContext:
         path: model.LawPath,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None,
         owner_label: str,
         statement_label: str,
         allowed_kinds: tuple[str, ...],
@@ -8936,6 +9520,7 @@ class CompilationContext:
         resolved = self._resolve_law_path(
             path,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label=statement_label,
             allowed_kinds=allowed_kinds,
@@ -8952,11 +9537,20 @@ class CompilationContext:
         path: model.LawPath,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None,
         owner_label: str,
         statement_label: str,
         allowed_kinds: tuple[str, ...],
     ) -> ResolvedLawPath:
         matches: list[ResolvedLawPath] = []
+        if agent_contract is not None:
+            matches.extend(
+                self._resolve_bound_law_matches(
+                    path,
+                    agent_contract=agent_contract,
+                    allowed_kinds=allowed_kinds,
+                )
+            )
         for split_index in range(1, len(path.parts) + 1):
             ref = model.NameRef(
                 module_parts=path.parts[: split_index - 1],
@@ -9004,12 +9598,7 @@ class CompilationContext:
         unique_matches: list[ResolvedLawPath] = []
         seen: set[tuple[tuple[str, ...], str, tuple[str, ...], str]] = set()
         for match in matches:
-            key = (
-                match.unit.module_parts,
-                match.decl.name,
-                match.remainder,
-                type(match.decl).__name__,
-            )
+            key = self._law_path_match_key(match)
             if key in seen:
                 continue
             seen.add(key)
@@ -9027,11 +9616,83 @@ class CompilationContext:
                 f"{'.'.join(path.parts)} matches {choices}"
             )
 
-        allowed_text = " or ".join(allowed_kinds)
+        allowed_text = self._law_path_allowed_text(
+            allowed_kinds,
+            agent_contract=agent_contract,
+        )
         raise CompileError(
-            f"{statement_label} target must resolve to a declared {allowed_text} in {owner_label}: "
+            f"{statement_label} target must resolve to a {allowed_text} in {owner_label}: "
             f"{'.'.join(path.parts)}"
         )
+
+    def _resolve_bound_law_matches(
+        self,
+        path: model.LawPath,
+        *,
+        agent_contract: AgentContract,
+        allowed_kinds: tuple[str, ...],
+    ) -> tuple[ResolvedLawPath, ...]:
+        for split_index in range(len(path.parts), 0, -1):
+            prefix = path.parts[:split_index]
+            candidates: list[ContractBinding] = []
+            if "input" in allowed_kinds:
+                binding = agent_contract.input_bindings_by_path.get(prefix)
+                if binding is not None:
+                    candidates.append(binding)
+            if "output" in allowed_kinds:
+                binding = agent_contract.output_bindings_by_path.get(prefix)
+                if binding is not None:
+                    candidates.append(binding)
+            if not candidates:
+                continue
+            return tuple(
+                ResolvedLawPath(
+                    unit=binding.artifact.unit,
+                    decl=binding.artifact.decl,
+                    remainder=path.parts[len(binding.binding_path) :],
+                    wildcard=path.wildcard,
+                    binding_path=binding.binding_path,
+                )
+                for binding in candidates
+            )
+        return ()
+
+    def _law_path_match_key(
+        self,
+        match: ResolvedLawPath,
+    ) -> tuple[tuple[str, ...], str, tuple[str, ...], str]:
+        return (
+            match.unit.module_parts,
+            match.decl.name,
+            match.remainder,
+            type(match.decl).__name__,
+        )
+
+    def _law_path_allowed_text(
+        self,
+        allowed_kinds: tuple[str, ...],
+        *,
+        agent_contract: AgentContract | None,
+    ) -> str:
+        labels: list[str] = []
+        for kind in allowed_kinds:
+            if kind == "input":
+                labels.append(
+                    "declared or bound concrete-turn input"
+                    if agent_contract is not None
+                    else "declared input"
+                )
+                continue
+            if kind == "output":
+                labels.append(
+                    "declared or bound concrete-turn output"
+                    if agent_contract is not None
+                    else "declared output"
+                )
+                continue
+            if kind == "enum":
+                labels.append("declared enum")
+        return " or ".join(labels)
 
     def _resolve_output_field_node(
         self,
@@ -9055,27 +9716,158 @@ class CompilationContext:
             current_node = children[segment]
         return current_node
 
-    def _law_paths_match(self, left: model.LawPath, right: model.LawPath) -> bool:
-        return self._law_path_contains_path(left, right) or self._law_path_contains_path(right, left)
+    def _law_paths_match(
+        self,
+        left: model.LawPath,
+        right: model.LawPath,
+        *,
+        unit: IndexedUnit | None = None,
+        agent_contract: AgentContract | None = None,
+        owner_label: str = "workflow law",
+        statement_label: str = "law path",
+        allowed_kinds: tuple[str, ...] = ("input", "output"),
+    ) -> bool:
+        return self._law_path_contains_path(
+            left,
+            right,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_kinds=allowed_kinds,
+        ) or self._law_path_contains_path(
+            right,
+            left,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_kinds=allowed_kinds,
+        )
 
-    def _law_path_contains_path(self, container: model.LawPath, path: model.LawPath) -> bool:
-        if len(container.parts) > len(path.parts):
+    def _law_path_contains_path(
+        self,
+        container: model.LawPath,
+        path: model.LawPath,
+        *,
+        unit: IndexedUnit | None = None,
+        agent_contract: AgentContract | None = None,
+        owner_label: str = "workflow law",
+        statement_label: str = "law path",
+        allowed_kinds: tuple[str, ...] = ("input", "output"),
+    ) -> bool:
+        if unit is None or agent_contract is None:
+            if len(container.parts) > len(path.parts):
+                return False
+            if path.parts[: len(container.parts)] != container.parts:
+                return False
+            if len(container.parts) == len(path.parts):
+                return container.wildcard or not path.wildcard or container.wildcard == path.wildcard
+            return container.wildcard
+
+        canonical_container = self._canonicalize_law_path(
+            container,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_kinds=allowed_kinds,
+        )
+        canonical_path = self._canonicalize_law_path(
+            path,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_kinds=allowed_kinds,
+        )
+        return self._canonical_law_path_contains_path(canonical_container, canonical_path)
+
+    def _canonicalize_law_path(
+        self,
+        path: model.LawPath,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+        statement_label: str,
+        allowed_kinds: tuple[str, ...],
+    ) -> CanonicalLawPath:
+        resolved = self._validate_law_path_root(
+            path,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_kinds=allowed_kinds,
+        )
+        return CanonicalLawPath(
+            unit=resolved.unit,
+            decl=resolved.decl,
+            remainder=resolved.remainder,
+            wildcard=resolved.wildcard,
+        )
+
+    def _canonical_law_path_contains_path(
+        self,
+        container: CanonicalLawPath,
+        path: CanonicalLawPath,
+    ) -> bool:
+        if (
+            container.unit.module_parts != path.unit.module_parts
+            or container.decl.name != path.decl.name
+            or type(container.decl) is not type(path.decl)
+        ):
             return False
-        if path.parts[: len(container.parts)] != container.parts:
+        if len(container.remainder) > len(path.remainder):
             return False
-        if len(container.parts) == len(path.parts):
-            return container.wildcard or not path.wildcard or container.wildcard == path.wildcard
+        if path.remainder[: len(container.remainder)] != container.remainder:
+            return False
+        if len(container.remainder) == len(path.remainder):
+            return (
+                container.wildcard
+                or not path.wildcard
+                or container.wildcard == path.wildcard
+            )
         return container.wildcard
 
     def _path_set_contains_path(
         self,
         target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
         path: model.LawPath,
+        *,
+        unit: IndexedUnit | None = None,
+        agent_contract: AgentContract | None = None,
+        owner_label: str = "workflow law",
+        statement_label: str = "law path",
+        allowed_kinds: tuple[str, ...] = ("input", "output"),
     ) -> bool:
         target = self._coerce_path_set(target)
-        if not any(self._law_path_contains_path(base, path) for base in target.paths):
+        if not any(
+            self._law_path_contains_path(
+                base,
+                path,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+                statement_label=statement_label,
+                allowed_kinds=allowed_kinds,
+            )
+            for base in target.paths
+        ):
             return False
-        if any(self._law_path_contains_path(excluded, path) for excluded in target.except_paths):
+        if any(
+            self._law_path_contains_path(
+                excluded,
+                path,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+                statement_label=statement_label,
+                allowed_kinds=allowed_kinds,
+            )
+            for excluded in target.except_paths
+        ):
             return False
         return True
 
@@ -9083,14 +9875,36 @@ class CompilationContext:
         self,
         left: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
         right: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+        *,
+        unit: IndexedUnit | None = None,
+        agent_contract: AgentContract | None = None,
+        owner_label: str = "workflow law",
+        statement_label: str = "law path",
+        allowed_kinds: tuple[str, ...] = ("input", "output"),
     ) -> bool:
         left = self._coerce_path_set(left)
         right = self._coerce_path_set(right)
         for path in left.paths:
-            if self._path_set_contains_path(right, path):
+            if self._path_set_contains_path(
+                right,
+                path,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+                statement_label=statement_label,
+                allowed_kinds=allowed_kinds,
+            ):
                 return True
         for path in right.paths:
-            if self._path_set_contains_path(left, path):
+            if self._path_set_contains_path(
+                left,
+                path,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+                statement_label=statement_label,
+                allowed_kinds=allowed_kinds,
+            ):
                 return True
         return False
 
@@ -9099,11 +9913,13 @@ class CompilationContext:
         path: model.LawPath,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
     ) -> str:
         try:
             resolved = self._resolve_law_path(
                 path,
                 unit=unit,
+                agent_contract=agent_contract,
                 owner_label="workflow law",
                 statement_label="law path",
                 allowed_kinds=("input", "output", "enum"),

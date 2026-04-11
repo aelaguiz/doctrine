@@ -31,7 +31,8 @@ anchored in `doctrine/`, the manifest-backed examples, and this docs index.
 Historical proposal, planning, and worklog material lives under
 [archive/](archive/README.md) and is not part of the live docs path. The
 shipped numbered corpus now runs through
-`examples/49_review_capstone`, including the workflow-law cutover, the staged
-route-only setup ladder, the guarded route-only handoff capstone, and the full
-first-class `review` ladder through blocked review, exact contract gates,
-current truth, carried mode and trigger state, inheritance, and the capstone.
+`examples/53_review_bound_carrier_roots`, including the workflow-law cutover,
+the staged route-only setup ladder, the bound-root currentness and scope
+ladder, the guarded route-only handoff capstone, and the first-class `review`
+ladder through blocked review, exact contract gates, current truth, carried
+mode and trigger state, inheritance, the capstone, and bound review carriers.

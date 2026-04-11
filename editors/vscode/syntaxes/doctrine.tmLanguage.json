@@ -94,6 +94,9 @@
       "include": "#trustSurfaceField"
     },
     {
+      "include": "#boundCurrentArtifactCarrier"
+    },
+    {
       "include": "#lawKeyword"
     },
     {
@@ -104,6 +107,9 @@
     },
     {
       "include": "#reviewSemanticRef"
+    },
+    {
+      "include": "#boundDottedReference"
     },
     {
       "include": "#abstractField"
@@ -792,6 +798,32 @@
         }
       }
     },
+    "boundCurrentArtifactCarrier": {
+      "match": "\\b(current)(\\s+)(artifact)(\\s+)([a-z_][A-Za-z0-9_]*)(\\s+)(via)(\\s+)([a-z_][A-Za-z0-9_]*)(\\.)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.control.doctrine"
+        },
+        "3": {
+          "name": "keyword.control.doctrine"
+        },
+        "5": {
+          "name": "support.type.reference.doctrine"
+        },
+        "7": {
+          "name": "keyword.control.doctrine"
+        },
+        "9": {
+          "name": "support.type.reference.doctrine"
+        },
+        "10": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "11": {
+          "name": "variable.other.member.doctrine"
+        }
+      }
+    },
     "lawKeyword": {
       "match": "\\b(accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|stop|structure|support_only|true|truth|via|vocabulary|when)\\b",
       "name": "keyword.control.doctrine"
@@ -844,6 +876,20 @@
       "captures": {
         "1": {
           "name": "keyword.other.field.doctrine"
+        },
+        "2": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "3": {
+          "name": "variable.other.member.doctrine"
+        }
+      }
+    },
+    "boundDottedReference": {
+      "match": "\\b(?!(?:accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|route|stop|structure|support_only|true|truth|unclear|via|vocabulary|when)\\b)([a-z_][A-Za-z0-9_]*)(\\.)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\b",
+      "captures": {
+        "1": {
+          "name": "support.type.reference.doctrine"
         },
         "2": {
           "name": "punctuation.separator.interpolation.doctrine"

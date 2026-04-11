@@ -9,6 +9,11 @@ outputs SharedOutputs: "Your Outputs"
 # <----- keyword.declaration.doctrine
 #       ^ entity.name.type.doctrine
 
+    coordination_handoff: "Coordination Handoff Binding"
+#   ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
+        CoordinationHandoff
+#       ^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine
+
 agent Reviewer:
     inputs: SharedInputs
 #   ^^^^^^ keyword.other.field.doctrine

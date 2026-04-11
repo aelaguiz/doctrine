@@ -57,6 +57,11 @@ review ReviewBodyDemo: "Review Body"
 #   ^^^^^^^^^ keyword.other.field.doctrine
 #            ^ punctuation.separator.key-value.doctrine
 
+        current artifact draft_spec via review_comment.current_artifact
+#                        ^^^^^^^^^^ support.type.reference.doctrine
+#                                       ^^^^^^^^^^^^^^ support.type.reference.doctrine
+#                                                      ^^^^^^^^^^^^^^^^ variable.other.member.doctrine
+
         accept "Ready" when contract.passes
 #       ^^^^^^ keyword.control.doctrine
 #                           ^^^^^^^^ keyword.other.field.doctrine
