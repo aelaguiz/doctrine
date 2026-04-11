@@ -1,38 +1,46 @@
-# Docs
+# Documentation
 
-Start here if you are new to the repo:
+Doctrine's live documentation is anchored in the shipped implementation under
+`doctrine/` and the manifest-backed example corpus through
+`examples/53_review_bound_carrier_roots`.
 
-- [WHY_DOCTRINE.md](WHY_DOCTRINE.md): what problem Doctrine solves and why the
-  runtime stays `AGENTS.md`
-- [WORKFLOW_LAW.md](WORKFLOW_LAW.md): canonical shipped reference for `law`,
-  `trust_surface`, guarded output sections, conditional routes, carriers,
-  currentness, invalidation, and law reuse
-- [REVIEW_SPEC.md](REVIEW_SPEC.md): canonical shipped reference for first-class
-  `review`, shared review contracts, exact failing gates, carried review
-  state, and review inheritance
-- [../examples/README.md](../examples/README.md): how to read the numbered
-  example corpus and its manifests
-- [../example_agents/README.md](../example_agents/README.md): external
-  instruction bank for harvesting real-world test cases and design pressure
+## Start Here
 
-Reference docs:
+- [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
+  runtime stays Markdown
+- [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
+  the shipped declaration model, composition rules, refs, interpolation, and
+  Markdown emission
+- [../examples/README.md](../examples/README.md): the teaching and verification
+  corpus, in order
 
-- [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): current language
-  decisions and design pressure
-- [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): shipped I/O model and
-  explicit non-goals
-- [COMPILER_ERRORS.md](COMPILER_ERRORS.md): canonical parse, compile, and emit
-  error catalog
+## Feature Guides
+
+- [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
+  bindings, `trust_surface`, guarded output sections, and portable truth
+- [WORKFLOW_LAW.md](WORKFLOW_LAW.md): workflow law, currentness, scope,
+  preservation, invalidation, and route-only turns
+- [REVIEW_SPEC.md](REVIEW_SPEC.md): first-class `review`, contracts, verdict
+  coupling, carried state, current truth, and inheritance
+
+## Reference
+
+- [COMPILER_ERRORS.md](COMPILER_ERRORS.md): stable parse, compile, and emit
+  error codes
+- [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
+  guardrails, and current non-goals
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-The live docs set is intentionally small. The shipped language truth stays
-anchored in `doctrine/`, the manifest-backed examples, and this docs index.
-Historical proposal, planning, and worklog material lives under
-[archive/](archive/README.md) and is not part of the live docs path. The
-shipped numbered corpus now runs through
-`examples/53_review_bound_carrier_roots`, including the workflow-law cutover,
-the staged route-only setup ladder, the bound-root currentness and scope
-ladder, the guarded route-only handoff capstone, and the first-class `review`
-ladder through blocked review, exact contract gates, current truth, carried
-mode and trigger state, inheritance, the capstone, and bound review carriers.
+## Repo Truth
+
+- Shipped language truth lives in `doctrine/`.
+- The example corpus is proof, not just illustration.
+- If docs and examples disagree, trust `doctrine/` and the manifest-backed
+  cases.
+
+## Not Part Of The Live Docs Path
+
+Dated proposals, plans, worklogs, and exploratory notes are intentionally
+excluded from this index. They are not part of Doctrine's evergreen open
+source documentation set.

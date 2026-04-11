@@ -75,7 +75,7 @@ arch_skill:planning_passes
 deep_dive_pass_1: done 2026-04-10
 external_research_grounding: done 2026-04-10
 deep_dive_pass_2: done 2026-04-10
-recommended_flow: phase plan -> implement
+recommended_flow: implement-loop
 note: This is a warn-first checklist only. It should not hard-block execution.
 -->
 <!-- arch_skill:block:planning_passes:end -->
@@ -344,7 +344,7 @@ Behavior-preservation evidence:
     `make verify-diagnostics`.
   - Current build-contract coverage is narrower than the full shipped
     workflow-law corpus: the emit path is actively proved for examples `07`,
-    `14`, and `36`, while the broader language corpus now runs through `42`.
+    `14`, and `36`, while the broader language corpus now runs through `53`.
 
 ## 3.3 Open questions from research
 
@@ -355,16 +355,15 @@ Behavior-preservation evidence:
     `CompilationContext`
   - the smallest honest preservation signal is target-backed `build_contract`
     proof, with `.flow.d2` as the hard-gated artifact
-- The remaining phase-planning questions are narrower:
-  - Should rendered `.flow.svg` ship in the same first pass as `.flow.d2`, or
-    immediately after the D2 dependency story is pinned?
-    Evidence needed:
-    a concrete dependency and determinism decision for SVG rendering.
-  - Which existing example should carry the first checked graph build proof:
-    reuse `36` for lowest migration cost, or add a newer route-focused target
-    if it expresses the v1 story more directly?
-    Evidence needed:
-    a phase-plan tradeoff between proof breadth and implementation churn.
+- The research-stage open questions have been closed by later passes:
+  - `.flow.d2` stays the owned v1 artifact. Same-command `.flow.svg` rendering
+    ships only if the D2 dependency can be pinned and invoked cleanly in the
+    public command; otherwise implementation must reopen the merge decision
+    instead of silently downgrading the feature.
+  - `example_36_invalidation_and_rebuild` is the first shipped proof target
+    because it already has target-backed build proof and exercises multi-agent
+    flow, routes, shared outputs, trust carriers, and invalidation.
+- No blocking research questions remain before `implement-loop`.
 <!-- arch_skill:block:research_grounding:end -->
 
 <!-- arch_skill:block:external_research:start -->
@@ -1365,3 +1364,36 @@ for `emit_flow`.
   implementation in `phase-plan`.
 - Reopen the proof-target choice only if implementation shows `36` hides a
   readability or graph-shape risk that a route-only example would catch better.
+
+## 2026-04-11 - Auto-plan hardened the artifact and handed off to implement-loop
+
+### Context
+
+The plan already contained research, external research, both deep-dive passes,
+and a full phase plan, but the artifact still carried stale research-era notes
+about corpus coverage, unresolved phase-planning questions, and a
+pre-phase-plan `recommended_flow`.
+
+### Options
+
+- Leave the stale planning notes in place and treat the artifact as "close
+  enough."
+- Refresh the artifact so the document itself names the current truth and the
+  next real command.
+
+### Decision
+
+Refresh the stale planning notes, keep the controller bounded to docs-only
+planning work, and treat the next move as `implement-loop`.
+
+### Consequences
+
+- The planning-pass block now points at the actual next workflow move.
+- Section 3 no longer contradicts the already-chosen proof target, SVG stop
+  line, or shipped corpus boundary.
+- The artifact is ready for bounded implementation follow-through rather than
+  another planning pass.
+
+### Follow-ups
+
+- Next command: `Use $arch-step implement-loop docs/DOCTRINE_AGENT_DATA_FLOW_VISUALIZATION_2026-04-10.md`.
