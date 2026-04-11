@@ -3,6 +3,9 @@
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
 `examples/53_review_bound_carrier_roots`.
+The shipped compiler stays fail-loud and deterministic while scaling to larger
+prompt graphs through shared compile sessions and safe default batch
+parallelism.
 
 ## Start Here
 
@@ -42,6 +45,8 @@ Doctrine's live documentation is anchored in the shipped implementation under
   cases.
 - The shared emit registry now drives both compiled Markdown trees and
   target-scoped workflow data-flow artifacts.
+- Emit and verification surfaces reuse shared compile sessions and preserve
+  authored ordering even when batch compilation fans out across threads.
 
 ## Not Part Of The Live Docs Path
 

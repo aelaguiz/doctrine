@@ -31,6 +31,7 @@ make
 - Treat `doctrine/` as the shipped source of truth for parser, compiler, and renderer behavior.
 - Treat `examples/` as design and verification inputs, not as proof of shipped behavior on their own.
 - Keep new examples disciplined: one new idea at a time, with the smallest example that proves it cleanly.
+- Preserve compiler scalability when you touch batch surfaces: avoid repeated parse or index work, prefer shared compile sessions, and keep authored output ordering deterministic when work fans out in parallel.
 - Prefer fail-loud behavior over silent fallback when you change grammar or compiler behavior.
 - Keep public docs and examples generic. Do not import private product names, internal skill slugs, or company-specific workflow terms from other repos.
 - Update docs and instructions when behavior changes.

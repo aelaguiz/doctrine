@@ -12,6 +12,10 @@ Use `emit_docs` when you need the compiled runtime prompt surface. Use
 `emit_flow` when you need a reviewable graph of how declared inputs, concrete
 agents, outputs, and route edges fit together for one entrypoint.
 
+Both emit commands reuse one compilation session per entrypoint. `emit_docs`
+also compiles concrete root agents with safe default thread fan-out, while
+still writing outputs in deterministic authored order.
+
 ## Prerequisites
 
 Sync Python dependencies first:
@@ -93,6 +97,8 @@ Useful CLI rules:
 - Repeat `--target` to emit multiple configured targets in one command.
 - If `--pyproject` is omitted, Doctrine walks upward from the current working
   directory until it finds `pyproject.toml`.
+- `emit_docs` reuses one indexed prompt graph per target instead of reparsing
+  the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad
   targets.
 

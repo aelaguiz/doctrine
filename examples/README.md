@@ -2,6 +2,9 @@
 
 The examples are both the language teaching surface and the verification
 corpus.
+They are also the main proof that Doctrine stays deterministic and tractable as
+prompt graphs grow, because the shipped verify and emit surfaces reuse shared
+compile sessions while keeping manifest and output ordering stable.
 
 Each numbered example may contain:
 
@@ -20,6 +23,8 @@ Each numbered example may contain:
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
 - Keep new examples narrow. One new idea per example is the design rule.
+- Batch verification and emit commands are expected to stay scalable on this
+  corpus without changing emitted language or manifest order.
 
 ## Learning Paths
 

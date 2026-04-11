@@ -16,6 +16,8 @@ When the source of truth is hand-maintained Markdown:
 - shared sections get copied into multiple agents and drift
 - a small policy change turns into a multi-file search-and-hope edit
 - humans lose track of which wording is canonical
+- large agent families keep paying the same load and index cost whenever you
+  need to regenerate runtime artifacts
 - coding agents make the problem worse by expanding or duplicating large files
   instead of making small structural edits
 
@@ -93,6 +95,9 @@ code:
 - typed `inputs`, `outputs`, and `skills` make turn contracts explicit
 - compile-time errors fail loud when a child forgets an inherited section or
   points at the wrong thing
+- shared compile sessions and safe parallel batch work keep large prompt
+  families practical instead of redoing the same serial compile setup for every
+  concrete agent
 - runtime Markdown stays clean because the structure lives in the source, not in
   emitted boilerplate
 
@@ -119,5 +124,7 @@ That split is deliberate:
 - keep the runtime artifact compatible with current coding-agent tools
 - make small, safe edits possible for coding agents that are bad at maintaining
   giant Markdown files
+- keep large prompt families practical by making compilation deterministic,
+  reusable, and fast enough for real repos
 - fail loud when the source is inconsistent instead of silently papering over
   drift
