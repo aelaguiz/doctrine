@@ -1,0 +1,11 @@
+import cyclic_siblings.alpha
+import cyclic_siblings.beta
+
+
+agent SiblingImportCycleDemo:
+    role: "You are the sibling import cycle demonstration agent."
+
+    workflow: "Imported Steps"
+        "This example should fail while resolving a sibling import cycle."
+
+        use alpha: cyclic_siblings.alpha.Alpha

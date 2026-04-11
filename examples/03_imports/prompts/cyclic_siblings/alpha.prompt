@@ -1,0 +1,5 @@
+import cyclic_siblings.beta
+
+
+workflow Alpha: "Alpha"
+    "This module is part of a sibling import cycle."

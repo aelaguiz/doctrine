@@ -23,6 +23,7 @@ class SmokeFailure(RuntimeError):
 
 def main() -> int:
     _check_transform_errors_surface_as_parse_errors()
+    _check_invalid_string_literals_surface_as_parse_errors()
     _check_compile_missing_role_has_specific_code()
     _check_analysis_field_renders()
     _check_reserved_analysis_slot_key_is_rejected()
@@ -68,6 +69,24 @@ agent Demo:
             _expect("override workflow" in rendered, rendered)
             return
         raise SmokeFailure("expected transformer-stage parse failure, but parsing succeeded")
+
+
+def _check_invalid_string_literals_surface_as_parse_errors() -> None:
+    source = """agent Demo:
+    role: "bad \\x"
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        try:
+            parse_file(prompt_path)
+        except Exception as exc:
+            _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E106", f"expected E106, got {getattr(exc, 'code', None)}")
+            rendered = str(exc)
+            _expect("Invalid string literal" in rendered, rendered)
+            _expect("truncated \\xXX escape" in rendered, rendered)
+            return
+        raise SmokeFailure("expected invalid string literal parse failure, but parsing succeeded")
 
 
 def _check_compile_missing_role_has_specific_code() -> None:

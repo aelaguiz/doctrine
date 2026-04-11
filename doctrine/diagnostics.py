@@ -276,6 +276,14 @@ class ParseError(DoctrineError):
             code = exc.orig_exc.code
             summary = exc.orig_exc.summary
             hints = exc.orig_exc.hints
+        elif getattr(exc, "rule", None) in {"ESCAPED_STRING", "MULTILINE_STRING"} and isinstance(
+            exc.orig_exc, (SyntaxError, ValueError)
+        ):
+            code = "E106"
+            summary = "Invalid string literal"
+            hints = (
+                "Fix the quoted string so its escapes and delimiters are valid.",
+            )
         return cls.from_parts(
             code=code,
             summary=summary,

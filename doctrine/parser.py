@@ -1589,7 +1589,7 @@ def parse_text(source: str, *, source_path: str | Path | None = None) -> model.P
     try:
         return ToAst().transform(tree)
     except VisitError as exc:
-        if isinstance(exc.orig_exc, ValueError):
+        if isinstance(exc.orig_exc, (SyntaxError, ValueError)):
             raise ParseError.from_transform(source=source, path=resolved_path, exc=exc) from exc
         raise
 

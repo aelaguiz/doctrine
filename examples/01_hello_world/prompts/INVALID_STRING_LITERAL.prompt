@@ -1,0 +1,2 @@
+agent BrokenString:
+    role: "bad \x"
