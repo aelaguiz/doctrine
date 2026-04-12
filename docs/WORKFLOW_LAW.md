@@ -9,7 +9,7 @@ Use it when a turn needs any of these behaviors:
 - one current artifact per active branch, or explicitly no current artifact
 - narrow write authority with preserved truth outside the owned scope
 - comparison-only support or rewrite-evidence exclusions
-- invalidation when upstream truth moves
+- invalidation when upstream truth moves, including declared schema groups
 - fail-loud stop lines and honest reroute
 
 For the full declaration overview, use
@@ -134,6 +134,11 @@ Examples `40` through `42` intentionally keep their route-only handoff comments
 outside `trust_surface`. They normalize comment readback for `current none`
 turns; they do not carry portable current truth.
 
+`route_only` is the dedicated declaration that lowers through this same
+`current none` and route validation path. It adds authored `facts:`,
+activation `when:`, `handoff_output:`, guarded top-level output keys, and
+explicit `routes:` without creating a second route engine.
+
 ## Scope, Preservation, And Evidence Roles
 
 Workflow law makes narrow edit authority explicit.
@@ -180,6 +185,11 @@ law:
 
 Use this pattern when upstream truth moved and a downstream artifact must stop
 counting as current.
+
+`invalidate` may target one concrete input or output root or a declared schema
+group such as `BuildSurfaceSchema.groups.downstream_rebuild`. Group
+invalidations expand to concrete member artifacts in authored group order when
+they render or flow through trusted carriers.
 
 The shipped control-flow statements are:
 
@@ -234,6 +244,14 @@ Important rules:
 - inherited law may not mix named subsection patching with bare parent law
   statements
 
+## Grounding
+
+`grounding` is not itself workflow law, but it shares the same control-plane
+boundary. It declares explicit grounding policy with `source:`, `target:`, and
+`policy:` items such as `start_from`, `forbid`, `allow`, and `if ... -> route
+...`, while keeping routing on ordinary concrete agents and keeping output
+readback on ordinary emitted surfaces.
+
 ## Example Ladder
 
 Read the workflow-law examples in this order:
@@ -252,5 +270,11 @@ Read the workflow-law examples in this order:
 - `38_metadata_polish_capstone`: the integrated workflow-law capstone
 - `39_guarded_output_sections`: conditional readback on `output`
 - `40` through `42`: the staged route-only handoff ladder
+- `70_route_only_declaration`: dedicated `route_only` lowered through the same
+  route-only validation path
+- `71_grounding_declaration`: explicit grounding protocol with ordinary route
+  targets
+- `72_schema_group_invalidation`: schema-group invalidation expansion in
+  authored order
 - `50` through `52`: bound roots for currentness, inherited bindings, and
   preservation law

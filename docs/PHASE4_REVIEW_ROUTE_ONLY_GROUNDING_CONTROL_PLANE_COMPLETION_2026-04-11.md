@@ -106,6 +106,43 @@ quietly shrinking the phase to the subset that already exists.
 - Preserve the already-shipped review, workflow-law, and schema behavior that
   this phase builds on.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-11
+Verdict (code): COMPLETE
+Manual QA: pending (non-blocking)
+
+## Code blockers (why code is not done)
+- None. Fresh audit verification passed on 2026-04-11:
+  - `make verify-examples`
+  - `make verify-diagnostics`
+  - `cd editors/vscode && make`
+- Completion anchors:
+  - `doctrine/grammars/doctrine.lark:15`
+  - `doctrine/parser.py:306`
+  - `doctrine/parser.py:330`
+  - `doctrine/compiler.py:3301`
+  - `doctrine/compiler.py:4641`
+  - `doctrine/compiler.py:15394`
+  - `docs/REVIEW_SPEC.md:28`
+  - `docs/WORKFLOW_LAW.md:137`
+  - `docs/LANGUAGE_REFERENCE.md:24`
+  - `examples/README.md:39`
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- Optional human spot check:
+  - read the emitted Markdown for `examples/68_review_family_shared_scaffold`
+    through `examples/72_schema_group_invalidation`
+  - install the packaged VSIX locally if a manual editor smoke test is still
+    desired after the passing automated package/test run
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
@@ -763,6 +800,8 @@ Rollback:
 
 ## 7.2 Phase 2 - Review family and case-selected review core
 
+Status: COMPLETED
+
 Goal:
 - Ship `review_family` and the explicit case-selected review surface on top of
   the current review agreement path.
@@ -798,6 +837,8 @@ Rollback:
 
 ## 7.3 Phase 3 - Dedicated route_only and grounding core
 
+Status: COMPLETED
+
 Goal:
 - Ship dedicated `route_only` and `grounding` declarations without creating a
   second route/currentness engine.
@@ -831,6 +872,8 @@ Rollback:
   regress shipped behavior before the phase is green.
 
 ## 7.4 Phase 4 - Schema-group invalidation consumption and control-plane integration
+
+Status: COMPLETED
 
 Goal:
 - Consume the already-shipped schema inventory/group surface and integrate the
@@ -866,6 +909,8 @@ Rollback:
   unsound before the phase is green.
 
 ## 7.5 Phase 5 - Proof, docs, editor parity, and closeout
+
+Status: COMPLETED
 
 Goal:
 - Leave one honest Phase 4 completion story everywhere the repo teaches or
@@ -961,3 +1006,9 @@ Rollback:
   only. Research grounding, both deep-dive passes, and the authoritative
   phase plan are now present, and the next bounded controller move is
   `implement-loop`.
+- 2026-04-11 - Shipped `review_family`, case-selected review families,
+  dedicated `route_only`, dedicated `grounding`, and schema-group invalidation
+  consumption on the shared compiler path. Added manifest-backed proof in
+  `examples/68_*` through `examples/72_*`, fixed schema-group current-artifact
+  overlap validation, converged live docs, and restored VS Code keyword and
+  declaration coverage before the final verification pass.

@@ -1,0 +1,41 @@
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+output RouteRepairComment: "Route Repair Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{SpecialistOwner}} when repair returns to specialist work."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current and who owns next."
+
+
+abstract agent SpecialistOwner:
+    role: "Own specialist repair."
+    workflow: "Repair"
+        "Repair the issue."
+
+
+route_only RouteRepair: "Route Repair"
+    facts: RouteFacts
+    when:
+        live_job == "route_repair"
+    current none
+    handoff_output: RouteRepairComment
+    routes:
+        specialist_owner -> SpecialistOwner
+
+
+agent InvalidRouteOnlyTargetDemo:
+    role: "Show the compiler fails when a route-only target is abstract."
+    workflow: RouteRepair
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteRepairComment

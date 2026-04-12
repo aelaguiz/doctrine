@@ -1,0 +1,44 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "grounding declares explicit protocol policy without inventing a side channel"
+status = "active"
+kind = "render_contract"
+agent = "ClaimGroundingDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep grounding policy explicit and route review when the wording still needs follow-up.",
+  "",
+  "## Claim Grounding",
+  "",
+  "Ground this pass against Repo Facts.",
+  "Target: wording_claim.",
+  "Start from accepted_claim unless stale_claim.",
+  "Do not use unchecked_claim.",
+  "Allow cited_fact.",
+  "If needs_review, route to Review Lead.",
+  "",
+  "## Inputs",
+  "",
+  "### Repo Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host facts that ground the current wording claim.",
+]
+
+[[cases]]
+name = "grounding rejects abstract route targets"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_ABSTRACT_GROUNDING_ROUTE.prompt"
+agent = "InvalidGroundingRouteDemo"
+exception_type = "CompileError"
+error_code = "E282"
+message_contains = [
+  "Route target must be a concrete agent",
+  "ReviewLead",
+]

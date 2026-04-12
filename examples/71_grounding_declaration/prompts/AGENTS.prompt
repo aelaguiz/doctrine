@@ -1,0 +1,31 @@
+# This example introduces dedicated `grounding`. The declaration owns explicit
+# protocol shape and policy, while output and routing stay on ordinary surfaces.
+
+input RepoFacts: "Repo Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host facts that ground the current wording claim."
+
+
+agent ReviewLead:
+    role: "Own review when grounded wording still needs follow-up."
+    workflow: "Review"
+        "Review the grounded wording before it ships."
+
+
+grounding ClaimGrounding: "Claim Grounding"
+    source: RepoFacts
+    target: wording_claim
+    policy:
+        start_from accepted_claim unless stale_claim
+        forbid unchecked_claim
+        allow cited_fact
+        if needs_review -> route ReviewLead
+
+
+agent ClaimGroundingDemo:
+    role: "Keep grounding policy explicit and route review when the wording still needs follow-up."
+    workflow: ClaimGrounding
+    inputs: "Inputs"
+        RepoFacts

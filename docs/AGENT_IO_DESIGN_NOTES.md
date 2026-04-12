@@ -19,6 +19,8 @@ use [EMIT_GUIDE.md](EMIT_GUIDE.md).
 - Guarded output sections keep conditional readback on the output contract.
 - Workflow law and review decide currentness, invalidation, verdicts, and
   carried state.
+- Dedicated `review_family`, `route_only`, and `grounding` declarations still
+  feed the same ordinary output and `trust_surface` boundary.
 
 This keeps the split clean:
 
@@ -153,6 +155,8 @@ Carrier rules:
 - that field must be listed in the output's `trust_surface`
 - if the carried artifact is itself an output root, the concrete turn must emit
   that output
+- `invalidate` may also carry a declared schema group; schema-group carriers
+  expand to concrete member artifacts in authored group order
 - `standalone_read` explains the contract to humans, but it does not create a
   second trust channel
 - compiled `AGENTS.md` emission and target-scoped workflow-flow emission are
@@ -212,6 +216,8 @@ Instead:
 
 - `comment_output` names one ordinary `output`
 - `fields:` binds review semantic channels into paths under that output
+- `review_family` reuses the same `comment_output` and `fields:` surface; it
+  does not introduce a second emitted review contract
 - review currentness still uses direct carriers such as
   `current artifact DraftSpec via ReviewComment.current_artifact`
 - carried review state such as `active_mode` and `trigger_reason` still lives

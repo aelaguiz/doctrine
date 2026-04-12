@@ -1,0 +1,27 @@
+input RepoFacts: "Repo Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+abstract agent ReviewLead:
+    role: "Own review."
+    workflow: "Review"
+        "Review the grounded wording."
+
+
+grounding ClaimGrounding: "Claim Grounding"
+    source: RepoFacts
+    target: wording_claim
+    policy:
+        start_from accepted_claim unless stale_claim
+        forbid unchecked_claim
+        allow cited_fact
+        if needs_review -> route ReviewLead
+
+
+agent InvalidGroundingRouteDemo:
+    role: "Show the compiler fails when a grounding route target is abstract."
+    workflow: ClaimGrounding
+    inputs: "Inputs"
+        RepoFacts

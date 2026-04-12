@@ -316,6 +316,8 @@ class IndexedUnit:
     schemas_by_name: dict[str, model.SchemaDecl]
     documents_by_name: dict[str, model.DocumentDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
+    route_onlys_by_name: dict[str, model.RouteOnlyDecl]
+    groundings_by_name: dict[str, model.GroundingDecl]
     reviews_by_name: dict[str, model.ReviewDecl]
     inputs_blocks_by_name: dict[str, model.InputsDecl]
     inputs_by_name: dict[str, model.InputDecl]
@@ -650,6 +652,8 @@ class ResolvedReviewBody:
     contract: model.ReviewContractConfig | None = None
     comment_output: model.ReviewCommentOutputConfig | None = None
     fields: model.ReviewFieldsConfig | None = None
+    selector: model.ReviewSelectorConfig | None = None
+    cases: tuple[model.ReviewCase, ...] = ()
     items: tuple[model.ReviewSection | model.ReviewOutcomeSection, ...] = ()
 
 
@@ -724,7 +728,7 @@ OutputDeclKey = tuple[tuple[str, ...], str]
 @dataclass(slots=True, frozen=True)
 class ResolvedLawPath:
     unit: IndexedUnit
-    decl: model.InputDecl | model.OutputDecl | model.EnumDecl
+    decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup
     remainder: tuple[str, ...]
     wildcard: bool = False
     binding_path: tuple[str, ...] | None = None
@@ -733,7 +737,7 @@ class ResolvedLawPath:
 @dataclass(slots=True, frozen=True)
 class CanonicalLawPath:
     unit: IndexedUnit
-    decl: model.InputDecl | model.OutputDecl | model.EnumDecl
+    decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup
     remainder: tuple[str, ...]
     wildcard: bool = False
 
@@ -906,7 +910,10 @@ _REVIEW_REQUIRED_FIELD_NAMES = frozenset(
     }
 )
 _REVIEW_OPTIONAL_FIELD_NAMES = frozenset({"blocked_gate", "active_mode", "trigger_reason"})
-_REVIEW_FIELD_NAMES = _REVIEW_REQUIRED_FIELD_NAMES | _REVIEW_OPTIONAL_FIELD_NAMES
+_REVIEW_CONTEXT_FIELD_NAMES = frozenset({"current_artifact"})
+_REVIEW_FIELD_NAMES = (
+    _REVIEW_REQUIRED_FIELD_NAMES | _REVIEW_OPTIONAL_FIELD_NAMES | _REVIEW_CONTEXT_FIELD_NAMES
+)
 _REVIEW_GUARD_FIELD_NAMES = _REVIEW_FIELD_NAMES | frozenset({"current_artifact"})
 _REVIEW_VERDICT_TEXT = {
     "accept": "accepted",
@@ -1062,6 +1069,8 @@ class CompilationSession:
         schemas_by_name: dict[str, model.SchemaDecl] = {}
         documents_by_name: dict[str, model.DocumentDecl] = {}
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
+        route_onlys_by_name: dict[str, model.RouteOnlyDecl] = {}
+        groundings_by_name: dict[str, model.GroundingDecl] = {}
         reviews_by_name: dict[str, model.ReviewDecl] = {}
         skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
         inputs_blocks_by_name: dict[str, model.InputsDecl] = {}
@@ -1103,6 +1112,14 @@ class CompilationSession:
             if isinstance(declaration, model.WorkflowDecl):
                 _register_decl(workflows_by_name, declaration.name, module_parts)
                 workflows_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.RouteOnlyDecl):
+                _register_decl(route_onlys_by_name, declaration.name, module_parts)
+                route_onlys_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.GroundingDecl):
+                _register_decl(groundings_by_name, declaration.name, module_parts)
+                groundings_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.ReviewDecl):
                 _register_decl(reviews_by_name, declaration.name, module_parts)
@@ -1179,6 +1196,8 @@ class CompilationSession:
             schemas_by_name=schemas_by_name,
             documents_by_name=documents_by_name,
             workflows_by_name=workflows_by_name,
+            route_onlys_by_name=route_onlys_by_name,
+            groundings_by_name=groundings_by_name,
             reviews_by_name=reviews_by_name,
             inputs_blocks_by_name=inputs_blocks_by_name,
             inputs_by_name=inputs_by_name,
@@ -1667,11 +1686,11 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="invalidate",
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=("input", "output", "schema_group"),
                 )
                 if target.remainder or target.wildcard:
                     raise CompileError(
-                        f"invalidate must name one full input or output artifact in {owner_label}: "
+                        f"invalidate must name one full input or output artifact or schema group in {owner_label}: "
                         f"{'.'.join(invalidate.target.parts)}"
                     )
                 carrier = self._validate_carrier_path(
@@ -1681,17 +1700,33 @@ class CompilationContext:
                     owner_label=owner_label,
                     statement_label="invalidate",
                 )
-                target_label = self._display_readable_decl(target.decl)
                 carrier_label = self._flow_carrier_label(
                     carrier,
                     owner_label=owner_label,
                 )
-                self._flow_append_artifact_note(
-                    input_notes=input_notes,
-                    output_notes=output_notes,
-                    resolved=target,
-                    note=f"Invalidated via {carrier_label}",
-                )
+                if isinstance(target.decl, ResolvedSchemaGroup):
+                    target_labels: list[str] = []
+                    for member in self._schema_group_member_artifacts(target.decl, unit=target.unit):
+                        target_labels.append(member.title)
+                        self._flow_append_artifact_note(
+                            input_notes=input_notes,
+                            output_notes=output_notes,
+                            resolved=ResolvedLawPath(
+                                unit=member.artifact.unit,
+                                decl=member.artifact.decl,
+                                remainder=(),
+                            ),
+                            note=f"Invalidated via {carrier_label}",
+                        )
+                    target_label = ", ".join(target_labels) or target.decl.title
+                else:
+                    target_label = self._display_readable_decl(target.decl)
+                    self._flow_append_artifact_note(
+                        input_notes=input_notes,
+                        output_notes=output_notes,
+                        resolved=target,
+                        note=f"Invalidated via {carrier_label}",
+                    )
                 self._flow_append_note(
                     output_notes,
                     (carrier.unit.module_parts, carrier.decl.name),
@@ -2341,7 +2376,27 @@ class CompilationContext:
                 unit=review_unit,
             )
             contract_gates: tuple[ReviewContractGate, ...] = ()
-            if resolved.contract is not None:
+            if resolved.cases:
+                collected: list[ReviewContractGate] = []
+                seen_gate_keys: set[str] = set()
+                for case in resolved.cases:
+                    try:
+                        case_gates = self._resolve_review_contract_spec(
+                            case.contract.contract_ref,
+                            unit=review_unit,
+                            owner_label=(
+                                f"review {_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+                            ),
+                        ).gates
+                    except CompileError:
+                        continue
+                    for gate in case_gates:
+                        if gate.key in seen_gate_keys:
+                            continue
+                        seen_gate_keys.add(gate.key)
+                        collected.append(gate)
+                contract_gates = tuple(collected)
+            elif resolved.contract is not None:
                 try:
                     contract_gates = self._resolve_review_contract_spec(
                         resolved.contract.contract_ref,
@@ -3240,8 +3295,219 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
             )
-        target_unit, workflow_decl = self._resolve_workflow_ref(value, unit=unit)
+        try:
+            target_unit, workflow_decl = self._resolve_workflow_ref(value, unit=unit)
+        except CompileError as workflow_error:
+            route_only = self._try_resolve_route_only_ref(value, unit=unit)
+            if route_only is not None:
+                route_unit, route_decl = route_only
+                return self._resolve_route_only_decl_as_workflow(
+                    route_decl,
+                    unit=route_unit,
+                    owner_label=owner_label,
+                )
+            grounding = self._try_resolve_grounding_ref(value, unit=unit)
+            if grounding is not None:
+                grounding_unit, grounding_decl = grounding
+                return self._resolve_grounding_decl_as_workflow(
+                    grounding_decl,
+                    unit=grounding_unit,
+                    owner_label=owner_label,
+                )
+            raise workflow_error
         return self._resolve_workflow_decl(workflow_decl, unit=target_unit)
+
+    def _resolve_route_only_decl_as_workflow(
+        self,
+        decl: model.RouteOnlyDecl,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ResolvedWorkflowBody:
+        facts_ref = decl.body.facts_ref
+        if facts_ref is None:
+            raise CompileError(f"route_only is missing facts: {decl.name}")
+        self._resolve_route_only_facts_decl(
+            facts_ref,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        if not decl.body.current_none:
+            raise CompileError(f"route_only must declare `current none`: {decl.name}")
+        if decl.body.handoff_output_ref is None:
+            raise CompileError(f"route_only is missing handoff_output: {decl.name}")
+        output_unit, output_decl = self._resolve_output_decl(
+            decl.body.handoff_output_ref,
+            unit=unit,
+        )
+        self._validate_route_only_guarded_output(
+            output_decl,
+            facts_ref=facts_ref,
+            guarded=decl.body.guarded,
+            owner_label=owner_label,
+        )
+        if not decl.body.routes:
+            raise CompileError(f"route_only must declare at least one route: {decl.name}")
+
+        law_items: list[model.LawStmt] = []
+        active_expr = self._combine_exprs_with_and(
+            tuple(self._prefix_route_only_expr(expr, facts_ref) for expr in decl.body.when_exprs)
+        )
+        if active_expr is not None:
+            law_items.append(model.ActiveWhenStmt(expr=active_expr))
+        law_items.append(model.CurrentNoneStmt())
+        law_items.append(model.StopStmt(message="No specialist artifact is current for this turn."))
+
+        next_owner_expr = model.ExprRef(
+            parts=(*facts_ref.module_parts, facts_ref.declaration_name, "next_owner")
+        )
+        route_cases: list[model.MatchArm] = []
+        for route in decl.body.routes:
+            self._validate_route_target(route.target, unit=unit)
+            route_stmt = model.LawRouteStmt(
+                label=f"Route to {self._display_ref(route.target)}.",
+                target=route.target,
+            )
+            route_cases.append(
+                model.MatchArm(head=route.key, items=(route_stmt,))
+            )
+        law_items.append(model.MatchStmt(expr=next_owner_expr, cases=tuple(route_cases)))
+
+        preamble: list[model.ProseLine] = [f"Emit {output_decl.title}."]
+        if output_unit.module_parts != unit.module_parts:
+            preamble[0] = f"Emit {_dotted_decl_name(output_unit.module_parts, output_decl.name)}."
+        return ResolvedWorkflowBody(
+            title=decl.body.title,
+            preamble=tuple(preamble),
+            items=(),
+            law=model.LawBody(items=tuple(law_items)),
+        )
+
+    def _resolve_grounding_decl_as_workflow(
+        self,
+        decl: model.GroundingDecl,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ResolvedWorkflowBody:
+        if decl.body.target is None:
+            raise CompileError(f"grounding is missing target: {decl.name}")
+
+        preamble: list[model.ProseLine] = []
+        if decl.body.source_ref is not None:
+            preamble.append(f"Ground this pass against {self._display_ref(decl.body.source_ref)}.")
+        preamble.append(f"Target: {decl.body.target}.")
+
+        for item in decl.body.policy_items:
+            if isinstance(item, model.GroundingPolicyStartFrom):
+                if item.unless is None:
+                    preamble.append(f"Start from {item.source}.")
+                else:
+                    preamble.append(f"Start from {item.source} unless {item.unless}.")
+                continue
+            if isinstance(item, model.GroundingPolicyForbid):
+                preamble.append(f"Do not use {item.value}.")
+                continue
+            if isinstance(item, model.GroundingPolicyAllow):
+                preamble.append(f"Allow {item.value}.")
+                continue
+            self._validate_route_target(item.target, unit=unit)
+            preamble.append(
+                f"If {item.condition}, route to {self._display_ref(item.target)}."
+            )
+
+        return ResolvedWorkflowBody(
+            title=decl.body.title,
+            preamble=tuple(preamble),
+            items=(),
+            law=None,
+        )
+
+    def _resolve_route_only_facts_decl(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[IndexedUnit, model.InputDecl | model.OutputDecl]:
+        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
+        output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+        if input_decl is not None and output_decl is not None:
+            raise CompileError(
+                f"Ambiguous route_only facts in {owner_label}: {_dotted_ref_name(ref)}"
+            )
+        if input_decl is None and output_decl is None:
+            raise CompileError(
+                f"route_only facts must resolve to an input or output declaration in {owner_label}: "
+                f"{_dotted_ref_name(ref)}"
+            )
+        return target_unit, input_decl if input_decl is not None else output_decl
+
+    def _validate_route_only_guarded_output(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        facts_ref: model.NameRef,
+        guarded: tuple[model.RouteOnlyGuard, ...],
+        owner_label: str,
+    ) -> None:
+        top_level_guards = {
+            item.key: item
+            for item in output_decl.items
+            if isinstance(item, model.GuardedOutputSection)
+        }
+        for guard in guarded:
+            output_guard = top_level_guards.get(guard.key)
+            if output_guard is None:
+                raise CompileError(
+                    f"route_only guarded section is missing from {output_decl.name} in {owner_label}: "
+                    f"{guard.key}"
+                )
+            expected_expr = self._prefix_route_only_expr(guard.expr, facts_ref)
+            if output_guard.when_expr != expected_expr:
+                raise CompileError(
+                    f"route_only guarded section does not match output guard in {owner_label}: "
+                    f"{guard.key}"
+                )
+
+    def _prefix_route_only_expr(
+        self,
+        expr: model.Expr,
+        facts_ref: model.NameRef,
+    ) -> model.Expr:
+        facts_root = (*facts_ref.module_parts, facts_ref.declaration_name)
+        if isinstance(expr, model.ExprRef):
+            if len(expr.parts) == 1:
+                return model.ExprRef(parts=(*facts_root, *expr.parts))
+            return expr
+        if isinstance(expr, model.ExprCall):
+            return model.ExprCall(
+                name=expr.name,
+                args=tuple(self._prefix_route_only_expr(arg, facts_ref) for arg in expr.args),
+            )
+        if isinstance(expr, model.ExprSet):
+            return model.ExprSet(
+                items=tuple(self._prefix_route_only_expr(item, facts_ref) for item in expr.items)
+            )
+        if isinstance(expr, model.ExprBinary):
+            return model.ExprBinary(
+                op=expr.op,
+                left=self._prefix_route_only_expr(expr.left, facts_ref),
+                right=self._prefix_route_only_expr(expr.right, facts_ref),
+            )
+        return expr
+
+    def _combine_exprs_with_and(
+        self,
+        exprs: tuple[model.Expr, ...],
+    ) -> model.Expr | None:
+        if not exprs:
+            return None
+        combined = exprs[0]
+        for expr in exprs[1:]:
+            combined = model.ExprBinary(op="and", left=combined, right=expr)
+        return combined
 
     def _compile_inputs_field(
         self,
@@ -4367,14 +4633,22 @@ class CompilationContext:
         owner_label: str,
     ) -> CompiledSection:
         resolved = self._resolve_review_decl(review_decl, unit=unit)
-        if resolved.subject is None:
-            raise CompileError(f"Review is missing subject: {review_decl.name}")
-        if resolved.contract is None:
-            raise CompileError(f"Review is missing contract: {review_decl.name}")
         if resolved.comment_output is None:
             raise CompileError(f"Review is missing comment_output: {review_decl.name}")
         if resolved.fields is None:
             raise CompileError(f"Review is missing fields: {review_decl.name}")
+        if resolved.cases:
+            return self._compile_case_selected_review_decl(
+                review_decl,
+                resolved=resolved,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+            )
+        if resolved.subject is None:
+            raise CompileError(f"Review is missing subject: {review_decl.name}")
+        if resolved.contract is None:
+            raise CompileError(f"Review is missing contract: {review_decl.name}")
 
         subjects = self._resolve_review_subjects(
             resolved.subject,
@@ -4417,7 +4691,7 @@ class CompilationContext:
         if on_reject is None:
             raise CompileError(f"Review is missing on_reject: {review_decl.name}")
 
-        section_titles = {section.key: section.title for section in pre_sections}
+        section_titles = {section.key: self._review_section_title(section) for section in pre_sections}
         gate_observation = self._review_gate_observation(comment_output_decl)
         accept_gate_count = 0
         any_block_gates = False
@@ -4527,7 +4801,7 @@ class CompilationContext:
                 body.append("")
             body.append(
                 CompiledSection(
-                    title=section.title,
+                    title=self._review_section_title(section),
                     body=self._compile_review_pre_outcome_section_body(
                         section.items,
                         unit=unit,
@@ -4557,6 +4831,308 @@ class CompilationContext:
                 )
             )
 
+        return CompiledSection(title=resolved.title, body=tuple(body))
+
+    def _review_section_title(
+        self,
+        section: model.ReviewSection,
+    ) -> str:
+        return section.title or _humanize_key(section.key)
+
+    def _compile_case_selected_review_decl(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        resolved: ResolvedReviewBody,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> CompiledSection:
+        if resolved.selector is None:
+            raise CompileError(
+                f"Case-selected review is missing selector: {review_decl.name}"
+            )
+        if resolved.subject is not None or resolved.contract is not None or resolved.subject_map is not None:
+            raise CompileError(
+                f"Case-selected review must declare subject and contract inside cases: {review_decl.name}"
+            )
+
+        comment_output_unit, comment_output_decl = self._resolve_output_decl(
+            resolved.comment_output.output_ref,
+            unit=unit,
+        )
+        comment_output_key = (comment_output_unit.module_parts, comment_output_decl.name)
+        if comment_output_key not in agent_contract.outputs:
+            raise CompileError(
+                f"Review comment_output must be emitted by the concrete turn in {owner_label}: "
+                f"{comment_output_decl.name}"
+            )
+
+        pre_sections = [
+            item for item in resolved.items if isinstance(item, model.ReviewSection)
+        ]
+        outcome_sections = [
+            item for item in resolved.items if isinstance(item, model.ReviewOutcomeSection)
+        ]
+        if outcome_sections:
+            raise CompileError(
+                f"Case-selected review must keep on_accept and on_reject inside cases: {review_decl.name}"
+            )
+
+        enum_decl = self._try_resolve_enum_decl(resolved.selector.enum_ref, unit=unit)
+        if enum_decl is None:
+            raise CompileError(
+                f"Review selector must resolve to a closed enum in {owner_label}: "
+                f"{_dotted_ref_name(resolved.selector.enum_ref)}"
+            )
+
+        seen_case_members: dict[str, str] = {}
+        expected_case_members = {member.value for member in enum_decl.members}
+        for case in resolved.cases:
+            if len(case.subject.subjects) != 1:
+                raise CompileError(
+                    f"Review case must declare exactly one subject in {owner_label}: {case.key}"
+                )
+            for option in case.head.options:
+                resolved_option = self._resolve_review_match_option(option, unit=unit)
+                if resolved_option is None:
+                    raise CompileError(
+                        f"Review case selector must resolve to {enum_decl.name} in {owner_label}: {case.key}"
+                    )
+                option_enum_decl, member_value = resolved_option
+                if option_enum_decl.name != enum_decl.name:
+                    raise CompileError(
+                        f"Review case selector must resolve to {enum_decl.name} in {owner_label}: {case.key}"
+                    )
+                previous_case = seen_case_members.get(member_value)
+                if previous_case is not None:
+                    raise CompileError(
+                        f"Review cases overlap in {owner_label}: {previous_case}, {case.key}"
+                    )
+                seen_case_members[member_value] = case.key
+        if set(seen_case_members) != expected_case_members:
+            raise CompileError(f"Review cases must be exhaustive in {owner_label}")
+
+        shared_titles = {
+            section.key: self._review_section_title(section) for section in pre_sections
+        }
+        gate_observation = self._review_gate_observation(comment_output_decl)
+        all_contract_gates: list[ReviewContractGate] = []
+        seen_contract_gate_keys: set[str] = set()
+        all_accept_branches: list[ResolvedReviewAgreementBranch] = []
+        all_reject_branches: list[ResolvedReviewAgreementBranch] = []
+
+        carried_fields = {
+            field_name
+            for case in resolved.cases
+            for field_name in (
+                *self._collect_review_carried_fields(case.on_accept.items),
+                *self._collect_review_carried_fields(case.on_reject.items),
+            )
+        }
+        field_bindings = self._validate_review_field_bindings(
+            resolved.fields,
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+            require_blocked_gate=any(
+                self._review_items_contain_blocks(section.items) for section in pre_sections
+            )
+            or any(self._review_items_contain_blocks(case.checks) for case in resolved.cases),
+            require_active_mode=(
+                resolved.selector.field_name == "active_mode" or "active_mode" in carried_fields
+            ),
+            require_trigger_reason="trigger_reason" in carried_fields,
+        )
+
+        body: list[CompiledBodyItem] = [
+            f"Selected review mode: {enum_decl.title}.",
+        ]
+
+        for case in resolved.cases:
+            contract_spec = self._resolve_review_contract_spec(
+                case.contract.contract_ref,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+            )
+            for gate in contract_spec.gates:
+                if gate.key in seen_contract_gate_keys:
+                    continue
+                seen_contract_gate_keys.add(gate.key)
+                all_contract_gates.append(gate)
+
+        review_semantics = ReviewSemanticContext(
+            output_module_parts=comment_output_unit.module_parts,
+            output_name=comment_output_decl.name,
+            field_bindings=tuple(field_bindings.items()),
+            contract_gates=tuple(all_contract_gates),
+        )
+
+        shared_contract_spec = ReviewContractSpec(
+            kind="review",
+            title="Selected Review Contract",
+            gates=tuple(all_contract_gates),
+        )
+
+        for section in pre_sections:
+            if body and body[-1] != "":
+                body.append("")
+            body.append(
+                CompiledSection(
+                    title=self._review_section_title(section),
+                    body=self._compile_review_pre_outcome_section_body(
+                        section.items,
+                        unit=unit,
+                        contract_spec=shared_contract_spec,
+                        section_titles=shared_titles,
+                        owner_label=f"{owner_label}.{section.key}",
+                        review_semantics=review_semantics,
+                    ),
+                )
+            )
+
+        for case in resolved.cases:
+            subjects = self._resolve_review_subjects(
+                case.subject,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+            )
+            subject_keys = {
+                (subject_unit.module_parts, subject_decl.name)
+                for subject_unit, subject_decl in subjects
+            }
+            contract_spec = self._resolve_review_contract_spec(
+                case.contract.contract_ref,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+            )
+            case_checks = model.ReviewSection(
+                key=f"{case.key}_checks",
+                title="Checks",
+                items=case.checks,
+            )
+            case_pre_sections = [*pre_sections, case_checks]
+            case_titles = {
+                **shared_titles,
+                case_checks.key: self._review_section_title(case_checks),
+            }
+            accept_gate_count = 0
+            any_block_gates = False
+            for section in case_pre_sections:
+                accept_gate_count += self._count_review_accept_stmts(section.items)
+                any_block_gates = any_block_gates or self._review_items_contain_blocks(section.items)
+                self._validate_review_pre_outcome_items(
+                    section.items,
+                    unit=unit,
+                    owner_label=f"{owner_label}.cases.{case.key}.{section.key}",
+                    contract_spec=contract_spec,
+                    section_titles=case_titles,
+                    agent_contract=agent_contract,
+                )
+            if accept_gate_count != 1:
+                raise CompileError(
+                    f"Review case must define exactly one accept gate in {owner_label}: {case.key}"
+                )
+
+            pre_outcome_branches = self._resolve_review_pre_outcome_branches(
+                case_pre_sections,
+                unit=unit,
+                contract_spec=contract_spec,
+                section_titles=case_titles,
+                owner_label=f"{owner_label}.cases.{case.key}",
+                gate_observation=gate_observation,
+            )
+            accept_gate_branches = tuple(
+                branch
+                for branch in pre_outcome_branches
+                if branch.verdict == _REVIEW_VERDICT_TEXT["accept"]
+            )
+            reject_gate_branches = tuple(
+                branch
+                for branch in pre_outcome_branches
+                if branch.verdict == _REVIEW_VERDICT_TEXT["changes_requested"]
+            )
+            accept_branches = self._validate_review_outcome_section(
+                case.on_accept,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+                agent_contract=agent_contract,
+                comment_output_decl=comment_output_decl,
+                comment_output_unit=comment_output_unit,
+                next_owner_field_path=field_bindings["next_owner"],
+                field_bindings=field_bindings,
+                subject_keys=subject_keys,
+                subject_map=None,
+                blocked_gate_required=any_block_gates,
+                gate_branches=accept_gate_branches,
+            )
+            reject_branches = self._validate_review_outcome_section(
+                case.on_reject,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+                agent_contract=agent_contract,
+                comment_output_decl=comment_output_decl,
+                comment_output_unit=comment_output_unit,
+                next_owner_field_path=field_bindings["next_owner"],
+                field_bindings=field_bindings,
+                subject_keys=subject_keys,
+                subject_map=None,
+                blocked_gate_required=any_block_gates,
+                gate_branches=reject_gate_branches,
+            )
+            all_accept_branches.extend(accept_branches)
+            all_reject_branches.extend(reject_branches)
+
+            case_body: list[CompiledBodyItem] = [
+                self._render_review_subject_summary(subjects),
+                f"Shared review contract: {contract_spec.title}.",
+            ]
+            if case_body and case_body[-1] != "":
+                case_body.append("")
+            case_body.append(
+                CompiledSection(
+                    title=self._review_section_title(case_checks),
+                    body=self._compile_review_pre_outcome_section_body(
+                        case.checks,
+                        unit=unit,
+                        contract_spec=contract_spec,
+                        section_titles=case_titles,
+                        owner_label=f"{owner_label}.cases.{case.key}.checks",
+                        review_semantics=review_semantics,
+                    ),
+                )
+            )
+            for key, section in (("on_accept", case.on_accept), ("on_reject", case.on_reject)):
+                if case_body and case_body[-1] != "":
+                    case_body.append("")
+                case_body.append(
+                    CompiledSection(
+                        title=section.title or ("If Accepted" if key == "on_accept" else "If Rejected"),
+                        body=self._compile_review_outcome_section_body(
+                            section.items,
+                            unit=unit,
+                            owner_label=f"{owner_label}.cases.{case.key}.{key}",
+                            review_semantics=review_semantics,
+                        ),
+                    )
+                )
+            if body and body[-1] != "":
+                body.append("")
+            body.append(CompiledSection(title=case.title, body=tuple(case_body)))
+
+        self._validate_review_current_artifact_alignment(
+            (*all_accept_branches, *all_reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+        )
+        self._validate_review_optional_field_alignment(
+            (*all_accept_branches, *all_reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            field_bindings=field_bindings,
+            owner_label=owner_label,
+        )
         return CompiledSection(title=resolved.title, body=tuple(body))
 
     def _resolve_review_subjects(
@@ -8807,6 +9383,8 @@ class CompilationContext:
         contract = parent_review.contract if parent_review is not None else None
         comment_output = parent_review.comment_output if parent_review is not None else None
         fields = parent_review.fields if parent_review is not None else None
+        selector = parent_review.selector if parent_review is not None else None
+        cases = parent_review.cases if parent_review is not None else ()
 
         if parent_review is None:
             fields_accounted = True
@@ -8839,6 +9417,52 @@ class CompilationContext:
                     )
                 fields = item
                 fields_accounted = True
+                continue
+            if isinstance(item, model.ReviewSelectorConfig):
+                if parent_review is not None and parent_review.selector is not None:
+                    raise CompileError(
+                        f"Inherited review selector cannot be redefined in {owner_label}"
+                    )
+                selector = item
+                continue
+            if isinstance(item, model.ReviewCasesConfig):
+                if parent_review is not None and parent_review.cases:
+                    raise CompileError(
+                        f"Inherited review cases cannot be redefined in {owner_label}"
+                    )
+                cases = tuple(
+                    model.ReviewCase(
+                        key=case.key,
+                        title=case.title,
+                        head=case.head,
+                        subject=case.subject,
+                        contract=case.contract,
+                        checks=self._resolve_review_pre_outcome_items(
+                            case.checks,
+                            unit=unit,
+                            owner_label=f"{owner_label}.cases.{case.key}.checks",
+                        ),
+                        on_accept=model.ReviewOutcomeSection(
+                            key="on_accept",
+                            title=case.on_accept.title,
+                            items=self._resolve_review_outcome_items(
+                                case.on_accept.items,
+                                unit=unit,
+                                owner_label=f"{owner_label}.cases.{case.key}.on_accept",
+                            ),
+                        ),
+                        on_reject=model.ReviewOutcomeSection(
+                            key="on_reject",
+                            title=case.on_reject.title,
+                            items=self._resolve_review_outcome_items(
+                                case.on_reject.items,
+                                unit=unit,
+                                owner_label=f"{owner_label}.cases.{case.key}.on_reject",
+                            ),
+                        ),
+                    )
+                    for case in item.cases
+                )
                 continue
 
             if isinstance(item, model.InheritItem) and item.key == "fields":
@@ -8964,6 +9588,8 @@ class CompilationContext:
             contract=contract,
             comment_output=comment_output,
             fields=fields,
+            selector=selector,
+            cases=cases,
             items=tuple(resolved_items),
         )
 
@@ -13646,7 +14272,17 @@ class CompilationContext:
         elif isinstance(stmt, model.ForbidStmt):
             text = f"Do not modify {self._render_path_set(stmt.target)}."
         elif isinstance(stmt, model.InvalidateStmt):
-            text = f"{self._display_law_path_root(stmt.target, unit=unit, agent_contract=agent_contract)} is no longer current."
+            rendered = [
+                f"{label} is no longer current."
+                for label in self._render_invalidation_targets(
+                    stmt.target,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                )
+            ]
+            if bullet:
+                return [f"- {line}" for line in rendered]
+            return rendered
         elif isinstance(stmt, model.StopStmt):
             message = stmt.message or ""
             if message and not message.endswith("."):
@@ -13993,6 +14629,7 @@ class CompilationContext:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label="workflow law",
+                        allowed_kinds=("input", "output", "schema_group"),
                     ):
                         raise CompileError(
                             f"The current artifact cannot be invalidated in the same active branch in {owner_label}"
@@ -14253,7 +14890,7 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="invalidate",
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=("input", "output", "schema_group"),
                 )
                 continue
             if isinstance(item, (model.OwnOnlyStmt, model.SupportOnlyStmt, model.IgnoreStmt, model.ForbidStmt)):
@@ -14548,11 +15185,11 @@ class CompilationContext:
             agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="invalidate",
-            allowed_kinds=("input", "output"),
+            allowed_kinds=("input", "output", "schema_group"),
         )
         if target.remainder or target.wildcard:
             raise CompileError(
-                f"invalidate must name one full input or output artifact in {owner_label}: "
+                f"invalidate must name one full input or output artifact or schema group in {owner_label}: "
                 f"{'.'.join(stmt.target.parts)}"
             )
         self._validate_carrier_path(
@@ -14685,9 +15322,9 @@ class CompilationContext:
             statement_label=statement_label,
             allowed_kinds=allowed_kinds,
         )
-        if isinstance(resolved.decl, model.EnumDecl) and resolved.remainder:
+        if isinstance(resolved.decl, (model.EnumDecl, ResolvedSchemaGroup)) and resolved.remainder:
             raise CompileError(
-                f"{statement_label} enum targets must not descend through fields in {owner_label}: "
+                f"{statement_label} enum and schema-group targets must not descend through fields in {owner_label}: "
                 f"{'.'.join(path.parts)}"
             )
         return resolved
@@ -14754,6 +15391,23 @@ class CompilationContext:
                             wildcard=path.wildcard,
                         )
                     )
+            if "schema_group" in allowed_kinds:
+                schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
+                if schema_decl is not None and len(remainder) >= 2 and remainder[0] == "groups":
+                    resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                    group = next(
+                        (item for item in resolved_schema.groups if item.key == remainder[1]),
+                        None,
+                    )
+                    if group is not None:
+                        matches.append(
+                            ResolvedLawPath(
+                                unit=lookup_unit,
+                                decl=group,
+                                remainder=remainder[2:],
+                                wildcard=path.wildcard,
+                            )
+                        )
 
         unique_matches: list[ResolvedLawPath] = []
         seen: set[tuple[tuple[str, ...], str, tuple[str, ...], str]] = set()
@@ -14823,7 +15477,7 @@ class CompilationContext:
     ) -> tuple[tuple[str, ...], str, tuple[str, ...], str]:
         return (
             match.unit.module_parts,
-            match.decl.name,
+            self._law_path_decl_identity(match.decl),
             match.remainder,
             type(match.decl).__name__,
         )
@@ -14852,6 +15506,9 @@ class CompilationContext:
                 continue
             if kind == "enum":
                 labels.append("declared enum")
+                continue
+            if kind == "schema_group":
+                labels.append("declared schema group")
         return " or ".join(labels)
 
     def _resolve_output_field_node(
@@ -14973,9 +15630,28 @@ class CompilationContext:
         container: CanonicalLawPath,
         path: CanonicalLawPath,
     ) -> bool:
+        if isinstance(container.decl, ResolvedSchemaGroup):
+            if container.remainder or container.wildcard:
+                return False
+            return any(
+                self._canonical_law_path_contains_path(
+                    CanonicalLawPath(
+                        unit=member.artifact.unit,
+                        decl=member.artifact.decl,
+                        remainder=(),
+                        wildcard=False,
+                    ),
+                    path,
+                )
+                for member in self._schema_group_member_artifacts(
+                    container.decl,
+                    unit=container.unit,
+                )
+            )
         if (
             container.unit.module_parts != path.unit.module_parts
-            or container.decl.name != path.decl.name
+            or self._law_path_decl_identity(container.decl)
+            != self._law_path_decl_identity(path.decl)
             or type(container.decl) is not type(path.decl)
         ):
             return False
@@ -14990,6 +15666,14 @@ class CompilationContext:
                 or container.wildcard == path.wildcard
             )
         return container.wildcard
+
+    def _law_path_decl_identity(
+        self,
+        decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup,
+    ) -> str:
+        if isinstance(decl, ResolvedSchemaGroup):
+            return decl.key
+        return decl.name
 
     def _path_set_contains_path(
         self,
@@ -15082,14 +15766,60 @@ class CompilationContext:
                 agent_contract=agent_contract,
                 owner_label="workflow law",
                 statement_label="law path",
-                allowed_kinds=("input", "output", "enum"),
+                allowed_kinds=("input", "output", "enum", "schema_group"),
             )
         except CompileError:
             return ".".join(path.parts)
-        title = self._display_readable_decl(resolved.decl)
+        if isinstance(resolved.decl, ResolvedSchemaGroup):
+            title = resolved.decl.title
+        else:
+            title = self._display_readable_decl(resolved.decl)
         if not resolved.remainder:
             return title
         return f"{title}.{'.'.join(resolved.remainder)}"
+
+    def _render_invalidation_targets(
+        self,
+        path: model.LawPath,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract | None = None,
+    ) -> tuple[str, ...]:
+        try:
+            resolved = self._resolve_law_path(
+                path,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label="workflow law",
+                statement_label="invalidate",
+                allowed_kinds=("input", "output", "schema_group"),
+            )
+        except CompileError:
+            return (".".join(path.parts),)
+        if isinstance(resolved.decl, ResolvedSchemaGroup):
+            members = self._schema_group_member_artifacts(resolved.decl, unit=resolved.unit)
+            if not members:
+                return (resolved.decl.title,)
+            return tuple(member.title for member in members)
+        return (self._display_law_path_root(path, unit=unit, agent_contract=agent_contract),)
+
+    def _schema_group_member_artifacts(
+        self,
+        group: ResolvedSchemaGroup,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[ResolvedSchemaArtifact, ...]:
+        for schema_decl in unit.schemas_by_name.values():
+            resolved_schema = self._resolve_schema_decl(schema_decl, unit=unit)
+            if group not in resolved_schema.groups:
+                continue
+            artifacts_by_key = {artifact.key: artifact for artifact in resolved_schema.artifacts}
+            return tuple(
+                artifacts_by_key[key]
+                for key in group.members
+                if key in artifacts_by_key
+            )
+        return ()
 
     def _coerce_path_set(
         self,
@@ -15212,6 +15942,36 @@ class CompilationContext:
             registry_name="workflows_by_name",
             missing_label="workflow declaration",
         )
+
+    def _try_resolve_route_only_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.RouteOnlyDecl] | None:
+        try:
+            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        except CompileError:
+            return None
+        decl = target_unit.route_onlys_by_name.get(ref.declaration_name)
+        if decl is None:
+            return None
+        return target_unit, decl
+
+    def _try_resolve_grounding_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.GroundingDecl] | None:
+        try:
+            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        except CompileError:
+            return None
+        decl = target_unit.groundings_by_name.get(ref.declaration_name)
+        if decl is None:
+            return None
+        return target_unit, decl
 
     def _resolve_review_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit

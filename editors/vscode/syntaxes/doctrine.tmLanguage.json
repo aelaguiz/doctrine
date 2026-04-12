@@ -342,7 +342,7 @@
       }
     },
     "workflow": {
-      "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(workflow|route_only|grounding)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -391,7 +391,7 @@
       }
     },
     "reviewDeclaration": {
-      "match": "^(\\s*)(review)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(review|review_family)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -986,7 +986,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(derive|classify|compare|defend|from|against|using|render_profile|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption)\\b"
+      "match": "\\b(derive|classify|compare|defend|from|against|using|render_profile|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
     },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",
@@ -1220,7 +1220,7 @@
       }
     },
     "reviewSubjectMapField": {
-      "match": "^(\\s*)(subject_map)(\\s*)(:)",
+      "match": "^(\\s*)(subject_map|selector|cases)(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.other.field.doctrine"
@@ -1256,7 +1256,7 @@
       }
     },
     "reviewFieldBinding": {
-      "match": "^(\\s*)(verdict|reviewed_artifact|analysis|readback|failing_gates|blocked_gate|next_owner|active_mode|trigger_reason)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "match": "^(\\s*)(verdict|reviewed_artifact|analysis|readback|current_artifact|failing_gates|blocked_gate|next_owner|active_mode|trigger_reason)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
           "name": "keyword.other.field.doctrine"
