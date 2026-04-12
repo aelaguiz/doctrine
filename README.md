@@ -66,7 +66,7 @@ For the motivating use case and the runtime rationale, read
 - session-based compilation, once-per-session import loading, and deterministic
   default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
-  `examples/81_final_output_rejects_non_output_refs`
+  `examples/83_review_final_output_json_schema`
 - a repo-local emit pipeline for compiled Markdown plus compiler-owned workflow
   flow artifacts, and a VS Code extension for `.prompt` files
 

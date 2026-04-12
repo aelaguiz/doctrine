@@ -2376,10 +2376,6 @@ class CompilationContext:
             raise CompileError(
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
             )
-        if review_fields and final_output_fields:
-            raise CompileError(
-                f"E214 final_output is not supported on review-driven agents in v1: {agent.name}"
-            )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
         field_specs: list[AgentFieldCompileSpec] = []
         seen_role = False
@@ -2432,6 +2428,7 @@ class CompilationContext:
                 field=final_output_fields[0],
                 unit=unit,
                 agent_contract=agent_contract,
+                review_output_contexts=review_output_contexts,
             )
             if final_output_fields
             else None
@@ -2602,6 +2599,7 @@ class CompilationContext:
         field: model.FinalOutputField,
         unit: IndexedUnit,
         agent_contract: AgentContract,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
     ) -> CompiledFinalOutputSpec:
         owner_label = f"agent {agent_name} final_output"
         output_unit, output_decl = self._resolve_final_output_decl(
@@ -2614,6 +2612,20 @@ class CompilationContext:
             raise CompileError(
                 "E212 final_output output is not emitted by the concrete turn in "
                 f"agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            )
+        review_semantics = self._review_output_context_for_key(
+            review_output_contexts,
+            output_key,
+        )
+        if review_output_contexts and review_semantics is None:
+            expected_outputs = ", ".join(
+                _dotted_decl_name(module_parts, output_name)
+                for (module_parts, output_name), _context in sorted(review_output_contexts)
+            )
+            raise CompileError(
+                "E214 final_output on review-driven agents must match the review comment_output in "
+                f"agent {agent_name}: expected {expected_outputs}, got "
+                f"{_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
             )
 
         scalar_items, section_items, extras = self._split_record_items(
@@ -2638,6 +2650,18 @@ class CompilationContext:
                 "E213 final_output must designate one TurnResponse output, not files or another "
                 f"target, in agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
             )
+        explicit_render_profile, render_profile = self._resolve_output_render_profiles(
+            output_decl,
+            unit=output_unit,
+            files_section=files_section,
+            shape_item=shape_item,
+        )
+        self._validate_output_guard_sections(
+            output_decl,
+            unit=output_unit,
+            allow_review_semantics=review_semantics is not None,
+            review_semantics=review_semantics,
+        )
 
         requirement = (
             self._display_symbol_value(
@@ -2667,6 +2691,9 @@ class CompilationContext:
             shape_title=shape_title,
             json_summary=json_summary,
             extras=extras,
+            review_semantics=review_semantics,
+            render_profile=render_profile,
+            explicit_render_profile=explicit_render_profile,
         )
         return CompiledFinalOutputSpec(
             output_key=output_key,
@@ -2841,6 +2868,9 @@ class CompilationContext:
         shape_title: str,
         json_summary: FinalOutputJsonShapeSummary | None,
         extras: tuple[model.AnyRecordItem, ...],
+        review_semantics: ReviewSemanticContext | None,
+        render_profile: ResolvedRenderProfile | None,
+        explicit_render_profile: ResolvedRenderProfile | None,
     ) -> CompiledSection:
         format_label = self._final_output_format_label(output_decl, unit=unit, json_summary=json_summary)
         metadata_rows = [
@@ -2931,25 +2961,44 @@ class CompilationContext:
                             resolved_document,
                             unit=document_unit,
                         ),
+                        render_profile=explicit_render_profile or resolved_document.render_profile,
                     ),
                 ]
             )
 
+        trust_surface_section = (
+            self._compile_trust_surface_section(
+                output_decl,
+                unit=unit,
+                render_profile=render_profile,
+            )
+            if output_decl.trust_surface
+            else None
+        )
+
         if json_summary is not None:
             body.extend(
-                self._compile_final_output_support_items(
+                self._compile_output_support_items(
                     json_summary.extra_items,
                     unit=json_summary.shape_unit,
                     owner_label=f"output shape {json_summary.shape_decl.name}",
                     surface_label="final_output shape support",
+                    review_semantics=review_semantics,
+                    render_profile=render_profile,
+                    insert_item_spacers=True,
                 )
             )
         body.extend(
-            self._compile_final_output_support_items(
+            self._compile_output_support_items(
                 extras,
                 unit=unit,
                 owner_label=f"output {output_decl.name}",
                 surface_label="final_output support",
+                review_semantics=review_semantics,
+                render_profile=render_profile,
+                trust_surface_section=trust_surface_section,
+                standalone_title="Read It Cold",
+                insert_item_spacers=True,
             )
         )
 
@@ -2959,39 +3008,99 @@ class CompilationContext:
                 CompiledSection(
                     title=output_decl.title,
                     body=tuple(body),
+                    render_profile=render_profile,
                 ),
             ),
         )
 
-    def _compile_final_output_support_items(
+    def _compile_output_support_items(
         self,
         items: tuple[model.AnyRecordItem, ...],
         *,
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+        trust_surface_section: CompiledSection | None = None,
+        standalone_title: str = "Standalone Read",
+        insert_item_spacers: bool = False,
     ) -> list[CompiledBodyItem]:
         compiled: list[CompiledBodyItem] = []
+        rendered_trust_surface = False
         for item in items:
+            if (
+                trust_surface_section is not None
+                and not rendered_trust_surface
+                and isinstance(item, model.RecordSection)
+                and item.key == "standalone_read"
+            ):
+                compiled.append(trust_surface_section)
+                rendered_trust_surface = True
             rendered_items = list(
                 self._compile_record_item(
                     item,
                     unit=unit,
                     owner_label=owner_label,
                     surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    render_profile=render_profile,
                 )
             )
-            if isinstance(item, model.RecordSection) and item.key == "standalone_read":
+            if (
+                isinstance(item, model.RecordSection)
+                and item.key == "standalone_read"
+                and standalone_title != "Standalone Read"
+            ):
                 rendered_items = [
-                    replace(rendered, title="Read It Cold")
+                    replace(rendered, title=standalone_title)
                     if isinstance(rendered, CompiledSection)
                     else rendered
                     for rendered in rendered_items
                 ]
-            if compiled:
+            if compiled and insert_item_spacers:
                 compiled.append("")
             compiled.extend(rendered_items)
+        if trust_surface_section is not None and not rendered_trust_surface:
+            if compiled and insert_item_spacers:
+                compiled.append("")
+            compiled.append(trust_surface_section)
         return compiled
+
+    def _resolve_output_render_profiles(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        files_section: model.RecordSection | None,
+        shape_item: model.RecordScalar | None,
+    ) -> tuple[ResolvedRenderProfile | None, ResolvedRenderProfile | None]:
+        explicit_render_profile: ResolvedRenderProfile | None = None
+        if decl.render_profile_ref is not None:
+            if files_section is not None:
+                raise CompileError(
+                    f"Output render_profile requires one markdown-bearing output artifact in {decl.name}"
+                )
+            if shape_item is None or not (
+                self._is_markdown_shape_value(shape_item.value, unit=unit)
+                or self._is_comment_shape_value(shape_item.value, unit=unit)
+            ):
+                raise CompileError(
+                    f"Output render_profile requires a markdown-bearing shape in output {decl.name}"
+                )
+            explicit_render_profile = self._resolve_render_profile_ref(
+                decl.render_profile_ref,
+                unit=unit,
+            )
+
+        default_render_profile: ResolvedRenderProfile | None = None
+        if files_section is None and shape_item is not None:
+            if self._is_comment_shape_value(shape_item.value, unit=unit):
+                default_render_profile = ResolvedRenderProfile(name="CommentMarkdown")
+            elif self._is_markdown_shape_value(shape_item.value, unit=unit):
+                default_render_profile = ResolvedRenderProfile(name="ArtifactMarkdown")
+
+        return explicit_render_profile, (explicit_render_profile or default_render_profile)
 
     def _final_output_format_label(
         self,
@@ -5393,32 +5502,12 @@ class CompilationContext:
                 f"Output must define either `files` or both `target` and `shape`: {decl.name}"
             )
 
-        explicit_render_profile: ResolvedRenderProfile | None = None
-        if decl.render_profile_ref is not None:
-            if files_section is not None:
-                raise CompileError(
-                    f"Output render_profile requires one markdown-bearing output artifact in {decl.name}"
-                )
-            if shape_item is None or not (
-                self._is_markdown_shape_value(shape_item.value, unit=unit)
-                or self._is_comment_shape_value(shape_item.value, unit=unit)
-            ):
-                raise CompileError(
-                    f"Output render_profile requires a markdown-bearing shape in output {decl.name}"
-                )
-            explicit_render_profile = self._resolve_render_profile_ref(
-                decl.render_profile_ref,
-                unit=unit,
-            )
-
-        default_render_profile: ResolvedRenderProfile | None = None
-        if files_section is None and shape_item is not None:
-            if self._is_comment_shape_value(shape_item.value, unit=unit):
-                default_render_profile = ResolvedRenderProfile(name="CommentMarkdown")
-            elif self._is_markdown_shape_value(shape_item.value, unit=unit):
-                default_render_profile = ResolvedRenderProfile(name="ArtifactMarkdown")
-
-        render_profile = explicit_render_profile or default_render_profile
+        explicit_render_profile, render_profile = self._resolve_output_render_profiles(
+            decl,
+            unit=unit,
+            files_section=files_section,
+            shape_item=shape_item,
+        )
 
         body: list[CompiledBodyItem] = []
         if files_section is not None:
@@ -5497,29 +5586,15 @@ class CompilationContext:
         )
 
         if extras:
-            support_items: list[CompiledBodyItem] = []
-            rendered_trust_surface = False
-            for item in extras:
-                if (
-                    trust_surface_section is not None
-                    and not rendered_trust_surface
-                    and isinstance(item, model.RecordSection)
-                    and item.key == "standalone_read"
-                ):
-                    support_items.append(trust_surface_section)
-                    rendered_trust_surface = True
-                support_items.extend(
-                    self._compile_record_item(
-                        item,
-                        unit=unit,
-                        owner_label=f"output {decl.name}",
-                        surface_label="output prose",
-                        review_semantics=review_semantics,
-                        render_profile=render_profile,
-                    )
-                )
-            if trust_surface_section is not None and not rendered_trust_surface:
-                support_items.append(trust_surface_section)
+            support_items = self._compile_output_support_items(
+                extras,
+                unit=unit,
+                owner_label=f"output {decl.name}",
+                surface_label="output prose",
+                review_semantics=review_semantics,
+                render_profile=render_profile,
+                trust_surface_section=trust_surface_section,
+            )
             body.append("")
             body.extend(support_items)
         elif trust_surface_section is not None:

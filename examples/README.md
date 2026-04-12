@@ -59,9 +59,10 @@ Each numbered example may contain:
   rejection, sequencing-proof, and winner-selection obligations
 - `75`: repo-level compile config plus cross-root standard-library imports
   proven across multiple entrypoints and fail-loud ambiguity/config cases
-- `76` through `81`: optional `final_output:` designation, dedicated
-  final-answer rendering, schema-backed JSON final answers, and fail-loud
-  invalid-target / wrong-kind cases
+- `76` through `83`: optional `final_output:` designation, dedicated
+  final-answer rendering, schema-backed JSON final answers, fail-loud
+  invalid-target / wrong-kind cases, and review-driven final answers that
+  reuse `comment_output`
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -152,6 +153,8 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `79_final_output_json_schema` | Schema-backed JSON `final_output:` with payload preview and example shape. |
 | `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
 | `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
+| `82_review_final_output_prose_basic` | Review-driven prose `final_output:` reuses `comment_output` as the dedicated final answer. |
+| `83_review_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` reuses `comment_output` and keeps review semantics on the same output boundary. |
 
 ## Useful Commands
 

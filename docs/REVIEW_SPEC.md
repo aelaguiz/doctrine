@@ -42,6 +42,8 @@ Important rules:
 - a concrete agent may attach a `review_family` directly only when the family
   is already concrete, such as an exhaustive case-selected family
 - the concrete agent must still emit the review's declared `comment_output`
+- when a review-driven agent uses `final_output:`, it must point at that same
+  `comment_output`
 
 ## Review Contracts
 
@@ -321,6 +323,9 @@ Because `comment_output` is still an ordinary `output`, review comments may
 also use the shared readable block kinds that ordinary outputs ship, such as
 `definitions`, `properties`, explicit `guard` shells, `callout`, or `code`,
 alongside guarded sections.
+That same `comment_output` may also be the agent's `final_output:` when the
+review should end with a dedicated prose or schema-backed JSON final-answer
+contract.
 
 ## Multi-Subject Review And Carried State
 

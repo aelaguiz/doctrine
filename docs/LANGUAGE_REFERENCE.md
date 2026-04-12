@@ -83,8 +83,8 @@ Important rules:
   ordinary concrete turn.
 - `final_output:` optionally points at one emitted `output` declaration and
   marks that `TurnResponse` artifact as the turn-ending assistant message.
-- In v1, `final_output:` is for concrete workflow-style agents only. It is not
-  supported on review-driven agents.
+- On review-driven agents, `final_output:` must point at the same emitted
+  `output` the attached `review` declares as `comment_output:`.
 
 `role` has two shipped shapes:
 
@@ -478,6 +478,8 @@ Important rules:
 - When that designated output's `output shape` carries a `json schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
+- On review-driven agents, the designated final output must be the review's
+  `comment_output:` rather than a second emitted `TurnResponse`.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 

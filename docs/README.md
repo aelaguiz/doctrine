@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/81_final_output_rejects_non_output_refs`.
+`examples/83_review_final_output_json_schema`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.

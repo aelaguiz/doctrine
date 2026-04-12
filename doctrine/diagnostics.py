@@ -746,15 +746,16 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^E214 final_output is not supported on review-driven agents in v1: (?P<agent>.+)$"
+            r"^E214 final_output on review-driven agents must match the review comment_output in agent (?P<agent>[^:]+): expected (?P<expected>.+), got (?P<got>.+)$"
         ),
         "E214",
-        "Final output is not supported on review-driven agents in v1",
+        "Final output must match the review comment_output",
         lambda match: (
-            f"Agent `{match.group('agent')}` attaches both review-driven behavior and `final_output`, "
-            "which is outside the shipped v1 surface."
+            f"Review-driven agent `{match.group('agent')}` points `final_output` at "
+            f"`{match.group('got')}`, but review turns may only designate their emitted "
+            f"`comment_output` (`{match.group('expected')}`)."
         ),
-        ("Keep `final_output:` on concrete workflow-style agents only in v1.",),
+        ("Point `final_output:` at the same `output` the review declares as `comment_output:`.",),
     ),
     (
         re.compile(

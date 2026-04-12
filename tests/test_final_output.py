@@ -451,6 +451,262 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Read It Cold", rendered)
         self.assertNotIn("## Outputs", rendered)
 
+    def test_review_driven_final_output_renders_dedicated_prose_contract(self) -> None:
+        agent = self._compile_agent(
+            """
+            input DraftSpec: "Draft Spec"
+                source: File
+                    path: "unit_root/DRAFT_SPEC.md"
+                shape: MarkdownDocument
+                requirement: Required
+
+            workflow DraftReviewContract: "Draft Review Contract"
+                completeness: "Completeness"
+                    "Confirm the draft covers the required sections."
+
+            agent ReviewLead:
+                role: "Own accepted drafts."
+                workflow: "Follow Up"
+                    "Take accepted drafts forward."
+
+            agent DraftAuthor:
+                role: "Fix rejected drafts."
+                workflow: "Revise"
+                    "Revise the rejected draft."
+
+            output DraftReviewComment: "Draft Review Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                verdict: "Verdict"
+                    "State whether the draft passed review."
+
+                reviewed_artifact: "Reviewed Artifact"
+                    "Name the reviewed artifact."
+
+                analysis_performed: "Analysis Performed"
+                    "Summarize the review analysis."
+
+                output_contents_that_matter: "Output Contents That Matter"
+                    "Summarize what the next owner should read first."
+
+                current_artifact: "Current Artifact"
+                    "Name the artifact that remains current after review."
+
+                next_owner: "Next Owner"
+                    "Name {{ReviewLead}} when accepted and {{DraftAuthor}} when rejected."
+
+                failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                    failing_gates: "Failing Gates"
+                        "List the failing review gates in authored order."
+
+                trust_surface:
+                    current_artifact
+
+                standalone_read: "Standalone Read"
+                    "A downstream owner should understand the review verdict, current artifact, and next owner from this output alone."
+
+            review DraftReview: "Draft Review"
+                subject: DraftSpec
+                contract: DraftReviewContract
+                comment_output: DraftReviewComment
+
+                fields:
+                    verdict: verdict
+                    reviewed_artifact: reviewed_artifact
+                    analysis: analysis_performed
+                    readback: output_contents_that_matter
+                    current_artifact: current_artifact
+                    failing_gates: failure_detail.failing_gates
+                    next_owner: next_owner
+
+                contract_checks: "Contract Checks"
+                    accept "The shared draft review contract passes." when contract.passes
+
+                on_accept: "If Accepted"
+                    current artifact DraftSpec via DraftReviewComment.current_artifact
+                    route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+                on_reject: "If Rejected"
+                    current artifact DraftSpec via DraftReviewComment.current_artifact
+                    route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+            agent DraftReviewAgent:
+                role: "Keep review final outputs aligned."
+                review: DraftReview
+                inputs: "Inputs"
+                    DraftSpec
+                outputs: "Outputs"
+                    DraftReviewComment
+                final_output: DraftReviewComment
+            """,
+            agent_name="DraftReviewAgent",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertNotIn("## Outputs", rendered)
+        self.assertIn("### Draft Review Comment", rendered)
+        self.assertIn("#### Trust Surface", rendered)
+        self.assertIn("- Current Artifact", rendered)
+        self.assertIn("#### Failure Detail", rendered)
+        self.assertIn("Rendered only when verdict is changes requested.", rendered)
+        self.assertIn("#### Read It Cold", rendered)
+
+    def test_review_driven_final_output_renders_schema_backed_json_contract(self) -> None:
+        agent = self._compile_agent(
+            """
+            json schema AcceptanceReviewSchema: "Acceptance Review Schema"
+                profile: OpenAIStructuredOutput
+                file: "schemas/acceptance_review.schema.json"
+
+            output shape AcceptanceReviewJson: "Acceptance Review JSON"
+                kind: JsonObject
+                schema: AcceptanceReviewSchema
+                example_file: "examples/acceptance_review.example.json"
+
+            input DraftPlan: "Draft Plan"
+                source: File
+                    path: "unit_root/DRAFT_PLAN.md"
+                shape: MarkdownDocument
+                requirement: Required
+
+            schema PlanReviewContract: "Plan Review Contract"
+                sections:
+                    summary: "Summary"
+                        "Summarize the reviewed plan."
+
+                gates:
+                    outline_complete: "Outline Complete"
+                        "Confirm the reviewed plan includes the outline."
+
+            agent ReviewLead:
+                role: "Own accepted plans."
+                workflow: "Follow Up"
+                    "Take accepted plans forward."
+
+            agent PlanAuthor:
+                role: "Fix rejected plans."
+                workflow: "Revise"
+                    "Revise the rejected plan."
+
+            output AcceptanceReviewResponse: "Acceptance Review Response"
+                target: TurnResponse
+                shape: AcceptanceReviewJson
+                requirement: Required
+
+                verdict: "Verdict"
+                    "State whether the plan passed review."
+
+                reviewed_artifact: "Reviewed Artifact"
+                    "Name the reviewed artifact."
+
+                analysis_performed: "Analysis Performed"
+                    "Summarize the review analysis."
+
+                output_contents_that_matter: "Output Contents That Matter"
+                    "Summarize what the next owner should read first."
+
+                current_artifact: "Current Artifact"
+                    "Name the artifact that remains current after review."
+
+                next_owner: "Next Owner"
+                    "Name {{ReviewLead}} when accepted and {{PlanAuthor}} when rejected."
+
+                failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                    failing_gates: "Failing Gates"
+                        "List exact failing gates, including {{contract.outline_complete}} when it fails."
+
+                trust_surface:
+                    current_artifact
+
+                standalone_read: "Standalone Read"
+                    "A downstream owner should understand the acceptance verdict, current artifact, and next owner from this output alone."
+
+            review AcceptanceReview: "Acceptance Review"
+                subject: DraftPlan
+                contract: PlanReviewContract
+                comment_output: AcceptanceReviewResponse
+
+                fields:
+                    verdict: verdict
+                    reviewed_artifact: reviewed_artifact
+                    analysis: analysis_performed
+                    readback: output_contents_that_matter
+                    current_artifact: current_artifact
+                    failing_gates: failure_detail.failing_gates
+                    next_owner: next_owner
+
+                contract_gate_checks: "Contract Gate Checks"
+                    accept "The acceptance review contract passes." when contract.passes
+
+                on_accept: "If Accepted"
+                    current artifact DraftPlan via AcceptanceReviewResponse.current_artifact
+                    route "Accepted plan returns to ReviewLead." -> ReviewLead
+
+                on_reject: "If Rejected"
+                    current artifact DraftPlan via AcceptanceReviewResponse.current_artifact
+                    route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+
+            agent AcceptanceReviewAgent:
+                role: "Keep schema-backed review final outputs aligned."
+                review: AcceptanceReview
+                inputs: "Inputs"
+                    DraftPlan
+                outputs: "Outputs"
+                    AcceptanceReviewResponse
+                final_output: AcceptanceReviewResponse
+            """,
+            agent_name="AcceptanceReviewAgent",
+            extra_files={
+                "schemas/acceptance_review.schema.json": textwrap.dedent(
+                    """\
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "verdict": {
+                          "type": "string",
+                          "enum": ["accepted", "changes_requested"],
+                          "description": "Review verdict."
+                        },
+                        "reviewed_artifact": {
+                          "type": "string",
+                          "description": "Reviewed artifact name."
+                        },
+                        "next_owner": {
+                          "type": "string",
+                          "description": "Next owner after review."
+                        }
+                      }
+                    }
+                    """
+                ),
+                "examples/acceptance_review.example.json": textwrap.dedent(
+                    """\
+                    {
+                      "verdict": "accepted",
+                      "reviewed_artifact": "Draft Plan",
+                      "next_owner": "ReviewLead"
+                    }
+                    """
+                ),
+            },
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertNotIn("## Outputs", rendered)
+        self.assertIn("| Format | Structured JSON |", rendered)
+        self.assertIn("| Schema | Acceptance Review Schema |", rendered)
+        self.assertIn("#### Payload Shape", rendered)
+        self.assertIn("| `verdict` | string | Review verdict. |", rendered)
+        self.assertIn("#### Trust Surface", rendered)
+        self.assertIn("- Current Artifact", rendered)
+        self.assertIn("#### Failure Detail", rendered)
+        self.assertIn("List exact failing gates, including Outline Complete when it fails.", rendered)
+
     def test_final_output_requires_output_declaration(self) -> None:
         error = self._compile_error(
             """
@@ -542,18 +798,87 @@ class FinalOutputTests(unittest.TestCase):
         self.assertEqual(error.code, "E213")
         self.assertIn("another target", str(error))
 
-    def test_final_output_is_not_supported_on_review_driven_agents_in_v1(self) -> None:
+    def test_review_driven_final_output_must_match_review_comment_output(self) -> None:
         error = self._compile_error(
             """
+            input DraftSpec: "Draft Spec"
+                source: File
+                    path: "unit_root/DRAFT_SPEC.md"
+                shape: MarkdownDocument
+                requirement: Required
+
+            workflow ChangeReviewContract: "Change Review Contract"
+                completeness: "Completeness"
+                    "Confirm the draft covers the required sections."
+
+            agent ReviewLead:
+                role: "Own accepted drafts."
+                workflow: "Follow Up"
+                    "Take accepted drafts forward."
+
+            agent DraftAuthor:
+                role: "Fix rejected drafts."
+                workflow: "Revise"
+                    "Revise the rejected draft."
+
+            output DraftReviewComment: "Draft Review Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                verdict: "Verdict"
+                    "State whether the draft passed review."
+
+                reviewed_artifact: "Reviewed Artifact"
+                    "Name the reviewed artifact."
+
+                analysis_performed: "Analysis Performed"
+                    "Summarize the review analysis."
+
+                output_contents_that_matter: "Output Contents That Matter"
+                    "Summarize what the next owner should read first."
+
+                next_owner: "Next Owner"
+                    "Name {{ReviewLead}} when accepted and {{DraftAuthor}} when rejected."
+
+                failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                    failing_gates: "Failing Gates"
+                        "List the failing review gates in authored order."
+
             output FinalReply: "Final Reply"
                 target: TurnResponse
                 shape: CommentText
                 requirement: Required
 
+            review ChangeReview: "Change Review"
+                subject: DraftSpec
+                contract: ChangeReviewContract
+                comment_output: DraftReviewComment
+
+                fields:
+                    verdict: verdict
+                    reviewed_artifact: reviewed_artifact
+                    analysis: analysis_performed
+                    readback: output_contents_that_matter
+                    failing_gates: failure_detail.failing_gates
+                    next_owner: next_owner
+
+                contract_checks: "Contract Checks"
+                    accept "The change review contract passes." when contract.passes
+
+                on_accept: "If Accepted"
+                    current none
+                    route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+                on_reject: "If Rejected"
+                    current none
+                    route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
             agent InvalidAgent:
-                role: "Try to mix review and final_output."
+                role: "Point final_output at the wrong review output."
                 review: ChangeReview
                 outputs: "Outputs"
+                    DraftReviewComment
                     FinalReply
                 final_output: FinalReply
             """,
@@ -561,7 +886,9 @@ class FinalOutputTests(unittest.TestCase):
         )
 
         self.assertEqual(error.code, "E214")
-        self.assertIn("review-driven agents", str(error))
+        self.assertIn("comment_output", str(error))
+        self.assertIn("DraftReviewComment", str(error))
+        self.assertIn("FinalReply", str(error))
 
 
 if __name__ == "__main__":

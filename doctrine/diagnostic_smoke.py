@@ -29,13 +29,14 @@ def main() -> int:
     _check_analysis_field_renders()
     _check_final_output_prose_renders()
     _check_final_output_json_renders()
+    _check_review_driven_final_output_renders()
     _check_final_output_missing_schema_file_has_specific_code()
     _check_final_output_invalid_schema_json_has_specific_code()
     _check_final_output_missing_example_file_has_specific_code()
     _check_final_output_non_output_ref_has_specific_code()
     _check_final_output_missing_emission_has_specific_code()
     _check_final_output_file_target_has_specific_code()
-    _check_final_output_review_conflict_has_specific_code()
+    _check_final_output_review_mismatch_has_specific_code()
     _check_reserved_analysis_slot_key_is_rejected()
     _check_output_schema_attachment_renders()
     _check_input_structure_attachment_renders()
@@ -217,6 +218,22 @@ def _check_final_output_json_renders() -> None:
         _expect("| `next_step` | string \\| null | Null only when no follow-up is needed. |" in rendered, rendered)
 
 
+def _check_review_driven_final_output_renders() -> None:
+    source = _final_output_review_prose_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        compiled = compile_prompt(prompt, "ReviewFinalOutputAgent")
+        _expect(compiled.final_output is not None, "expected compiled final_output metadata")
+        _expect(compiled.final_output.format_mode == "prose", str(compiled.final_output))
+        rendered = render_markdown(compiled)
+        _expect("## Final Output" in rendered, rendered)
+        _expect("#### Trust Surface" in rendered, rendered)
+        _expect("- Current Artifact" in rendered, rendered)
+        _expect("Rendered only when verdict is changes requested." in rendered, rendered)
+        _expect("## Outputs" not in rendered, rendered)
+
+
 def _check_final_output_missing_schema_file_has_specific_code() -> None:
     source = _final_output_json_source(schema_file="schemas/missing_repo_status.schema.json")
     with TemporaryDirectory() as tmp_dir:
@@ -346,8 +363,8 @@ def _check_final_output_file_target_has_specific_code() -> None:
         raise SmokeFailure("expected compile failure for file-backed final_output, but compilation succeeded")
 
 
-def _check_final_output_review_conflict_has_specific_code() -> None:
-    source = _final_output_review_conflict_source()
+def _check_final_output_review_mismatch_has_specific_code() -> None:
+    source = _final_output_review_mismatch_source()
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
         prompt = parse_file(prompt_path)
@@ -356,9 +373,11 @@ def _check_final_output_review_conflict_has_specific_code() -> None:
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
             _expect(getattr(exc, "code", None) == "E214", f"expected E214, got {getattr(exc, 'code', None)}")
-            _expect("review-driven agents" in str(exc), str(exc))
+            _expect("comment_output" in str(exc), str(exc))
+            _expect("DraftReviewComment" in str(exc), str(exc))
+            _expect("FinalReply" in str(exc), str(exc))
             return
-        raise SmokeFailure("expected compile failure for review + final_output, but compilation succeeded")
+        raise SmokeFailure("expected compile failure for review final_output mismatch, but compilation succeeded")
 
 
 def _check_reserved_analysis_slot_key_is_rejected() -> None:
@@ -1516,16 +1535,111 @@ agent InvalidFinalOutputAgent:
 """
 
 
-def _final_output_review_conflict_source() -> str:
-    return """output FinalReply: "Final Reply"
+def _final_output_review_prose_source() -> str:
+    return """input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+agent ReviewLead:
+    role: "Own accepted drafts."
+    workflow: "Follow Up"
+        "Take accepted drafts forward."
+
+agent DraftAuthor:
+    role: "Fix rejected drafts."
+    workflow: "Revise"
+        "Revise the rejected draft."
+
+output DraftReviewComment: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State whether the draft passed review."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize what the next owner should read first."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that remains current after review."
+
+    next_owner: "Next Owner"
+        "Name {{ReviewLead}} when accepted and {{DraftAuthor}} when rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "List the failing review gates in authored order."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should understand the review verdict, current artifact, and next owner from this output alone."
+
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: DraftReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        current_artifact: current_artifact
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_checks: "Contract Checks"
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact DraftSpec via DraftReviewComment.current_artifact
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current artifact DraftSpec via DraftReviewComment.current_artifact
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+agent ReviewFinalOutputAgent:
+    role: "Keep review final outputs aligned."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        DraftReviewComment
+    final_output: DraftReviewComment
+"""
+
+
+def _final_output_review_mismatch_source() -> str:
+    return _final_output_review_prose_source() + """
+
+output FinalReply: "Final Reply"
     target: TurnResponse
     shape: CommentText
     requirement: Required
 
 agent InvalidFinalOutputAgent:
-    role: "Try to mix review and final_output."
-    review: ChangeReview
+    role: "Point final_output at the wrong review output."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
     outputs: "Outputs"
+        DraftReviewComment
         FinalReply
     final_output: FinalReply
 """
