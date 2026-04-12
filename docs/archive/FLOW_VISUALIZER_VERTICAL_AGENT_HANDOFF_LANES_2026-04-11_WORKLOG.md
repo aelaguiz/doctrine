@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: `docs/FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11.md`
+Plan doc: `docs/archive/FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11.md`
 
 ## Initial entry
 - Run started.

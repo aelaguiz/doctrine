@@ -44,6 +44,11 @@ Current archived sets:
 - [MULTI_AGENT_SHARED_IO_FLOW_VISUALIZER_2026-04-11.md](MULTI_AGENT_SHARED_IO_FLOW_VISUALIZER_2026-04-11.md):
   archived multi-agent flow-visualizer architecture pass and worklog after the
   live README and emit docs became the canonical feature path
+- [FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11.md](FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11.md):
+  archived follow-on flow-visualizer closeout that moved the compiler-owned
+  handoff story to a route-first vertical lane
+- [FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11_WORKLOG.md](FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11_WORKLOG.md):
+  archived companion worklog for the vertical-lane closeout
 - [vscode_auditor_codex_exec_sigabrt_2026-04-11.md](vscode_auditor_codex_exec_sigabrt_2026-04-11.md):
   archived investigation note for the sandboxed Codex auditor SIGABRT on the
   VS Code integration path
