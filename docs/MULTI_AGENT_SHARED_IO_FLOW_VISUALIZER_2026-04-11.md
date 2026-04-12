@@ -85,7 +85,7 @@ Manual QA: pending (non-blocking)
     - `doctrine/emit_flow.py:110-207`
     - `doctrine/diagnostic_smoke.py:616-692`
     - `pyproject.toml:40-43`
-    - `examples/68_flow_visualizer_showcase/cases.toml:4-8`
+    - `examples/73_flow_visualizer_showcase/cases.toml:4-8`
     - `README.md:143-172`
     - `docs/EMIT_GUIDE.md:17-125`
     - `docs/COMPILER_ERRORS.md:184-188`
@@ -103,7 +103,7 @@ Manual QA: pending (non-blocking)
 - None.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- Visually inspect `examples/68_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
+- Visually inspect `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
   and the rendered README embed to confirm the grouped shared-input,
   handoff-lane, and shared-output layout still reads cleanly to a human.
 <!-- arch_skill:block:implementation_audit:end -->
@@ -531,7 +531,7 @@ Current problems with that shape:
   pipeline
 - extend `doctrine/emit_flow.py` rather than adding a second command
 - add one new curated flagship example target and checked-in flow proof under
-  `examples/68_flow_visualizer_showcase/`
+  `examples/73_flow_visualizer_showcase/`
 - update `README.md`, `docs/EMIT_GUIDE.md`, and `examples/README.md` so the new
   example and quick-start path are the live truth
 
@@ -638,7 +638,7 @@ Design intent:
 | build-contract verification | `doctrine/verify_corpus.py` | `_run_build_contract` | regenerates docs and optionally flow artifacts for configured targets | keep this path authoritative for the new flagship example and any changed flow outputs | preserve proof discipline | no second verifier path; showcase example must prove itself through build contract | `make verify-examples` |
 | structural smoke tests | `doctrine/diagnostic_smoke.py` | shared-I/O smoke, output-name smoke, new renderer/CLI smoke | protects shared extraction and naming but not the new render-model or CLI mode | add regression checks for quick-start CLI resolution and core shared-section rendering invariants | prevent visualizer regressions from drifting silently | smoke tests protect the new CLI and sectioned render contract | `make verify-diagnostics` if diagnostics surface changes; otherwise smoke invocation |
 | emit registry | `pyproject.toml` | `[tool.doctrine.emit.targets]` | only example targets `07`, `14`, and `36` are registered | add a new flagship flow showcase target | README/demo asset and build-contract proof need a stable configured target | showcase example has a stable build-contract name | `make verify-examples` |
-| flagship example source and proof | `examples/68_flow_visualizer_showcase/**` | new prompt, manifest, refs, and `build_ref/AGENTS.flow.{d2,svg}` | no current example simultaneously owns public handoff clarity and shared-entity visibility | add a curated public-friendly example instead of distorting existing teaching examples | keep one new idea per existing example while still shipping a compelling showcase | new example becomes the canonical public visualizer proof | `make verify-examples`, targeted manifest verification |
+| flagship example source and proof | `examples/73_flow_visualizer_showcase/**` | new prompt, manifest, refs, and `build_ref/AGENTS.flow.{d2,svg}` | no current example simultaneously owns public handoff clarity and shared-entity visibility | add a curated public-friendly example instead of distorting existing teaching examples | keep one new idea per existing example while still shipping a compelling showcase | new example becomes the canonical public visualizer proof | `make verify-examples`, targeted manifest verification |
 | public docs | `README.md`, `docs/EMIT_GUIDE.md`, `examples/README.md` | flow docs and example guidance | docs mention `emit_flow`, but the story is split and README has no embedded flow SVG | embed the generated showcase SVG, document the quick-start mode, and point readers at the flagship example | user asked for clean docs and a README-embedded SVG | live docs tell one consistent public story | doc command receipts plus build-contract proof asset generation |
 | stable error docs | `docs/COMPILER_ERRORS.md` | emit error catalog | current catalog covers target/config/D2 failures only | update only if the new quick-start mode adds or changes stable emit errors | keep docs aligned with shipped failures | stable error catalog stays honest about CLI behavior | manual doc sync plus any emit smoke/error tests |
 
@@ -753,7 +753,7 @@ Status: COMPLETE
   add one dedicated public-friendly example that simultaneously shows multi-agent
   handoffs and shared entities well enough to anchor the README.
 * Work:
-  add `examples/68_flow_visualizer_showcase/` with a narrow prompt, manifest,
+  add `examples/73_flow_visualizer_showcase/` with a narrow prompt, manifest,
   checked render refs, and checked `build_ref/AGENTS.flow.{d2,svg}` artifacts;
   register its emit target in `pyproject.toml`; keep `07` and `36` narrow and
   use the new example as the public flagship instead of mutating existing
@@ -820,7 +820,7 @@ test harness. The important unit-level guards are:
 The integration path should stay small and real:
 
 - one targeted `emit_flow` regeneration for
-  `examples/68_flow_visualizer_showcase`
+  `examples/73_flow_visualizer_showcase`
 - one targeted manifest run for that example
 - `make verify-examples` for the whole shipped corpus and checked-in flow proof
   artifacts

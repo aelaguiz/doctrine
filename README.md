@@ -66,7 +66,7 @@ For the motivating use case and the runtime rationale, read
 - session-based compilation, once-per-session import loading, and deterministic
   default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
-  `examples/68_flow_visualizer_showcase`
+  `examples/73_flow_visualizer_showcase`
 - a repo-local emit pipeline for compiled Markdown plus compiler-owned workflow
   flow artifacts, and a VS Code extension for `.prompt` files
 
@@ -157,19 +157,19 @@ workflow.
 ## Workflow Visualizer
 
 <p align="center">
-  <img src="examples/68_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, routed agent handoffs, a shared handoff carrier, and local outputs." width="1200">
+  <img src="examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, routed agent handoffs, a shared handoff carrier, and local outputs." width="1200">
 </p>
 
 The checked-in showcase above comes from
-`examples/68_flow_visualizer_showcase`. It shows shared inputs, explicit
+`examples/73_flow_visualizer_showcase`. It shows shared inputs, explicit
 handoff routes, one shared carrier output, and each agent's local artifacts in
 one compiler-owned graph.
 
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
-uv run --locked python -m doctrine.emit_flow --target example_68_flow_visualizer_showcase
-uv run --locked python -m doctrine.emit_flow --entrypoint examples/68_flow_visualizer_showcase/prompts/AGENTS.prompt --output-dir examples/68_flow_visualizer_showcase/build
+uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_flow --entrypoint examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt --output-dir examples/73_flow_visualizer_showcase/build
 ```
 
 ## Documentation

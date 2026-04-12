@@ -1,0 +1,97 @@
+# This example introduces `review_family` as a dedicated reusable review
+# scaffold. The child review still owns subject, contract, and outcomes, and it
+# must account for inherited shared review entries explicitly.
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact."
+
+
+workflow SharedDraftReviewContract: "Shared Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Repair rejected draft defects."
+    workflow: "Revise"
+        "Revise the same draft when review requests changes."
+
+
+output SharedReviewFamilyComment: "Shared Review Family Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when the draft is rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now."
+
+
+review_family SharedDraftReviewFamily: "Shared Draft Review"
+    comment_output: SharedReviewFamilyComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    handoff_first:
+        reject "Producer handoff is incomplete." when DraftSpec.handoff_incomplete
+
+
+review SharedDraftReview[SharedDraftReviewFamily]: "Shared Draft Review"
+    subject: DraftSpec
+    contract: SharedDraftReviewContract
+    inherit fields
+    inherit handoff_first
+
+    contract_checks: "Contract Checks"
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept:
+        current none
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject:
+        current none
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+
+agent SharedReviewFamilyDemo:
+    role: "Keep reusable review scaffolds explicit and accounted for."
+    review: SharedDraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        SharedReviewFamilyComment

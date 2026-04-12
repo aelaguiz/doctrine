@@ -1,0 +1,91 @@
+# This example introduces schema-group invalidation consumption. The workflow
+# invalidates one declared group, and the emitted readback expands that group
+# into concrete member artifacts in authored order.
+
+input BuildFacts: "Build Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host facts that say whether structure changed and downstream rebuild work is now required."
+
+
+output BuildPlan: "Build Plan"
+    target: File
+        path: "unit_root/BUILD_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+
+output ManifestFile: "Manifest File"
+    target: File
+        path: "unit_root/MANIFEST.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+output RebuildHandoff: "Rebuild Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    invalidations: "Invalidations"
+        "Name any artifacts that are no longer current."
+
+    trust_surface:
+        current_artifact
+        invalidations
+
+    standalone_read: "Standalone Read"
+        "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
+
+
+schema BuildSurfaceSchema: "Build Surface Schema"
+    sections:
+        summary: "Summary"
+            "Summarize the shipped surface."
+
+    artifacts:
+        review_comment: "Review Comment"
+            ref: ReviewComment
+
+        manifest_file: "Manifest File"
+            ref: ManifestFile
+
+    groups:
+        downstream_rebuild: "Downstream Rebuild"
+            review_comment
+            manifest_file
+
+
+agent RoutingOwner:
+    role: "Own rebuild reroutes when downstream truth is invalidated."
+    workflow: "Route"
+        "Route the same issue back for rebuild."
+
+
+workflow StructureShift: "Structure Shift"
+    law:
+        active when BuildFacts.structure_changed
+        current artifact BuildPlan via RebuildHandoff.current_artifact
+        invalidate BuildSurfaceSchema.groups.downstream_rebuild via RebuildHandoff.invalidations
+        stop "Downstream rebuild surface is no longer current."
+        route "Route the issue back to RoutingOwner for rebuild." -> RoutingOwner
+
+
+agent SchemaGroupInvalidationDemo:
+    role: "Invalidate downstream rebuild groups when structure changes."
+    workflow: StructureShift
+    inputs: "Inputs"
+        BuildFacts
+    outputs: "Outputs"
+        BuildPlan
+        RebuildHandoff

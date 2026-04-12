@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/68_flow_visualizer_showcase`.
+`examples/73_flow_visualizer_showcase`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -57,7 +57,8 @@ needs, and groups the work that should be built together.
   extensions, now proved in `examples/64_*` through `examples/67_*`
 - [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md):
   phase 4 schema-backed review integration, review families, `route_only`,
-  `grounding`, and control-plane convergence
+  `grounding`, and control-plane convergence, now proved in `examples/68_*`
+  through `examples/72_*`
 
 ## Historical Design Context
 

@@ -54,9 +54,9 @@ Doctrine reads emit targets from `[tool.doctrine.emit.targets]` in
 [tool.doctrine.emit]
 
 [[tool.doctrine.emit.targets]]
-name = "example_68_flow_visualizer_showcase"
-entrypoint = "examples/68_flow_visualizer_showcase/prompts/AGENTS.prompt"
-output_dir = "examples/68_flow_visualizer_showcase/build"
+name = "example_73_flow_visualizer_showcase"
+entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
+output_dir = "examples/73_flow_visualizer_showcase/build"
 ```
 
 Each target field has one job:
@@ -86,7 +86,7 @@ uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 Emit one workflow data-flow graph from a configured target:
 
 ```bash
-uv run --locked python -m doctrine.emit_flow --target example_68_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 ```
 
 If you are not running from the repo root, point the command at the config
@@ -95,7 +95,7 @@ file explicitly:
 ```bash
 uv run --locked python -m doctrine.emit_flow \
   --pyproject /path/to/pyproject.toml \
-  --target example_68_flow_visualizer_showcase
+  --target example_73_flow_visualizer_showcase
 ```
 
 Useful CLI rules:
@@ -117,8 +117,8 @@ When you want a first flow render before adding a permanent target to
 
 ```bash
 uv run --locked python -m doctrine.emit_flow \
-  --entrypoint examples/68_flow_visualizer_showcase/prompts/AGENTS.prompt \
-  --output-dir examples/68_flow_visualizer_showcase/build
+  --entrypoint examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt \
+  --output-dir examples/73_flow_visualizer_showcase/build
 ```
 
 Direct mode keeps the same prompts-root validation and the same output layout
@@ -152,8 +152,8 @@ examples/07_handoffs/build/project_lead/AGENTS.md
 examples/07_handoffs/build/research_specialist/AGENTS.md
 examples/07_handoffs/build/writing_specialist/AGENTS.md
 
-examples/68_flow_visualizer_showcase/build/AGENTS.flow.d2
-examples/68_flow_visualizer_showcase/build/AGENTS.flow.svg
+examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
+examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
 ```
 
 ## How To Read `emit_flow` Output
@@ -193,7 +193,7 @@ make verify-examples
 For one manifest-backed example:
 
 ```bash
-uv run --locked python -m doctrine.verify_corpus --manifest examples/68_flow_visualizer_showcase/cases.toml
+uv run --locked python -m doctrine.verify_corpus --manifest examples/73_flow_visualizer_showcase/cases.toml
 ```
 
 If you changed emit diagnostics or the emit CLI error surface, also run:
@@ -204,8 +204,8 @@ make verify-diagnostics
 
 The canonical checked-in flow proof lives in:
 
-- `examples/68_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
-- `examples/68_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
+- `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
+- `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
 
 ## Troubleshooting
 

@@ -36,15 +36,20 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `68`: second-wave integration surfaces for `analysis`,
+- `54` through `72`: second-wave integration surfaces for `analysis`,
   owner-aware `schema:` / `structure:` attachments, readable markdown
   documents and descendants, schema artifact inventories and reusable groups,
   shared readable block reuse, multiline code blocks, schema-backed review
   contracts, title-bearing identity projections for concrete agents and enum
   members, authored render profiles, compact `properties`, typed row/item
-  schemas, semantic render-profile lowering targets, late extension readable
-  blocks such as raw `markdown`, `html`, `footnotes`, `image`, and structured
-  nested table cells, plus the flagship multi-agent flow-visualizer showcase
+  schemas, semantic render-profile lowering targets, and late extension
+  readable blocks such as raw `markdown`, `html`, `footnotes`, `image`, and
+  structured nested table cells, plus `review_family`, case-selected review
+  families, dedicated `route_only`, dedicated `grounding`, and schema-group
+  invalidation
+- `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
+  routed handoffs, a shared carrier output, and checked-in `.flow.{d2,svg}`
+  artifacts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -121,7 +126,12 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `65_row_and_item_schemas` | Typed `item_schema:` / `row_schema:` descendants on readable list and table blocks. |
 | `66_late_extension_blocks` | Explicit raw `markdown` / `html`, `footnotes`, `image`, and structured nested table cells. |
 | `67_semantic_profile_lowering` | Semantic render-profile lowering for `analysis.stages`, `review.contract_checks`, and `control.invalidations`, plus document-attached profile inheritance through `output structure:`. |
-| `68_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, routed handoffs, shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
+| `68_review_family_shared_scaffold` | Dedicated `review_family` reuse with explicit inherited scaffold accounting. |
+| `69_case_selected_review_family` | Case-selected `review_family` with exhaustive enum-backed cases. |
+| `70_route_only_declaration` | Dedicated `route_only` lowered through the shipped route-only workflow-law path. |
+| `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy and ordinary routing. |
+| `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
+| `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, routed handoffs, shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
 
 ## Useful Commands
 
@@ -142,9 +152,9 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
-uv run --locked python -m doctrine.emit_flow --target example_68_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 ```
 
-Example `68_flow_visualizer_showcase` is the canonical checked-in flow
+Example `73_flow_visualizer_showcase` is the canonical checked-in flow
 example. Its `build_ref/` tree includes both compiled Markdown and
 `AGENTS.flow.{d2,svg}` proof artifacts.
