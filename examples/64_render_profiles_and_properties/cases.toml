@@ -57,6 +57,19 @@ message_contains = [
 ]
 
 [[cases]]
+name = "render profiles reject workflow-law sentence targets"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_RENDER_PROFILE_WORKFLOW_LAW_TARGET.prompt"
+agent = "InvalidRenderProfileWorkflowLawTargetDemo"
+exception_type = "CompileError"
+error_code = "E298"
+message_contains = [
+  "Unknown render_profile target",
+  "current_artifact",
+]
+
+[[cases]]
 name = "render profiles reject invalid identity modes"
 status = "active"
 kind = "compile_fail"

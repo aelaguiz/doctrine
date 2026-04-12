@@ -593,6 +593,14 @@ class ToAst(Transformer):
                     "Use `schema:` for reusable inventory ownership or keep local `must_include:` prose, not both.",
                 ),
             )
+        if schema is not None and structure is not None:
+            raise TransformParseFailure(
+                "Outputs may not define both `schema:` and `structure:`.",
+                hints=(
+                    "Pick one artifact owner per markdown output declaration.",
+                    "Use `schema:` for reusable inventory ownership or `structure:` for reusable markdown structure, not both.",
+                ),
+            )
         return OutputBodyParts(
             items=tuple(record_items),
             schema=schema,
@@ -692,6 +700,10 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def analysis_section_item(self, value):
         return value
+
+    @v_args(inline=True)
+    def prove_stmt(self, target_title, basis):
+        return model.ProveStmt(target_title=target_title, basis=basis)
 
     @v_args(inline=True)
     def derive_stmt(self, target_title, basis):
@@ -804,8 +816,14 @@ class ToAst(Transformer):
     def decision_rejected_required_stmt(self, _items):
         return model.DecisionRequiredItem(key="rejected")
 
+    def decision_sequencing_proof_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="sequencing_proof")
+
     def decision_winner_reasons_required_stmt(self, _items):
         return model.DecisionRequiredItem(key="winner_reasons")
+
+    def decision_winner_required_stmt(self, _items):
+        return model.DecisionChooseWinner()
 
     def decision_choose_one_winner_stmt(self, _items):
         return model.DecisionChooseWinner()

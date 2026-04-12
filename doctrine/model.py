@@ -646,6 +646,12 @@ class SkillsDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class ProveStmt:
+    target_title: str
+    basis: LawPathSet
+
+
+@dataclass(slots=True, frozen=True)
 class DeriveStmt:
     target_title: str
     basis: LawPathSet
@@ -671,7 +677,13 @@ class DefendStmt:
 
 
 AnalysisSectionItem: TypeAlias = (
-    ProseLine | SectionBodyRef | DeriveStmt | ClassifyStmt | CompareStmt | DefendStmt
+    ProseLine
+    | SectionBodyRef
+    | ProveStmt
+    | DeriveStmt
+    | ClassifyStmt
+    | CompareStmt
+    | DefendStmt
 )
 
 

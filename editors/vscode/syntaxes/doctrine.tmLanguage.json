@@ -1006,7 +1006,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
+      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
     },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",

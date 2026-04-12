@@ -14,7 +14,7 @@ enum CompareRule: "Compare Rule"
 
 analysis ReleaseAnalysis: "Release Analysis"
     stages: "Stages"
-        derive "Release plan" from {CurrentPlan}
+        prove "Release plan" from {CurrentPlan}
         classify "Risk band" as RiskBand
         compare "Coverage" against {CurrentPlan}
         defend "Recommendation" using {CurrentPlan}

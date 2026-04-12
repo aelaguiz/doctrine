@@ -6,13 +6,14 @@ decision PlayableStrategyChoice: "Playable Strategy Choice"
     candidates minimum 3
     rank required
     rejects required
-    choose one winner
+    winner required
     rank_by {teaching_fit, product_reality, capstone_coherence, downstream_preservability}
 
 decision RepChoice: "Rep Choice"
     candidate_pool required
     kept required
     rejected required
+    sequencing_proof required
     winner_reasons required
 
 

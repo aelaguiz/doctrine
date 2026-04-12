@@ -1,0 +1,18 @@
+schema DeliveryInventory: "Delivery Inventory"
+    sections:
+        summary: "Summary"
+            "Include a short summary."
+
+
+document DeliveryPlan: "Delivery Plan"
+    section summary: "Summary"
+        "Write the summary."
+
+
+output InvalidDeliveryPlan: "Invalid Delivery Plan"
+    target: File
+        path: "unit_root/INVALID_DELIVERY_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    schema: DeliveryInventory
+    structure: DeliveryPlan

@@ -290,10 +290,12 @@ analysis_override_section: "override" CNAME ":" string? _NL _INDENT analysis_sec
 analysis_section_body: analysis_section_item+
 ?analysis_section_item: prose_line _NL?
                       | workflow_section_ref_item
+                      | prove_stmt
                       | derive_stmt
                       | classify_stmt
                       | compare_stmt
                       | defend_stmt
+prove_stmt: "prove" string "from" path_set_expr _NL
 derive_stmt: "derive" string "from" path_set_expr _NL
 classify_stmt: "classify" string "as" name_ref _NL
 compare_stmt: "compare" string "against" path_set_expr compare_using_clause? _NL
@@ -309,7 +311,9 @@ decision_body_line: decision_render_profile_stmt
                   | decision_candidate_pool_required_stmt
                   | decision_kept_required_stmt
                   | decision_rejected_required_stmt
+                  | decision_sequencing_proof_required_stmt
                   | decision_winner_reasons_required_stmt
+                  | decision_winner_required_stmt
                   | decision_choose_one_winner_stmt
                   | decision_rank_by_stmt
 decision_render_profile_stmt: "render_profile" ":" name_ref _NL?
@@ -320,7 +324,9 @@ decision_rejects_required_stmt: "rejects" "required" _NL
 decision_candidate_pool_required_stmt: "candidate_pool" "required" _NL
 decision_kept_required_stmt: "kept" "required" _NL
 decision_rejected_required_stmt: "rejected" "required" _NL
+decision_sequencing_proof_required_stmt: "sequencing_proof" "required" _NL
 decision_winner_reasons_required_stmt: "winner_reasons" "required" _NL
+decision_winner_required_stmt: "winner" "required" _NL
 decision_choose_one_winner_stmt: "choose" "one" "winner" _NL
 decision_rank_by_stmt: "rank_by" "{" CNAME ("," CNAME)* "}" _NL
 

@@ -41,6 +41,7 @@ expected_lines = [
   "A candidate pool is required.",
   "Kept candidates are required.",
   "Rejected candidates are required.",
+  "Sequencing proof is required.",
   "Winner reasons are required.",
 ]
 

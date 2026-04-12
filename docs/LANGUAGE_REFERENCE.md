@@ -206,7 +206,7 @@ attach through `analysis:`.
 ```prompt
 analysis ReleaseAnalysis: "Release Analysis"
     stages: "Stages"
-        derive "Release plan" from {CurrentPlan}
+        prove "Release plan" from {CurrentPlan}
         classify "Risk band" as RiskBand
         compare "Coverage" against {CurrentPlan}
         defend "Recommendation" using {CurrentPlan}
@@ -217,11 +217,16 @@ Important rules:
 - `analysis` is a readable declaration with titled keyed sections.
 - `analysis` may attach `render_profile:` to control how its readable
   structure renders when another shipped surface lowers it into markdown.
-- A section body may contain prose plus `derive`, `classify`, `compare`, and
-  `defend`.
+- A section body may contain prose plus `prove`, `derive`, `classify`,
+  `compare`, and `defend`.
+- Dump-era analysis shorthands such as `require ...`, `screen ... with ...`,
+  top-level `basis:`, `upstream_truth`, `assign ... using ...`, and
+  `export ...` are not shipped analysis syntax. Keep proof in `prove`,
+  classification in `classify`, candidate obligations in `decision`, and
+  higher-level contract shape in `schema`, `document`, or prose.
 - `classify ... as EnumRef` uses a declared `enum`.
-- `derive`, `compare`, and `defend` read declared artifact roots or addressable
-  paths.
+- `prove`, `derive`, `compare`, and `defend` read declared artifact roots or
+  addressable paths.
 - Analysis sections are addressable, so refs such as
   `ReleaseAnalysis:stages.title` are valid.
 
@@ -247,8 +252,13 @@ Important rules:
   renders when Doctrine lowers it into markdown.
 - The shipped typed statements are `candidates minimum <n>`, `rank required`,
   `rejects required`, `candidate_pool required`, `kept required`,
-  `rejected required`, `winner_reasons required`, `choose one winner`, and
+  `rejected required`, `sequencing_proof required`,
+  `winner_reasons required`, `choose one winner`, `winner required`, and
   `rank_by {dimension, ...}`.
+- `winner required` is accepted as a normalized alias for `choose one winner`.
+- Dump-era `solver_screen ...` wording is not a shipped decision keyword. Keep
+  screening evidence in the generic decision scaffold or in review gating when
+  the semantics are truly contract-gating.
 - Decision declarations stay generic. What counts as a candidate or which
   dimensions matter remains author-owned, not compiler-owned.
 
@@ -286,6 +296,8 @@ Important rules:
 - On `output shape`, `schema:` remains the owner-aware attachment point for
   `json schema`.
 - Output-attached schemas must still expose at least one section.
+- A markdown-bearing `output` may not attach both `schema:` and `structure:`.
+  Pick exactly one artifact owner on that surface.
 - Schema addressability is family-namespaced by authored key:
   `BuildSurfaceSchema:sections.summary.title`,
   `BuildSurfaceSchema:artifacts.manifest_file.title`, and
@@ -359,6 +371,9 @@ Important rules:
 - `analysis.stages` supports `titled_section` and `natural_ordered_prose`.
 - `review.contract_checks` supports `titled_section` and `sentence`.
 - `control.invalidations` supports `expanded_sequence` and `sentence`.
+- Workflow-law sentences such as `current artifact`, `own only`, and
+  `preserve exact` stay compiler-owned sentence lowering. They are not shipped
+  `render_profile` targets.
 - `render_profile:` may attach to `analysis`, `schema`, `document`, and
   markdown-bearing `output`.
 - `Comment` and `CommentText` outputs default to `CommentMarkdown`.

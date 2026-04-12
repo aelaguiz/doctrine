@@ -410,6 +410,7 @@ class ResolvedSkillsBody:
 ResolvedAnalysisSectionItem: TypeAlias = (
     model.ProseLine
     | ResolvedSectionRef
+    | model.ProveStmt
     | model.DeriveStmt
     | model.ClassifyStmt
     | model.CompareStmt
@@ -818,9 +819,6 @@ _BUILTIN_OUTPUT_TARGETS = {
 
 _BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")
 _KNOWN_RENDER_PROFILE_TARGETS = {
-    "current_artifact",
-    "own_only",
-    "preserve_exact",
     "review.contract_checks",
     "analysis.stages",
     "control.invalidations",
@@ -4091,6 +4089,11 @@ class CompilationContext:
             if isinstance(item, ResolvedSectionRef):
                 body.append(f"- {item.label}")
                 continue
+            if isinstance(item, model.ProveStmt):
+                body.append(
+                    f"Prove {item.target_title} from {self._render_analysis_basis(item.basis, unit=unit)}."
+                )
+                continue
             if isinstance(item, model.DeriveStmt):
                 body.append(
                     f"Derive {item.target_title} from {self._render_analysis_basis(item.basis, unit=unit)}."
@@ -4175,6 +4178,7 @@ class CompilationContext:
             "candidate_pool": "A candidate pool is required.",
             "kept": "Kept candidates are required.",
             "rejected": "Rejected candidates are required.",
+            "sequencing_proof": "Sequencing proof is required.",
             "winner_reasons": "Winner reasons are required.",
         }
         text = decision_required_text.get(item.key)
@@ -10780,7 +10784,7 @@ class CompilationContext:
                 )
                 resolved.append(ResolvedSectionRef(label=display.text))
                 continue
-            if isinstance(item, (model.DeriveStmt, model.CompareStmt, model.DefendStmt)):
+            if isinstance(item, (model.ProveStmt, model.DeriveStmt, model.CompareStmt, model.DefendStmt)):
                 basis = self._coerce_path_set(item.basis)
                 if not basis.paths:
                     raise CompileError(f"Analysis basis may not be empty in {owner_label}")
