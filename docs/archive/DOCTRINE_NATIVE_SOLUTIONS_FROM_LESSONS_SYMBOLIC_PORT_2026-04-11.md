@@ -5,7 +5,7 @@ status: proposal
 owners: [aelaguiz]
 reviewers: []
 related:
-  - docs/DOCTRINE_FEATURE_REQUESTS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md
+  - docs/archive/DOCTRINE_FEATURE_REQUESTS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md
   - docs/01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md
   - docs/02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md
   - docs/03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md
@@ -67,14 +67,14 @@ Three design moves cover almost all of what Lessons is asking for:
 
 Those moves line up with the planned phase docs:
 
-- [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md)
+- [../01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](../01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md)
   establishes the core rule that keys are law while titles are prose.
-- [02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md)
+- [../02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](../02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md)
   introduces first-class inventory structure through `schema`.
-- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
+- [../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
   makes typed readable output render beautifully through `properties`,
   `render_profile`, and semantic lowering.
-- [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md)
+- [../04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](../04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md)
   is the natural landing zone for case-driven review and reusable
   control-plane integration.
 
@@ -179,10 +179,10 @@ human-facing. The right move is to make agents honor that same rule directly.
 
 ## Planned-feature fit
 
-- [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md)
+- [../01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](../01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md)
   already states the governing principle that keys are law and titles are
   prose. This solution is the direct extension of that rule to `agent`.
-- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
+- [../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
   would make the readback especially nice through `properties` and
   `render_profile`.
 
@@ -278,10 +278,10 @@ just a rendering override.
 
 ## Planned-feature fit
 
-- [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md)
+- [../01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](../01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md)
   provides the design principle: structural keys and human-facing titles are
   different jobs.
-- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
+- [../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
   would improve how enum-driven branches and properties render once members
   have distinct titles.
 
@@ -465,7 +465,7 @@ introducing a hidden dynamic gate namespace.
 
 ## Planned-feature fit
 
-- [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md)
+- [../04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](../04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md)
   already plans `review_family`, schema-backed contracts, and control-plane
   convergence. This proposal is the natural extension of that phase.
 - [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
@@ -574,13 +574,13 @@ Doctrine already wants: `schema` as reusable inventory structure.
 
 ## Planned-feature fit
 
-- [02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md)
+- [../02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](../02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md)
   already establishes `schema` as the home for reusable inventory and gate
   structure.
-- [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md)
+- [../04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](../04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md)
   already plans control-plane convergence, which is the right place for group
   invalidation consumption.
-- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
+- [../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](../03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md)
   would let expanded invalidation readback render tersely or richly depending
   on profile.
 

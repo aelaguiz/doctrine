@@ -2320,7 +2320,8 @@ def parse_text(source: str, *, source_path: str | Path | None = None) -> model.P
     except UnexpectedInput as exc:
         raise ParseError.from_lark(source=source, path=resolved_path, exc=exc) from exc
     try:
-        return ToAst().transform(tree)
+        prompt_file = ToAst().transform(tree)
+        return replace(prompt_file, source_path=resolved_path)
     except VisitError as exc:
         if isinstance(exc.orig_exc, (SyntaxError, ValueError)):
             raise ParseError.from_transform(source=source, path=resolved_path, exc=exc) from exc
@@ -2329,8 +2330,7 @@ def parse_text(source: str, *, source_path: str | Path | None = None) -> model.P
 
 def parse_file(path: str | Path) -> model.PromptFile:
     resolved_path = Path(path).resolve()
-    prompt_file = parse_text(resolved_path.read_text(), source_path=resolved_path)
-    return replace(prompt_file, source_path=resolved_path)
+    return parse_text(resolved_path.read_text(), source_path=resolved_path)
 
 
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:

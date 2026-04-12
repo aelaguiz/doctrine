@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Phase 1 Typed Markdown Completion Parity Plan - Architecture Plan"
 date: 2026-04-11
-status: active
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -9,8 +9,8 @@ doc_type: parity_plan
 related:
   - docs/01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md
   - docs/READABLE_MARKDOWN_SPEC.md
-  - docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
-  - docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11_WORKLOG.md
+  - docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
+  - docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11_WORKLOG.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/LANGUAGE_DESIGN_NOTES.md
   - docs/README.md
@@ -87,70 +87,26 @@ updated or folded so Phase 1 has one honest completion story.
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-11
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: pending (non-blocking)
 
 ## Code blockers (why code is not done)
-- `cd editors/vscode && make` still exits non-zero because `npm run test:integration`
-  aborts with `SIGABRT` after four startup attempts in this worktree.
-- `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` still
-  carries conflicting active status surfaces instead of one reconciled live
-  truth.
+- None. The archived follow-through worklog records the reconciliation of the
+  overlapping readable-markdown plan plus passing reruns for the targeted
+  identity manifest, diagnostic smoke, and `cd editors/vscode && make` from
+  the main worktree.
 
 ## Reopened phases (false-complete fixes)
-- Phase 4 (Live truth convergence and stale-status cleanup) — reopened because:
-  - the overlapping readable-markdown implementation doc is still `active` and
-    still disagrees with itself about whether the editor-parity cutover is
-    complete.
-- Phase 5 (Final verification and closeout) — reopened because:
-  - the editor verification signal is still red even though the repo-local
-    language proof signals are green.
+- None. The later follow-through recorded in
+  `docs/archive/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11_WORKLOG.md`
+  closed both reopened items.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Overlapping readable-markdown plan state is still internally contradictory.
-  - Evidence anchors:
-    - `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md:2280`
-    - `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md:2293`
-    - `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md:4`
-    - `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md:96`
-    - `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md:2411`
-  - Plan expects:
-    - the overlapping readable-markdown plan to be repaired, folded, or
-      demoted so it no longer competes with this plan, and no live truth
-      surface to contradict the current Phase 1 state.
-  - Code reality:
-    - the overlapping doc still says `status: active`; its authoritative audit
-      block says `Verdict (code): COMPLETE`; its later Phase 5 still says
-      `Status: REOPENED (audit found missing code work)`.
-  - Fix:
-    - reconcile or demote/fold that active doc so it carries one honest status
-      story and no longer competes with this Phase 1 completion plan.
-- Editor parity verification is still not green.
-  - Evidence anchors:
-    - `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md:2314`
-    - `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md:2319`
-    - `editors/vscode/package.json:24`
-    - `editors/vscode/package.json:29`
-    - `editors/vscode/tests/integration/run.js:132`
-    - `editors/vscode/tests/integration/run.js:157`
-  - Plan expects:
-    - the final closeout phase to rerun the relevant repo verification
-      commands, including `cd editors/vscode && make` when editor files move,
-      before Phase 1 is called complete.
-  - Code reality:
-    - fresh repo-local language proof passed with `./.venv/bin/python -m doctrine.verify_corpus`
-      and `./.venv/bin/python -m doctrine.diagnostic_smoke`, but
-      `cd editors/vscode && make` still exits non-zero because
-      `npm run test:integration` aborts with `SIGABRT` after four startup
-      attempts before packaging can finish.
-  - Fix:
-    - make the VS Code integration run exit zero again, then rerun
-      `cd editors/vscode && make` and keep the surviving active plan surfaces
-      aligned with that fresh result.
+- None. This archived parity plan is retained as historical implementation
+  trail only.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- After Phases 4 and 5 are green again, run the short live-editor smoke ladder
-  from `editors/vscode/README.md`.
+- None required for this archived copy.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -311,7 +267,7 @@ readable-markdown ladder staying green rather than by new bespoke harnesses.
   Phase 1 ladder at `56`, `58`, `59`, `60`, and `61`.
 - `docs/README.md`, `docs/LANGUAGE_REFERENCE.md`, and `editors/vscode/README.md`
   already describe large parts of the shipped Phase 1 surface.
-- `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and its
+- `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and its
   worklog capture a broader readable-markdown implementation effort with real
   execution history.
 - The current identity path is older than the Phase 1 source doc:
@@ -399,7 +355,7 @@ readable-markdown ladder staying green rather than by new bespoke harnesses.
 - Prompt surfaces / agent contract to reuse:
   - `AGENTS.md` — repo-level rules for verification, shipped truth, and how
     docs must yield to `doctrine/` plus manifest-backed proof.
-  - `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md` — the
+  - `docs/archive/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md` — the
     canonical full-arch artifact; no second execution checklist should emerge.
 - Native model or agent capabilities to lean on:
   - Codex runtime with `codex_hooks` and the installed `arch-step` stop-hook
@@ -411,7 +367,7 @@ readable-markdown ladder staying green rather than by new bespoke harnesses.
 - Duplicate or drifting paths relevant to this change:
   - `AGENTS.md` and `docs/LANGUAGE_DESIGN_NOTES.md` — still claim the shipped
     corpus stops at `examples/53_review_bound_carrier_roots`.
-  - `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` —
+  - `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` —
     still carries a `NOT COMPLETE` audit block that conflicts with its later
     worklog and with the newer `56` through `61` proof wave.
   - `docs/LANGUAGE_REFERENCE.md` — already documents most readable/document
@@ -455,7 +411,7 @@ readable-markdown ladder staying green rather than by new bespoke harnesses.
 
 - Phase source boundary: `docs/01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md`
 - Broader readable-markdown context:
-  `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and
+  `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and
   `_WORKLOG.md`
 - Shipped implementation path for the readable/document wave:
   `doctrine/grammars/doctrine.lark`, `doctrine/model.py`, `doctrine/parser.py`,
@@ -600,7 +556,7 @@ must stay aligned with the final shipped syntax and proof surface.
 | Readable/document proof ladder | `examples/56_document_structure_attachments/cases.toml`, `examples/58_readable_document_blocks/cases.toml`, `examples/59_document_inheritance_and_descendants/cases.toml`, `examples/60_shared_readable_bodies/cases.toml`, `examples/61_multiline_code_and_readable_failures/cases.toml` | manifest-backed proof | Already proves the readable/document wave, including compile-negative failures | Preserve and only extend if the parity matrix finds a real readable/document miss | These are the current preservation signals for the landed half of Phase 1 | One proof ladder, no replacement ladder | Targeted manifest runs, `make verify-examples` |
 | Phase 1 identity proof | `examples/29_enums/cases.toml` and `examples/*` (one narrow new identity example only if needed) | manifest-backed proof for titles / wire / projections | Current corpus proves enum basics and general title interpolation, but not explicit concrete-agent head titles or enum-member `wire` splits | Reuse an existing example if honest; otherwise add one narrow manifest-backed example for agent titles, enum `:key`, enum `:wire`, duplicate wire, and invalid `:wire` | `docs/01_*` requires proof, not just implementation claims | One narrow identity proof surface adjacent to the shipped corpus | Targeted identity manifest, `make verify-examples` |
 | Live docs + instructions | `AGENTS.md`, `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/LANGUAGE_REFERENCE.md`, `docs/README.md`, `examples/README.md`, `docs/COMPILER_ERRORS.md` | shipped boundary statements, language reference, error catalog | `AGENTS.md` and `docs/LANGUAGE_DESIGN_NOTES.md` still stop at `53`; `docs/LANGUAGE_REFERENCE.md` is ahead on readable/document behavior but not yet an honest source for the full Phase 1 identity split | Rewrite the surviving docs to match final shipped proof and diagnostics | Phase 1 cannot close with split truth | Live docs must follow shipped code + manifests | Re-run any cited check; manual doc audit |
-| Overlapping readable-markdown plan state | `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11_WORKLOG.md` | active status blocks vs worklog evidence | Active doc still says `NOT COMPLETE` while the worklog records repeated green editor verification and shipped post-`57` proof | Repair the active status or demote/fold the doc so it no longer competes with this plan | One active completion narrative is required | One live completion story | Re-run any proof signal restated as green |
+| Overlapping readable-markdown plan state | `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11_WORKLOG.md` | active status blocks vs worklog evidence | Active doc still says `NOT COMPLETE` while the worklog records repeated green editor verification and shipped post-`57` proof | Repair the active status or demote/fold the doc so it no longer competes with this plan | One active completion narrative is required | One live completion story | Re-run any proof signal restated as green |
 | Editor parity | `editors/vscode/README.md`, `editors/vscode/resolver.js`, `editors/vscode/syntaxes/doctrine.tmLanguage.json`, `editors/vscode/language-configuration.json`, `editors/vscode/tests/**` | syntax, resolver, smoke guidance | Readable/document examples are already referenced, but any new agent-title or enum `wire` syntax would require matching editor support | Update editor syntax/resolver/tests only if the implementation adds new shipped grammar | Editor behavior must mirror compiler truth | One editor grammar/resolver path | `cd editors/vscode && make` if touched |
 
 ## 6.2 Migration notes
@@ -2265,15 +2221,15 @@ Status: COMPLETE
 
 ## Phase 4 - Live truth convergence and stale-status cleanup
 
-Status: IN PROGRESS (implementation pass addressed missing code work; fresh audit pending)
+Status: COMPLETE
 
 Implementation pass result:
 
-- `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` was
+- `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` was
   demoted to `historical` and its current Phase 5 state now matches its own
   `Verdict (code): COMPLETE`.
-- Fresh audit is still pending, so the authoritative implementation-audit block
-  above remains the controller truth until the next pass rewrites it.
+- The later follow-through worklog recorded the reconciliation work and passing
+  reruns from the main worktree.
 
 * Goal:
   make code, proof, docs, instructions, and active plan artifacts tell the same
@@ -2299,7 +2255,7 @@ Implementation pass result:
 
 ## Phase 5 - Final verification and closeout
 
-Status: IN PROGRESS (fresh proof rerun; fresh audit pending)
+Status: COMPLETE
 
 Implementation pass result:
 

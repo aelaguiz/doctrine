@@ -103,7 +103,7 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
-Worklog: `docs/DOCTRINE_COMPILER_SCALABILITY_AND_PARALLELISM_2026-04-11_WORKLOG.md`
+Worklog: `docs/archive/second_wave/DOCTRINE_COMPILER_SCALABILITY_AND_PARALLELISM_2026-04-11_WORKLOG.md`
 
 # 0) Holistic North Star
 

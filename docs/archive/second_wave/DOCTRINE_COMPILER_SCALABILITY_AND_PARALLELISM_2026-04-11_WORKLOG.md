@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: docs/DOCTRINE_COMPILER_SCALABILITY_AND_PARALLELISM_2026-04-11.md
+Plan doc: docs/archive/second_wave/DOCTRINE_COMPILER_SCALABILITY_AND_PARALLELISM_2026-04-11.md
 
 ## Initial entry
 - Run started.

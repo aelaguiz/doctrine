@@ -34,6 +34,8 @@ parallelism.
   error codes
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
+- [archive/README.md](archive/README.md): historical proposals, plans, and
+  worklogs that are not part of the live docs path
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
@@ -57,11 +59,12 @@ needs, and groups the work that should be built together.
   phase 4 schema-backed review integration, review families, `route_only`,
   `grounding`, and control-plane convergence
 
-## Drafting Artifacts
+## Historical Design Context
 
-These documents remain in the repo as drafting artifacts. They were the raw
-design inputs that were turned into the phased plan set above. Keep them for
-provenance and drafting history, not as the primary implementation-order view.
+These documents remain in the repo as historical design context. They were the
+raw design inputs that were turned into the phased plan set above. Keep them
+for provenance and drafting history, not as the primary implementation-order
+view or the canonical shipped reference.
 
 - [ANALYSIS_AND_SCHEMA_SPEC.md](ANALYSIS_AND_SCHEMA_SPEC.md): first-class
   `analysis`, first-class `schema`, grammar, model, diagnostics, and example
@@ -79,9 +82,9 @@ provenance and drafting history, not as the primary implementation-order view.
   design space, deferred ideas, and explicit non-first-wave language surfaces
 
 The phased plan set supersedes the split drafting view as the implementation
-sequence. The legacy standalone specs and `docs/big_pile_of_shit.md` remain
-useful historical design context, but they are intentionally not the phased
-plan source of truth.
+sequence. Use the live reference set above plus the numbered examples for
+current shipped behavior. Keep the legacy standalone specs only as background
+context for how the second-wave design was decomposed.
 
 ## Repo Truth
 
@@ -98,5 +101,5 @@ plan source of truth.
 
 Dated proposals, plans, worklogs, and exploratory notes are intentionally
 excluded from this index. They are not part of Doctrine's evergreen open
-source documentation set. That includes exploratory monolith notes such as
-`docs/big_pile_of_shit.md`.
+source documentation set. For historical materials that are still worth
+keeping in-repo, use [archive/README.md](archive/README.md).

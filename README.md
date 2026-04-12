@@ -66,7 +66,7 @@ For the motivating use case and the runtime rationale, read
 - session-based compilation, once-per-session import loading, and deterministic
   default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
-  `examples/53_review_bound_carrier_roots`
+  `examples/67_semantic_profile_lowering`
 - a repo-local emit pipeline for compiled Markdown plus target-scoped workflow
   flow artifacts, and a VS Code extension for `.prompt` files
 
@@ -174,6 +174,8 @@ Start with the live docs set:
 Dated proposals, plans, worklogs, and exploratory notes under `docs/` are
 intentionally excluded from that live path. They are not part of Doctrine's
 evergreen open source documentation set.
+For the historical material that is still intentionally kept in-repo, use
+[docs/archive/README.md](docs/archive/README.md).
 
 ## VS Code Extension
 
