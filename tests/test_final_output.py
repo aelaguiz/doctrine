@@ -190,6 +190,146 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Example Shape", rendered)
         self.assertIn("```json", rendered)
 
+    def test_json_final_output_requires_readable_schema_file(self) -> None:
+        # Schema-backed final answers must fail loud when the declared schema file
+        # cannot be read, or the rendered contract silently drops the payload shape.
+        error = self._compile_error(
+            """
+            json schema RepoStatusSchema: "Repo Status Schema"
+                profile: OpenAIStructuredOutput
+                file: "schemas/missing_repo_status.schema.json"
+
+            output shape RepoStatusJson: "Repo Status JSON"
+                kind: JsonObject
+                schema: RepoStatusSchema
+                example_file: "examples/repo_status.example.json"
+
+            output RepoStatusFinalResponse: "Repo Status Final Response"
+                target: TurnResponse
+                shape: RepoStatusJson
+                requirement: Required
+
+            agent RepoStatusAgent:
+                role: "Report repo status in structured form."
+                workflow: "Summarize"
+                    "Summarize the repo state and end with the declared final output."
+                outputs: "Outputs"
+                    RepoStatusFinalResponse
+                final_output: RepoStatusFinalResponse
+            """,
+            agent_name="RepoStatusAgent",
+            extra_files={
+                "examples/repo_status.example.json": textwrap.dedent(
+                    """\
+                    {
+                      "summary": "Branch is clean and checks passed.",
+                      "status": "ok",
+                      "next_step": null
+                    }
+                    """
+                ),
+            },
+        )
+
+        self.assertEqual(error.code, "E215")
+        self.assertIn("missing or unreadable", str(error))
+        self.assertIn("schemas/missing_repo_status.schema.json", str(error))
+
+    def test_json_final_output_requires_valid_schema_json(self) -> None:
+        # The final-output contract should fail before render when the declared
+        # schema file is malformed, not silently degrade to metadata-only JSON.
+        error = self._compile_error(
+            """
+            json schema RepoStatusSchema: "Repo Status Schema"
+                profile: OpenAIStructuredOutput
+                file: "schemas/repo_status.schema.json"
+
+            output shape RepoStatusJson: "Repo Status JSON"
+                kind: JsonObject
+                schema: RepoStatusSchema
+                example_file: "examples/repo_status.example.json"
+
+            output RepoStatusFinalResponse: "Repo Status Final Response"
+                target: TurnResponse
+                shape: RepoStatusJson
+                requirement: Required
+
+            agent RepoStatusAgent:
+                role: "Report repo status in structured form."
+                workflow: "Summarize"
+                    "Summarize the repo state and end with the declared final output."
+                outputs: "Outputs"
+                    RepoStatusFinalResponse
+                final_output: RepoStatusFinalResponse
+            """,
+            agent_name="RepoStatusAgent",
+            extra_files={
+                "schemas/repo_status.schema.json": "{not json",
+                "examples/repo_status.example.json": textwrap.dedent(
+                    """\
+                    {
+                      "summary": "Branch is clean and checks passed.",
+                      "status": "ok",
+                      "next_step": null
+                    }
+                    """
+                ),
+            },
+        )
+
+        self.assertEqual(error.code, "E216")
+        self.assertIn("valid JSON object", str(error))
+        self.assertIn("schemas/repo_status.schema.json", str(error))
+
+    def test_json_final_output_requires_readable_example_file(self) -> None:
+        # The example block is part of the user-visible final contract, so a
+        # declared example file must fail loud instead of disappearing.
+        error = self._compile_error(
+            """
+            json schema RepoStatusSchema: "Repo Status Schema"
+                profile: OpenAIStructuredOutput
+                file: "schemas/repo_status.schema.json"
+
+            output shape RepoStatusJson: "Repo Status JSON"
+                kind: JsonObject
+                schema: RepoStatusSchema
+                example_file: "examples/missing_repo_status.example.json"
+
+            output RepoStatusFinalResponse: "Repo Status Final Response"
+                target: TurnResponse
+                shape: RepoStatusJson
+                requirement: Required
+
+            agent RepoStatusAgent:
+                role: "Report repo status in structured form."
+                workflow: "Summarize"
+                    "Summarize the repo state and end with the declared final output."
+                outputs: "Outputs"
+                    RepoStatusFinalResponse
+                final_output: RepoStatusFinalResponse
+            """,
+            agent_name="RepoStatusAgent",
+            extra_files={
+                "schemas/repo_status.schema.json": textwrap.dedent(
+                    """\
+                    {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "string",
+                          "description": "Short natural-language status."
+                        }
+                      }
+                    }
+                    """
+                ),
+            },
+        )
+
+        self.assertEqual(error.code, "E215")
+        self.assertIn("missing or unreadable", str(error))
+        self.assertIn("examples/missing_repo_status.example.json", str(error))
+
     def test_final_output_is_omitted_from_outputs_when_side_artifacts_remain(self) -> None:
         agent = self._compile_agent(
             """
@@ -222,6 +362,94 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("### Release Notes File", rendered)
         outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
         self.assertNotIn("### Final Reply", outputs_block)
+
+    def test_final_output_can_flow_through_patched_outputs_block(self) -> None:
+        # Child agents still emit the final TurnResponse contract even when the
+        # output comes from an inherited outputs block patch. Hiding that output
+        # from the ordinary Outputs section must not break inherited-key accounting.
+        agent = self._compile_agent(
+            """
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+                standalone_read: "Standalone Read"
+                    "The final answer should still render through a patched outputs block."
+
+            output ReleaseNotesFile: "Release Notes File"
+                target: File
+                    path: "artifacts/RELEASE_NOTES.md"
+                shape: MarkdownDocument
+                requirement: Required
+
+            outputs SharedOutputs: "Outputs"
+                final_reply: "Final Reply"
+                    FinalReply
+                release_notes: "Release Notes File"
+                    ReleaseNotesFile
+
+            abstract agent BaseAgent:
+                role: "Use shared outputs."
+                outputs: SharedOutputs
+
+            agent PatchedFinalAgent[BaseAgent]:
+                role: "Patch shared outputs and still end with the final answer."
+                workflow: "Ship"
+                    "Ship and stop."
+                outputs[SharedOutputs]: "Outputs"
+                    inherit final_reply
+                    inherit release_notes
+                final_output: FinalReply
+            """,
+            agent_name="PatchedFinalAgent",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Outputs", rendered)
+        self.assertIn("## Final Output", rendered)
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        self.assertNotIn("### Final Reply", outputs_block)
+        self.assertIn("### Release Notes File", outputs_block)
+        self.assertIn("### Final Reply", rendered.split("## Final Output", 1)[1])
+
+    def test_final_output_can_use_imported_output_declaration(self) -> None:
+        # Imported output declarations are a first-class reuse surface. The
+        # dedicated final-output contract should still render when the chosen
+        # TurnResponse output comes from an imported module.
+        agent = self._compile_agent(
+            """
+            import shared.outputs
+
+            agent ImportedFinalAgent:
+                role: "Use an imported final output."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    shared.outputs.ImportedFinalReply
+                final_output: shared.outputs.ImportedFinalReply
+            """,
+            agent_name="ImportedFinalAgent",
+            extra_files={
+                "prompts/shared/outputs.prompt": textwrap.dedent(
+                    """\
+                    output ImportedFinalReply: "Imported Final Reply"
+                        target: TurnResponse
+                        shape: CommentText
+                        requirement: Required
+
+                        standalone_read: "Standalone Read"
+                            "Imported final outputs should still render as the dedicated final answer contract."
+                    """
+                ),
+            },
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertIn("### Imported Final Reply", rendered)
+        self.assertIn("#### Read It Cold", rendered)
+        self.assertNotIn("## Outputs", rendered)
 
     def test_final_output_requires_output_declaration(self) -> None:
         error = self._compile_error(

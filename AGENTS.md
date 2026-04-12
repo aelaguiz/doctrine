@@ -63,7 +63,6 @@
 - `docs/LANGUAGE_DESIGN_NOTES.md`: current language decisions
 - `docs/AGENT_IO_DESIGN_NOTES.md`: shipped I/O model and non-goals
 - `docs/COMPILER_ERRORS.md`: canonical error catalog
-- `docs/GBRAIN_SKILLPACK.md`: deep reference for brain-first lookup, enrichment, and citation discipline
 - `examples/README.md`: how to read the examples and manifests
 
 ## Editing Notes

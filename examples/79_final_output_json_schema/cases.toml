@@ -60,3 +60,45 @@ expected_lines = [
   "",
   "The final answer should stand on its own as one structured repo-status result.",
 ]
+
+[[cases]]
+name = "json-schema final output fails loud when the declared schema file is missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_SCHEMA_FILE.prompt"
+agent = "InvalidMissingSchemaFileAgent"
+exception_type = "CompileError"
+error_code = "E215"
+message_contains = [
+  "Final output support file is missing or unreadable",
+  "json schema RepoStatusSchema",
+  "schemas/missing_repo_status.schema.json",
+]
+
+[[cases]]
+name = "json-schema final output fails loud when the declared schema file is invalid JSON"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_INVALID_SCHEMA_JSON.prompt"
+agent = "InvalidInvalidSchemaJsonAgent"
+exception_type = "CompileError"
+error_code = "E216"
+message_contains = [
+  "Final output schema file must contain a JSON object",
+  "json schema RepoStatusSchema",
+  "schemas/invalid_repo_status.schema.json",
+]
+
+[[cases]]
+name = "json-schema final output fails loud when the declared example file is missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_EXAMPLE_FILE.prompt"
+agent = "InvalidMissingExampleFileAgent"
+exception_type = "CompileError"
+error_code = "E215"
+message_contains = [
+  "Final output support file is missing or unreadable",
+  "output shape RepoStatusJson",
+  "examples/missing_repo_status.example.json",
+]

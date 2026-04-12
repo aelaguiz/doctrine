@@ -2807,9 +2807,18 @@ class CompilationContext:
         )
         payload_rows = self._load_json_schema_payload_rows(
             schema_unit=schema_unit,
+            schema_decl=schema_decl,
             schema_file=schema_file,
         )
-        example_text = self._read_declared_support_text(shape_unit, example_file)
+        example_text = (
+            self._read_required_final_output_support_text(
+                shape_unit,
+                example_file,
+                owner_label=f"output shape {shape_decl.name}",
+            )
+            if example_file is not None
+            else None
+        )
         return FinalOutputJsonShapeSummary(
             shape_unit=shape_unit,
             shape_decl=shape_decl,
@@ -3026,19 +3035,28 @@ class CompilationContext:
         self,
         *,
         schema_unit: IndexedUnit,
+        schema_decl: model.JsonSchemaDecl,
         schema_file: str | None,
     ) -> tuple[tuple[str, str, str], ...]:
         if schema_file is None:
             return ()
-        payload = self._read_declared_support_text(schema_unit, schema_file)
-        if payload is None:
-            return ()
+        payload = self._read_required_final_output_support_text(
+            schema_unit,
+            schema_file,
+            owner_label=f"json schema {schema_decl.name}",
+        )
         try:
             schema_data = json.loads(payload)
-        except json.JSONDecodeError:
-            return ()
+        except json.JSONDecodeError as exc:
+            raise CompileError(
+                "E216 final_output schema file must contain valid JSON object in "
+                f"json schema {schema_decl.name}: {schema_file}"
+            ) from exc
         if not isinstance(schema_data, dict):
-            return ()
+            raise CompileError(
+                "E216 final_output schema file must contain valid JSON object in "
+                f"json schema {schema_decl.name}: {schema_file}"
+            )
         properties = schema_data.get("properties")
         if not isinstance(properties, dict):
             return ()
@@ -3103,6 +3121,21 @@ class CompilationContext:
             return path.read_text()
         except OSError:
             return None
+
+    def _read_required_final_output_support_text(
+        self,
+        unit: IndexedUnit,
+        relative_path: str,
+        *,
+        owner_label: str,
+    ) -> str:
+        text = self._read_declared_support_text(unit, relative_path)
+        if text is not None:
+            return text
+        raise CompileError(
+            "E215 final_output support file is missing or unreadable in "
+            f"{owner_label}: {relative_path}"
+        )
 
     def _review_output_contexts_for_agent(
         self,
@@ -4436,6 +4469,7 @@ class CompilationContext:
                 )
             parent_unit, parent_decl = self._resolve_inputs_block_ref(parent_ref, unit=unit)
             parent_body = self._resolve_inputs_decl(parent_decl, unit=parent_unit)
+            inheritance_parent_body = parent_body
         else:
             if self._ref_exists_in_registry(
                 parent_ref,
@@ -4453,6 +4487,14 @@ class CompilationContext:
                 review_output_contexts=review_output_contexts,
                 excluded_output_keys=excluded_output_keys,
             )
+            inheritance_parent_body = parent_body
+            if excluded_output_keys:
+                inheritance_parent_body = self._resolve_outputs_decl(
+                    parent_decl,
+                    unit=parent_unit,
+                    review_output_contexts=review_output_contexts,
+                    excluded_output_keys=frozenset(),
+                )
 
         return self._resolve_io_body(
             field.value,
@@ -4460,6 +4502,7 @@ class CompilationContext:
             field_kind=field_kind,
             owner_label=owner_label,
             parent_io=parent_body,
+            inheritance_parent_io=inheritance_parent_body,
             parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
             review_output_contexts=review_output_contexts,
             excluded_output_keys=excluded_output_keys,
@@ -11003,6 +11046,7 @@ class CompilationContext:
         self._outputs_resolution_stack.append(outputs_key)
         try:
             parent_io: ResolvedIoBody | None = None
+            inheritance_parent_io: ResolvedIoBody | None = None
             parent_label: str | None = None
             if outputs_decl.parent_ref is not None:
                 parent_unit, parent_decl = self._resolve_parent_outputs_decl(
@@ -11015,6 +11059,14 @@ class CompilationContext:
                     review_output_contexts=review_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
+                inheritance_parent_io = parent_io
+                if excluded_output_keys:
+                    inheritance_parent_io = self._resolve_outputs_decl(
+                        parent_decl,
+                        unit=parent_unit,
+                        review_output_contexts=review_output_contexts,
+                        excluded_output_keys=frozenset(),
+                    )
                 parent_label = f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
             resolved = self._resolve_io_body(
@@ -11023,6 +11075,7 @@ class CompilationContext:
                 field_kind="outputs",
                 owner_label=_dotted_decl_name(unit.module_parts, outputs_decl.name),
                 parent_io=parent_io,
+                inheritance_parent_io=inheritance_parent_io,
                 parent_label=parent_label,
                 review_output_contexts=review_output_contexts,
                 excluded_output_keys=excluded_output_keys,
@@ -11072,6 +11125,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         parent_io: ResolvedIoBody | None = None,
+        inheritance_parent_io: ResolvedIoBody | None = None,
         parent_label: str | None = None,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
@@ -11103,8 +11157,9 @@ class CompilationContext:
                 bindings=self._resolved_io_body_bindings(resolved_items),
             )
 
+        inherited_parent_io = inheritance_parent_io if inheritance_parent_io is not None else parent_io
         unkeyed_parent_titles = [
-            item.section.title for item in parent_io.items if isinstance(item, ResolvedIoRef)
+            item.section.title for item in inherited_parent_io.items if isinstance(item, ResolvedIoRef)
         ]
         if unkeyed_parent_titles:
             details = ", ".join(unkeyed_parent_titles)
@@ -11113,6 +11168,9 @@ class CompilationContext:
             )
 
         parent_items_by_key = {
+            item.key: item for item in inherited_parent_io.items if isinstance(item, ResolvedIoSection)
+        }
+        visible_parent_items_by_key = {
             item.key: item for item in parent_io.items if isinstance(item, ResolvedIoSection)
         }
         resolved_items: list[ResolvedIoItem] = []
@@ -11158,7 +11216,9 @@ class CompilationContext:
                         f"Cannot inherit undefined {field_kind} entry in {parent_label}: {key}"
                     )
                 accounted_keys.add(key)
-                resolved_items.append(parent_item)
+                visible_parent_item = visible_parent_items_by_key.get(key)
+                if visible_parent_item is not None:
+                    resolved_items.append(visible_parent_item)
                 continue
 
             if parent_item is None:
@@ -11204,7 +11264,9 @@ class CompilationContext:
                 )
 
         missing_keys = [
-            item.key for item in parent_io.items if isinstance(item, ResolvedIoSection) and item.key not in accounted_keys
+            item.key
+            for item in inherited_parent_io.items
+            if isinstance(item, ResolvedIoSection) and item.key not in accounted_keys
         ]
         if missing_keys:
             missing = ", ".join(missing_keys)

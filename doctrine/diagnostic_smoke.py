@@ -29,6 +29,9 @@ def main() -> int:
     _check_analysis_field_renders()
     _check_final_output_prose_renders()
     _check_final_output_json_renders()
+    _check_final_output_missing_schema_file_has_specific_code()
+    _check_final_output_invalid_schema_json_has_specific_code()
+    _check_final_output_missing_example_file_has_specific_code()
     _check_final_output_non_output_ref_has_specific_code()
     _check_final_output_missing_emission_has_specific_code()
     _check_final_output_file_target_has_specific_code()
@@ -212,6 +215,89 @@ def _check_final_output_json_renders() -> None:
         _expect("| Profile | OpenAIStructuredOutput |" in rendered, rendered)
         _expect("#### Payload Shape" in rendered, rendered)
         _expect("| `next_step` | string \\| null | Null only when no follow-up is needed. |" in rendered, rendered)
+
+
+def _check_final_output_missing_schema_file_has_specific_code() -> None:
+    source = _final_output_json_source(schema_file="schemas/missing_repo_status.schema.json")
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        root = prompt_path.parent.parent
+        (root / "examples").mkdir(exist_ok=True)
+        (root / "examples" / "repo_status.example.json").write_text(
+            "{\n  \"status\": \"ok\"\n}\n",
+            encoding="utf-8",
+        )
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "RepoStatusAgent")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E215", f"expected E215, got {getattr(exc, 'code', None)}")
+            _expect("missing or unreadable" in str(exc), str(exc))
+            _expect("schemas/missing_repo_status.schema.json" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for missing final_output schema file, but compilation succeeded")
+
+
+def _check_final_output_invalid_schema_json_has_specific_code() -> None:
+    source = _final_output_json_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        root = prompt_path.parent.parent
+        (root / "schemas").mkdir(exist_ok=True)
+        (root / "examples").mkdir(exist_ok=True)
+        (root / "schemas" / "repo_status.schema.json").write_text(
+            "{not json",
+            encoding="utf-8",
+        )
+        (root / "examples" / "repo_status.example.json").write_text(
+            "{\n  \"status\": \"ok\"\n}\n",
+            encoding="utf-8",
+        )
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "RepoStatusAgent")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E216", f"expected E216, got {getattr(exc, 'code', None)}")
+            _expect("valid JSON object" in str(exc), str(exc))
+            _expect("schemas/repo_status.schema.json" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for invalid final_output schema JSON, but compilation succeeded")
+
+
+def _check_final_output_missing_example_file_has_specific_code() -> None:
+    source = _final_output_json_source(example_file="examples/missing_repo_status.example.json")
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        root = prompt_path.parent.parent
+        (root / "schemas").mkdir(exist_ok=True)
+        (root / "schemas" / "repo_status.schema.json").write_text(
+            textwrap.dedent(
+                """\
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "description": "Current repo outcome."
+                    }
+                  }
+                }
+                """
+            ),
+            encoding="utf-8",
+        )
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "RepoStatusAgent")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E215", f"expected E215, got {getattr(exc, 'code', None)}")
+            _expect("missing or unreadable" in str(exc), str(exc))
+            _expect("examples/missing_repo_status.example.json" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for missing final_output example file, but compilation succeeded")
 
 
 def _check_final_output_non_output_ref_has_specific_code() -> None:
@@ -1350,15 +1436,19 @@ agent HelloAgent:
 """
 
 
-def _final_output_json_source() -> str:
-    return """json schema RepoStatusSchema: "Repo Status Schema"
+def _final_output_json_source(
+    *,
+    schema_file: str = "schemas/repo_status.schema.json",
+    example_file: str = "examples/repo_status.example.json",
+) -> str:
+    return f"""json schema RepoStatusSchema: "Repo Status Schema"
     profile: OpenAIStructuredOutput
-    file: "schemas/repo_status.schema.json"
+    file: "{schema_file}"
 
 output shape RepoStatusJson: "Repo Status JSON"
     kind: JsonObject
     schema: RepoStatusSchema
-    example_file: "examples/repo_status.example.json"
+    example_file: "{example_file}"
 
     explanation: "Field Notes"
         "Use the schema fields exactly once."

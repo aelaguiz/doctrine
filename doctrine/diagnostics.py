@@ -757,6 +757,30 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         ("Keep `final_output:` on concrete workflow-style agents only in v1.",),
     ),
     (
+        re.compile(
+            r"^E215 final_output support file is missing or unreadable in (?P<owner>[^:]+): (?P<path>.+)$"
+        ),
+        "E215",
+        "Final output support file is missing or unreadable",
+        lambda match: (
+            f"`final_output` needs support file `{match.group('path')}` in "
+            f"{match.group('owner')}, but the compiler could not read it."
+        ),
+        ("Fix the relative path or add the declared support file.",),
+    ),
+    (
+        re.compile(
+            r"^E216 final_output schema file must contain valid JSON object in (?P<owner>[^:]+): (?P<path>.+)$"
+        ),
+        "E216",
+        "Final output schema file must contain a JSON object",
+        lambda match: (
+            f"`final_output` schema file `{match.group('path')}` in "
+            f"{match.group('owner')} must decode to one JSON object."
+        ),
+        ("Fix the declared schema file so it contains valid JSON object text.",),
+    ),
+    (
         re.compile(r"^Cyclic agent inheritance: (?P<detail>.+)$"),
         "E207",
         "Cyclic agent inheritance",
