@@ -1,15 +1,15 @@
 ---
 title: "Doctrine - Phase 4 Review Route Only Grounding Control Plane Completion - Architecture Plan"
 date: 2026-04-11
-status: active
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
 doc_type: parity_plan
 related:
   - docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md
-  - docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md
-  - docs/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md
+  - docs/archive/second_wave/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md
+  - docs/archive/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md
   - docs/REVIEW_SPEC.md
   - docs/WORKFLOW_LAW.md
   - docs/LANGUAGE_REFERENCE.md
@@ -489,7 +489,7 @@ Behavior-preservation evidence:
   - `docs/REVIEW_SPEC.md` — currently positions `abstract review` as the
     inheritance-only reusable review story; if `review_family` ships, that
     boundary must be rewritten truthfully.
-  - `docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md`
+  - `docs/archive/second_wave/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md`
     — still records reopened render-profile/lowering gaps that may matter if
     Phase 4 tries to claim profile-sensitive readback behavior beyond the
     already-shipped readable subset.
@@ -760,7 +760,7 @@ output surface.
 | Review reuse | `docs/REVIEW_SPEC.md`, `doctrine/compiler.py` review path | Fold reusable review scaffolds into `review_family` on top of the existing review agreement path | Prevent parallel reusable-review stories (`abstract review` only vs new family semantics) | include |
 | Route-only semantics | `docs/WORKFLOW_LAW.md`, route-only examples, workflow-law validators | Keep workflow-law route-only checks as substrate for dedicated `route_only` | Prevent a second route/currentness engine | include |
 | Inventory consumption | schema group compiler + invalidation validation | Reuse shipped schema groups for invalidation targets and expansion | Prevent a second invalidation inventory type | include |
-| Readback polish | `docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md` | Reopen only the narrow readable-lowering prerequisite if Phase 4 truly needs it | Prevent Phase 4 from silently absorbing unrelated Phase 3 scope | defer |
+| Readback polish | `docs/archive/second_wave/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md` | Reopen only the narrow readable-lowering prerequisite if Phase 4 truly needs it | Prevent Phase 4 from silently absorbing unrelated Phase 3 scope | defer |
 | Historical design guidance | `docs/LANGUAGE_MECHANICS_SPEC.md` | Remove or rewrite anti-Phase-4 guidance after code lands | Prevent contradictory live doctrine | include |
 <!-- arch_skill:block:call_site_audit:end -->
 

@@ -4658,6 +4658,13 @@ class CompilationContext:
         subject_keys = {
             (subject_unit.module_parts, subject_decl.name) for subject_unit, subject_decl in subjects
         }
+        if resolved.subject_map is not None:
+            self._resolved_review_subject_map(
+                resolved.subject_map,
+                unit=unit,
+                owner_label=owner_label,
+                subject_keys=subject_keys,
+            )
         contract_spec = self._resolve_review_contract_spec(
             resolved.contract.contract_ref,
             unit=unit,
@@ -5166,6 +5173,69 @@ class CompilationContext:
             seen.add(key)
             resolved.append((target_unit, decl))
         return tuple(resolved)
+
+    def _resolve_enum_member_identity(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[tuple[str, ...], str, str] | None:
+        if not isinstance(expr, model.ExprRef) or len(expr.parts) < 2:
+            return None
+        enum_ref = _name_ref_from_dotted_name(".".join(expr.parts[:-1]))
+        try:
+            lookup_unit = self._resolve_readable_decl_lookup_unit(enum_ref, unit=unit)
+        except CompileError:
+            return None
+        enum_decl = lookup_unit.enums_by_name.get(enum_ref.declaration_name)
+        if enum_decl is None:
+            return None
+        member = next((member for member in enum_decl.members if member.key == expr.parts[-1]), None)
+        if member is None:
+            return None
+        return (lookup_unit.module_parts, enum_decl.name, member.key)
+
+    def _resolved_review_subject_map(
+        self,
+        subject_map: model.ReviewSubjectMapConfig,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        subject_keys: set[tuple[tuple[str, ...], str]],
+    ) -> dict[tuple[tuple[str, ...], str, str], tuple[tuple[str, ...], str]]:
+        mapping: dict[tuple[tuple[str, ...], str, str], tuple[tuple[str, ...], str]] = {}
+        for entry in subject_map.entries:
+            entry_identity = self._resolve_enum_member_identity(
+                model.ExprRef(
+                    parts=(*entry.enum_member_ref.module_parts, entry.enum_member_ref.declaration_name)
+                ),
+                unit=unit,
+            )
+            if entry_identity is None:
+                raise CompileError(
+                    "Review subject_map entry must resolve to an enum member in "
+                    f"{owner_label}: {_dotted_ref_name(entry.enum_member_ref)}"
+                )
+            if entry_identity in mapping:
+                raise CompileError(
+                    f"Duplicate review subject_map entry in {owner_label}: "
+                    f"{_dotted_ref_name(entry.enum_member_ref)}"
+                )
+
+            subject_unit, subject_decl = self._resolve_review_subjects(
+                model.ReviewSubjectConfig(subjects=(entry.artifact_ref,)),
+                unit=unit,
+                owner_label=f"{owner_label} subject_map",
+            )[0]
+            subject_key = (subject_unit.module_parts, subject_decl.name)
+            if subject_key not in subject_keys:
+                raise CompileError(
+                    "Review subject_map target must be one of the declared review subjects in "
+                    f"{owner_label}: {_dotted_ref_name(entry.artifact_ref)}"
+                )
+            mapping[entry_identity] = subject_key
+
+        return mapping
 
     def _resolve_review_contract_spec(
         self,
@@ -6415,6 +6485,7 @@ class CompilationContext:
                     subject_map=subject_map,
                     current_subject_key=resolved_branch.current_subject_key,
                     reviewed_subject_key=resolved_branch.reviewed_subject_key,
+                    owner_label=f"{owner_label}.{section.key}",
                 )
                 blocked_before_subject_review = (
                     (
@@ -6514,6 +6585,7 @@ class CompilationContext:
                 subject_keys=subject_keys,
                 subject_map=subject_map,
                 branch=branch,
+                review_unit=unit,
                 output_decl=comment_output_decl,
                 output_unit=comment_output_unit,
                 field_path=field_bindings["reviewed_artifact"],
@@ -6533,6 +6605,7 @@ class CompilationContext:
         subject_keys: set[tuple[tuple[str, ...], str]],
         subject_map: model.ReviewSubjectMapConfig | None,
         branch: ReviewOutcomeBranch,
+        review_unit: IndexedUnit,
         output_decl: model.OutputDecl,
         output_unit: IndexedUnit,
         field_path: tuple[str, ...],
@@ -6545,9 +6618,10 @@ class CompilationContext:
         if subject_map is not None:
             mapped = self._review_subject_key_from_subject_map(
                 branch,
-                unit=output_unit,
+                unit=review_unit,
                 subject_keys=subject_keys,
                 subject_map=subject_map,
+                owner_label=owner_label,
             )
             if mapped is not None:
                 return mapped
@@ -6576,33 +6650,21 @@ class CompilationContext:
         unit: IndexedUnit,
         subject_keys: set[tuple[tuple[str, ...], str]],
         subject_map: model.ReviewSubjectMapConfig,
+        owner_label: str,
     ) -> tuple[tuple[str, ...], str] | None:
         active_mode = next((carry for carry in branch.carries if carry.field_name == "active_mode"), None)
         if active_mode is None:
             return None
-        member_value = self._resolve_constant_enum_member(active_mode.expr, unit=unit)
-        if member_value is None:
+        active_mode_identity = self._resolve_enum_member_identity(active_mode.expr, unit=unit)
+        if active_mode_identity is None:
             return None
-
-        mapping: dict[str, tuple[tuple[str, ...], str]] = {}
-        for entry in subject_map.entries:
-            resolved = self._resolve_review_match_option(
-                model.ExprRef(parts=(*entry.enum_member_ref.module_parts, entry.enum_member_ref.declaration_name)),
-                unit=unit,
-            )
-            if resolved is None:
-                return None
-            _enum_decl, enum_member_value = resolved
-            subject_unit, subject_decl = self._resolve_review_subjects(
-                model.ReviewSubjectConfig(subjects=(entry.artifact_ref,)),
-                unit=unit,
-                owner_label="review subject_map",
-            )[0]
-            mapping[enum_member_value] = (subject_unit.module_parts, subject_decl.name)
-        mapped = mapping.get(member_value)
-        if mapped in subject_keys:
-            return mapped
-        return None
+        mapping = self._resolved_review_subject_map(
+            subject_map,
+            unit=unit,
+            owner_label=owner_label,
+            subject_keys=subject_keys,
+        )
+        return mapping.get(active_mode_identity)
 
     def _record_item_subject_keys(
         self,
@@ -7529,6 +7591,7 @@ class CompilationContext:
         subject_map: model.ReviewSubjectMapConfig | None,
         current_subject_key: tuple[tuple[str, ...], str] | None,
         reviewed_subject_key: tuple[tuple[str, ...], str] | None,
+        owner_label: str,
     ) -> bool:
         if current_subject_key is not None and current_subject_key in subject_keys:
             return True
@@ -7542,6 +7605,7 @@ class CompilationContext:
                 unit=unit,
                 subject_keys=subject_keys,
                 subject_map=subject_map,
+                owner_label=owner_label,
             )
             in subject_keys
         )

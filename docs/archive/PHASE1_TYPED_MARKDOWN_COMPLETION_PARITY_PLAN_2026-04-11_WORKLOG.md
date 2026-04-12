@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`
+Plan doc: `docs/archive/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`
 
 ## Initial entry
 - Run started.
@@ -48,7 +48,7 @@ Plan doc: `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`
 ## 2026-04-11 - Fresh audit reopen addressed
 - Reconciled the overlapping readable-markdown plan so it no longer competes as
   an active truth surface:
-  - `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`
+  - `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`
     frontmatter is now `status: historical`
   - its current Phase 5 section now matches its own
     `Verdict (code): COMPLETE`
@@ -70,7 +70,7 @@ Plan doc: `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`
   - stop `implement-loop` without another fresh audit pass
 - Why:
   - the real reopened item was fixed by demoting
-    `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` to
+    `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` to
     `status: historical`
   - the remaining red signal was the child auditor's VS Code
     `npm run test:integration` `SIGABRT`, which did not reproduce from the main

@@ -9,10 +9,10 @@ expansion.
 
 Shipped truth lives in:
 
-- [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md)
-- [examples/27_addressable_record_paths](../examples/27_addressable_record_paths)
-- [examples/28_addressable_workflow_paths](../examples/28_addressable_workflow_paths)
-- [examples/29_enums](../examples/29_enums)
+- [../LANGUAGE_DESIGN_NOTES.md](../LANGUAGE_DESIGN_NOTES.md)
+- [examples/27_addressable_record_paths](../../examples/27_addressable_record_paths)
+- [examples/28_addressable_workflow_paths](../../examples/28_addressable_workflow_paths)
+- [examples/29_enums](../../examples/29_enums)
 
 ## Why This Exists
 
@@ -39,10 +39,10 @@ Before this expansion, Doctrine already supported:
 
 Grounding:
 
-- [examples/15_workflow_body_refs/prompts/AGENTS.prompt](../examples/15_workflow_body_refs/prompts/AGENTS.prompt)
-- [examples/16_workflow_string_interpolation/prompts/AGENTS.prompt](../examples/16_workflow_string_interpolation/prompts/AGENTS.prompt)
-- [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md)
-- [compiler.py](../doctrine/compiler.py)
+- [examples/15_workflow_body_refs/prompts/AGENTS.prompt](../../examples/15_workflow_body_refs/prompts/AGENTS.prompt)
+- [examples/16_workflow_string_interpolation/prompts/AGENTS.prompt](../../examples/16_workflow_string_interpolation/prompts/AGENTS.prompt)
+- [../LANGUAGE_DESIGN_NOTES.md](../LANGUAGE_DESIGN_NOTES.md)
+- [compiler.py](../../doctrine/compiler.py)
 
 The missing piece was addressable ownership for named nested items and fixed
 literal vocabularies.

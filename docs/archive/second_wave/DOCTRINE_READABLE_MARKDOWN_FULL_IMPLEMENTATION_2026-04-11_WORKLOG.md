@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
+Plan doc: docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
 
 ## Initial entry
 - Run started.
@@ -45,8 +45,8 @@ Plan doc: docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
 ## Reopened Phase 5 follow-through
 - Work completed:
   - Hardened `editors/vscode/tests/integration/run.js` so VS Code integration runs use short temp `--user-data-dir` and `--extensions-dir` paths instead of the repo-local `.vscode-test` profile path that had been producing the macOS IPC-length warning during the failed audit run.
-  - Reframed `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` as a historical umbrella artifact and updated its baseline/problem-grounding sections so they no longer present pre-ship readable-markdown and `structure:` gaps as current repo reality.
-  - Reframed `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` the same way, keeping it as implementation history instead of live shipped-truth commentary for readable markdown.
+  - Reframed `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` as a historical umbrella artifact and updated its baseline/problem-grounding sections so they no longer present pre-ship readable-markdown and `structure:` gaps as current repo reality.
+  - Reframed `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` the same way, keeping it as implementation history instead of live shipped-truth commentary for readable markdown.
 - Tests run + results:
   - `cd editors/vscode && make` — passed, including `npm run test:integration`, alignment validation, and VSIX packaging.
   - `.venv/bin/python -m doctrine.verify_corpus` — passed.
@@ -59,8 +59,8 @@ Plan doc: docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
 ## Reopened Phase 5 follow-through (second fresh-audit fix)
 - Work completed:
   - Added a bounded retry in `editors/vscode/tests/integration/run.js` for transient VS Code startup aborts that surface as `SIGABRT` from `@vscode/test-electron`, while still using short temp profile paths on every attempt.
-  - Replaced the stale `Implementation Audit (authoritative)` block in `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` with a superseded historical snapshot note that explicitly points current audit authority back to `docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`.
-  - Softened the umbrella mechanics doc wording in `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` so editor-package success is described as a historical plan-closure signal, not as current repo truth.
+  - Replaced the stale `Implementation Audit (authoritative)` block in `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` with a superseded historical snapshot note that explicitly points current audit authority back to `docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`.
+  - Softened the umbrella mechanics doc wording in `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` so editor-package success is described as a historical plan-closure signal, not as current repo truth.
 - Tests run + results:
   - `npm run test:integration` — passed repeatedly after the retry-wrapper hardening.
   - `cd editors/vscode && make` — passed non-interactively, including integration, alignment validation, and VSIX packaging.
@@ -75,7 +75,7 @@ Plan doc: docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md
 ## Reopened Phase 5 follow-through (third fresh-audit fix)
 - Work completed:
   - Increased the VS Code integration startup retry budget in `editors/vscode/tests/integration/run.js` from one retry to a four-attempt bounded retry loop with a short backoff, so the editor test runner can survive the audit-observed double-`SIGABRT` startup failure mode instead of failing after two aborted launches.
-  - Reframed the remaining stale mechanics umbrella pass note in `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` so it no longer asserts that `cd editors/vscode && make` is currently green; it now points readers back to the dedicated readable-markdown plan for current editor-package truth.
+  - Reframed the remaining stale mechanics umbrella pass note in `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` so it no longer asserts that `cd editors/vscode && make` is currently green; it now points readers back to the dedicated readable-markdown plan for current editor-package truth.
 - Tests run + results:
   - `npm test` in `editors/vscode` — passed.
   - `cd editors/vscode && make` — passed, including integration, alignment validation, and VSIX packaging.

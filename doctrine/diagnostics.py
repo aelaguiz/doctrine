@@ -1393,6 +1393,42 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(
+            r"^Review subject_map entry must resolve to an enum member in "
+            r"(?P<owner>.+): (?P<entry>.+)$"
+        ),
+        "E470",
+        "Invalid review declaration shape",
+        lambda match: (
+            f"Review `{match.group('owner')}` uses a `subject_map` entry that does not "
+            f"resolve to an enum member: `{match.group('entry')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate review subject_map entry in (?P<owner>.+): (?P<entry>.+)$"),
+        "E470",
+        "Invalid review declaration shape",
+        lambda match: (
+            f"Review `{match.group('owner')}` repeats `subject_map` entry "
+            f"`{match.group('entry')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Review subject_map target must be one of the declared review subjects in "
+            r"(?P<owner>.+): (?P<target>.+)$"
+        ),
+        "E470",
+        "Invalid review declaration shape",
+        lambda match: (
+            f"Review `{match.group('owner')}` maps `subject_map` to undeclared review subject "
+            f"`{match.group('target')}`."
+        ),
+        (),
+    ),
+    (
         re.compile(r"^Review is missing fields: (?P<name>.+)$"),
         "E473",
         "Review is missing fields",

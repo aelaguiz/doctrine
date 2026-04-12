@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Metadata Binding Model And Mini Ladder - Architecture Plan"
 date: 2026-04-10
-status: active
+status: historical
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []

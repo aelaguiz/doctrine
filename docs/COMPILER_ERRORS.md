@@ -133,7 +133,7 @@ Stability rules:
 
 | Code | Stage | Summary | Notes |
 | --- | --- | --- | --- |
-| `E470` | compile | Invalid review declaration shape | Review inheritance or explicit review patching used an invalid structural shape, such as a review cycle or a kind-mismatched override. |
+| `E470` | compile | Invalid review declaration shape | Review inheritance, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a duplicate `subject_map` entry, or a kind-mismatched override. |
 | `E471` | parse | Illegal statement placement in review body | A review statement appeared in the wrong section family, such as `block` inside `on_accept` or `route` inside a pre-outcome review section. |
 | `E472` | parse | Invalid guarded match head | A review `match` head used an invalid guarded fallback shape, such as `else when ...`. |
 | `E473` | compile | Review fields surface is invalid or incomplete | The required `fields:` binding surface is missing or does not bind every required semantic channel. |

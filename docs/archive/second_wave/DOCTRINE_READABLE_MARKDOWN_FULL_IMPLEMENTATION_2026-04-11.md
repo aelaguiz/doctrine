@@ -8,8 +8,8 @@ reviewers: []
 doc_type: architectural_change
 related:
   - docs/READABLE_MARKDOWN_SPEC.md
-  - docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md
-  - docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md
+  - docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md
+  - docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/AGENT_IO_DESIGN_NOTES.md
   - docs/REVIEW_SPEC.md
@@ -113,7 +113,7 @@ Manual QA: pending (non-blocking)
 ## Notes
 - This doc now survives as historical context. The canonical active Phase 1
   completion artifact is
-  `docs/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`.
+  `docs/archive/PHASE1_TYPED_MARKDOWN_COMPLETION_PARITY_PLAN_2026-04-11.md`.
 - The shipped Phase 1 proof corpus now runs through
   `examples/62_identity_titles_keys_and_wire`.
 - The earlier VS Code package-path blocker is no longer real in this worktree.
@@ -749,7 +749,7 @@ UI scope remains repo-local editor parity:
 | Render metadata lines | `doctrine/renderer.py` | Centralize contract metadata-line rendering across readable blocks | Prevents block helpers from inventing inconsistent contract prose | include |
 | Diagnostic catalog sync | `doctrine/diagnostics.py` + `docs/COMPILER_ERRORS.md` + `doctrine/diagnostic_smoke.py` | Treat readable diagnostics as one documented surface | Prevents hidden or uncatalogued readable failures | include |
 | Evergreen readable docs | live `docs/` + `examples/README.md` + `editors/vscode/README.md` | Rewrite shipped truth in the same cutover | Prevents another half-shipped readable wave | include |
-| Umbrella readable plan docs | `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` | Clean up only if they still mislead after the code cutover | Prevents status confusion without broadening the feature scope | defer |
+| Umbrella readable plan docs | `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` | Clean up only if they still mislead after the code cutover | Prevents status confusion without broadening the feature scope | defer |
 | Raw markdown escape hatch | none | Keep v1 closed to escape hatches and shims | Prevents architecture creep and dual truth | exclude |
 <!-- arch_skill:block:call_site_audit:end -->
 
