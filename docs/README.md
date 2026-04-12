@@ -34,8 +34,6 @@ parallelism.
   error codes
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
-- [archive/README.md](archive/README.md): historical proposals, plans, and
-  worklogs that are not part of the live docs path
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
@@ -69,17 +67,15 @@ For the current shipped language surface, use
 
 ## Historical Design Context
 
-The shipped docs above are the only live reference path. For second-wave
-history, provenance, and archived implementation passes, use
-[archive/second_wave/README.md](archive/second_wave/README.md).
+The shipped docs above are the only live reference path. Earlier plans,
+worklogs, audits, and one-off investigations are deleted after a restore-point
+commit. If you need that old context, use git history.
 
 The raw design inputs
 `ANALYSIS_AND_SCHEMA_SPEC.md`, `READABLE_MARKDOWN_SPEC.md`,
 `INTEGRATION_SURFACES_SPEC.md`, `LANGUAGE_MECHANICS_SPEC.md`, and
-`SECOND_WAVE_LANGUAGE_NOTES.md` still remain in the root `docs/` tree because
-archived implementation docs cite their current paths directly, and moving them
-would force a broad historical ref rewrite. Treat those files as drafting
-artifacts kept for provenance and link stability, not as the primary
+`SECOND_WAVE_LANGUAGE_NOTES.md` still remain in the root `docs/` tree as
+drafting artifacts kept for provenance and link stability, not as the primary
 implementation-order view or the canonical shipped reference.
 
 ## Repo Truth
@@ -101,7 +97,5 @@ implementation-order view or the canonical shipped reference.
 
 Dated proposals, plans, worklogs, and exploratory notes are intentionally
 excluded from this index. They are not part of Doctrine's evergreen open
-source documentation set. For historical materials that are still worth
-keeping in-repo, use [archive/README.md](archive/README.md), including the
-dedicated [archive/second_wave/README.md](archive/second_wave/README.md) index
-for second-wave historical context.
+source documentation set. After a restore-point commit, delete them. Git
+history is the archive.

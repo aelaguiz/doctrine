@@ -21,6 +21,8 @@
 - Never delete docs without first making a restore-point commit that contains the pre-deletion state.
 - Do this even when the docs look stale, low-quality, or obviously wrong.
 - If you are not making that commit in the current task, do not delete the docs.
+- After that restore-point commit, delete stale docs instead of moving them into an archive directory.
+- Git history is the archive. Do not keep or create `docs/archive/` as a long-term holding area.
 
 ## Shipped Truth
 
