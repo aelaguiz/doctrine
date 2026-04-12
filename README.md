@@ -66,8 +66,8 @@ For the motivating use case and the runtime rationale, read
 - session-based compilation, once-per-session import loading, and deterministic
   default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
-  `examples/67_semantic_profile_lowering`
-- a repo-local emit pipeline for compiled Markdown plus target-scoped workflow
+  `examples/73_flow_visualizer_showcase`
+- a repo-local emit pipeline for compiled Markdown plus compiler-owned workflow
   flow artifacts, and a VS Code extension for `.prompt` files
 
 The shipped implementation lives in `doctrine/`. The examples are the teaching
@@ -140,9 +140,10 @@ uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_wo
 
 Doctrine reads configured emit targets from `pyproject.toml`. `emit_docs`
 writes a compiled Markdown tree for each concrete agent in the entrypoint.
-`emit_flow` writes one target-scoped workflow data-flow artifact beside it as
-deterministic `.flow.d2` plus same-command `.flow.svg`. Entrypoints may be
-either `AGENTS.prompt` or `SOUL.prompt`, and the emitted basename follows the
+`emit_flow` writes one workflow data-flow artifact as deterministic `.flow.d2`
+plus same-command `.flow.svg`, and it can run either from a configured target
+or directly from `--entrypoint` plus `--output-dir`. Entrypoints may be either
+`AGENTS.prompt` or `SOUL.prompt`, and the emitted basename follows the
 entrypoint stem.
 
 Both emit and verification surfaces reuse shared compilation sessions so
@@ -153,10 +154,22 @@ Start with [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md) for prerequisites, target
 configuration, output layout, troubleshooting, and the exact `emit_flow`
 workflow.
 
+## Workflow Visualizer
+
+<p align="center">
+  <img src="examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, routed agent handoffs, a shared handoff carrier, and local outputs." width="1200">
+</p>
+
+The checked-in showcase above comes from
+`examples/73_flow_visualizer_showcase`. It shows shared inputs, explicit
+handoff routes, one shared carrier output, and each agent's local artifacts in
+one compiler-owned graph.
+
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
-uv run --locked python -m doctrine.emit_flow --target example_36_invalidation_and_rebuild
+uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_flow --entrypoint examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt --output-dir examples/73_flow_visualizer_showcase/build
 ```
 
 ## Documentation
