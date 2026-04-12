@@ -1,0 +1,29 @@
+# This example introduces the concrete-agent `decision:` attachment.
+# The decision declaration keeps candidate-pool and ranking obligations typed
+# while the emitted home still reads as ordinary guidance.
+
+decision PlayableStrategyChoice: "Playable Strategy Choice"
+    candidates minimum 3
+    rank required
+    rejects required
+    choose one winner
+    rank_by {teaching_fit, product_reality, capstone_coherence, downstream_preservability}
+
+decision RepChoice: "Rep Choice"
+    candidate_pool required
+    kept required
+    rejected required
+    winner_reasons required
+
+
+agent StrategyDecisionDemo:
+    role: "Follow {{PlayableStrategyChoice:title}} before you lock the route."
+    workflow: "Choose"
+        "Use the attached decision scaffold before you freeze the strategy."
+    decision: PlayableStrategyChoice
+
+agent RepDecisionDemo:
+    role: "Follow {{RepChoice:title}} before you lock the reps."
+    workflow: "Choose"
+        "Use the attached decision scaffold before you freeze the reps."
+    decision: RepChoice

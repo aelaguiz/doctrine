@@ -320,6 +320,7 @@ class IndexedUnit:
     imports: tuple[model.ImportDecl, ...]
     render_profiles_by_name: dict[str, model.RenderProfileDecl]
     analyses_by_name: dict[str, model.AnalysisDecl]
+    decisions_by_name: dict[str, model.DecisionDecl]
     schemas_by_name: dict[str, model.SchemaDecl]
     documents_by_name: dict[str, model.DocumentDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
@@ -883,6 +884,7 @@ def _resolve_render_profile_mode(
 _READABLE_DECL_REGISTRIES = (
     ("agent declaration", "agents_by_name"),
     ("analysis declaration", "analyses_by_name"),
+    ("decision declaration", "decisions_by_name"),
     ("schema declaration", "schemas_by_name"),
     ("document declaration", "documents_by_name"),
     ("input declaration", "inputs_by_name"),
@@ -1074,6 +1076,7 @@ class CompilationSession:
         imports: list[model.ImportDecl] = []
         render_profiles_by_name: dict[str, model.RenderProfileDecl] = {}
         analyses_by_name: dict[str, model.AnalysisDecl] = {}
+        decisions_by_name: dict[str, model.DecisionDecl] = {}
         schemas_by_name: dict[str, model.SchemaDecl] = {}
         documents_by_name: dict[str, model.DocumentDecl] = {}
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
@@ -1108,6 +1111,10 @@ class CompilationSession:
             if isinstance(declaration, model.AnalysisDecl):
                 _register_decl(analyses_by_name, declaration.name, module_parts)
                 analyses_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.DecisionDecl):
+                _register_decl(decisions_by_name, declaration.name, module_parts)
+                decisions_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.SchemaDecl):
                 _register_decl(schemas_by_name, declaration.name, module_parts)
@@ -1201,6 +1208,7 @@ class CompilationSession:
             imports=tuple(imports),
             render_profiles_by_name=render_profiles_by_name,
             analyses_by_name=analyses_by_name,
+            decisions_by_name=decisions_by_name,
             schemas_by_name=schemas_by_name,
             documents_by_name=documents_by_name,
             workflows_by_name=workflows_by_name,
@@ -1404,6 +1412,11 @@ class CompilationContext:
             if declaration is None:
                 raise CompileError(f"Missing target analysis declaration: {declaration_name}")
             return self._compile_analysis_decl(declaration, unit=self.root_unit)
+        if declaration_kind == "decision":
+            declaration = self.root_unit.decisions_by_name.get(declaration_name)
+            if declaration is None:
+                raise CompileError(f"Missing target decision declaration: {declaration_name}")
+            return self._compile_decision_decl(declaration, unit=self.root_unit)
         if declaration_kind == "schema":
             declaration = self.root_unit.schemas_by_name.get(declaration_name)
             if declaration is None:
@@ -2400,6 +2413,9 @@ class CompilationContext:
         if isinstance(field, model.AnalysisField):
             analysis_unit, analysis_decl = self._resolve_analysis_ref(field.value, unit=unit)
             return self._compile_analysis_decl(analysis_decl, unit=analysis_unit)
+        if isinstance(field, model.DecisionField):
+            decision_unit, decision_decl = self._resolve_decision_ref(field.value, unit=unit)
+            return self._compile_decision_decl(decision_decl, unit=decision_unit)
         if isinstance(field, model.SkillsField):
             return self._compile_skills_field(field, unit=unit)
         if isinstance(field, model.ReviewField):
@@ -4103,6 +4119,70 @@ class CompilationContext:
                 f"Internal compiler error: unsupported analysis item {type(item).__name__}"
             )
         return tuple(body)
+
+    def _compile_decision_decl(
+        self,
+        decl: model.DecisionDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        body: list[CompiledBodyItem] = [
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=f"decision {decl.name}",
+                surface_label="decision prose",
+                ambiguous_label="decision prose interpolation ref",
+            )
+            for line in decl.body.preamble
+        ]
+        for item in decl.body.items:
+            if isinstance(item, model.DecisionMinimumCandidates):
+                body.append(
+                    f"Build at least {item.count} candidates before choosing a winner."
+                )
+                continue
+            if isinstance(item, model.DecisionRequiredItem):
+                body.append(self._render_decision_required_item(item))
+                continue
+            if isinstance(item, model.DecisionChooseWinner):
+                body.append("Choose exactly one winner.")
+                continue
+            if isinstance(item, model.DecisionRankBy):
+                dimensions = self._natural_language_join(
+                    [_humanize_key(dimension) for dimension in item.dimensions]
+                )
+                body.append(f"Rank by {dimensions}.")
+                continue
+            raise CompileError(
+                f"Internal compiler error: unsupported decision item {type(item).__name__}"
+            )
+        render_profile = (
+            self._resolve_render_profile_ref(decl.render_profile_ref, unit=unit)
+            if decl.render_profile_ref is not None
+            else ResolvedRenderProfile(name="ContractMarkdown")
+        )
+        return CompiledSection(
+            title=decl.title,
+            body=tuple(body),
+            render_profile=render_profile,
+        )
+
+    def _render_decision_required_item(self, item: model.DecisionRequiredItem) -> str:
+        decision_required_text = {
+            "rank": "Ranking is required.",
+            "rejects": "Explicit rejects are required.",
+            "candidate_pool": "A candidate pool is required.",
+            "kept": "Kept candidates are required.",
+            "rejected": "Rejected candidates are required.",
+            "winner_reasons": "Winner reasons are required.",
+        }
+        text = decision_required_text.get(item.key)
+        if text is None:
+            raise CompileError(
+                f"Internal compiler error: unsupported decision required item `{item.key}`"
+            )
+        return text
 
     def _compile_schema_decl(
         self,
@@ -13884,6 +13964,8 @@ class CompilationContext:
             return DisplayValue(text=target.name, kind="symbol")
         if isinstance(target, model.AnalysisDecl):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.DecisionDecl):
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaDecl):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentDecl):
@@ -16162,6 +16244,16 @@ class CompilationContext:
             unit=unit,
             registry_name="analyses_by_name",
             missing_label="analysis declaration",
+        )
+
+    def _resolve_decision_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.DecisionDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="decisions_by_name",
+            missing_label="decision declaration",
         )
 
     def _resolve_schema_ref(

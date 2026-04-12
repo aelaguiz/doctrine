@@ -1,0 +1,57 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "agent decision attachment renders candidate and ranking obligations naturally"
+status = "active"
+kind = "render_contract"
+agent = "StrategyDecisionDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Follow Playable Strategy Choice before you lock the route.",
+  "",
+  "## Choose",
+  "",
+  "Use the attached decision scaffold before you freeze the strategy.",
+  "",
+  "## Playable Strategy Choice",
+  "",
+  "Build at least 3 candidates before choosing a winner.",
+  "Ranking is required.",
+  "Explicit rejects are required.",
+  "Choose exactly one winner.",
+  "Rank by Teaching Fit, Product Reality, Capstone Coherence, and Downstream Preservability.",
+]
+
+[[cases]]
+name = "decision attachment renders candidate-pool evidence requirements naturally"
+status = "active"
+kind = "render_contract"
+agent = "RepDecisionDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Follow Rep Choice before you lock the reps.",
+  "",
+  "## Choose",
+  "",
+  "Use the attached decision scaffold before you freeze the reps.",
+  "",
+  "## Rep Choice",
+  "",
+  "A candidate pool is required.",
+  "Kept candidates are required.",
+  "Rejected candidates are required.",
+  "Winner reasons are required.",
+]
+
+[[cases]]
+name = "decision field fails loudly on an unknown declaration"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_DECISION_REF.prompt"
+agent = "InvalidUnknownDecisionRef"
+exception_type = "CompileError"
+message_contains = [
+  "decision declaration",
+  "MissingDecision",
+]

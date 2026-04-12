@@ -20,7 +20,8 @@
 #                           ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                            ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                         ^ source.doctrine punctuation.definition.string.end.doctrine
-#                                          ^^^^^^^^^^ source.doctrine
+#                                          ^ source.doctrine
+#                                           ^^^^^^^^ source.doctrine keyword.control.doctrine
 >        kind: important
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine entity.name.section.doctrine
@@ -59,7 +60,8 @@
 #                              ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                               ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                           ^ source.doctrine punctuation.definition.string.end.doctrine
-#                                            ^^^^^^^^^^ source.doctrine
+#                                            ^ source.doctrine
+#                                             ^^^^^^^^ source.doctrine keyword.control.doctrine
 >        verdict: "Verdict"
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine entity.name.section.doctrine
@@ -94,7 +96,8 @@
 #                         ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                          ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                       ^ source.doctrine punctuation.definition.string.end.doctrine
-#                                        ^^^^^^^^^^ source.doctrine
+#                                        ^ source.doctrine
+#                                         ^^^^^^^^ source.doctrine keyword.control.doctrine
 >        columns:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine entity.name.section.doctrine

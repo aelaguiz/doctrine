@@ -36,7 +36,7 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `72`: second-wave integration surfaces for `analysis`,
+- `54` through `74`: second-wave integration surfaces for `analysis`,
   owner-aware `schema:` / `structure:` attachments, readable markdown
   documents and descendants, schema artifact inventories and reusable groups,
   shared readable block reuse, multiline code blocks, schema-backed review
@@ -45,11 +45,16 @@ Each numbered example may contain:
   schemas, semantic render-profile lowering targets, and late extension
   readable blocks such as raw `markdown`, `html`, `footnotes`, `image`, and
   structured nested table cells, plus `review_family`, case-selected review
-  families, dedicated `route_only`, dedicated `grounding`, and schema-group
-  invalidation
+  families, dedicated `route_only`, dedicated `grounding`, schema-group
+  invalidation, and first-class `decision` attachments for candidate-pool and
+  winner-selection scaffolds
+- `73` and `74`: the flagship multi-agent flow visualizer showcase and the
+  decision-attachment capstone for reusable candidate-pool readback
 - `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
   a route-first handoff lane, a routed return loop, a shared carrier output,
   and checked-in `.flow.{d2,svg}` artifacts
+- `74`: first-class `decision` attachments with typed candidate-pool, ranking,
+  rejection, and winner-selection obligations
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -132,6 +137,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy and ordinary routing. |
 | `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
 | `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, a route-first handoff lane, a routed return loop, a shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
+| `74_decision_attachment` | First-class `decision` declarations plus concrete-agent `decision:` attachments for candidate-pool and winner-selection scaffolds. |
 
 ## Useful Commands
 

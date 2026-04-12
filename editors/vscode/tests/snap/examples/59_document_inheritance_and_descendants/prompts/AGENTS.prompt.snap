@@ -36,7 +36,8 @@
 #                         ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                          ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                    ^ source.doctrine punctuation.definition.string.end.doctrine
-#                                     ^^^^^^^^^^ source.doctrine
+#                                     ^ source.doctrine
+#                                      ^^^^^^^^ source.doctrine keyword.control.doctrine
 >        first: "Read the brief."
 #^^^^^^^^ source.doctrine
 #        ^^^^^ source.doctrine entity.name.section.doctrine
@@ -60,7 +61,8 @@
 #                    ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                     ^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                             ^ source.doctrine punctuation.definition.string.end.doctrine
-#                              ^^^^^^^^^^ source.doctrine
+#                              ^ source.doctrine
+#                               ^^^^^^^^ source.doctrine keyword.control.doctrine
 >        columns:
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^ source.doctrine entity.name.section.doctrine

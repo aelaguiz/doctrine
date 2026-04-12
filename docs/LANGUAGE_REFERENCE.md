@@ -23,7 +23,7 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 A prompt file may contain imports and any mix of shipped declarations:
 
-- `render_profile`, `analysis`, `schema`, `document`
+- `render_profile`, `analysis`, `decision`, `schema`, `document`
 - `agent`, `abstract agent`
 - `workflow`, `route_only`, `grounding`
 - `review`, `review_family`, `abstract review`
@@ -64,7 +64,7 @@ Important rules:
   declaration name available.
 - Every concrete agent needs a `role`.
 - Reserved typed agent fields include `inputs`, `outputs`, `analysis`,
-  `skills`, and `review`.
+  `decision`, `skills`, and `review`.
 - Any other keyed field is an authored workflow slot. Those slots can point at
   a named `workflow` or define an inline workflow body.
 - `abstract <slot_key>` marks an authored slot that concrete children must
@@ -78,6 +78,8 @@ Important rules:
 - `review:` may point at a concrete `review` or a case-complete
   `review_family`.
 - `analysis:` attaches one reusable `analysis` declaration to an otherwise
+  ordinary concrete turn.
+- `decision:` attaches one reusable `decision` declaration to an otherwise
   ordinary concrete turn.
 
 `role` has two shipped shapes:
@@ -190,10 +192,11 @@ Important rules:
 - Grounding routes still target ordinary concrete agents.
 - `grounding` owns protocol shape, not domain truth.
 
-## Analysis, Schemas, And Documents
+## Analysis, Decisions, Schemas, And Documents
 
-Doctrine ships three additional readable declaration families for structured
-reasoning, artifact inventories, and reusable markdown structure.
+Doctrine ships four additional readable declaration families for structured
+reasoning, candidate-pool decisions, artifact inventories, and reusable
+markdown structure.
 
 ### Analysis
 
@@ -221,6 +224,33 @@ Important rules:
   paths.
 - Analysis sections are addressable, so refs such as
   `ReleaseAnalysis:stages.title` are valid.
+
+### Decision
+
+`decision` declares a reusable candidate-pool and winner-selection scaffold
+that a concrete agent may attach through `decision:`.
+
+```prompt
+decision PlayableStrategyChoice: "Playable Strategy Choice"
+    candidates minimum 3
+    rank required
+    rejects required
+    choose one winner
+    rank_by {teaching_fit, product_reality, capstone_coherence}
+```
+
+Important rules:
+
+- `decision` is a readable declaration that keeps candidate search, ranking,
+  rejection, and winner-selection obligations typed instead of prose-only.
+- `decision` may attach `render_profile:` to control how its readable body
+  renders when Doctrine lowers it into markdown.
+- The shipped typed statements are `candidates minimum <n>`, `rank required`,
+  `rejects required`, `candidate_pool required`, `kept required`,
+  `rejected required`, `winner_reasons required`, `choose one winner`, and
+  `rank_by {dimension, ...}`.
+- Decision declarations stay generic. What counts as a candidate or which
+  dimensions matter remains author-owned, not compiler-owned.
 
 ### Schemas
 

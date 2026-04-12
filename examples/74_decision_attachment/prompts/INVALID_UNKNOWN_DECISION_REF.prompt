@@ -1,0 +1,5 @@
+agent InvalidUnknownDecisionRef:
+    role: "This agent points at a missing decision."
+    workflow: "Choose"
+        "This example should fail loudly."
+    decision: MissingDecision

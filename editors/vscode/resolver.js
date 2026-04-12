@@ -39,7 +39,7 @@ const USE_RE = new RegExp(
   `^\\s*use\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const TOP_LEVEL_FIELD_REF_RE = new RegExp(
-  `^\\s*(analysis|skills|inputs|outputs)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(analysis|decision|skills|inputs|outputs)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEYED_DECL_REF_RE = new RegExp(
   `^\\s*(source|target|shape|schema|structure|render_profile)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -202,10 +202,11 @@ const PURPOSE_OR_REASON_RE = new RegExp(
   `^\\s*(purpose|reason)\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
 
-const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "analysis", "skills", "review"]);
+const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "analysis", "decision", "skills", "review"]);
 const READABLE_DECLARATION_KINDS = Object.freeze([
   "agent",
   "analysis",
+  "decision",
   "schema_decl",
   "document",
   "input",
@@ -222,6 +223,7 @@ const DECLARATION_KIND = Object.freeze({
   AGENT: "agent",
   REVIEW: "review",
   ANALYSIS: "analysis",
+  DECISION: "decision",
   SCHEMA_DECL: "schema_decl",
   DOCUMENT: "document",
   WORKFLOW: "workflow",
@@ -242,6 +244,7 @@ const DECLARATION_KIND = Object.freeze({
 const ADDRESSABLE_DECLARATION_KINDS = Object.freeze([
   DECLARATION_KIND.AGENT,
   DECLARATION_KIND.ANALYSIS,
+  DECLARATION_KIND.DECISION,
   DECLARATION_KIND.SCHEMA_DECL,
   DECLARATION_KIND.DOCUMENT,
   DECLARATION_KIND.WORKFLOW,
@@ -312,6 +315,11 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     ),
     nameGroup: 1,
     parentGroup: 2,
+  },
+  {
+    kind: DECLARATION_KIND.DECISION,
+    regex: new RegExp(`^\\s*decision\\s+(${IDENTIFIER_PATTERN})\\s*:`),
+    nameGroup: 1,
   },
   {
     kind: DECLARATION_KIND.SCHEMA_DECL,
@@ -5826,6 +5834,8 @@ function keyedFieldToDeclarationKind(fieldName) {
   switch (fieldName) {
     case "analysis":
       return DECLARATION_KIND.ANALYSIS;
+    case "decision":
+      return DECLARATION_KIND.DECISION;
     case "skills":
       return DECLARATION_KIND.SKILLS_BLOCK;
     case "inputs":

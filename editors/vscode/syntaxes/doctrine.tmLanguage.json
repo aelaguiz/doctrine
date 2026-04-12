@@ -16,6 +16,9 @@
       "include": "#analysisDeclaration"
     },
     {
+      "include": "#decisionDeclaration"
+    },
+    {
       "include": "#schemaDeclaration"
     },
     {
@@ -146,6 +149,9 @@
     },
     {
       "include": "#analysisField"
+    },
+    {
+      "include": "#decisionField"
     },
     {
       "include": "#skillsField"
@@ -291,6 +297,20 @@
           "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "decisionDeclaration": {
+      "match": "^(\\s*)(decision)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
@@ -986,7 +1006,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(derive|classify|compare|defend|from|against|using|render_profile|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
+      "match": "\\b(derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
     },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",
@@ -1111,6 +1131,20 @@
     },
     "analysisField": {
       "match": "^( {4})(analysis)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
+    "decisionField": {
+      "match": "^( {4})(decision)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
           "name": "keyword.other.field.doctrine"

@@ -40,6 +40,11 @@
 #           ^ punctuation.separator.key-value.doctrine
 #             ^ entity.name.type.reference.key-value.doctrine
 
+    decision: StrategyChoice
+#   ^^^^^^^^ keyword.other.field.doctrine
+#           ^ punctuation.separator.key-value.doctrine
+#             ^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+
         produced_output: "Produced Output"
 #       ^ entity.name.section.doctrine
 #                      ^ punctuation.separator.key-value.doctrine

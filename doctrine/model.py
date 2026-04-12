@@ -712,6 +712,49 @@ class AnalysisDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class DecisionMinimumCandidates:
+    count: int
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionRequiredItem:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionChooseWinner:
+    pass
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionRankBy:
+    dimensions: tuple[str, ...]
+
+
+DecisionItem: TypeAlias = (
+    DecisionMinimumCandidates | DecisionRequiredItem | DecisionChooseWinner | DecisionRankBy
+)
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[DecisionItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionDecl:
+    name: str
+    body: DecisionBody
+    render_profile_ref: NameRef | None = None
+
+    @property
+    def title(self) -> str:
+        return self.body.title
+
+
+@dataclass(slots=True, frozen=True)
 class SchemaSection:
     key: str
     title: str
@@ -1154,6 +1197,11 @@ class AnalysisField:
 
 
 @dataclass(slots=True, frozen=True)
+class DecisionField:
+    value: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
 
@@ -1173,6 +1221,7 @@ Field: TypeAlias = (
     | InputsField
     | OutputsField
     | AnalysisField
+    | DecisionField
     | SkillsField
     | ReviewField
 )
@@ -1304,6 +1353,7 @@ Declaration: TypeAlias = (
     ImportDecl
     | RenderProfileDecl
     | AnalysisDecl
+    | DecisionDecl
     | SchemaDecl
     | DocumentDecl
     | WorkflowDecl

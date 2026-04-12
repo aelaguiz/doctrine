@@ -243,6 +243,9 @@ Important rules:
 - `override <section_key>:` must target a real parent subsection
 - inherited law may not mix named subsection patching with bare parent law
   statements
+- Doctrine does not ship a separate reusable preservation declaration family.
+  Reuse preservation pressure by factoring named law subsections and inheriting
+  or patching them, as shown in `37_law_reuse_and_patching`.
 
 ## Grounding
 
