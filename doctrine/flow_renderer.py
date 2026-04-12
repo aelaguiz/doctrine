@@ -138,13 +138,18 @@ def render_flow_svg(d2_path: Path, svg_path: Path) -> None:
             f"Doctrine D2 helper is missing: `{D2_HELPER_PATH}`."
         )
 
-    result = subprocess.run(
-        ["node", str(D2_HELPER_PATH), str(d2_path), str(svg_path)],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            ["node", str(D2_HELPER_PATH), str(d2_path), str(svg_path)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise FlowRenderDependencyError(
+            "Node.js is required to render flow SVG output, but `node` was not found on PATH."
+        ) from exc
     if result.returncode == 0:
         return
     detail = (result.stderr or result.stdout).strip() or f"node exited {result.returncode}"
@@ -233,14 +238,22 @@ def _graph_participants(
     dict[tuple[tuple[str, ...], str], tuple[str, ...]],
     dict[tuple[tuple[str, ...], str], tuple[str, ...]],
 ]:
+    agent_titles = {
+        (agent.module_parts, agent.name): agent.title or agent.name
+        for agent in graph.agents
+    }
     input_consumers: dict[tuple[tuple[str, ...], str], set[str]] = defaultdict(set)
     output_producers: dict[tuple[tuple[str, ...], str], set[str]] = defaultdict(set)
 
     for edge in graph.edges:
         if edge.kind == "consume" and edge.source_kind == "input" and edge.target_kind == "agent":
-            input_consumers[(edge.source_module_parts, edge.source_name)].add(edge.target_name)
+            input_consumers[(edge.source_module_parts, edge.source_name)].add(
+                agent_titles.get((edge.target_module_parts, edge.target_name), edge.target_name)
+            )
         if edge.kind == "produce" and edge.source_kind == "agent" and edge.target_kind == "output":
-            output_producers[(edge.target_module_parts, edge.target_name)].add(edge.source_name)
+            output_producers[(edge.target_module_parts, edge.target_name)].add(
+                agent_titles.get((edge.source_module_parts, edge.source_name), edge.source_name)
+            )
 
     return (
         {key: tuple(sorted(names)) for key, names in input_consumers.items()},

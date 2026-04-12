@@ -60,7 +60,7 @@ Stability rules:
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
 | `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |
-| `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet. |
+| `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:` or `schema:` plus `structure:`. |
 
 ### Compile codes
 

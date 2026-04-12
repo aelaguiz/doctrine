@@ -320,6 +320,7 @@ class IndexedUnit:
     imports: tuple[model.ImportDecl, ...]
     render_profiles_by_name: dict[str, model.RenderProfileDecl]
     analyses_by_name: dict[str, model.AnalysisDecl]
+    decisions_by_name: dict[str, model.DecisionDecl]
     schemas_by_name: dict[str, model.SchemaDecl]
     documents_by_name: dict[str, model.DocumentDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
@@ -346,6 +347,7 @@ class ResolvedRouteLine:
     label: str
     target_module_parts: tuple[str, ...]
     target_name: str
+    target_display_name: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -408,6 +410,7 @@ class ResolvedSkillsBody:
 ResolvedAnalysisSectionItem: TypeAlias = (
     model.ProseLine
     | ResolvedSectionRef
+    | model.ProveStmt
     | model.DeriveStmt
     | model.ClassifyStmt
     | model.CompareStmt
@@ -816,9 +819,6 @@ _BUILTIN_OUTPUT_TARGETS = {
 
 _BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")
 _KNOWN_RENDER_PROFILE_TARGETS = {
-    "current_artifact",
-    "own_only",
-    "preserve_exact",
     "review.contract_checks",
     "analysis.stages",
     "control.invalidations",
@@ -882,6 +882,7 @@ def _resolve_render_profile_mode(
 _READABLE_DECL_REGISTRIES = (
     ("agent declaration", "agents_by_name"),
     ("analysis declaration", "analyses_by_name"),
+    ("decision declaration", "decisions_by_name"),
     ("schema declaration", "schemas_by_name"),
     ("document declaration", "documents_by_name"),
     ("input declaration", "inputs_by_name"),
@@ -1073,6 +1074,7 @@ class CompilationSession:
         imports: list[model.ImportDecl] = []
         render_profiles_by_name: dict[str, model.RenderProfileDecl] = {}
         analyses_by_name: dict[str, model.AnalysisDecl] = {}
+        decisions_by_name: dict[str, model.DecisionDecl] = {}
         schemas_by_name: dict[str, model.SchemaDecl] = {}
         documents_by_name: dict[str, model.DocumentDecl] = {}
         workflows_by_name: dict[str, model.WorkflowDecl] = {}
@@ -1107,6 +1109,10 @@ class CompilationSession:
             if isinstance(declaration, model.AnalysisDecl):
                 _register_decl(analyses_by_name, declaration.name, module_parts)
                 analyses_by_name[declaration.name] = declaration
+                continue
+            if isinstance(declaration, model.DecisionDecl):
+                _register_decl(decisions_by_name, declaration.name, module_parts)
+                decisions_by_name[declaration.name] = declaration
                 continue
             if isinstance(declaration, model.SchemaDecl):
                 _register_decl(schemas_by_name, declaration.name, module_parts)
@@ -1200,6 +1206,7 @@ class CompilationSession:
             imports=tuple(imports),
             render_profiles_by_name=render_profiles_by_name,
             analyses_by_name=analyses_by_name,
+            decisions_by_name=decisions_by_name,
             schemas_by_name=schemas_by_name,
             documents_by_name=documents_by_name,
             workflows_by_name=workflows_by_name,
@@ -1403,6 +1410,11 @@ class CompilationContext:
             if declaration is None:
                 raise CompileError(f"Missing target analysis declaration: {declaration_name}")
             return self._compile_analysis_decl(declaration, unit=self.root_unit)
+        if declaration_kind == "decision":
+            declaration = self.root_unit.decisions_by_name.get(declaration_name)
+            if declaration is None:
+                raise CompileError(f"Missing target decision declaration: {declaration_name}")
+            return self._compile_decision_decl(declaration, unit=self.root_unit)
         if declaration_kind == "schema":
             declaration = self.root_unit.schemas_by_name.get(declaration_name)
             if declaration is None:
@@ -2399,6 +2411,9 @@ class CompilationContext:
         if isinstance(field, model.AnalysisField):
             analysis_unit, analysis_decl = self._resolve_analysis_ref(field.value, unit=unit)
             return self._compile_analysis_decl(analysis_decl, unit=analysis_unit)
+        if isinstance(field, model.DecisionField):
+            decision_unit, decision_decl = self._resolve_decision_ref(field.value, unit=unit)
+            return self._compile_decision_decl(decision_decl, unit=decision_unit)
         if isinstance(field, model.SkillsField):
             return self._compile_skills_field(field, unit=unit)
         if isinstance(field, model.ReviewField):
@@ -3426,18 +3441,22 @@ class CompilationContext:
         route_cases: list[model.MatchArm] = []
         for route in decl.body.routes:
             self._validate_route_target(route.target, unit=unit)
+            _route_unit, route_agent = self._resolve_agent_ref(route.target, unit=unit)
+            route_title = route_agent.title or _humanize_key(route_agent.name)
             route_stmt = model.LawRouteStmt(
-                label=f"Route to {self._display_ref(route.target)}.",
+                label=f"Route to {route_title}.",
                 target=route.target,
             )
             route_cases.append(
-                model.MatchArm(head=route.key, items=(route_stmt,))
+                model.MatchArm(
+                    head=route.key,
+                    items=(route_stmt,),
+                    display_label=route_title if route.key is not None else None,
+                )
             )
         law_items.append(model.MatchStmt(expr=next_owner_expr, cases=tuple(route_cases)))
 
         preamble: list[model.ProseLine] = [f"Emit {output_decl.title}."]
-        if output_unit.module_parts != unit.module_parts:
-            preamble[0] = f"Emit {_dotted_decl_name(output_unit.module_parts, output_decl.name)}."
         return ResolvedWorkflowBody(
             title=decl.body.title,
             preamble=tuple(preamble),
@@ -3457,7 +3476,9 @@ class CompilationContext:
 
         preamble: list[model.ProseLine] = []
         if decl.body.source_ref is not None:
-            preamble.append(f"Ground this pass against {self._display_ref(decl.body.source_ref)}.")
+            preamble.append(
+                f"Ground this pass against {self._display_ref(decl.body.source_ref, unit=unit)}."
+            )
         preamble.append(f"Target: {decl.body.target}.")
 
         for item in decl.body.policy_items:
@@ -3475,7 +3496,7 @@ class CompilationContext:
                 continue
             self._validate_route_target(item.target, unit=unit)
             preamble.append(
-                f"If {item.condition}, route to {self._display_ref(item.target)}."
+                f"If {item.condition}, route to {self._display_ref(item.target, unit=unit)}."
             )
 
         return ResolvedWorkflowBody(
@@ -4068,6 +4089,11 @@ class CompilationContext:
             if isinstance(item, ResolvedSectionRef):
                 body.append(f"- {item.label}")
                 continue
+            if isinstance(item, model.ProveStmt):
+                body.append(
+                    f"Prove {item.target_title} from {self._render_analysis_basis(item.basis, unit=unit)}."
+                )
+                continue
             if isinstance(item, model.DeriveStmt):
                 body.append(
                     f"Derive {item.target_title} from {self._render_analysis_basis(item.basis, unit=unit)}."
@@ -4096,6 +4122,71 @@ class CompilationContext:
                 f"Internal compiler error: unsupported analysis item {type(item).__name__}"
             )
         return tuple(body)
+
+    def _compile_decision_decl(
+        self,
+        decl: model.DecisionDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        body: list[CompiledBodyItem] = [
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=f"decision {decl.name}",
+                surface_label="decision prose",
+                ambiguous_label="decision prose interpolation ref",
+            )
+            for line in decl.body.preamble
+        ]
+        for item in decl.body.items:
+            if isinstance(item, model.DecisionMinimumCandidates):
+                body.append(
+                    f"Build at least {item.count} candidates before choosing a winner."
+                )
+                continue
+            if isinstance(item, model.DecisionRequiredItem):
+                body.append(self._render_decision_required_item(item))
+                continue
+            if isinstance(item, model.DecisionChooseWinner):
+                body.append("Choose exactly one winner.")
+                continue
+            if isinstance(item, model.DecisionRankBy):
+                dimensions = self._natural_language_join(
+                    [_humanize_key(dimension) for dimension in item.dimensions]
+                )
+                body.append(f"Rank by {dimensions}.")
+                continue
+            raise CompileError(
+                f"Internal compiler error: unsupported decision item {type(item).__name__}"
+            )
+        render_profile = (
+            self._resolve_render_profile_ref(decl.render_profile_ref, unit=unit)
+            if decl.render_profile_ref is not None
+            else ResolvedRenderProfile(name="ContractMarkdown")
+        )
+        return CompiledSection(
+            title=decl.title,
+            body=tuple(body),
+            render_profile=render_profile,
+        )
+
+    def _render_decision_required_item(self, item: model.DecisionRequiredItem) -> str:
+        decision_required_text = {
+            "rank": "Ranking is required.",
+            "rejects": "Explicit rejects are required.",
+            "candidate_pool": "A candidate pool is required.",
+            "kept": "Kept candidates are required.",
+            "rejected": "Rejected candidates are required.",
+            "sequencing_proof": "Sequencing proof is required.",
+            "winner_reasons": "Winner reasons are required.",
+        }
+        text = decision_required_text.get(item.key)
+        if text is None:
+            raise CompileError(
+                f"Internal compiler error: unsupported decision required item `{item.key}`"
+            )
+        return text
 
     def _compile_schema_decl(
         self,
@@ -7918,7 +8009,7 @@ class CompilationContext:
                 review_semantics=review_semantics,
             )
         if isinstance(item, model.ReviewCurrentArtifactStmt):
-            return [f"Current artifact: {self._display_ref(item.artifact_ref)}."]
+            return [f"Current artifact: {self._display_ref(item.artifact_ref, unit=unit)}."]
         if isinstance(item, model.ReviewCurrentNoneStmt):
             return ["There is no current artifact for this outcome."]
         if isinstance(item, model.ReviewCarryStmt):
@@ -8668,7 +8759,7 @@ class CompilationContext:
             )
             return (
                 CompiledSection(
-                    title=self._display_ref(item.ref),
+                    title=self._display_ref(item.ref, unit=unit),
                     body=body,
                 ),
             )
@@ -9362,7 +9453,7 @@ class CompilationContext:
             enum_decl = self._try_resolve_enum_decl(value, unit=unit)
             if enum_decl is not None:
                 return DisplayValue(text=enum_decl.title, kind="title")
-            return DisplayValue(text=self._display_ref(value), kind="symbol")
+            return DisplayValue(text=self._display_ref(value, unit=unit), kind="symbol")
         if owner_label is None or surface_label is None:
             raise CompileError(
                 "Internal compiler error: addressable refs require an owner label and surface label"
@@ -9394,7 +9485,15 @@ class CompilationContext:
         )
         return display.text
 
-    def _display_ref(self, ref: model.NameRef) -> str:
+    def _display_ref(self, ref: model.NameRef, *, unit: IndexedUnit) -> str:
+        try:
+            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        except CompileError:
+            lookup_unit = None
+        if lookup_unit is not None:
+            matches = self._find_readable_decl_matches(ref.declaration_name, unit=lookup_unit)
+            if len(matches) == 1:
+                return self._display_readable_decl(matches[0][1])
         if ref.module_parts:
             return ".".join((*ref.module_parts, ref.declaration_name))
         return _humanize_key(ref.declaration_name)
@@ -10685,7 +10784,7 @@ class CompilationContext:
                 )
                 resolved.append(ResolvedSectionRef(label=display.text))
                 continue
-            if isinstance(item, (model.DeriveStmt, model.CompareStmt, model.DefendStmt)):
+            if isinstance(item, (model.ProveStmt, model.DeriveStmt, model.CompareStmt, model.DefendStmt)):
                 basis = self._coerce_path_set(item.basis)
                 if not basis.paths:
                     raise CompileError(f"Analysis basis may not be empty in {owner_label}")
@@ -12735,6 +12834,7 @@ class CompilationContext:
                     ),
                     target_module_parts=target_unit.module_parts,
                     target_name=target_agent.name,
+                    target_display_name=target_agent.title or target_agent.name,
                 )
             )
         return tuple(resolved)
@@ -13868,6 +13968,8 @@ class CompilationContext:
             return DisplayValue(text=target.name, kind="symbol")
         if isinstance(target, model.AnalysisDecl):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.DecisionDecl):
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaDecl):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentDecl):
@@ -14070,7 +14172,7 @@ class CompilationContext:
 
     def _display_readable_decl(self, decl: ReadableDecl) -> str:
         if isinstance(decl, model.Agent):
-            return decl.title or decl.name
+            return decl.title or _humanize_key(decl.name)
         return decl.title
 
     def _validate_route_target(self, ref: model.NameRef, *, unit: IndexedUnit) -> None:
@@ -14273,7 +14375,7 @@ class CompilationContext:
             return []
 
         labels = [
-            self._render_expr(case.head, unit=unit)
+            case.display_label or self._render_expr(case.head, unit=unit)
             for case in stmt.cases
             if case.head is not None
         ]
@@ -14283,7 +14385,9 @@ class CompilationContext:
             if case.head is None:
                 heading = "Else:"
             else:
-                heading = f"If mode is {self._render_expr(case.head, unit=unit)}:"
+                heading = (
+                    f"If mode is {case.display_label or self._render_expr(case.head, unit=unit)}:"
+                )
             lines.extend(["", heading])
             lines.extend(
                 self._render_law_stmt_block(
@@ -16022,7 +16126,7 @@ class CompilationContext:
                     )
                 )
             elif isinstance(item, ResolvedRouteLine):
-                body.append(f"{item.label} -> {item.target_name}")
+                body.append(f"{item.label} -> {item.target_display_name}")
             else:
                 body.append(f"- {item.label}")
 
@@ -16144,6 +16248,16 @@ class CompilationContext:
             unit=unit,
             registry_name="analyses_by_name",
             missing_label="analysis declaration",
+        )
+
+    def _resolve_decision_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.DecisionDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="decisions_by_name",
+            missing_label="decision declaration",
         )
 
     def _resolve_schema_ref(

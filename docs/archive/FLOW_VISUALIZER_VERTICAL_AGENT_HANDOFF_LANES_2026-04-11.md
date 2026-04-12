@@ -145,7 +145,7 @@ note: This is a warn-first checklist only. It should not hard-block execution.
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
-Worklog: `docs/FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11_WORKLOG.md`
+Worklog: `docs/archive/FLOW_VISUALIZER_VERTICAL_AGENT_HANDOFF_LANES_2026-04-11_WORKLOG.md`
 
 # 0) Holistic North Star
 

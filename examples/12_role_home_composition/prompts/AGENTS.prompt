@@ -281,7 +281,7 @@ abstract agent LessonsRoleHome:
     standards_and_support: LessonsStandardsAndSupport
 
 
-agent LessonsProjectLead[LessonsRoleHome]:
+agent LessonsProjectLead[LessonsRoleHome]: "Lessons Project Lead"
     role: "Core job: open, route, and finish Lessons issues while keeping publish and follow-up honest on the same issue."
 
     your_job: ProjectLeadJob
@@ -316,7 +316,7 @@ agent LessonsProjectLead[LessonsRoleHome]:
     override standards_and_support: ProjectLeadStandardsAndSupport
 
 
-agent LessonsCopywriter[LessonsRoleHome]:
+agent LessonsCopywriter[LessonsRoleHome]: "Lessons Copywriter"
     role: "Core job: turn the approved manifest into grounded reader-facing copy without changing lesson structure or authority scope."
 
     your_job: CopywriterJob

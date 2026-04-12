@@ -95,11 +95,11 @@ Use the current issue state to understand the named current files and publish st
 
 ### Next Owner If Accepted
 
-- If the issue is ready for copy work -> LessonsCopywriter
+- If the issue is ready for copy work -> Lessons Copywriter
 
 ### If The Work Is Not Ready
 
-- If the route is still unclear -> LessonsProjectLead
+- If the route is still unclear -> Lessons Project Lead
 
 ## When To Stop
 

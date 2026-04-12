@@ -6,7 +6,7 @@ Preserve the shared audience direction while you write the draft.
 
 ### Project Routing
 
-Return the draft to ProjectLead. -> ProjectLead
+Return the draft to ProjectLead. -> Project Lead
 
 ## Inputs
 

@@ -9,6 +9,10 @@ workflow ReviewFlow[shared.workflow.BaseFlow]: "Workflow"
 #         ^ entity.name.type.doctrine
 #                    ^ entity.other.inherited-class.doctrine
 
+decision StrategyChoice: "Strategy Choice"
+# <------- keyword.declaration.doctrine
+#         ^ entity.name.type.doctrine
+
 skills SharedSkills[shared.skills.BaseSkills]: "Skills"
 # <----- keyword.declaration.doctrine
 #        ^ entity.name.type.doctrine

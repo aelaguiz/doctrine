@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/73_flow_visualizer_showcase`.
+`examples/74_decision_attachment`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -39,11 +39,18 @@ parallelism.
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-## Phased Plan Set
+## Historical Phase Docs
 
-These documents organize the second-wave language work into implementation
-order. Each phase doc is self-contained, restates the prior-phase baseline it
-needs, and groups the work that should be built together.
+These documents organize the earlier second-wave language work into
+implementation order. They are still useful historical implementation notes,
+but they are not the current live completeness story now that shipped truth
+also includes the first-class `decision` surface and
+`examples/74_decision_attachment`.
+
+For the current shipped language surface, use
+[LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md),
+[WORKFLOW_LAW.md](WORKFLOW_LAW.md), and
+[../examples/README.md](../examples/README.md) first.
 
 - [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md):
   phase 1 typed-markdown foundation, first-class `document`, the readable block

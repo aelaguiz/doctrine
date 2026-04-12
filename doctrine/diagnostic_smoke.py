@@ -33,6 +33,7 @@ def main() -> int:
     _check_readable_guard_rejects_output_owned_refs()
     _check_readable_table_requires_columns()
     _check_output_schema_owner_conflict_surfaces_as_parse_error()
+    _check_output_schema_structure_conflict_surfaces_as_parse_error()
     _check_review_illegal_statement_placement_has_specific_code()
     _check_review_invalid_guarded_match_head_has_specific_code()
     _check_review_multiple_currentness_has_specific_code()
@@ -215,6 +216,21 @@ def _check_output_schema_owner_conflict_surfaces_as_parse_error() -> None:
             _expect("must_include" in str(exc), str(exc))
             return
         raise SmokeFailure("expected parse failure for output schema owner conflict, but parsing succeeded")
+
+
+def _check_output_schema_structure_conflict_surfaces_as_parse_error() -> None:
+    source = _output_schema_structure_conflict_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        try:
+            parse_file(prompt_path)
+        except Exception as exc:
+            _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E199", f"expected E199, got {getattr(exc, 'code', None)}")
+            _expect("schema" in str(exc).lower(), str(exc))
+            _expect("structure" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected parse failure for output schema and structure conflict, but parsing succeeded")
 
 
 def _check_review_illegal_statement_placement_has_specific_code() -> None:
@@ -935,6 +951,26 @@ agent OutputDemo:
     role: "Keep the schema attachment visible."
     outputs: "Outputs"
         SchemaOutput
+"""
+
+
+def _output_schema_structure_conflict_source() -> str:
+    return """schema DeliveryInventory: "Delivery Inventory"
+    sections:
+        summary: "Summary"
+            "Include a short summary."
+
+document DeliveryPlan: "Delivery Plan"
+    section summary: "Summary"
+        "Write the summary."
+
+output InvalidDeliveryPlan: "Invalid Delivery Plan"
+    target: File
+        path: "unit_root/INVALID_DELIVERY_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+    schema: DeliveryInventory
+    structure: DeliveryPlan
 """
 
 

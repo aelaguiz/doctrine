@@ -6,7 +6,7 @@ Read the same brief and audience guide before you add research.
 
 ### Project Routing
 
-Hand the research packet to WritingSpecialist. -> WritingSpecialist
+Hand the research packet to WritingSpecialist. -> Writing Specialist
 
 ## Inputs
 

@@ -96,6 +96,8 @@ Important rules:
 - Output-attached schemas must still expose at least one section even when the
   same schema also owns reusable artifacts or groups.
 - `structure:` may attach a named `document` to a markdown-bearing output.
+- A markdown-bearing `output` may not attach both `schema:` and `structure:`.
+  Pick exactly one reusable owner for that artifact surface.
 - `render_profile:` may attach a named markdown presentation policy to a
   markdown-bearing output.
 - Ordinary output record bodies may reuse readable block kinds such as
@@ -113,6 +115,11 @@ Shipped markdown render defaults:
 - authored `render_profile` declarations may override supported readable
   rendering targets such as `properties`, guarded shells, and the shipped
   semantic lowering targets
+- the shipped semantic targets are `analysis.stages`,
+  `review.contract_checks`, and `control.invalidations`
+- workflow-law sentences such as `current artifact`, `own only`, and
+  `preserve exact` stay built-in compiler sentence lowering rather than
+  authored `render_profile` targets
 - if a markdown-bearing `output` uses `structure:` without its own
   `render_profile:`, an attached `document render_profile:` still governs the
   lowered readable body
@@ -126,14 +133,22 @@ Output bodies can include:
 - `standalone_read`
 - `trust_surface`
 
-Typed attachment example:
+Typed attachment examples:
+
+```prompt
+output DeliveryPlan: "Delivery Plan"
+    target: File
+        path: "unit_root/DELIVERY_PLAN.md"
+    shape: MarkdownDocument
+    schema: DeliveryInventory
+    requirement: Required
+```
 
 ```prompt
 output LessonPlanFile: "Lesson Plan File"
     target: File
         path: "lesson_root/_authoring/LESSON_PLAN.md"
     shape: MarkdownDocument
-    schema: LessonPlanInventory
     structure: LessonPlan
     requirement: Required
 ```

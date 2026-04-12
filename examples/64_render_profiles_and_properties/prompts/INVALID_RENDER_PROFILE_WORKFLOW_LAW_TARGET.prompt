@@ -1,0 +1,17 @@
+render_profile BrokenProfile:
+    current_artifact -> sentence
+
+
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    render_profile: BrokenProfile
+    requirement: Required
+
+
+agent InvalidRenderProfileWorkflowLawTargetDemo:
+    role: "Compile the broken review comment."
+    workflow: "Review"
+        "This should fail."
+    outputs: "Outputs"
+        ReviewComment

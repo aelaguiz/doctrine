@@ -175,6 +175,7 @@ class WhenStmt:
 class MatchArm:
     head: Expr | None
     items: tuple["LawStmt", ...]
+    display_label: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -645,6 +646,12 @@ class SkillsDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class ProveStmt:
+    target_title: str
+    basis: LawPathSet
+
+
+@dataclass(slots=True, frozen=True)
 class DeriveStmt:
     target_title: str
     basis: LawPathSet
@@ -670,7 +677,13 @@ class DefendStmt:
 
 
 AnalysisSectionItem: TypeAlias = (
-    ProseLine | SectionBodyRef | DeriveStmt | ClassifyStmt | CompareStmt | DefendStmt
+    ProseLine
+    | SectionBodyRef
+    | ProveStmt
+    | DeriveStmt
+    | ClassifyStmt
+    | CompareStmt
+    | DefendStmt
 )
 
 
@@ -703,6 +716,49 @@ class AnalysisDecl:
     name: str
     body: AnalysisBody
     parent_ref: NameRef | None = None
+    render_profile_ref: NameRef | None = None
+
+    @property
+    def title(self) -> str:
+        return self.body.title
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionMinimumCandidates:
+    count: int
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionRequiredItem:
+    key: str
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionChooseWinner:
+    pass
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionRankBy:
+    dimensions: tuple[str, ...]
+
+
+DecisionItem: TypeAlias = (
+    DecisionMinimumCandidates | DecisionRequiredItem | DecisionChooseWinner | DecisionRankBy
+)
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionBody:
+    title: str
+    preamble: tuple[ProseLine, ...]
+    items: tuple[DecisionItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionDecl:
+    name: str
+    body: DecisionBody
     render_profile_ref: NameRef | None = None
 
     @property
@@ -1153,6 +1209,11 @@ class AnalysisField:
 
 
 @dataclass(slots=True, frozen=True)
+class DecisionField:
+    value: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
 
@@ -1172,6 +1233,7 @@ Field: TypeAlias = (
     | InputsField
     | OutputsField
     | AnalysisField
+    | DecisionField
     | SkillsField
     | ReviewField
 )
@@ -1303,6 +1365,7 @@ Declaration: TypeAlias = (
     ImportDecl
     | RenderProfileDecl
     | AnalysisDecl
+    | DecisionDecl
     | SchemaDecl
     | DocumentDecl
     | WorkflowDecl

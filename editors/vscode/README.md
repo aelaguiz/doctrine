@@ -13,7 +13,7 @@ Repo-local VS Code language support for `.prompt` files.
   clickable surface:
   parent declaration refs, authored-slot refs and overrides, workflow `use`
   refs, workflow `skills` refs and override refs, route targets, `analysis`,
-  `skills`,
+  `decision`, `skills`,
   `inputs`, `outputs`, patch-parent refs, `source`, `target`, `shape`,
   owner-aware `schema` refs on `output shape` and `output`, `structure` refs
   on markdown-bearing `input` and `output` surfaces, standalone input/output
@@ -56,8 +56,9 @@ sections, carried `active_mode` / `trigger_reason`, bound review carrier roots,
 and semantic refs on the review comment surface.
 
 Second-wave support here also follows the shipped language guides: top-level
-`render_profile`, `analysis`, `schema`, and `document` declarations, agent
-`analysis:` slots, typed `schema:` / `structure:` / `render_profile:`
+`render_profile`, `analysis`, `decision`, `schema`, and `document`
+declarations, agent `analysis:` / `decision:` slots, typed
+`schema:` / `structure:` / `render_profile:`
 attachments, addressable analysis or document paths such as `Decl:section.title`,
 family-namespaced schema paths such as
 `BuildSurfaceSchema:artifacts.manifest_file.title`, keyed readable descendants
@@ -163,6 +164,8 @@ local editor is actually running the newest VSIX before changing the grammar.
 9. For the second-wave ladder, smoke-check:
    `examples/54_analysis_attachment/prompts/AGENTS.prompt` for `analysis:`
    slot clicks and `ReleaseAnalysis:stages.title`,
+   `examples/74_decision_attachment/prompts/AGENTS.prompt` for `decision:`
+   slot clicks and decision declaration roots,
    `examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt` for
    owner-aware `schema:` clicks on both `output shape` and `output`,
    `examples/56_document_structure_attachments/prompts/AGENTS.prompt` for

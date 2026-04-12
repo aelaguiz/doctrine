@@ -77,6 +77,13 @@ class AnalysisBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class DecisionBodyParts:
+    preamble: tuple[model.ProseLine, ...]
+    items: tuple[model.DecisionItem, ...]
+    render_profile_ref: model.NameRef | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class SchemaBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.SchemaItem, ...]
@@ -239,6 +246,10 @@ class ToAst(Transformer):
         return model.AnalysisField(value=ref)
 
     @v_args(inline=True)
+    def decision_field(self, ref):
+        return model.DecisionField(value=ref)
+
+    @v_args(inline=True)
     def skills_field(self, title_or_ref, body=None):
         return model.SkillsField(value=self._skills_value(title_or_ref, body))
 
@@ -371,6 +382,18 @@ class ToAst(Transformer):
             ),
             parent_ref=parent_ref,
             render_profile_ref=analysis_body.render_profile_ref,
+        )
+
+    @v_args(inline=True)
+    def decision_decl(self, name, title, decision_body):
+        return model.DecisionDecl(
+            name=name,
+            body=model.DecisionBody(
+                title=title,
+                preamble=decision_body.preamble,
+                items=decision_body.items,
+            ),
+            render_profile_ref=decision_body.render_profile_ref,
         )
 
     @v_args(inline=True)
@@ -570,6 +593,14 @@ class ToAst(Transformer):
                     "Use `schema:` for reusable inventory ownership or keep local `must_include:` prose, not both.",
                 ),
             )
+        if schema is not None and structure is not None:
+            raise TransformParseFailure(
+                "Outputs may not define both `schema:` and `structure:`.",
+                hints=(
+                    "Pick one artifact owner per markdown output declaration.",
+                    "Use `schema:` for reusable inventory ownership or `structure:` for reusable markdown structure, not both.",
+                ),
+            )
         return OutputBodyParts(
             items=tuple(record_items),
             schema=schema,
@@ -671,6 +702,10 @@ class ToAst(Transformer):
         return value
 
     @v_args(inline=True)
+    def prove_stmt(self, target_title, basis):
+        return model.ProveStmt(target_title=target_title, basis=basis)
+
+    @v_args(inline=True)
     def derive_stmt(self, target_title, basis):
         return model.DeriveStmt(target_title=target_title, basis=basis)
 
@@ -693,6 +728,108 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def defend_stmt(self, target_title, basis):
         return model.DefendStmt(target_title=target_title, basis=basis)
+
+    @v_args(inline=True)
+    def decision_render_profile_stmt(self, ref):
+        return ("render_profile", ref)
+
+    @v_args(inline=True)
+    def decision_string(self, value):
+        return value
+
+    @v_args(inline=True)
+    def decision_body_line(self, value):
+        return value
+
+    def decision_body(self, items):
+        preamble: list[model.ProseLine] = []
+        decision_items: list[model.DecisionItem] = []
+        render_profile_ref: model.NameRef | None = None
+        seen_entries: set[str] = set()
+        for item in items:
+            if isinstance(item, tuple) and item and item[0] == "render_profile":
+                if render_profile_ref is not None:
+                    raise TransformParseFailure(
+                        "Decision declarations may define `render_profile:` only once.",
+                        hints=("Keep exactly one `render_profile:` attachment per decision declaration.",),
+                    )
+                render_profile_ref = item[1]
+                continue
+            if isinstance(item, (str, model.EmphasizedLine)):
+                if decision_items:
+                    raise TransformParseFailure(
+                        "Decision prose lines must appear before typed decision entries.",
+                        hints=(
+                            "Move prose lines to the top of the decision body before typed decision requirements.",
+                        ),
+                    )
+                preamble.append(item)
+                continue
+
+            if isinstance(item, model.DecisionMinimumCandidates):
+                dedupe_key = "minimum_candidates"
+            elif isinstance(item, model.DecisionRequiredItem):
+                dedupe_key = f"required:{item.key}"
+            elif isinstance(item, model.DecisionChooseWinner):
+                dedupe_key = "choose_winner"
+            elif isinstance(item, model.DecisionRankBy):
+                dedupe_key = "rank_by"
+            else:
+                dedupe_key = type(item).__name__
+
+            if dedupe_key in seen_entries:
+                raise TransformParseFailure(
+                    f"Decision declarations may account for `{dedupe_key}` only once.",
+                    hints=("Keep each decision requirement explicit only once per declaration.",),
+                )
+            seen_entries.add(dedupe_key)
+            decision_items.append(item)
+
+        return DecisionBodyParts(
+            preamble=tuple(preamble),
+            items=tuple(decision_items),
+            render_profile_ref=render_profile_ref,
+        )
+
+    @v_args(inline=True)
+    def decision_candidates_minimum_stmt(self, count):
+        parsed = int(count)
+        if parsed < 1:
+            raise TransformParseFailure(
+                "Decision candidate minimum must be at least 1.",
+                hints=("Use `candidates minimum <positive number>`.",),
+            )
+        return model.DecisionMinimumCandidates(count=parsed)
+
+    def decision_rank_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="rank")
+
+    def decision_rejects_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="rejects")
+
+    def decision_candidate_pool_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="candidate_pool")
+
+    def decision_kept_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="kept")
+
+    def decision_rejected_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="rejected")
+
+    def decision_sequencing_proof_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="sequencing_proof")
+
+    def decision_winner_reasons_required_stmt(self, _items):
+        return model.DecisionRequiredItem(key="winner_reasons")
+
+    def decision_winner_required_stmt(self, _items):
+        return model.DecisionChooseWinner()
+
+    def decision_choose_one_winner_stmt(self, _items):
+        return model.DecisionChooseWinner()
+
+    def decision_rank_by_stmt(self, items):
+        return model.DecisionRankBy(dimensions=tuple(items))
 
     @v_args(inline=True)
     def schema_string(self, value):

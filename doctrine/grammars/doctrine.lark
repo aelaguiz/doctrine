@@ -15,6 +15,7 @@ prompt_file: _NL* declaration+ _NL*
 ?declaration: import_decl
             | render_profile_decl
             | analysis_decl
+            | decision_decl
             | schema_decl
             | document_decl
             | workflow_decl
@@ -43,6 +44,7 @@ render_profile_decl: "render_profile" CNAME _NL
 render_profile_rule: dotted_name "->" CNAME _NL?
 
 analysis_decl: "analysis" CNAME inheritance? ":" string _NL _INDENT analysis_body _DEDENT
+decision_decl: "decision" CNAME ":" string _NL _INDENT decision_body _DEDENT
 schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DEDENT
 document_decl: "document" CNAME inheritance? ":" string _NL _INDENT document_body _DEDENT
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
@@ -78,6 +80,7 @@ inheritance: "[" name_ref "]"
             | outputs_inline_field
             | outputs_ref_field
             | analysis_field
+            | decision_field
             | skills_field
             | review_field
             | agent_slot_abstract
@@ -97,6 +100,7 @@ outputs_inline_field: "outputs" ":" string _NL _INDENT record_body _DEDENT
 outputs_ref_field: "outputs" ":" name_ref _NL?
 outputs_patch_field: "outputs" inheritance ":" string _NL _INDENT io_body _DEDENT
 analysis_field: "analysis" ":" name_ref _NL?
+decision_field: "decision" ":" name_ref _NL?
 skills_field: "skills" ":" string _NL _INDENT skills_body _DEDENT
             | "skills" ":" name_ref _NL?
 review_field: "review" ":" name_ref _NL?
@@ -286,15 +290,45 @@ analysis_override_section: "override" CNAME ":" string? _NL _INDENT analysis_sec
 analysis_section_body: analysis_section_item+
 ?analysis_section_item: prose_line _NL?
                       | workflow_section_ref_item
+                      | prove_stmt
                       | derive_stmt
                       | classify_stmt
                       | compare_stmt
                       | defend_stmt
+prove_stmt: "prove" string "from" path_set_expr _NL
 derive_stmt: "derive" string "from" path_set_expr _NL
 classify_stmt: "classify" string "as" name_ref _NL
 compare_stmt: "compare" string "against" path_set_expr compare_using_clause? _NL
 compare_using_clause: "using" expr_set
 defend_stmt: "defend" string "using" path_set_expr _NL
+
+decision_body: decision_body_line+
+decision_body_line: decision_render_profile_stmt
+                  | decision_string
+                  | decision_candidates_minimum_stmt
+                  | decision_rank_required_stmt
+                  | decision_rejects_required_stmt
+                  | decision_candidate_pool_required_stmt
+                  | decision_kept_required_stmt
+                  | decision_rejected_required_stmt
+                  | decision_sequencing_proof_required_stmt
+                  | decision_winner_reasons_required_stmt
+                  | decision_winner_required_stmt
+                  | decision_choose_one_winner_stmt
+                  | decision_rank_by_stmt
+decision_render_profile_stmt: "render_profile" ":" name_ref _NL?
+decision_string: prose_line _NL?
+decision_candidates_minimum_stmt: "candidates" "minimum" SIGNED_NUMBER _NL
+decision_rank_required_stmt: "rank" "required" _NL
+decision_rejects_required_stmt: "rejects" "required" _NL
+decision_candidate_pool_required_stmt: "candidate_pool" "required" _NL
+decision_kept_required_stmt: "kept" "required" _NL
+decision_rejected_required_stmt: "rejected" "required" _NL
+decision_sequencing_proof_required_stmt: "sequencing_proof" "required" _NL
+decision_winner_reasons_required_stmt: "winner_reasons" "required" _NL
+decision_winner_required_stmt: "winner" "required" _NL
+decision_choose_one_winner_stmt: "choose" "one" "winner" _NL
+decision_rank_by_stmt: "rank_by" "{" CNAME ("," CNAME)* "}" _NL
 
 schema_body: schema_body_line+
 schema_body_line: schema_render_profile_stmt
