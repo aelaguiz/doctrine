@@ -144,7 +144,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_OVERLAPPING_CASES.prompt"
 agent = "InvalidCaseOverlapDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E470"
 message_contains = [
   "Review cases overlap",
   "draft_path",
@@ -158,7 +158,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_NON_TOTAL_CASES.prompt"
 agent = "InvalidCaseNonTotalDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E470"
 message_contains = [
   "Review cases must be exhaustive",
 ]

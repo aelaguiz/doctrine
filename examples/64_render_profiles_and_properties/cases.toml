@@ -37,7 +37,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_DUPLICATE_PROPERTY_KEY.prompt"
 agent = "InvalidDuplicatePropertyKeyDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E295"
 message_contains = [
   "Duplicate properties entry key",
   "verdict",
@@ -50,7 +50,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_RENDER_PROFILE_TARGET.prompt"
 agent = "InvalidRenderProfileTargetDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E298"
 message_contains = [
   "Unknown render_profile target",
   "route_only",
@@ -63,7 +63,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_RENDER_PROFILE_IDENTITY_MODE.prompt"
 agent = "InvalidRenderProfileIdentityModeDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E298"
 message_contains = [
   "Invalid render_profile mode for identity.owner",
   "wire_only",
@@ -76,7 +76,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_GUARD_SHELL_DISALLOWED_SOURCE.prompt"
 agent = "InvalidGuardShellSourceDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E296"
 message_contains = [
   "Readable guard reads disallowed source",
   "BrokenComment.summary_present",

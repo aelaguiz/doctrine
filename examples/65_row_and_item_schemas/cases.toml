@@ -49,7 +49,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_KEY.prompt"
 agent = "InvalidDuplicateItemSchemaKeyDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E295"
 message_contains = [
   "Duplicate item_schema key",
   "step_label",
@@ -62,7 +62,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_KEY.prompt"
 agent = "InvalidDuplicateRowSchemaKeyDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E295"
 message_contains = [
   "Duplicate row_schema key",
   "topic",

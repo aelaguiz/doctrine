@@ -87,7 +87,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_MARKDOWN_INLINE_TEXT.prompt"
 agent = "InvalidMarkdownInlineTextDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E297"
 message_contains = [
   "Raw markdown blocks must use a multiline string",
   "ReleaseAppendix.appendix_markdown",
@@ -100,7 +100,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_TABLE_INLINE_MULTILINE_CELL.prompt"
 agent = "InvalidTableInlineMultilineCellDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E297"
 message_contains = [
   "Readable table inline cells must stay single-line",
   "nested tables require structured cell bodies",

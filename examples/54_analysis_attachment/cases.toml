@@ -41,7 +41,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_UNKNOWN_ANALYSIS_REF.prompt"
 agent = "InvalidUnknownAnalysisRef"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E276"
 message_contains = [
   "analysis declaration",
   "MissingAnalysis",

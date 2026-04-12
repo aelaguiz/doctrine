@@ -78,7 +78,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_SCHEMA_ARTIFACT_REF_NOT_ROOT.prompt"
 agent = "BrokenArtifactSchemaDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E303"
 message_contains = [
   "Schema artifact refs must resolve to input or output declarations",
   "BrokenArtifactSchema",
@@ -91,7 +91,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_SCHEMA_GROUP_UNKNOWN_MEMBER.prompt"
 agent = "UnknownGroupMemberDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E303"
 message_contains = [
   "Unknown schema group member",
   "downstream_rebuild.missing_file",
@@ -104,7 +104,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_SCHEMA_GROUP_EMPTY.prompt"
 agent = "EmptyGroupDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E303"
 message_contains = [
   "Schema groups may not be empty",
   "downstream_rebuild",
@@ -117,7 +117,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_OUTPUT_SCHEMA_WITHOUT_SECTIONS.prompt"
 agent = "ArtifactOnlySchemaDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E302"
 message_contains = [
   "Output-attached schema must export at least one section",
   "BuildPlan",

@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Multi-Agent Shared I/O Flow Visualizer - Architecture Plan"
 date: 2026-04-11
-status: complete
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []

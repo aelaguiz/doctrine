@@ -1,0 +1,29 @@
+input ApprovedPlan: "Approved Plan"
+    source: File
+        path: "unit_root/_authoring/APPROVED_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input AlternatePlan: "Alternate Plan"
+    source: File
+        path: "unit_root/_authoring/ALTERNATE_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+inputs BaseInputs: "Inputs"
+    approved_plan: "Approved Plan Binding"
+        ApprovedPlan
+
+
+inputs ReviewInputs[BaseInputs]: "Inputs"
+    inherit approved_plan
+
+
+agent InvalidConflictingBoundRootDemo:
+    role: "Keep inherited binding roots unique."
+    inputs: ReviewInputs
+    inputs: "Conflicting Inputs"
+        approved_plan: "Approved Plan Binding"
+            AlternatePlan

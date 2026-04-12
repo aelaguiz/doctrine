@@ -161,3 +161,29 @@ expected_lines = [
   "",
   "Use the attached checkout for product truth only. It does not decide workflow, ownership, or the next step.",
 ]
+
+[[cases]]
+name = "duplicate role fields fail with a dedicated agent-field code"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ROLE_FIELD.prompt"
+agent = "InvalidDuplicateRoleField"
+exception_type = "CompileError"
+error_code = "E203"
+message_contains = [
+  "Duplicate role field",
+  "InvalidDuplicateRoleField",
+]
+
+[[cases]]
+name = "duplicate typed agent fields fail with a dedicated agent-field code"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_TYPED_FIELD.prompt"
+agent = "InvalidDuplicateTypedField"
+exception_type = "CompileError"
+error_code = "E204"
+message_contains = [
+  "Duplicate typed field",
+  "inputs",
+]
