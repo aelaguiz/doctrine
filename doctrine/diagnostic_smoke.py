@@ -649,10 +649,27 @@ version = "0.0.0"
         _expect("shared_inputs: {" in rendered, rendered)
         _expect("agent_handoffs: {" in rendered, rendered)
         _expect("shared_outputs_and_carriers: {" in rendered, rendered)
+        _expect(rendered.startswith("direction: down\n"), rendered)
         _expect("Shared Input" in rendered, rendered)
         _expect("Shared Output / Carrier" in rendered, rendered)
         _expect("Used by:" in rendered, rendered)
         _expect("Produced by:" in rendered, rendered)
+        _expect('primary_lane: {\n    label: ""\n    direction: down' in rendered, rendered)
+        _expect(
+            "agent_handoffs.primary_lane.agent_projectlead -> agent_handoffs.primary_lane.agent_researchspecialist"
+            in rendered,
+            rendered,
+        )
+        _expect(
+            "agent_handoffs.primary_lane.agent_researchspecialist -> agent_handoffs.primary_lane.agent_writingspecialist"
+            in rendered,
+            rendered,
+        )
+        _expect(
+            "agent_handoffs.primary_lane.agent_writingspecialist -> agent_handoffs.primary_lane.agent_projectlead"
+            in rendered,
+            rendered,
+        )
         _expect("Start research with" in rendered, rendered)
         _expect("Return the draft to" in rendered, rendered)
 

@@ -157,13 +157,13 @@ workflow.
 ## Workflow Visualizer
 
 <p align="center">
-  <img src="examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, routed agent handoffs, a shared handoff carrier, and local outputs." width="1200">
+  <img src="examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, a route-first vertical handoff lane, a shared handoff carrier, and local outputs." width="1200">
 </p>
 
 The checked-in showcase above comes from
-`examples/73_flow_visualizer_showcase`. It shows shared inputs, explicit
-handoff routes, one shared carrier output, and each agent's local artifacts in
-one compiler-owned graph.
+`examples/73_flow_visualizer_showcase`. It shows shared inputs feeding a
+route-first handoff lane, an explicit return loop, one shared carrier output,
+and each agent's local artifacts in one compiler-owned graph.
 
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs

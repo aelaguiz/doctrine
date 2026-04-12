@@ -2,7 +2,7 @@ direction: down
 
 shared_inputs: {
   label: "Shared Inputs"
-  direction: right
+  direction: down
   style: {
     fill: "#F5F8FF"
     stroke: "#2F6FEB"
@@ -28,42 +28,50 @@ shared_inputs: {
 
 agent_handoffs: {
   label: "Agent Handoffs"
-  direction: right
+  direction: down
   style: {
     fill: "#FFF8EB"
     stroke: "#B54708"
   }
-  agent_projectlead: {
-    label: "ProjectLead\nAgent\nPlan the work, leave the\nexecution plan, and route the\nissue into research."
-    shape: rectangle
+  primary_lane: {
+    label: ""
+    direction: down
     style: {
-      fill: "#FFF7E6"
-      stroke: "#B54708"
+      fill: "transparent"
+      stroke: "transparent"
     }
-  }
-
-  agent_researchspecialist: {
-    label: "ResearchSpecialist\nAgent\nTurn the shared brief into a\nreusable research packet."
-    shape: rectangle
-    style: {
-      fill: "#FFF7E6"
-      stroke: "#B54708"
+    agent_projectlead: {
+      label: "ProjectLead\nAgent\nPlan the work, leave the\nexecution plan, and route the\nissue into research."
+      shape: rectangle
+      style: {
+        fill: "#FFF7E6"
+        stroke: "#B54708"
+      }
     }
-  }
 
-  agent_writingspecialist: {
-    label: "WritingSpecialist\nAgent\nTurn the research packet into\na launch-ready draft and\nreturn it to the lead."
-    shape: rectangle
-    style: {
-      fill: "#FFF7E6"
-      stroke: "#B54708"
+    agent_researchspecialist: {
+      label: "ResearchSpecialist\nAgent\nTurn the shared brief into a\nreusable research packet."
+      shape: rectangle
+      style: {
+        fill: "#FFF7E6"
+        stroke: "#B54708"
+      }
+    }
+
+    agent_writingspecialist: {
+      label: "WritingSpecialist\nAgent\nTurn the research packet into\na launch-ready draft and\nreturn it to the lead."
+      shape: rectangle
+      style: {
+        fill: "#FFF7E6"
+        stroke: "#B54708"
+      }
     }
   }
 }
 
 shared_outputs_and_carriers: {
   label: "Shared Outputs And Carriers"
-  direction: right
+  direction: down
   style: {
     fill: "#F3FFF8"
     stroke: "#067647"
@@ -80,22 +88,13 @@ shared_outputs_and_carriers: {
 
 local_outputs: {
   label: "Local Outputs"
-  direction: right
+  direction: down
   style: {
     fill: "#F8FAFC"
     stroke: "#94A3B8"
   }
   output_executionplan: {
     label: "Execution Plan\nOutput\nTarget: File\nPath: project_root/_authoring/\nEXECUTION_PLAN.md\nShape: Markdown Document\nRequirement: Required\nProduced by: ProjectLead"
-    shape: rectangle
-    style: {
-      fill: "#ECFDF3"
-      stroke: "#067647"
-    }
-  }
-
-  output_launchdraft: {
-    label: "Launch Draft\nOutput\nTarget: File\nPath: project_root/_authoring/\nLAUNCH_DRAFT.md\nShape: Markdown Document\nRequirement: Required\nProduced by: WritingSpecialist"
     shape: rectangle
     style: {
       fill: "#ECFDF3"
@@ -111,121 +110,130 @@ local_outputs: {
       stroke: "#067647"
     }
   }
+
+  output_launchdraft: {
+    label: "Launch Draft\nOutput\nTarget: File\nPath: project_root/_authoring/\nLAUNCH_DRAFT.md\nShape: Markdown Document\nRequirement: Required\nProduced by: WritingSpecialist"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
 }
 
-agent_handoffs.agent_projectlead -> agent_handoffs.agent_researchspecialist: {
+shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_projectlead: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_projectlead: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_projectlead -> local_outputs.output_executionplan: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_projectlead -> shared_outputs_and_carriers.output_sharedhandoff: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_projectlead -> agent_handoffs.primary_lane.agent_researchspecialist: {
   label: "Start research with\nResearchSpecialist."
   style: {
     stroke: "#B54708"
   }
 }
 
-agent_handoffs.agent_researchspecialist -> agent_handoffs.agent_writingspecialist: {
+shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_researchspecialist: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_researchspecialist: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_researchspecialist -> local_outputs.output_researchpacket: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_researchspecialist -> shared_outputs_and_carriers.output_sharedhandoff: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_researchspecialist -> agent_handoffs.primary_lane.agent_writingspecialist: {
   label: "Hand the research packet to\nWritingSpecialist."
   style: {
     stroke: "#B54708"
   }
 }
 
-agent_handoffs.agent_writingspecialist -> agent_handoffs.agent_projectlead: {
+shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_writingspecialist: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_writingspecialist: {
+  label: "consumes"
+  style: {
+    stroke: "#5B708B"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_writingspecialist -> local_outputs.output_launchdraft: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_writingspecialist -> shared_outputs_and_carriers.output_sharedhandoff: {
+  label: "produces"
+  style: {
+    stroke: "#067647"
+    stroke-dash: 4
+  }
+}
+
+agent_handoffs.primary_lane.agent_writingspecialist -> agent_handoffs.primary_lane.agent_projectlead: {
   label: "Return the draft to\nProjectLead."
   style: {
     stroke: "#B54708"
-  }
-}
-
-shared_inputs.input_audienceguide -> agent_handoffs.agent_projectlead: {
-  label: "consumes"
-  style: {
-    stroke: "#5B708B"
-    stroke-dash: 4
-  }
-}
-
-shared_inputs.input_audienceguide -> agent_handoffs.agent_researchspecialist: {
-  label: "consumes"
-  style: {
-    stroke: "#5B708B"
-    stroke-dash: 4
-  }
-}
-
-shared_inputs.input_audienceguide -> agent_handoffs.agent_writingspecialist: {
-  label: "consumes"
-  style: {
-    stroke: "#5B708B"
-    stroke-dash: 4
-  }
-}
-
-shared_inputs.input_projectbrief -> agent_handoffs.agent_projectlead: {
-  label: "consumes"
-  style: {
-    stroke: "#5B708B"
-    stroke-dash: 4
-  }
-}
-
-shared_inputs.input_projectbrief -> agent_handoffs.agent_researchspecialist: {
-  label: "consumes"
-  style: {
-    stroke: "#5B708B"
-    stroke-dash: 4
-  }
-}
-
-shared_inputs.input_projectbrief -> agent_handoffs.agent_writingspecialist: {
-  label: "consumes"
-  style: {
-    stroke: "#5B708B"
-    stroke-dash: 4
-  }
-}
-
-agent_handoffs.agent_projectlead -> local_outputs.output_executionplan: {
-  label: "produces"
-  style: {
-    stroke: "#067647"
-    stroke-dash: 4
-  }
-}
-
-agent_handoffs.agent_projectlead -> shared_outputs_and_carriers.output_sharedhandoff: {
-  label: "produces"
-  style: {
-    stroke: "#067647"
-    stroke-dash: 4
-  }
-}
-
-agent_handoffs.agent_researchspecialist -> local_outputs.output_researchpacket: {
-  label: "produces"
-  style: {
-    stroke: "#067647"
-    stroke-dash: 4
-  }
-}
-
-agent_handoffs.agent_researchspecialist -> shared_outputs_and_carriers.output_sharedhandoff: {
-  label: "produces"
-  style: {
-    stroke: "#067647"
-    stroke-dash: 4
-  }
-}
-
-agent_handoffs.agent_writingspecialist -> local_outputs.output_launchdraft: {
-  label: "produces"
-  style: {
-    stroke: "#067647"
-    stroke-dash: 4
-  }
-}
-
-agent_handoffs.agent_writingspecialist -> shared_outputs_and_carriers.output_sharedhandoff: {
-  label: "produces"
-  style: {
-    stroke: "#067647"
-    stroke-dash: 4
   }
 }

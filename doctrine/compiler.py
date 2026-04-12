@@ -1501,6 +1501,8 @@ class CompilationContext:
                     workflow_stack=(),
                 )
 
+        # Preserve first-seen flow order so the renderer can recover the routed
+        # handoff lane instead of receiving an alphabetized graph.
         return FlowGraph(
             agents=tuple(
                 FlowAgentNode(
@@ -1510,10 +1512,7 @@ class CompilationContext:
                     detail_lines=node.detail_lines,
                     notes=tuple(agent_notes.get((node.module_parts, node.name), ())),
                 )
-                for node in sorted(
-                    agent_nodes.values(),
-                    key=lambda node: (node.module_parts, node.name),
-                )
+                for node in agent_nodes.values()
             ),
             inputs=tuple(
                 FlowInputNode(
@@ -1526,10 +1525,7 @@ class CompilationContext:
                     detail_lines=node.detail_lines,
                     notes=tuple(input_notes.get((node.module_parts, node.name), ())),
                 )
-                for node in sorted(
-                    input_nodes.values(),
-                    key=lambda node: (node.module_parts, node.name),
-                )
+                for node in input_nodes.values()
             ),
             outputs=tuple(
                 FlowOutputNode(
@@ -1544,26 +1540,9 @@ class CompilationContext:
                     trust_surface=node.trust_surface,
                     notes=tuple(output_notes.get((node.module_parts, node.name), ())),
                 )
-                for node in sorted(
-                    output_nodes.values(),
-                    key=lambda node: (node.module_parts, node.name),
-                )
+                for node in output_nodes.values()
             ),
-            edges=tuple(
-                sorted(
-                    edges.values(),
-                    key=lambda edge: (
-                        edge.kind,
-                        edge.source_kind,
-                        edge.source_module_parts,
-                        edge.source_name,
-                        edge.target_kind,
-                        edge.target_module_parts,
-                        edge.target_name,
-                        edge.label,
-                    ),
-                )
-            ),
+            edges=tuple(edges.values()),
         )
 
     def _collect_flow_from_workflow_body(
