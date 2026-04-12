@@ -171,13 +171,17 @@ The generated graph includes:
 - labeled route edges between agents when authored routing is part of the turn
 - currentness, invalidation, and `trust_surface` notes on output nodes when
   workflow law binds them
-- section groupings for shared inputs, local inputs, agent handoffs, shared
-  outputs or carriers, and local outputs
+- section groupings for shared inputs, local inputs, route-first agent
+  handoffs, shared outputs or carriers, and local outputs
 
 Reading guidance:
 
 - `.flow.d2` is the deterministic, diff-friendly source artifact.
 - `.flow.svg` is the convenience render of the same graph for browsing.
+- when route edges exist, the agent section renders as a route-first lane:
+  the first routed owner anchors the main lane, loop-backs stay attached to
+  that lane, and additional routed starts or standalone agents render as
+  secondary stacks instead of one flat strip
 - If you care about reviewable truth in version control, inspect `.flow.d2`
   first.
 
@@ -202,10 +206,12 @@ If you changed emit diagnostics or the emit CLI error surface, also run:
 make verify-diagnostics
 ```
 
-The canonical checked-in flow proof lives in:
+The canonical checked-in flow proofs live in:
 
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
+- `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.d2`
+- `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.svg`
 
 ## Troubleshooting
 

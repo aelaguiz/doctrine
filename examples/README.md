@@ -48,8 +48,8 @@ Each numbered example may contain:
   families, dedicated `route_only`, dedicated `grounding`, and schema-group
   invalidation
 - `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
-  routed handoffs, a shared carrier output, and checked-in `.flow.{d2,svg}`
-  artifacts
+  a route-first handoff lane, a routed return loop, a shared carrier output,
+  and checked-in `.flow.{d2,svg}` artifacts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -131,7 +131,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `70_route_only_declaration` | Dedicated `route_only` lowered through the shipped route-only workflow-law path. |
 | `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy and ordinary routing. |
 | `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
-| `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, routed handoffs, shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
+| `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, a route-first handoff lane, a routed return loop, a shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
 
 ## Useful Commands
 
