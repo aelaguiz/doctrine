@@ -37,46 +37,16 @@ parallelism.
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-## Historical Phase Docs
-
-These documents organize the earlier second-wave language work into
-implementation order. They are still useful historical implementation notes,
-but they are not the current live completeness story now that shipped truth
-also includes the first-class `decision` surface and
-`examples/75_cross_root_standard_library_imports`.
-
-For the current shipped language surface, use
-[LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md),
-[WORKFLOW_LAW.md](WORKFLOW_LAW.md), and
-[../examples/README.md](../examples/README.md) first.
-
-- [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md):
-  phase 1 typed-markdown foundation, first-class `document`, the readable block
-  family, multiline strings, `structure:`, and the base renderer conversion
-- [02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md):
-  phase 2 `analysis`, `schema`, owner-aware `schema:` rules, schema
-  artifacts/groups, output contracts, diagnostics, and proof ordering
-- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md):
-  phase 3 advanced readable-markdown surfaces such as `properties`, explicit
-  guard shells, `render_profile`, typed row/item schemas, and later block
-  extensions, now proved in `examples/64_*` through `examples/67_*`
-- [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md):
-  phase 4 schema-backed review integration, review families, `route_only`,
-  `grounding`, and control-plane convergence, now proved in `examples/68_*`
-  through `examples/72_*`
-
 ## Historical Design Context
 
 The shipped docs above are the only live reference path. Earlier plans,
 worklogs, audits, and one-off investigations are deleted after a restore-point
 commit. If you need that old context, use git history.
 
-The raw design inputs
-`ANALYSIS_AND_SCHEMA_SPEC.md`, `READABLE_MARKDOWN_SPEC.md`,
-`INTEGRATION_SURFACES_SPEC.md`, `LANGUAGE_MECHANICS_SPEC.md`, and
-`SECOND_WAVE_LANGUAGE_NOTES.md` still remain in the root `docs/` tree as
-drafting artifacts kept for provenance and link stability, not as the primary
-implementation-order view or the canonical shipped reference.
+The earlier second-wave draft specs, phase plans, and the implemented
+`final_output` design proposal were deleted after restore-point commits once
+their durable truth landed in the live docs and verified example corpus. Use
+git history if you need that design-phase context.
 
 ## Repo Truth
 
