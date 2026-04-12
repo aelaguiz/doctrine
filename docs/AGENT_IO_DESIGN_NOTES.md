@@ -250,6 +250,8 @@ Instead:
   refs and guards
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
+- imported reusable `comment_output` declarations may still bind local routed
+  owners on the concrete review without copying the output declaration local
 - review currentness still uses direct carriers such as
   `current artifact DraftSpec via ReviewComment.current_artifact`
 - carried review state such as `active_mode` and `trigger_reason` still lives

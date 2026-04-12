@@ -1,0 +1,59 @@
+import shared.review
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Fix rejected draft defects."
+    workflow: "Revise"
+        "Revise the same draft when review requests changes."
+
+
+review DraftReview: "Draft Review"
+    subject: DraftSpec
+    contract: DraftReviewContract
+    comment_output: shared.review.DraftReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        current_artifact: current_artifact
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_checks: "Contract Checks"
+        accept "The shared draft review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+
+agent ImportedDraftReviewDemo:
+    role: "Use an imported comment output that still binds local routed owners."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        shared.review.DraftReviewComment

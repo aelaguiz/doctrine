@@ -87,6 +87,11 @@ Important rules:
   `comment_output:` or point at another emitted `TurnResponse` output.
   `comment_output:` stays the review carrier, while a separate `final_output:`
   still inherits the review semantic refs and guards.
+- When a review points `comment_output:` at an imported reusable `output`,
+  bare refs inside that output still resolve locally first, then may bind the
+  concrete review's local declarations when the imported module does not
+  define them. Shared review comments therefore can still name local routed
+  owners without moving the output declaration.
 
 `role` has two shipped shapes:
 

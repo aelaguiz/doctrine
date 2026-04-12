@@ -59,11 +59,12 @@ Each numbered example may contain:
   rejection, sequencing-proof, and winner-selection obligations
 - `75`: repo-level compile config plus cross-root standard-library imports
   proven across multiple entrypoints and fail-loud ambiguity/config cases
-- `76` through `85`: optional `final_output:` designation, dedicated
+- `76` through `86`: optional `final_output:` designation, dedicated
   final-answer rendering, schema-backed JSON final answers, fail-loud
   invalid-target / wrong-kind cases, and review-driven final answers that may
   either reuse `comment_output` or split the review comment from a separate
-  control-only final output
+  control-only final output, plus imported reusable review comment outputs
+  that still bind local routed owners
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -158,6 +159,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `83_review_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
 | `84_review_split_final_output_prose` | Review-driven prose `final_output:` may split from `comment_output` while the separate final message still inherits review semantics. |
 | `85_review_split_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
+| `86_imported_review_comment_local_routes` | Imported reusable `comment_output` declarations may still structurally bind local routed owners on the concrete review. |
 
 ## Useful Commands
 

@@ -650,6 +650,7 @@ class ReviewContractSpec:
 
 @dataclass(slots=True, frozen=True)
 class ReviewSemanticContext:
+    review_module_parts: tuple[str, ...]
     output_module_parts: tuple[str, ...]
     output_name: str
     field_bindings: tuple[tuple[str, tuple[str, ...]], ...] = ()
@@ -3307,6 +3308,7 @@ class CompilationContext:
                 (
                     (output_unit.module_parts, output_decl.name),
                     ReviewSemanticContext(
+                        review_module_parts=review_unit.module_parts,
                         output_module_parts=output_unit.module_parts,
                         output_name=output_decl.name,
                         field_bindings=tuple(field_bindings),
@@ -5746,6 +5748,7 @@ class CompilationContext:
             require_trigger_reason="trigger_reason" in carried_fields,
         )
         review_semantics = ReviewSemanticContext(
+            review_module_parts=unit.module_parts,
             output_module_parts=comment_output_unit.module_parts,
             output_name=comment_output_decl.name,
             field_bindings=tuple(field_bindings.items()),
@@ -5964,6 +5967,7 @@ class CompilationContext:
                 all_contract_gates.append(gate)
 
         review_semantics = ReviewSemanticContext(
+            review_module_parts=unit.module_parts,
             output_module_parts=comment_output_unit.module_parts,
             output_name=comment_output_decl.name,
             field_bindings=tuple(field_bindings.items()),
@@ -7785,6 +7789,7 @@ class CompilationContext:
             )
         self._validate_review_next_owner_binding(
             branch.route,
+            review_unit=unit,
             output_decl=output_decl,
             output_unit=output_unit,
             field_path=next_owner_field_path,
@@ -8609,12 +8614,13 @@ class CompilationContext:
         self,
         route: model.ReviewOutcomeRouteStmt,
         *,
+        review_unit: IndexedUnit,
         output_decl: model.OutputDecl,
         output_unit: IndexedUnit,
         field_path: tuple[str, ...],
         owner_label: str,
     ) -> None:
-        route_unit, route_agent = self._resolve_agent_ref(route.target, unit=output_unit)
+        route_unit, route_agent = self._resolve_agent_ref(route.target, unit=review_unit)
         field_node = self._resolve_output_field_node(
             output_decl,
             path=field_path,
@@ -8636,6 +8642,9 @@ class CompilationContext:
             target_unit=route_unit,
             target_agent_name=route_agent.name,
             unit=output_unit,
+            fallback_unit=(
+                review_unit if review_unit.module_parts != output_unit.module_parts else None
+            ),
             owner_label=f"output {output_decl.name}.{'.'.join(field_path)}",
         ):
             raise CompileError(
@@ -13889,6 +13898,7 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str,
         missing_local_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[IndexedUnit, ReadableDecl]:
         target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
         matches = self._find_readable_decl_matches(
@@ -13918,6 +13928,36 @@ class CompilationContext:
                 f"Workflow refs are not allowed in {surface_label}; "
                 f"use `use` for workflow composition: {dotted_name}"
             )
+
+        fallback_unit = self._review_semantic_fallback_lookup_unit(
+            ref,
+            unit=unit,
+            review_semantics=review_semantics,
+        )
+        if fallback_unit is not None:
+            fallback_matches = self._find_readable_decl_matches(
+                ref.declaration_name,
+                unit=fallback_unit,
+            )
+            if len(fallback_matches) == 1:
+                decl = fallback_matches[0][1]
+                if isinstance(decl, model.Agent) and decl.abstract:
+                    raise CompileError(
+                        f"Abstract agent refs are not allowed in {surface_label}; "
+                        f"mention a concrete agent instead: {dotted_name}"
+                    )
+                return fallback_unit, decl
+            if len(fallback_matches) > 1:
+                labels = ", ".join(label for label, _decl in fallback_matches)
+                raise CompileError(
+                    f"Ambiguous {ambiguous_label} in {owner_label}: "
+                    f"{dotted_name} matches {labels}"
+                )
+            if fallback_unit.workflows_by_name.get(ref.declaration_name) is not None:
+                raise CompileError(
+                    f"Workflow refs are not allowed in {surface_label}; "
+                    f"use `use` for workflow composition: {dotted_name}"
+                )
 
         if ref.module_parts:
             raise CompileError(f"Missing imported declaration: {dotted_name}")
@@ -13962,6 +14002,7 @@ class CompilationContext:
                 surface_label=surface_label,
                 ambiguous_label=ambiguous_label,
                 missing_local_label=missing_local_label,
+                review_semantics=review_semantics,
             )
             return self._display_addressable_target_value(
                 AddressableNode(unit=target_unit, root_decl=decl, target=decl),
@@ -14026,6 +14067,31 @@ class CompilationContext:
                 f"Ambiguous {ambiguous_label} in {owner_label}: "
                 f"{dotted_name} matches {labels}"
             )
+
+        fallback_unit = self._review_semantic_fallback_lookup_unit(
+            ref,
+            unit=unit,
+            review_semantics=review_semantics,
+        )
+        if fallback_unit is not None:
+            fallback_matches = self._find_addressable_root_matches(
+                ref.declaration_name,
+                unit=fallback_unit,
+            )
+            if len(fallback_matches) == 1:
+                decl = fallback_matches[0][1]
+                if isinstance(decl, model.Agent) and decl.abstract:
+                    raise CompileError(
+                        "Abstract agent refs are not allowed in addressable paths; "
+                        f"mention a concrete agent instead: {dotted_name}"
+                    )
+                return fallback_unit, decl
+            if len(fallback_matches) > 1:
+                labels = ", ".join(label for label, _decl in fallback_matches)
+                raise CompileError(
+                    f"Ambiguous {ambiguous_label} in {owner_label}: "
+                    f"{dotted_name} matches {labels}"
+                )
 
         if ref.module_parts:
             raise CompileError(f"Missing imported declaration: {dotted_name}")
@@ -15036,6 +15102,19 @@ class CompilationContext:
             raise CompileError(f"Missing import module: {'.'.join(ref.module_parts)}")
         return target_unit
 
+    def _review_semantic_fallback_lookup_unit(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        review_semantics: ReviewSemanticContext | None,
+    ) -> IndexedUnit | None:
+        if review_semantics is None or ref.module_parts:
+            return None
+        if review_semantics.review_module_parts == unit.module_parts:
+            return None
+        return self._load_module(review_semantics.review_module_parts)
+
     def _find_readable_decl_matches(
         self,
         declaration_name: str,
@@ -15875,6 +15954,7 @@ class CompilationContext:
         target_unit: IndexedUnit,
         target_agent_name: str,
         unit: IndexedUnit,
+        fallback_unit: IndexedUnit | None = None,
         owner_label: str,
     ) -> bool:
         if (
@@ -15885,6 +15965,7 @@ class CompilationContext:
                 target_unit=target_unit,
                 target_agent_name=target_agent_name,
                 unit=unit,
+                fallback_unit=fallback_unit,
                 owner_label=owner_label,
             )
         ):
@@ -15896,6 +15977,7 @@ class CompilationContext:
                 target_unit=target_unit,
                 target_agent_name=target_agent_name,
                 unit=unit,
+                fallback_unit=fallback_unit,
                 owner_label=owner_label,
             )
             for ref in self._iter_record_item_interpolation_refs(item)
@@ -15908,6 +15990,7 @@ class CompilationContext:
         target_unit: IndexedUnit,
         target_agent_name: str,
         unit: IndexedUnit,
+        fallback_unit: IndexedUnit | None = None,
         owner_label: str,
     ) -> bool:
         try:
@@ -15919,7 +16002,18 @@ class CompilationContext:
                 missing_local_label="next_owner",
             )
         except CompileError:
-            return False
+            if fallback_unit is None:
+                return False
+            try:
+                root_unit, root_decl = self._resolve_addressable_root_decl(
+                    ref.root,
+                    unit=fallback_unit,
+                    owner_label=owner_label,
+                    ambiguous_label="next_owner interpolation ref",
+                    missing_local_label="next_owner",
+                )
+            except CompileError:
+                return False
 
         if not isinstance(root_decl, model.Agent):
             return False
@@ -15934,12 +16028,18 @@ class CompilationContext:
         target_unit: IndexedUnit,
         target_agent_name: str,
         unit: IndexedUnit,
+        fallback_unit: IndexedUnit | None = None,
         owner_label: str,
     ) -> bool:
         try:
             ref_unit, agent = self._resolve_agent_ref(ref, unit=unit)
         except CompileError:
-            return False
+            if fallback_unit is None:
+                return False
+            try:
+                ref_unit, agent = self._resolve_agent_ref(ref, unit=fallback_unit)
+            except CompileError:
+                return False
         _ = owner_label
         return agent.name == target_agent_name and ref_unit.module_parts == target_unit.module_parts
 

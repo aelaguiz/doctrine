@@ -45,6 +45,9 @@ Important rules:
 - when a review-driven agent uses `final_output:`, it may either reuse that
   same `comment_output` or point at another emitted `TurnResponse`; the
   review's `comment_output` still remains the review carrier
+- `comment_output:` may point at an imported reusable `output`, and that
+  shared output may still structurally bind local routed owners on the
+  concrete review without cloning the declaration into the local module
 
 ## Review Contracts
 
@@ -331,6 +334,10 @@ A review-driven agent may also point `final_output:` at a second emitted
 `TurnResponse` output. In that split shape, `comment_output` stays the durable
 review carrier while the separate final output inherits the same review
 semantic refs and guards.
+Imported reusable review comments keep that same behavior: the bound output
+field still lives on the imported `comment_output`, while bare owner refs that
+are missing from the imported module may still bind the concrete review's
+local routed agents.
 
 ## Multi-Subject Review And Carried State
 

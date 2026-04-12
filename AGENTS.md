@@ -37,7 +37,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/85_review_split_final_output_json_schema`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/86_imported_review_comment_local_routes`.
 
 ## Authoring Rules
 
