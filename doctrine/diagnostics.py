@@ -1010,10 +1010,57 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Doctrine compile config must be a TOML table\.$"),
+        "E285",
+        "Invalid compile config",
+        lambda _match: "Doctrine compile config must be a TOML table.",
+        (),
+    ),
+    (
+        re.compile(r"^Doctrine compile config additional_prompt_roots must be an array of strings\.$"),
+        "E285",
+        "Invalid compile config",
+        lambda _match: (
+            "Doctrine compile config `additional_prompt_roots` must be an array of strings."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Configured additional prompts root must be an existing prompts directory: (?P<path>.+)$"
+        ),
+        "E285",
+        "Invalid compile config",
+        lambda match: (
+            f"Configured additional prompts root must be an existing `prompts/` directory: `{match.group('path')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate configured prompts root: (?P<path>.+)$"),
+        "E286",
+        "Duplicate configured prompts root",
+        lambda match: f"Configured prompts root `{match.group('path')}` is duplicated.",
+        (),
+    ),
+    (
+        re.compile(
+            r"^Ambiguous import module: (?P<module>.+) \(matching prompts roots: (?P<roots>.+)\)$"
+        ),
+        "E287",
+        "Ambiguous import module",
+        lambda match: (
+            f"Import module `{match.group('module')}` matches more than one configured prompts root: {match.group('roots')}."
+        ),
+        (),
+    ),
+    (
         re.compile(r"^Missing import module: (?P<module>.+)$"),
         "E280",
         "Missing import module",
-        lambda match: f"Import module `{match.group('module')}` could not be found under the current prompts root.",
+        lambda match: (
+            f"Import module `{match.group('module')}` could not be found in the active prompts roots."
+        ),
         (),
     ),
     (

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import threading
+import tomllib
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -11,6 +12,12 @@ from typing import TypeAlias
 from doctrine import model
 from doctrine.diagnostics import CompileError, DiagnosticLocation, DoctrineError
 from doctrine.parser import parse_file
+from doctrine.project_config import (
+    ProjectConfig,
+    ProjectConfigError,
+    find_nearest_pyproject,
+    load_project_config_for_source,
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -315,6 +322,7 @@ AddressableTarget: TypeAlias = (
 
 @dataclass(slots=True, frozen=True)
 class IndexedUnit:
+    prompt_root: Path
     module_parts: tuple[str, ...]
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
@@ -416,6 +424,9 @@ ResolvedAnalysisSectionItem: TypeAlias = (
     | model.CompareStmt
     | model.DefendStmt
 )
+
+
+ModuleLoadKey: TypeAlias = tuple[Path, tuple[str, ...]]
 
 
 @dataclass(slots=True, frozen=True)
@@ -985,15 +996,47 @@ def _validate_render_profile_decl(decl: model.RenderProfileDecl, *, owner_label:
 
 
 class CompilationSession:
-    def __init__(self, prompt_file: model.PromptFile):
+    def __init__(
+        self,
+        prompt_file: model.PromptFile,
+        *,
+        project_config: ProjectConfig | None = None,
+    ):
         self.prompt_root = _resolve_prompt_root(prompt_file.source_path)
-        self._module_cache: dict[tuple[str, ...], IndexedUnit] = {}
-        self._module_load_errors: dict[tuple[str, ...], Exception] = {}
-        self._module_loading: dict[tuple[str, ...], threading.Event] = {}
+        try:
+            resolved_project_config = project_config or load_project_config_for_source(
+                prompt_file.source_path
+            )
+            compile_config = resolved_project_config.resolve_compile_config()
+        except tomllib.TOMLDecodeError as exc:
+            config_path = project_config.path if project_config is not None else None
+            if config_path is None and prompt_file.source_path is not None:
+                config_path = find_nearest_pyproject(prompt_file.source_path.parent)
+            raise CompileError.from_parts(
+                code="E299",
+                summary="Compile failure",
+                detail="The Doctrine project config is not valid TOML.",
+                location=_path_location(config_path),
+                cause=getattr(exc, "msg", str(exc)),
+            ) from exc
+        except ProjectConfigError as exc:
+            raise CompileError(str(exc)).ensure_location(
+                path=resolved_project_config.path
+            ) from exc
+
+        self.project_config = resolved_project_config
+        self.import_roots = _resolve_import_roots(
+            self.prompt_root,
+            compile_config.additional_prompt_roots,
+        )
+        self._module_cache: dict[ModuleLoadKey, IndexedUnit] = {}
+        self._module_load_errors: dict[ModuleLoadKey, Exception] = {}
+        self._module_loading: dict[ModuleLoadKey, threading.Event] = {}
         self._module_lock = threading.Lock()
         # Shared prompt graph data lives on the session; compile contexts stay task-local.
         self.root_unit = self._index_unit(
             prompt_file,
+            prompt_root=self.prompt_root,
             module_parts=(),
             ancestry=(),
             allow_parallel_imports=True,
@@ -1061,14 +1104,15 @@ class CompilationSession:
     def load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
         if not module_parts:
             return self.root_unit
-        return self._load_module(module_parts, ancestry=())
+        return self._load_module(module_parts, prompt_root=None, ancestry=())
 
     def _index_unit(
         self,
         prompt_file: model.PromptFile,
         *,
+        prompt_root: Path,
         module_parts: tuple[str, ...],
-        ancestry: tuple[tuple[str, ...], ...],
+        ancestry: tuple[ModuleLoadKey, ...],
         allow_parallel_imports: bool,
     ) -> IndexedUnit:
         imports: list[model.ImportDecl] = []
@@ -1194,6 +1238,7 @@ class CompilationSession:
 
         imported_units = self._load_imports(
             imports,
+            prompt_root=prompt_root,
             module_parts=module_parts,
             importer_path=prompt_file.source_path,
             ancestry=ancestry,
@@ -1201,6 +1246,7 @@ class CompilationSession:
         )
 
         return IndexedUnit(
+            prompt_root=prompt_root,
             module_parts=module_parts,
             prompt_file=prompt_file,
             imports=tuple(imports),
@@ -1232,9 +1278,10 @@ class CompilationSession:
         self,
         imports: list[model.ImportDecl],
         *,
+        prompt_root: Path,
         module_parts: tuple[str, ...],
         importer_path: Path | None,
-        ancestry: tuple[tuple[str, ...], ...],
+        ancestry: tuple[ModuleLoadKey, ...],
         allow_parallel_imports: bool,
     ) -> dict[tuple[str, ...], IndexedUnit]:
         imported_units: dict[tuple[str, ...], IndexedUnit] = {}
@@ -1252,8 +1299,10 @@ class CompilationSession:
 
         for resolved_module_parts, _import_decl in resolved_imports:
             try:
+                # Relative imports stay inside the importer's owning prompts root.
                 imported_units[resolved_module_parts] = self._load_module(
                     resolved_module_parts,
+                    prompt_root=prompt_root if _import_decl.path.level > 0 else None,
                     ancestry=ancestry,
                 )
             except DoctrineError as exc:
@@ -1267,29 +1316,35 @@ class CompilationSession:
         self,
         module_parts: tuple[str, ...],
         *,
-        ancestry: tuple[tuple[str, ...], ...],
+        prompt_root: Path | None,
+        ancestry: tuple[ModuleLoadKey, ...],
     ) -> IndexedUnit:
-        cached = self._module_cache.get(module_parts)
+        resolved_prompt_root = self._resolve_module_root(
+            module_parts,
+            prompt_root=prompt_root,
+        )
+        module_key = _module_load_key(resolved_prompt_root, module_parts)
+        cached = self._module_cache.get(module_key)
         if cached is not None:
             return cached
-        if module_parts in ancestry:
+        if module_key in ancestry:
             raise CompileError(f"Cyclic import module: {'.'.join(module_parts)}")
 
         with self._module_lock:
-            cached = self._module_cache.get(module_parts)
+            cached = self._module_cache.get(module_key)
             if cached is not None:
                 return cached
 
-            cached_error = self._module_load_errors.get(module_parts)
+            cached_error = self._module_load_errors.get(module_key)
             if cached_error is not None:
                 if isinstance(cached_error, DoctrineError):
                     raise _clone_doctrine_error(cached_error)
                 raise cached_error
 
-            ready = self._module_loading.get(module_parts)
+            ready = self._module_loading.get(module_key)
             if ready is None:
                 ready = threading.Event()
-                self._module_loading[module_parts] = ready
+                self._module_loading[module_key] = ready
                 is_loader = True
             else:
                 is_loader = False
@@ -1297,10 +1352,10 @@ class CompilationSession:
         if not is_loader:
             ready.wait()
             with self._module_lock:
-                cached = self._module_cache.get(module_parts)
+                cached = self._module_cache.get(module_key)
                 if cached is not None:
                     return cached
-                cached_error = self._module_load_errors.get(module_parts)
+                cached_error = self._module_load_errors.get(module_key)
             if cached_error is None:
                 raise CompileError(
                     f"Internal compiler error: module load finished without a result: {'.'.join(module_parts)}"
@@ -1309,7 +1364,7 @@ class CompilationSession:
                 raise _clone_doctrine_error(cached_error)
             raise cached_error
 
-        module_path = self.prompt_root.joinpath(*module_parts).with_suffix(".prompt")
+        module_path = _module_path_for_root(resolved_prompt_root, module_parts)
         try:
             if not module_path.is_file():
                 raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
@@ -1317,8 +1372,9 @@ class CompilationSession:
                 prompt_file = parse_file(module_path)
                 indexed = self._index_unit(
                     prompt_file,
+                    prompt_root=resolved_prompt_root,
                     module_parts=module_parts,
-                    ancestry=(*ancestry, module_parts),
+                    ancestry=(*ancestry, module_key),
                     allow_parallel_imports=False,
                 )
             except DoctrineError as exc:
@@ -1329,19 +1385,42 @@ class CompilationSession:
         except Exception as exc:
             with self._module_lock:
                 if isinstance(exc, DoctrineError):
-                    self._module_load_errors[module_parts] = _clone_doctrine_error(exc)
+                    self._module_load_errors[module_key] = _clone_doctrine_error(exc)
                 else:
-                    self._module_load_errors[module_parts] = exc
+                    self._module_load_errors[module_key] = exc
             raise
         else:
             with self._module_lock:
-                self._module_cache[module_parts] = indexed
+                self._module_cache[module_key] = indexed
             return indexed
         finally:
             with self._module_lock:
-                ready = self._module_loading.pop(module_parts, None)
+                ready = self._module_loading.pop(module_key, None)
             if ready is not None:
                 ready.set()
+
+    def _resolve_module_root(
+        self,
+        module_parts: tuple[str, ...],
+        *,
+        prompt_root: Path | None,
+    ) -> Path:
+        if prompt_root is not None:
+            return prompt_root
+
+        matching_roots = tuple(
+            candidate_root
+            for candidate_root in self.import_roots
+            if _module_path_for_root(candidate_root, module_parts).is_file()
+        )
+        if not matching_roots:
+            raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
+        if len(matching_roots) > 1:
+            root_list = ", ".join(str(root) for root in matching_roots)
+            raise CompileError(
+                f"Ambiguous import module: {'.'.join(module_parts)} (matching prompts roots: {root_list})"
+            )
+        return matching_roots[0]
 
 
 class CompilationContext:
@@ -16594,15 +16673,27 @@ class CompilationContext:
         return self.session.load_module(module_parts)
 
 
-def compile_prompt(prompt_file: model.PromptFile, agent_name: str) -> CompiledAgent:
-    return CompilationSession(prompt_file).compile_agent(agent_name)
+def compile_prompt(
+    prompt_file: model.PromptFile,
+    agent_name: str,
+    *,
+    project_config: ProjectConfig | None = None,
+) -> CompiledAgent:
+    return CompilationSession(prompt_file, project_config=project_config).compile_agent(
+        agent_name
+    )
 
 
 def extract_target_flow_graph(
     prompt_file: model.PromptFile,
     agent_names: tuple[str, ...],
+    *,
+    project_config: ProjectConfig | None = None,
 ) -> FlowGraph:
-    return CompilationSession(prompt_file).extract_target_flow_graph(agent_names)
+    return CompilationSession(
+        prompt_file,
+        project_config=project_config,
+    ).extract_target_flow_graph(agent_names)
 
 
 def _resolve_prompt_root(source_path: Path | None) -> Path:
@@ -16633,6 +16724,28 @@ def _resolve_import_path(
         raise CompileError(f"Relative import walks above prompts root: {dotted_import}")
 
     return (*package_parts, *import_path.module_parts)
+
+
+def _resolve_import_roots(
+    prompt_root: Path,
+    additional_prompt_roots: tuple[Path, ...],
+) -> tuple[Path, ...]:
+    import_roots = [prompt_root]
+    seen_roots = {prompt_root}
+    for additional_root in additional_prompt_roots:
+        if additional_root in seen_roots:
+            raise CompileError(f"Duplicate configured prompts root: {additional_root}")
+        seen_roots.add(additional_root)
+        import_roots.append(additional_root)
+    return tuple(import_roots)
+
+
+def _module_load_key(prompt_root: Path, module_parts: tuple[str, ...]) -> ModuleLoadKey:
+    return (prompt_root, module_parts)
+
+
+def _module_path_for_root(prompt_root: Path, module_parts: tuple[str, ...]) -> Path:
+    return prompt_root.joinpath(*module_parts).with_suffix(".prompt")
 
 
 def _dotted_decl_name(module_parts: tuple[str, ...], name: str) -> str:

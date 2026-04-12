@@ -36,7 +36,7 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `74`: second-wave integration surfaces for `analysis`,
+- `54` through `75`: second-wave integration surfaces for `analysis`,
   owner-aware `schema:` / `structure:` attachments, readable markdown
   documents and descendants, schema artifact inventories and reusable groups,
   shared readable block reuse, multiline code blocks, schema-backed review
@@ -55,6 +55,8 @@ Each numbered example may contain:
   and checked-in `.flow.{d2,svg}` artifacts
 - `74`: first-class `decision` attachments with typed candidate-pool, ranking,
   rejection, sequencing-proof, and winner-selection obligations
+- `75`: repo-level compile config plus cross-root standard-library imports
+  proven across multiple entrypoints and fail-loud ambiguity/config cases
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -138,6 +140,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
 | `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, a route-first handoff lane, a routed return loop, a shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
 | `74_decision_attachment` | First-class `decision` declarations plus concrete-agent `decision:` attachments for candidate-pool, sequencing-proof, and winner-selection scaffolds. |
+| `75_cross_root_standard_library_imports` | Repo-level `[tool.doctrine.compile].additional_prompt_roots`, shared authored `prompts/` roots, multiple entrypoints, and fail-loud ambiguity/config proofs for cross-root imports. |
 
 ## Useful Commands
 

@@ -10,7 +10,7 @@ const {
 const CACHE_PATH_ENV = "DOCTRINE_VSCODE_TEST_CACHE";
 const EXECUTABLE_PATH_ENV = "DOCTRINE_VSCODE_EXECUTABLE_PATH";
 const MAX_STARTUP_ATTEMPTS = 4;
-const EXTENSION_COPY_EXCLUDE_NAMES = new Set([".vscode-test", "node_modules"]);
+const EXTENSION_COPY_EXCLUDE_NAMES = new Set([".vscode-test"]);
 
 function makeTempDir(prefix) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));

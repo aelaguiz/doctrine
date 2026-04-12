@@ -493,12 +493,22 @@ import ..common.roles
 
 Important rules:
 
-- Import resolution is rooted in the nearest `prompts/` tree.
+- Each prompt file still owns its nearest local `prompts/` tree.
+- Absolute imports may also search explicitly configured shared authored roots
+  from `[tool.doctrine.compile].additional_prompt_roots` in the nearest
+  `pyproject.toml`.
+- Each `additional_prompt_roots` entry resolves relative to that
+  `pyproject.toml` and must point at an existing directory literally named
+  `prompts`.
 - Absolute and relative imports both keep typed declaration identity.
+- Relative imports stay rooted in the importing module's own `prompts/` tree.
+  They do not hop across configured roots.
 - Imported symbols are still used through normal declaration refs such as
   `shared.contracts.ReviewContract`.
+- Duplicate dotted modules across configured roots fail loudly instead of using
+  root precedence heuristics.
 - Missing modules, missing declarations, duplicate declarations, and module
-  cycles fail loudly.
+  cycles still fail loudly.
 
 ## Readable Refs, Addressable Paths, And Interpolation
 

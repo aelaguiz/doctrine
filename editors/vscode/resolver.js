@@ -1,4 +1,6 @@
+const fs = require("node:fs");
 const path = require("node:path");
+const TOML = require("@iarna/toml");
 
 const vscode = require("vscode");
 
@@ -421,6 +423,7 @@ const DECLARATION_DEFINITIONS = Object.freeze([
 const INDEX_CACHE = new Map();
 const REVIEW_CONTEXT_CACHE = new Map();
 const AGENT_BINDING_CACHE = new Map();
+const PROJECT_CONFIG_CACHE = new Map();
 
 // Compiler semantics stay the policy owner. This file only adapts those
 // shipped import, declaration, readable-ref, and inheritance rules to VS Code.
@@ -5388,10 +5391,17 @@ function collectImportEntries(document, context) {
       continue;
     }
 
+    const targetUri = parsed.level === 0
+      ? resolveAbsoluteImportTargetUri(context.importRootUris, resolvedModuleParts)
+      : modulePartsToPromptUri(context.promptRootUri, resolvedModuleParts);
+    if (!targetUri) {
+      continue;
+    }
+
     entries.push({
       moduleParts: resolvedModuleParts,
       range: createLastMatchRange(lineText, lineNumber, match[1]),
-      targetUri: modulePartsToPromptUri(context.promptRootUri, resolvedModuleParts),
+      targetUri,
     });
   }
 
@@ -5409,7 +5419,11 @@ function getDocumentContext(document) {
     return undefined;
   }
 
-  return { currentModuleParts, promptRootUri };
+  return {
+    currentModuleParts,
+    importRootUris: resolveImportRootUris(document.uri, promptRootUri),
+    promptRootUri,
+  };
 }
 
 function resolveRefTargetUri(ref, documentUri, context, importEntries) {
@@ -5446,6 +5460,17 @@ function resolvePromptRoot(documentUri) {
   }
 }
 
+function resolveImportRootUris(documentUri, promptRootUri) {
+  const roots = [promptRootUri];
+  const config = loadCompileProjectConfig(documentUri);
+  for (const additionalRootUri of config.additionalPromptRootUris) {
+    if (!roots.some((rootUri) => rootUri.toString() === additionalRootUri.toString())) {
+      roots.push(additionalRootUri);
+    }
+  }
+  return roots;
+}
+
 function uriToModuleParts(documentUri, promptRootUri) {
   const relativePath = path.posix.relative(promptRootUri.path, documentUri.path);
   if (
@@ -5463,6 +5488,16 @@ function uriToModuleParts(documentUri, promptRootUri) {
 function modulePartsToPromptUri(promptRootUri, moduleParts) {
   const fileName = `${moduleParts[moduleParts.length - 1]}.prompt`;
   return vscode.Uri.joinPath(promptRootUri, ...moduleParts.slice(0, -1), fileName);
+}
+
+function resolveAbsoluteImportTargetUri(importRootUris, moduleParts) {
+  const candidates = importRootUris
+    .map((promptRootUri) => modulePartsToPromptUri(promptRootUri, moduleParts))
+    .filter((targetUri) => uriExistsSync(targetUri));
+  if (candidates.length !== 1) {
+    return undefined;
+  }
+  return candidates[0];
 }
 
 function parseImportPath(rawPath) {
@@ -5912,6 +5947,70 @@ async function uriExists(uri) {
   } catch {
     return false;
   }
+}
+
+function uriExistsSync(uri) {
+  try {
+    fs.statSync(uri.fsPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function loadCompileProjectConfig(documentUri) {
+  const pyprojectPath = findNearestPyproject(documentUri);
+  if (!pyprojectPath) {
+    return { additionalPromptRootUris: [] };
+  }
+
+  const cacheKey = pyprojectPath.fsPath;
+  const cached = PROJECT_CONFIG_CACHE.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  let config = { additionalPromptRootUris: [] };
+  try {
+    const parsed = TOML.parse(fs.readFileSync(pyprojectPath.fsPath, "utf8"));
+    const compile = parsed?.tool?.doctrine?.compile;
+    const rawRoots = compile?.additional_prompt_roots;
+    if (Array.isArray(rawRoots)) {
+      const additionalPromptRootUris = rawRoots
+        .filter((value) => typeof value === "string")
+        .map((value) => resolveConfigPath(pyprojectPath, value))
+        .filter((targetUri) => path.posix.basename(targetUri.path) === "prompts")
+        .filter((targetUri) => uriExistsSync(targetUri));
+      config = { additionalPromptRootUris };
+    }
+  } catch {
+    config = { additionalPromptRootUris: [] };
+  }
+
+  PROJECT_CONFIG_CACHE.set(cacheKey, config);
+  return config;
+}
+
+function findNearestPyproject(documentUri) {
+  let currentPath = path.dirname(documentUri.fsPath);
+  while (true) {
+    const candidatePath = path.join(currentPath, "pyproject.toml");
+    if (fs.existsSync(candidatePath)) {
+      return vscode.Uri.file(candidatePath);
+    }
+    const parentPath = path.dirname(currentPath);
+    if (parentPath === currentPath) {
+      return undefined;
+    }
+    currentPath = parentPath;
+  }
+}
+
+function resolveConfigPath(pyprojectUri, value) {
+  const candidatePath = path.isAbsolute(value)
+    ? value
+    : path.join(path.dirname(pyprojectUri.fsPath), value);
+  return vscode.Uri.file(path.resolve(candidatePath));
 }
 
 module.exports = {

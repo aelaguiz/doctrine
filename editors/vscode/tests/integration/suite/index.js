@@ -10,7 +10,9 @@ const REPO_ROOT = process.env.DOCTRINE_REPO_ROOT
 async function run() {
   await activateDoctrineExtension();
   await testImportLinks();
+  await testCrossRootImportLinks();
   await testDefinitionProvider();
+  await testCrossRootDefinitionProvider();
   await testAddressableDefinitionProvider();
   await testWorkflowLawDefinitionProvider();
   await testReviewDefinitionProvider();
@@ -115,6 +117,94 @@ async function testDefinitionProvider() {
     relativePath: "examples/09_outputs/prompts/AGENTS.prompt",
     sourceLineFragment: "shape: IssueSummaryText",
     sourceText: "IssueSummaryText",
+  });
+}
+
+async function testCrossRootImportLinks() {
+  const document = await openPrompt(
+    "examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt",
+  );
+  const links = await vscode.commands.executeCommand(
+    "_executeLinkProvider",
+    document.uri,
+    100,
+  );
+
+  assert.ok(Array.isArray(links), "Cross-root import links should return an array.");
+
+  assertLinkTarget(
+    links,
+    document,
+    "local.shared_turn",
+    "examples/75_cross_root_standard_library_imports/flow_alpha/prompts/local/shared_turn.prompt",
+  );
+  assertLinkTarget(
+    links,
+    document,
+    "library.io.shared_inputs",
+    "examples/75_cross_root_standard_library_imports/shared/prompts/library/io/shared_inputs.prompt",
+  );
+
+  const sharedDocument = await openPrompt(
+    "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening.prompt",
+  );
+  const sharedLinks = await vscode.commands.executeCommand(
+    "_executeLinkProvider",
+    sharedDocument.uri,
+    100,
+  );
+  assertLinkTarget(
+    sharedLinks,
+    sharedDocument,
+    "..context.topic",
+    "examples/75_cross_root_standard_library_imports/shared/prompts/library/context/topic.prompt",
+  );
+
+  const ambiguousDocument = await openPrompt(
+    "examples/75_cross_root_standard_library_imports/invalid_ambiguous/prompts/AGENTS.prompt",
+  );
+  const ambiguousLinks = await vscode.commands.executeCommand(
+    "_executeLinkProvider",
+    ambiguousDocument.uri,
+    100,
+  );
+  assert.ok(Array.isArray(ambiguousLinks), "Ambiguous import links should still return an array.");
+  assertNoLinkTarget(
+    ambiguousLinks,
+    ambiguousDocument,
+    "library.workflows.common_turn",
+  );
+}
+
+async function testCrossRootDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: "workflow SharedStandardTurn",
+    expectedRelativeTargetPath:
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/common_turn.prompt",
+    relativePath:
+      "examples/75_cross_root_standard_library_imports/flow_beta/prompts/AGENTS.prompt",
+    sourceLineFragment: "workflow: library.workflows.common_turn.SharedStandardTurn",
+    sourceText: "library.workflows.common_turn.SharedStandardTurn",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "inputs SharedLibraryInputs",
+    expectedRelativeTargetPath:
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/io/shared_inputs.prompt",
+    relativePath:
+      "examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt",
+    sourceLineFragment: "inputs: library.io.shared_inputs.SharedLibraryInputs",
+    sourceText: "library.io.shared_inputs.SharedLibraryInputs",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "workflow TopicContext",
+    expectedRelativeTargetPath:
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/context/topic.prompt",
+    relativePath:
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening.prompt",
+    sourceLineFragment: "use topic: library.context.topic.TopicContext",
+    sourceText: "library.context.topic.TopicContext",
   });
 }
 
@@ -979,6 +1069,12 @@ function assertLinkTarget(links, document, linkText, expectedRelativeTargetPath)
     path.join(REPO_ROOT, expectedRelativeTargetPath),
     `Expected ${linkText} to resolve to ${expectedRelativeTargetPath}.`,
   );
+}
+
+function assertNoLinkTarget(links, document, linkText) {
+  const position = positionForText(document, linkText);
+  const link = links.find((candidate) => rangeContains(candidate.range, position));
+  assert.equal(link, undefined, `Expected no link for ${linkText}.`);
 }
 
 async function assertDefinitionTarget({

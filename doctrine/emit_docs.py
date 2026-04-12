@@ -110,7 +110,7 @@ def emit_target(
         seen_paths[emit_path] = agent_name
         planned_emits.append((agent_name, emit_path))
 
-    session = CompilationSession(prompt_file)
+    session = CompilationSession(prompt_file, project_config=target.project_config)
     try:
         compiled_agents = session.compile_agents(tuple(agent_name for agent_name, _ in planned_emits))
     except DoctrineError as exc:

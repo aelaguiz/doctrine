@@ -74,6 +74,30 @@ Important rules:
 - Multiple targets may exist in one repo, and both emit commands use the same
   target registry.
 
+## Cross-Root Compile Config
+
+Emit target mode and direct mode both compile through the same shared Doctrine
+project-config contract:
+
+```toml
+[tool.doctrine.compile]
+additional_prompt_roots = ["shared/prompts"]
+```
+
+Important rules:
+
+- `additional_prompt_roots` entries resolve relative to the authoritative
+  `pyproject.toml`.
+- Absolute imports may search the entrypoint-local `prompts/` root plus the
+  configured additional roots.
+- Relative imports stay inside the importing module's own `prompts/` root.
+- Emit output layout does not widen with import search. Doctrine still places
+  emitted files relative to the entrypoint's own local `prompts/` root.
+- In configured target mode, emit passes the already-resolved target
+  `pyproject.toml` through to compilation.
+- In direct `emit_flow` mode without `--pyproject`, Doctrine resolves compile
+  config from the entrypoint's nearest `pyproject.toml`.
+
 ## Run The Commands
 
 Emit compiled Markdown for one or more configured targets:
@@ -104,7 +128,9 @@ Useful CLI rules:
 - `emit_flow` direct mode requires both `--entrypoint` and `--output-dir`.
 - `emit_flow` accepts either `--target` or direct mode, but not both at once.
 - If `--pyproject` is omitted, Doctrine walks upward from the current working
-  directory until it finds `pyproject.toml`.
+  directory until it finds `pyproject.toml` for configured target mode.
+- Direct `emit_flow` mode resolves compile config from the entrypoint's nearest
+  `pyproject.toml` unless `--pyproject` explicitly overrides it.
 - `emit_docs` reuses one indexed prompt graph per target instead of reparsing
   the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad
@@ -123,6 +149,9 @@ uv run --locked python -m doctrine.emit_flow \
 
 Direct mode keeps the same prompts-root validation and the same output layout
 rules as configured target mode. It only skips the named target lookup.
+Compile-time import search may widen through
+`[tool.doctrine.compile].additional_prompt_roots`, but emitted output placement
+still stays anchored to the entrypoint's own local `prompts/` root.
 
 ## Output Layout
 

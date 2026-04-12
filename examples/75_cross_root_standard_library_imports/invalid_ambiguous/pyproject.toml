@@ -1,0 +1,2 @@
+[tool.doctrine.compile]
+additional_prompt_roots = ["shared_one/prompts", "shared_two/prompts"]

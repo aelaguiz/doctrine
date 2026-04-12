@@ -7,9 +7,15 @@ from pathlib import Path
 
 from doctrine import model
 from doctrine.diagnostics import DiagnosticLocation, EmitError
+from doctrine.project_config import (
+    PYPROJECT_FILE_NAME,
+    ProjectConfig,
+    find_nearest_pyproject,
+    load_project_config,
+    load_project_config_for_source,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PYPROJECT_FILE_NAME = "pyproject.toml"
 CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
 SUPPORTED_ENTRYPOINTS = ("AGENTS.prompt", "SOUL.prompt")
 
@@ -19,6 +25,7 @@ class EmitTarget:
     name: str
     entrypoint: Path
     output_dir: Path
+    project_config: ProjectConfig
 
 
 def resolve_pyproject_path(
@@ -49,10 +56,9 @@ def resolve_pyproject_path(
             )
         return resolved
 
-    for candidate_dir in [base_dir, *base_dir.parents]:
-        candidate = candidate_dir / PYPROJECT_FILE_NAME
-        if candidate.is_file():
-            return candidate.resolve()
+    resolved = find_nearest_pyproject(base_dir)
+    if resolved is not None:
+        return resolved
 
     raise emit_error(
         "E504",
@@ -68,12 +74,8 @@ def load_emit_targets(
     start_dir: str | Path | None = None,
 ) -> dict[str, EmitTarget]:
     config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
-
-    try:
-        raw = tomllib.loads(config_path.read_text())
-    except tomllib.TOMLDecodeError as exc:
-        raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
-    emit = raw.get("tool", {}).get("doctrine", {}).get("emit", {})
+    project_config = _load_emit_project_config(config_path)
+    emit = project_config.raw_emit if isinstance(project_config.raw_emit, dict) else {}
     raw_targets = emit.get("targets")
     if not isinstance(raw_targets, list) or not raw_targets:
         raise emit_error(
@@ -128,7 +130,12 @@ def load_emit_targets(
                 location=path_location(output_dir),
             )
 
-        targets[name] = EmitTarget(name=name, entrypoint=entrypoint, output_dir=output_dir)
+        targets[name] = EmitTarget(
+            name=name,
+            entrypoint=entrypoint,
+            output_dir=output_dir,
+            project_config=project_config,
+        )
 
     return targets
 
@@ -141,8 +148,14 @@ def resolve_direct_emit_target(
     start_dir: str | Path | None = None,
     name: str | None = None,
 ) -> EmitTarget:
-    config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
-    config_dir = config_path.parent
+    base_dir = (Path(start_dir) if start_dir is not None else Path.cwd()).resolve()
+    if pyproject_path is not None:
+        config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
+        config_dir = config_path.parent
+        project_config = _load_emit_project_config(config_path)
+    else:
+        config_dir = base_dir
+        project_config = None
 
     entrypoint_path = resolve_config_file(
         config_dir,
@@ -170,11 +183,32 @@ def resolve_direct_emit_target(
             location=path_location(output_dir_path),
         )
 
+    if project_config is None:
+        project_config = _load_compile_project_config_for_entrypoint(entrypoint_path)
+
     return EmitTarget(
         name=name or entrypoint_path.stem.lower(),
         entrypoint=entrypoint_path,
         output_dir=output_dir_path,
+        project_config=project_config,
     )
+
+
+def _load_emit_project_config(config_path: Path) -> ProjectConfig:
+    try:
+        return load_project_config(config_path)
+    except tomllib.TOMLDecodeError as exc:
+        raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
+
+
+def _load_compile_project_config_for_entrypoint(entrypoint_path: Path) -> ProjectConfig:
+    try:
+        return load_project_config_for_source(entrypoint_path)
+    except tomllib.TOMLDecodeError as exc:
+        config_path = find_nearest_pyproject(entrypoint_path.parent)
+        if config_path is None:
+            raise
+        raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
 
 
 def root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:

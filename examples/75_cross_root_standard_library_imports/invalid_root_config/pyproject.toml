@@ -1,0 +1,2 @@
+[tool.doctrine.compile]
+additional_prompt_roots = ["shared/not_prompts"]

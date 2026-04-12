@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/74_decision_attachment`.
+`examples/75_cross_root_standard_library_imports`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -45,7 +45,7 @@ These documents organize the earlier second-wave language work into
 implementation order. They are still useful historical implementation notes,
 but they are not the current live completeness story now that shipped truth
 also includes the first-class `decision` surface and
-`examples/74_decision_attachment`.
+`examples/75_cross_root_standard_library_imports`.
 
 For the current shipped language surface, use
 [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md),
@@ -91,6 +91,9 @@ implementation-order view or the canonical shipped reference.
 - The shared emit registry drives configured Markdown and flow builds, and
   `emit_flow` also supports direct quick-start entrypoints on the same
   prompts-root-aware pipeline.
+- Absolute imports may also span explicitly configured shared `prompts/`
+  roots through `[tool.doctrine.compile].additional_prompt_roots`, while
+  relative imports stay rooted in the importing module's own `prompts/` tree.
 - Emit and verification surfaces reuse shared compile sessions and preserve
   authored ordering even when batch compilation fans out across threads.
 

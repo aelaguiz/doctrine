@@ -1,0 +1,8 @@
+import library.workflows.common_turn
+import library.io.shared_inputs
+
+
+agent CrossRootBeta:
+    role: "You are the beta cross-root agent."
+    workflow: library.workflows.common_turn.SharedStandardTurn
+    inputs: library.io.shared_inputs.SharedLibraryInputs
