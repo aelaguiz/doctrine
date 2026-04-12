@@ -1897,6 +1897,37 @@ _EMIT_PATTERN_BUILDERS: tuple[
         lambda match: f"Could not resolve `prompts/` root for `{match.group('path')}`.",
         (),
     ),
+    (
+        re.compile(
+            r"^Use either configured target mode \(`--target`\) or direct mode \(`--entrypoint` with `--output-dir`\), not both\.$"
+        ),
+        "E517",
+        "Emit flow CLI requires exactly one resolution mode",
+        lambda _match: (
+            "Use either configured target mode (`--target`) or direct mode "
+            "(`--entrypoint` with `--output-dir`), not both."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Use configured target mode \(`--target`\) or direct mode \(`--entrypoint` with `--output-dir`\)\.$"
+        ),
+        "E517",
+        "Emit flow CLI requires exactly one resolution mode",
+        lambda _match: (
+            "Use configured target mode (`--target`) or direct mode "
+            "(`--entrypoint` with `--output-dir`)."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Direct `emit_flow` mode requires both `--entrypoint` and `--output-dir`\.$"),
+        "E518",
+        "Direct emit flow mode requires entrypoint and output_dir",
+        lambda _match: "Direct `emit_flow` mode requires both `--entrypoint` and `--output-dir`.",
+        (),
+    ),
 )
 
 

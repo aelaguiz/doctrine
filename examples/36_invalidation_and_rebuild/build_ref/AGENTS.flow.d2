@@ -1,96 +1,120 @@
 direction: down
 
-input_currenthandoff: {
-  label: "Current Handoff\nInput\nSource: Prompt\nShape: Json Object\nRequirement: Required"
-  shape: rectangle
+shared_inputs: {
+  label: "Shared Inputs"
+  direction: right
   style: {
-    fill: "#E8F1FF"
+    fill: "#F5F8FF"
     stroke: "#2F6FEB"
   }
+  input_currenthandoff: {
+    label: "Current Handoff\nShared Input\nSource: Prompt\nShape: Json Object\nRequirement: Required\nUsed by:\nBlockedSectionReviewDemo,\nRebuildSectionReviewDemo,\nStructureChangeDemo"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
 }
 
-agent_blockedsectionreviewdemo: {
-  label: "BlockedSectionReviewDemo\nAgent\nDo not keep reviewing against\ninvalidated downstream truth.\nMay end with no current\nartifact"
-  shape: rectangle
+agent_handoffs: {
+  label: "Agent Handoffs"
+  direction: right
   style: {
-    fill: "#FFF7E6"
+    fill: "#FFF8EB"
     stroke: "#B54708"
   }
-}
+  agent_blockedsectionreviewdemo: {
+    label: "BlockedSectionReviewDemo\nAgent\nDo not keep reviewing against\ninvalidated downstream truth.\nMay end with no current\nartifact"
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
 
-agent_rebuildsectionreviewdemo: {
-  label: "RebuildSectionReviewDemo\nAgent\nRebuild invalidated review\nwork and reissue it as current\ntruth."
-  shape: rectangle
-  style: {
-    fill: "#FFF7E6"
-    stroke: "#B54708"
+  agent_rebuildsectionreviewdemo: {
+    label: "RebuildSectionReviewDemo\nAgent\nRebuild invalidated review\nwork and reissue it as current\ntruth."
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+
+  agent_routingowner: {
+    label: "RoutingOwner\nAgent\nOwn explicit reroutes when\nspecialist work cannot\ncontinue."
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+
+  agent_structurechangedemo: {
+    label: "StructureChangeDemo\nAgent\nInvalidate downstream review\nwhen structure changes."
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
   }
 }
 
-agent_routingowner: {
-  label: "RoutingOwner\nAgent\nOwn explicit reroutes when\nspecialist work cannot\ncontinue."
-  shape: rectangle
+shared_outputs_and_carriers: {
+  label: "Shared Outputs And Carriers"
+  direction: right
   style: {
-    fill: "#FFF7E6"
-    stroke: "#B54708"
-  }
-}
-
-agent_structurechangedemo: {
-  label: "StructureChangeDemo\nAgent\nInvalidate downstream review\nwhen structure changes."
-  shape: rectangle
-  style: {
-    fill: "#FFF7E6"
-    stroke: "#B54708"
-  }
-}
-
-output_blockedreviewhandoff: {
-  label: "Blocked Review Handoff\nOutput\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nTrust: Invalidations"
-  shape: rectangle
-  style: {
-    fill: "#ECFDF3"
+    fill: "#F3FFF8"
     stroke: "#067647"
   }
-}
+  output_blockedreviewhandoff: {
+    label: "Blocked Review Handoff\nCarrier Output\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by:\nBlockedSectionReviewDemo\nTrust: Invalidations"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
 
-output_invalidationhandoff: {
-  label: "Invalidation Handoff\nOutput\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nTrust: Current Artifact,\nInvalidations\nCarries current for Section\nMetadata\nCarries invalidation for\nSection Review"
-  shape: rectangle
-  style: {
-    fill: "#ECFDF3"
-    stroke: "#067647"
+  output_invalidationhandoff: {
+    label: "Invalidation Handoff\nCarrier Output\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by:\nStructureChangeDemo\nTrust: Current Artifact,\nInvalidations\nCarries current for Section\nMetadata\nCarries invalidation for\nSection Review"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
+
+  output_rebuildhandoff: {
+    label: "Rebuild Handoff\nCarrier Output\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by:\nRebuildSectionReviewDemo\nTrust: Current Artifact\nCarries current for Section\nReview"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
+
+  output_sectionmetadata: {
+    label: "Section Metadata\nCarrier Output\nTarget: File\nPath: unit_root/_authoring/sec\ntion_metadata.json\nShape: Json Object\nRequirement: Required\nProduced by:\nStructureChangeDemo\nCurrent via Invalidation\nHandoff.Current Artifact"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
+
+  output_sectionreview: {
+    label: "Section Review\nCarrier Output\nTarget: File\nPath: unit_root/_authoring/SEC\nTION_REVIEW.md\nShape: Markdown Document\nRequirement: Required\nProduced by:\nRebuildSectionReviewDemo\nInvalidated via Invalidation\nHandoff.Invalidations\nCurrent via Rebuild\nHandoff.Current Artifact"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
   }
 }
 
-output_rebuildhandoff: {
-  label: "Rebuild Handoff\nOutput\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nTrust: Current Artifact\nCarries current for Section\nReview"
-  shape: rectangle
-  style: {
-    fill: "#ECFDF3"
-    stroke: "#067647"
-  }
-}
-
-output_sectionmetadata: {
-  label: "Section Metadata\nOutput\nTarget: File\nPath: unit_root/_authoring/sec\ntion_metadata.json\nShape: Json Object\nRequirement: Required\nCurrent via Invalidation\nHandoff.Current Artifact"
-  shape: rectangle
-  style: {
-    fill: "#ECFDF3"
-    stroke: "#067647"
-  }
-}
-
-output_sectionreview: {
-  label: "Section Review\nOutput\nTarget: File\nPath: unit_root/_authoring/SEC\nTION_REVIEW.md\nShape: Markdown Document\nRequirement: Required\nInvalidated via Invalidation\nHandoff.Invalidations\nCurrent via Rebuild\nHandoff.Current Artifact"
-  shape: rectangle
-  style: {
-    fill: "#ECFDF3"
-    stroke: "#067647"
-  }
-}
-
-input_currenthandoff -> agent_blockedsectionreviewdemo: {
+shared_inputs.input_currenthandoff -> agent_handoffs.agent_blockedsectionreviewdemo: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -98,7 +122,7 @@ input_currenthandoff -> agent_blockedsectionreviewdemo: {
   }
 }
 
-input_currenthandoff -> agent_rebuildsectionreviewdemo: {
+shared_inputs.input_currenthandoff -> agent_handoffs.agent_rebuildsectionreviewdemo: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -106,7 +130,7 @@ input_currenthandoff -> agent_rebuildsectionreviewdemo: {
   }
 }
 
-input_currenthandoff -> agent_structurechangedemo: {
+shared_inputs.input_currenthandoff -> agent_handoffs.agent_structurechangedemo: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -114,21 +138,21 @@ input_currenthandoff -> agent_structurechangedemo: {
   }
 }
 
-agent_blockedsectionreviewdemo -> agent_routingowner: {
+agent_handoffs.agent_blockedsectionreviewdemo -> agent_handoffs.agent_routingowner: {
   label: "Route the same issue back to\nRoutingOwner until review is\nrebuilt."
   style: {
     stroke: "#D92D20"
   }
 }
 
-agent_structurechangedemo -> agent_routingowner: {
+agent_handoffs.agent_structurechangedemo -> agent_handoffs.agent_routingowner: {
   label: "Route the same issue back to\nRoutingOwner for rebuild."
   style: {
     stroke: "#D92D20"
   }
 }
 
-agent_blockedsectionreviewdemo -> output_blockedreviewhandoff: {
+agent_handoffs.agent_blockedsectionreviewdemo -> shared_outputs_and_carriers.output_blockedreviewhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -136,7 +160,7 @@ agent_blockedsectionreviewdemo -> output_blockedreviewhandoff: {
   }
 }
 
-agent_rebuildsectionreviewdemo -> output_rebuildhandoff: {
+agent_handoffs.agent_rebuildsectionreviewdemo -> shared_outputs_and_carriers.output_rebuildhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -144,7 +168,7 @@ agent_rebuildsectionreviewdemo -> output_rebuildhandoff: {
   }
 }
 
-agent_rebuildsectionreviewdemo -> output_sectionreview: {
+agent_handoffs.agent_rebuildsectionreviewdemo -> shared_outputs_and_carriers.output_sectionreview: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -152,7 +176,7 @@ agent_rebuildsectionreviewdemo -> output_sectionreview: {
   }
 }
 
-agent_structurechangedemo -> output_invalidationhandoff: {
+agent_handoffs.agent_structurechangedemo -> shared_outputs_and_carriers.output_invalidationhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -160,7 +184,7 @@ agent_structurechangedemo -> output_invalidationhandoff: {
   }
 }
 
-agent_structurechangedemo -> output_sectionmetadata: {
+agent_handoffs.agent_structurechangedemo -> shared_outputs_and_carriers.output_sectionmetadata: {
   label: "produces"
   style: {
     stroke: "#067647"

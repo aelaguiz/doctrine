@@ -1,16 +1,22 @@
 # Emit Guide
 
-Doctrine ships two emit commands that operate on named targets from
-`pyproject.toml`:
+Doctrine ships two emit commands that share one prompts-root-aware emit
+pipeline:
 
 - `doctrine.emit_docs` writes the runtime Markdown tree that existing coding
   agent tools consume.
-- `doctrine.emit_flow` writes one target-scoped workflow data-flow graph as
+- `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
 
 Use `emit_docs` when you need the compiled runtime prompt surface. Use
 `emit_flow` when you need a reviewable graph of how declared inputs, concrete
 agents, outputs, and route edges fit together for one entrypoint.
+
+Important mode split:
+
+- `emit_docs` runs on named targets from `pyproject.toml`.
+- `emit_flow` can run on a named target or in direct quick-start mode with
+  `--entrypoint` plus `--output-dir`.
 
 Both emit commands reuse one compilation session per entrypoint. `emit_docs`
 also compiles concrete root agents with safe default thread fan-out, while
@@ -48,9 +54,9 @@ Doctrine reads emit targets from `[tool.doctrine.emit.targets]` in
 [tool.doctrine.emit]
 
 [[tool.doctrine.emit.targets]]
-name = "example_36_invalidation_and_rebuild"
-entrypoint = "examples/36_invalidation_and_rebuild/prompts/AGENTS.prompt"
-output_dir = "examples/36_invalidation_and_rebuild/build"
+name = "example_68_flow_visualizer_showcase"
+entrypoint = "examples/68_flow_visualizer_showcase/prompts/AGENTS.prompt"
+output_dir = "examples/68_flow_visualizer_showcase/build"
 ```
 
 Each target field has one job:
@@ -77,10 +83,10 @@ uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 ```
 
-Emit a target-scoped workflow data-flow graph:
+Emit one workflow data-flow graph from a configured target:
 
 ```bash
-uv run --locked python -m doctrine.emit_flow --target example_36_invalidation_and_rebuild
+uv run --locked python -m doctrine.emit_flow --target example_68_flow_visualizer_showcase
 ```
 
 If you are not running from the repo root, point the command at the config
@@ -89,18 +95,34 @@ file explicitly:
 ```bash
 uv run --locked python -m doctrine.emit_flow \
   --pyproject /path/to/pyproject.toml \
-  --target example_36_invalidation_and_rebuild
+  --target example_68_flow_visualizer_showcase
 ```
 
 Useful CLI rules:
 
 - Repeat `--target` to emit multiple configured targets in one command.
+- `emit_flow` direct mode requires both `--entrypoint` and `--output-dir`.
+- `emit_flow` accepts either `--target` or direct mode, but not both at once.
 - If `--pyproject` is omitted, Doctrine walks upward from the current working
   directory until it finds `pyproject.toml`.
 - `emit_docs` reuses one indexed prompt graph per target instead of reparsing
   the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad
   targets.
+
+## Quick Start Without A Named Target
+
+When you want a first flow render before adding a permanent target to
+`pyproject.toml`, `emit_flow` can resolve one entrypoint directly:
+
+```bash
+uv run --locked python -m doctrine.emit_flow \
+  --entrypoint examples/68_flow_visualizer_showcase/prompts/AGENTS.prompt \
+  --output-dir examples/68_flow_visualizer_showcase/build
+```
+
+Direct mode keeps the same prompts-root validation and the same output layout
+rules as configured target mode. It only skips the named target lookup.
 
 ## Output Layout
 
@@ -115,7 +137,8 @@ For runtime Markdown, Doctrine writes one file per concrete root agent:
 If the entrypoint-relative directory already ends with the agent slug, Doctrine
 does not repeat that directory level.
 
-For workflow flow artifacts, Doctrine writes one file pair per target:
+For workflow flow artifacts, Doctrine writes one file pair per emitted
+entrypoint:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<ENTRYPOINT_STEM>.flow.d2
@@ -129,8 +152,8 @@ examples/07_handoffs/build/project_lead/AGENTS.md
 examples/07_handoffs/build/research_specialist/AGENTS.md
 examples/07_handoffs/build/writing_specialist/AGENTS.md
 
-examples/36_invalidation_and_rebuild/build/AGENTS.flow.d2
-examples/36_invalidation_and_rebuild/build/AGENTS.flow.svg
+examples/68_flow_visualizer_showcase/build/AGENTS.flow.d2
+examples/68_flow_visualizer_showcase/build/AGENTS.flow.svg
 ```
 
 ## How To Read `emit_flow` Output
@@ -141,13 +164,15 @@ I/O model and workflow-law semantics; it does not scrape emitted Markdown.
 The generated graph includes:
 
 - input nodes for declared `input` and `inputs` surfaces
-- agent nodes for concrete root agents in the configured entrypoint
+- agent nodes for concrete root agents in the resolved entrypoint
 - output nodes for declared `output` and `outputs` surfaces
 - consume edges from inputs to agents
 - produce edges from agents to outputs
 - labeled route edges between agents when authored routing is part of the turn
 - currentness, invalidation, and `trust_surface` notes on output nodes when
   workflow law binds them
+- section groupings for shared inputs, local inputs, agent handoffs, shared
+  outputs or carriers, and local outputs
 
 Reading guidance:
 
@@ -168,7 +193,7 @@ make verify-examples
 For one manifest-backed example:
 
 ```bash
-uv run --locked python -m doctrine.verify_corpus --manifest examples/36_invalidation_and_rebuild/cases.toml
+uv run --locked python -m doctrine.verify_corpus --manifest examples/68_flow_visualizer_showcase/cases.toml
 ```
 
 If you changed emit diagnostics or the emit CLI error surface, also run:
@@ -179,8 +204,8 @@ make verify-diagnostics
 
 The canonical checked-in flow proof lives in:
 
-- `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.d2`
-- `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.svg`
+- `examples/68_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
+- `examples/68_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
 
 ## Troubleshooting
 
@@ -197,6 +222,10 @@ Common emit failures:
 - `E516`: `.flow.d2` was written, but the pinned SVG renderer failed. Inspect
   the `.flow.d2` source and the command output, then rerun after fixing the
   local Node or D2 problem.
+- `E517`: `emit_flow` was invoked with both configured-target mode and direct
+  mode, or with neither mode.
+- `E518`: direct `emit_flow` mode omitted either `--entrypoint` or
+  `--output-dir`.
 
 For the full stable error catalog, use
 [COMPILER_ERRORS.md](COMPILER_ERRORS.md).

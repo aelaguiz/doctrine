@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/67_semantic_profile_lowering`.
+`examples/68_flow_visualizer_showcase`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -92,8 +92,9 @@ context for how the second-wave design was decomposed.
 - The example corpus is proof, not just illustration.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
-- The shared emit registry now drives both compiled Markdown trees and
-  target-scoped workflow data-flow artifacts.
+- The shared emit registry drives configured Markdown and flow builds, and
+  `emit_flow` also supports direct quick-start entrypoints on the same
+  prompts-root-aware pipeline.
 - Emit and verification surfaces reuse shared compile sessions and preserve
   authored ordering even when batch compilation fans out across threads.
 

@@ -133,6 +133,50 @@ def load_emit_targets(
     return targets
 
 
+def resolve_direct_emit_target(
+    *,
+    entrypoint: str | Path,
+    output_dir: str | Path,
+    pyproject_path: str | Path | None = None,
+    start_dir: str | Path | None = None,
+    name: str | None = None,
+) -> EmitTarget:
+    config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
+    config_dir = config_path.parent
+
+    entrypoint_path = resolve_config_file(
+        config_dir,
+        str(entrypoint),
+        label="direct emit entrypoint",
+    )
+    if entrypoint_path.name not in SUPPORTED_ENTRYPOINTS:
+        raise emit_error(
+            "E510",
+            "Emit target entrypoint must be AGENTS.prompt or SOUL.prompt",
+            "Direct emit entrypoint must point at an `AGENTS.prompt` or `SOUL.prompt` file, "
+            f"got `{entrypoint_path.name}`.",
+            location=path_location(entrypoint_path),
+        )
+
+    # Reuse the same prompts-root validation the configured target path uses.
+    entrypoint_relative_dir(entrypoint_path)
+
+    output_dir_path = resolve_config_path(config_dir, str(output_dir))
+    if output_dir_path.is_file():
+        raise emit_error(
+            "E511",
+            "Emit target output_dir is a file",
+            f"Direct emit output_dir is a file: `{output_dir_path}`.",
+            location=path_location(output_dir_path),
+        )
+
+    return EmitTarget(
+        name=name or entrypoint_path.stem.lower(),
+        entrypoint=entrypoint_path,
+        output_dir=output_dir_path,
+    )
+
+
 def root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:
     names = [
         declaration.name
