@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md
+Plan doc: docs/archive/second_wave/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11.md
 
 ## Initial entry
 - Run started.

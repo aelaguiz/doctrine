@@ -11,7 +11,7 @@ related:
   - docs/ANALYSIS_AND_SCHEMA_SPEC.md
   - docs/READABLE_MARKDOWN_SPEC.md
   - docs/LANGUAGE_MECHANICS_SPEC.md
-  - docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md
+  - docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/AGENT_IO_DESIGN_NOTES.md
   - docs/REVIEW_SPEC.md
@@ -82,7 +82,7 @@ reality for readable markdown or typed `structure:` attachments.
 
 Readable markdown, typed `structure:` attachments, their example proof, and
 editor/docs convergence now ship through
-`docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and the
+`docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` and the
 evergreen docs it updated.
 
 ## Non-negotiables
@@ -108,7 +108,7 @@ snapshot is not the current authority for readable-markdown completion or
 editor parity.
 
 Current authoritative audit state for readable markdown lives in
-`docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`. Do not
+`docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md`. Do not
 treat prior pass/fail notes here as current repo truth.
 <!-- arch_skill:block:implementation_audit:end -->
 
@@ -410,7 +410,7 @@ Behavior-preservation evidence:
   - `cd editors/vscode && make`
   - gbrain repo-memory note `concepts/doctrine-second-wave-compiler-gap-2026-04-11`
 - Duplicate or drifting paths relevant to this change:
-  - `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` -
+  - `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md` -
     overlaps heavily and now contains stale claims about current repo state, so
     docs convergence must decide whether to fold, supersede, or retire its
     overlapping slice.
@@ -728,7 +728,7 @@ Behavior-preservation evidence:
 | Corpus | `examples/README.md`, new `examples/54_*` onward, manifests and refs | Shipped proof ends at 53; no post-53 second-wave ladder | Add the full manifest-backed ladder and negative cases for analysis/schema/document/integration surfaces | The feature is not shipped until proof exists | Post-53 numbered proof ladder | Targeted manifest runs and `make verify-examples` |
 | Existing example convergence | `examples/09_outputs/prompts/AGENTS.prompt` and associated refs/cases | Uses future-looking `schema:` and `structure:` lines as generic record keys | Make example 09 honest about shipped semantics or move typed proof to the post-53 ladder | Today it teaches a half-shipped story | One truthful example ladder | Example 09 manifest/snap updates plus new examples |
 | Evergreen docs | `docs/README.md`, `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/REVIEW_SPEC.md`, `docs/WORKFLOW_LAW.md`, `docs/COMPILER_ERRORS.md`, `examples/README.md` | Evergreen docs still describe the pre-integration shipped truth and the specs as unshipped | Rewrite evergreen docs to the shipped second-wave truth and record the final disposition of the enhancement-spec set | No split-brain docs after ship | One live docs story | Final verification sweep and doc review |
-| Planning/doc convergence | `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/README.md` | Overlapping active mechanics plan contains stale overlapping claims | Fold, supersede, or retire overlapping narrative so only one live architecture story remains for this scope | Leaving both live would preserve planning drift after implementation | One active architecture narrative for this scope | Docs-only verification during finalization |
+| Planning/doc convergence | `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/README.md` | Overlapping active mechanics plan contains stale overlapping claims | Fold, supersede, or retire overlapping narrative so only one live architecture story remains for this scope | Leaving both live would preserve planning drift after implementation | One active architecture narrative for this scope | Docs-only verification during finalization |
 | VS Code syntax | `editors/vscode/syntaxes/doctrine.tmLanguage.json`, `editors/vscode/scripts/validate_lark_alignment.py` | Top-level decls colorize, but typed attachments and richer body forms are incomplete | Add syntax coverage for the new fields and attachment forms; keep grammar-alignment samples honest | Editor parity must widen with the language | Syntax parity for second-wave surfaces | `cd editors/vscode && make` |
 | VS Code navigation | `editors/vscode/resolver.js`, `editors/vscode/tests/integration/suite/index.js`, unit/snap tests, `editors/vscode/README.md` | Global `schema:` -> `json schema`, no `structure:` keyed refs, review contracts assume workflows | Make resolver owner-aware for `schema:`, add `structure:` and `analysis:` coverage, add schema-backed review contract navigation, and update README smoke paths | The extension currently encodes stale semantics | Owner-aware keyed ref resolution and contract navigation | `cd editors/vscode && make` plus updated integration/snapshot suites |
 
@@ -1005,7 +1005,7 @@ Status: COMPLETED
 - The user explicitly requested `$arch-step new` for a full implementation plan
   against `docs/INTEGRATION_SURFACES_SPEC.md`.
 - The repo already contains
-  `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, which
+  `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, which
   overlaps this problem space but is anchored more broadly on the mechanics-wave
   work.
 

@@ -7,7 +7,7 @@ owners: ["aelaguiz"]
 reviewers: []
 doc_type: architectural_change
 related:
-  - docs/research_visualizations.md
+  - docs/archive/research_visualizations.md
   - doctrine/compiler.py
   - doctrine/emit_docs.py
   - doctrine/renderer.py
@@ -313,7 +313,7 @@ Behavior-preservation evidence:
 <!-- arch_skill:block:research_grounding:start -->
 ## 3.1 External anchors (papers, systems, prior art)
 
-- `docs/research_visualizations.md` is useful as a comparative note, not as a
+- `docs/archive/research_visualizations.md` is useful as a comparative note, not as a
   shipped decision. Adopt from it only the requirements-level lesson that
   layout quality and domain-specific readability hints matter for workflow
   graphs. Reject treating any listed tool or renderer as already chosen.
@@ -1447,7 +1447,7 @@ planning work, and treat the next move as `implement-loop`.
 
 ### Follow-ups
 
-- Next command: `Use $arch-step implement-loop docs/DOCTRINE_AGENT_DATA_FLOW_VISUALIZATION_2026-04-10.md`.
+- Next command: `Use $arch-step implement-loop docs/archive/second_wave/DOCTRINE_AGENT_DATA_FLOW_VISUALIZATION_2026-04-10.md`.
 
 ## 2026-04-11 - Implement-loop finished the feature clean
 

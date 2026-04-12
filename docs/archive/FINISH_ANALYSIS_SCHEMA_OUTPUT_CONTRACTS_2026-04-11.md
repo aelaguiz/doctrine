@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Finish Analysis Schema Output Contracts - Architecture Plan"
 date: 2026-04-11
-status: active
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
@@ -114,7 +114,7 @@ note: Auto-plan completed research, deep-dive pass 1, deep-dive pass 2, and phas
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
-Worklog: `docs/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11_WORKLOG.md`
+Worklog: `docs/archive/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11_WORKLOG.md`
 
 # 0) Holistic North Star
 

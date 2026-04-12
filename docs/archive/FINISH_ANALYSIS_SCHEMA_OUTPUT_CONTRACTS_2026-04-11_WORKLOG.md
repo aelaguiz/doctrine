@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: docs/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md
+Plan doc: docs/archive/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md
 
 ## Initial entry
 - Run started.
@@ -43,7 +43,7 @@ Plan doc: docs/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md
 ## Re-arm entry
 - Work completed:
   - Re-armed `.codex/implement-loop-state.json` for
-    `docs/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md` so the
+    `docs/archive/FINISH_ANALYSIS_SCHEMA_OUTPUT_CONTRACTS_2026-04-11.md` so the
     installed Stop hook can run the fresh `audit-implementation` handoff on
     session stop.
 - Tests run + results:

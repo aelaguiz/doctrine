@@ -13,7 +13,7 @@ from doctrine.compiler import compile_prompt, extract_target_flow_graph
 from doctrine.diagnostics import diagnostic_to_dict
 from doctrine.emit_docs import main as emit_docs_main
 from doctrine.emit_flow import main as emit_flow_main
-from doctrine.parser import parse_file
+from doctrine.parser import parse_file, parse_text
 from doctrine.renderer import render_markdown
 
 
@@ -24,6 +24,7 @@ class SmokeFailure(RuntimeError):
 def main() -> int:
     _check_transform_errors_surface_as_parse_errors()
     _check_invalid_string_literals_surface_as_parse_errors()
+    _check_parse_text_preserves_source_path_for_compilation()
     _check_compile_missing_role_has_specific_code()
     _check_analysis_field_renders()
     _check_reserved_analysis_slot_key_is_rejected()
@@ -89,6 +90,18 @@ def _check_invalid_string_literals_surface_as_parse_errors() -> None:
             _expect("truncated \\xXX escape" in rendered, rendered)
             return
         raise SmokeFailure("expected invalid string literal parse failure, but parsing succeeded")
+
+
+def _check_parse_text_preserves_source_path_for_compilation() -> None:
+    source = """agent GreetingDemo:
+    role: "Say hello."
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        parsed = parse_text(prompt_path.read_text(), source_path=prompt_path)
+        _expect(parsed.source_path == prompt_path.resolve(), f"expected source_path {prompt_path.resolve()}, got {parsed.source_path!r}")
+        rendered = compile_prompt(parsed, "GreetingDemo")
+        _expect(rendered.name == "GreetingDemo", f"expected GreetingDemo, got {rendered.name}")
 
 
 def _check_compile_missing_role_has_specific_code() -> None:

@@ -12,8 +12,8 @@ related:
   - docs/READABLE_MARKDOWN_SPEC.md
   - docs/LANGUAGE_MECHANICS_SPEC.md
   - docs/SECOND_WAVE_LANGUAGE_NOTES.md
-  - docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md
-  - docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md
+  - docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md
+  - docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/LANGUAGE_DESIGN_NOTES.md
   - docs/AGENT_IO_DESIGN_NOTES.md
@@ -101,7 +101,7 @@ note: Fresh audit-implementation on 2026-04-11 found the Phase 3 implementation 
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
-Worklog: `docs/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11_WORKLOG.md`
+Worklog: `docs/archive/second_wave/PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11_WORKLOG.md`
 
 Implementation status: fresh `audit-implementation` on 2026-04-11 found no
 remaining code-completeness blockers. Phase 3 implementation, manifest-backed
@@ -397,10 +397,10 @@ Behavior-preservation evidence:
 - There is no manifest-backed positive and negative proof ladder yet for the
   full Phase 3 surface, and evergreen docs do not currently teach it as
   shipped truth.
-- `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
+- `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
   explicitly records explored controls such as `properties`, standalone
   `guard`, and `render_profile` as deferred or excluded from that earlier wave.
-- `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
+- `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
   explicitly treats user-authored `render_profile` as out of scope for that
   completed wave.
 - Evergreen docs and examples guides do not currently teach the full Phase 3
@@ -425,8 +425,8 @@ Updated: 2026-04-11
 
 - R1 — Phase 3 - Advanced Typed Markdown Render Policy And Extension Surfaces — `docs/03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md`
 - R2 — Phase 4 - Review Route Only Grounding And Control Plane Integration — `docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md`
-- R3 — Historical Mechanics-Wave Disposition — `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
-- R4 — Historical Integration-Wave Disposition — `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
+- R3 — Historical Mechanics-Wave Disposition — `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
+- R4 — Historical Integration-Wave Disposition — `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
 
 ## Binding obligations (distilled; must satisfy)
 
@@ -722,7 +722,7 @@ Rendered intent:
 ```
 ~~~~
 
-### R3 — Historical Mechanics-Wave Disposition — `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
+### R3 — Historical Mechanics-Wave Disposition — `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
 ~~~~markdown
 ## 5.4 Invariants and boundaries
 
@@ -741,7 +741,7 @@ Rendered intent:
   v1.
 ~~~~
 
-### R4 — Historical Integration-Wave Disposition — `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
+### R4 — Historical Integration-Wave Disposition — `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
 ~~~~markdown
 ## Non-negotiables
 
@@ -813,10 +813,10 @@ Rendered intent:
   convergence surface for this work.
 - `docs/README.md` still routes readers through the phased plan set and lists
   Phase 3 as the implementation-order doc for these surfaces.
-- `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
+- `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`
   records `properties`, standalone `guard`, and `render_profile` as deferred or
   excluded from the earlier mechanics wave.
-- `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
+- `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md`
   records user-authored `render_profile` as out of scope for that completed
   integration wave.
 - Current search evidence also makes the remaining gap concrete: outside the
@@ -1006,7 +1006,7 @@ Rendered intent:
 | Diagnostics | `doctrine/diagnostic_smoke.py`, `docs/COMPILER_ERRORS.md` | compile-negative coverage and error catalog | current diagnostics cover existing readable guard failures and other shipped rules, not the full Phase 3 ladder | add fail-loud validation coverage and document the resulting error surfaces | requested scope includes the compile-negative ladder | explicit Phase 3 validation contract | verify-diagnostics |
 | Proof corpus | `examples/README.md`, new `examples/64+` manifests/artifacts | example ladder | shipped corpus stops at current baseline examples; no dedicated Phase 3 ladder exists | add manifest-backed positive and negative examples in the source-doc order | Doctrine is example-first and proof-backed | canonical Phase 3 proof ladder | verify-examples |
 | Evergreen docs | `docs/LANGUAGE_REFERENCE.md`, `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/REVIEW_SPEC.md`, `docs/README.md` | live docs truth | live docs teach the shipped baseline but not the missing Phase 3 layer | update the surviving canonical docs to describe the new surfaces and their boundaries accurately | avoid split truth | one live docs story | docs review |
-| Historical / dependent docs | `docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md`, `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` | baseline assumptions and earlier defer/exclude claims | dependent docs are ahead of code and historical docs still preserve earlier exclusions | reconcile, demote, or annotate these docs so they stop competing with shipped truth | phase completion is not honest until drift is removed | truthful cross-phase and historical story | docs review |
+| Historical / dependent docs | `docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md`, `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` | baseline assumptions and earlier defer/exclude claims | dependent docs are ahead of code and historical docs still preserve earlier exclusions | reconcile, demote, or annotate these docs so they stop competing with shipped truth | phase completion is not honest until drift is removed | truthful cross-phase and historical story | docs review |
 | VS Code parity | `editors/vscode/syntaxes/doctrine.tmLanguage.json`, `editors/vscode/resolver.js`, `editors/vscode/scripts/validate_lark_alignment.py`, `editors/vscode/README.md`, `editors/vscode/tests/integration/suite/index.js` | syntax, navigation, alignment, README, integration tests | editor parity already covers the shipped baseline but not the Phase 3 additive layer | extend syntax, resolver coverage, README examples, and tests only where new Phase 3 surfaces need parity | editor truth is in scope | broader parity on the same language path | `cd editors/vscode && make` |
 
 ## 6.2 Migration notes
@@ -1056,7 +1056,7 @@ Rendered intent:
 | Producer attachments | `doctrine/compiler.py`, `doctrine/parser.py`, `docs/04_*`, `docs/REVIEW_SPEC.md` | attach render policy at producer declarations and lower semantic producers into typed markdown | prevents review/control-plane readbacks from forking later | include |
 | Block-owned symbolic shape | readable table/list compilation and addressability paths | thread `row_schema:` / `item_schema:` through existing keyed descendant logic | prevents later review/preservation code from inventing ad hoc shape metadata | include |
 | Late extension rendering | readable block dispatch + VS Code syntax | make `markdown`, `html`, `footnotes`, `image`, and structured cells explicit block kinds | prevents silent fallback escapes | include |
-| Historical truth cleanup | `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` | rewrite or demote earlier exclusions after implementation lands | prevents live contradictory completion stories | include |
+| Historical truth cleanup | `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11.md`, `docs/archive/second_wave/DOCTRINE_INTEGRATION_SURFACES_FULL_IMPLEMENTATION_2026-04-11.md` | rewrite or demote earlier exclusions after implementation lands | prevents live contradictory completion stories | include |
 | Later product seams | `review_family`, `route_only`, `grounding`, currentness semantics | keep later-phase product semantics out of this implementation wave | prevents scope creep into Phase 4 | exclude |
 <!-- arch_skill:block:call_site_audit:end -->
 

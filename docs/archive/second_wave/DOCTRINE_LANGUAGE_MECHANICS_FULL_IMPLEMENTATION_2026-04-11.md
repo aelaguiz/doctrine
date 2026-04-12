@@ -87,7 +87,7 @@ readable markdown or `structure:` attachments.
 
 Readable markdown, typed `structure:` attachments, their post-53 proof ladder,
 and VS Code parity now ship through
-`docs/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` plus the
+`docs/archive/second_wave/DOCTRINE_READABLE_MARKDOWN_FULL_IMPLEMENTATION_2026-04-11.md` plus the
 evergreen docs in `docs/README.md`, `docs/LANGUAGE_REFERENCE.md`, and
 `docs/AGENT_IO_DESIGN_NOTES.md`.
 6. Bring the VS Code extension to full parity with the shipped language and
@@ -839,7 +839,7 @@ Completed work:
 - Verified real `implement-loop` runtime support and armed
   `.codex/implement-loop-state.json`.
 - Created the canonical worklog at
-  `docs/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11_WORKLOG.md`.
+  `docs/archive/second_wave/DOCTRINE_LANGUAGE_MECHANICS_FULL_IMPLEMENTATION_2026-04-11_WORKLOG.md`.
 - Added top-level `analysis`, `schema`, and `document` parse scaffolding in
   `doctrine/grammars/doctrine.lark`, `doctrine/model.py`, and
   `doctrine/parser.py`, including shared document-block keywords and triple

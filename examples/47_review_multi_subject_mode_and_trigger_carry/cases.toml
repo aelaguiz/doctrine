@@ -322,3 +322,29 @@ message_contains = [
   "Review fields are incomplete",
   "trigger_reason",
 ]
+
+[[cases]]
+name = "review subject_map entries must stay unique"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_SUBJECT_MAP_ENTRY.prompt"
+agent = "MultiSubjectReviewDemo"
+exception_type = "CompileError"
+error_code = "E470"
+message_contains = [
+  "Duplicate review subject_map entry",
+  "ReviewMode.draft_rewrite",
+]
+
+[[cases]]
+name = "review subject_map targets must stay inside the declared subject set"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SUBJECT_MAP_TARGET_OUTSIDE_SUBJECT_SET.prompt"
+agent = "MultiSubjectReviewDemo"
+exception_type = "CompileError"
+error_code = "E470"
+message_contains = [
+  "Review subject_map target must be one of the declared review subjects",
+  "ReviewFacts",
+]
