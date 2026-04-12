@@ -138,13 +138,18 @@ def render_flow_svg(d2_path: Path, svg_path: Path) -> None:
             f"Doctrine D2 helper is missing: `{D2_HELPER_PATH}`."
         )
 
-    result = subprocess.run(
-        ["node", str(D2_HELPER_PATH), str(d2_path), str(svg_path)],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            ["node", str(D2_HELPER_PATH), str(d2_path), str(svg_path)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise FlowRenderDependencyError(
+            "Node.js is required to render flow SVG output, but `node` was not found on PATH."
+        ) from exc
     if result.returncode == 0:
         return
     detail = (result.stderr or result.stdout).strip() or f"node exited {result.returncode}"
