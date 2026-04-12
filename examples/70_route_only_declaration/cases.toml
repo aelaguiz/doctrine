@@ -1,0 +1,90 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "route_only lowers through the shipped route-only workflow-law path"
+status = "active"
+kind = "render_contract"
+agent = "RouteRepairDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep route-only repair explicit when no specialist artifact is current.",
+  "",
+  "## Route Repair",
+  "",
+  "Emit Route Repair Comment.",
+  "",
+  "This pass runs only when RouteFacts.live_job is route_repair and current specialist output is missing.",
+  "",
+  "There is no current artifact for this turn.",
+  "",
+  "Stop: No specialist artifact is current for this turn.",
+  "",
+  "Work in exactly one mode:",
+  "- draft_owner",
+  "- routing_owner",
+  "",
+  "If mode is draft_owner:",
+  "- Route to Draft Author.",
+  "",
+  "If mode is routing_owner:",
+  "- Route to Routing Owner.",
+  "",
+  "Else:",
+  "- Route to Routing Owner.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host-provided route facts that say whether route repair is active, whether the current specialist output is missing, which owner should take the next pass, whether rewrite mode is live, and what the next step is.",
+  "",
+  "## Outputs",
+  "",
+  "### Route Repair Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Must Include",
+  "",
+  "##### Current Route",
+  "",
+  "Say the route-only state now in force.",
+  "",
+  "##### Next Owner",
+  "",
+  "Name the next owner, including DraftAuthor when repair returns to draft work and RoutingOwner when routing keeps the issue local.",
+  "",
+  "##### Next Step",
+  "",
+  "Say the next concrete step now.",
+  "",
+  "#### Rewrite Mode",
+  "",
+  "Rendered only when route facts section status is new or full rewrite.",
+  "",
+  "Say plainly that later metadata must be rewritten instead of inherited.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, and what the next concrete step is.",
+]
+
+[[cases]]
+name = "route_only rejects abstract route targets"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_ABSTRACT_ROUTE_TARGET.prompt"
+agent = "InvalidRouteOnlyTargetDemo"
+exception_type = "CompileError"
+error_code = "E282"
+message_contains = [
+  "Route target must be a concrete agent",
+  "SpecialistOwner",
+]

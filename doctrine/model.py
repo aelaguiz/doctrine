@@ -565,6 +565,79 @@ class WorkflowDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class RouteOnlyGuard:
+    key: str
+    expr: Expr
+
+
+@dataclass(slots=True, frozen=True)
+class RouteOnlyRoute:
+    key: str | None
+    target: NameRef
+
+
+@dataclass(slots=True, frozen=True)
+class RouteOnlyBody:
+    title: str
+    facts_ref: NameRef | None = None
+    when_exprs: tuple[Expr, ...] = ()
+    current_none: bool = False
+    handoff_output_ref: NameRef | None = None
+    guarded: tuple[RouteOnlyGuard, ...] = ()
+    routes: tuple[RouteOnlyRoute, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class RouteOnlyDecl:
+    name: str
+    body: RouteOnlyBody
+
+
+@dataclass(slots=True, frozen=True)
+class GroundingPolicyStartFrom:
+    source: str
+    unless: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class GroundingPolicyForbid:
+    value: str
+
+
+@dataclass(slots=True, frozen=True)
+class GroundingPolicyAllow:
+    value: str
+
+
+@dataclass(slots=True, frozen=True)
+class GroundingPolicyRoute:
+    condition: str
+    target: NameRef
+
+
+GroundingPolicyItem: TypeAlias = (
+    GroundingPolicyStartFrom
+    | GroundingPolicyForbid
+    | GroundingPolicyAllow
+    | GroundingPolicyRoute
+)
+
+
+@dataclass(slots=True, frozen=True)
+class GroundingBody:
+    title: str
+    source_ref: NameRef | None = None
+    target: str | None = None
+    policy_items: tuple[GroundingPolicyItem, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class GroundingDecl:
+    name: str
+    body: GroundingBody
+
+
+@dataclass(slots=True, frozen=True)
 class SkillsDecl:
     name: str
     body: SkillsBody
@@ -821,6 +894,13 @@ class ReviewFieldsConfig:
 
 
 @dataclass(slots=True, frozen=True)
+class ReviewSelectorConfig:
+    field_name: str
+    expr: Expr
+    enum_ref: NameRef
+
+
+@dataclass(slots=True, frozen=True)
 class ContractGateRef:
     key: str
 
@@ -949,7 +1029,7 @@ ReviewOutcomeStmt: TypeAlias = (
 @dataclass(slots=True, frozen=True)
 class ReviewSection:
     key: str
-    title: str
+    title: str | None
     items: tuple[ReviewPreOutcomeStmt, ...]
 
 
@@ -979,12 +1059,31 @@ class ReviewOverrideOutcomeSection:
     items: tuple[ReviewOutcomeStmt, ...]
 
 
+@dataclass(slots=True, frozen=True)
+class ReviewCase:
+    key: str
+    title: str
+    head: ReviewMatchHead
+    subject: ReviewSubjectConfig
+    contract: ReviewContractConfig
+    checks: tuple[ReviewPreOutcomeStmt, ...]
+    on_accept: ReviewOutcomeSection
+    on_reject: ReviewOutcomeSection
+
+
+@dataclass(slots=True, frozen=True)
+class ReviewCasesConfig:
+    cases: tuple[ReviewCase, ...]
+
+
 ReviewItem: TypeAlias = (
     ReviewSubjectConfig
     | ReviewSubjectMapConfig
     | ReviewContractConfig
     | ReviewCommentOutputConfig
     | ReviewFieldsConfig
+    | ReviewSelectorConfig
+    | ReviewCasesConfig
     | ReviewSection
     | ReviewOutcomeSection
     | InheritItem
@@ -1006,6 +1105,7 @@ class ReviewDecl:
     body: ReviewBody
     abstract: bool = False
     parent_ref: NameRef | None = None
+    family: bool = False
 
 
 WorkflowSlotValue: TypeAlias = WorkflowBody | NameRef
@@ -1206,6 +1306,8 @@ Declaration: TypeAlias = (
     | SchemaDecl
     | DocumentDecl
     | WorkflowDecl
+    | RouteOnlyDecl
+    | GroundingDecl
     | ReviewDecl
     | SkillsDecl
     | Agent

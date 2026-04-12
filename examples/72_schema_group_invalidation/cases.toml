@@ -1,0 +1,92 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "schema group invalidation expands to concrete artifacts in authored order"
+status = "active"
+kind = "render_contract"
+agent = "SchemaGroupInvalidationDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Invalidate downstream rebuild groups when structure changes.",
+  "",
+  "## Structure Shift",
+  "",
+  "This pass runs only when structure changed.",
+  "",
+  "Current artifact: Build Plan.",
+  "",
+  "Review Comment is no longer current.",
+  "Manifest File is no longer current.",
+  "",
+  "Stop: Downstream rebuild surface is no longer current.",
+  "",
+  "Route the issue back to RoutingOwner for rebuild.",
+  "",
+  "## Inputs",
+  "",
+  "### Build Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host facts that say whether structure changed and downstream rebuild work is now required.",
+  "",
+  "## Outputs",
+  "",
+  "### Build Plan",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/BUILD_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Rebuild Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Invalidations",
+  "",
+  "Name any artifacts that are no longer current.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Invalidations",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know what is current now and what is no longer current.",
+]
+
+[[cases]]
+name = "schema group invalidation rejects missing group targets"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_SCHEMA_GROUP.prompt"
+agent = "InvalidGroupTargetDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "invalidate target must resolve",
+  "BuildSurfaceSchema.groups.missing_group",
+]
+
+[[cases]]
+name = "schema group invalidation rejects groups that contain the current artifact"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CURRENT_ARTIFACT_IN_GROUP.prompt"
+agent = "InvalidCurrentArtifactInvalidatedGroupDemo"
+exception_type = "CompileError"
+error_code = "E371"
+message_contains = [
+  "Current artifact invalidated in same branch",
+]

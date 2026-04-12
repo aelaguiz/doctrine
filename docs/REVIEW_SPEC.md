@@ -28,14 +28,19 @@ This is the same split workflow law uses for producer turns:
 Doctrine ships:
 
 - top-level `review`
+- top-level `review_family`
 - top-level `abstract review`
 - an agent `review:` slot
 
 Important rules:
 
 - `review` is a first-class declaration, not a workflow naming convention
+- `review_family` is a first-class reusable review scaffold on the same review
+  compiler path
 - a concrete agent may not define both `workflow:` and `review:`
 - an `abstract review` may not be attached directly to a concrete agent
+- a concrete agent may attach a `review_family` directly only when the family
+  is already concrete, such as an exhaustive case-selected family
 - the concrete agent must still emit the review's declared `comment_output`
 
 ## Review Contracts
@@ -112,6 +117,49 @@ review DraftReview: "Draft Review"
         failing_gates: failure_detail.failing_gates
         next_owner: next_owner
 ```
+
+## Review Families And Case Selection
+
+`review_family` is the reusable review surface when multiple reviews share the
+same durable comment contract, handoff-first scaffolds, or exhaustive
+mode-selected cases.
+
+Two shipped patterns are now valid:
+
+- a child `review` inherits a `review_family` and explicitly accounts for the
+  inherited entries it keeps
+- a concrete agent attaches a case-complete `review_family` directly through
+  `review:`
+
+Case-selected review families use one explicit selector plus exhaustive cases:
+
+```prompt
+selector:
+    mode selected_mode = ReviewFacts.selected_mode as ReviewMode
+
+cases:
+    draft_path: "Draft Path"
+        when ReviewMode.draft_rewrite
+        subject: DraftSpec
+        contract: DraftReviewContract
+        checks:
+            accept "The draft review contract passes." when contract.passes
+        on_accept:
+            current artifact DraftSpec via SelectedReviewComment.current_artifact
+            route "Accepted draft rewrite returns to RevisionOwner." -> RevisionOwner
+        on_reject:
+            current artifact DraftSpec via SelectedReviewComment.current_artifact
+            route "Rejected draft rewrite returns to RevisionOwner." -> RevisionOwner
+```
+
+Important rules:
+
+- case selectors must be non-overlapping and exhaustive
+- each case declares exactly one `subject:`, one `contract:`, one `checks:`
+  block, and both outcome sections
+- shared pre-outcome sections still run before each case-local `checks:` block
+- `fields:` may also bind `current_artifact` when reusable output logic needs
+  `fields.current_artifact`
 
 ## Field Bindings
 
@@ -311,7 +359,10 @@ Inherited review surfaces include:
 
 Important rules:
 
-- use `abstract review` for inheritance-only review doctrine
+- use `review_family` for reusable shared review scaffolds that should stay on
+  the ordinary review path
+- use `abstract review` for inheritance-only review doctrine when no dedicated
+  family surface is needed
 - children must account for inherited review surfaces explicitly
 - `override` requires a real inherited target
 - inherited review structure is not implicitly merged by omission
@@ -349,3 +400,6 @@ Read the review examples in this order:
 - `53_review_bound_carrier_roots`: bound review carriers and carried state
 - `57_schema_review_contracts`: schema-backed review contracts with exported
   schema gates
+- `68_review_family_shared_scaffold`: dedicated `review_family` reuse with
+  explicit inherited scaffold accounting
+- `69_case_selected_review_family`: exhaustive case-selected review families

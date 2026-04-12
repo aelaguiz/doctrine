@@ -83,7 +83,7 @@ const REVIEW_CONFIG_REF_RE = new RegExp(
   `^\\s*(subject|contract|comment_output)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const REVIEW_FIELD_BINDING_RE = new RegExp(
-  `^\\s*(verdict|reviewed_artifact|analysis|readback|failing_gates|blocked_gate|next_owner|active_mode|trigger_reason)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(verdict|reviewed_artifact|analysis|readback|current_artifact|failing_gates|blocked_gate|next_owner|active_mode|trigger_reason)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const REVIEW_SUBJECT_MAP_ENTRY_RE = new RegExp(
   `^\\s*(${DOTTED_NAME_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -269,11 +269,33 @@ const DECLARATION_DEFINITIONS = Object.freeze([
   {
     kind: DECLARATION_KIND.REVIEW,
     regex: new RegExp(
+      `^\\s*review_family\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
+    ),
+    nameGroup: 1,
+    parentGroup: 2,
+  },
+  {
+    kind: DECLARATION_KIND.REVIEW,
+    regex: new RegExp(
       `^\\s*(abstract\\s+)?review\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
     ),
     abstractGroup: 1,
     nameGroup: 2,
     parentGroup: 3,
+  },
+  {
+    kind: DECLARATION_KIND.WORKFLOW,
+    regex: new RegExp(
+      `^\\s*route_only\\s+(${IDENTIFIER_PATTERN})\\s*:`,
+    ),
+    nameGroup: 1,
+  },
+  {
+    kind: DECLARATION_KIND.WORKFLOW,
+    regex: new RegExp(
+      `^\\s*grounding\\s+(${IDENTIFIER_PATTERN})\\s*:`,
+    ),
+    nameGroup: 1,
   },
   {
     kind: DECLARATION_KIND.WORKFLOW,

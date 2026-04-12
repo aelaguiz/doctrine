@@ -36,7 +36,7 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `67`: second-wave integration surfaces for `analysis`,
+- `54` through `72`: second-wave integration surfaces for `analysis`,
   owner-aware `schema:` / `structure:` attachments, readable markdown
   documents and descendants, schema artifact inventories and reusable groups,
   shared readable block reuse, multiline code blocks, schema-backed review
@@ -44,7 +44,9 @@ Each numbered example may contain:
   members, authored render profiles, compact `properties`, typed row/item
   schemas, semantic render-profile lowering targets, and late extension
   readable blocks such as raw `markdown`, `html`, `footnotes`, `image`, and
-  structured nested table cells
+  structured nested table cells, plus `review_family`, case-selected review
+  families, dedicated `route_only`, dedicated `grounding`, and schema-group
+  invalidation
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -121,6 +123,11 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `65_row_and_item_schemas` | Typed `item_schema:` / `row_schema:` descendants on readable list and table blocks. |
 | `66_late_extension_blocks` | Explicit raw `markdown` / `html`, `footnotes`, `image`, and structured nested table cells. |
 | `67_semantic_profile_lowering` | Semantic render-profile lowering for `analysis.stages`, `review.contract_checks`, and `control.invalidations`, plus document-attached profile inheritance through `output structure:`. |
+| `68_review_family_shared_scaffold` | Dedicated `review_family` reuse with explicit inherited scaffold accounting. |
+| `69_case_selected_review_family` | Case-selected `review_family` with exhaustive enum-backed cases. |
+| `70_route_only_declaration` | Dedicated `route_only` lowered through the shipped route-only workflow-law path. |
+| `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy and ordinary routing. |
+| `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
 
 ## Useful Commands
 

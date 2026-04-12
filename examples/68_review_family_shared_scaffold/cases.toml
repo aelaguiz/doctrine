@@ -1,0 +1,101 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "review_family shares reusable review scaffolds without hiding child ownership"
+status = "active"
+kind = "render_contract"
+agent = "SharedReviewFamilyDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep reusable review scaffolds explicit and accounted for.",
+  "",
+  "## Shared Draft Review",
+  "",
+  "Review subject: Draft Spec.",
+  "Shared review contract: Shared Draft Review Contract.",
+  "",
+  "### Handoff First",
+  "",
+  "Reject: Producer handoff is incomplete.",
+  "",
+  "### Contract Checks",
+  "",
+  "Accept only if The shared draft review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Accepted draft returns to ReviewLead.",
+  "",
+  "### If Rejected",
+  "",
+  "There is no current artifact for this outcome.",
+  "",
+  "Rejected draft returns to DraftAuthor.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Spec",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/DRAFT_SPEC.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "Use the current draft specification as the reviewed artifact.",
+  "",
+  "## Outputs",
+  "",
+  "### Shared Review Family Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Verdict",
+  "",
+  "Say whether the review accepted the draft or requested changes.",
+  "",
+  "#### Reviewed Artifact",
+  "",
+  "Name the reviewed artifact this review judged.",
+  "",
+  "#### Analysis Performed",
+  "",
+  "Summarize the review analysis that led to the verdict.",
+  "",
+  "#### Output Contents That Matter",
+  "",
+  "Summarize the parts of the draft the next owner must read first.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name the failing review gates in authored order.",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.",
+]
+
+[[cases]]
+name = "missing review_family fails loudly when a child review inherits it"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKNOWN_REVIEW_FAMILY.prompt"
+agent = "InvalidUnknownReviewFamilyDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "Missing local review declaration",
+  "MissingReviewFamily",
+]

@@ -306,10 +306,12 @@ These are the rules the proposal set treats as non-negotiable:
 - `analysis` is for process structure, not control flow
 - `schema` is for artifact structure, not runtime routing
 - do not add lesson-specific or domain-specific core primitives
-- do not add a separate `review_family` language when abstract review already
-  exists
-- do not add `route_only` as a new declaration kind when workflow law already
-  covers it
+- `review_family` now ships as additive reusable review doctrine on the same
+  review agreement path as `review`
+- `route_only` now ships as a dedicated declaration that lowers through the
+  existing workflow-law route-only semantics
+- `grounding` now ships as an explicit control-plane protocol declaration on
+  ordinary workflow and output surfaces
 - do not add conditional schema sections in v1; use inheritance
 - do not let outputs own both local `must_include` and `schema:` in the first
   release

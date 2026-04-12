@@ -25,8 +25,8 @@ A prompt file may contain imports and any mix of shipped declarations:
 
 - `render_profile`, `analysis`, `schema`, `document`
 - `agent`, `abstract agent`
-- `workflow`
-- `review`, `abstract review`
+- `workflow`, `route_only`, `grounding`
+- `review`, `review_family`, `abstract review`
 - `skill`, `skills`
 - `input`, `inputs`, `input source`
 - `output`, `outputs`, `output target`, `output shape`, `json schema`
@@ -73,6 +73,10 @@ Important rules:
 - `override <slot_key>:` replaces an inherited authored slot in place.
 - A concrete agent may not define both `workflow:` and `review:`. Review turns
   use `review:` as their main semantic body.
+- `workflow:` may point at a named `workflow`, `route_only`, or `grounding`
+  declaration.
+- `review:` may point at a concrete `review` or a case-complete
+  `review_family`.
 - `analysis:` attaches one reusable `analysis` declaration to an otherwise
   ordinary concrete turn.
 
@@ -126,6 +130,65 @@ Inherited workflows use explicit ordered patching:
 
 Children must account for every inherited keyed item exactly once. Doctrine
 does not do implicit merge by omission.
+
+## Review Families And Control-Plane Declarations
+
+Doctrine now ships dedicated control-plane declarations instead of forcing
+every reusable review or routing shape through raw workflow or review patching.
+
+### Review Families
+
+`review_family` is a reusable review scaffold on the same compiler path as
+`review`.
+
+Important rules:
+
+- `review_family` may own `comment_output`, `fields`, shared pre-outcome
+  sections, `selector`, and exhaustive `cases`.
+- Child `review` declarations still own `subject:`, `contract:`, and outcome
+  sections unless the family is already case-complete.
+- A concrete agent may attach a `review_family` directly only when the family
+  already resolves to a concrete review shape, such as a case-selected family
+  with exhaustive cases.
+- `review_family` is additive reuse. It does not replace ordinary `review` or
+  `abstract review`.
+
+### Route-Only
+
+`route_only` declares routing-only turns with:
+
+- `facts:`
+- `when:`
+- `current none`
+- `handoff_output:`
+- `guarded:`
+- `routes:`
+
+Important rules:
+
+- `route_only` lowers through the same workflow-law `current none`, route, and
+  standalone-read validation path the earlier route-only ladder already used.
+- The dedicated declaration does not create a second route engine.
+- Guarded route-only keys must line up with guarded top-level output sections
+  on the declared `handoff_output`.
+
+### Grounding
+
+`grounding` declares an explicit grounding protocol with:
+
+- `source:`
+- `target:`
+- `policy:`
+
+The shipped policy items are `start_from`, `forbid`, `allow`, and `if ... ->
+route ...`.
+
+Important rules:
+
+- `grounding` lowers through ordinary workflow-style readable output, not a
+  hidden receipt or packet channel.
+- Grounding routes still target ordinary concrete agents.
+- `grounding` owns protocol shape, not domain truth.
 
 ## Analysis, Schemas, And Documents
 

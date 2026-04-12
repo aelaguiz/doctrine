@@ -18,7 +18,10 @@ prompt_file: _NL* declaration+ _NL*
             | schema_decl
             | document_decl
             | workflow_decl
+            | route_only_decl
+            | grounding_decl
             | abstract_review_decl
+            | review_family_decl
             | review_decl
             | skills_decl
             | inputs_decl
@@ -43,7 +46,10 @@ analysis_decl: "analysis" CNAME inheritance? ":" string _NL _INDENT analysis_bod
 schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DEDENT
 document_decl: "document" CNAME inheritance? ":" string _NL _INDENT document_body _DEDENT
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
+route_only_decl: "route_only" CNAME ":" string _NL _INDENT route_only_body _DEDENT
+grounding_decl: "grounding" CNAME ":" string _NL _INDENT grounding_body _DEDENT
 abstract_review_decl: "abstract" "review" CNAME inheritance? ":" string _NL _INDENT review_body _DEDENT
+review_family_decl: "review_family" CNAME inheritance? ":" string _NL _INDENT review_body _DEDENT
 review_decl: "review" CNAME inheritance? ":" string _NL _INDENT review_body _DEDENT
 skills_decl: "skills" CNAME inheritance? ":" string _NL _INDENT skills_body _DEDENT
 inputs_decl: "inputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
@@ -106,10 +112,13 @@ slot_body: _INDENT workflow_body _DEDENT
 review_body: review_item+
 ?review_item: review_config
             | pre_outcome_review_section
+            | pre_outcome_review_section_untitled
             | on_accept_review_section_titled
             | on_accept_review_section_untitled
             | on_reject_review_section_titled
             | on_reject_review_section_untitled
+            | selector_block
+            | review_cases_block
             | review_inherit
             | review_override_fields
             | review_override_pre_outcome_section_titled
@@ -144,6 +153,7 @@ semantic_field_name: "verdict"            -> review_semantic_field_verdict
                    | "reviewed_artifact"  -> review_semantic_field_reviewed_artifact
                    | "analysis"           -> review_semantic_field_analysis
                    | "readback"           -> review_semantic_field_readback
+                   | "current_artifact"   -> review_semantic_field_current_artifact
                    | "failing_gates"      -> review_semantic_field_failing_gates
                    | "blocked_gate"       -> review_semantic_field_blocked_gate
                    | "next_owner"         -> review_semantic_field_next_owner
@@ -151,10 +161,22 @@ semantic_field_name: "verdict"            -> review_semantic_field_verdict
                    | "trigger_reason"     -> review_semantic_field_trigger_reason
 
 pre_outcome_review_section: CNAME ":" string _NL _INDENT pre_outcome_review_stmt+ _DEDENT
+pre_outcome_review_section_untitled: CNAME ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 on_accept_review_section_titled: "on_accept" ":" string _NL _INDENT outcome_review_stmt+ _DEDENT
 on_accept_review_section_untitled: "on_accept" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
 on_reject_review_section_titled: "on_reject" ":" string _NL _INDENT outcome_review_stmt+ _DEDENT
 on_reject_review_section_untitled: "on_reject" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
+selector_block: "selector" ":" _NL _INDENT review_selector_stmt+ _DEDENT
+review_selector_stmt: "mode" CNAME "=" expr "as" name_ref _NL
+review_cases_block: "cases" ":" _NL _INDENT review_case_decl+ _DEDENT
+review_case_decl: CNAME ":" string _NL _INDENT review_case_body _DEDENT
+review_case_body: review_case_when_stmt review_case_subject_stmt review_case_contract_stmt review_case_checks review_case_on_accept review_case_on_reject
+review_case_when_stmt: "when" union_expr _NL
+review_case_subject_stmt: "subject" ":" artifact_subject_expr _NL
+review_case_contract_stmt: "contract" ":" review_contract_ref _NL
+review_case_checks: "checks" ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
+review_case_on_accept: "on_accept" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
+review_case_on_reject: "on_reject" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
 review_inherit: "inherit" review_item_key _NL?
 review_override_fields: "override" "fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
 review_override_pre_outcome_section_titled: "override" CNAME ":" string _NL _INDENT pre_outcome_review_stmt+ _DEDENT
@@ -218,6 +240,37 @@ union_expr: expr ("|" expr)*
 
 outcome_route_stmt: "route" string "->" name_ref outcome_when_clause? _NL
 outcome_when_clause: "when" expr
+
+route_only_body: route_only_item+
+?route_only_item: route_only_facts_stmt
+                | route_only_when_block
+                | route_only_current_none_stmt
+                | route_only_handoff_output_stmt
+                | route_only_guarded_block
+                | route_only_routes_block
+route_only_facts_stmt: "facts" ":" name_ref _NL
+route_only_when_block: "when" ":" _NL _INDENT route_only_when_expr+ _DEDENT
+route_only_when_expr: expr _NL
+route_only_current_none_stmt: "current" "none" _NL
+route_only_handoff_output_stmt: "handoff_output" ":" output_ref _NL
+route_only_guarded_block: "guarded" ":" _NL _INDENT route_only_guarded_entry+ _DEDENT
+route_only_guarded_entry: CNAME "when" expr _NL
+route_only_routes_block: "routes" ":" _NL _INDENT route_only_route_entry+ _DEDENT
+route_only_route_entry: CNAME "->" name_ref _NL
+                     | "else" "->" name_ref _NL
+
+grounding_body: grounding_item+
+?grounding_item: grounding_source_stmt
+               | grounding_target_stmt
+               | grounding_policy_block
+grounding_source_stmt: "source" ":" name_ref _NL
+grounding_target_stmt: "target" ":" CNAME _NL
+grounding_policy_block: "policy" ":" _NL _INDENT grounding_policy_item+ _DEDENT
+grounding_policy_item: "start_from" CNAME grounding_unless_clause? _NL -> grounding_policy_start_from
+                     | "forbid" CNAME _NL -> grounding_policy_forbid
+                     | "allow" CNAME _NL -> grounding_policy_allow
+                     | "if" CNAME "->" "route" name_ref _NL -> grounding_policy_route
+grounding_unless_clause: "unless" CNAME
 
 analysis_body: analysis_body_line+
 analysis_body_line: analysis_render_profile_stmt
