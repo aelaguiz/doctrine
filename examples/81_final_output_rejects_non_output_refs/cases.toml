@@ -1,0 +1,15 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "final_output rejects refs that are not outputs"
+status = "active"
+kind = "compile_fail"
+agent = "InvalidSchemaFinalOutputAgent"
+exception_type = "CompileError"
+error_code = "E211"
+message_contains = [
+  "Final output must point at output declaration",
+  "ReleaseSchema",
+  "schema declaration",
+]

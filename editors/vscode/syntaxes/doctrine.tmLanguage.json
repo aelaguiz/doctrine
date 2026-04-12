@@ -160,6 +160,9 @@
       "include": "#reviewField"
     },
     {
+      "include": "#finalOutputField"
+    },
+    {
       "include": "#ioPatchField"
     },
     {
@@ -1176,6 +1179,20 @@
     },
     "reviewField": {
       "match": "^(\\s*)(review)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
+    "finalOutputField": {
+      "match": "^(\\s*)(final_output)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
       "captures": {
         "2": {
           "name": "keyword.other.field.doctrine"

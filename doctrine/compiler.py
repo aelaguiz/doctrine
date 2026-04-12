@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import threading
@@ -173,9 +174,28 @@ class CompiledRuleBlock:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledFinalOutputSpec:
+    output_key: "OutputDeclKey"
+    output_name: str
+    output_title: str
+    target_title: str
+    shape_name: str | None
+    shape_title: str | None
+    requirement: str | None
+    format_mode: str
+    schema_name: str | None = None
+    schema_title: str | None = None
+    schema_profile: str | None = None
+    schema_file: str | None = None
+    example_file: str | None = None
+    section: CompiledSection | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
+    final_output: CompiledFinalOutputSpec | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -586,6 +606,20 @@ class AgentContract:
 
 
 @dataclass(slots=True, frozen=True)
+class FinalOutputJsonShapeSummary:
+    shape_unit: IndexedUnit
+    shape_decl: model.OutputShapeDecl
+    schema_unit: IndexedUnit
+    schema_decl: model.JsonSchemaDecl
+    schema_profile: str | None
+    schema_file: str | None
+    example_file: str | None
+    payload_rows: tuple[tuple[str, str, str], ...]
+    example_text: str | None
+    extra_items: tuple[model.AnyRecordItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class LawBranch:
     activation_exprs: tuple[model.Expr, ...] = ()
     mode_bindings: tuple[model.ModeStmt, ...] = ()
@@ -815,7 +849,15 @@ _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 # authored workflow slot, with one legacy carve-out: the old `workflow` field
 # still preserves 01-06 body inheritance semantics instead of switching to a
 # second slot-patching dialect.
-_RESERVED_AGENT_FIELD_KEYS = {"role", "inputs", "outputs", "analysis", "skills", "review"}
+_RESERVED_AGENT_FIELD_KEYS = {
+    "role",
+    "inputs",
+    "outputs",
+    "analysis",
+    "skills",
+    "review",
+    "final_output",
+}
 
 _BUILTIN_INPUT_SOURCES = {
     "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
@@ -1083,13 +1125,15 @@ class CompilationSession:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
-    ) -> CompiledField:
+        final_output: CompiledFinalOutputSpec | None,
+    ) -> CompiledField | None:
         return CompilationContext(self)._compile_agent_field(
             spec,
             agent_name=agent_name,
             unit=unit,
             agent_contract=agent_contract,
             review_output_contexts=review_output_contexts,
+            final_output=final_output,
         )
 
     def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
@@ -1442,6 +1486,7 @@ class CompilationContext:
                 tuple[str, ...],
                 str,
                 frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+                frozenset[OutputDeclKey],
             ]
         ] = []
         self._agent_slot_resolution_stack: list[tuple[tuple[str, ...], str]] = []
@@ -1463,6 +1508,7 @@ class CompilationContext:
                 tuple[str, ...],
                 str,
                 frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+                frozenset[OutputDeclKey],
             ],
             ResolvedIoBody,
         ] = {}
@@ -2323,9 +2369,16 @@ class CompilationContext:
         review_fields = [
             field for field in agent.fields if isinstance(field, model.ReviewField)
         ]
+        final_output_fields = [
+            field for field in agent.fields if isinstance(field, model.FinalOutputField)
+        ]
         if has_workflow_slot and review_fields:
             raise CompileError(
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
+            )
+        if review_fields and final_output_fields:
+            raise CompileError(
+                f"E214 final_output is not supported on review-driven agents in v1: {agent.name}"
             )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
         field_specs: list[AgentFieldCompileSpec] = []
@@ -2373,14 +2426,25 @@ class CompilationContext:
         if not seen_role:
             raise CompileError(f"Concrete agent is missing role field: {agent.name}")
 
+        final_output = (
+            self._compile_final_output_spec(
+                agent_name=agent.name,
+                field=final_output_fields[0],
+                unit=unit,
+                agent_contract=agent_contract,
+            )
+            if final_output_fields
+            else None
+        )
         compiled_fields = self._compile_agent_fields(
             field_specs,
             agent_name=agent.name,
             unit=unit,
             agent_contract=agent_contract,
             review_output_contexts=review_output_contexts,
+            final_output=final_output,
         )
-        return CompiledAgent(name=agent.name, fields=compiled_fields)
+        return CompiledAgent(name=agent.name, fields=compiled_fields, final_output=final_output)
 
     def _compile_agent_fields(
         self,
@@ -2390,18 +2454,21 @@ class CompilationContext:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        final_output: CompiledFinalOutputSpec | None,
     ) -> tuple[CompiledField, ...]:
         if len(specs) <= 1:
-            return tuple(
+            compiled = [
                 self._compile_agent_field(
                     spec,
                     agent_name=agent_name,
                     unit=unit,
                     agent_contract=agent_contract,
                     review_output_contexts=review_output_contexts,
+                    final_output=final_output,
                 )
                 for spec in specs
-            )
+            ]
+            return tuple(field for field in compiled if field is not None)
 
         with ThreadPoolExecutor(max_workers=_default_worker_count(len(specs))) as executor:
             futures = [
@@ -2412,10 +2479,15 @@ class CompilationContext:
                     unit=unit,
                     agent_contract=agent_contract,
                     review_output_contexts=review_output_contexts,
+                    final_output=final_output,
                 )
                 for spec in specs
             ]
-            return tuple(future.result() for future in futures)
+            return tuple(
+                field
+                for future in futures
+                if (field := future.result()) is not None
+            )
 
     def _compile_agent_field(
         self,
@@ -2425,7 +2497,8 @@ class CompilationContext:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
-    ) -> CompiledField:
+        final_output: CompiledFinalOutputSpec | None,
+    ) -> CompiledField | None:
         field = spec.field
 
         if isinstance(field, model.RoleScalar):
@@ -2486,6 +2559,9 @@ class CompilationContext:
                 unit=unit,
                 owner_label=f"agent {agent_name}",
                 review_output_contexts=review_output_contexts,
+                excluded_output_keys=(
+                    frozenset({final_output.output_key}) if final_output is not None else frozenset()
+                ),
             )
         if isinstance(field, model.AnalysisField):
             analysis_unit, analysis_decl = self._resolve_analysis_ref(field.value, unit=unit)
@@ -2508,10 +2584,525 @@ class CompilationContext:
                 agent_contract=agent_contract,
                 owner_label=f"agent {agent_name} review",
             )
+        if isinstance(field, model.FinalOutputField):
+            if final_output is None or final_output.section is None:
+                raise CompileError(
+                    f"Internal compiler error: missing compiled final_output in agent {agent_name}"
+                )
+            return final_output.section
 
         raise CompileError(
             f"Unsupported agent field in {agent_name}: {type(field).__name__}"
         )
+
+    def _compile_final_output_spec(
+        self,
+        *,
+        agent_name: str,
+        field: model.FinalOutputField,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+    ) -> CompiledFinalOutputSpec:
+        owner_label = f"agent {agent_name} final_output"
+        output_unit, output_decl = self._resolve_final_output_decl(
+            field.value,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        output_key = (output_unit.module_parts, output_decl.name)
+        if output_key not in agent_contract.outputs:
+            raise CompileError(
+                "E212 final_output output is not emitted by the concrete turn in "
+                f"agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            )
+
+        scalar_items, section_items, extras = self._split_record_items(
+            output_decl.items,
+            scalar_keys={"target", "shape", "requirement"},
+            section_keys={"files"},
+            owner_label=f"output {output_decl.name}",
+        )
+        target_item = scalar_items.get("target")
+        shape_item = scalar_items.get("shape")
+        requirement_item = scalar_items.get("requirement")
+        files_section = section_items.get("files")
+
+        if (
+            files_section is not None
+            or target_item is None
+            or shape_item is None
+            or not isinstance(target_item.value, model.NameRef)
+            or not self._is_builtin_turn_response_target_ref(target_item.value)
+        ):
+            raise CompileError(
+                "E213 final_output must designate one TurnResponse output, not files or another "
+                f"target, in agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            )
+
+        requirement = (
+            self._display_symbol_value(
+                requirement_item.value,
+                unit=output_unit,
+                owner_label=f"output {output_decl.name}",
+                surface_label="output fields",
+            )
+            if requirement_item is not None
+            else None
+        )
+        shape_name = self._final_output_shape_name(shape_item.value)
+        shape_title = self._display_output_shape(
+            shape_item.value,
+            unit=output_unit,
+            owner_label=output_decl.name,
+            surface_label="output fields",
+        )
+        json_summary = self._resolve_final_output_json_shape_summary(
+            shape_item.value,
+            unit=output_unit,
+        )
+        section = self._compile_final_output_section(
+            output_decl,
+            unit=output_unit,
+            requirement=requirement,
+            shape_title=shape_title,
+            json_summary=json_summary,
+            extras=extras,
+        )
+        return CompiledFinalOutputSpec(
+            output_key=output_key,
+            output_name=output_decl.name,
+            output_title=output_decl.title,
+            target_title="Turn Response",
+            shape_name=shape_name,
+            shape_title=shape_title,
+            requirement=requirement,
+            format_mode="json_schema" if json_summary is not None else "prose",
+            schema_name=json_summary.schema_decl.name if json_summary is not None else None,
+            schema_title=json_summary.schema_decl.title if json_summary is not None else None,
+            schema_profile=json_summary.schema_profile if json_summary is not None else None,
+            schema_file=json_summary.schema_file if json_summary is not None else None,
+            example_file=json_summary.example_file if json_summary is not None else None,
+            section=section,
+        )
+
+    def _resolve_final_output_decl(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[IndexedUnit, model.OutputDecl]:
+        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        local_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+        if local_decl is not None:
+            return target_unit, local_decl
+
+        other_kind = self._named_non_output_decl_kind(ref.declaration_name, unit=target_unit)
+        if other_kind is not None:
+            raise CompileError(
+                "E211 final_output must point at an output declaration in "
+                f"{owner_label}: {_dotted_ref_name(ref)} resolves to {other_kind}"
+            )
+        return self._resolve_output_decl(ref, unit=unit)
+
+    def _named_non_output_decl_kind(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        registry_order = (
+            ("render_profile declaration", unit.render_profiles_by_name),
+            ("analysis declaration", unit.analyses_by_name),
+            ("decision declaration", unit.decisions_by_name),
+            ("schema declaration", unit.schemas_by_name),
+            ("document declaration", unit.documents_by_name),
+            ("workflow declaration", unit.workflows_by_name),
+            ("route_only declaration", unit.route_onlys_by_name),
+            ("grounding declaration", unit.groundings_by_name),
+            ("review declaration", unit.reviews_by_name),
+            ("skills declaration", unit.skills_blocks_by_name),
+            ("inputs block", unit.inputs_blocks_by_name),
+            ("input declaration", unit.inputs_by_name),
+            ("input source declaration", unit.input_sources_by_name),
+            ("outputs block", unit.outputs_blocks_by_name),
+            ("output target declaration", unit.output_targets_by_name),
+            ("output shape declaration", unit.output_shapes_by_name),
+            ("json schema declaration", unit.json_schemas_by_name),
+            ("skill declaration", unit.skills_by_name),
+            ("agent declaration", unit.agents_by_name),
+            ("enum declaration", unit.enums_by_name),
+        )
+        for label, registry in registry_order:
+            if declaration_name in registry:
+                return label
+        return None
+
+    def _is_builtin_turn_response_target_ref(self, ref: model.NameRef) -> bool:
+        return not ref.module_parts and ref.declaration_name == "TurnResponse"
+
+    def _final_output_shape_name(self, value: model.RecordScalarValue) -> str | None:
+        if isinstance(value, model.AddressableRef):
+            return None
+        if isinstance(value, str):
+            return value
+        return value.declaration_name
+
+    def _resolve_final_output_json_shape_summary(
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+    ) -> FinalOutputJsonShapeSummary | None:
+        if isinstance(value, (str, model.AddressableRef)):
+            return None
+        if not self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
+            return None
+
+        shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+        shape_scalars, _shape_sections, shape_extras = self._split_record_items(
+            shape_decl.items,
+            scalar_keys={"kind", "schema", "example_file"},
+            owner_label=f"output shape {shape_decl.name}",
+        )
+        schema_item = shape_scalars.get("schema")
+        if schema_item is None or not isinstance(schema_item.value, model.NameRef):
+            return None
+
+        schema_unit, schema_decl = self._resolve_json_schema_ref(schema_item.value, unit=shape_unit)
+        schema_scalars, _schema_sections, _schema_extras = self._split_record_items(
+            schema_decl.items,
+            scalar_keys={"profile", "file"},
+            owner_label=f"json schema {schema_decl.name}",
+        )
+        profile_item = schema_scalars.get("profile")
+        schema_file_item = schema_scalars.get("file")
+        example_file_item = shape_scalars.get("example_file")
+        if profile_item is None:
+            schema_profile = None
+        elif isinstance(profile_item.value, model.NameRef) and not profile_item.value.module_parts:
+            schema_profile = profile_item.value.declaration_name
+        else:
+            schema_profile = self._display_symbol_value(
+                profile_item.value,
+                unit=schema_unit,
+                owner_label=f"json schema {schema_decl.name}",
+                surface_label="json schema fields",
+            )
+        if schema_file_item is None:
+            schema_file = None
+        elif isinstance(schema_file_item.value, str):
+            schema_file = schema_file_item.value
+        else:
+            schema_file = self._display_symbol_value(
+                schema_file_item.value,
+                unit=schema_unit,
+                owner_label=f"json schema {schema_decl.name}",
+                surface_label="json schema fields",
+            )
+        example_file = (
+            example_file_item.value
+            if example_file_item is not None and isinstance(example_file_item.value, str)
+            else None
+        )
+        payload_rows = self._load_json_schema_payload_rows(
+            schema_unit=schema_unit,
+            schema_file=schema_file,
+        )
+        example_text = self._read_declared_support_text(shape_unit, example_file)
+        return FinalOutputJsonShapeSummary(
+            shape_unit=shape_unit,
+            shape_decl=shape_decl,
+            schema_unit=schema_unit,
+            schema_decl=schema_decl,
+            schema_profile=schema_profile,
+            schema_file=schema_file,
+            example_file=example_file,
+            payload_rows=payload_rows,
+            example_text=example_text,
+            extra_items=shape_extras,
+        )
+
+    def _compile_final_output_section(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        requirement: str | None,
+        shape_title: str,
+        json_summary: FinalOutputJsonShapeSummary | None,
+        extras: tuple[model.AnyRecordItem, ...],
+    ) -> CompiledSection:
+        format_label = self._final_output_format_label(output_decl, unit=unit, json_summary=json_summary)
+        metadata_rows = [
+            ("Message kind", "Final assistant message"),
+            ("Format", format_label),
+            ("Shape", shape_title),
+        ]
+        if json_summary is not None:
+            metadata_rows.append(("Schema", json_summary.schema_decl.title))
+            if json_summary.schema_profile is not None:
+                metadata_rows.append(("Profile", json_summary.schema_profile))
+            if json_summary.schema_file is not None:
+                metadata_rows.append(("Schema file", f"`{json_summary.schema_file}`"))
+            if json_summary.example_file is not None:
+                metadata_rows.append(("Example file", f"`{json_summary.example_file}`"))
+        if requirement is not None:
+            metadata_rows.append(("Requirement", requirement))
+
+        body: list[CompiledBodyItem] = [
+            "> **Final answer contract**",
+            "> "
+            + (
+                "End the turn with one schema-backed final assistant message."
+                if json_summary is not None
+                else "End the turn with one final assistant message that satisfies this contract."
+            ),
+            "",
+            *self._pipe_table_lines(("Contract", "Value"), tuple(metadata_rows)),
+        ]
+
+        if json_summary is not None and json_summary.payload_rows:
+            body.extend(
+                [
+                    "",
+                    CompiledSection(
+                        title="Payload Shape",
+                        body=tuple(
+                            self._pipe_table_lines(
+                                ("Field", "Type", "Meaning"),
+                                json_summary.payload_rows,
+                            )
+                        ),
+                    ),
+                ]
+            )
+
+        if json_summary is not None and json_summary.example_text is not None:
+            body.extend(
+                [
+                    "",
+                    CompiledSection(
+                        title="Example Shape",
+                        body=(
+                            f"```json",
+                            *json_summary.example_text.rstrip("\n").splitlines(),
+                            "```",
+                        ),
+                    ),
+                ]
+            )
+
+        if output_decl.schema_ref is not None:
+            schema_unit, schema_decl = self._resolve_schema_ref(output_decl.schema_ref, unit=unit)
+            resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
+            if not resolved_schema.sections:
+                raise CompileError(
+                    f"Output-attached schema must export at least one section in output {output_decl.name}: {schema_decl.name}"
+                )
+            body.extend(
+                [
+                    "",
+                    CompiledSection(
+                        title=f"Schema: {schema_decl.title}",
+                        body=(self._compile_schema_sections_block(resolved_schema),),
+                    ),
+                ]
+            )
+
+        if output_decl.structure_ref is not None:
+            document_unit, document_decl = self._resolve_document_ref(output_decl.structure_ref, unit=unit)
+            resolved_document = self._resolve_document_decl(document_decl, unit=document_unit)
+            body.extend(
+                [
+                    "",
+                    CompiledSection(
+                        title=f"Structure: {document_decl.title}",
+                        body=self._compile_document_body(
+                            resolved_document,
+                            unit=document_unit,
+                        ),
+                    ),
+                ]
+            )
+
+        if json_summary is not None:
+            body.extend(
+                self._compile_final_output_support_items(
+                    json_summary.extra_items,
+                    unit=json_summary.shape_unit,
+                    owner_label=f"output shape {json_summary.shape_decl.name}",
+                    surface_label="final_output shape support",
+                )
+            )
+        body.extend(
+            self._compile_final_output_support_items(
+                extras,
+                unit=unit,
+                owner_label=f"output {output_decl.name}",
+                surface_label="final_output support",
+            )
+        )
+
+        return CompiledSection(
+            title="Final Output",
+            body=(
+                CompiledSection(
+                    title=output_decl.title,
+                    body=tuple(body),
+                ),
+            ),
+        )
+
+    def _compile_final_output_support_items(
+        self,
+        items: tuple[model.AnyRecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> list[CompiledBodyItem]:
+        compiled: list[CompiledBodyItem] = []
+        for item in items:
+            rendered_items = list(
+                self._compile_record_item(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                )
+            )
+            if isinstance(item, model.RecordSection) and item.key == "standalone_read":
+                rendered_items = [
+                    replace(rendered, title="Read It Cold")
+                    if isinstance(rendered, CompiledSection)
+                    else rendered
+                    for rendered in rendered_items
+                ]
+            if compiled:
+                compiled.append("")
+            compiled.extend(rendered_items)
+        return compiled
+
+    def _final_output_format_label(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        json_summary: FinalOutputJsonShapeSummary | None,
+    ) -> str:
+        if json_summary is not None:
+            return "Structured JSON"
+        shape_ref = next(
+            (
+                item.value
+                for item in output_decl.items
+                if isinstance(item, model.RecordScalar) and item.key == "shape" and item.body is None
+            ),
+            None,
+        )
+        if shape_ref is not None and (
+            self._is_markdown_shape_value(shape_ref, unit=unit)
+            or self._is_comment_shape_value(shape_ref, unit=unit)
+        ):
+            return "Natural-language markdown"
+        return "Natural-language text"
+
+    def _pipe_table_lines(
+        self,
+        headers: tuple[str, ...],
+        rows: tuple[tuple[str, ...], ...],
+    ) -> tuple[str, ...]:
+        escaped_headers = tuple(header.replace("|", "\\|") for header in headers)
+        lines = [
+            "| " + " | ".join(escaped_headers) + " |",
+            "| " + " | ".join(["---"] * len(headers)) + " |",
+        ]
+        for row in rows:
+            lines.append("| " + " | ".join(cell.replace("|", "\\|") for cell in row) + " |")
+        return tuple(lines)
+
+    def _load_json_schema_payload_rows(
+        self,
+        *,
+        schema_unit: IndexedUnit,
+        schema_file: str | None,
+    ) -> tuple[tuple[str, str, str], ...]:
+        if schema_file is None:
+            return ()
+        payload = self._read_declared_support_text(schema_unit, schema_file)
+        if payload is None:
+            return ()
+        try:
+            schema_data = json.loads(payload)
+        except json.JSONDecodeError:
+            return ()
+        if not isinstance(schema_data, dict):
+            return ()
+        properties = schema_data.get("properties")
+        if not isinstance(properties, dict):
+            return ()
+        rows: list[tuple[str, str, str]] = []
+        for field_name, field_schema in properties.items():
+            if not isinstance(field_schema, dict):
+                continue
+            rows.append(
+                (
+                    f"`{field_name}`",
+                    self._json_schema_type_label(field_schema),
+                    self._json_schema_meaning(field_schema),
+                )
+            )
+        return tuple(rows)
+
+    def _json_schema_type_label(self, field_schema: dict[str, object]) -> str:
+        schema_type = field_schema.get("type")
+        if isinstance(schema_type, list):
+            labels = []
+            for item in schema_type:
+                if item == "array":
+                    labels.append(self._json_schema_array_type_label(field_schema))
+                    continue
+                labels.append("null" if item == "null" else str(item))
+            return " | ".join(labels)
+        if isinstance(schema_type, str):
+            if schema_type == "array":
+                return self._json_schema_array_type_label(field_schema)
+            return schema_type
+        if "enum" in field_schema and isinstance(field_schema["enum"], list):
+            return "enum"
+        return "value"
+
+    def _json_schema_array_type_label(self, field_schema: dict[str, object]) -> str:
+        items = field_schema.get("items")
+        if isinstance(items, dict):
+            item_type = items.get("type")
+            if isinstance(item_type, str):
+                return f"array<{item_type}>"
+        return "array"
+
+    def _json_schema_meaning(self, field_schema: dict[str, object]) -> str:
+        description = field_schema.get("description")
+        if isinstance(description, str) and description.strip():
+            return description.strip()
+        enum_values = field_schema.get("enum")
+        if isinstance(enum_values, list) and enum_values:
+            rendered = ", ".join(f"`{value}`" for value in enum_values)
+            return f"One of {rendered}."
+        return ""
+
+    def _read_declared_support_text(
+        self,
+        unit: IndexedUnit,
+        relative_path: str | None,
+    ) -> str | None:
+        if relative_path is None:
+            return None
+        path = unit.prompt_root.parent / relative_path
+        try:
+            return path.read_text()
+        except OSError:
+            return None
 
     def _review_output_contexts_for_agent(
         self,
@@ -2715,6 +3306,8 @@ class CompilationContext:
             return "skills"
         if isinstance(field, model.ReviewField):
             return "review"
+        if isinstance(field, model.FinalOutputField):
+            return "final_output"
         return type(field).__name__
 
     def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
@@ -3692,13 +4285,15 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
-    ) -> CompiledSection:
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
+    ) -> CompiledSection | None:
         return self._compile_io_field(
             field=field,
             unit=unit,
             field_kind="outputs",
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            excluded_output_keys=excluded_output_keys,
         )
 
     def _compile_io_field(
@@ -3709,7 +4304,8 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
-    ) -> CompiledSection:
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
+    ) -> CompiledSection | None:
         if field.parent_ref is not None:
             resolved = self._resolve_io_field_patch(
                 field,
@@ -3717,7 +4313,10 @@ class CompilationContext:
                 field_kind=field_kind,
                 owner_label=owner_label,
                 review_output_contexts=review_output_contexts,
+                excluded_output_keys=excluded_output_keys,
             )
+            if field_kind == "outputs" and self._resolved_io_body_is_empty(resolved):
+                return None
             return self._compile_resolved_io_body(resolved)
 
         if isinstance(field.value, tuple):
@@ -3725,7 +4324,7 @@ class CompilationContext:
                 raise CompileError(
                     f"Internal compiler error: {field_kind} field is missing title in {owner_label}"
                 )
-            return CompiledSection(
+            compiled_section = CompiledSection(
                 title=field.title,
                 body=self._compile_contract_bucket_items(
                     field.value,
@@ -3733,8 +4332,12 @@ class CompilationContext:
                     field_kind=field_kind,
                     owner_label=f"{field_kind} field `{field.title}`",
                     review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 ),
             )
+            if field_kind == "outputs" and not compiled_section.body:
+                return None
+            return compiled_section
 
         if isinstance(field.value, model.NameRef):
             resolved = self._resolve_io_field_ref(
@@ -3742,7 +4345,10 @@ class CompilationContext:
                 unit=unit,
                 field_kind=field_kind,
                 review_output_contexts=review_output_contexts,
+                excluded_output_keys=excluded_output_keys,
             )
+            if field_kind == "outputs" and self._resolved_io_body_is_empty(resolved):
+                return None
             return self._compile_resolved_io_body(resolved)
 
         raise CompileError(
@@ -3756,6 +4362,9 @@ class CompilationContext:
             body.append(item.section)
         return CompiledSection(title=io_body.title, body=tuple(body))
 
+    def _resolved_io_body_is_empty(self, io_body: ResolvedIoBody) -> bool:
+        return not io_body.preamble and not io_body.items
+
     def _resolve_io_field_ref(
         self,
         ref: model.NameRef,
@@ -3763,6 +4372,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         if field_kind == "inputs":
             if self._ref_exists_in_registry(
@@ -3791,6 +4401,7 @@ class CompilationContext:
             outputs_decl,
             unit=target_unit,
             review_output_contexts=review_output_contexts,
+            excluded_output_keys=excluded_output_keys,
         )
 
     def _resolve_io_field_patch(
@@ -3801,6 +4412,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         parent_ref = field.parent_ref
         if parent_ref is None:
@@ -3839,6 +4451,7 @@ class CompilationContext:
                 parent_decl,
                 unit=parent_unit,
                 review_output_contexts=review_output_contexts,
+                excluded_output_keys=excluded_output_keys,
             )
 
         return self._resolve_io_body(
@@ -3849,6 +4462,7 @@ class CompilationContext:
             parent_io=parent_body,
             parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
             review_output_contexts=review_output_contexts,
+            excluded_output_keys=excluded_output_keys,
         )
 
     def _compile_skills_field(
@@ -3870,6 +4484,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[CompiledBodyItem, ...]:
         return self._resolve_contract_bucket_items(
             items,
@@ -3877,6 +4492,7 @@ class CompilationContext:
             field_kind=field_kind,
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            excluded_output_keys=excluded_output_keys,
         ).body
 
     def _resolve_contract_bucket_items(
@@ -3887,6 +4503,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
         path_prefix: tuple[str, ...] = (),
     ) -> ResolvedContractBucket:
         body: list[CompiledBodyItem] = []
@@ -3908,27 +4525,34 @@ class CompilationContext:
                 continue
 
             if isinstance(item, model.RecordSection):
-                has_keyed_children = True
                 resolved_section = self._resolve_io_section_item(
                     item,
                     unit=unit,
                     field_kind=field_kind,
                     binding_path=(*path_prefix, item.key),
                     review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
+                if resolved_section is None:
+                    continue
+                has_keyed_children = True
                 body.append(resolved_section.section)
                 artifacts.extend(resolved_section.artifacts)
                 bindings.extend(resolved_section.bindings)
                 continue
 
             if isinstance(item, model.RecordRef):
-                compiled_section, artifact = self._resolve_contract_bucket_ref_entry(
+                resolved_ref = self._resolve_contract_bucket_ref_entry(
                     item,
                     unit=unit,
                     field_kind=field_kind,
                     owner_label=owner_label,
                     review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
+                if resolved_ref is None:
+                    continue
+                compiled_section, artifact = resolved_ref
                 body.append(compiled_section)
                 artifacts.append(artifact)
                 direct_artifacts.append(artifact)
@@ -3959,14 +4583,19 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
-    ) -> CompiledSection:
-        section, _artifact = self._resolve_contract_bucket_ref_entry(
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
+    ) -> CompiledSection | None:
+        resolved_ref = self._resolve_contract_bucket_ref_entry(
             item,
             unit=unit,
             field_kind=field_kind,
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            excluded_output_keys=excluded_output_keys,
         )
+        if resolved_ref is None:
+            return None
+        section, _artifact = resolved_ref
         return section
 
     def _resolve_contract_bucket_ref_entry(
@@ -3977,7 +4606,8 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
-    ) -> tuple[CompiledSection, ContractArtifact]:
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
+    ) -> tuple[CompiledSection, ContractArtifact] | None:
         if item.body is not None:
             raise CompileError(
                 f"Declaration refs cannot define inline bodies in {owner_label}: "
@@ -4002,9 +4632,12 @@ class CompilationContext:
                 f"{_dotted_ref_name(item.ref)}"
             )
         target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+        output_key = (target_unit.module_parts, decl.name)
+        if output_key in excluded_output_keys:
+            return None
         review_semantics = self._review_output_context_for_key(
             review_output_contexts,
-            (target_unit.module_parts, decl.name),
+            output_key,
         )
         return (
             self._compile_output_decl(
@@ -10345,8 +10978,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
-        outputs_key = (unit.module_parts, outputs_decl.name, review_output_contexts)
+        outputs_key = (
+            unit.module_parts,
+            outputs_decl.name,
+            review_output_contexts,
+            excluded_output_keys,
+        )
         cached = self._resolved_outputs_cache.get(outputs_key)
         if cached is not None:
             return cached
@@ -10354,7 +10993,10 @@ class CompilationContext:
         if outputs_key in self._outputs_resolution_stack:
             cycle = " -> ".join(
                 ".".join(parts + (name,)) or name
-                for parts, name, _review_keys in [*self._outputs_resolution_stack, outputs_key]
+                for parts, name, _review_keys, _excluded_keys in [
+                    *self._outputs_resolution_stack,
+                    outputs_key,
+                ]
             )
             raise CompileError(f"Cyclic outputs inheritance: {cycle}")
 
@@ -10371,6 +11013,7 @@ class CompilationContext:
                     parent_decl,
                     unit=parent_unit,
                     review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
                 parent_label = f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
@@ -10382,6 +11025,7 @@ class CompilationContext:
                 parent_io=parent_io,
                 parent_label=parent_label,
                 review_output_contexts=review_output_contexts,
+                excluded_output_keys=excluded_output_keys,
             )
             self._resolved_outputs_cache[outputs_key] = resolved
             return resolved
@@ -10430,6 +11074,7 @@ class CompilationContext:
         parent_io: ResolvedIoBody | None = None,
         parent_label: str | None = None,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
@@ -10448,6 +11093,7 @@ class CompilationContext:
                 field_kind=field_kind,
                 owner_label=owner_label,
                 review_output_contexts=review_output_contexts,
+                excluded_output_keys=excluded_output_keys,
             )
             return ResolvedIoBody(
                 title=io_body.title,
@@ -10475,14 +11121,16 @@ class CompilationContext:
 
         for item in io_body.items:
             if isinstance(item, model.RecordRef):
-                resolved_items.append(
-                    self._resolve_io_ref_item(
-                        item,
-                        unit=unit,
-                        field_kind=field_kind,
-                        owner_label=owner_label,
-                    )
+                resolved_item = self._resolve_io_ref_item(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=owner_label,
+                    review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
+                if resolved_item is not None:
+                    resolved_items.append(resolved_item)
                 continue
 
             key = item.key
@@ -10491,14 +11139,16 @@ class CompilationContext:
             emitted_keys.add(key)
 
             if isinstance(item, model.RecordSection):
-                resolved_items.append(
-                    self._resolve_io_section_item(
-                        item,
-                        unit=unit,
-                        field_kind=field_kind,
-                        binding_path=(item.key,),
-                    )
+                resolved_item = self._resolve_io_section_item(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    binding_path=(item.key,),
+                    review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
+                if resolved_item is not None:
+                    resolved_items.append(resolved_item)
                 continue
 
             parent_item = parent_items_by_key.get(key)
@@ -10530,6 +11180,7 @@ class CompilationContext:
                 ),
                 review_output_contexts=review_output_contexts,
                 path_prefix=(key,),
+                excluded_output_keys=excluded_output_keys,
             )
             bindings = list(resolved_bucket.bindings)
             if not resolved_bucket.has_keyed_children and len(resolved_bucket.direct_artifacts) == 1:
@@ -10539,17 +11190,18 @@ class CompilationContext:
                         artifact=resolved_bucket.direct_artifacts[0],
                     )
                 )
-            resolved_items.append(
-                ResolvedIoSection(
-                    key=key,
-                    section=CompiledSection(
-                        title=item.title if item.title is not None else parent_item.section.title,
-                        body=resolved_bucket.body,
-                    ),
-                    artifacts=resolved_bucket.artifacts,
-                    bindings=tuple(bindings),
+            if resolved_bucket.body or resolved_bucket.artifacts or bindings:
+                resolved_items.append(
+                    ResolvedIoSection(
+                        key=key,
+                        section=CompiledSection(
+                            title=item.title if item.title is not None else parent_item.section.title,
+                            body=resolved_bucket.body,
+                        ),
+                        artifacts=resolved_bucket.artifacts,
+                        bindings=tuple(bindings),
+                    )
                 )
-            )
 
         missing_keys = [
             item.key for item in parent_io.items if isinstance(item, ResolvedIoSection) and item.key not in accounted_keys
@@ -12699,21 +13351,23 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[ResolvedIoItem, ...]:
         resolved_items: list[ResolvedIoItem] = []
         seen_keys: set[str] = set()
 
         for item in io_items:
             if isinstance(item, model.RecordRef):
-                resolved_items.append(
-                    self._resolve_io_ref_item(
-                        item,
-                        unit=unit,
-                        field_kind=field_kind,
-                        owner_label=owner_label,
-                        review_output_contexts=review_output_contexts,
-                    )
+                resolved_item = self._resolve_io_ref_item(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    owner_label=owner_label,
+                    review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
+                if resolved_item is not None:
+                    resolved_items.append(resolved_item)
                 continue
 
             key = item.key
@@ -12722,15 +13376,16 @@ class CompilationContext:
             seen_keys.add(key)
 
             if isinstance(item, model.RecordSection):
-                resolved_items.append(
-                    self._resolve_io_section_item(
-                        item,
-                        unit=unit,
-                        field_kind=field_kind,
-                        binding_path=(item.key,),
-                        review_output_contexts=review_output_contexts,
-                    )
+                resolved_item = self._resolve_io_section_item(
+                    item,
+                    unit=unit,
+                    field_kind=field_kind,
+                    binding_path=(item.key,),
+                    review_output_contexts=review_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
                 )
+                if resolved_item is not None:
+                    resolved_items.append(resolved_item)
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
@@ -12748,7 +13403,8 @@ class CompilationContext:
         field_kind: str,
         binding_path: tuple[str, ...],
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
-    ) -> ResolvedIoSection:
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
+    ) -> ResolvedIoSection | None:
         resolved_bucket = self._resolve_contract_bucket_items(
             item.items,
             unit=unit,
@@ -12756,6 +13412,7 @@ class CompilationContext:
             owner_label=f"{field_kind} section `{item.title}`",
             review_output_contexts=review_output_contexts,
             path_prefix=binding_path,
+            excluded_output_keys=excluded_output_keys,
         )
         bindings = list(resolved_bucket.bindings)
         if not resolved_bucket.has_keyed_children and len(resolved_bucket.direct_artifacts) == 1:
@@ -12765,6 +13422,8 @@ class CompilationContext:
                     artifact=resolved_bucket.direct_artifacts[0],
                 )
             )
+        if not resolved_bucket.body and not resolved_bucket.artifacts and not bindings:
+            return None
         return ResolvedIoSection(
             key=item.key,
             section=CompiledSection(
@@ -12783,14 +13442,19 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
-    ) -> ResolvedIoRef:
-        section, artifact = self._resolve_contract_bucket_ref_entry(
+        excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
+    ) -> ResolvedIoRef | None:
+        resolved_ref = self._resolve_contract_bucket_ref_entry(
             item,
             unit=unit,
             field_kind=field_kind,
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            excluded_output_keys=excluded_output_keys,
         )
+        if resolved_ref is None:
+            return None
+        section, artifact = resolved_ref
         return ResolvedIoRef(
             section=section,
             artifact=artifact,
@@ -16577,6 +17241,16 @@ class CompilationContext:
             unit=unit,
             registry_name="output_shapes_by_name",
             missing_label="output shape declaration",
+        )
+
+    def _resolve_json_schema_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.JsonSchemaDecl]:
+        return self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="json_schemas_by_name",
+            missing_label="json schema declaration",
         )
 
     def _resolve_skill_decl(

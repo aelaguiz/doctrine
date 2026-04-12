@@ -15,6 +15,8 @@ use [EMIT_GUIDE.md](EMIT_GUIDE.md).
 
 - `input` and `inputs` describe consumed artifacts.
 - `output` and `outputs` describe emitted artifacts.
+- `final_output` marks the turn-ending assistant message when one emitted
+  output should be treated specially.
 - `trust_surface` marks portable downstream readback.
 - Guarded output sections keep conditional readback on the output contract.
 - Workflow law and review decide currentness, invalidation, verdicts, and
@@ -107,6 +109,11 @@ Important rules:
   `output`.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
+- `final_output:` on an agent points at one emitted `TurnResponse` output and
+  gives it a dedicated `Final Output` render.
+- When that designated output's `output shape` carries a `json schema`, the
+  final assistant message is structured JSON. Otherwise it stays ordinary
+  prose or markdown according to the output contract.
 
 Shipped markdown render defaults:
 

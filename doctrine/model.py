@@ -1223,6 +1223,11 @@ class ReviewField:
     value: NameRef
 
 
+@dataclass(slots=True, frozen=True)
+class FinalOutputField:
+    value: NameRef
+
+
 Field: TypeAlias = (
     RoleScalar
     | RoleBlock
@@ -1236,6 +1241,7 @@ Field: TypeAlias = (
     | DecisionField
     | SkillsField
     | ReviewField
+    | FinalOutputField
 )
 
 

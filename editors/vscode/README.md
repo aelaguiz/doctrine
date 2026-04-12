@@ -13,7 +13,7 @@ Repo-local VS Code language support for `.prompt` files.
   clickable surface:
   parent declaration refs, authored-slot refs and overrides, workflow `use`
   refs, workflow `skills` refs and override refs, route targets, `analysis`,
-  `decision`, `skills`,
+  `decision`, `skills`, `final_output`,
   `inputs`, `outputs`, patch-parent refs, `source`, `target`, `shape`,
   owner-aware `schema` refs on `output shape` and `output`, `structure` refs
   on markdown-bearing `input` and `output` surfaces, standalone input/output
@@ -60,7 +60,7 @@ and semantic refs on the review comment surface.
 
 Second-wave support here also follows the shipped language guides: top-level
 `render_profile`, `analysis`, `decision`, `schema`, and `document`
-declarations, agent `analysis:` / `decision:` slots, typed
+declarations, agent `analysis:` / `decision:` / `final_output:` slots, typed
 `schema:` / `structure:` / `render_profile:`
 attachments, addressable analysis or document paths such as `Decl:section.title`,
 family-namespaced schema paths such as
@@ -170,6 +170,8 @@ local editor is actually running the newest VSIX before changing the grammar.
    slot clicks and `ReleaseAnalysis:stages.title`,
    `examples/74_decision_attachment/prompts/AGENTS.prompt` for `decision:`
    slot clicks and decision declaration roots,
+   `examples/76_final_output_prose_basic/prompts/AGENTS.prompt` for
+   `final_output:` clicks into the referenced `output`,
    `examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt`
    for cross-root absolute import clicks and
    `examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening.prompt`

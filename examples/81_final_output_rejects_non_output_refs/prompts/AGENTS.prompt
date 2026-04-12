@@ -1,0 +1,11 @@
+schema ReleaseSchema: "Release Schema"
+    sections:
+        summary: "Summary"
+            "Provide a summary."
+
+
+agent InvalidSchemaFinalOutputAgent:
+    role: "Try to point final_output at a schema."
+    workflow: "Reply"
+        "Reply and stop."
+    final_output: ReleaseSchema

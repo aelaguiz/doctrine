@@ -118,6 +118,15 @@ async function testDefinitionProvider() {
     sourceLineFragment: "shape: IssueSummaryText",
     sourceText: "IssueSummaryText",
   });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output FinalReply: "Final Reply"',
+    expectedRelativeTargetPath:
+      "examples/76_final_output_prose_basic/prompts/AGENTS.prompt",
+    relativePath: "examples/76_final_output_prose_basic/prompts/AGENTS.prompt",
+    sourceLineFragment: "final_output: FinalReply",
+    sourceText: "FinalReply",
+  });
 }
 
 async function testCrossRootImportLinks() {

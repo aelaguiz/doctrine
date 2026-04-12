@@ -64,7 +64,7 @@ Important rules:
   declaration name available.
 - Every concrete agent needs a `role`.
 - Reserved typed agent fields include `inputs`, `outputs`, `analysis`,
-  `decision`, `skills`, and `review`.
+  `decision`, `skills`, `review`, and `final_output`.
 - Any other keyed field is an authored workflow slot. Those slots can point at
   a named `workflow` or define an inline workflow body.
 - `abstract <slot_key>` marks an authored slot that concrete children must
@@ -81,6 +81,10 @@ Important rules:
   ordinary concrete turn.
 - `decision:` attaches one reusable `decision` declaration to an otherwise
   ordinary concrete turn.
+- `final_output:` optionally points at one emitted `output` declaration and
+  marks that `TurnResponse` artifact as the turn-ending assistant message.
+- In v1, `final_output:` is for concrete workflow-style agents only. It is not
+  supported on review-driven agents.
 
 `role` has two shipped shapes:
 
@@ -469,6 +473,13 @@ Important rules:
 - `json schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
+- `final_output:` on an agent designates one emitted `TurnResponse` output as
+  the final assistant message.
+- When that designated output's `output shape` carries a `json schema`, the
+  final assistant message is structured JSON. Otherwise it stays ordinary
+  prose or markdown according to the output contract.
+- The designated final output renders under a dedicated `Final Output`
+  section and is omitted from ordinary `Outputs` rendering for that agent.
 
 Output bodies may also contain:
 

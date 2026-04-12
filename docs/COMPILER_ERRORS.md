@@ -76,6 +76,10 @@ Stability rules:
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
 | `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
 | `E210` | Abstract authored slot must be defined directly | An inherited abstract authored slot was handled with `inherit` or `override` instead of a direct `slot_key: ...` definition. |
+| `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. |
+| `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
+| `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
+| `E214` | Final output is not supported on review-driven agents in v1 | v1 only supports `final_output:` on concrete workflow-style agents, not review-attached agents. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |

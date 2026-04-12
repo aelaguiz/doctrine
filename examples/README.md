@@ -36,7 +36,7 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `75`: second-wave integration surfaces for `analysis`,
+- `54` through `81`: second-wave integration surfaces for `analysis`,
   owner-aware `schema:` / `structure:` attachments, readable markdown
   documents and descendants, schema artifact inventories and reusable groups,
   shared readable block reuse, multiline code blocks, schema-backed review
@@ -46,8 +46,10 @@ Each numbered example may contain:
   readable blocks such as raw `markdown`, `html`, `footnotes`, `image`, and
   structured nested table cells, plus `review_family`, case-selected review
   families, dedicated `route_only`, dedicated `grounding`, schema-group
-  invalidation, and first-class `decision` attachments for candidate-pool,
-  sequencing-proof, and winner-selection scaffolds
+  invalidation, first-class `decision` attachments for candidate-pool,
+  sequencing-proof, and winner-selection scaffolds, plus optional
+  agent-scoped `final_output:` designation for prose and JSON-schema final
+  assistant messages
 - `73` and `74`: the flagship multi-agent flow visualizer showcase and the
   decision-attachment capstone for reusable candidate-pool readback
 - `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
@@ -57,6 +59,9 @@ Each numbered example may contain:
   rejection, sequencing-proof, and winner-selection obligations
 - `75`: repo-level compile config plus cross-root standard-library imports
   proven across multiple entrypoints and fail-loud ambiguity/config cases
+- `76` through `81`: optional `final_output:` designation, dedicated
+  final-answer rendering, schema-backed JSON final answers, and fail-loud
+  invalid-target / wrong-kind cases
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -141,6 +146,12 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, a route-first handoff lane, a routed return loop, a shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
 | `74_decision_attachment` | First-class `decision` declarations plus concrete-agent `decision:` attachments for candidate-pool, sequencing-proof, and winner-selection scaffolds. |
 | `75_cross_root_standard_library_imports` | Repo-level `[tool.doctrine.compile].additional_prompt_roots`, shared authored `prompts/` roots, multiple entrypoints, and fail-loud ambiguity/config proofs for cross-root imports. |
+| `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
+| `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |
+| `78_final_output_and_side_artifacts` | Final assistant messages stay separate from ordinary emitted artifacts. |
+| `79_final_output_json_schema` | Schema-backed JSON `final_output:` with payload preview and example shape. |
+| `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
+| `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
 
 ## Useful Commands
 

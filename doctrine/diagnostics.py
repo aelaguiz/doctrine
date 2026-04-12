@@ -709,6 +709,54 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         ("Define the slot directly with `slot_key: ...`.",),
     ),
     (
+        re.compile(
+            r"^E211 final_output must point at an output declaration in (?P<owner>[^:]+): (?P<ref>.+) resolves to (?P<kind>.+)$"
+        ),
+        "E211",
+        "Final output must point at output declaration",
+        lambda match: (
+            f"`final_output` in {match.group('owner')} points at `{match.group('ref')}`, "
+            f"which resolves to {match.group('kind')} instead of an `output` declaration."
+        ),
+        ("Point `final_output:` at a declared `output`.",),
+    ),
+    (
+        re.compile(
+            r"^E212 final_output output is not emitted by the concrete turn in agent (?P<agent>[^:]+): (?P<output>.+)$"
+        ),
+        "E212",
+        "Final output is not emitted by the concrete turn",
+        lambda match: (
+            f"Agent `{match.group('agent')}` declares `final_output` as "
+            f"`{match.group('output')}`, but that output is not emitted by the concrete turn."
+        ),
+        ("Add the output to the agent `outputs:` contract, or point `final_output:` at one that already is.",),
+    ),
+    (
+        re.compile(
+            r"^E213 final_output must designate one TurnResponse output, not files or another target, in agent (?P<agent>[^:]+): (?P<output>.+)$"
+        ),
+        "E213",
+        "Final output must designate one TurnResponse message",
+        lambda match: (
+            f"Agent `{match.group('agent')}` points `final_output` at `{match.group('output')}`, "
+            "but the designated output is not one `TurnResponse` assistant message."
+        ),
+        ("Use a typed `output` with `target: TurnResponse` and no `files:` bundle.",),
+    ),
+    (
+        re.compile(
+            r"^E214 final_output is not supported on review-driven agents in v1: (?P<agent>.+)$"
+        ),
+        "E214",
+        "Final output is not supported on review-driven agents in v1",
+        lambda match: (
+            f"Agent `{match.group('agent')}` attaches both review-driven behavior and `final_output`, "
+            "which is outside the shipped v1 surface."
+        ),
+        ("Keep `final_output:` on concrete workflow-style agents only in v1.",),
+    ),
+    (
         re.compile(r"^Cyclic agent inheritance: (?P<detail>.+)$"),
         "E207",
         "Cyclic agent inheritance",

@@ -35,7 +35,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/75_cross_root_standard_library_imports`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/81_final_output_rejects_non_output_refs`.
 
 ## Authoring Rules
 

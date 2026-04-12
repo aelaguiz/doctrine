@@ -41,7 +41,7 @@ const USE_RE = new RegExp(
   `^\\s*use\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const TOP_LEVEL_FIELD_REF_RE = new RegExp(
-  `^\\s*(analysis|decision|skills|inputs|outputs)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(analysis|decision|skills|inputs|outputs|final_output)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEYED_DECL_REF_RE = new RegExp(
   `^\\s*(source|target|shape|schema|structure|render_profile)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -204,7 +204,7 @@ const PURPOSE_OR_REASON_RE = new RegExp(
   `^\\s*(purpose|reason)\\s*:\\s*${STRING_PATTERN}\\s*$`,
 );
 
-const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "analysis", "decision", "skills", "review"]);
+const RESERVED_AGENT_FIELD_KEYS = new Set(["role", "inputs", "outputs", "analysis", "decision", "skills", "review", "final_output"]);
 const READABLE_DECLARATION_KINDS = Object.freeze([
   "agent",
   "analysis",
@@ -5877,6 +5877,8 @@ function keyedFieldToDeclarationKind(fieldName) {
       return DECLARATION_KIND.INPUTS_BLOCK;
     case "outputs":
       return DECLARATION_KIND.OUTPUTS_BLOCK;
+    case "final_output":
+      return DECLARATION_KIND.OUTPUT;
     case "source":
       return DECLARATION_KIND.INPUT_SOURCE;
     case "target":

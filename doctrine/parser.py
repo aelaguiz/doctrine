@@ -258,6 +258,10 @@ class ToAst(Transformer):
         return model.ReviewField(value=ref)
 
     @v_args(inline=True)
+    def final_output_field(self, ref):
+        return model.FinalOutputField(value=ref)
+
+    @v_args(inline=True)
     def agent_slot_field(self, key, value, body=None):
         return model.AuthoredSlotField(key=key, value=self._workflow_slot_value(value, body))
 
