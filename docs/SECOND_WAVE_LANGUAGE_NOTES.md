@@ -4,19 +4,21 @@ artifact_role: pre-phase design input
 superseded_by_phase_docs: true
 ---
 
-> Drafting artifact note (2026-04-11): This standalone notes file remains in
-> the repo for provenance, but the implementation-order planning set now lives
-> in the numbered phase docs under `docs/01_` through `docs/04_`. Treat this
-> file as a pre-phase design input rather than the canonical phased plan.
+> Historical drafting artifact note (2026-04-11): This file stays at its
+> original `docs/` path because archived second-wave implementation docs cite
+> it directly. The implementation-order planning set now lives in the numbered
+> phase docs under `docs/01_` through `docs/04_`, and shipped behavior is
+> defined by the live docs plus `doctrine/`. Treat the body below as pre-phase
+> design history, not as the canonical phased plan.
 
 # Second-Wave And Deferred Language Ideas
 
-This document captures the broader language-enhancement ideas that were explored
-around the same time as `analysis`, `schema`, and the readable-output system,
-but were either narrowed, deferred, or explicitly rejected as first-wave core
-declaration families.
+This document captures the broader language-enhancement ideas that were
+explored around the same time as `analysis`, `schema`, and the readable-output
+system, but were either narrowed, deferred, or explicitly rejected as
+first-wave core declaration families.
 
-The high-level design direction explored was:
+The high-level design direction explored here was:
 
 - add first-class analysis blocks for repeated reasoning choreography
 - add artifact schemas with semantic gates, not just headings

@@ -4,14 +4,17 @@ artifact_role: pre-phase design input
 superseded_by_phase_docs: true
 ---
 
-> Drafting artifact note (2026-04-11): This standalone mechanics doc remains in
-> the repo for provenance, but the implementation-order planning set now lives
-> in the numbered phase docs under `docs/01_` through `docs/04_`. Treat this
-> file as a pre-phase design input rather than the canonical sequencing view.
+> Historical drafting artifact note (2026-04-11): This file stays at its
+> original `docs/` path because archived second-wave implementation docs cite
+> it directly. The implementation-order planning set now lives in the numbered
+> phase docs under `docs/01_` through `docs/04_`, and current shipped language
+> rules live in `docs/LANGUAGE_REFERENCE.md`, `docs/WORKFLOW_LAW.md`,
+> `docs/REVIEW_SPEC.md`, and `doctrine/`. Treat the body below as pre-phase
+> design history, not as the canonical sequencing view.
 
 # Cross-Cutting Language Mechanics Spec
 
-This document collects the language mechanics that cut across the proposed new
+This document collected the language mechanics that cut across the proposed new
 surfaces:
 
 - sequencing and scope constraints
@@ -25,14 +28,15 @@ surfaces:
 - acceptance corpus planning
 - strict invariants and non-goals
 
-The intent is to keep the new surfaces aligned with existing Doctrine behavior
+The intent was to keep the new surfaces aligned with existing Doctrine behavior
 instead of introducing special-case sublanguages with different rules.
 
 ## Sequencing and scope constraints
 
-The first important constraint is sequencing.
+The first important constraint in this design record was sequencing.
 
-The active plan is still incomplete around existing surfaces:
+At the time this was written, the active plan was still incomplete around
+existing surfaces:
 
 - route-only workflow law
 - critic first-class review
