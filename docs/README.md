@@ -62,30 +62,18 @@ needs, and groups the work that should be built together.
 
 ## Historical Design Context
 
-These documents remain in the repo as historical design context. They were the
-raw design inputs that were turned into the phased plan set above. Keep them
-for provenance and drafting history, not as the primary implementation-order
-view or the canonical shipped reference.
+The shipped docs above are the only live reference path. For second-wave
+history, provenance, and archived implementation passes, use
+[archive/second_wave/README.md](archive/second_wave/README.md).
 
-- [ANALYSIS_AND_SCHEMA_SPEC.md](ANALYSIS_AND_SCHEMA_SPEC.md): first-class
-  `analysis`, first-class `schema`, grammar, model, diagnostics, and example
-  ladders
-- [READABLE_MARKDOWN_SPEC.md](READABLE_MARKDOWN_SPEC.md): first-class
-  `document`, readable block kinds, typed markdown rendering, and contract
-  formatting rules
-- [INTEGRATION_SURFACES_SPEC.md](INTEGRATION_SURFACES_SPEC.md): how the new
-  surfaces fit with workflow law, review, outputs, `trust_surface`, current
-  truth, and route/preservation semantics
-- [LANGUAGE_MECHANICS_SPEC.md](LANGUAGE_MECHANICS_SPEC.md): inheritance,
-  addressability, name resolution, diagnostics, compiler touchpoints, and
-  acceptance-corpus planning
-- [SECOND_WAVE_LANGUAGE_NOTES.md](SECOND_WAVE_LANGUAGE_NOTES.md): broader
-  design space, deferred ideas, and explicit non-first-wave language surfaces
-
-The phased plan set supersedes the split drafting view as the implementation
-sequence. Use the live reference set above plus the numbered examples for
-current shipped behavior. Keep the legacy standalone specs only as background
-context for how the second-wave design was decomposed.
+The raw design inputs
+`ANALYSIS_AND_SCHEMA_SPEC.md`, `READABLE_MARKDOWN_SPEC.md`,
+`INTEGRATION_SURFACES_SPEC.md`, `LANGUAGE_MECHANICS_SPEC.md`, and
+`SECOND_WAVE_LANGUAGE_NOTES.md` still remain in the root `docs/` tree because
+archived implementation docs cite their current paths directly, and moving them
+would force a broad historical ref rewrite. Treat those files as drafting
+artifacts kept for provenance and link stability, not as the primary
+implementation-order view or the canonical shipped reference.
 
 ## Repo Truth
 
@@ -104,4 +92,6 @@ context for how the second-wave design was decomposed.
 Dated proposals, plans, worklogs, and exploratory notes are intentionally
 excluded from this index. They are not part of Doctrine's evergreen open
 source documentation set. For historical materials that are still worth
-keeping in-repo, use [archive/README.md](archive/README.md).
+keeping in-repo, use [archive/README.md](archive/README.md), including the
+dedicated [archive/second_wave/README.md](archive/second_wave/README.md) index
+for second-wave historical context.

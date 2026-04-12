@@ -4,22 +4,26 @@ artifact_role: pre-phase design input
 superseded_by_phase_docs: true
 ---
 
-> Drafting artifact note (2026-04-11): This standalone integration doc remains
-> in the repo for provenance, but the implementation-order planning set now
-> lives in the numbered phase docs under `docs/01_` through `docs/04_`. Treat
-> this file as a pre-phase design input rather than the canonical phased plan.
+> Historical drafting artifact note (2026-04-11): This file stays at its
+> original `docs/` path because archived second-wave implementation docs cite
+> it directly. The implementation-order planning set now lives in the numbered
+> phase docs under `docs/01_` through `docs/04_`, and shipped integration truth
+> lives in `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/WORKFLOW_LAW.md`,
+> `docs/REVIEW_SPEC.md`, and `doctrine/`. Treat the body below as pre-phase
+> design history, not as the canonical phased plan.
 
 # Integration Surfaces For New Language Features
 
-This document defined, and now records, how the shipped second-wave language
-features integrate with the rest of Doctrine.
+This document recorded how the second-wave language features were expected to
+integrate with the rest of Doctrine during design.
 
-The shipped surfaces from this spec now include `analysis`, `schema`,
-`document`, agent `analysis:` attachments, typed `schema:` / `structure:`
-attachments, and schema-backed `review contract:` support. Deferred ideas in
-this document remain deferred unless the live docs say otherwise.
+Many shipped surfaces discussed here now exist, including `analysis`,
+`schema`, `document`, agent `analysis:` attachments, typed `schema:` /
+`structure:` attachments, and schema-backed `review contract:` support.
+Deferred ideas in this document remain deferred unless the live docs say
+otherwise.
 
-The key architectural rule is:
+The key architectural rule in this design record was:
 
 - add the minimum number of new declaration families
 - use shipped Doctrine surfaces before inventing new layers
@@ -29,12 +33,12 @@ The key architectural rule is:
   `trust_surface`, currentness, preservation, and invalidation machinery
   instead of building parallel systems
 
-The structural invariant under that rule is:
+The structural invariant under that rule was:
 
 - one owner per seam
 - one live route per seam
 
-The strongest design rule is:
+The strongest design rule recorded here was:
 
 Doctrine owns the grammar of the move.
 Domain packs own the specific game being played.

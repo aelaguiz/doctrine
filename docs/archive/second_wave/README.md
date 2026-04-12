@@ -27,6 +27,14 @@ Archived sets in this directory:
 - `PHASE3_RENDER_POLICY_AND_EXTENSION_SURFACES_COMPLETION_2026-04-11*`:
   completed Phase 3 parity plan and worklog
 
-Some still-active parity plans in the root `docs/` tree cite these archived
-docs as historical context or evidence. Those root docs remain the current
-working surfaces until a later cleanup pass retires or archives them too.
+Historical second-wave design inputs still kept in the root `docs/` tree:
+
+- [../../ANALYSIS_AND_SCHEMA_SPEC.md](../../ANALYSIS_AND_SCHEMA_SPEC.md)
+- [../../READABLE_MARKDOWN_SPEC.md](../../READABLE_MARKDOWN_SPEC.md)
+- [../../INTEGRATION_SURFACES_SPEC.md](../../INTEGRATION_SURFACES_SPEC.md)
+- [../../LANGUAGE_MECHANICS_SPEC.md](../../LANGUAGE_MECHANICS_SPEC.md)
+- [../../SECOND_WAVE_LANGUAGE_NOTES.md](../../SECOND_WAVE_LANGUAGE_NOTES.md)
+
+Those files remain for provenance and because archived implementation docs cite
+them directly. They are historical drafting artifacts, not current working
+surfaces and not part of Doctrine's live docs path.

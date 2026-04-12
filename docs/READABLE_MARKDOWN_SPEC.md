@@ -4,15 +4,17 @@ artifact_role: pre-phase design input
 superseded_by_phase_docs: true
 ---
 
-> Drafting artifact note (2026-04-11): This standalone readable-markdown spec
-> remains in the repo for provenance, but the implementation-order planning set
-> now lives in the numbered phase docs under `docs/01_` through `docs/04_`.
-> Treat this file as a pre-phase design input rather than the canonical phased
-> plan.
+> Historical drafting artifact note (2026-04-11): This file stays at its
+> original `docs/` path because archived second-wave implementation docs cite
+> it directly. The implementation-order planning set now lives in the numbered
+> phase docs under `docs/01_` through `docs/04_`, and shipped readable-markdown
+> behavior is grounded in `doctrine/`, `docs/01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md`,
+> and the active examples. Treat the body below as pre-phase design history,
+> not as the canonical phased plan.
 
 # Readable Markdown And Document Rendering Spec
 
-This document defines the readable-output layer for the proposed language
+This document recorded the readable-output layer proposed for this language
 enhancement:
 
 - the first-class `document` declaration
@@ -21,7 +23,7 @@ enhancement:
 - the rendering rules that keep emitted AGENTS.md and contract output natural
   instead of mechanically mirroring source nesting
 
-The problem this work addresses is structural, not cosmetic.
+The problem this work was trying to address was structural, not cosmetic.
 
 The current renderer fundamentally walks nested compiled sections and turns
 structure into deeper heading depth. Emphasized lines are the only real
@@ -29,7 +31,7 @@ non-heading format in the current surface. That means rich semantic differences
 collapse into `##`, `###`, and `####`, and the output reads as outline depth
 instead of document shape.
 
-The correct abstraction is a typed markdown layer shared by all readable
+The intended abstraction was a typed markdown layer shared by all readable
 Doctrine surfaces, with a first-class `document` declaration at the top and a
 richer block AST underneath it.
 

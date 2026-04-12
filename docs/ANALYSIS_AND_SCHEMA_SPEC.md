@@ -1,15 +1,21 @@
+---
+status: drafting_artifact
+artifact_role: pre-phase design input
+superseded_by_phase_docs: true
+---
+
 # Analysis And Schema Language Surfaces
 
-> Status note (2026-04-11): The shipped `analysis` and `schema` core now lives
-> in `doctrine/` and the manifest-backed examples, including first-class schema
-> `artifacts:` / `groups:` in `examples/63_schema_artifacts_and_groups`. This
-> document remains useful background design history, but some later phase
-> splits and example numbers below are legacy notes rather than current shipped
-> truth. When this document and the repo disagree, trust `doctrine/`,
-> `docs/02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md`, and the active examples.
+> Historical drafting artifact note (2026-04-11): This file stays at its
+> original `docs/` path because archived second-wave implementation docs cite
+> it directly. The shipped `analysis` and `schema` core now lives in
+> `doctrine/`, `docs/02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md`, and the
+> manifest-backed examples, including first-class schema `artifacts:` /
+> `groups:` in `examples/63_schema_artifacts_and_groups`. The body below is a
+> design-phase record, not current shipped truth.
 
-This document defines the two new core semantic declaration families that the
-language expansion is centered on:
+This document recorded the design for the two core semantic declaration
+families that anchored this language expansion:
 
 - `analysis` for structured reasoning programs
 - `schema` for structured artifact inventories and later gate catalogs
@@ -30,8 +36,8 @@ The two main prose buckets that the language needs to absorb are:
    "At minimum confirm the file has non-empty X, Y, Z..." or "This output must
    include A, B, C..."
 
-The first bucket should become `analysis`.
-The second bucket should become `schema`.
+The first bucket was intended to become `analysis`.
+The second bucket was intended to become `schema`.
 
 The boundary between Doctrine core and domain-specific packs is:
 
@@ -39,7 +45,7 @@ The boundary between Doctrine core and domain-specific packs is:
 - Domain packs own domain truth, domain enums, domain gate names, and domain
   meanings.
 
-In the language expansion described here, Doctrine core should own:
+In the language expansion described here, Doctrine core was expected to own:
 
 - a first-class `analysis` declaration for structured reasoning programs
 - a first-class `schema` declaration for document section inventories and later
@@ -50,7 +56,7 @@ In the language expansion described here, Doctrine core should own:
 - inheritance, patching, and name-resolution behavior for both, matching
   existing Doctrine patterns
 
-Domain packs should own:
+Domain packs were expected to own:
 
 - `StepRole`, `MetadataMode`, route labels, and any other closed vocabularies
 - schema declarations like lesson-plan schema, section-map schema, metadata
@@ -60,7 +66,7 @@ Domain packs should own:
 - the actual meaning of concepts like "same-route", "similar-burden",
   "90-120s corridor", "capstone route", or "exact-move boundary"
 
-Agent-local prose should continue to own:
+Agent-local prose was expected to continue to own:
 
 - mission and role identity
 - judgment-heavy quality bars
