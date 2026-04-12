@@ -195,6 +195,9 @@ class FlowInputNode:
     module_parts: tuple[str, ...]
     name: str
     title: str
+    source_title: str | None = None
+    shape_title: str | None = None
+    requirement_title: str | None = None
     detail_lines: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
 
@@ -204,6 +207,10 @@ class FlowOutputNode:
     module_parts: tuple[str, ...]
     name: str
     title: str
+    target_title: str | None = None
+    primary_path: str | None = None
+    shape_title: str | None = None
+    requirement_title: str | None = None
     detail_lines: tuple[str, ...] = ()
     trust_surface: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
@@ -1513,6 +1520,9 @@ class CompilationContext:
                     module_parts=node.module_parts,
                     name=node.name,
                     title=node.title,
+                    source_title=node.source_title,
+                    shape_title=node.shape_title,
+                    requirement_title=node.requirement_title,
                     detail_lines=node.detail_lines,
                     notes=tuple(input_notes.get((node.module_parts, node.name), ())),
                 )
@@ -1526,6 +1536,10 @@ class CompilationContext:
                     module_parts=node.module_parts,
                     name=node.name,
                     title=node.title,
+                    target_title=node.target_title,
+                    primary_path=node.primary_path,
+                    shape_title=node.shape_title,
+                    requirement_title=node.requirement_title,
                     detail_lines=node.detail_lines,
                     trust_surface=node.trust_surface,
                     notes=tuple(output_notes.get((node.module_parts, node.name), ())),
@@ -1840,11 +1854,18 @@ class CompilationContext:
         key = (unit.module_parts, decl.name)
         if key in nodes:
             return
+        source_title, shape_title, requirement_title, detail_lines = self._flow_input_summary(
+            decl,
+            unit=unit,
+        )
         nodes[key] = FlowInputNode(
             module_parts=unit.module_parts,
             name=decl.name,
             title=decl.title,
-            detail_lines=self._flow_input_detail_lines(decl, unit=unit),
+            source_title=source_title,
+            shape_title=shape_title,
+            requirement_title=requirement_title,
+            detail_lines=detail_lines,
         )
 
     def _flow_upsert_output_node(
@@ -1857,11 +1878,21 @@ class CompilationContext:
         key = (unit.module_parts, decl.name)
         if key in nodes:
             return
+        target_title, primary_path, shape_title, requirement_title, detail_lines = (
+            self._flow_output_summary(
+                decl,
+                unit=unit,
+            )
+        )
         nodes[key] = FlowOutputNode(
             module_parts=unit.module_parts,
             name=decl.name,
             title=decl.title,
-            detail_lines=self._flow_output_detail_lines(decl, unit=unit),
+            target_title=target_title,
+            primary_path=primary_path,
+            shape_title=shape_title,
+            requirement_title=requirement_title,
+            detail_lines=detail_lines,
             trust_surface=self._flow_trust_surface_labels(decl, unit=unit),
         )
 
@@ -1894,12 +1925,12 @@ class CompilationContext:
                 )
         return ()
 
-    def _flow_input_detail_lines(
+    def _flow_input_summary(
         self,
         decl: model.InputDecl,
         *,
         unit: IndexedUnit,
-    ) -> tuple[str, ...]:
+    ) -> tuple[str, str, str, tuple[str, ...]]:
         scalar_items, _section_items, _extras = self._split_record_items(
             decl.items,
             scalar_keys={"source", "shape", "requirement"},
@@ -1914,32 +1945,41 @@ class CompilationContext:
             raise CompileError(f"Input is missing required fields: {decl.name}")
 
         source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
-        lines = [f"Source: {source_spec.title}"]
-        lines.extend(
-            self._flow_config_lines(
-                source_item.body or (),
-                spec=source_spec,
-                unit=unit,
-                owner_label=f"input {decl.name} source",
-            )
+        config_lines, _config_values = self._flow_config_summary(
+            source_item.body or (),
+            spec=source_spec,
+            unit=unit,
+            owner_label=f"input {decl.name} source",
         )
-        lines.append(
-            f"Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+        shape_title = self._display_symbol_value(
+            shape_item.value,
+            unit=unit,
+            owner_label=f"input {decl.name}",
+            surface_label="input fields",
         )
-        lines.append(
-            f"Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+        requirement_title = self._display_symbol_value(
+            requirement_item.value,
+            unit=unit,
+            owner_label=f"input {decl.name}",
+            surface_label="input fields",
         )
+        lines = list(config_lines)
         if decl.structure_ref is not None:
             _document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             lines.append(f"Structure: {document_decl.title}")
-        return tuple(lines)
+        return (
+            source_spec.title,
+            shape_title,
+            requirement_title,
+            tuple(lines),
+        )
 
-    def _flow_output_detail_lines(
+    def _flow_output_summary(
         self,
         decl: model.OutputDecl,
         *,
         unit: IndexedUnit,
-    ) -> tuple[str, ...]:
+    ) -> tuple[str, str | None, str | None, str | None, tuple[str, ...]]:
         scalar_items, section_items, _extras = self._split_record_items(
             decl.items,
             scalar_keys={"target", "shape", "requirement"},
@@ -1951,8 +1991,12 @@ class CompilationContext:
         requirement_item = scalar_items.get("requirement")
         files_section = section_items.get("files")
 
+        target_title: str | None = None
+        primary_path: str | None = None
+        shape_title: str | None = None
         lines: list[str] = []
         if files_section is not None:
+            target_title = "Files"
             lines.extend(
                 self._flow_output_files_detail_lines(
                     files_section,
@@ -1966,22 +2010,31 @@ class CompilationContext:
             if shape_item is None:
                 raise CompileError(f"Output must define a shape: {decl.name}")
             target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
-            lines.append(f"Target: {target_spec.title}")
-            lines.extend(
-                self._flow_config_lines(
-                    target_item.body or (),
-                    spec=target_spec,
-                    unit=unit,
-                    owner_label=f"output {decl.name} target",
-                )
+            target_title = target_spec.title
+            config_lines, config_values = self._flow_config_summary(
+                target_item.body or (),
+                spec=target_spec,
+                unit=unit,
+                owner_label=f"output {decl.name} target",
             )
-            lines.append(
-                f"Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
+            primary_path = config_values.get("path")
+            lines.extend(
+                line for line in config_lines if line != f"Path: {primary_path}"
+            )
+            shape_title = self._display_output_shape(
+                shape_item.value,
+                unit=unit,
+                owner_label=f"output {decl.name}",
+                surface_label="output fields",
             )
 
+        requirement_title: str | None = None
         if requirement_item is not None:
-            lines.append(
-                f"Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
+            requirement_title = self._display_symbol_value(
+                requirement_item.value,
+                unit=unit,
+                owner_label=f"output {decl.name}",
+                surface_label="output fields",
             )
         if decl.schema_ref is not None:
             _schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
@@ -1989,7 +2042,13 @@ class CompilationContext:
         if decl.structure_ref is not None:
             _document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             lines.append(f"Structure: {document_decl.title}")
-        return tuple(lines)
+        return (
+            target_title,
+            primary_path,
+            shape_title,
+            requirement_title,
+            tuple(lines),
+        )
 
     def _flow_output_files_detail_lines(
         self,
@@ -2033,7 +2092,24 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[str, ...]:
+        lines, _values = self._flow_config_summary(
+            config_items,
+            spec=spec,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        return lines
+
+    def _flow_config_summary(
+        self,
+        config_items: tuple[model.RecordItem, ...],
+        *,
+        spec: ConfigSpec,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[tuple[str, ...], dict[str, str]]:
         lines: list[str] = []
+        values: dict[str, str] = {}
         seen_keys: set[str] = set()
         allowed_keys = {**spec.required_keys, **spec.optional_keys}
 
@@ -2045,8 +2121,15 @@ class CompilationContext:
             seen_keys.add(item.key)
             if item.key not in allowed_keys:
                 raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
+            rendered = self._display_scalar_value(
+                item.value,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label="config values",
+            ).text
+            values[item.key] = rendered
             lines.append(
-                f"{allowed_keys[item.key]}: {self._display_scalar_value(item.value, unit=unit, owner_label=f'{owner_label}.{item.key}', surface_label='config values').text}"
+                f"{allowed_keys[item.key]}: {rendered}"
             )
 
         missing_required = [key for key in spec.required_keys if key not in seen_keys]
@@ -2054,7 +2137,7 @@ class CompilationContext:
             missing = ", ".join(missing_required)
             raise CompileError(f"Missing required config key in {owner_label}: {missing}")
 
-        return tuple(lines)
+        return tuple(lines), values
 
     def _flow_trust_surface_labels(
         self,

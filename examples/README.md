@@ -47,6 +47,9 @@ Each numbered example may contain:
   structured nested table cells, plus `review_family`, case-selected review
   families, dedicated `route_only`, dedicated `grounding`, and schema-group
   invalidation
+- `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
+  routed handoffs, a shared carrier output, and checked-in `.flow.{d2,svg}`
+  artifacts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -128,6 +131,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `70_route_only_declaration` | Dedicated `route_only` lowered through the shipped route-only workflow-law path. |
 | `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy and ordinary routing. |
 | `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
+| `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, routed handoffs, shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
 
 ## Useful Commands
 
@@ -148,9 +152,9 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
-uv run --locked python -m doctrine.emit_flow --target example_36_invalidation_and_rebuild
+uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 ```
 
-Example `36_invalidation_and_rebuild` is the canonical checked-in flow example.
-Its `build_ref/` tree includes both compiled Markdown and `AGENTS.flow.{d2,svg}`
-proof artifacts.
+Example `73_flow_visualizer_showcase` is the canonical checked-in flow
+example. Its `build_ref/` tree includes both compiled Markdown and
+`AGENTS.flow.{d2,svg}` proof artifacts.

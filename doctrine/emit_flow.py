@@ -13,6 +13,7 @@ from doctrine.emit_common import (
     entrypoint_relative_dir,
     load_emit_targets,
     path_location,
+    resolve_direct_emit_target,
     resolve_pyproject_path,
     root_concrete_agents,
 )
@@ -29,17 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         args = _build_arg_parser().parse_args(argv)
         config_path = resolve_pyproject_path(args.pyproject)
-        targets = load_emit_targets(config_path)
-
-        for target_name in args.target:
-            target = targets.get(target_name)
-            if target is None:
-                raise emit_error(
-                    "E501",
-                    "Unknown emit target",
-                    f"Emit target `{target_name}` is not defined in `pyproject.toml`.",
-                    location=path_location(config_path),
-                )
+        for target in _resolve_requested_targets(args, config_path):
             emitted = emit_target_flow(target)
             print(
                 f"{target.name}: emitted {len(emitted)} file(s) to {display_path(target.output_dir)}"
@@ -118,7 +109,10 @@ def emit_target_flow(
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Emit workflow data-flow artifacts for configured Doctrine targets."
+        description=(
+            "Emit workflow data-flow artifacts for configured Doctrine targets or "
+            "a direct Doctrine entrypoint."
+        )
     )
     parser.add_argument(
         "--pyproject",
@@ -130,10 +124,87 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--target",
         action="append",
-        required=True,
         help="Configured target name from [tool.doctrine.emit.targets]. Repeat to emit multiple targets.",
     )
+    parser.add_argument(
+        "--entrypoint",
+        help=(
+            "Direct Doctrine entrypoint to emit without a named target. "
+            "Must point at AGENTS.prompt or SOUL.prompt under a prompts/ tree."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        help=(
+            "Output directory for direct entrypoint mode. Required with --entrypoint."
+        ),
+    )
     return parser
+
+
+def _resolve_requested_targets(
+    args: argparse.Namespace,
+    config_path: Path,
+) -> tuple[EmitTarget, ...]:
+    target_mode = bool(args.target)
+    direct_mode = args.entrypoint is not None or args.output_dir is not None
+
+    if target_mode and direct_mode:
+        raise emit_error(
+            "E517",
+            "Emit flow CLI requires exactly one resolution mode",
+            "Use either configured target mode (`--target`) or direct mode "
+            "(`--entrypoint` with `--output-dir`), not both.",
+            location=path_location(config_path),
+        )
+
+    if target_mode:
+        targets = load_emit_targets(config_path)
+        resolved: list[EmitTarget] = []
+        for target_name in args.target:
+            target = targets.get(target_name)
+            if target is None:
+                raise emit_error(
+                    "E501",
+                    "Unknown emit target",
+                    f"Emit target `{target_name}` is not defined in `pyproject.toml`.",
+                    location=path_location(config_path),
+                )
+            resolved.append(target)
+        return tuple(resolved)
+
+    if direct_mode:
+        if args.entrypoint is None or args.output_dir is None:
+            raise emit_error(
+                "E518",
+                "Direct emit flow mode requires entrypoint and output_dir",
+                "Direct `emit_flow` mode requires both `--entrypoint` and "
+                "`--output-dir`.",
+                location=path_location(config_path),
+                hints=(
+                    "Use `--target <name>` for configured targets.",
+                    "Use `--entrypoint path/to/AGENTS.prompt --output-dir build` for direct mode.",
+                ),
+            )
+        return (
+            resolve_direct_emit_target(
+                pyproject_path=config_path,
+                entrypoint=args.entrypoint,
+                output_dir=args.output_dir,
+            ),
+        )
+
+    raise emit_error(
+        "E517",
+        "Emit flow CLI requires exactly one resolution mode",
+        "Use configured target mode (`--target`) or direct mode (`--entrypoint` "
+        "with `--output-dir`).",
+        location=path_location(config_path),
+        hints=(
+            "Use `--target <name>` for configured targets.",
+            "Use `--entrypoint path/to/AGENTS.prompt --output-dir build` for direct mode.",
+        ),
+    )
 
 
 if __name__ == "__main__":
