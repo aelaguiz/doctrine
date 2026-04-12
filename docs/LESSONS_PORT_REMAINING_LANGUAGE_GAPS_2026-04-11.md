@@ -1,13 +1,14 @@
 ---
 title: "Lessons port remaining language gaps and Doctrine-native closure"
 date: 2026-04-11
-status: proposal
+status: complete
 owners: [aelaguiz]
 reviewers: []
 related:
-  - docs/DOCTRINE_FEATURE_REQUESTS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md
-  - docs/DOCTRINE_NATIVE_SOLUTIONS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md
-  - docs/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md
+  - docs/archive/DOCTRINE_FEATURE_REQUESTS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md
+  - docs/archive/DOCTRINE_NATIVE_SOLUTIONS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md
+  - docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md
+  - docs/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md
   - docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/REVIEW_SPEC.md
@@ -27,9 +28,13 @@ one project.
 This doc therefore does three jobs:
 
 - say which asks are already solved by Doctrine or are not really Doctrine gaps
-- state the remaining framework needs in Doctrine-native terms
-- lock the clean final language direction with concrete authored examples and
-  rendered intent
+- state the final framework closures in Doctrine-native terms
+- lock the clean final language direction with concrete authored examples,
+  rendered intent, and shipped-proof closeout
+
+As of the current shipped repo, the two "remaining" framework gaps below are
+closed in Doctrine itself. This document now serves as the classification and
+closure note for that outcome rather than as an open implementation request.
 
 # Doctrine standards this doc follows
 
@@ -135,7 +140,10 @@ or "add review support somehow."
 
 # Remaining Doctrine-native language gaps
 
-Two framework-level needs still deserve a clean final language story.
+These were the final framework-level needs exposed by the Lessons port.
+In the current shipped repo, both now have a clean Doctrine-native answer and
+manifest-backed proof. The remaining work was repo-truth convergence, not new
+Lessons-specific language.
 
 ## Gap 1: one critic surface with case-selected exact review law
 
@@ -312,13 +320,13 @@ Route: Rejected copy review returns to Copy Editor.
 
 ### Current status
 
-This gap is no longer an open design mystery.
-The current Phase 4 branch already has grammar, model, parser, and compiler
-scaffolding for `review_family`, `selector`, and `cases`.
+This gap is no longer open.
+The current shipped repo has grammar, model, parser, compiler, live-doc, and
+manifest-backed proof coverage for `review_family`, `selector`, and `cases`.
 
-The remaining job is to make this the one honest language story across examples,
-live docs, and verification, not to keep debating whether a dynamic contract
-projection surface would be cleaner.
+The closeout work here was to keep the surrounding truth surfaces honest, not
+to keep debating whether a dynamic contract projection surface would be
+cleaner.
 
 ## Gap 2: schema-owned restart surfaces that invalidate concretely
 
@@ -406,13 +414,14 @@ The emitted control-plane readback should stay concrete:
 
 ### Current status
 
-This is also no longer an open architectural question.
-The current Phase 4 branch already resolves `schema.groups.*` through workflow
-law invalidation and expands group members in rendered control-plane surfaces.
+This is also no longer open.
+The current shipped repo already resolves `schema.groups.*` through workflow
+law invalidation, expands group members in rendered control-plane surfaces, and
+proves that behavior in the manifest-backed corpus.
 
-The remaining requirement is to make that canonical everywhere instead of
-leaving older docs or examples to imply that restart groups are only static
-inventory labels.
+The closeout work here was to make that shipped answer canonical everywhere
+instead of leaving older wording to imply that restart groups were still only
+static inventory labels.
 
 # How the dedicated Phase 4 surfaces should fit the framework
 
@@ -434,7 +443,7 @@ That means:
 This is the most Doctrine-native outcome because it keeps one semantic system
 and allows nicer authoring surfaces on top of it.
 
-The current Phase 4 branch is already directionally correct here:
+The current shipped repo already does this:
 
 - `route_only` resolves through the workflow owner path
 - `grounding` resolves through the workflow owner path
@@ -461,6 +470,17 @@ hatches.
 
 # Checks
 
-No code or examples changed in this pass. I did not run `make verify-examples`.
-This is a docs-only language-direction update grounded in the current repo docs
-and the in-flight Phase 4 implementation in `doctrine/`.
+Revalidated targeted shipped proof in this closeout pass:
+
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/57_schema_review_contracts/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/63_schema_artifacts_and_groups/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/68_review_family_shared_scaffold/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/69_case_selected_review_family/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/70_route_only_declaration/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/71_grounding_declaration/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/72_schema_group_invalidation/cases.toml`
+
+All passed. No compiler or example changes were required to close the remaining
+language surfaces themselves; the implementation work moved to live
+truth-surface convergence plus full closeout verification from the canonical
+plan/worklog.
