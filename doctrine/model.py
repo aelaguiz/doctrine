@@ -175,6 +175,7 @@ class WhenStmt:
 class MatchArm:
     head: Expr | None
     items: tuple["LawStmt", ...]
+    display_label: str | None = None
 
 
 @dataclass(slots=True, frozen=True)

@@ -6,7 +6,7 @@ Use the shared project brief and audience guide to frame the work.
 
 ### Project Routing
 
-Start research with ResearchSpecialist. -> ResearchSpecialist
+Start research with ResearchSpecialist. -> Research Specialist
 
 ## Inputs
 

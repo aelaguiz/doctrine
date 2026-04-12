@@ -54,7 +54,7 @@ output SharedHandoff: "Shared Handoff"
     standalone_read: "Standalone Read"
         "A downstream owner should be able to read this handoff alone and know what is current now, what to read first, and who owns next."
 
-agent ProjectLead:
+agent ProjectLead: "Project Lead"
     role: "Plan the work, leave the execution plan, and route the issue into research."
     workflow: "Project Lead"
         "Use the shared project brief and audience guide to frame the work."
@@ -67,7 +67,7 @@ agent ProjectLead:
         ExecutionPlan
         SharedHandoff
 
-agent ResearchSpecialist:
+agent ResearchSpecialist: "Research Specialist"
     role: "Turn the shared brief into a reusable research packet."
     workflow: "Research"
         "Read the same brief and audience guide before you add research."
@@ -80,7 +80,7 @@ agent ResearchSpecialist:
         ResearchPacket
         SharedHandoff
 
-agent WritingSpecialist:
+agent WritingSpecialist: "Writing Specialist"
     role: "Turn the research packet into a launch-ready draft and return it to the lead."
     workflow: "Writing"
         "Preserve the shared audience direction while you write the draft."

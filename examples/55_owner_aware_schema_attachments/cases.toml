@@ -9,7 +9,7 @@ agent = "OwnerAwareSchemaDemo"
 assertion = "exact_lines"
 approx_ref = "ref/owner_aware_schema_demo/AGENTS.md"
 expected_lines = [
-  "Check Delivery Json Schema before you publish Delivery Plan.",
+  "Check Delivery JSON Schema before you publish Delivery Plan.",
   "",
   "## Publish",
   "",

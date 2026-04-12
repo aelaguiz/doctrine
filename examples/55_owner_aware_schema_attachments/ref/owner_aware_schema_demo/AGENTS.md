@@ -1,4 +1,4 @@
-Check Delivery Json Schema before you publish Delivery Plan.
+Check Delivery JSON Schema before you publish Delivery Plan.
 
 ## Publish
 

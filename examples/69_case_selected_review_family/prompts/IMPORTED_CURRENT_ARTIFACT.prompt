@@ -1,0 +1,58 @@
+import shared_review_refs
+
+
+review_family ImportedSelectedReviewFamily: "Selected Review"
+    comment_output: shared_review_refs.SelectedReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+        current_artifact: current_artifact
+
+    selector:
+        mode selected_mode = shared_review_refs.ReviewFacts.selected_mode as shared_review_refs.ReviewMode
+
+    handoff_first:
+        reject "Shared review handoff is incomplete." when shared_review_refs.ReviewFacts.handoff_incomplete
+
+    cases:
+        draft_path: "Draft Path"
+            when shared_review_refs.ReviewMode.draft_rewrite
+            subject: shared_review_refs.DraftSpec
+            contract: shared_review_refs.DraftReviewContract
+            checks:
+                accept "The draft review contract passes." when contract.passes
+            on_accept:
+                current artifact shared_review_refs.DraftSpec via shared_review_refs.SelectedReviewComment.current_artifact
+                route "Accepted draft rewrite returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+            on_reject:
+                current artifact shared_review_refs.DraftSpec via shared_review_refs.SelectedReviewComment.current_artifact
+                route "Rejected draft rewrite returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+
+        metadata_path: "Metadata Path"
+            when shared_review_refs.ReviewMode.metadata_refresh
+            subject: shared_review_refs.MetadataRecord
+            contract: shared_review_refs.MetadataReviewContract
+            checks:
+                accept "The metadata review contract passes." when contract.passes
+            on_accept:
+                current artifact shared_review_refs.MetadataRecord via shared_review_refs.SelectedReviewComment.current_artifact
+                route "Accepted metadata refresh returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+            on_reject:
+                current artifact shared_review_refs.MetadataRecord via shared_review_refs.SelectedReviewComment.current_artifact
+                route "Rejected metadata refresh returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+
+
+agent ImportedSelectedReviewFamilyDemo:
+    role: "Keep case-selected review families explicit and exhaustive."
+    review: ImportedSelectedReviewFamily
+    inputs: "Inputs"
+        shared_review_refs.DraftSpec
+        shared_review_refs.MetadataRecord
+        shared_review_refs.ReviewFacts
+    outputs: "Outputs"
+        shared_review_refs.SelectedReviewComment

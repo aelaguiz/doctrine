@@ -112,11 +112,11 @@ A downstream reader should be able to read `COPY_GROUNDING.md` and `lesson_manif
 
 ### Next Owner If Accepted
 
-- If copy and validation are ready -> LessonsProjectLead
+- If copy and validation are ready -> Lessons Project Lead
 
 ### If The Work Is Not Ready
 
-- If grounding is missing or routing is unclear -> LessonsProjectLead
+- If grounding is missing or routing is unclear -> Lessons Project Lead
 
 ## When To Stop
 

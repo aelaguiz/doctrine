@@ -1,0 +1,76 @@
+enum ReviewMode: "Review Mode"
+    draft_rewrite: "draft-rewrite"
+    metadata_refresh: "metadata-refresh"
+
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification when the selected mode is draft rewrite."
+
+
+input MetadataRecord: "Metadata Record"
+    source: File
+        path: "unit_root/METADATA.json"
+    shape: JsonObject
+    requirement: Required
+    "Use the current metadata record when the selected mode is metadata refresh."
+
+
+input ReviewFacts: "Review Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host facts that say which review mode is live and whether the shared handoff is incomplete."
+
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+workflow MetadataReviewContract: "Metadata Review Contract"
+    freshness: "Freshness"
+        "Confirm the metadata stays current."
+
+
+agent RevisionOwner:
+    role: "Own the next revision pass after review."
+    workflow: "Revise"
+        "Take the selected current artifact to the next revision step."
+
+
+output SelectedReviewComment: "Selected Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the selected subject or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the selected subject the next owner must read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{RevisionOwner}} under both selected review modes."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that is current now under the selected review mode."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand which subject was reviewed, which artifact is current now, and who owns next."
+
+    trust_surface:
+        current_artifact

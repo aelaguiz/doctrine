@@ -346,6 +346,7 @@ class ResolvedRouteLine:
     label: str
     target_module_parts: tuple[str, ...]
     target_name: str
+    target_display_name: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -3426,18 +3427,22 @@ class CompilationContext:
         route_cases: list[model.MatchArm] = []
         for route in decl.body.routes:
             self._validate_route_target(route.target, unit=unit)
+            _route_unit, route_agent = self._resolve_agent_ref(route.target, unit=unit)
+            route_title = route_agent.title or _humanize_key(route_agent.name)
             route_stmt = model.LawRouteStmt(
-                label=f"Route to {self._display_ref(route.target)}.",
+                label=f"Route to {route_title}.",
                 target=route.target,
             )
             route_cases.append(
-                model.MatchArm(head=route.key, items=(route_stmt,))
+                model.MatchArm(
+                    head=route.key,
+                    items=(route_stmt,),
+                    display_label=route_title if route.key is not None else None,
+                )
             )
         law_items.append(model.MatchStmt(expr=next_owner_expr, cases=tuple(route_cases)))
 
         preamble: list[model.ProseLine] = [f"Emit {output_decl.title}."]
-        if output_unit.module_parts != unit.module_parts:
-            preamble[0] = f"Emit {_dotted_decl_name(output_unit.module_parts, output_decl.name)}."
         return ResolvedWorkflowBody(
             title=decl.body.title,
             preamble=tuple(preamble),
@@ -3457,7 +3462,9 @@ class CompilationContext:
 
         preamble: list[model.ProseLine] = []
         if decl.body.source_ref is not None:
-            preamble.append(f"Ground this pass against {self._display_ref(decl.body.source_ref)}.")
+            preamble.append(
+                f"Ground this pass against {self._display_ref(decl.body.source_ref, unit=unit)}."
+            )
         preamble.append(f"Target: {decl.body.target}.")
 
         for item in decl.body.policy_items:
@@ -3475,7 +3482,7 @@ class CompilationContext:
                 continue
             self._validate_route_target(item.target, unit=unit)
             preamble.append(
-                f"If {item.condition}, route to {self._display_ref(item.target)}."
+                f"If {item.condition}, route to {self._display_ref(item.target, unit=unit)}."
             )
 
         return ResolvedWorkflowBody(
@@ -7918,7 +7925,7 @@ class CompilationContext:
                 review_semantics=review_semantics,
             )
         if isinstance(item, model.ReviewCurrentArtifactStmt):
-            return [f"Current artifact: {self._display_ref(item.artifact_ref)}."]
+            return [f"Current artifact: {self._display_ref(item.artifact_ref, unit=unit)}."]
         if isinstance(item, model.ReviewCurrentNoneStmt):
             return ["There is no current artifact for this outcome."]
         if isinstance(item, model.ReviewCarryStmt):
@@ -8668,7 +8675,7 @@ class CompilationContext:
             )
             return (
                 CompiledSection(
-                    title=self._display_ref(item.ref),
+                    title=self._display_ref(item.ref, unit=unit),
                     body=body,
                 ),
             )
@@ -9362,7 +9369,7 @@ class CompilationContext:
             enum_decl = self._try_resolve_enum_decl(value, unit=unit)
             if enum_decl is not None:
                 return DisplayValue(text=enum_decl.title, kind="title")
-            return DisplayValue(text=self._display_ref(value), kind="symbol")
+            return DisplayValue(text=self._display_ref(value, unit=unit), kind="symbol")
         if owner_label is None or surface_label is None:
             raise CompileError(
                 "Internal compiler error: addressable refs require an owner label and surface label"
@@ -9394,7 +9401,15 @@ class CompilationContext:
         )
         return display.text
 
-    def _display_ref(self, ref: model.NameRef) -> str:
+    def _display_ref(self, ref: model.NameRef, *, unit: IndexedUnit) -> str:
+        try:
+            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        except CompileError:
+            lookup_unit = None
+        if lookup_unit is not None:
+            matches = self._find_readable_decl_matches(ref.declaration_name, unit=lookup_unit)
+            if len(matches) == 1:
+                return self._display_readable_decl(matches[0][1])
         if ref.module_parts:
             return ".".join((*ref.module_parts, ref.declaration_name))
         return _humanize_key(ref.declaration_name)
@@ -12735,6 +12750,7 @@ class CompilationContext:
                     ),
                     target_module_parts=target_unit.module_parts,
                     target_name=target_agent.name,
+                    target_display_name=target_agent.title or target_agent.name,
                 )
             )
         return tuple(resolved)
@@ -14070,7 +14086,7 @@ class CompilationContext:
 
     def _display_readable_decl(self, decl: ReadableDecl) -> str:
         if isinstance(decl, model.Agent):
-            return decl.title or decl.name
+            return decl.title or _humanize_key(decl.name)
         return decl.title
 
     def _validate_route_target(self, ref: model.NameRef, *, unit: IndexedUnit) -> None:
@@ -14273,7 +14289,7 @@ class CompilationContext:
             return []
 
         labels = [
-            self._render_expr(case.head, unit=unit)
+            case.display_label or self._render_expr(case.head, unit=unit)
             for case in stmt.cases
             if case.head is not None
         ]
@@ -14283,7 +14299,9 @@ class CompilationContext:
             if case.head is None:
                 heading = "Else:"
             else:
-                heading = f"If mode is {self._render_expr(case.head, unit=unit)}:"
+                heading = (
+                    f"If mode is {case.display_label or self._render_expr(case.head, unit=unit)}:"
+                )
             lines.extend(["", heading])
             lines.extend(
                 self._render_law_stmt_block(
@@ -16022,7 +16040,7 @@ class CompilationContext:
                     )
                 )
             elif isinstance(item, ResolvedRouteLine):
-                body.append(f"{item.label} -> {item.target_name}")
+                body.append(f"{item.label} -> {item.target_display_name}")
             else:
                 body.append(f"- {item.label}")
 

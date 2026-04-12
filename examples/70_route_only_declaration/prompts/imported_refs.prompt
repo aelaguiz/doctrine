@@ -1,0 +1,26 @@
+output RouteRepairComment: "Route Repair Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    must_include: "Must Include"
+        current_route: "Current Route"
+            "Say the route-only state now in force."
+
+        next_owner: "Next Owner"
+            "Name the next owner, including {{DraftAuthor}} when repair returns to draft work and {{RoutingOwner}} when routing keeps the issue local."
+
+        next_step: "Next Step"
+            "Say the next concrete step now."
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue safely."
+    workflow: "Route"
+        "Take back the same issue when the next specialist owner is still not justified."
+
+
+agent DraftAuthor:
+    role: "Own follow-up repair when the draft still needs changes."
+    workflow: "Repair"
+        "Repair the draft before the next specialist pass."

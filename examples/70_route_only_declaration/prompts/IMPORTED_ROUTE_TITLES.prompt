@@ -1,0 +1,30 @@
+import imported_refs
+
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided route facts that say whether route repair is active, whether the current specialist output is missing, which owner should take the next pass, whether rewrite mode is live, and what the next step is."
+
+
+route_only RouteRepair: "Route Repair"
+    facts: RouteFacts
+    when:
+        live_job == "route_repair"
+        current_specialist_output_missing
+    current none
+    handoff_output: imported_refs.RouteRepairComment
+    routes:
+        draft_owner -> imported_refs.DraftAuthor
+        routing_owner -> imported_refs.RoutingOwner
+        else -> imported_refs.RoutingOwner
+
+
+agent ImportedRouteRepairDemo:
+    role: "Keep route-only repair explicit when no specialist artifact is current."
+    workflow: RouteRepair
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        imported_refs.RouteRepairComment
