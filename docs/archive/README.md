@@ -1,7 +1,8 @@
 # Docs Archive
 
-This directory keeps historical proposal, planning, and worklog material that
-is useful for maintainers but is not the live language reference.
+This directory keeps historical proposal, planning, worklog, and dated
+investigation material that is useful for maintainers but is not the live
+language reference.
 
 If you want the current shipped documentation, start with:
 
@@ -27,10 +28,25 @@ Current archived sets:
   external failed implementation reference
 - [DOCTRINE_FEATURE_REQUESTS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md](DOCTRINE_FEATURE_REQUESTS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md):
   archived Lessons symbolic-port feature requests
+- [lessons_symbolic_port_issue_classification_2026-04-11.md](lessons_symbolic_port_issue_classification_2026-04-11.md):
+  archived bug-split note separating the real Doctrine defect from
+  Paperclip-specific Lessons prompt issues
 - [DOCTRINE_NATIVE_SOLUTIONS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md](DOCTRINE_NATIVE_SOLUTIONS_FROM_LESSONS_SYMBOLIC_PORT_2026-04-11.md):
   archived companion note mapping those asks onto Doctrine-native solutions
+- [LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md](LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md):
+  archived closure note for the remaining Lessons-port language-gap audit after
+  the live repo converged on the shipped Doctrine answer
+- [LESSONS_PORT_REMAINING_LANGUAGE_GAPS_FULL_IMPLEMENTATION_2026-04-11.md](LESSONS_PORT_REMAINING_LANGUAGE_GAPS_FULL_IMPLEMENTATION_2026-04-11.md):
+  archived full-scope closeout plan and worklog for the remaining Lessons-port
+  language-gap pass
 - [EXTERNAL_AGENT_PATTERNS_AND_DOCTRINE_SUPPORT_2026-04-11.md](EXTERNAL_AGENT_PATTERNS_AND_DOCTRINE_SUPPORT_2026-04-11.md):
   dated external-agent pattern analysis against Doctrine support
+- [MULTI_AGENT_SHARED_IO_FLOW_VISUALIZER_2026-04-11.md](MULTI_AGENT_SHARED_IO_FLOW_VISUALIZER_2026-04-11.md):
+  archived multi-agent flow-visualizer architecture pass and worklog after the
+  live README and emit docs became the canonical feature path
+- [vscode_auditor_codex_exec_sigabrt_2026-04-11.md](vscode_auditor_codex_exec_sigabrt_2026-04-11.md):
+  archived investigation note for the sandboxed Codex auditor SIGABRT on the
+  VS Code integration path
 - [research_visualizations.md](research_visualizations.md): dated comparative
   note on workflow-visualization tooling
 - [PROPOSAL_SPEC1_3.md](PROPOSAL_SPEC1_3.md): dated workflow-law design note
@@ -45,3 +61,5 @@ Current archived sets:
 - [PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md](PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md):
   archived Phase 4 parity-plan residue retained as historical implementation
   context
+- [PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md](PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md):
+  archived companion worklog for the already archived Phase 4 parity plan

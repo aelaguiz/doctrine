@@ -54,7 +54,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_DOCUMENT_OVERRIDE_KIND_MISMATCH.prompt"
 agent = "BrokenLessonPlanDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E305"
 message_contains = [
   "Override kind mismatch for document entry",
   "read_order",

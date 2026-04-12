@@ -73,7 +73,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_MISSING_SCHEMA_GROUP.prompt"
 agent = "InvalidGroupTargetDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E373"
 message_contains = [
   "invalidate target must resolve",
   "BuildSurfaceSchema.groups.missing_group",

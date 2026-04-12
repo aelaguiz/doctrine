@@ -1,16 +1,16 @@
 ---
 title: "Doctrine - Lessons Port Remaining Language Gaps Full Implementation - Architecture Plan"
 date: 2026-04-11
-status: complete
+status: historical
 fallback_policy: forbidden
 owners: ["aelaguiz"]
 reviewers: []
 doc_type: parity_plan
 related:
-  - docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md
+  - docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md
   - docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md
   - docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md
-  - docs/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md
+  - docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/REVIEW_SPEC.md
   - docs/WORKFLOW_LAW.md
@@ -31,7 +31,7 @@ related:
 
 ## Outcome
 
-Treat `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` as the full
+Treat `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` as the full
 requested-scope boundary, then leave Doctrine in one honest end state where
 every item in that doc is either fully shipped and evidenced or explicitly
 classified as already-shipped baseline or non-gap with the repo truth updated
@@ -141,7 +141,7 @@ coverage, or remains contradicted by live docs or instructions.
 ## 0.2 In scope
 
 - The full requested scope in
-  `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md`, including:
+  `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md`, including:
   - preserving the items that should stay off the remaining-gap list
   - the full closure story for one critic surface with case-selected exact
     review law
@@ -181,7 +181,7 @@ coverage, or remains contradicted by live docs or instructions.
 ## 0.4 Definition of done (acceptance evidence)
 
 - Every claim in
-  `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` is accounted for as
+  `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` is accounted for as
   one of:
   - preserved already-shipped baseline
   - genuine remaining gap now implemented
@@ -357,11 +357,11 @@ coverage, or remains contradicted by live docs or instructions.
   - `editors/vscode/` plus `cd editors/vscode && make` — the editor parity
     surface if the audit finds keyword or grammar drift.
   - `docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md`
-    and `docs/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md`
+    and `docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md`
     — historical evidence only, useful for intent and prior closeout claims but
     not authoritative over the live code path.
 - Duplicate or drifting paths relevant to this change:
-  - `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` — still frames
+  - `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` — still frames
     the two remaining language families as open closure work, which may now be
     partially or wholly stale.
   - `AGENTS.md` — currently says the shipped corpus covers through
@@ -436,7 +436,7 @@ The remaining-gap behavior already spans the normal Doctrine layers:
   - `editors/vscode/syntaxes/doctrine.tmLanguage.json`
   - `editors/vscode/tests/`
 - remaining drift surfaces under audit:
-  - `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md`
+  - `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md`
   - `AGENTS.md`
   - historical context docs such as `docs/SECOND_WAVE_LANGUAGE_NOTES.md` and
     `docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md`
@@ -512,7 +512,7 @@ Current drift or ambiguity visible from repo evidence:
 - `docs/README.md` and `examples/README.md` already present the Phase 4 ladder
   as shipped through `examples/72_*`
 - `AGENTS.md` still says the current shipped corpus ends at `examples/63_*`
-- `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` still frames the
+- `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` still frames the
   remaining work as open closure, while also admitting the current Phase 4
   branch already has the relevant grammar/model/parser/compiler scaffolding
 - `docs/SECOND_WAVE_LANGUAGE_NOTES.md` contains pre-Phase-4 rejection logic for
@@ -611,7 +611,7 @@ Not applicable.
 
 | Area | File | Symbol / Call site | Current behavior | Required change | Why | New API / contract | Tests impacted |
 | ---- | ---- | ------------------ | ---------------- | --------------- | --- | ------------------ | -------------- |
-| Scope source | `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` | remaining-gap classifications and closeout language | Treats two surfaces as remaining gaps, while also acknowledging current branch scaffolding | Line-by-line classify each claim as preserved baseline, residual real gap, or stale framing | The plan must close the full requested scope without mistaking stale docs for shipped truth | None unless wording is updated | Full corpus verify only if proof-facing examples/docs change |
+| Scope source | `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` | remaining-gap classifications and closeout language | Treats two surfaces as remaining gaps, while also acknowledging current branch scaffolding | Line-by-line classify each claim as preserved baseline, residual real gap, or stale framing | The plan must close the full requested scope without mistaking stale docs for shipped truth | None unless wording is updated | Full corpus verify only if proof-facing examples/docs change |
 | Canonical phase spec | `docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md` | Phase 4 promised behavior | Defines the intended shipped Phase 4 contract | Use as the requested-scope boundary and check every explicit promise against live code/docs/examples | Prevent scope shrink and prevent inventing new scope | None | Targeted manifests around `68_*` through `72_*` |
 | Grammar | `doctrine/grammars/doctrine.lark` | top-level declarations, `selector_block`, schema `groups:`, `invalidate_stmt` | Already declares the key Phase 4 syntax | Leave unchanged unless source-gap classification or targeted revalidation proves a still-missing authored-shape promise | Grammar is now a reopen-on-failure surface, not the default first edit | Possible only if residual syntax gap exists | Targeted manifests first, then `make verify-examples` |
 | Parser/model | `doctrine/parser.py`, `doctrine/model.py` | `review_family_decl`, `route_only_decl`, `grounding_decl`, selector/case structures, schema groups | Already materializes the Phase 4 surfaces into typed objects | Leave unchanged unless the source-gap audit finds a typed-structure omission that the current manifests do not actually cover | Avoid fake completion based only on grammar acceptance, but also avoid unnecessary compiler churn | Possible only if residual semantic shape gap exists | Targeted manifests first, then `make verify-examples` |
@@ -620,7 +620,7 @@ Not applicable.
 | Proof ladder | `examples/57_schema_review_contracts`, `examples/63_schema_artifacts_and_groups`, `examples/68_*` through `examples/72_*`, `examples/README.md` | positive and compile-negative corpus | Corpus already teaches and proves much of the shipped story, including explicit positive and negative cases for the two claimed remaining gaps | Re-run targeted manifests first and classify any mismatch before touching compiler code; add or tighten examples only if a source-gap promise is still not proved cleanly | Manifest-backed proof is the first closeout signal and the gate for reopening code | Possible example/ref additions only if residual proof gap exists | Targeted manifests, then `make verify-examples` |
 | Live docs | `docs/README.md`, `docs/LANGUAGE_REFERENCE.md`, `docs/REVIEW_SPEC.md`, `docs/WORKFLOW_LAW.md`, `docs/AGENT_IO_DESIGN_NOTES.md` | shipped language teaching path | Already teaches the dedicated Phase 4 surfaces as shipped | Converge any remaining wording mismatch or stale framing; otherwise preserve | Repo needs one live explanation of shipped behavior | None unless wording changes expose a real contract adjustment | Spot-check named examples; full corpus verify if doc/example coupling changes |
 | Repo instructions | `AGENTS.md` | shipped corpus statement and repo truth guidance | Still says the current shipped corpus ends at `examples/63_*` | Update if implementation closeout confirms the live shipped corpus statement should match `examples/72_*` | This is a live instruction surface inside scope and currently conflicts with live docs | None | No code tests; full relevant verify if docs/examples changed |
-| Historical context | `docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md`, `docs/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md`, `docs/SECOND_WAVE_LANGUAGE_NOTES.md` | old completion and pre-Phase-4 reasoning | Useful provenance, but not live truth | Keep historical unless they are still linked or phrased in a way that confuses live guidance; do not delete without restore-point commit | Need clean live/historical separation, not docs archaeology in the live path | None | N/A unless docs navigation changes |
+| Historical context | `docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11.md`, `docs/archive/PHASE4_REVIEW_ROUTE_ONLY_GROUNDING_CONTROL_PLANE_COMPLETION_2026-04-11_WORKLOG.md`, `docs/SECOND_WAVE_LANGUAGE_NOTES.md` | old completion and pre-Phase-4 reasoning | Useful provenance, but not live truth | Keep historical unless they are still linked or phrased in a way that confuses live guidance; do not delete without restore-point commit | Need clean live/historical separation, not docs archaeology in the live path | None | N/A unless docs navigation changes |
 | Editor parity | `editors/vscode/resolver.js`, `editors/vscode/syntaxes/doctrine.tmLanguage.json`, `editors/vscode/tests/` | keyword detection, declaration parsing, syntax coverage | Already includes the new declaration families and keywords | Confirm no lag relative to live compiler truth; patch only if a residual mismatch is found | Full closeout includes editor parity when relevant | Possible resolver/syntax contract only if lag exists | `cd editors/vscode && make` |
 
 ## 6.2 Migration notes
@@ -644,7 +644,7 @@ Not applicable.
   - None. Do not add any new harness to "prove" what the existing corpus and
     compiler path already can prove.
 - Live docs/comments/instructions to update or delete:
-  - `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` if its role or
+  - `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` if its role or
     phrasing needs to change after the audit verdict
   - `AGENTS.md` if the shipped-corpus statement remains stale after closeout
   - `docs/COMPILER_ERRORS.md` if diagnostic mapping changes
@@ -661,7 +661,7 @@ Not applicable.
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude) |
 | ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
 | Live truth | `AGENTS.md` and `docs/README.md` / `examples/README.md` | one shared shipped-corpus statement | Prevent repo instructions from understating shipped Phase 4 proof coverage | include |
-| Source-gap framing | `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` | one explicit classification of baseline vs residual gap vs stale framing | Prevent the source scope doc from remaining an accidental competing truth surface | include |
+| Source-gap framing | `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` | one explicit classification of baseline vs residual gap vs stale framing | Prevent the source scope doc from remaining an accidental competing truth surface | include |
 | Phase 4 teaching path | `docs/LANGUAGE_REFERENCE.md`, `docs/REVIEW_SPEC.md`, `docs/WORKFLOW_LAW.md`, `docs/AGENT_IO_DESIGN_NOTES.md` | dedicated declarations as wrappers over existing semantics | Prevent split-brain docs where one live guide teaches a second control plane | include |
 | Diagnostics contract | `docs/COMPILER_ERRORS.md` | explicit error-code story for residual Phase 4 failures | Prevent generic error wording from drifting away from the real compile behavior | defer unless implementation changes diagnostics |
 | Historical notes | `docs/SECOND_WAVE_LANGUAGE_NOTES.md`, archive plan/worklog docs | explicit historical/non-live role | Prevent background notes from being mistaken for live doctrine without forcing unnecessary deletions now | defer |
@@ -689,7 +689,7 @@ Status: COMPLETE
     `examples/70_route_only_declaration`,
     `examples/71_grounding_declaration`, and
     `examples/72_schema_group_invalidation`.
-  - Audit `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` line by
+  - Audit `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` line by
     line against:
     - `docs/04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md`
     - the live compiler path under `doctrine/`
@@ -773,7 +773,7 @@ Status: COMPLETE
   Eliminate the in-scope split truth so the repo teaches one honest story about
   the remaining-gap verdict.
 * Work:
-  - Update `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` so it no
+  - Update `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` so it no
     longer reads like a competing live truth surface once the classification is
     final
   - Update `AGENTS.md` if the shipped-corpus statement should now match the
@@ -802,7 +802,7 @@ Status: COMPLETE
   - revert the live-truth edits while keeping semantic proof and classification
     intact
 Completed work:
-  - updated `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` from
+  - updated `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` from
     open-gap framing to shipped closure/classification truth
   - repaired stale related-doc links in that doc
   - updated `AGENTS.md` so the shipped-corpus statement matches the live docs
@@ -905,7 +905,7 @@ for honest proof.
 ### Context
 
 The user asked for a full implementation plan for
-`docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md`, but the live repo
+`docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md`, but the live repo
 already shows strong evidence that much of Phase 4 is implemented.
 
 ### Options

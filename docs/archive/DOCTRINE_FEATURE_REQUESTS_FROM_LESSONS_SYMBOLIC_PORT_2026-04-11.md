@@ -5,7 +5,7 @@ status: proposal
 owners: [aelaguiz]
 reviewers: []
 related:
-  - docs/bugs/lessons_symbolic_port_issue_classification_2026-04-11.md
+  - docs/archive/lessons_symbolic_port_issue_classification_2026-04-11.md
   - ../paperclip_agents/docs/LESSONS_SYMBOLIC_DOCTRINE_PORT_IMPLEMENTATION_PLAN_2026-04-10.md
   - ../paperclip_agents/docs/LESSONS_SYMBOLIC_DOCTRINE_PORT_RENDERED_OUTPUT_AUDIT_2026-04-11.md
   - docs/LANGUAGE_REFERENCE.md
@@ -64,7 +64,7 @@ It does not ask for:
 
 The workflow-law route-label interpolation leak is a real Doctrine bug and
 should be fixed directly. It is not a feature request. See
-`docs/bugs/lessons_symbolic_port_issue_classification_2026-04-11.md`.
+`docs/archive/lessons_symbolic_port_issue_classification_2026-04-11.md`.
 
 # Feature requests
 

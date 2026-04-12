@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: docs/MULTI_AGENT_SHARED_IO_FLOW_VISUALIZER_2026-04-11.md
+Plan doc: docs/archive/MULTI_AGENT_SHARED_IO_FLOW_VISUALIZER_2026-04-11.md
 
 ## Initial entry
 - Run started.

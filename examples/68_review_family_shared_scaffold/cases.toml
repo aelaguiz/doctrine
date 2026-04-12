@@ -94,7 +94,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_UNKNOWN_REVIEW_FAMILY.prompt"
 agent = "InvalidUnknownReviewFamilyDemo"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E470"
 message_contains = [
   "Missing local review declaration",
   "MissingReviewFamily",

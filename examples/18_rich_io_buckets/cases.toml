@@ -86,7 +86,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_OUTPUT_BUCKET_SCALAR.prompt"
 agent = "InvalidOutputBucketScalar"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E301"
 message_contains = [
   "Scalar keyed items are not allowed in outputs field `Outputs`",
   "notes",
@@ -111,7 +111,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_OUTPUT_BUCKET_REF_BODY.prompt"
 agent = "InvalidOutputBucketRefBody"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E301"
 message_contains = [
   "Declaration refs cannot define inline bodies in outputs field `Outputs`",
   "DossierFile",
@@ -124,7 +124,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_OUTPUT_BUCKET_WRONG_KIND_REF.prompt"
 agent = "InvalidOutputBucketWrongKindRef"
 exception_type = "CompileError"
-error_code = "E299"
+error_code = "E301"
 message_contains = [
   "Outputs refs must resolve to output declarations, not input declarations",
   "CurrentSectionPlan",

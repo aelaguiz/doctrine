@@ -50,3 +50,16 @@ expected_lines = [
   "",
   "A downstream owner must be able to read this output alone and know which artifact is current now.",
 ]
+
+[[cases]]
+name = "conflicting concrete-turn bound roots fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CONFLICTING_BOUND_ROOT.prompt"
+agent = "InvalidConflictingBoundRootDemo"
+exception_type = "CompileError"
+error_code = "E260"
+message_contains = [
+  "Conflicting concrete-turn binding roots resolve different artifacts",
+  "approved_plan",
+]

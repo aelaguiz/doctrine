@@ -1,6 +1,6 @@
 # Worklog
 
-Plan doc: docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_FULL_IMPLEMENTATION_2026-04-11.md
+Plan doc: docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_FULL_IMPLEMENTATION_2026-04-11.md
 
 ## Initial entry
 - Run started.
@@ -30,7 +30,7 @@ Plan doc: docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_FULL_IMPLEMENTATION_2026-04-
 
 ## Phase 3 (Converge live docs and instruction truth to the shipped verdict) Progress Update
 - Work completed:
-  - Updated `docs/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` to read
+  - Updated `docs/archive/LESSONS_PORT_REMAINING_LANGUAGE_GAPS_2026-04-11.md` to read
     as a shipped closure/classification note.
   - Fixed stale related paths in that doc.
   - Updated `AGENTS.md` so the shipped-corpus statement matches the live docs

@@ -1,0 +1,14 @@
+input CurrentIssuePlan: "Current Issue Plan"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidDuplicateTypedField:
+    role: "Use the current issue plan."
+
+    inputs: "Inputs"
+        CurrentIssuePlan
+
+    inputs: "Duplicate Inputs"
+        CurrentIssuePlan

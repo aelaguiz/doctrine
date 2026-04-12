@@ -139,6 +139,7 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_CURRENT_ARTIFACT_OUTSIDE_SUBJECT.prompt"
 agent = "InvalidCurrentArtifactOutsideSubjectDemo"
 exception_type = "CompileError"
+error_code = "E469"
 message_contains = [
   "Review current artifact must stay rooted in a review subject or emitted output",
   "OtherSpec",

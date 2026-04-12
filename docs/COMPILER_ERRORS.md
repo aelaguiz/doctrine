@@ -32,8 +32,8 @@ Stability rules:
 | --- | --- |
 | `E001`-`E099` | reserved canonical language-rule errors |
 | `E100`-`E199` | parse errors |
-| `E200`-`E469` | semantic compile errors |
-| `E470`-`E499` | review-specific parse and compile errors |
+| `E200`-`E468` | semantic compile errors |
+| `E469`-`E499` | review-specific parse and compile errors |
 | `E500`-`E699` | emit and build-target errors |
 | `E900`-`E999` | internal compiler bugs or invariant failures |
 
@@ -82,6 +82,7 @@ Stability rules:
 | `E240`-`E243` | Workflow inheritance and patching errors | These codes cover cyclic workflow inheritance, inheriting undefined keys, kind mismatches, and `inherit` or `override` without an inherited workflow. |
 | `E244`-`E249` | IO block inheritance and typed-field ref errors | These codes cover cyclic `inputs` / `outputs` block inheritance, undefined inherited keys, patching without an inherited IO block, inherited IO blocks without stable keyed sections, and wrong-kind IO refs or patch bases. |
 | `E250` | Cyclic skills inheritance | Top-level `skills` block inheritance forms a cycle. |
+| `E260` | Conflicting concrete-turn binding roots | One concrete-turn bound root path resolves to different artifacts inside the same concrete turn. |
 | `E261` | Duplicate workflow item key | One workflow body repeats the same keyed entry. |
 | `E270` | Ambiguous declaration reference | A readable or addressable ref matches more than one visible declaration kind. |
 | `E271` | Workflow ref is not allowed here | A bare workflow ref was used on a readable surface that allows declarations but not workflow roots. |
@@ -89,7 +90,7 @@ Stability rules:
 | `E273` | Unknown addressable path | An interpolation or addressable ref asked for a nested path that does not exist on that surface. |
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
-| `E276` | Missing local declaration reference | A local readable or addressable ref points at a declaration that does not exist. |
+| `E276` | Missing local declaration reference | A local readable, analysis, or addressable ref points at a declaration that does not exist. |
 | `E280` | Missing import module | An imported module could not be found under the current `prompts/` root. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
@@ -102,7 +103,15 @@ Stability rules:
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
 | `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
 | `E294` | Duplicate enum member wire | One `enum` body repeats the same host-facing `wire` value. |
-| `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. This currently includes readable-markdown validation failures such as duplicate document block keys, duplicate `properties` or row/item schema keys, readable-guard source violations, invalid `render_profile` targets or modes, unknown callout kinds, empty tables, raw markdown blocks that omit multiline string form, and inline table cells that try to spill into nested content without a structured cell body. Phase 4 control-plane failures such as missing `review_family` declarations, overlapping or non-total case-selected review families, and missing schema-group invalidation targets also currently surface through `E299`. |
+| `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a document block, properties entry, inline schema entry, footnote, or table child. |
+| `E296` | Readable guard reads disallowed source | A readable `when` guard reads emitted output fields or other disallowed sources instead of only declared inputs and enum members. |
+| `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty table, or a multiline inline table cell. |
+| `E298` | Invalid render_profile declaration | A `render_profile` declares an unknown target, unsupported mode, or duplicate target rule. |
+| `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. No shipped manifest-backed compile-fail case currently depends on `E299`. |
+| `E301` | Invalid IO bucket item | An `inputs:` or `outputs:` bucket contains an invalid item shape, inline declaration body, or wrong-kind declaration ref. |
+| `E302` | Invalid output attachment declaration | An output attaches an invalid `schema:` or `structure:` surface, such as a sectionless schema or a non-markdown structure target. |
+| `E303` | Invalid schema declaration | A schema artifact or schema group uses an invalid declaration shape, such as a wrong-kind artifact ref, an unknown group member, or an empty group. |
+| `E305` | Invalid document inheritance patch | A document inheritance patch uses the wrong override shape, such as a kind mismatch or a patch without an inherited document parent. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |
@@ -124,6 +133,7 @@ Stability rules:
 | `E362` | Comparison-only basis contradiction | `support_only ... for comparison` and `ignore ... for comparison` contradict each other. |
 | `E371` | Current artifact invalidated in same branch | The current artifact is invalidated in the same active branch that declares it current. |
 | `E372` | Invalidation carrier field missing from trust surface | An `invalidate ... via ...` carrier field is not listed in the output's `trust_surface`. |
+| `E373` | Invalidation target is unknown | `invalidate` points at something that is not a declared or bound concrete-turn input, output, or schema group. |
 | `E381` | Inherited law requires named sections | An inherited workflow-law block mixed bare statements with section patching. |
 | `E382` | Duplicate inherited law subsection | An inherited workflow-law block accounted for the same parent subsection more than once. |
 | `E383` | Missing inherited law subsection | An inherited workflow-law block omitted one or more required parent subsections. |
@@ -133,14 +143,15 @@ Stability rules:
 
 | Code | Stage | Summary | Notes |
 | --- | --- | --- | --- |
-| `E470` | compile | Invalid review declaration shape | Review inheritance, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a duplicate `subject_map` entry, or a kind-mismatched override. |
+| `E469` | compile | Review current artifact is outside the review subject set | `current artifact ... via ...` pointed at something other than a declared review subject or an emitted output. |
+| `E470` | compile | Invalid review declaration shape | Review inheritance, `review_family` authoring, case-selected review-family selection, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a missing inherited review family, overlapping or non-exhaustive cases, a duplicate `subject_map` entry, or a kind-mismatched override. |
 | `E471` | parse | Illegal statement placement in review body | A review statement appeared in the wrong section family, such as `block` inside `on_accept` or `route` inside a pre-outcome review section. |
 | `E472` | parse | Invalid guarded match head | A review `match` head used an invalid guarded fallback shape, such as `else when ...`. |
 | `E473` | compile | Review fields surface is invalid or incomplete | The required `fields:` binding surface is missing or does not bind every required semantic channel. |
 | `E474` | compile | Review is missing subject | A concrete review omitted `subject:`. |
 | `E475` | compile | Review subject has the wrong kind | `subject:` must resolve only to declared `input` or `output` roots. |
 | `E476` | compile | Review is missing contract | A concrete review omitted `contract:`. |
-| `E477` | compile | Review contract target or gate ref is invalid | The referenced contract workflow or schema is invalid for review semantics, or the review names an unknown `contract.<gate>` identity. |
+| `E477` | compile | Review contract target or gate ref is invalid | The referenced contract workflow or schema is invalid for review semantics, such as exporting no gates, or the review names an unknown `contract.<gate>` identity. |
 | `E478` | compile | Review is missing comment_output | A concrete review omitted `comment_output:`. |
 | `E479` | compile | Review comment_output is not emitted | The concrete agent does not emit the review's declared `comment_output`. |
 | `E480` | compile | Concrete agent defines both workflow and review | A concrete agent may not attach both `workflow:` and `review:`. |
