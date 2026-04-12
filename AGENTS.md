@@ -16,6 +16,12 @@
 - Keep implementation, examples, docs, and instructions aligned.
 - If behavior changed, update the manifest-backed proof or say plainly why it did not need to change.
 
+## Doc Deletion Safety
+
+- Never delete docs without first making a restore-point commit that contains the pre-deletion state.
+- Do this even when the docs look stale, low-quality, or obviously wrong.
+- If you are not making that commit in the current task, do not delete the docs.
+
 ## Shipped Truth
 
 - The shipped language lives in `doctrine/`, not in draft docs or unchecked examples.
