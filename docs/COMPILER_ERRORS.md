@@ -79,7 +79,7 @@ Stability rules:
 | `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. |
 | `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
 | `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
-| `E214` | Final output must match the review comment_output | A review-driven agent pointed `final_output:` at some emitted `TurnResponse`, but not the same `output` the attached review declares as `comment_output:`. |
+| `E214` | Retired | Reserved error code. Review-driven `final_output:` may now differ from `comment_output:`. |
 | `E215` | Final output support file is missing or unreadable | A schema-backed `final_output:` declares a schema or example support file that the compiler cannot read. |
 | `E216` | Final output schema file must contain a JSON object | A schema-backed `final_output:` points at a schema file that is not valid JSON object text. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |

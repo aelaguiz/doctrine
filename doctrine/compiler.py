@@ -2377,6 +2377,9 @@ class CompilationContext:
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
             )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
+        primary_review_output_context = self._primary_review_output_context(
+            review_output_contexts
+        )
         field_specs: list[AgentFieldCompileSpec] = []
         seen_role = False
         seen_typed_fields: set[str] = set()
@@ -2429,6 +2432,11 @@ class CompilationContext:
                 unit=unit,
                 agent_contract=agent_contract,
                 review_output_contexts=review_output_contexts,
+                fallback_review_semantics=(
+                    primary_review_output_context[1]
+                    if primary_review_output_context is not None
+                    else None
+                ),
             )
             if final_output_fields
             else None
@@ -2600,6 +2608,7 @@ class CompilationContext:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        fallback_review_semantics: ReviewSemanticContext | None = None,
     ) -> CompiledFinalOutputSpec:
         owner_label = f"agent {agent_name} final_output"
         output_unit, output_decl = self._resolve_final_output_decl(
@@ -2617,16 +2626,8 @@ class CompilationContext:
             review_output_contexts,
             output_key,
         )
-        if review_output_contexts and review_semantics is None:
-            expected_outputs = ", ".join(
-                _dotted_decl_name(module_parts, output_name)
-                for (module_parts, output_name), _context in sorted(review_output_contexts)
-            )
-            raise CompileError(
-                "E214 final_output on review-driven agents must match the review comment_output in "
-                f"agent {agent_name}: expected {expected_outputs}, got "
-                f"{_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
-            )
+        if review_semantics is None:
+            review_semantics = fallback_review_semantics
 
         scalar_items, section_items, extras = self._split_record_items(
             output_decl.items,
@@ -3324,6 +3325,17 @@ class CompilationContext:
             if key == output_key:
                 return context
         return None
+
+    def _primary_review_output_context(
+        self,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+    ) -> tuple[OutputDeclKey, ReviewSemanticContext] | None:
+        if not review_output_contexts:
+            return None
+        return sorted(
+            review_output_contexts,
+            key=lambda item: _dotted_decl_name(item[0][0], item[0][1]),
+        )[0]
 
     def _review_semantic_field_path(
         self,

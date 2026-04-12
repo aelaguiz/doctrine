@@ -2,7 +2,7 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
-name = "review-driven json-schema final_output reuses comment_output as the dedicated final answer"
+name = "review-driven json-schema final_output may reuse comment_output as the dedicated final answer"
 status = "active"
 kind = "render_contract"
 agent = "AcceptanceReviewJsonDemo"

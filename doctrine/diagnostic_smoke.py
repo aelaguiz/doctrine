@@ -30,13 +30,14 @@ def main() -> int:
     _check_final_output_prose_renders()
     _check_final_output_json_renders()
     _check_review_driven_final_output_renders()
+    _check_review_driven_split_final_output_renders()
+    _check_review_driven_split_json_final_output_renders()
     _check_final_output_missing_schema_file_has_specific_code()
     _check_final_output_invalid_schema_json_has_specific_code()
     _check_final_output_missing_example_file_has_specific_code()
     _check_final_output_non_output_ref_has_specific_code()
     _check_final_output_missing_emission_has_specific_code()
     _check_final_output_file_target_has_specific_code()
-    _check_final_output_review_mismatch_has_specific_code()
     _check_reserved_analysis_slot_key_is_rejected()
     _check_output_schema_attachment_renders()
     _check_input_structure_attachment_renders()
@@ -234,6 +235,84 @@ def _check_review_driven_final_output_renders() -> None:
         _expect("## Outputs" not in rendered, rendered)
 
 
+def _check_review_driven_split_final_output_renders() -> None:
+    source = _final_output_review_split_prose_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        compiled = compile_prompt(prompt, "SplitReviewFinalOutputAgent")
+        _expect(compiled.final_output is not None, "expected compiled final_output metadata")
+        _expect(compiled.final_output.format_mode == "prose", str(compiled.final_output))
+        rendered = render_markdown(compiled)
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        final_output_block = rendered.split("## Final Output", 1)[1]
+        _expect("### Draft Review Comment" in outputs_block, rendered)
+        _expect("### Draft Review Decision" not in outputs_block, rendered)
+        _expect("### Draft Review Decision" in final_output_block, rendered)
+        _expect("Rendered only when verdict is changes requested." in final_output_block, rendered)
+        _expect("Keep the control summary aligned with Current Artifact." in final_output_block, rendered)
+
+
+def _check_review_driven_split_json_final_output_renders() -> None:
+    source = _final_output_review_split_json_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        root = prompt_path.parent.parent
+        (root / "schemas").mkdir(exist_ok=True)
+        (root / "examples").mkdir(exist_ok=True)
+        (root / "schemas" / "acceptance_control.schema.json").write_text(
+            textwrap.dedent(
+                """\
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "route": {
+                      "type": "string",
+                      "enum": ["follow_up", "revise"],
+                      "description": "Control route for the next owner."
+                    },
+                    "current_artifact": {
+                      "type": "string",
+                      "description": "Current artifact after review."
+                    },
+                    "next_owner": {
+                      "type": "string",
+                      "description": "Next owner after review."
+                    }
+                  }
+                }
+                """
+            ),
+            encoding="utf-8",
+        )
+        (root / "examples" / "acceptance_control.example.json").write_text(
+            textwrap.dedent(
+                """\
+                {
+                  "route": "follow_up",
+                  "current_artifact": "Draft Plan",
+                  "next_owner": "ReviewLead"
+                }
+                """
+            ),
+            encoding="utf-8",
+        )
+        prompt = parse_file(prompt_path)
+        compiled = compile_prompt(prompt, "ReviewSplitJsonFinalOutputAgent")
+        _expect(compiled.final_output is not None, "expected compiled final_output metadata")
+        _expect(compiled.final_output.format_mode == "json_schema", str(compiled.final_output))
+        rendered = render_markdown(compiled)
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        final_output_block = rendered.split("## Final Output", 1)[1]
+        _expect("### Acceptance Review Comment" in outputs_block, rendered)
+        _expect("### Acceptance Control Final Response" not in outputs_block, rendered)
+        _expect("| Schema | Acceptance Control Schema |" in final_output_block, rendered)
+        _expect("Keep `current_artifact` aligned with Current Artifact." in final_output_block, rendered)
+        _expect("Use `route` value `revise` only when Outline Complete fails." in final_output_block, rendered)
+        _expect("Rendered only when verdict is changes requested." in final_output_block, rendered)
+
+
 def _check_final_output_missing_schema_file_has_specific_code() -> None:
     source = _final_output_json_source(schema_file="schemas/missing_repo_status.schema.json")
     with TemporaryDirectory() as tmp_dir:
@@ -361,23 +440,6 @@ def _check_final_output_file_target_has_specific_code() -> None:
             _expect("TurnResponse" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for file-backed final_output, but compilation succeeded")
-
-
-def _check_final_output_review_mismatch_has_specific_code() -> None:
-    source = _final_output_review_mismatch_source()
-    with TemporaryDirectory() as tmp_dir:
-        prompt_path = _write_prompt(tmp_dir, source)
-        prompt = parse_file(prompt_path)
-        try:
-            compile_prompt(prompt, "InvalidFinalOutputAgent")
-        except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E214", f"expected E214, got {getattr(exc, 'code', None)}")
-            _expect("comment_output" in str(exc), str(exc))
-            _expect("DraftReviewComment" in str(exc), str(exc))
-            _expect("FinalReply" in str(exc), str(exc))
-            return
-        raise SmokeFailure("expected compile failure for review final_output mismatch, but compilation succeeded")
 
 
 def _check_reserved_analysis_slot_key_is_rejected() -> None:
@@ -1625,23 +1687,155 @@ agent ReviewFinalOutputAgent:
 """
 
 
-def _final_output_review_mismatch_source() -> str:
+def _final_output_review_split_prose_source() -> str:
     return _final_output_review_prose_source() + """
 
-output FinalReply: "Final Reply"
+output DraftReviewDecision: "Draft Review Decision"
     target: TurnResponse
     shape: CommentText
     requirement: Required
 
-agent InvalidFinalOutputAgent:
-    role: "Point final_output at the wrong review output."
+    control_summary: "Control Summary"
+        "End with one short control summary for the routed owner."
+
+    retry_note: "Retry Note" when verdict == ReviewVerdict.changes_requested:
+        "Only include this note when the review requests changes."
+
+    current_alignment: "Current Artifact Alignment"
+        "Keep the control summary aligned with {{fields.current_artifact}}."
+
+    standalone_read: "Standalone Read"
+        "The final control summary should stand on its own for the routed owner."
+
+agent SplitReviewFinalOutputAgent:
+    role: "Emit the rich review comment and a small final control summary."
     review: DraftReview
     inputs: "Inputs"
         DraftSpec
     outputs: "Outputs"
         DraftReviewComment
-        FinalReply
-    final_output: FinalReply
+        DraftReviewDecision
+    final_output: DraftReviewDecision
+"""
+
+
+def _final_output_review_split_json_source() -> str:
+    return """json schema AcceptanceControlSchema: "Acceptance Control Schema"
+    profile: OpenAIStructuredOutput
+    file: "schemas/acceptance_control.schema.json"
+
+output shape AcceptanceControlJson: "Acceptance Control JSON"
+    kind: JsonObject
+    schema: AcceptanceControlSchema
+    example_file: "examples/acceptance_control.example.json"
+
+    field_notes: "Field Notes"
+        "Keep `current_artifact` aligned with {{fields.current_artifact}}."
+        "Use `route` value `revise` only when {{contract.outline_complete}} fails."
+
+input DraftPlan: "Draft Plan"
+    source: File
+        path: "unit_root/DRAFT_PLAN.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+schema PlanReviewContract: "Plan Review Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the reviewed plan."
+
+    gates:
+        outline_complete: "Outline Complete"
+            "Confirm the reviewed plan includes the outline."
+
+agent ReviewLead:
+    role: "Own accepted plans."
+    workflow: "Follow Up"
+        "Take accepted plans forward."
+
+agent PlanAuthor:
+    role: "Fix rejected plans."
+    workflow: "Revise"
+        "Revise the rejected plan."
+
+output AcceptanceReviewComment: "Acceptance Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State whether the plan passed review."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize what the next owner should read first."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that remains current after review."
+
+    next_owner: "Next Owner"
+        "Name {{ReviewLead}} when accepted and {{PlanAuthor}} when rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "List exact failing gates, including {{contract.outline_complete}} when it fails."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should understand the acceptance verdict, current artifact, and next owner from this output alone."
+
+output AcceptanceControlFinalResponse: "Acceptance Control Final Response"
+    target: TurnResponse
+    shape: AcceptanceControlJson
+    requirement: Required
+
+    changes_requested_note: "Changes Requested Note" when verdict == ReviewVerdict.changes_requested:
+        "Only emit this retry control when the review requests changes."
+
+    standalone_read: "Standalone Read"
+        "This final JSON should be enough for the next owner to route the review result."
+
+review AcceptanceReview: "Acceptance Review"
+    subject: DraftPlan
+    contract: PlanReviewContract
+    comment_output: AcceptanceReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        current_artifact: current_artifact
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_checks: "Contract Checks"
+        accept "The acceptance review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact DraftPlan via AcceptanceReviewComment.current_artifact
+        route "Accepted plan returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current artifact DraftPlan via AcceptanceReviewComment.current_artifact
+        route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+
+agent ReviewSplitJsonFinalOutputAgent:
+    role: "Emit the review comment and end with a control-only JSON result."
+    review: AcceptanceReview
+    inputs: "Inputs"
+        DraftPlan
+    outputs: "Outputs"
+        AcceptanceReviewComment
+        AcceptanceControlFinalResponse
+    final_output: AcceptanceControlFinalResponse
 """
 
 

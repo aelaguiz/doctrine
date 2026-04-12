@@ -111,8 +111,10 @@ Important rules:
   concrete turn.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
-- On review-driven agents, `final_output:` must point at the same emitted
-  `output` the review uses as `comment_output:`.
+- On review-driven agents, `final_output:` may reuse `comment_output:` or
+  point at another emitted `TurnResponse` output. `comment_output:` remains
+  the review carrier, and a separate `final_output:` still inherits review
+  semantic refs and guards.
 - When that designated output's `output shape` carries a `json schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
@@ -240,9 +242,12 @@ Instead:
 
 - `comment_output` names one ordinary `output`
 - `fields:` binds review semantic channels into paths under that output
-- `final_output:` may designate that same `comment_output` when the review
-  should end with a dedicated final-answer contract, including a schema-backed
-  JSON `TurnResponse`
+- `final_output:` may designate that same `comment_output` or another emitted
+  `TurnResponse` when the review should end with a dedicated final-answer
+  contract, including a schema-backed JSON result
+- when `final_output:` is separate, `comment_output` stays the durable review
+  carrier while the separate final output inherits the same review semantic
+  refs and guards
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
 - review currentness still uses direct carriers such as

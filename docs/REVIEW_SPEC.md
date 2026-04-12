@@ -42,8 +42,9 @@ Important rules:
 - a concrete agent may attach a `review_family` directly only when the family
   is already concrete, such as an exhaustive case-selected family
 - the concrete agent must still emit the review's declared `comment_output`
-- when a review-driven agent uses `final_output:`, it must point at that same
-  `comment_output`
+- when a review-driven agent uses `final_output:`, it may either reuse that
+  same `comment_output` or point at another emitted `TurnResponse`; the
+  review's `comment_output` still remains the review carrier
 
 ## Review Contracts
 
@@ -326,6 +327,10 @@ alongside guarded sections.
 That same `comment_output` may also be the agent's `final_output:` when the
 review should end with a dedicated prose or schema-backed JSON final-answer
 contract.
+A review-driven agent may also point `final_output:` at a second emitted
+`TurnResponse` output. In that split shape, `comment_output` stays the durable
+review carrier while the separate final output inherits the same review
+semantic refs and guards.
 
 ## Multi-Subject Review And Carried State
 

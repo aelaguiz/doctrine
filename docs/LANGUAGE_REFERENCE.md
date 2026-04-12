@@ -83,8 +83,10 @@ Important rules:
   ordinary concrete turn.
 - `final_output:` optionally points at one emitted `output` declaration and
   marks that `TurnResponse` artifact as the turn-ending assistant message.
-- On review-driven agents, `final_output:` must point at the same emitted
-  `output` the attached `review` declares as `comment_output:`.
+- On review-driven agents, `final_output:` may either reuse the review's
+  `comment_output:` or point at another emitted `TurnResponse` output.
+  `comment_output:` stays the review carrier, while a separate `final_output:`
+  still inherits the review semantic refs and guards.
 
 `role` has two shipped shapes:
 
@@ -478,8 +480,10 @@ Important rules:
 - When that designated output's `output shape` carries a `json schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
-- On review-driven agents, the designated final output must be the review's
-  `comment_output:` rather than a second emitted `TurnResponse`.
+- On review-driven agents, the designated final output may be either the
+  review's `comment_output:` or a second emitted `TurnResponse`.
+  `comment_output:` still remains the review carrier for routing and
+  currentness semantics.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 

@@ -2,14 +2,14 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
-name = "review-driven prose final_output may reuse comment_output as the dedicated final answer"
+name = "review-driven prose final_output may split from comment_output and still inherit review semantics"
 status = "active"
 kind = "render_contract"
-agent = "DraftReviewFinalOutputDemo"
-approx_ref = "ref/draft_review_final_output_demo/AGENTS.md"
+agent = "DraftReviewSplitFinalOutputDemo"
+approx_ref = "ref/draft_review_split_final_output_demo/AGENTS.md"
 assertion = "exact_lines"
 expected_lines = [
-  "Keep review final outputs aligned without introducing a second message surface.",
+  "Emit the rich review comment and a small final control summary.",
   "",
   "## Draft Review",
   "",
@@ -41,19 +41,13 @@ expected_lines = [
   "- Shape: Markdown Document",
   "- Requirement: Required",
   "",
-  "## Final Output",
+  "## Outputs",
   "",
   "### Draft Review Comment",
   "",
-  "> **Final answer contract**",
-  "> End the turn with one final assistant message that satisfies this contract.",
-  "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Message kind | Final assistant message |",
-  "| Format | Natural-language markdown |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
   "",
   "#### Verdict",
   "",
@@ -91,7 +85,39 @@ expected_lines = [
   "",
   "- Current Artifact",
   "",
-  "#### Read It Cold",
+  "#### Standalone Read",
   "",
   "A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner.",
+  "",
+  "## Final Output",
+  "",
+  "### Draft Review Decision",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that satisfies this contract.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message kind | Final assistant message |",
+  "| Format | Natural-language markdown |",
+  "| Shape | Comment Text |",
+  "| Requirement | Required |",
+  "",
+  "#### Control Summary",
+  "",
+  "End with one short control summary for the routed owner.",
+  "",
+  "#### Retry Note",
+  "",
+  "Rendered only when verdict is changes requested.",
+  "",
+  "Only include this note when the review requests changes.",
+  "",
+  "#### Current Artifact Alignment",
+  "",
+  "Keep the control summary aligned with Current Artifact.",
+  "",
+  "#### Read It Cold",
+  "",
+  "The final control summary should stand on its own for the routed owner.",
 ]
