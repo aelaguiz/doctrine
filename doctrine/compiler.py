@@ -18056,19 +18056,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.WorkflowDecl]:
-        parent_ref = workflow_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: workflow has no parent ref: {workflow_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.workflows_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent workflow for {workflow_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_workflow_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=workflow_decl.name,
+            child_label="workflow",
+            parent_ref=workflow_decl.parent_ref,
+            registry_name="workflows_by_name",
+            resolve_parent_ref=self._resolve_workflow_ref,
+        )
 
     def _resolve_parent_analysis_decl(
         self,
@@ -18076,19 +18071,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.AnalysisDecl]:
-        parent_ref = analysis_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: analysis has no parent ref: {analysis_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.analyses_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent analysis for {analysis_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_analysis_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=analysis_decl.name,
+            child_label="analysis",
+            parent_ref=analysis_decl.parent_ref,
+            registry_name="analyses_by_name",
+            resolve_parent_ref=self._resolve_analysis_ref,
+        )
 
     def _resolve_parent_schema_decl(
         self,
@@ -18096,19 +18086,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.SchemaDecl]:
-        parent_ref = schema_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: schema has no parent ref: {schema_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.schemas_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent schema for {schema_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_schema_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=schema_decl.name,
+            child_label="schema",
+            parent_ref=schema_decl.parent_ref,
+            registry_name="schemas_by_name",
+            resolve_parent_ref=self._resolve_schema_ref,
+        )
 
     def _resolve_parent_document_decl(
         self,
@@ -18116,19 +18101,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.DocumentDecl]:
-        parent_ref = document_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: document has no parent ref: {document_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.documents_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent document for {document_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_document_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=document_decl.name,
+            child_label="document",
+            parent_ref=document_decl.parent_ref,
+            registry_name="documents_by_name",
+            resolve_parent_ref=self._resolve_document_ref,
+        )
 
     def _resolve_parent_skills_decl(
         self,
@@ -18136,19 +18116,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.SkillsDecl]:
-        parent_ref = skills_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: skills has no parent ref: {skills_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.skills_blocks_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent skills for {skills_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_skills_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=skills_decl.name,
+            child_label="skills",
+            parent_ref=skills_decl.parent_ref,
+            registry_name="skills_blocks_by_name",
+            resolve_parent_ref=self._resolve_skills_ref,
+        )
 
     def _resolve_parent_inputs_decl(
         self,
@@ -18156,19 +18131,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.InputsDecl]:
-        parent_ref = inputs_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: inputs block has no parent ref: {inputs_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.inputs_blocks_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent inputs block for {inputs_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_inputs_block_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=inputs_decl.name,
+            child_label="inputs block",
+            parent_ref=inputs_decl.parent_ref,
+            registry_name="inputs_blocks_by_name",
+            resolve_parent_ref=self._resolve_inputs_block_ref,
+        )
 
     def _resolve_parent_outputs_decl(
         self,
@@ -18176,19 +18146,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.OutputsDecl]:
-        parent_ref = outputs_decl.parent_ref
-        if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: outputs block has no parent ref: {outputs_decl.name}"
-            )
-        if not parent_ref.module_parts:
-            parent_decl = unit.outputs_blocks_by_name.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent outputs block for {outputs_decl.name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return self._resolve_outputs_block_ref(parent_ref, unit=unit)
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=outputs_decl.name,
+            child_label="outputs block",
+            parent_ref=outputs_decl.parent_ref,
+            registry_name="outputs_blocks_by_name",
+            resolve_parent_ref=self._resolve_outputs_block_ref,
+        )
 
     def _resolve_input_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -18276,17 +18241,38 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.Agent]:
-        parent_ref = agent.parent_ref
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=agent.name,
+            child_label="agent",
+            parent_ref=agent.parent_ref,
+            registry_name="agents_by_name",
+            resolve_parent_ref=self._resolve_agent_ref,
+        )
+
+    def _resolve_parent_decl(
+        self,
+        *,
+        unit: IndexedUnit,
+        child_name: str,
+        child_label: str,
+        parent_ref: model.NameRef | None,
+        registry_name: str,
+        resolve_parent_ref,
+    ):
         if parent_ref is None:
-            raise CompileError(f"Internal compiler error: agent has no parent ref: {agent.name}")
+            raise CompileError(
+                f"Internal compiler error: {child_label} has no parent ref: {child_name}"
+            )
         if not parent_ref.module_parts:
-            parent_agent = unit.agents_by_name.get(parent_ref.declaration_name)
-            if parent_agent is None:
+            registry = getattr(unit, registry_name)
+            parent_decl = registry.get(parent_ref.declaration_name)
+            if parent_decl is None:
                 raise CompileError(
-                    f"Missing parent agent for {agent.name}: {parent_ref.declaration_name}"
+                    f"Missing parent {child_label} for {child_name}: {parent_ref.declaration_name}"
                 )
-            return unit, parent_agent
-        return self._resolve_agent_ref(parent_ref, unit=unit)
+            return unit, parent_decl
+        return resolve_parent_ref(parent_ref, unit=unit)
 
     def _resolve_decl_ref(
         self,
