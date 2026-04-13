@@ -60,7 +60,7 @@ class DecisionAttachmentTests(unittest.TestCase):
             "Rank by Teaching Fit, Product Reality, Capstone Coherence, and Downstream Preservability.",
             rendered,
         )
-        self.assertIn("Winner reasons are required.", rendered)
+        self.assertIn("You must explain why the winner won.", rendered)
         self.assertLess(rendered.index("## Playable Strategy Choice"), rendered.index("## Rep Choice"))
 
     def test_duplicate_decision_attachment_still_fails_loudly(self) -> None:
