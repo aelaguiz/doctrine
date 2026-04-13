@@ -14,8 +14,8 @@ dependencies = [
     "lark>=1.2,<2",
 ]
 
-[tool.setuptools]
-packages = ["doctrine"]
+[tool.setuptools.packages.find]
+include = ["doctrine*"]
 
 [tool.setuptools.package-data]
 doctrine = ["grammars/*.lark", "*.mjs"]

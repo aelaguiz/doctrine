@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from doctrine.compiler import (
+from doctrine._compiler.types import (
     CompiledAgent,
     CompiledBodyItem,
     CompiledBulletsBlock,
