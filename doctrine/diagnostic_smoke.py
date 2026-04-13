@@ -57,6 +57,7 @@ def main() -> int:
     _check_route_only_output_can_render_route_semantics()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
+    _check_emit_docs_rejects_support_files_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_flow_graph_extracts_routes_and_shared_io()
     _check_emit_flow_uses_entrypoint_stem_for_output_name()
@@ -839,6 +840,62 @@ output_dir = "build"
         _expect("entrypoint does not exist" in output, output)
 
 
+def _check_emit_docs_rejects_support_files_outside_project_root() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        base = Path(tmp_dir)
+        root = base / "project"
+        prompts = root / "prompts"
+        prompts.mkdir(parents=True)
+        (base / "external.schema.json").write_text(
+            '{\n  "type": "object",\n  "properties": {}\n}\n',
+            encoding="utf-8",
+        )
+        (base / "external.example.json").write_text("{ }\n", encoding="utf-8")
+        (prompts / "AGENTS.prompt").write_text(
+            """json schema RepoStatusSchema: "Repo Status Schema"
+    profile: OpenAIStructuredOutput
+    file: "../external.schema.json"
+
+output shape RepoStatusJson: "Repo Status JSON"
+    kind: JsonObject
+    schema: RepoStatusSchema
+    example_file: "../external.example.json"
+
+output RepoStatusFinalResponse: "Repo Status Final Response"
+    target: TurnResponse
+    shape: RepoStatusJson
+    requirement: Required
+
+agent RepoStatusAgent:
+    role: "Report repo status."
+    workflow: "Summarize"
+        "Summarize the repo state."
+    outputs: "Outputs"
+        RepoStatusFinalResponse
+    final_output: RepoStatusFinalResponse
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_docs_main(["--pyproject", str(pyproject), "--target", "demo"])
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E519 emit error" in output, output)
+        _expect("outside the target project root" in output, output)
+
+
 def _check_emit_docs_uses_entrypoint_stem_for_output_name() -> None:
     with TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
@@ -882,9 +939,23 @@ output_dir = "build"
         )
         _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
         agents_path = root / "build" / "demo" / "agents" / "demo_agent" / "AGENTS.md"
+        agents_contract_path = (
+            root / "build" / "demo" / "agents" / "demo_agent" / "AGENTS.contract.json"
+        )
         soul_path = root / "build" / "demo" / "agents" / "demo_agent" / "SOUL.md"
+        soul_contract_path = (
+            root / "build" / "demo" / "agents" / "demo_agent" / "SOUL.contract.json"
+        )
         _expect(agents_path.is_file(), f"missing emitted AGENTS.md: {agents_path}")
+        _expect(
+            agents_contract_path.is_file(),
+            f"missing emitted AGENTS.contract.json: {agents_contract_path}",
+        )
         _expect(soul_path.is_file(), f"missing emitted SOUL.md: {soul_path}")
+        _expect(
+            soul_contract_path.is_file(),
+            f"missing emitted SOUL.contract.json: {soul_contract_path}",
+        )
 
 
 def _check_flow_graph_extracts_routes_and_shared_io() -> None:

@@ -198,11 +198,18 @@ class ValidateMixin:
     ) -> str | None:
         if relative_path is None:
             return None
-        path = unit.prompt_root.parent / relative_path
+        path = self._resolve_declared_support_path(unit, relative_path)
         try:
             return path.read_text()
         except OSError:
             return None
+
+    def _resolve_declared_support_path(
+        self,
+        unit: IndexedUnit,
+        relative_path: str,
+    ) -> Path:
+        return (unit.prompt_root.parent / relative_path).resolve()
 
     def _read_required_final_output_support_text(
         self,

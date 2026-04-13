@@ -12,8 +12,8 @@ Each numbered example may contain:
 - `cases.toml`: manifest-backed proof used by `doctrine.verify_corpus`
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
-  including compiled Markdown trees and target-scoped `.flow.{d2,svg}`
-  artifacts
+  including compiled Markdown trees, companion `.contract.json` files, and
+  target-scoped `.flow.{d2,svg}` artifacts
 
 ## How To Read The Corpus
 
@@ -191,5 +191,5 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 ```
 
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
-example. Its `build_ref/` tree includes both compiled Markdown and
-`AGENTS.flow.{d2,svg}` proof artifacts.
+example. Its `build_ref/` tree includes compiled Markdown, companion contract
+JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.

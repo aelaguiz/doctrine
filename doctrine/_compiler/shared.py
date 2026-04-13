@@ -352,6 +352,8 @@ class FinalOutputJsonShapeSummary:
     schema_profile: str | None
     schema_file: str | None
     example_file: str | None
+    resolved_schema_file: Path | None
+    resolved_example_file: Path | None
     payload_rows: tuple[tuple[str, str, str], ...]
     example_text: str | None
     extra_items: tuple[model.AnyRecordItem, ...]

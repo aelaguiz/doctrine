@@ -417,6 +417,8 @@ class CompileMixin:
             schema_profile=json_summary.schema_profile if json_summary is not None else None,
             schema_file=json_summary.schema_file if json_summary is not None else None,
             example_file=json_summary.example_file if json_summary is not None else None,
+            resolved_schema_file=json_summary.resolved_schema_file if json_summary is not None else None,
+            resolved_example_file=json_summary.resolved_example_file if json_summary is not None else None,
             section=section,
         )
 

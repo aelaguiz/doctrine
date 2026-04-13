@@ -96,6 +96,8 @@ class FinalOutputTests(unittest.TestCase):
         self.assertEqual(agent.final_output.format_mode, "prose")
         self.assertEqual(agent.final_output.output_name, "FinalReply")
         self.assertEqual(agent.final_output.shape_name, "CommentText")
+        self.assertIsNone(agent.final_output.resolved_schema_file)
+        self.assertIsNone(agent.final_output.resolved_example_file)
 
         rendered = render_markdown(agent)
         self.assertIn("## Final Output", rendered)
@@ -180,6 +182,12 @@ class FinalOutputTests(unittest.TestCase):
         self.assertEqual(agent.final_output.schema_profile, "OpenAIStructuredOutput")
         self.assertEqual(agent.final_output.schema_file, "schemas/repo_status.schema.json")
         self.assertEqual(agent.final_output.example_file, "examples/repo_status.example.json")
+        self.assertIsNotNone(agent.final_output.resolved_schema_file)
+        self.assertIsNotNone(agent.final_output.resolved_example_file)
+        self.assertTrue(agent.final_output.resolved_schema_file.is_absolute())
+        self.assertTrue(agent.final_output.resolved_example_file.is_absolute())
+        self.assertEqual(agent.final_output.resolved_schema_file.name, "repo_status.schema.json")
+        self.assertEqual(agent.final_output.resolved_example_file.name, "repo_status.example.json")
 
         rendered = render_markdown(agent)
         self.assertIn("| Format | Structured JSON |", rendered)

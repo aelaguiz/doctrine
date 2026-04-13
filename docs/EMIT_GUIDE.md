@@ -3,14 +3,15 @@
 Doctrine ships two emit commands that share one prompts-root-aware emit
 pipeline:
 
-- `doctrine.emit_docs` writes the runtime Markdown tree that existing coding
-  agent tools consume.
+- `doctrine.emit_docs` writes the runtime Markdown tree plus a versioned
+  machine-readable companion contract for each concrete emitted agent.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
 
-Use `emit_docs` when you need the compiled runtime prompt surface. Use
-`emit_flow` when you need a reviewable graph of how declared inputs, concrete
-agents, outputs, and route edges fit together for one entrypoint.
+Use `emit_docs` when you need the compiled runtime prompt surface and its
+machine-readable final-output metadata companion. Use `emit_flow` when you need
+a reviewable graph of how declared inputs, concrete agents, outputs, and route
+edges fit together for one entrypoint.
 
 Important mode split:
 
@@ -157,10 +158,11 @@ still stays anchored to the entrypoint's own local `prompts/` root.
 
 Both emitters preserve the entrypoint's path beneath `prompts/`.
 
-For runtime Markdown, Doctrine writes one file per concrete root agent:
+For runtime prompt output, Doctrine writes two files per concrete root agent:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.md
+<output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.contract.json
 ```
 
 If the entrypoint-relative directory already ends with the agent slug, Doctrine
@@ -178,12 +180,25 @@ Concrete shipped examples:
 
 ```text
 examples/07_handoffs/build/project_lead/AGENTS.md
+examples/07_handoffs/build/project_lead/AGENTS.contract.json
 examples/07_handoffs/build/research_specialist/AGENTS.md
+examples/07_handoffs/build/research_specialist/AGENTS.contract.json
 examples/07_handoffs/build/writing_specialist/AGENTS.md
+examples/07_handoffs/build/writing_specialist/AGENTS.contract.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
 ```
+
+The companion contract is compiler-owned emitted truth. In v1 it carries:
+
+- concrete agent identity
+- whether `final_output` exists
+- final-output declaration key and name
+- `format_mode`
+- `schema_profile`
+- stable project-relative `schema_file` and `example_file` paths when the final
+  output is schema-backed
 
 ## How To Read `emit_flow` Output
 
@@ -235,7 +250,9 @@ If you changed emit diagnostics or the emit CLI error surface, also run:
 make verify-diagnostics
 ```
 
-The canonical checked-in flow proofs live in:
+The canonical checked-in build proofs live in `build_ref/` trees and may include
+compiled Markdown, companion `.contract.json` files, and target-scoped flow
+artifacts. The flagship checked-in flow proofs live in:
 
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`

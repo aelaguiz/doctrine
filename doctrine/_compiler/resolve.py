@@ -114,6 +114,16 @@ class ResolveMixin:
             schema_decl=schema_decl,
             schema_file=schema_file,
         )
+        resolved_schema_file = (
+            self._resolve_declared_support_path(schema_unit, schema_file)
+            if schema_file is not None
+            else None
+        )
+        resolved_example_file = (
+            self._resolve_declared_support_path(shape_unit, example_file)
+            if example_file is not None
+            else None
+        )
         example_text = (
             self._read_required_final_output_support_text(
                 shape_unit,
@@ -131,6 +141,8 @@ class ResolveMixin:
             schema_profile=schema_profile,
             schema_file=schema_file,
             example_file=example_file,
+            resolved_schema_file=resolved_schema_file,
+            resolved_example_file=resolved_example_file,
             payload_rows=payload_rows,
             example_text=example_text,
             extra_items=shape_extras,

@@ -190,9 +190,9 @@ Carrier rules:
   expand to concrete member artifacts in authored group order
 - `standalone_read` explains the contract to humans, but it does not create a
   second trust channel
-- compiled `AGENTS.md` emission and target-scoped workflow-flow emission are
-  separate build layers configured outside the prompt language; they are not
-  `output target` declarations
+- compiled `AGENTS.md` plus companion `.contract.json` emission and
+  target-scoped workflow-flow emission are separate build layers configured
+  outside the prompt language; they are not `output target` declarations
 
 ## Guarded Output Sections
 

@@ -206,6 +206,7 @@ Stability rules:
 | `E516` | Pinned D2 renderer failed | `emit_flow` produced `.flow.d2`, but the pinned D2 renderer failed while producing `.flow.svg`. |
 | `E517` | Emit flow CLI requires exactly one resolution mode | `emit_flow` was invoked with both configured-target mode and direct mode, or with neither mode. |
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
+| `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

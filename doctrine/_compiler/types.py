@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TypeAlias
 
 from doctrine import model
@@ -176,6 +177,8 @@ class CompiledFinalOutputSpec:
     schema_profile: str | None = None
     schema_file: str | None = None
     example_file: str | None = None
+    resolved_schema_file: Path | None = None
+    resolved_example_file: Path | None = None
     section: CompiledSection | None = None
 
 
