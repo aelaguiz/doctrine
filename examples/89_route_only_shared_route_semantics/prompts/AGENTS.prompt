@@ -1,0 +1,43 @@
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host-provided route facts that say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local."
+
+
+output RouteRepairComment: "Route Repair Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    route_handoff: "Route Handoff" when route.exists:
+        next_owner: route.next_owner
+
+        route_summary: "Route Summary"
+            "{{route.summary}}"
+
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue safely."
+    workflow: "Route"
+        "Take back the same issue when the next specialist owner is still not justified."
+
+
+route_only RouteRepair: "Route Repair"
+    facts: RouteFacts
+    when:
+        live_job == "route_repair"
+        current_specialist_output_missing
+    current none
+    handoff_output: RouteRepairComment
+    routes:
+        routing_owner -> RoutingOwner
+
+
+agent RouteRepairDemo:
+    role: "Keep route-only repair explicit when no specialist artifact is current."
+    workflow: RouteRepair
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteRepairComment

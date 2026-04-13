@@ -28,6 +28,8 @@ The governing split is:
 - `workflow` still explains the job in human language
 - `law` inside `workflow` decides local truth and branch behavior
 - `output` still defines what the turn emits
+- when law resolves a real route, emitted outputs may read shared `route.*`
+  semantics on that same turn
 - `trust_surface` inside `output` marks which emitted fields downstream owners
   may trust
 - guarded output sections keep conditional readback on the output contract
@@ -56,9 +58,27 @@ Important rules:
 
 - Guarded output sections are still output-owned fields.
 - They are required only when their guard resolves true.
-- On ordinary outputs, guards may read declared inputs and enum members.
+- On ordinary outputs, guards may read declared inputs, enum members, and
+  `route.exists` when the active workflow-law branches expose route semantics.
 - They may not read workflow-local bindings, emitted output fields, or
   undeclared runtime names.
+
+When workflow law resolves a real route, emitted outputs may read:
+
+- `route.exists`
+- `route.next_owner`
+- `route.next_owner.key`
+- `route.next_owner.title`
+- `route.label`
+- `route.summary`
+
+Important rules:
+
+- `route.*` is compiler-owned derived truth from authored `route "..." -> Agent`
+  statements
+- unguarded `route.*` reads fail loudly when some active branches may not route
+- `when route.exists:` is the ordinary output-side guard for route-specific
+  readback
 
 ## Branch Model
 
@@ -275,6 +295,10 @@ Read the workflow-law examples in this order:
 - `40` through `42`: the staged route-only handoff ladder
 - `70_route_only_declaration`: dedicated `route_only` lowered through the same
   route-only validation path
+- `87_workflow_route_output_binding`: shared `route.*` reads on ordinary
+  workflow-law outputs plus fail-loud unguarded route reads
+- `89_route_only_shared_route_semantics`: dedicated `route_only` feeding the
+  same shared output-facing route semantics
 - `71_grounding_declaration`: explicit grounding protocol with ordinary route
   targets
 - `72_schema_group_invalidation`: schema-group invalidation expansion in

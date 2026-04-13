@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/86_imported_review_comment_local_routes`.
+`examples/90_split_handoff_and_final_output_shared_route_semantics`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.

@@ -53,6 +53,8 @@ def main() -> int:
     _check_review_failure_detail_guard_has_specific_code()
     _check_review_exact_contract_gate_modes_do_not_blow_up()
     _check_review_semantic_addressability_renders()
+    _check_route_output_read_requires_guard()
+    _check_route_only_output_can_render_route_semantics()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
@@ -670,6 +672,109 @@ def _check_review_semantic_addressability_renders() -> None:
         _expect("{{contract." not in rendered, rendered)
         _expect("Use Completeness before you route Next Owner." in rendered, rendered)
         _expect("compare Reviewed Artifact against Completeness." in rendered, rendered)
+
+
+def _check_route_output_read_requires_guard() -> None:
+    source = """input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    should_route: "Should Route"
+
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+output MaybeRoutedReply: "Maybe Routed Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+workflow MaybeRoutedWorkflow: "Maybe Routed Workflow"
+    "Route only when the host facts require it."
+
+    law:
+        active when true
+        current none
+        stop "Reply and stop."
+        route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+agent MaybeRouteBindingDemo:
+    role: "Fail loud when unguarded route reads span unrouted branches."
+    workflow: MaybeRoutedWorkflow
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        MaybeRoutedReply
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "MaybeRouteBindingDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect("route semantics are not live on every branch" in str(exc), str(exc))
+            _expect("guard the read with `route.exists`" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for unguarded route output read, but compilation succeeded")
+
+
+def _check_route_only_output_can_render_route_semantics() -> None:
+    source = """input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    next_owner_unknown: "Next Owner Unknown"
+
+output RouteOnlyHandoffOutput: "Routing Handoff Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    route_handoff: "Route Handoff" when route.exists:
+        next_owner: route.next_owner
+
+        route_readback: "Route Readback"
+            "{{route.summary}}"
+
+agent RoutingOwner:
+    role: "Own explicit reroutes when specialist work cannot continue safely."
+    workflow: "Instructions"
+        "Take back the same issue when the next specialist owner is still not justified."
+
+workflow RouteOnlyTurns: "Routing-Only Turns"
+    "Handle turns that can only stop, reroute, or keep ownership explicit."
+
+    law:
+        active when true
+        current none
+        stop "No specialist artifact is current for this turn."
+        route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown
+
+agent RouteOnlyRouteBindingDemo:
+    role: "Read route truth from a route-only comment output."
+    workflow: RouteOnlyTurns
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteOnlyHandoffOutput
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "RouteOnlyRouteBindingDemo"))
+        _expect("#### Route Handoff" in rendered, rendered)
+        _expect("Rendered only when a routed owner exists." in rendered, rendered)
+        _expect("- Next Owner: Routing Owner" in rendered, rendered)
+        _expect(
+            "Keep the issue on RoutingOwner until the next specialist owner is actually justified. Next owner: Routing Owner."
+            in rendered,
+            rendered,
+        )
 
 
 def _check_review_exact_contract_gate_modes_do_not_blow_up() -> None:

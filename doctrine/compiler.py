@@ -685,6 +685,22 @@ class ReviewSemanticContractGateTarget:
 
 
 @dataclass(slots=True, frozen=True)
+class RouteSemanticBranch:
+    target_module_parts: tuple[str, ...]
+    target_name: str
+    target_title: str | None
+    label: str
+    review_verdict: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class RouteSemanticContext:
+    branches: tuple[RouteSemanticBranch, ...] = ()
+    has_unrouted_branch: bool = False
+    route_required: bool = False
+
+
+@dataclass(slots=True, frozen=True)
 class ReadableColumnsTarget:
     columns: tuple[model.ReadableTableColumn, ...]
 
@@ -1126,6 +1142,7 @@ class CompilationSession:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         final_output: CompiledFinalOutputSpec | None,
     ) -> CompiledField | None:
         return CompilationContext(self)._compile_agent_field(
@@ -1134,6 +1151,7 @@ class CompilationSession:
             unit=unit,
             agent_contract=agent_contract,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             final_output=final_output,
         )
 
@@ -1487,6 +1505,7 @@ class CompilationContext:
                 tuple[str, ...],
                 str,
                 frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+                frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
                 frozenset[OutputDeclKey],
             ]
         ] = []
@@ -1509,6 +1528,7 @@ class CompilationContext:
                 tuple[str, ...],
                 str,
                 frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+                frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
                 frozenset[OutputDeclKey],
             ],
             ResolvedIoBody,
@@ -2378,6 +2398,12 @@ class CompilationContext:
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
             )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
+        route_output_contexts = self._route_output_contexts_for_agent(
+            agent,
+            unit=unit,
+            resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
+        )
         primary_review_output_context = self._primary_review_output_context(
             review_output_contexts
         )
@@ -2433,6 +2459,7 @@ class CompilationContext:
                 unit=unit,
                 agent_contract=agent_contract,
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 fallback_review_semantics=(
                     primary_review_output_context[1]
                     if primary_review_output_context is not None
@@ -2448,6 +2475,7 @@ class CompilationContext:
             unit=unit,
             agent_contract=agent_contract,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             final_output=final_output,
         )
         return CompiledAgent(name=agent.name, fields=compiled_fields, final_output=final_output)
@@ -2460,6 +2488,7 @@ class CompilationContext:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         final_output: CompiledFinalOutputSpec | None,
     ) -> tuple[CompiledField, ...]:
         if len(specs) <= 1:
@@ -2470,6 +2499,7 @@ class CompilationContext:
                     unit=unit,
                     agent_contract=agent_contract,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     final_output=final_output,
                 )
                 for spec in specs
@@ -2485,6 +2515,7 @@ class CompilationContext:
                     unit=unit,
                     agent_contract=agent_contract,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     final_output=final_output,
                 )
                 for spec in specs
@@ -2503,6 +2534,7 @@ class CompilationContext:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         final_output: CompiledFinalOutputSpec | None,
     ) -> CompiledField | None:
         field = spec.field
@@ -2565,6 +2597,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=f"agent {agent_name}",
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 excluded_output_keys=(
                     frozenset({final_output.output_key}) if final_output is not None else frozenset()
                 ),
@@ -2609,6 +2642,7 @@ class CompilationContext:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         fallback_review_semantics: ReviewSemanticContext | None = None,
     ) -> CompiledFinalOutputSpec:
         owner_label = f"agent {agent_name} final_output"
@@ -2629,6 +2663,10 @@ class CompilationContext:
         )
         if review_semantics is None:
             review_semantics = fallback_review_semantics
+        route_semantics = self._route_output_context_for_key(
+            route_output_contexts,
+            output_key,
+        )
 
         scalar_items, section_items, extras = self._split_record_items(
             output_decl.items,
@@ -2662,7 +2700,9 @@ class CompilationContext:
             output_decl,
             unit=output_unit,
             allow_review_semantics=review_semantics is not None,
+            allow_route_semantics=route_semantics is not None,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
         )
 
         requirement = (
@@ -2694,6 +2734,7 @@ class CompilationContext:
             json_summary=json_summary,
             extras=extras,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
             render_profile=render_profile,
             explicit_render_profile=explicit_render_profile,
         )
@@ -2871,6 +2912,7 @@ class CompilationContext:
         json_summary: FinalOutputJsonShapeSummary | None,
         extras: tuple[model.AnyRecordItem, ...],
         review_semantics: ReviewSemanticContext | None,
+        route_semantics: RouteSemanticContext | None,
         render_profile: ResolvedRenderProfile | None,
         explicit_render_profile: ResolvedRenderProfile | None,
     ) -> CompiledSection:
@@ -2973,6 +3015,7 @@ class CompilationContext:
                 output_decl,
                 unit=unit,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
             if output_decl.trust_surface
@@ -2987,6 +3030,7 @@ class CompilationContext:
                     owner_label=f"output shape {json_summary.shape_decl.name}",
                     surface_label="final_output shape support",
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                     insert_item_spacers=True,
                 )
@@ -2998,6 +3042,7 @@ class CompilationContext:
                 owner_label=f"output {output_decl.name}",
                 surface_label="final_output support",
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
                 trust_surface_section=trust_surface_section,
                 standalone_title="Read It Cold",
@@ -3024,6 +3069,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
         trust_surface_section: CompiledSection | None = None,
         standalone_title: str = "Standalone Read",
@@ -3047,6 +3093,7 @@ class CompilationContext:
                     owner_label=owner_label,
                     surface_label=surface_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                 )
             )
@@ -3339,6 +3386,384 @@ class CompilationContext:
             review_output_contexts,
             key=lambda item: _dotted_decl_name(item[0][0], item[0][1]),
         )[0]
+
+    def _route_output_contexts_for_agent(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+        resolved_slots: dict[str, ResolvedWorkflowBody],
+        agent_contract: AgentContract,
+    ) -> frozenset[tuple[OutputDeclKey, RouteSemanticContext]]:
+        emitted_output_keys = tuple(agent_contract.outputs.keys())
+        if not emitted_output_keys:
+            return frozenset()
+
+        context: RouteSemanticContext | None = None
+        review_fields = [field for field in agent.fields if isinstance(field, model.ReviewField)]
+        if review_fields:
+            review_unit, review_decl = self._resolve_review_ref(review_fields[0].value, unit=unit)
+            context = self._route_semantic_context_from_review_decl(
+                review_decl,
+                unit=review_unit,
+            )
+        elif (workflow_body := resolved_slots.get("workflow")) is not None and workflow_body.law is not None:
+            context = self._route_semantic_context_from_law_items(
+                workflow_body.law.items,
+                unit=unit,
+            )
+
+        if context is None:
+            return frozenset()
+        return frozenset((output_key, context) for output_key in emitted_output_keys)
+
+    def _route_output_context_for_key(
+        self,
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+        output_key: OutputDeclKey,
+    ) -> RouteSemanticContext | None:
+        for key, context in route_output_contexts:
+            if key == output_key:
+                return context
+        return None
+
+    def _route_semantic_context_from_review_decl(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> RouteSemanticContext | None:
+        resolved = self._resolve_review_decl(review_decl, unit=unit)
+        branches: list[RouteSemanticBranch] = []
+        has_unrouted_branch = False
+
+        def collect_section(
+            section: model.ReviewOutcomeSection,
+            *,
+            verdict: str,
+        ) -> None:
+            nonlocal has_unrouted_branch
+            for branch in self._collect_review_outcome_leaf_branches(section.items, unit=unit):
+                if not branch.routes:
+                    has_unrouted_branch = True
+                    continue
+                for route in branch.routes:
+                    branches.append(
+                        self._route_semantic_branch_from_route(
+                            route.target,
+                            label=route.label,
+                            unit=unit,
+                            review_verdict=verdict,
+                        )
+                    )
+
+        if resolved.cases:
+            for case in resolved.cases:
+                collect_section(case.on_accept, verdict=_REVIEW_VERDICT_TEXT["accept"])
+                collect_section(case.on_reject, verdict=_REVIEW_VERDICT_TEXT["changes_requested"])
+        else:
+            for item in resolved.items:
+                if not isinstance(item, model.ReviewOutcomeSection):
+                    continue
+                verdict = (
+                    _REVIEW_VERDICT_TEXT["accept"]
+                    if item.key == "on_accept"
+                    else _REVIEW_VERDICT_TEXT["changes_requested"]
+                )
+                collect_section(item, verdict=verdict)
+
+        return self._build_route_semantic_context(
+            branches,
+            has_unrouted_branch=has_unrouted_branch,
+        )
+
+    def _route_semantic_context_from_law_items(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+    ) -> RouteSemanticContext | None:
+        branches: list[RouteSemanticBranch] = []
+        has_unrouted_branch = False
+        for branch in self._collect_law_leaf_branches(items, unit=unit):
+            if not branch.routes:
+                has_unrouted_branch = True
+                continue
+            if not any(route.when_expr is None for route in branch.routes):
+                has_unrouted_branch = True
+            for route in branch.routes:
+                branches.append(
+                    self._route_semantic_branch_from_route(
+                        route.target,
+                        label=route.label,
+                        unit=unit,
+                    )
+                )
+        return self._build_route_semantic_context(
+            branches,
+            has_unrouted_branch=has_unrouted_branch,
+        )
+
+    def _route_semantic_branch_from_route(
+        self,
+        target: model.NameRef,
+        *,
+        label: str,
+        unit: IndexedUnit,
+        review_verdict: str | None = None,
+    ) -> RouteSemanticBranch:
+        route_unit, route_agent = self._resolve_agent_ref(target, unit=unit)
+        return RouteSemanticBranch(
+            target_module_parts=route_unit.module_parts,
+            target_name=route_agent.name,
+            target_title=route_agent.title,
+            label=label,
+            review_verdict=review_verdict,
+        )
+
+    def _build_route_semantic_context(
+        self,
+        branches: list[RouteSemanticBranch],
+        *,
+        has_unrouted_branch: bool,
+    ) -> RouteSemanticContext | None:
+        if not branches and not has_unrouted_branch:
+            return None
+        seen: set[tuple[tuple[str, ...], str, str, str | None]] = set()
+        deduped: list[RouteSemanticBranch] = []
+        for branch in branches:
+            key = (
+                branch.target_module_parts,
+                branch.target_name,
+                branch.label,
+                branch.review_verdict,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(branch)
+        return RouteSemanticContext(
+            branches=tuple(deduped),
+            has_unrouted_branch=has_unrouted_branch,
+        )
+
+    def _narrow_route_semantics(
+        self,
+        route_semantics: RouteSemanticContext | None,
+        expr: model.Expr | None,
+        *,
+        unit: IndexedUnit,
+    ) -> RouteSemanticContext | None:
+        if route_semantics is None or expr is None:
+            return route_semantics
+
+        narrowed = route_semantics
+        exists_state = self._route_guard_exists_state(expr)
+        if exists_state is True:
+            narrowed = replace(narrowed, route_required=True)
+        elif exists_state is False:
+            narrowed = RouteSemanticContext(branches=(), has_unrouted_branch=False)
+
+        verdict = self._route_guard_review_verdict(expr, unit=unit)
+        if verdict is not None:
+            narrowed = self._route_semantics_for_review_verdict(narrowed, verdict)
+        return narrowed
+
+    def _route_guard_exists_state(self, expr: model.Expr) -> bool | None:
+        if isinstance(expr, model.ExprRef):
+            return True if expr.parts == ("route", "exists") else None
+        if isinstance(expr, model.ExprBinary):
+            if expr.op in {"==", "!="}:
+                left_is_route = isinstance(expr.left, model.ExprRef) and expr.left.parts == (
+                    "route",
+                    "exists",
+                )
+                right_is_route = isinstance(expr.right, model.ExprRef) and expr.right.parts == (
+                    "route",
+                    "exists",
+                )
+                if left_is_route and isinstance(expr.right, bool):
+                    return expr.right if expr.op == "==" else not expr.right
+                if right_is_route and isinstance(expr.left, bool):
+                    return expr.left if expr.op == "==" else not expr.left
+            if expr.op == "and":
+                left = self._route_guard_exists_state(expr.left)
+                right = self._route_guard_exists_state(expr.right)
+                if left is False or right is False:
+                    return False
+                if left is True or right is True:
+                    return True
+        return None
+
+    def _route_guard_review_verdict(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        if isinstance(expr, model.ExprBinary):
+            if expr.op == "and":
+                left = self._route_guard_review_verdict(expr.left, unit=unit)
+                right = self._route_guard_review_verdict(expr.right, unit=unit)
+                if left is None:
+                    return right
+                if right is None:
+                    return left
+                return left if left == right else None
+            if expr.op == "==":
+                left_is_verdict = isinstance(expr.left, model.ExprRef) and expr.left.parts == ("verdict",)
+                right_is_verdict = isinstance(expr.right, model.ExprRef) and expr.right.parts == ("verdict",)
+                if left_is_verdict:
+                    return self._resolve_constant_enum_member(expr.right, unit=unit)
+                if right_is_verdict:
+                    return self._resolve_constant_enum_member(expr.left, unit=unit)
+        return None
+
+    def _route_semantics_for_review_verdict(
+        self,
+        route_semantics: RouteSemanticContext,
+        verdict: str,
+    ) -> RouteSemanticContext:
+        matching = tuple(
+            branch for branch in route_semantics.branches if branch.review_verdict in {None, verdict}
+        )
+        has_unrouted_branch = route_semantics.has_unrouted_branch and not matching
+        return RouteSemanticContext(
+            branches=matching,
+            has_unrouted_branch=has_unrouted_branch,
+            route_required=route_semantics.route_required,
+        )
+
+    def _route_semantic_branch_title(self, branch: RouteSemanticBranch) -> str:
+        return branch.target_title or _humanize_key(branch.target_name)
+
+    def _route_semantic_branch_summary(self, branch: RouteSemanticBranch) -> str:
+        return f"{branch.label} Next owner: {self._route_semantic_branch_title(branch)}."
+
+    def _route_semantic_parts(
+        self,
+        ref: model.AddressableRef,
+    ) -> tuple[str, ...] | None:
+        parts = (*ref.root.module_parts, ref.root.declaration_name, *ref.path)
+        if not parts or parts[0] != "route":
+            return None
+        return parts
+
+    def _route_semantic_branches_for_read(
+        self,
+        route_semantics: RouteSemanticContext | None,
+        *,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+    ) -> tuple[RouteSemanticBranch, ...]:
+        if route_semantics is None:
+            raise CompileError(
+                f"Missing route semantics in {surface_label} {owner_label}: {ref_label}"
+            )
+        if route_semantics.has_unrouted_branch and not route_semantics.route_required:
+            raise CompileError(
+                "route semantics are not live on every branch in "
+                f"{surface_label} {owner_label}: {ref_label}; guard the read with `route.exists`."
+            )
+        if not route_semantics.branches:
+            raise CompileError(
+                f"route semantics require a routed branch in {surface_label} {owner_label}: {ref_label}"
+            )
+        return route_semantics.branches
+
+    def _unique_route_semantic_branch(
+        self,
+        branches: tuple[RouteSemanticBranch, ...],
+        *,
+        key_fn,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+        detail_label: str,
+    ) -> RouteSemanticBranch:
+        unique_keys = {key_fn(branch) for branch in branches}
+        if len(unique_keys) != 1:
+            raise CompileError(
+                f"Ambiguous {detail_label} in {surface_label} {owner_label}: {ref_label}"
+            )
+        return branches[0]
+
+    def _resolve_route_semantic_ref_value(
+        self,
+        ref: model.AddressableRef,
+        *,
+        owner_label: str,
+        surface_label: str,
+        route_semantics: RouteSemanticContext | None,
+    ) -> DisplayValue | None:
+        parts = self._route_semantic_parts(ref)
+        if route_semantics is None or parts is None:
+            return None
+        ref_label = _display_addressable_ref(ref)
+        if parts == ("route",):
+            return DisplayValue(text="Route", kind="title")
+        if parts == ("route", "exists"):
+            if route_semantics.route_required:
+                return DisplayValue(text="true", kind="symbol")
+            if route_semantics.branches and not route_semantics.has_unrouted_branch:
+                return DisplayValue(text="true", kind="symbol")
+            if not route_semantics.branches:
+                return DisplayValue(text="false", kind="symbol")
+            raise CompileError(
+                f"route.exists is branch-dependent in {surface_label} {owner_label}: {ref_label}"
+            )
+
+        branches = self._route_semantic_branches_for_read(
+            route_semantics,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            ref_label=ref_label,
+        )
+        if parts[1] == "next_owner":
+            branch = self._unique_route_semantic_branch(
+                branches,
+                key_fn=lambda item: (item.target_module_parts, item.target_name),
+                owner_label=owner_label,
+                surface_label=surface_label,
+                ref_label=ref_label,
+                detail_label="route.next_owner",
+            )
+            if len(parts) == 2:
+                return DisplayValue(
+                    text=self._route_semantic_branch_title(branch),
+                    kind="title",
+                )
+            if len(parts) == 3 and parts[2] in {"name", "key"}:
+                return DisplayValue(text=branch.target_name, kind="symbol")
+            if len(parts) == 3 and parts[2] == "title":
+                return DisplayValue(text=self._route_semantic_branch_title(branch), kind="title")
+        if parts == ("route", "label"):
+            branch = self._unique_route_semantic_branch(
+                branches,
+                key_fn=lambda item: item.label,
+                owner_label=owner_label,
+                surface_label=surface_label,
+                ref_label=ref_label,
+                detail_label="route.label",
+            )
+            return DisplayValue(text=branch.label, kind="title")
+        if parts == ("route", "summary"):
+            branch = self._unique_route_semantic_branch(
+                branches,
+                key_fn=lambda item: self._route_semantic_branch_summary(item),
+                owner_label=owner_label,
+                surface_label=surface_label,
+                ref_label=ref_label,
+                detail_label="route.summary",
+            )
+            return DisplayValue(
+                text=self._route_semantic_branch_summary(branch),
+                kind="title",
+            )
+        raise CompileError(
+            f"Unknown route semantic path on {surface_label} in {owner_label}: {ref_label}"
+        )
 
     def _review_semantic_field_path(
         self,
@@ -4442,6 +4867,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> CompiledSection | None:
         return self._compile_io_field(
@@ -4450,6 +4876,7 @@ class CompilationContext:
             field_kind="outputs",
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             excluded_output_keys=excluded_output_keys,
         )
 
@@ -4461,6 +4888,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> CompiledSection | None:
         if field.parent_ref is not None:
@@ -4470,6 +4898,7 @@ class CompilationContext:
                 field_kind=field_kind,
                 owner_label=owner_label,
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 excluded_output_keys=excluded_output_keys,
             )
             if field_kind == "outputs" and self._resolved_io_body_is_empty(resolved):
@@ -4489,6 +4918,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     owner_label=f"{field_kind} field `{field.title}`",
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 ),
             )
@@ -4502,6 +4932,7 @@ class CompilationContext:
                 unit=unit,
                 field_kind=field_kind,
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 excluded_output_keys=excluded_output_keys,
             )
             if field_kind == "outputs" and self._resolved_io_body_is_empty(resolved):
@@ -4529,6 +4960,7 @@ class CompilationContext:
         unit: IndexedUnit,
         field_kind: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         if field_kind == "inputs":
@@ -4558,6 +4990,7 @@ class CompilationContext:
             outputs_decl,
             unit=target_unit,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             excluded_output_keys=excluded_output_keys,
         )
 
@@ -4569,6 +5002,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         parent_ref = field.parent_ref
@@ -4609,6 +5043,7 @@ class CompilationContext:
                 parent_decl,
                 unit=parent_unit,
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 excluded_output_keys=excluded_output_keys,
             )
             inheritance_parent_body = parent_body
@@ -4617,6 +5052,7 @@ class CompilationContext:
                     parent_decl,
                     unit=parent_unit,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=frozenset(),
                 )
 
@@ -4629,6 +5065,7 @@ class CompilationContext:
             inheritance_parent_io=inheritance_parent_body,
             parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             excluded_output_keys=excluded_output_keys,
         )
 
@@ -4651,6 +5088,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[CompiledBodyItem, ...]:
         return self._resolve_contract_bucket_items(
@@ -4659,6 +5097,7 @@ class CompilationContext:
             field_kind=field_kind,
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             excluded_output_keys=excluded_output_keys,
         ).body
 
@@ -4670,6 +5109,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
         path_prefix: tuple[str, ...] = (),
     ) -> ResolvedContractBucket:
@@ -4683,11 +5123,11 @@ class CompilationContext:
             if isinstance(item, (str, model.EmphasizedLine)):
                 body.append(
                     self._interpolate_authored_prose_line(
-                        item,
-                        unit=unit,
-                        owner_label=owner_label,
-                        surface_label=f"{field_kind} prose",
-                    )
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=f"{field_kind} prose",
+                )
                 )
                 continue
 
@@ -4698,6 +5138,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     binding_path=(*path_prefix, item.key),
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 if resolved_section is None:
@@ -4715,6 +5156,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     owner_label=owner_label,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 if resolved_ref is None:
@@ -4750,6 +5192,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> CompiledSection | None:
         resolved_ref = self._resolve_contract_bucket_ref_entry(
@@ -4758,6 +5201,7 @@ class CompilationContext:
             field_kind=field_kind,
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             excluded_output_keys=excluded_output_keys,
         )
         if resolved_ref is None:
@@ -4773,6 +5217,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[CompiledSection, ContractArtifact] | None:
         if item.body is not None:
@@ -4806,12 +5251,18 @@ class CompilationContext:
             review_output_contexts,
             output_key,
         )
+        route_semantics = self._route_output_context_for_key(
+            route_output_contexts,
+            output_key,
+        )
         return (
             self._compile_output_decl(
                 decl,
                 unit=target_unit,
                 allow_review_semantics=review_semantics is not None,
+                allow_route_semantics=route_semantics is not None,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             ),
             ContractArtifact(kind="output", unit=target_unit, decl=decl),
         )
@@ -5488,13 +5939,17 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> CompiledSection:
         self._validate_output_guard_sections(
             decl,
             unit=unit,
             allow_review_semantics=allow_review_semantics,
+            allow_route_semantics=allow_route_semantics,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
         )
         scalar_items, section_items, extras = self._split_record_items(
             decl.items,
@@ -5532,6 +5987,7 @@ class CompilationContext:
                     unit=unit,
                     output_name=decl.name,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                 )
             )
@@ -5595,6 +6051,7 @@ class CompilationContext:
                 decl,
                 unit=unit,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
             if decl.trust_surface
@@ -5608,6 +6065,7 @@ class CompilationContext:
                 owner_label=f"output {decl.name}",
                 surface_label="output prose",
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
                 trust_surface_section=trust_surface_section,
             )
@@ -8622,7 +9080,6 @@ class CompilationContext:
         field_path: tuple[str, ...],
         owner_label: str,
     ) -> None:
-        route_unit, route_agent = self._resolve_agent_ref(route.target, unit=review_unit)
         field_node = self._resolve_output_field_node(
             output_decl,
             path=field_path,
@@ -8639,20 +9096,24 @@ class CompilationContext:
                 f"Review next_owner binding must point at an output field in {owner_label}: "
                 f"{output_decl.name}.{'.'.join(field_path)}"
             )
-        if not self._record_item_mentions_agent(
+        route_branch = self._route_semantic_branch_from_route(
+            route.target,
+            label=route.label,
+            unit=review_unit,
+        )
+        self._validate_route_owner_alignment(
             target,
-            target_unit=route_unit,
-            target_agent_name=route_agent.name,
+            route_branch=route_branch,
             unit=output_unit,
             fallback_unit=(
                 review_unit if review_unit.module_parts != output_unit.module_parts else None
             ),
             owner_label=f"output {output_decl.name}.{'.'.join(field_path)}",
-        ):
-            raise CompileError(
+            error_message=(
                 f"Review next_owner field must structurally bind the routed target in {owner_label}: "
-                f"{output_decl.name}.{'.'.join(field_path)} -> {route_agent.name}"
-            )
+                f"{output_decl.name}.{'.'.join(field_path)} -> {route_branch.target_name}"
+            ),
+        )
 
     def _render_review_subject_summary(
         self,
@@ -8969,7 +9430,9 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         self._validate_output_record_items(
             decl.items,
@@ -8977,7 +9440,9 @@ class CompilationContext:
             unit=unit,
             owner_label=f"output {decl.name}",
             allow_review_semantics=allow_review_semantics,
+            allow_route_semantics=allow_route_semantics,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
         )
         for item in decl.trust_surface:
             if item.when_expr is None:
@@ -8988,12 +9453,15 @@ class CompilationContext:
                 unit=unit,
                 owner_label=f"output {decl.name}.trust_surface",
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
         self._validate_standalone_read_guard_contract(
             decl,
             unit=unit,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
         )
 
     def _validate_output_record_items(
@@ -9004,17 +9472,26 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         for item in items:
             if isinstance(item, model.GuardedOutputSection):
+                guarded_route_semantics = self._narrow_route_semantics(
+                    route_semantics,
+                    item.when_expr,
+                    unit=unit,
+                )
                 self._validate_output_guard_expr(
                     item.when_expr,
                     decl=decl,
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
                 self._validate_output_record_items(
                     item.items,
@@ -9022,7 +9499,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=guarded_route_semantics,
                 )
                 continue
             if isinstance(item, model.RecordSection):
@@ -9032,7 +9511,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
                 continue
             if isinstance(item, model.RecordScalar) and item.body is not None:
@@ -9042,7 +9523,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=f"{owner_label}.{item.key}",
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
                 continue
             if isinstance(item, model.RecordRef) and item.body is not None:
@@ -9052,7 +9535,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
 
     def _validate_output_guard_expr(
@@ -9063,7 +9548,9 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         if isinstance(expr, model.ExprRef):
             self._validate_output_guard_ref(
@@ -9072,7 +9559,9 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
             return
         if isinstance(expr, model.ExprBinary):
@@ -9082,7 +9571,9 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
             self._validate_output_guard_expr(
                 expr.right,
@@ -9090,7 +9581,9 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
             return
         if isinstance(expr, model.ExprCall):
@@ -9101,7 +9594,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
             return
         if isinstance(expr, model.ExprSet):
@@ -9112,7 +9607,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
 
     def _validate_output_guard_ref(
@@ -9123,13 +9620,17 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         if self._output_guard_ref_allowed(
             ref,
             unit=unit,
             allow_review_semantics=allow_review_semantics,
+            allow_route_semantics=allow_route_semantics,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
         ):
             return
         raise CompileError(
@@ -9142,11 +9643,20 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
         return (
             self._expr_ref_matches_input_decl(ref, unit=unit)
             or self._expr_ref_matches_enum_member(ref, unit=unit)
+            or (
+                allow_route_semantics
+                and self._expr_ref_matches_route_semantic_ref(
+                    ref,
+                    route_semantics=route_semantics,
+                )
+            )
             or (
                 allow_review_semantics
                 and (
@@ -9166,6 +9676,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         for path, item in self._iter_output_items_with_paths(decl.items):
             if not path or path[-1] != "standalone_read":
@@ -9177,6 +9688,7 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 ):
                     raise CompileError(
                         "standalone_read cannot interpolate guarded output detail "
@@ -9222,8 +9734,11 @@ class CompilationContext:
             return refs
         if isinstance(item, (model.RecordSection, model.GuardedOutputSection)):
             return self._iter_record_body_interpolation_refs(item.items)
-        if isinstance(item, model.RecordRef) and item.body is not None:
-            return self._iter_record_body_interpolation_refs(item.body)
+        if isinstance(item, model.RecordRef):
+            refs: tuple[model.AddressableRef, ...] = (model.AddressableRef(root=item.ref, path=()),)
+            if item.body is not None:
+                refs = (*refs, *self._iter_record_body_interpolation_refs(item.body))
+            return refs
         return ()
 
     def _iter_record_body_interpolation_refs(
@@ -9287,7 +9802,9 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
+        _ = route_semantics
         semantic_parts = self._review_semantic_addressable_parts(ref)
         if (
             review_semantics is not None
@@ -9365,6 +9882,24 @@ class CompilationContext:
             )
         return False
 
+    def _expr_ref_matches_route_semantic_ref(
+        self,
+        ref: model.ExprRef,
+        *,
+        route_semantics: RouteSemanticContext | None,
+    ) -> bool:
+        if route_semantics is None or not ref.parts or ref.parts[0] != "route":
+            return False
+        if len(ref.parts) == 2 and ref.parts[1] == "exists":
+            return True
+        if len(ref.parts) == 2 and ref.parts[1] in {"label", "summary", "next_owner"}:
+            return True
+        return len(ref.parts) == 3 and ref.parts[1] == "next_owner" and ref.parts[2] in {
+            "name",
+            "key",
+            "title",
+        }
+
     def _expr_ref_matches_review_verdict(self, ref: model.ExprRef) -> bool:
         return (
             len(ref.parts) == 2
@@ -9395,6 +9930,7 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledSection:
         lines: list[CompiledBodyItem] = []
@@ -9411,6 +9947,7 @@ class CompilationContext:
                 field_node,
                 owner_label=f"output {decl.name}",
                 surface_label="trust_surface",
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             ).text
             if item.when_expr is not None:
@@ -9448,6 +9985,7 @@ class CompilationContext:
         unit: IndexedUnit,
         output_name: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
@@ -9486,6 +10024,7 @@ class CompilationContext:
                             owner_label=f"output {output_name} file {item.key}",
                             surface_label="output file prose",
                             review_semantics=review_semantics,
+                            route_semantics=route_semantics,
                             render_profile=render_profile,
                         ),
                     )
@@ -9500,6 +10039,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
@@ -9511,6 +10051,7 @@ class CompilationContext:
                     owner_label=owner_label,
                     surface_label=surface_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                 )
             )
@@ -9524,6 +10065,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         if isinstance(item, (str, model.EmphasizedLine)):
@@ -9534,6 +10076,7 @@ class CompilationContext:
                     owner_label=owner_label,
                     surface_label=surface_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                 ),
             )
@@ -9548,6 +10091,7 @@ class CompilationContext:
                         owner_label=f"{owner_label}.{item.key}",
                         surface_label=surface_label,
                         review_semantics=review_semantics,
+                        route_semantics=route_semantics,
                         render_profile=render_profile,
                     ),
                 ),
@@ -9561,6 +10105,7 @@ class CompilationContext:
                     owner_label=owner_label,
                     surface_label=surface_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                     section_body_compiler=lambda payload, nested_owner_label: self._compile_record_support_items(
                         payload,
@@ -9568,12 +10113,22 @@ class CompilationContext:
                         owner_label=nested_owner_label,
                         surface_label=surface_label,
                         review_semantics=review_semantics,
+                        route_semantics=self._narrow_route_semantics(
+                            route_semantics,
+                            item.when_expr,
+                            unit=unit,
+                        ) if item.when_expr is not None else route_semantics,
                         render_profile=render_profile,
                     ),
                 ),
             )
 
         if isinstance(item, model.GuardedOutputSection):
+            guarded_route_semantics = self._narrow_route_semantics(
+                route_semantics,
+                item.when_expr,
+                unit=unit,
+            )
             condition = self._render_condition_expr(item.when_expr, unit=unit)
             body: list[CompiledBodyItem] = [f"Rendered only when {condition}."]
             compiled_items = self._compile_record_support_items(
@@ -9582,6 +10137,7 @@ class CompilationContext:
                 owner_label=f"{owner_label}.{item.key}",
                 surface_label=surface_label,
                 review_semantics=review_semantics,
+                route_semantics=guarded_route_semantics,
                 render_profile=render_profile,
             )
             if compiled_items:
@@ -9596,6 +10152,7 @@ class CompilationContext:
                 owner_label=owner_label,
                 surface_label=surface_label,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
 
@@ -9607,6 +10164,7 @@ class CompilationContext:
                     owner_label=f"{owner_label}.{_dotted_ref_name(item.ref)}",
                     surface_label=surface_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                 )
                 if item.body is not None
@@ -9629,6 +10187,7 @@ class CompilationContext:
         owner_label: str,
         surface_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         label = _humanize_key(item.key)
@@ -9638,6 +10197,7 @@ class CompilationContext:
             owner_label=f"{owner_label}.{item.key}",
             surface_label=surface_label,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
             render_profile=render_profile,
         )
         if item.body is None:
@@ -9651,6 +10211,7 @@ class CompilationContext:
                 owner_label=f"{owner_label}.{item.key}",
                 surface_label=surface_label,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
         )
@@ -9665,6 +10226,7 @@ class CompilationContext:
         surface_label: str,
         section_body_compiler,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
         if block.when_expr is not None:
@@ -9673,8 +10235,15 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
                 allow_review_semantics=review_semantics is not None,
+                allow_route_semantics=route_semantics is not None,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
+        block_route_semantics = self._narrow_route_semantics(
+            route_semantics,
+            block.when_expr,
+            unit=unit,
+        )
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         title = None if block.kind == "properties" and block.anonymous else (
             block.title or _humanize_key(block.key)
@@ -9720,6 +10289,7 @@ class CompilationContext:
                         surface_label=f"{block.kind} item prose",
                         ambiguous_label=f"{block.kind} item interpolation ref",
                         review_semantics=review_semantics,
+                        route_semantics=block_route_semantics,
                         render_profile=render_profile,
                     )
                 )
@@ -9730,6 +10300,7 @@ class CompilationContext:
                 schema_label="item_schema",
                 surface_label=f"{block.kind} item schema",
                 review_semantics=review_semantics,
+                route_semantics=block_route_semantics,
                 render_profile=render_profile,
             )
             compiled_cls = {
@@ -9751,6 +10322,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=block_owner_label,
                 review_semantics=review_semantics,
+                route_semantics=block_route_semantics,
                 render_profile=render_profile,
             )
             return CompiledPropertiesBlock(
@@ -9788,6 +10360,7 @@ class CompilationContext:
                                 surface_label="definitions prose",
                                 ambiguous_label="definitions prose interpolation ref",
                                 review_semantics=review_semantics,
+                                route_semantics=block_route_semantics,
                                 render_profile=render_profile,
                             )
                             for line in definition.body
@@ -9825,6 +10398,7 @@ class CompilationContext:
                                 surface_label="table column prose",
                                 ambiguous_label="table column interpolation ref",
                                 review_semantics=review_semantics,
+                                route_semantics=block_route_semantics,
                                 render_profile=render_profile,
                             )
                             for line in column.body
@@ -9873,6 +10447,7 @@ class CompilationContext:
                         surface_label="table cell prose",
                         ambiguous_label="table cell interpolation ref",
                         review_semantics=review_semantics,
+                        route_semantics=block_route_semantics,
                         render_profile=render_profile,
                     )
                     if "\n" in cell_text:
@@ -9890,6 +10465,7 @@ class CompilationContext:
                     surface_label="table notes",
                     ambiguous_label="table note interpolation ref",
                     review_semantics=review_semantics,
+                    route_semantics=block_route_semantics,
                     render_profile=render_profile,
                 )
                 for line in block.payload.notes
@@ -9901,6 +10477,7 @@ class CompilationContext:
                 schema_label="row_schema",
                 surface_label="table row schema",
                 review_semantics=review_semantics,
+                route_semantics=block_route_semantics,
                 render_profile=render_profile,
             )
             return CompiledTableBlock(
@@ -9954,6 +10531,7 @@ class CompilationContext:
                         surface_label="callout prose",
                         ambiguous_label="callout interpolation ref",
                         review_semantics=review_semantics,
+                        route_semantics=block_route_semantics,
                         render_profile=render_profile,
                     )
                     for line in block.payload.body
@@ -9989,6 +10567,7 @@ class CompilationContext:
                 surface_label=f"{block.kind} text",
                 ambiguous_label=f"{block.kind} interpolation ref",
                 review_semantics=review_semantics,
+                route_semantics=block_route_semantics,
                 render_profile=render_profile,
             )
             if "\n" not in text:
@@ -10008,6 +10587,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=block_owner_label,
                 review_semantics=review_semantics,
+                route_semantics=block_route_semantics,
                 render_profile=render_profile,
             )
             return CompiledFootnotesBlock(
@@ -10028,6 +10608,7 @@ class CompilationContext:
                     surface_label="image src",
                     ambiguous_label="image src interpolation ref",
                     review_semantics=review_semantics,
+                    route_semantics=block_route_semantics,
                     render_profile=render_profile,
                 ),
                 alt=self._interpolate_authored_prose_string(
@@ -10037,6 +10618,7 @@ class CompilationContext:
                     surface_label="image alt",
                     ambiguous_label="image alt interpolation ref",
                     review_semantics=review_semantics,
+                    route_semantics=block_route_semantics,
                     render_profile=render_profile,
                 ),
                 caption=(
@@ -10047,6 +10629,7 @@ class CompilationContext:
                         surface_label="image caption",
                         ambiguous_label="image caption interpolation ref",
                         review_semantics=review_semantics,
+                        route_semantics=block_route_semantics,
                         render_profile=render_profile,
                     )
                     if block.payload.caption is not None
@@ -10278,6 +10861,7 @@ class CompilationContext:
         owner_label: str | None = None,
         surface_label: str | None = None,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
         display = self._display_scalar_value(
@@ -10286,6 +10870,7 @@ class CompilationContext:
             owner_label=owner_label,
             surface_label=surface_label,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
             render_profile=render_profile,
         )
         if display.kind == "string_literal":
@@ -10300,11 +10885,25 @@ class CompilationContext:
         owner_label: str | None = None,
         surface_label: str | None = None,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> DisplayValue:
         if isinstance(value, str):
             return DisplayValue(text=value, kind="string_literal")
         if isinstance(value, model.NameRef):
+            if value.module_parts and value.module_parts[0] == "route":
+                if owner_label is None or surface_label is None:
+                    raise CompileError(
+                        "Internal compiler error: route refs require an owner label and surface label"
+                    )
+                route_value = self._resolve_route_semantic_ref_value(
+                    model.AddressableRef(root=value, path=()),
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                    route_semantics=route_semantics,
+                )
+                if route_value is not None:
+                    return route_value
             enum_decl = self._try_resolve_enum_decl(value, unit=unit)
             if enum_decl is not None:
                 return DisplayValue(text=enum_decl.title, kind="title")
@@ -10321,6 +10920,7 @@ class CompilationContext:
             ambiguous_label=f"{surface_label} addressable ref",
             missing_local_label=surface_label,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
             render_profile=render_profile,
         )
 
@@ -11121,12 +11721,14 @@ class CompilationContext:
         *,
         unit: IndexedUnit,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         outputs_key = (
             unit.module_parts,
             outputs_decl.name,
             review_output_contexts,
+            route_output_contexts,
             excluded_output_keys,
         )
         cached = self._resolved_outputs_cache.get(outputs_key)
@@ -11136,7 +11738,7 @@ class CompilationContext:
         if outputs_key in self._outputs_resolution_stack:
             cycle = " -> ".join(
                 ".".join(parts + (name,)) or name
-                for parts, name, _review_keys, _excluded_keys in [
+                for parts, name, _review_keys, _route_keys, _excluded_keys in [
                     *self._outputs_resolution_stack,
                     outputs_key,
                 ]
@@ -11157,6 +11759,7 @@ class CompilationContext:
                     parent_decl,
                     unit=parent_unit,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 inheritance_parent_io = parent_io
@@ -11165,6 +11768,7 @@ class CompilationContext:
                         parent_decl,
                         unit=parent_unit,
                         review_output_contexts=review_output_contexts,
+                        route_output_contexts=route_output_contexts,
                         excluded_output_keys=frozenset(),
                     )
                 parent_label = f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
@@ -11178,6 +11782,7 @@ class CompilationContext:
                 inheritance_parent_io=inheritance_parent_io,
                 parent_label=parent_label,
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 excluded_output_keys=excluded_output_keys,
             )
             self._resolved_outputs_cache[outputs_key] = resolved
@@ -11228,6 +11833,7 @@ class CompilationContext:
         inheritance_parent_io: ResolvedIoBody | None = None,
         parent_label: str | None = None,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
         resolved_preamble = tuple(
@@ -11247,6 +11853,7 @@ class CompilationContext:
                 field_kind=field_kind,
                 owner_label=owner_label,
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 excluded_output_keys=excluded_output_keys,
             )
             return ResolvedIoBody(
@@ -11285,6 +11892,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     owner_label=owner_label,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 if resolved_item is not None:
@@ -11303,6 +11911,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     binding_path=(item.key,),
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 if resolved_item is not None:
@@ -11339,6 +11948,7 @@ class CompilationContext:
                     f"{field_kind} section `{item.title if item.title is not None else parent_item.section.title}`"
                 ),
                 review_output_contexts=review_output_contexts,
+                route_output_contexts=route_output_contexts,
                 path_prefix=(key,),
                 excluded_output_keys=excluded_output_keys,
             )
@@ -12522,6 +13132,7 @@ class CompilationContext:
         schema_label: str,
         surface_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ReadableInlineSchemaData | None:
         if schema is None:
@@ -12543,6 +13154,7 @@ class CompilationContext:
                             surface_label=surface_label,
                             ambiguous_label=f"{schema_label} interpolation ref",
                             review_semantics=review_semantics,
+                            route_semantics=route_semantics,
                             render_profile=render_profile,
                         )
                         for line in entry.body
@@ -12558,6 +13170,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ReadablePropertiesData:
         if not isinstance(payload, model.ReadablePropertiesData):
@@ -12579,6 +13192,7 @@ class CompilationContext:
                             surface_label="properties prose",
                             ambiguous_label="properties interpolation ref",
                             review_semantics=review_semantics,
+                            route_semantics=route_semantics,
                             render_profile=render_profile,
                         )
                         for line in entry.body
@@ -12594,6 +13208,7 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ReadableFootnotesData:
         if not isinstance(payload, model.ReadableFootnotesData):
@@ -12614,6 +13229,7 @@ class CompilationContext:
                         surface_label="footnotes prose",
                         ambiguous_label="footnote interpolation ref",
                         review_semantics=review_semantics,
+                        route_semantics=route_semantics,
                         render_profile=render_profile,
                     ),
                 )
@@ -12743,14 +13359,18 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         allow_review_semantics: bool = False,
+        allow_route_semantics: bool = False,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         if isinstance(expr, model.ExprRef):
             if self._output_guard_ref_allowed(
                 expr,
                 unit=unit,
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             ):
                 return
             raise CompileError(
@@ -12762,14 +13382,18 @@ class CompilationContext:
                 unit=unit,
                 owner_label=owner_label,
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
             self._validate_readable_guard_expr(
                 expr.right,
                 unit=unit,
                 owner_label=owner_label,
                 allow_review_semantics=allow_review_semantics,
+                allow_route_semantics=allow_route_semantics,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
             )
             return
         if isinstance(expr, model.ExprCall):
@@ -12779,7 +13403,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
             return
         if isinstance(expr, model.ExprSet):
@@ -12789,7 +13415,9 @@ class CompilationContext:
                     unit=unit,
                     owner_label=owner_label,
                     allow_review_semantics=allow_review_semantics,
+                    allow_route_semantics=allow_route_semantics,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                 )
 
     def _readable_guard_text(
@@ -13513,6 +14141,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[ResolvedIoItem, ...]:
         resolved_items: list[ResolvedIoItem] = []
@@ -13526,6 +14155,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     owner_label=owner_label,
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 if resolved_item is not None:
@@ -13544,6 +14174,7 @@ class CompilationContext:
                     field_kind=field_kind,
                     binding_path=(item.key,),
                     review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
                     excluded_output_keys=excluded_output_keys,
                 )
                 if resolved_item is not None:
@@ -13565,6 +14196,7 @@ class CompilationContext:
         field_kind: str,
         binding_path: tuple[str, ...],
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoSection | None:
         resolved_bucket = self._resolve_contract_bucket_items(
@@ -13573,6 +14205,7 @@ class CompilationContext:
             field_kind=field_kind,
             owner_label=f"{field_kind} section `{item.title}`",
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             path_prefix=binding_path,
             excluded_output_keys=excluded_output_keys,
         )
@@ -13604,6 +14237,7 @@ class CompilationContext:
         field_kind: str,
         owner_label: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoRef | None:
         resolved_ref = self._resolve_contract_bucket_ref_entry(
@@ -13612,6 +14246,7 @@ class CompilationContext:
             field_kind=field_kind,
             owner_label=owner_label,
             review_output_contexts=review_output_contexts,
+            route_output_contexts=route_output_contexts,
             excluded_output_keys=excluded_output_keys,
         )
         if resolved_ref is None:
@@ -13792,6 +14427,7 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str | None = None,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
         if "{{" not in value and "}}" not in value:
@@ -13814,6 +14450,7 @@ class CompilationContext:
                     surface_label=surface_label,
                     ambiguous_label=ambiguous_label,
                     review_semantics=review_semantics,
+                    route_semantics=route_semantics,
                     render_profile=render_profile,
                 )
             )
@@ -13836,6 +14473,7 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str | None = None,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
@@ -13846,6 +14484,7 @@ class CompilationContext:
                 surface_label=surface_label,
                 ambiguous_label=ambiguous_label,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
         return model.EmphasizedLine(
@@ -13857,6 +14496,7 @@ class CompilationContext:
                 surface_label=surface_label,
                 ambiguous_label=ambiguous_label,
                 review_semantics=review_semantics,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             ),
         )
@@ -13870,6 +14510,7 @@ class CompilationContext:
         surface_label: str,
         ambiguous_label: str | None = None,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
@@ -13890,6 +14531,7 @@ class CompilationContext:
             ambiguous_label=ambiguous_label or f"{surface_label} interpolation ref",
             missing_local_label=surface_label,
             review_semantics=review_semantics,
+            route_semantics=route_semantics,
             render_profile=render_profile,
         ).text
 
@@ -13981,9 +14623,18 @@ class CompilationContext:
         ambiguous_label: str,
         missing_local_label: str,
         review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> DisplayValue:
         ref_label = _display_addressable_ref(ref)
+        route_value = self._resolve_route_semantic_ref_value(
+            ref,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            route_semantics=route_semantics,
+        )
+        if route_value is not None:
+            return route_value
         semantic_node = self._resolve_review_semantic_node(
             ref,
             review_semantics=review_semantics,
@@ -14890,6 +15541,7 @@ class CompilationContext:
         *,
         owner_label: str,
         surface_label: str,
+        route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> DisplayValue:
         target = node.target
@@ -14912,6 +15564,7 @@ class CompilationContext:
                 field_node,
                 owner_label=owner_label,
                 surface_label=surface_label,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
         if isinstance(target, ReviewSemanticContractFactTarget):
@@ -14974,6 +15627,7 @@ class CompilationContext:
                 unit=node.unit,
                 owner_label=owner_label,
                 surface_label=surface_label,
+                route_semantics=route_semantics,
                 render_profile=render_profile,
             )
         if isinstance(target, model.EnumMember):
@@ -15689,6 +16343,8 @@ class CompilationContext:
         parts = ref.parts
         if not parts:
             return ""
+        if parts == ("route", "exists"):
+            return "a routed owner exists"
         key = parts[-1]
         if key == "missing":
             return f"{self._render_ref_root(parts[:-1], unit=unit)} is missing"
@@ -15929,44 +16585,74 @@ class CompilationContext:
             return
 
         for route in branch.routes:
-            route_unit, route_agent = self._resolve_agent_ref(route.target, unit=unit)
+            route_branch = self._route_semantic_branch_from_route(
+                route.target,
+                label=route.label,
+                unit=unit,
+            )
             next_owner_fields_found = False
             for (_output_key, (output_unit, output_decl)) in output_items:
                 for path, item in self._iter_output_items_with_paths(output_decl.items):
                     if not path or path[-1] != "next_owner":
                         continue
                     next_owner_fields_found = True
-                    if self._record_item_mentions_agent(
+                    self._validate_route_owner_alignment(
                         item,
-                        target_unit=route_unit,
-                        target_agent_name=route_agent.name,
+                        route_branch=route_branch,
                         unit=output_unit,
                         owner_label=f"output {output_decl.name}.{'.'.join(path)}",
-                    ):
-                        continue
-                    raise CompileError(
-                        "next_owner field must interpolate routed target "
-                        f"in {owner_label}: {output_decl.name}.{'.'.join(path)} -> {route_agent.name}"
+                        error_message=(
+                            "next_owner field must interpolate routed target "
+                            f"in {owner_label}: {output_decl.name}.{'.'.join(path)} -> "
+                            f"{route_branch.target_name}"
+                        ),
                     )
             if next_owner_fields_found:
                 continue
+
+    def _validate_route_owner_alignment(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        route_branch: RouteSemanticBranch,
+        unit: IndexedUnit,
+        owner_label: str,
+        error_message: str,
+        fallback_unit: IndexedUnit | None = None,
+    ) -> None:
+        route_semantics = RouteSemanticContext(
+            branches=(route_branch,),
+            route_required=True,
+        )
+        if self._record_item_mentions_agent(
+            item,
+            target_unit_module_parts=route_branch.target_module_parts,
+            target_agent_name=route_branch.target_name,
+            unit=unit,
+            fallback_unit=fallback_unit,
+            owner_label=owner_label,
+            route_semantics=route_semantics,
+        ):
+            return
+        raise CompileError(error_message)
 
     def _record_item_mentions_agent(
         self,
         item: model.AnyRecordItem,
         *,
-        target_unit: IndexedUnit,
+        target_unit_module_parts: tuple[str, ...],
         target_agent_name: str,
         unit: IndexedUnit,
         fallback_unit: IndexedUnit | None = None,
         owner_label: str,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
         if (
             isinstance(item, model.RecordScalar)
             and isinstance(item.value, model.NameRef)
             and self._name_ref_matches_agent(
                 item.value,
-                target_unit=target_unit,
+                target_unit_module_parts=target_unit_module_parts,
                 target_agent_name=target_agent_name,
                 unit=unit,
                 fallback_unit=fallback_unit,
@@ -15974,15 +16660,30 @@ class CompilationContext:
             )
         ):
             return True
-
-        return any(
-            self._addressable_ref_matches_agent(
-                ref,
-                target_unit=target_unit,
+        if (
+            isinstance(item, model.RecordScalar)
+            and isinstance(item.value, model.NameRef)
+            and self._addressable_ref_matches_agent(
+                model.AddressableRef(root=item.value, path=()),
+                target_unit_module_parts=target_unit_module_parts,
                 target_agent_name=target_agent_name,
                 unit=unit,
                 fallback_unit=fallback_unit,
                 owner_label=owner_label,
+                route_semantics=route_semantics,
+            )
+        ):
+            return True
+
+        return any(
+            self._addressable_ref_matches_agent(
+                ref,
+                target_unit_module_parts=target_unit_module_parts,
+                target_agent_name=target_agent_name,
+                unit=unit,
+                fallback_unit=fallback_unit,
+                owner_label=owner_label,
+                route_semantics=route_semantics,
             )
             for ref in self._iter_record_item_interpolation_refs(item)
         )
@@ -15991,12 +16692,28 @@ class CompilationContext:
         self,
         ref: model.AddressableRef,
         *,
-        target_unit: IndexedUnit,
+        target_unit_module_parts: tuple[str, ...],
         target_agent_name: str,
         unit: IndexedUnit,
         fallback_unit: IndexedUnit | None = None,
         owner_label: str,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
+        route_parts = self._route_semantic_parts(ref)
+        if (
+            route_semantics is not None
+            and route_parts in {
+                ("route", "next_owner"),
+                ("route", "next_owner", "name"),
+                ("route", "next_owner", "key"),
+                ("route", "next_owner", "title"),
+            }
+        ):
+            return any(
+                branch.target_name == target_agent_name
+                and branch.target_module_parts == target_unit_module_parts
+                for branch in route_semantics.branches
+            )
         try:
             root_unit, root_decl = self._resolve_addressable_root_decl(
                 ref.root,
@@ -16021,7 +16738,7 @@ class CompilationContext:
 
         if not isinstance(root_decl, model.Agent):
             return False
-        if root_decl.name != target_agent_name or root_unit.module_parts != target_unit.module_parts:
+        if root_decl.name != target_agent_name or root_unit.module_parts != target_unit_module_parts:
             return False
         return not ref.path or ref.path in {("name",), ("key",), ("title",)}
 
@@ -16029,7 +16746,7 @@ class CompilationContext:
         self,
         ref: model.NameRef,
         *,
-        target_unit: IndexedUnit,
+        target_unit_module_parts: tuple[str, ...],
         target_agent_name: str,
         unit: IndexedUnit,
         fallback_unit: IndexedUnit | None = None,
@@ -16045,7 +16762,7 @@ class CompilationContext:
             except CompileError:
                 return False
         _ = owner_label
-        return agent.name == target_agent_name and ref_unit.module_parts == target_unit.module_parts
+        return agent.name == target_agent_name and ref_unit.module_parts == target_unit_module_parts
 
     def _validate_route_only_standalone_read_contract(
         self,

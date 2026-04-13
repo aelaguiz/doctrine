@@ -109,12 +109,17 @@ Important rules:
   `output`.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
+- Any emitted output may read shared compiler-owned route semantics through
+  `route.exists`, `route.next_owner`, `route.next_owner.key`,
+  `route.next_owner.title`, `route.label`, and `route.summary` when workflow
+  law, `route_only`, `grounding`, or review resolves a real route.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
   point at another emitted `TurnResponse` output. `comment_output:` remains
   the review carrier, and a separate `final_output:` still inherits review
-  semantic refs and guards.
+  semantic refs, guards, and any shared `route.*` reads that are live on that
+  output.
 - When that designated output's `output shape` carries a `json schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
@@ -204,9 +209,13 @@ Important rules:
 - Guarded sections are still output-owned fields.
 - They can be keyed, nested, addressed, and interpolated like other output
   structure.
-- On ordinary outputs, guards may read declared inputs and enum members.
+- On ordinary outputs, guards may read declared inputs, enum members, and
+  `route.exists` when the active turn resolves route semantics.
 - On review-bound outputs, guards may also read resolved review semantic names
   such as `verdict`, `contract.*`, and `fields.*`.
+- Route-specific readback should be guarded with `when route.exists:` when some
+  active branches may not route. Unguarded `route.*` reads fail loudly instead
+  of defaulting to fake local or terminal route values.
 - A guarded output section does not become portable truth unless it is also
   listed in `trust_surface`.
 
@@ -247,7 +256,7 @@ Instead:
   contract, including a schema-backed JSON result
 - when `final_output:` is separate, `comment_output` stays the durable review
   carrier while the separate final output inherits the same review semantic
-  refs and guards
+  refs, guards, and shared `route.*` reads
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
 - imported reusable `comment_output` declarations may still bind local routed
@@ -295,3 +304,9 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `66`: explicit raw `markdown` / `html`, `footnotes`, `image`, and structured nested table cells
 - `67`: semantic render-profile lowering targets plus `document render_profile:`
   surviving `output structure:` lowering
+- `87`: shared `route.*` reads on ordinary workflow-law outputs plus fail-loud
+  unguarded route reads
+- `88`: review comments mixing review semantics and shared `route.*`
+- `89`: dedicated `route_only` feeding the same shared `route.*` output surface
+- `90`: split durable review comment plus JSON `final_output:` consuming the
+  same shared routed-owner truth

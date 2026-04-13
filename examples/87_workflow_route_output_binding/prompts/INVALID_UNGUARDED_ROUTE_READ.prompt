@@ -1,0 +1,38 @@
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    should_route: "Should Route"
+
+
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+
+output MaybeRoutedComment: "Maybe Routed Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+
+workflow MaybeRoutedWorkflow: "Maybe Routed Workflow"
+    "Route only when the host facts require it."
+
+    law:
+        active when true
+        current none
+        stop "Reply and stop."
+        route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+
+agent InvalidWorkflowRouteBindingDemo:
+    role: "Fail loud when unguarded route reads span unrouted branches."
+    workflow: MaybeRoutedWorkflow
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        MaybeRoutedComment

@@ -65,6 +65,9 @@ Each numbered example may contain:
   either reuse `comment_output` or split the review comment from a separate
   control-only final output, plus imported reusable review comment outputs
   that still bind local routed owners
+- `87` through `90`: shared output-facing route semantics for ordinary
+  workflow-law outputs, review comments, dedicated `route_only`, and split
+  review `final_output:` contracts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -160,6 +163,10 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `84_review_split_final_output_prose` | Review-driven prose `final_output:` may split from `comment_output` while the separate final message still inherits review semantics. |
 | `85_review_split_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
 | `86_imported_review_comment_local_routes` | Imported reusable `comment_output` declarations may still structurally bind local routed owners on the concrete review. |
+| `87_workflow_route_output_binding` | Ordinary workflow-law outputs may read shared compiler-owned `route.*` semantics, and unguarded reads fail loudly when some branches do not route. |
+| `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
+| `89_route_only_shared_route_semantics` | Dedicated `route_only` lowers onto the same shared `route.*` output surface. |
+| `90_split_handoff_and_final_output_shared_route_semantics` | A durable review comment and a separate JSON `final_output:` may consume the same shared `route.*` truth without merging into one output. |
 
 ## Useful Commands
 
