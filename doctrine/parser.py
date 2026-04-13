@@ -10,7 +10,7 @@ from doctrine._parser.agents import AgentTransformerMixin
 from doctrine._parser.analysis_decisions import AnalysisDecisionTransformerMixin
 from doctrine._parser.expressions import ExpressionTransformerMixin
 from doctrine._parser.io import IoTransformerMixin
-from doctrine._parser.parts import *  # noqa: F401,F403
+from doctrine._parser.parts import _name_ref_from_dotted_name
 from doctrine._parser.readables import ReadableNodeTransformerMixin
 from doctrine._parser.reviews import ReviewTransformerMixin
 from doctrine._parser.runtime import (

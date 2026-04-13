@@ -1,11 +1,32 @@
 from __future__ import annotations
 
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from typing import TYPE_CHECKING
+
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    CompiledAgent,
+    CompiledSection,
+    IndexedUnit,
+    OutputDeclKey,
+    ResolvedAgentSlotState,
+    ResolvedAnalysisBody,
+    ResolvedDocumentBody,
+    ResolvedIoBody,
+    ResolvedReviewBody,
+    ResolvedSchemaBody,
+    ResolvedSkillsBody,
+    ResolvedWorkflowBody,
+    ReviewSemanticContext,
+    RouteSemanticContext,
+)
 from doctrine._compiler.display import DisplayMixin
 from doctrine._compiler.compile import CompileMixin
 from doctrine._compiler.resolve import ResolveMixin
 from doctrine._compiler.flow import FlowMixin
 from doctrine._compiler.validate import ValidateMixin
+
+if TYPE_CHECKING:
+    from doctrine._compiler.session import CompilationSession
 
 # Thin compile-context boundary: task-local state and public entrypoints live
 # here, while the subsystem helper families are owned by the internal mixins.

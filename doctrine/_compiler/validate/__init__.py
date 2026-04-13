@@ -3,8 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from doctrine import model
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    FinalOutputJsonShapeSummary,
+    IndexedUnit,
+    ResolvedIoBody,
+)
 from doctrine._compiler.validate.addressable_children import ValidateAddressableChildrenMixin
 from doctrine._compiler.validate.addressable_display import ValidateAddressableDisplayMixin
 from doctrine._compiler.validate.agents import ValidateAgentsMixin

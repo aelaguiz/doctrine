@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import (
     _REVIEW_VERDICT_TEXT,
     _resolve_render_profile_mode,
@@ -10,7 +11,27 @@ from doctrine._compiler.naming import (
     _lowercase_initial,
     _name_ref_from_dotted_name,
 )
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AgentContract,
+    CompileError,
+    CompiledBodyItem,
+    IndexedUnit,
+    ReadableColumnsTarget,
+    ReadableRowsTarget,
+    ReadableSchemaTarget,
+    ResolvedAnalysisSection,
+    ResolvedRenderProfile,
+    ResolvedSchemaArtifact,
+    ResolvedSchemaGroup,
+    ResolvedSectionItem,
+    ResolvedSkillEntry,
+    ResolvedSkillsSection,
+    ResolvedUseItem,
+    ResolvedWorkflowSkillsItem,
+    ReviewContractSpec,
+    ReviewSemanticContext,
+    SchemaFamilyTarget,
+)
 
 
 class DisplayMixin:
