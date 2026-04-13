@@ -201,7 +201,7 @@ class CompiledSkillPackage:
 @dataclass(slots=True, frozen=True)
 class CompiledSkillPackageFile:
     path: str
-    content: str
+    content: bytes
 
 
 @dataclass(slots=True, frozen=True)

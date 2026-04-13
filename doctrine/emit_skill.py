@@ -99,12 +99,12 @@ def emit_target_skill(
     emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
     markdown_path = emitted_dir / entrypoint_output_name(target.entrypoint)
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
-    markdown_path.write_text(render_skill_package_markdown(compiled))
+    markdown_path.write_text(render_skill_package_markdown(compiled), encoding="utf-8")
     emitted_paths: list[Path] = [markdown_path]
     for bundled_file in compiled.files:
         bundled_path = emitted_dir / Path(bundled_file.path)
         bundled_path.parent.mkdir(parents=True, exist_ok=True)
-        bundled_path.write_text(bundled_file.content)
+        bundled_path.write_bytes(bundled_file.content)
         emitted_paths.append(bundled_path)
     return tuple(emitted_paths)
 

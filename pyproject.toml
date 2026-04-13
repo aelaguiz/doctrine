@@ -86,3 +86,8 @@ output_dir = "examples/97_skill_package_compendium/build"
 name = "example_98_skill_package_path_case_preservation"
 entrypoint = "examples/98_skill_package_path_case_preservation/prompts/SKILL.prompt"
 output_dir = "examples/98_skill_package_path_case_preservation/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_99_skill_package_binary_assets"
+entrypoint = "examples/99_skill_package_binary_assets/prompts/SKILL.prompt"
+output_dir = "examples/99_skill_package_binary_assets/build"

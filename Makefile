@@ -5,6 +5,7 @@ NPM ?= npm
 PYTHON ?= python
 
 UV_RUN := $(UV) run --locked $(PYTHON)
+VERIFY_FLOW_PREREQ := $(UV_RUN) -m doctrine.verify_prereqs --require-flow-renderer
 VSCODE_MAKE := $(MAKE) -C editors/vscode
 
 .PHONY: help setup test tests check verify verify-examples verify-diagnostics vscode-tests vscode-package
@@ -31,9 +32,11 @@ tests:
 test: tests
 
 verify-examples:
+	$(VERIFY_FLOW_PREREQ)
 	$(UV_RUN) -m doctrine.verify_corpus
 
 verify-diagnostics:
+	$(VERIFY_FLOW_PREREQ)
 	$(UV_RUN) -m doctrine.diagnostic_smoke
 
 verify: verify-examples verify-diagnostics

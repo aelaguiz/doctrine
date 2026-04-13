@@ -7,4 +7,4 @@ license: "MIT"
 
 # Bundled Agents Package
 
-Delegate cold review work to the bundled markdown agents under `agents/`.
+Delegate cold review work to bundled markdown agents and runtime metadata under `agents/`.

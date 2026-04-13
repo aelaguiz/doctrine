@@ -31,6 +31,13 @@ class FlowLanePlan:
     standalone_agents: tuple[AgentKey, ...]
 
 
+def ensure_pinned_d2_dependency() -> None:
+    if not D2_PACKAGE_PATH.is_file():
+        raise FlowRenderDependencyError(
+            "Pinned D2 dependency is missing under `node_modules/@terrastruct/d2`. Run `npm ci`."
+        )
+
+
 def render_flow_d2(graph: FlowGraph) -> str:
     lines = [
         "direction: down",
@@ -129,10 +136,7 @@ def render_flow_d2(graph: FlowGraph) -> str:
 
 
 def render_flow_svg(d2_path: Path, svg_path: Path) -> None:
-    if not D2_PACKAGE_PATH.is_file():
-        raise FlowRenderDependencyError(
-            "Pinned D2 dependency is missing under `node_modules/@terrastruct/d2`. Run `npm ci`."
-        )
+    ensure_pinned_d2_dependency()
     if not D2_HELPER_PATH.is_file():
         raise FlowRenderDependencyError(
             f"Doctrine D2 helper is missing: `{D2_HELPER_PATH}`."

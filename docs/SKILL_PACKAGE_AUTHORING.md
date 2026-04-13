@@ -72,8 +72,8 @@ The package source root is the directory that contains `SKILL.prompt`.
 Doctrine treats that directory as the package tree it owns:
 
 - `SKILL.prompt` compiles to `SKILL.md`.
-- Ordinary bundled UTF-8 text files beside or below `SKILL.prompt` copy
-  through under the same relative paths.
+- Any bundled file that is not a `.prompt` file copies through under the same
+  relative paths, byte for byte.
 - Relative Markdown links should therefore be authored against the source tree
   you keep beside `SKILL.prompt`.
 - `build_ref/` is not part of this model. It is verifier-owned checked-in proof
@@ -129,10 +129,10 @@ Important rules:
 
 Doctrine currently owns two bundled-file behaviors.
 
-### Ordinary bundled text files
+### Ordinary bundled files
 
-Any ordinary UTF-8 text file under the package source root copies through under
-the same relative path.
+Any bundled file under the package source root that is not a `.prompt` file
+copies through under the same relative path, byte for byte.
 
 Examples:
 
@@ -140,6 +140,7 @@ Examples:
 - `reference/REFERENCE.md`
 - `scripts/greet.py`
 - `scripts/greet.ts`
+- `assets/icon.png`
 - `agents/openai.yaml`
 - `.codex-plugin/plugin.json`
 - `.app.json`
@@ -165,7 +166,7 @@ skill package BundledAgentsPackage: "Bundled Agents Package"
         description: "Ship bundled agent prompts beside the main skill package."
         version: "1.0.0"
         license: "MIT"
-    "Delegate cold review work to the bundled markdown agents under `agents/`."
+    "Delegate cold review work to bundled markdown agents and runtime metadata under `agents/`."
 ```
 
 With source files:
@@ -175,6 +176,7 @@ prompts/
 |-- SKILL.prompt
 `-- agents/
     |-- cold_reviewer.prompt
+    |-- openai.yaml
     `-- escalation_router.prompt
 ```
 
@@ -185,6 +187,7 @@ build/
 |-- SKILL.md
 `-- agents/
     |-- cold_reviewer.md
+    |-- openai.yaml
     `-- escalation_router.md
 ```
 
@@ -192,8 +195,9 @@ Important rules:
 
 - bundled agent prompts must live under `agents/`
 - each bundled agent prompt must define exactly one concrete agent
-- other descendant prompt-bearing subtrees stay compiler-owned and are not
-  copied through as ordinary files
+- other files in the same `agents/` tree still bundle normally
+- other descendant prompt-bearing subtrees stay compiler-owned, and their
+  `.prompt` files are not copied through as ordinary files
 
 ## Fail-Loud Boundaries
 
@@ -203,17 +207,19 @@ guessing.
 Important fail-loud cases:
 
 - authored bundled files may not collide with emitted `SKILL.md`
+- authored bundled files may not collide with compiled bundled agent markdown
+  paths such as `agents/reviewer.md`
 - path case-collisions fail loudly
 - bundled paths must stay relative to the package source root
 - bundled paths must use `/` separators
-- bundled ordinary files must be UTF-8 text
+- bundled files preserve their bytes exactly
 
 Example `98_skill_package_path_case_preservation` proves the exact-path and
 case-preservation boundary, including a negative collision case.
 
 ## Example Gallery
 
-The canonical package authoring ladder is `91` through `98`.
+The canonical package authoring ladder is `91` through `99`.
 
 - `91_skill_package_minimal`: smallest `SKILL.prompt` plus `skill package`
   surface
@@ -226,17 +232,19 @@ The canonical package authoring ladder is `91` through `98`.
 - `95_skill_package_plugin_metadata`: plugin-style split metadata roots such as
   `.codex-plugin/plugin.json`, `.app.json`, and `agents/openai.yaml`
 - `96_skill_package_bundled_agents`: bundled `agents/**/*.prompt` modules that
-  emit markdown companions
+  emit markdown companions while normal files in the same tree still bundle
 - `97_skill_package_compendium`: larger source-root compendium and reference
   tree preservation
 - `98_skill_package_path_case_preservation`: exact path and case preservation
   plus negative collision proof
+- `99_skill_package_binary_assets`: bundled binary assets such as `assets/*.png`
+  preserved byte for byte
 
 This gallery is generic on purpose, but it is shaped to match the real skill
 families Doctrine needs to author in practice: markdown-only skills,
 reference-heavy skills, script-backed helpers, runtime metadata packages,
 plugin bundles, delegating companion-agent packages, larger compendia, and
-path-sensitive bundles.
+path-sensitive bundles, including binary assets.
 
 ## Verification
 

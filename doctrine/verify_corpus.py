@@ -752,9 +752,20 @@ def _build_tree_diff(*, expected_root: Path, actual_root: Path) -> str | None:
 
     common = sorted(expected_files.keys() & actual_files.keys())
     for rel_path in common:
-        expected_lines = tuple(expected_files[rel_path].read_text().splitlines())
-        actual_lines = tuple(actual_files[rel_path].read_text().splitlines())
-        if expected_lines == actual_lines:
+        expected_bytes = expected_files[rel_path].read_bytes()
+        actual_bytes = actual_files[rel_path].read_bytes()
+        if expected_bytes == actual_bytes:
+            continue
+        expected_lines = _decode_utf8_lines(expected_bytes)
+        actual_lines = _decode_utf8_lines(actual_bytes)
+        if expected_lines is None or actual_lines is None:
+            if lines:
+                lines.append("")
+            rel_label = rel_path.as_posix()
+            lines.append(
+                "Binary file mismatch: "
+                f"{rel_label} (expected {len(expected_bytes)} bytes, emitted {len(actual_bytes)} bytes)"
+            )
             continue
         if lines:
             lines.append("")
@@ -769,6 +780,13 @@ def _build_tree_diff(*, expected_root: Path, actual_root: Path) -> str | None:
         )
 
     return "\n".join(lines) if lines else None
+
+
+def _decode_utf8_lines(payload: bytes) -> tuple[str, ...] | None:
+    try:
+        return tuple(payload.decode("utf-8").splitlines())
+    except UnicodeDecodeError:
+        return None
 
 
 def _build_ref_has_flow_artifacts(expected_root: Path) -> bool:

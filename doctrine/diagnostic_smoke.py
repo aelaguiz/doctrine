@@ -61,6 +61,8 @@ def main() -> int:
     _check_emit_docs_rejects_support_files_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_emit_skill_uses_source_root_bundle_outputs()
+    _check_emit_skill_keeps_mixed_agents_tree_files()
+    _check_emit_skill_preserves_binary_assets()
     _check_flow_graph_extracts_routes_and_shared_io()
     _check_emit_flow_uses_entrypoint_stem_for_output_name()
     _check_emit_flow_rejects_skill_entrypoints()
@@ -1016,6 +1018,105 @@ output_dir = "build"
         _expect(skill_path.is_file(), f"missing emitted SKILL.md: {skill_path}")
         _expect(checklist_path.is_file(), f"missing bundled reference file: {checklist_path}")
         _expect(reviewer_path.is_file(), f"missing compiled bundled agent file: {reviewer_path}")
+
+
+def _check_emit_skill_keeps_mixed_agents_tree_files() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "skills" / "mixed_agents"
+        (prompts / "agents").mkdir(parents=True)
+        skill_prompt = prompts / "SKILL.prompt"
+        skill_prompt.write_text(
+            """skill package MixedAgents: "Mixed Agents"
+    metadata:
+        name: "mixed-agents"
+    "Keep runtime metadata and bundled agent prompts in one `agents/` tree."
+""",
+            encoding="utf-8",
+        )
+        (prompts / "agents" / "reviewer.prompt").write_text(
+            """agent Reviewer:
+    role: "Review the package."
+""",
+            encoding="utf-8",
+        )
+        runtime_metadata = """interface:
+  display_name: Mixed Agents
+default_prompt: SKILL.md
+"""
+        (prompts / "agents" / "openai.yaml").write_text(
+            runtime_metadata,
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "mixed_agents"
+entrypoint = "prompts/skills/mixed_agents/SKILL.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+        exit_code = emit_skill_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "mixed_agents",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        reviewer_path = root / "build" / "skills" / "mixed_agents" / "agents" / "reviewer.md"
+        metadata_path = root / "build" / "skills" / "mixed_agents" / "agents" / "openai.yaml"
+        _expect(reviewer_path.is_file(), f"missing compiled bundled agent file: {reviewer_path}")
+        _expect(metadata_path.is_file(), f"missing bundled runtime metadata file: {metadata_path}")
+        _expect(metadata_path.read_text(encoding="utf-8") == runtime_metadata, metadata_path.read_text(encoding="utf-8"))
+
+
+def _check_emit_skill_preserves_binary_assets() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "skills" / "binary_assets"
+        (prompts / "assets").mkdir(parents=True)
+        skill_prompt = prompts / "SKILL.prompt"
+        skill_prompt.write_text(
+            """skill package BinaryAssets: "Binary Assets"
+    metadata:
+        name: "binary-assets"
+    "Keep bundled binary assets byte-for-byte."
+""",
+            encoding="utf-8",
+        )
+        asset_bytes = bytes.fromhex(
+            "89504e470d0a1a0a"
+            "0000000d4948445200000001000000010802000000907753de"
+            "0000000c4944415408d763f8ffff3f0005fe02fea7e58f7f"
+            "0000000049454e44ae426082"
+        )
+        (prompts / "assets" / "icon.png").write_bytes(asset_bytes)
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "binary_assets"
+entrypoint = "prompts/skills/binary_assets/SKILL.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+        exit_code = emit_skill_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "binary_assets",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        asset_path = root / "build" / "skills" / "binary_assets" / "assets" / "icon.png"
+        _expect(asset_path.is_file(), f"missing bundled binary asset: {asset_path}")
+        _expect(asset_path.read_bytes() == asset_bytes, "expected bundled binary asset bytes to round-trip")
 
 
 def _check_flow_graph_extracts_routes_and_shared_io() -> None:

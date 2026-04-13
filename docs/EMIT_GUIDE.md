@@ -211,10 +211,11 @@ Important package rules:
 
 - `SKILL.prompt` compiles to `SKILL.md`.
 - The directory that contains `SKILL.prompt` is the package source root.
-- Ordinary bundled UTF-8 text files emit under the same relative paths from
-  that source root.
+- Any bundled file that is not a `.prompt` file emits under the same relative
+  path from that source root, byte for byte.
 - Bundled agent prompts under `agents/**/*.prompt` emit compiled markdown
   companions under the same relative paths, with `.prompt` replaced by `.md`.
+- Other files in the same `agents/` tree still emit as ordinary bundled files.
 - `SKILL.md` is compiler-owned emitted output, so authored bundled files may
   not collide with that path.
 
@@ -236,6 +237,8 @@ examples/92_skill_package_references/build/references/checklist.md
 examples/93_skill_package_scripts/build/scripts/greet.py
 examples/95_skill_package_plugin_metadata/build/.codex-plugin/plugin.json
 examples/96_skill_package_bundled_agents/build/agents/cold_reviewer.md
+examples/96_skill_package_bundled_agents/build/agents/openai.yaml
+examples/99_skill_package_binary_assets/build/assets/icon.png
 ```
 
 The companion contract is compiler-owned emitted truth. In v1 it carries:

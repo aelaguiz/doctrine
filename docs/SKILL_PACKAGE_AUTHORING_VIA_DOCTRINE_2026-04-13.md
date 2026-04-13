@@ -664,7 +664,7 @@ Deep-dive pass 2 resolves the architecture as:
     source-local files by default, not hard-coded package-family declarations
 - canonical teaching set:
   - `docs/SKILL_PACKAGE_AUTHORING.md`
-  - package-gallery examples `91` through `98`
+  - package-gallery examples `91` through `99`
 <!-- arch_skill:block:research_grounding:end -->
 
 <!-- arch_skill:block:current_architecture:start -->
@@ -831,7 +831,7 @@ That future on-disk shape should look like:
   - `docs/EMIT_GUIDE.md` documents package emission
   - `docs/SKILL_PACKAGE_AUTHORING.md` teaches realistic package construction
 - Numbered corpus:
-  - examples `91` through `98` become the initial package gallery
+  - examples `91` through `99` become the initial package gallery
   - current inline skill examples remain and continue proving legacy behavior
 - Emitted package tree:
   - one package root emits `SKILL.md`
@@ -1522,7 +1522,7 @@ Decision
 - package emission ships as a dedicated sibling command/module (`emit_skill`)
   rather than a retrofit mode inside `emit_docs`
 - the canonical teaching path is `docs/SKILL_PACKAGE_AUTHORING.md` plus package
-  gallery examples `91` through `98`
+  gallery examples `91` through `99`
 
 Consequences
 

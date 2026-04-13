@@ -112,7 +112,12 @@ class CompileMixin:
         reserved_prompt_dirs = {
             path.parent
             for path in source_files
-            if path.suffix == ".prompt" and path.parent != source_root
+            if path.suffix == ".prompt"
+            and path.parent != source_root
+            and not self._is_skill_package_bundled_agent_prompt(
+                path,
+                source_root=source_root,
+            )
         }
         for bundled_path in source_files:
             if bundled_path == source_path:
@@ -147,11 +152,7 @@ class CompileMixin:
                 seen_folded=seen_folded,
             )
             try:
-                content = bundled_path.read_text()
-            except UnicodeDecodeError as exc:
-                raise CompileError(
-                    f"Skill package bundled files must be UTF-8 text in skill package {decl.name}: {normalized_path}"
-                ).ensure_location(path=bundled_path) from exc
+                content = bundled_path.read_bytes()
             except OSError as exc:
                 raise CompileError(
                     f"Could not read skill package bundled file in skill package {decl.name}: {normalized_path}"
@@ -210,7 +211,7 @@ class CompileMixin:
         compiled_agent = nested_session.compile_agent(concrete_agents[0].name)
         return CompiledSkillPackageFile(
             path=output_path,
-            content=render_markdown(compiled_agent),
+            content=render_markdown(compiled_agent).encode("utf-8"),
         )
 
     def _compile_skill_package_decl(

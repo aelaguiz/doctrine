@@ -17,3 +17,14 @@ message_contains = [
   "case-collides",
   "skill.md",
 ]
+
+[[cases]]
+name = "bundled files may not collide with compiled agent markdown outputs"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_agent_output_collision/SKILL.prompt"
+exception_type = "CompileError"
+message_contains = [
+  "Duplicate skill package bundled path",
+  "agents/reviewer.md",
+]

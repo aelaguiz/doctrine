@@ -1,0 +1,5 @@
+interface:
+  display_name: Bundled Agents Package
+default_prompt: SKILL.md
+policy:
+  allow_implicit_invocation: false

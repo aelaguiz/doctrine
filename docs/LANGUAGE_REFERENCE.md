@@ -466,12 +466,13 @@ Important rules:
   package declaration key.
 - The directory that contains `SKILL.prompt` is the package source root.
 - `SKILL.prompt` compiles to `SKILL.md`.
-- Ordinary bundled UTF-8 text files beside or below `SKILL.prompt` emit under
-  the same relative paths, so relative Markdown links keep working after emit.
+- Any bundled file that is not a `.prompt` file emits under the same relative
+  path, byte for byte, so relative Markdown links keep working after emit.
 - Bundled agent prompts under `agents/**/*.prompt` compile to markdown
   companions under the same relative paths, with `.prompt` replaced by `.md`.
+- Other files in the same `agents/` tree still bundle normally.
 - Other descendant prompt-bearing subtrees stay compiler-owned; Doctrine does
-  not copy `.prompt` files through as ordinary bundle files.
+  not copy their `.prompt` files through as ordinary bundle files.
 - Reserved-path and case-collision errors fail loudly. `SKILL.md` is
   compiler-owned output, not an authored source file.
 - Use inline `skill` and `skills` when the capability only needs reusable

@@ -25,7 +25,7 @@ Each numbered example may contain:
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
 - Keep new examples narrow. One new idea per example is the design rule.
-- Package examples `91` through `98` use `SKILL.prompt` and teach the
+- Package examples `91` through `99` use `SKILL.prompt` and teach the
   source-root bundle model. They do not make `build_ref/` part of the public
   authoring story.
 - Batch verification and emit commands are expected to stay scalable on this
@@ -73,10 +73,10 @@ Each numbered example may contain:
 - `87` through `90`: shared output-facing route semantics for ordinary
   workflow-law outputs, review comments, dedicated `route_only`, and split
   review `final_output:` contracts
-- `91` through `98`: first-class skill-package authoring with `SKILL.prompt`,
+- `91` through `99`: first-class skill-package authoring with `SKILL.prompt`,
   source-root bundle copy-through, runtime and plugin metadata roots, bundled
-  agent companions, larger compendium trees, and exact path and case
-  preservation
+  agent companions, larger compendium trees, exact path and case
+  preservation, and binary assets
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -183,9 +183,10 @@ For the shipped skill-package authoring guide, use
 | `93_skill_package_scripts` | Ordinary bundled script files copied through from the package source root. |
 | `94_skill_package_runtime_metadata` | Runtime metadata roots such as `agents/openai.yaml` in the source-root bundle model. |
 | `95_skill_package_plugin_metadata` | Plugin-style split metadata roots such as `.codex-plugin/plugin.json`, `.app.json`, and `agents/openai.yaml`. |
-| `96_skill_package_bundled_agents` | Bundled `agents/**/*.prompt` modules that emit markdown companions. |
+| `96_skill_package_bundled_agents` | Bundled `agents/**/*.prompt` modules that emit markdown companions while normal files in the same `agents/` tree still bundle. |
 | `97_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
 | `98_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
+| `99_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
 
 ## Useful Commands
 
@@ -214,6 +215,6 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
 example. Its `build_ref/` tree includes compiled Markdown, companion contract
 JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.
-Examples `91` through `98` are the canonical checked-in skill-package gallery.
+Examples `91` through `99` are the canonical checked-in skill-package gallery.
 Their `build_ref/` trees are expected emitted package proof, not public
 authoring input.
