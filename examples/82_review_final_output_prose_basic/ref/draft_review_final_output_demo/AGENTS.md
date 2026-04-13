@@ -35,11 +35,11 @@ Rejected draft goes to DraftAuthor.
 ### Draft Review Comment
 
 > **Final answer contract**
-> End the turn with one final assistant message that satisfies this contract.
+> End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Natural-language markdown |
 | Shape | Comment |
 | Requirement | Required |
@@ -70,7 +70,7 @@ Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor w
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -80,6 +80,6 @@ Name the failing review gates in authored order.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner.

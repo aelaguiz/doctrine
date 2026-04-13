@@ -8,7 +8,7 @@ Active mode: manifest-title.
 
 Current artifact: Primary Manifest.
 
-Must current_handoff.preserve_basis == approved_plan.
+Make sure current_handoff.preserve_basis == approved_plan.
 
 Own only `primary_manifest.title`.
 
@@ -16,7 +16,7 @@ Preserve exact `primary_manifest.*` except `primary_manifest.title`.
 
 Preserve decisions `approved_plan`.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 If unclear(pass_mode, current_handoff.preserve_basis):
 - Stop: Mode or preserve basis is unclear.

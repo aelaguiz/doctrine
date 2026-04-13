@@ -15,13 +15,13 @@ Accept only if The schema review contract passes.
 
 ### If Accepted
 
-There is no current artifact for this outcome.
+No artifact is current for this outcome.
 
 Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
-There is no current artifact for this outcome.
+No artifact is current for this outcome.
 
 Rejected plan goes to PlanAuthor.
 
@@ -67,7 +67,7 @@ Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 

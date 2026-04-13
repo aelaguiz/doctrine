@@ -161,7 +161,7 @@ def _check_final_output_prose_renders() -> None:
         rendered = render_markdown(compiled)
         _expect("## Final Output" in rendered, rendered)
         _expect("| Format | Natural-language markdown |" in rendered, rendered)
-        _expect("#### Read It Cold" in rendered, rendered)
+        _expect("#### Read on Its Own" in rendered, rendered)
         _expect("## Outputs" not in rendered, rendered)
 
 
@@ -218,7 +218,7 @@ def _check_final_output_json_renders() -> None:
         rendered = render_markdown(compiled)
         _expect("| Format | Structured JSON |" in rendered, rendered)
         _expect("| Profile | OpenAIStructuredOutput |" in rendered, rendered)
-        _expect("#### Payload Shape" in rendered, rendered)
+        _expect("#### Payload Fields" in rendered, rendered)
         _expect("| `next_step` | string \\| null | Null only when no follow-up is needed. |" in rendered, rendered)
 
 
@@ -234,7 +234,7 @@ def _check_review_driven_final_output_renders() -> None:
         _expect("## Final Output" in rendered, rendered)
         _expect("#### Trust Surface" in rendered, rendered)
         _expect("- Current Artifact" in rendered, rendered)
-        _expect("Rendered only when verdict is changes requested." in rendered, rendered)
+        _expect("Show this only when verdict is changes requested." in rendered, rendered)
         _expect("## Outputs" not in rendered, rendered)
 
 
@@ -252,7 +252,7 @@ def _check_review_driven_split_final_output_renders() -> None:
         _expect("### Draft Review Comment" in outputs_block, rendered)
         _expect("### Draft Review Decision" not in outputs_block, rendered)
         _expect("### Draft Review Decision" in final_output_block, rendered)
-        _expect("Rendered only when verdict is changes requested." in final_output_block, rendered)
+        _expect("Show this only when verdict is changes requested." in final_output_block, rendered)
         _expect("Keep the control summary aligned with Current Artifact." in final_output_block, rendered)
 
 
@@ -313,7 +313,7 @@ def _check_review_driven_split_json_final_output_renders() -> None:
         _expect("| Schema | Acceptance Control Schema |" in final_output_block, rendered)
         _expect("Keep `current_artifact` aligned with Current Artifact." in final_output_block, rendered)
         _expect("Use `route` value `revise` only when Outline Complete fails." in final_output_block, rendered)
-        _expect("Rendered only when verdict is changes requested." in final_output_block, rendered)
+        _expect("Show this only when verdict is changes requested." in final_output_block, rendered)
 
 
 def _check_final_output_missing_schema_file_has_specific_code() -> None:
@@ -769,7 +769,7 @@ agent RouteOnlyRouteBindingDemo:
         prompt = parse_file(prompt_path)
         rendered = render_markdown(compile_prompt(prompt, "RouteOnlyRouteBindingDemo"))
         _expect("#### Route Handoff" in rendered, rendered)
-        _expect("Rendered only when a routed owner exists." in rendered, rendered)
+        _expect("Show this only when a routed owner exists." in rendered, rendered)
         _expect("- Next Owner: Routing Owner" in rendered, rendered)
         _expect(
             "Keep the issue on RoutingOwner until the next specialist owner is clear. Next owner: Routing Owner."

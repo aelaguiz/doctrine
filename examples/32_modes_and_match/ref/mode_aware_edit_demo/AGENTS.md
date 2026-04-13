@@ -6,17 +6,17 @@ Edit in exactly one typed mode and carry that mode through the handoff.
 
 This pass runs only when edit is owed now.
 
-Work in exactly one mode:
+Use exactly one mode:
 - manifest-title
 - section-summary
 
-If mode is manifest-title:
+If the mode is manifest-title:
 - Current artifact: Approved Plan.
-- Must CurrentHandoff.preserve_basis == ApprovedPlan.
+- Make sure CurrentHandoff.preserve_basis == ApprovedPlan.
 
-If mode is section-summary:
+If the mode is section-summary:
 - Current artifact: Approved Structure.
-- Must CurrentHandoff.preserve_basis == ApprovedStructure.
+- Make sure CurrentHandoff.preserve_basis == ApprovedStructure.
 
 ## Inputs
 

@@ -37,7 +37,7 @@ Summarize the status facts that drove this turn.
 
 ##### Rewrite Detail
 
-Rendered only when route facts section status is new or full rewrite.
+Show this only when route facts section status is new or full rewrite.
 
 Explain why rewrite-aware handling applies on this turn.
 

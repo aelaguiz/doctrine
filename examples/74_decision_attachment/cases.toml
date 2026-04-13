@@ -17,8 +17,8 @@ expected_lines = [
   "## Playable Strategy Choice",
   "",
   "Build at least 3 candidates before choosing a winner.",
-  "Ranking is required.",
-  "Explicit rejects are required.",
+  "You must rank the candidates.",
+  "You must name clear rejects.",
   "Choose exactly one winner.",
   "Rank by Teaching Fit, Product Reality, Capstone Coherence, and Downstream Preservability.",
 ]
@@ -38,11 +38,11 @@ expected_lines = [
   "",
   "## Rep Choice",
   "",
-  "A candidate pool is required.",
-  "Kept candidates are required.",
-  "Rejected candidates are required.",
-  "Sequencing proof is required.",
-  "Winner reasons are required.",
+  "You must show the candidate pool.",
+  "You must show the kept candidates.",
+  "You must show the rejected candidates.",
+  "You must show the sequencing proof.",
+  "You must explain why the winner won.",
 ]
 
 [[cases]]
@@ -73,18 +73,18 @@ expected_lines = [
   "## Playable Strategy Choice",
   "",
   "Build at least 3 candidates before choosing a winner.",
-  "Ranking is required.",
-  "Explicit rejects are required.",
+  "You must rank the candidates.",
+  "You must name clear rejects.",
   "Choose exactly one winner.",
   "Rank by Teaching Fit, Product Reality, Capstone Coherence, and Downstream Preservability.",
   "",
   "## Rep Choice",
   "",
-  "A candidate pool is required.",
-  "Kept candidates are required.",
-  "Rejected candidates are required.",
-  "Sequencing proof is required.",
-  "Winner reasons are required.",
+  "You must show the candidate pool.",
+  "You must show the kept candidates.",
+  "You must show the rejected candidates.",
+  "You must show the sequencing proof.",
+  "You must explain why the winner won.",
 ]
 
 [[cases]]

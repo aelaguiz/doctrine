@@ -439,7 +439,7 @@ class CompileMixin:
     ) -> CompiledSection:
         format_label = self._final_output_format_label(output_decl, unit=unit, json_summary=json_summary)
         metadata_rows = [
-            ("Message kind", "Final assistant message"),
+            ("Message type", "Final assistant message"),
             ("Format", format_label),
             ("Shape", shape_title),
         ]
@@ -458,9 +458,9 @@ class CompileMixin:
             "> **Final answer contract**",
             "> "
             + (
-                "End the turn with one schema-backed final assistant message."
+                "End the turn with one final assistant message that follows this schema."
                 if json_summary is not None
-                else "End the turn with one final assistant message that satisfies this contract."
+                else "End the turn with one final assistant message that follows this contract."
             ),
             "",
             *self._pipe_table_lines(("Contract", "Value"), tuple(metadata_rows)),
@@ -471,7 +471,7 @@ class CompileMixin:
                 [
                     "",
                     CompiledSection(
-                        title="Payload Shape",
+                        title="Payload Fields",
                         body=tuple(
                             self._pipe_table_lines(
                                 ("Field", "Type", "Meaning"),
@@ -487,7 +487,7 @@ class CompileMixin:
                 [
                     "",
                     CompiledSection(
-                        title="Example Shape",
+                        title="Example",
                         body=(
                             f"```json",
                             *json_summary.example_text.rstrip("\n").splitlines(),
@@ -566,7 +566,7 @@ class CompileMixin:
                 route_semantics=route_semantics,
                 render_profile=render_profile,
                 trust_surface_section=trust_surface_section,
-                standalone_title="Read It Cold",
+                standalone_title="Read on Its Own",
                 insert_item_spacers=True,
             )
         )
@@ -2347,7 +2347,7 @@ class CompileMixin:
                 unit=unit,
             )
             condition = self._render_condition_expr(item.when_expr, unit=unit)
-            body: list[CompiledBodyItem] = [f"Rendered only when {condition}."]
+            body: list[CompiledBodyItem] = [f"Show this only when {condition}."]
             compiled_items = self._compile_record_support_items(
                 item.items,
                 unit=unit,
@@ -2379,7 +2379,7 @@ class CompileMixin:
                 route_semantics=guarded_route_semantics,
                 render_profile=render_profile,
             )
-            body: list[CompiledBodyItem] = [f"Rendered only when {condition}.", "", value]
+            body: list[CompiledBodyItem] = [f"Show this only when {condition}.", "", value]
             if item.body is not None:
                 compiled_items = self._compile_record_support_items(
                     item.body,

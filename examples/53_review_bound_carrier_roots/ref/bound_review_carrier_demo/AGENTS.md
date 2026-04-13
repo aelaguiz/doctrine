@@ -90,19 +90,19 @@ Name the artifact that remains current after this review outcome.
 
 ##### Active Mode
 
-Rendered only when present(active_mode).
+Show this only when present(active_mode).
 
 Name the active review mode for the current artifact.
 
 ##### Trigger Reason
 
-Rendered only when present(trigger_reason).
+Show this only when present(trigger_reason).
 
 Name the trigger reason for the live artifact and mode.
 
 ##### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ###### Failing Gates
 

@@ -6,7 +6,7 @@ Stop when the specialist output is missing but the next owner is clear enough to
 
 This pass runs only when current specialist output is missing and next owner is not unknown.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: No specialist artifact is current for this turn.
 

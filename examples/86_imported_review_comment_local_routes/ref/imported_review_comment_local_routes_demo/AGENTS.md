@@ -64,7 +64,7 @@ Name the next owner, including ReviewLead when the draft is accepted and DraftAu
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 

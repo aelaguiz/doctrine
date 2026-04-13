@@ -6,7 +6,7 @@ Handle turns that can only stop, reroute, or keep ownership explicit.
 
 This pass runs only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: No specialist artifact is current for this turn.
 
@@ -46,13 +46,13 @@ Say the next concrete step now.
 
 #### Rewrite Mode
 
-Rendered only when route facts section status is new or full rewrite.
+Show this only when route facts section status is new or full rewrite.
 
 Say plainly that later section metadata must be rewritten instead of inherited.
 
 #### Repeated Problem
 
-Rendered only when critic miss is repeated.
+Show this only when critic miss is repeated.
 
 ##### What Keeps Failing
 
