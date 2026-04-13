@@ -6,11 +6,11 @@ Handle turns that can only stop, reroute, or keep ownership explicit.
 
 This pass runs only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: No specialist artifact is current for this turn.
 
-When next owner is unknown, keep the issue on RoutingOwner until the next specialist owner is actually justified.
+When next owner is unknown, keep the issue on RoutingOwner until the next specialist owner is clear.
 
 ## Inputs
 
@@ -20,7 +20,7 @@ When next owner is unknown, keep the issue on RoutingOwner until the next specia
 - Shape: Json Object
 - Requirement: Required
 
-Use host-provided route facts that say what live job is in force, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or full rewrite, whether a critic miss repeated, what the next concrete step is, what keeps failing, which role returned the issue, and what the next concrete fix is.
+Use host route facts. They say which live job is active, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or a full rewrite, whether the same critic miss happened again, what step comes next, what keeps failing, which role sent the issue back, and what fix comes next.
 
 ## Outputs
 
@@ -38,7 +38,7 @@ Say the route-only state now in force, including whether the turn is routing, pr
 
 ##### Next Owner
 
-Name the next owner when ownership is changing now. If ownership stays local, say plainly that it stays local. If the earliest clear owner is still unclear, say plainly that RoutingOwner keeps the issue.
+Name the next owner when ownership changes. If ownership stays local, say so. If no clear next owner is known yet, say that RoutingOwner keeps the issue.
 
 ##### Next Step
 
@@ -46,13 +46,13 @@ Say the next concrete step now.
 
 #### Rewrite Mode
 
-Rendered only when route facts section status is new or full rewrite.
+Show this only when route facts section status is new or full rewrite.
 
 Say plainly that later section metadata must be rewritten instead of inherited.
 
 #### Repeated Problem
 
-Rendered only when critic miss is repeated.
+Show this only when critic miss is repeated.
 
 ##### What Keeps Failing
 
@@ -68,4 +68,4 @@ Say the next concrete fix.
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, and what the next concrete step is.
+This comment should stand on its own. The next owner should know that no specialist artifact is current, which route-only state is active, who owns next, and what step comes next.

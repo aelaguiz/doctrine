@@ -51,7 +51,7 @@ Write this to disk before you summarize the turn.
 
 ##### Standalone Read
 
-A downstream reader should be able to read dossier_engineer.md alone and understand the current dossier truth.
+dossier_engineer.md should stand on its own and show the current dossier truth.
 
 ### Turn Summary
 

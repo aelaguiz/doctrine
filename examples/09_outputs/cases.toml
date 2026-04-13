@@ -50,7 +50,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated.",
+  "lesson_manifest.json and MANIFEST_VALIDATION.md should stand on their own and say what was built and what was checked.",
   "",
   "#### Notes",
   "",

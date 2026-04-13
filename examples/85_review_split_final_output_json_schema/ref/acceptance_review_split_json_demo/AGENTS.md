@@ -15,13 +15,13 @@ Accept only if The acceptance review contract passes.
 
 Current artifact: Draft Plan.
 
-Accepted plan returns to ReviewLead.
+Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Plan.
 
-Rejected plan returns to PlanAuthor.
+Rejected plan goes to PlanAuthor.
 
 ## Inputs
 
@@ -68,7 +68,7 @@ Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -80,18 +80,18 @@ List exact failing gates, including Outline Complete when it fails.
 
 #### Standalone Read
 
-A downstream owner should be able to read this review alone and understand the acceptance verdict, current artifact, and next owner.
+This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner.
 
 ## Final Output
 
 ### Acceptance Control Final Response
 
 > **Final answer contract**
-> End the turn with one schema-backed final assistant message.
+> End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Structured JSON |
 | Shape | Acceptance Control JSON |
 | Schema | Acceptance Control Schema |
@@ -100,7 +100,7 @@ A downstream owner should be able to read this review alone and understand the a
 | Example file | `examples/acceptance_control.example.json` |
 | Requirement | Required |
 
-#### Payload Shape
+#### Payload Fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -108,7 +108,7 @@ A downstream owner should be able to read this review alone and understand the a
 | `current_artifact` | string | Current artifact after review. |
 | `next_owner` | string | Next owner after review. |
 
-#### Example Shape
+#### Example
 
 ```json
 {
@@ -125,7 +125,7 @@ Use `route` value `revise` only when Outline Complete fails.
 
 #### Changes Requested Note
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 Only emit this retry control when the review requests changes.
 
@@ -133,6 +133,6 @@ Only emit this retry control when the review requests changes.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 This final JSON should be enough for the next owner to route the review result.

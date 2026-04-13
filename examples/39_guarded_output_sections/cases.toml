@@ -13,7 +13,7 @@ expected_lines = [
   "",
   "## Read First",
   "",
-  "Read the guarded sections directly from the emitted output contract.",
+  "Read the guarded output items directly from the emitted output contract.",
   "",
   "### Read Now",
   "",
@@ -30,7 +30,7 @@ expected_lines = [
   "- Shape: Json Object",
   "- Requirement: Required",
   "",
-  "Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn.",
+  "Use the host route facts. They say whether the current section is new or a full rewrite, whether the same critic miss happened again, and which status facts drove the turn.",
   "",
   "## Outputs",
   "",
@@ -42,19 +42,19 @@ expected_lines = [
   "",
   "#### Rewrite Mode",
   "",
-  "Rendered only when route facts section status is new or full rewrite.",
+  "Show this only when route facts section status is new or full rewrite.",
   "",
   "Name whether the section is brand new or undergoing a full rewrite.",
   "",
   "#### Repeated Problem",
   "",
-  "Rendered only when critic miss is repeated.",
+  "Show this only when critic miss is repeated.",
   "",
   "Say whether the same critic miss has repeated.",
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner should be able to read this comment alone and know which conditional readback blocks might appear.",
+  "This comment should stand on its own. The next owner should know which conditional readback blocks might appear.",
 ]
 
 [[cases]]
@@ -69,7 +69,7 @@ expected_lines = [
   "",
   "## Read First",
   "",
-  "Read the nested guarded sections directly from the emitted output contract.",
+  "Read the nested guarded output items directly from the emitted output contract.",
   "",
   "### Read Now",
   "",
@@ -86,7 +86,7 @@ expected_lines = [
   "- Shape: Json Object",
   "- Requirement: Required",
   "",
-  "Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn.",
+  "Use the host route facts. They say whether the current section is new or a full rewrite, whether the same critic miss happened again, and which status facts drove the turn.",
   "",
   "## Outputs",
   "",
@@ -104,13 +104,51 @@ expected_lines = [
   "",
   "##### Rewrite Detail",
   "",
-  "Rendered only when route facts section status is new or full rewrite.",
+  "Show this only when route facts section status is new or full rewrite.",
   "",
   "Explain why rewrite-aware handling applies on this turn.",
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner should be able to read this comment alone and know which nested conditional details might appear.",
+  "This comment should stand on its own. The next owner should know which nested conditional details might appear.",
+]
+
+[[cases]]
+name = "guarded output items can guard one scalar field directly"
+status = "active"
+kind = "render_contract"
+agent = "GuardedOutputItemsDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep guarded output items explicit.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host route facts. They say whether the current section is new or a full rewrite, whether the same critic miss happened again, and which status facts drove the turn.",
+  "",
+  "## Outputs",
+  "",
+  "### Guarded Scalar Readback Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Rewrite Note",
+  "",
+  "Show this only when route facts section status is new or full rewrite.",
+  "",
+  "`Rewrite applies.`",
+  "",
+  "#### Standalone Read",
+  "",
+  "This comment should stand on its own. The next owner should know when guarded fields may appear.",
 ]
 
 [[cases]]
@@ -162,4 +200,17 @@ error_code = "E338"
 message_contains = [
   "Output guard reads disallowed source",
   "route_mode",
+]
+
+[[cases]]
+name = "standalone_read cannot interpolate guarded scalar detail"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_STANDALONE_READ_REFERENCES_GUARDED_SCALAR.prompt"
+agent = "InvalidStandaloneReadGuardedScalarDemo"
+exception_type = "CompileError"
+error_code = "E340"
+message_contains = [
+  "Standalone read references guarded output detail",
+  "BrokenGuardedScalarComment:rewrite_note",
 ]

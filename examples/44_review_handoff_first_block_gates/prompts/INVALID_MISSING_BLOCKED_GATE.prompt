@@ -31,7 +31,7 @@ output HandoffReviewComment: "Handoff Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the handoff or requested changes."
+        "Say whether the review accepted the handoff or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the reviewed artifact."
@@ -74,11 +74,11 @@ review HandoffFirstReview: "Handoff-First Review"
 
     on_accept: "If Accepted"
         current none
-        route "Accepted handoff returns to ReviewLead." -> ReviewLead
+        route "Accepted handoff goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current none
-        route "Blocked or rejected handoff returns to DraftAuthor." -> DraftAuthor
+        route "Blocked or rejected handoff goes to DraftAuthor." -> DraftAuthor
 
 
 agent InvalidMissingBlockedGateDemo:

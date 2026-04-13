@@ -24,7 +24,7 @@ output BrokenGuardedComment: "Broken Guarded Comment"
     shape: Comment
     requirement: Required
 
-    # This line is invalid because guarded output sections may not read
+    # This line is invalid because guarded output items may not read
     # workflow-local names such as `pass_mode`.
     rewrite_mode: "Rewrite Mode" when pass_mode == RewriteMode.full_rewrite:
         "Name whether the pass is a full rewrite."

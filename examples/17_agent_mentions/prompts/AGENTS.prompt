@@ -29,6 +29,6 @@ agent ProjectLead:
 
 
 agent AgentMentionsDemo:
-    role: "Keep owner names readable in workflow prose without pretending that a mention is a route."
+    role: "Keep owner names easy to read in workflow prose without treating a mention like a route."
 
     read_first: HandoffMentions

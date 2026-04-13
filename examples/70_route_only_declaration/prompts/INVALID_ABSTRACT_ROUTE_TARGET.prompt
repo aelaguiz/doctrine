@@ -10,10 +10,10 @@ output RouteRepairComment: "Route Repair Comment"
     requirement: Required
 
     next_owner: "Next Owner"
-        "Name the next owner, including {{SpecialistOwner}} when repair returns to specialist work."
+        "Name the next owner, including {{SpecialistOwner}} when repair goes to specialist work."
 
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current and who owns next."
+        "This comment should stand on its own. The next owner should know that no specialist artifact is current and who owns next."
 
 
 abstract agent SpecialistOwner:

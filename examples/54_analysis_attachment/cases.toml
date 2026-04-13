@@ -9,7 +9,7 @@ agent = "ReleaseAnalysisDemo"
 assertion = "exact_lines"
 approx_ref = "ref/release_analysis_demo/AGENTS.md"
 expected_lines = [
-  "Follow Stages from Release Analysis.",
+  "Use Release Analysis and follow Stages.",
   "",
   "## Ship",
   "",
@@ -55,7 +55,7 @@ agent = "ReleaseComparisonAnalysisDemo"
 assertion = "exact_lines"
 approx_ref = "ref/release_comparison_analysis_demo/AGENTS.md"
 expected_lines = [
-  "Follow Stages from Release Comparison Analysis.",
+  "Use Release Comparison Analysis and follow Stages.",
   "",
   "## Ship",
   "",

@@ -52,4 +52,4 @@ Name any artifacts that are no longer current.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now and what is no longer current.
+This output should stand on its own. The next owner should know what is current now and what is no longer current.

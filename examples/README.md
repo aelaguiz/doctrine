@@ -33,7 +33,7 @@ Each numbered example may contain:
 - `07` through `29`: authored slots, routing, inputs, outputs, skills, refs,
   interpolation, reusable blocks, addressable paths, and enums
 - `30` through `42`: workflow law, currentness, trust carriers, preservation,
-  invalidation, guarded output sections, and route-only turns
+  invalidation, guarded output items, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
 - `54` through `81`: second-wave integration surfaces for `analysis`,
@@ -115,7 +115,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `36_invalidation_and_rebuild` | Invalidation as a truth transition plus rebuild routing. |
 | `37_law_reuse_and_patching` | Named workflow-law subsections and explicit law patching. |
 | `38_metadata_polish_capstone` | Full workflow-law capstone with activation, currentness, preservation, invalidation, and reroute. |
-| `39_guarded_output_sections` | Guarded output sections and nested guarded readback. |
+| `39_guarded_output_sections` | Guarded output items and nested guarded readback. |
 | `40_route_only_local_ownership` | Route-only local-ownership branch with `current none`. |
 | `41_route_only_reroute_handoff` | Route-only reroute branch when the next owner is still unknown. |
 | `42_route_only_handoff_capstone` | Integrated route-only handoff capstone. |

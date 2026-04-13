@@ -1,4 +1,4 @@
-Follow Stages from Release Comparison Analysis.
+Use Release Comparison Analysis and follow Stages.
 
 ## Ship
 

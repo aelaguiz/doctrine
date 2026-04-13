@@ -4,7 +4,7 @@ Keep reusable law subsections explicit in the base workflow.
 
 Current artifact: Section Metadata.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 If unclear(CurrentHandoff.preserve_basis):
 - Stop: Preserve basis is unclear.
@@ -57,4 +57,4 @@ Name any comparison-only artifacts used in this pass.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now and what was comparison-only.
+This output should stand on its own. The next owner should know what is current now and what was comparison-only.

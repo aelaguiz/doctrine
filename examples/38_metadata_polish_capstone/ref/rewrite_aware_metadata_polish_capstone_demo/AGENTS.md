@@ -8,7 +8,7 @@ Active mode: section-summary.
 
 Current artifact: Section Metadata.
 
-Must current_handoff.preserve_basis == approved_structure.
+Make sure current_handoff.preserve_basis == approved_structure.
 
 Own only {`section_metadata.name`, `section_metadata.description`}.
 
@@ -18,7 +18,7 @@ Preserve decisions `approved_structure`.
 
 Do not modify {`section_metadata.taxonomy`, `section_metadata.flags`}.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 When pass_mode is section-summary and current_handoff.rewrite_regime is rewrite, ignore {`section_metadata.name`, `section_metadata.description`} for rewrite evidence.
 
@@ -41,7 +41,7 @@ If structure changed:
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided handoff facts that say whether metadata polish is owed, which mode is active, which preserve basis remains authoritative, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
+Use the host handoff facts. They say whether metadata polish is owed, which mode is active, which preserve basis still decides, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
 
 ### Approved Plan Binding
 
@@ -99,7 +99,7 @@ Name the one active mode for this pass.
 
 ##### Preserve Basis
 
-Name the upstream declaration whose decisions remain authoritative.
+Name the upstream declaration that still decides.
 
 ##### Comparison Basis
 
@@ -124,4 +124,4 @@ Name any artifacts that are no longer current.
 
 ##### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed.
+This output should stand on its own. The next owner should know what is current, which mode is active, why that preserve basis still decides, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.

@@ -48,10 +48,21 @@
 - Model reusable capability as a `skill`, not as ad hoc script prose.
 - Keep public docs and examples generic. Do not import product names, internal skill slugs, or company-specific workflow jargon from other repos.
 
+## Plain Language Hard Requirement
+
+- Treat 7th grade reading level as a hard requirement for shipped bundled Markdown prose and agent replies.
+- Prefer short sentences, common words, and direct verbs.
+- Split dense instructions into two sentences when that keeps the meaning clear.
+- Keep Doctrine terms that carry exact meaning, but simplify the rest of the sentence around them.
+- Bad: `A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner.`
+- Good: `This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner.`
+- Bad: `Rendered only when route facts section status is new or full rewrite.`
+- Good: `Show this only when the route facts say the section is new or a full rewrite.`
+
 ## Communication
 
 - Lead with the concrete answer in 1-3 sentences.
-- Use plain, natural English.
+- Use plain, natural English at about a 7th grade reading level.
 - Say what changed, what you ran, what happened, and what happens next.
 - If you did not run a check, say that plainly.
 

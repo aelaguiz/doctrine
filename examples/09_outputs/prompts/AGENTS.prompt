@@ -125,7 +125,7 @@ output LessonManifestOutput: "Lesson Manifest Output"
             when: "Guided-walkthrough pacing is in scope."
 
     standalone_read: "Standalone Read"
-        "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
+        "lesson_manifest.json and MANIFEST_VALIDATION.md should stand on their own and say what was built and what was checked."
 
     notes: "Notes"
         "Interpret `lesson_root/...` from the current work context and surrounding instructions."

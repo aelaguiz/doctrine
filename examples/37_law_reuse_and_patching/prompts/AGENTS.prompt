@@ -60,7 +60,7 @@ output BaseCoordinationHandoff: "Base Coordination Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now and what was comparison-only."
+        "This output should stand on its own. The next owner should know what is current now and what was comparison-only."
 
 
 # Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
@@ -94,12 +94,12 @@ output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed."
+        "This output should stand on its own. The next owner should know what is current, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed."
 
 
 # Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue."
+    role: "Handle reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when workflow law requires a reroute."
 

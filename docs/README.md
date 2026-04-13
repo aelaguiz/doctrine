@@ -22,7 +22,7 @@ parallelism.
 ## Feature Guides
 
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
-  bindings, `trust_surface`, guarded output sections, and portable truth
+  bindings, `trust_surface`, guarded output items, and portable truth
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): workflow law, currentness, scope,
   preservation, invalidation, and route-only turns
 - [REVIEW_SPEC.md](REVIEW_SPEC.md): first-class `review`, contracts, verdict

@@ -258,7 +258,7 @@ class ReviewImportedOutputsTests(unittest.TestCase):
         self.assertIn("### Draft Review Decision", final_output_block)
         self.assertIn("#### Trust Surface", final_output_block)
         self.assertIn("- Current Artifact", final_output_block)
-        self.assertIn("#### Read It Cold", final_output_block)
+        self.assertIn("#### Read on Its Own", final_output_block)
 
 
 if __name__ == "__main__":
