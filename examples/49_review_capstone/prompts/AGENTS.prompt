@@ -32,7 +32,7 @@ input ReviewState: "Review State"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the review state that says which mode is active, whether peer comparison was used, whether the current artifact fell outside this review family, whether metadata-refresh exclusions apply, whether scope leaked, and why the next owner must act."
+    "Use the review state. It says which mode is active, whether peer comparison was used, whether the current artifact fell outside this review family, whether metadata-refresh exclusions apply, whether scope leaked, and why the next owner must act."
 
 
 # Declare the two subject artifacts that may be reviewed under this family.
@@ -110,32 +110,32 @@ output CapstoneReviewComment: "Capstone Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the selected subject or requested changes."
+        "Say whether the review accepted the selected subject or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
-        "Name the exact artifact identity this review judged. If the handoff-first block stopped review before content review started, name the producer handoff instead."
+        "Name the exact artifact this review judged. If a handoff-first block stopped review before content review began, name the producer handoff instead."
 
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."
+        "Sum up the review work that led to the verdict. Say how {{fields.reviewed_artifact}} met or did not meet {{contract.clarity}}. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."
 
     output_contents_that_matter: "Output Contents That Matter"
-        "Summarize the exact contents the next owner must read first, including any preserved boundary or rewrite-only exclusions that still matter now."
+        "Sum up the exact parts the next owner should read first. Include any preserved boundary or rewrite-only exclusions that still matter."
 
     current_artifact: "Current Artifact" when present(current_artifact):
-        "Name the artifact that remains current after this review outcome. Blocked handoff-first outcomes keep this absent because no later artifact became current."
+        "Name the artifact that stays current after this review outcome. Leave this out for blocked handoff-first outcomes, because no later artifact became current."
 
     next_owner: "Next Owner"
-        "Name the next owner, including {{ReviewLead}} for blocked or unresolved review, {{DraftAuthor}} for draft work, and {{MetadataAuthor}} for metadata work."
+        "Name the next owner. Use {{ReviewLead}} for blocked or unresolved review, {{DraftAuthor}} for draft work, and {{MetadataAuthor}} for metadata work."
 
     active_mode: "Active Mode" when present(active_mode):
-        "Name the active review mode that selected the current artifact."
+        "Name the active review mode for the current artifact."
 
     trigger_reason: "Trigger Reason" when present(trigger_reason):
-        "Name the trigger reason that explains why this mode and artifact are live."
+        "Name the trigger reason for this live mode and artifact."
 
     failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
         failing_gates: "Failing Gates"
-            "Name every failing review gate in authored order, including exact shared-contract gate identities."
+            "List each failed review gate in authored order, including exact shared-contract gate names."
 
         blocked_gate: "Blocked Gate" when present(blocked_gate):
             "Name the first blocking gate when the review stopped before content review started."
@@ -146,7 +146,7 @@ output CapstoneReviewComment: "Capstone Review Comment"
         trigger_reason when present(trigger_reason)
 
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand whether review was blocked or completed, what was actually reviewed, what remains current now when something remains current, what mode and trigger reason are live, who owns next, and which exact failures still matter."
+        "This comment should stand on its own. The next owner should know if review was blocked or done, what was reviewed, what is still current, which mode and trigger reason are live, who owns next, and which exact failures still matter."
 
 
 # Declare the capstone review itself. It keeps all review semantics inside one
@@ -189,39 +189,39 @@ review CapstoneReview: "Capstone Review"
                 current artifact DraftSpec via CapstoneReviewComment.current_artifact
                 carry active_mode = ReviewMode.draft_rewrite
                 carry trigger_reason = TriggerReason.structure_gap
-                route "Accepted draft rewrite returns to DraftAuthor." -> DraftAuthor
+                route "Accepted draft rewrite goes to DraftAuthor." -> DraftAuthor
 
             ReviewMode.metadata_refresh:
                 current artifact MetadataRecord via CapstoneReviewComment.current_artifact
                 carry active_mode = ReviewMode.metadata_refresh
                 carry trigger_reason = TriggerReason.stale_metadata
-                route "Accepted metadata refresh returns to MetadataAuthor." -> MetadataAuthor
+                route "Accepted metadata refresh goes to MetadataAuthor." -> MetadataAuthor
 
     on_reject: "If Rejected"
         match ReviewState.active_mode:
             ReviewMode.draft_rewrite when ProducerHandoff.invalid:
                 current none
-                route "Blocked handoff review returns to ReviewLead." -> ReviewLead
+                route "Blocked handoff review goes to ReviewLead." -> ReviewLead
 
             ReviewMode.draft_rewrite:
                 current artifact DraftSpec via CapstoneReviewComment.current_artifact
                 carry active_mode = ReviewMode.draft_rewrite
                 carry trigger_reason = TriggerReason.structure_gap
-                route "Rejected draft rewrite returns to DraftAuthor." -> DraftAuthor
+                route "Rejected draft rewrite goes to DraftAuthor." -> DraftAuthor
 
             ReviewMode.metadata_refresh when ProducerHandoff.invalid:
                 current none
-                route "Blocked handoff review returns to ReviewLead." -> ReviewLead
+                route "Blocked handoff review goes to ReviewLead." -> ReviewLead
 
             ReviewMode.metadata_refresh:
                 current artifact MetadataRecord via CapstoneReviewComment.current_artifact
                 carry active_mode = ReviewMode.metadata_refresh
                 carry trigger_reason = TriggerReason.stale_metadata
-                route "Rejected metadata refresh returns to MetadataAuthor." -> MetadataAuthor
+                route "Rejected metadata refresh goes to MetadataAuthor." -> MetadataAuthor
 
             else:
                 current none
-                route "Blocked mode selection review returns to ReviewLead." -> ReviewLead
+                route "Blocked mode selection review goes to ReviewLead." -> ReviewLead
 
 
 # Declare the concrete reviewer agent that emits the capstone review comment.

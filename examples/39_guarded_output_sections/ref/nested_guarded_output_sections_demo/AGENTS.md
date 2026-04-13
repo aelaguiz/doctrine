@@ -2,7 +2,7 @@ Keep nested conditional output readback explicit and addressable.
 
 ## Read First
 
-Read the nested guarded sections directly from the emitted output contract.
+Read the nested guarded output items directly from the emitted output contract.
 
 ### Read Now
 
@@ -19,7 +19,7 @@ Read Status Summary before Rewrite Detail when nested conditional detail is in p
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn.
+Use the host route facts. They say whether the current section is new or a full rewrite, whether the same critic miss happened again, and which status facts drove the turn.
 
 ## Outputs
 
@@ -37,10 +37,10 @@ Summarize the status facts that drove this turn.
 
 ##### Rewrite Detail
 
-Rendered only when route facts section status is new or full rewrite.
+Show this only when route facts section status is new or full rewrite.
 
 Explain why rewrite-aware handling applies on this turn.
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and know which nested conditional details might appear.
+This comment should stand on its own. The next owner should know which nested conditional details might appear.

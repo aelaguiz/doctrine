@@ -13,13 +13,13 @@ Accept only if The shared draft review contract passes.
 
 Current artifact: Draft Spec.
 
-Accepted draft returns to ReviewLead.
+Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Spec.
 
-Rejected draft returns to DraftAuthor.
+Rejected draft goes to DraftAuthor.
 
 ## Inputs
 
@@ -64,7 +64,7 @@ Name the next owner, including ReviewLead when the draft is accepted and DraftAu
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -83,11 +83,11 @@ A downstream owner should be able to read this review alone and understand the v
 ### Draft Review Decision
 
 > **Final answer contract**
-> End the turn with one final assistant message that satisfies this contract.
+> End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Natural-language markdown |
 | Shape | Comment Text |
 | Requirement | Required |
@@ -100,6 +100,6 @@ End with one short control summary for the routed owner.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 The final control summary should stand on its own for the routed owner.

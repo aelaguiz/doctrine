@@ -6,7 +6,7 @@ input DraftSpec: "Draft Spec"
         path: "unit_root/DRAFT_SPEC.md"
     shape: MarkdownDocument
     requirement: Required
-    "Use the current draft specification as the reviewed artifact."
+    "Use the current draft spec as the reviewed artifact."
 
 
 workflow ExactGateReviewContract: "Exact Gate Review Contract"
@@ -26,13 +26,13 @@ output ExactGateReviewComment: "Exact Gate Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the draft or requested changes."
+        "Say whether the review accepted the draft or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the reviewed artifact this review judged."
 
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict."
+        "Sum up the review work that led to the verdict."
 
     output_contents_that_matter: "Output Contents That Matter"
         "Summarize the parts of the draft the next owner must read first."

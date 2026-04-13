@@ -52,7 +52,7 @@ output CoordinationHandoff: "Coordination Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know which artifact is current now and which mode is active."
+        "This output should stand on its own. The next owner should know which artifact is current now and which mode is active."
 
 
 # Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.

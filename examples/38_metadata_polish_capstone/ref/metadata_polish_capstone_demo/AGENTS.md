@@ -8,7 +8,7 @@ Active mode: manifest-title.
 
 Current artifact: Primary Manifest.
 
-Must current_handoff.preserve_basis == approved_plan.
+Make sure current_handoff.preserve_basis == approved_plan.
 
 Own only `primary_manifest.title`.
 
@@ -16,7 +16,7 @@ Preserve exact `primary_manifest.*` except `primary_manifest.title`.
 
 Preserve decisions `approved_plan`.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 If unclear(pass_mode, current_handoff.preserve_basis):
 - Stop: Mode or preserve basis is unclear.
@@ -32,7 +32,7 @@ If unclear(pass_mode, current_handoff.preserve_basis):
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided handoff facts that say whether metadata polish is owed, which mode is active, which preserve basis remains authoritative, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
+Use the host handoff facts. They say whether metadata polish is owed, which mode is active, which preserve basis still decides, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
 
 ### Approved Plan Binding
 
@@ -90,7 +90,7 @@ Name the one active mode for this pass.
 
 ##### Preserve Basis
 
-Name the upstream declaration whose decisions remain authoritative.
+Name the upstream declaration that still decides.
 
 ##### Comparison Basis
 
@@ -105,4 +105,4 @@ Name any comparison-only artifacts used in this pass.
 
 ##### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now, which mode is active, and why that preserve basis remains authoritative.
+This output should stand on its own. The next owner should know what is current, which mode is active, and why that preserve basis still decides.

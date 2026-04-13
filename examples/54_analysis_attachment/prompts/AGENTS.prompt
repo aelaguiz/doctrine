@@ -40,7 +40,7 @@ input PriorPlan: "Prior Plan"
 
 
 agent ReleaseAnalysisDemo:
-    role: "Follow {{ReleaseAnalysis:stages.title}} from {{ReleaseAnalysis:title}}."
+    role: "Use {{ReleaseAnalysis:title}} and follow {{ReleaseAnalysis:stages.title}}."
     workflow: "Ship"
         "Use the attached analysis before you finalize the release plan."
     analysis: ReleaseAnalysis
@@ -48,7 +48,7 @@ agent ReleaseAnalysisDemo:
         CurrentPlan
 
 agent ReleaseComparisonAnalysisDemo:
-    role: "Follow {{ReleaseComparisonAnalysis:stages.title}} from {{ReleaseComparisonAnalysis:title}}."
+    role: "Use {{ReleaseComparisonAnalysis:title}} and follow {{ReleaseComparisonAnalysis:stages.title}}."
     workflow: "Ship"
         "Use the attached comparison analysis before you finalize the release plan."
     analysis: ReleaseComparisonAnalysis

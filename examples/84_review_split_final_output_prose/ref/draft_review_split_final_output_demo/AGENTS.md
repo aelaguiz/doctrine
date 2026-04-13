@@ -13,13 +13,13 @@ Accept only if The shared draft review contract passes.
 
 Current artifact: Draft Spec.
 
-Accepted draft returns to ReviewLead.
+Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Spec.
 
-Rejected draft returns to DraftAuthor.
+Rejected draft goes to DraftAuthor.
 
 ## Inputs
 
@@ -40,7 +40,7 @@ Rejected draft returns to DraftAuthor.
 
 #### Verdict
 
-Say whether the review accepted the draft or requested changes.
+Say whether the review accepted the draft or asked for changes.
 
 #### Reviewed Artifact
 
@@ -48,7 +48,7 @@ Name the reviewed artifact this review judged.
 
 #### Analysis Performed
 
-Summarize the review analysis that led to the verdict.
+Sum up the review work that led to the verdict.
 
 #### Output Contents That Matter
 
@@ -60,11 +60,11 @@ Name the artifact that remains current after review.
 
 #### Next Owner
 
-Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.
+Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -76,18 +76,18 @@ Name the failing review gates in authored order.
 
 #### Standalone Read
 
-A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner.
+This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner.
 
 ## Final Output
 
 ### Draft Review Decision
 
 > **Final answer contract**
-> End the turn with one final assistant message that satisfies this contract.
+> End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Natural-language markdown |
 | Shape | Comment Text |
 | Requirement | Required |
@@ -98,7 +98,7 @@ End with one short control summary for the routed owner.
 
 #### Retry Note
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 Only include this note when the review requests changes.
 
@@ -110,6 +110,6 @@ Keep the control summary aligned with Current Artifact.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 The final control summary should stand on its own for the routed owner.

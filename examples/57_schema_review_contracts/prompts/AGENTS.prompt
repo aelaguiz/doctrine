@@ -79,11 +79,11 @@ review SchemaBackedPlanReview: "Schema Backed Plan Review"
 
     on_accept: "If Accepted"
         current none
-        route "Accepted plan returns to ReviewLead." -> ReviewLead
+        route "Accepted plan goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current none
-        route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+        route "Rejected plan goes to PlanAuthor." -> PlanAuthor
 
 
 agent SchemaReviewContractDemo:

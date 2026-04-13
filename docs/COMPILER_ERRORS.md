@@ -128,7 +128,7 @@ Stability rules:
 | `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared or bound concrete-turn input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
 | `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
-| `E338` | Output guard reads disallowed source | A guarded output section reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs and enum members. |
+| `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs and enum members. |
 | `E339` | Routed next_owner field is not structurally bound | A route-only output includes a `next_owner` field, but that field does not structurally bind the routed target. |
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |

@@ -13,13 +13,13 @@ Accept only if The acceptance review contract passes.
 
 Current artifact: Draft Plan.
 
-Accepted plan returns to ReviewLead.
+Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Plan.
 
-Rejected plan returns to PlanAuthor.
+Rejected plan goes to PlanAuthor.
 
 ## Inputs
 
@@ -64,7 +64,7 @@ Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -76,18 +76,18 @@ List exact failing gates, including Outline Complete when it fails.
 
 #### Standalone Read
 
-A downstream owner should understand the acceptance verdict, current artifact, and next owner from this output alone.
+From this output alone, a downstream owner should know the acceptance verdict, current artifact, and next owner.
 
 ## Final Output
 
 ### Acceptance Control Final Response
 
 > **Final answer contract**
-> End the turn with one schema-backed final assistant message.
+> End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Structured JSON |
 | Shape | Acceptance Control JSON |
 | Schema | Acceptance Control Schema |
@@ -96,7 +96,7 @@ A downstream owner should understand the acceptance verdict, current artifact, a
 | Example file | `examples/acceptance_control.example.json` |
 | Requirement | Required |
 
-#### Payload Shape
+#### Payload Fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -104,7 +104,7 @@ A downstream owner should understand the acceptance verdict, current artifact, a
 | `current_artifact` | string | Current artifact after review. |
 | `next_owner` | string | Next owner after review. |
 
-#### Example Shape
+#### Example
 
 ```json
 {
@@ -116,16 +116,16 @@ A downstream owner should understand the acceptance verdict, current artifact, a
 
 #### Accepted Route
 
-Rendered only when verdict is accepted and a routed owner exists.
+Show this only when verdict is accepted and a routed owner exists.
 
-Accepted plan returns to ReviewLead. Next owner: Review Lead.
+Accepted plan goes to ReviewLead. Next owner: Review Lead.
 
 #### Retry Route
 
-Rendered only when verdict is changes requested and a routed owner exists.
+Show this only when verdict is changes requested and a routed owner exists.
 
 PlanAuthor
 
-#### Read It Cold
+#### Read on Its Own
 
 This final JSON should be enough for the next owner to route the review result.

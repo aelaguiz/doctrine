@@ -24,7 +24,7 @@ output HandoffReviewComment: "Handoff Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the handoff or requested changes."
+        "Say whether the review accepted the handoff or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the reviewed artifact."

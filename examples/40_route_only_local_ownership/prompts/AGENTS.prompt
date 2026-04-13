@@ -7,7 +7,7 @@ input RouteFacts: "Route Facts"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the host-provided route facts that say whether the current specialist output is missing, whether the next owner is still unclear, and what the current owner should do next before rerouting is justified."
+    "Use the host route facts. They say whether the current specialist output is missing, whether the next owner is still unclear, and what the current owner should do next before rerouting makes sense."
 
 
 # Declare the comment this turn emits when ownership stays local.
@@ -18,7 +18,7 @@ output LocalOwnershipComment: "Local Ownership Comment"
 
     # This field names the route-only state now in force.
     current_route: "Current Route"
-        "Say plainly that this is a route-only local-ownership turn: no specialist artifact is current, so ownership stays local until rerouting is justified."
+        "Say this is a route-only local turn. No specialist artifact is current, so ownership stays local until rerouting makes sense."
 
     # This field names the ownership outcome that follows from there being no
     # semantic reroute.
@@ -32,7 +32,7 @@ output LocalOwnershipComment: "Local Ownership Comment"
     # This block says what a downstream owner should understand from the
     # comment alone.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand that this route-only turn stayed local because no specialist artifact is current, who owns next, and what the next local repair step is."
+        "This comment should stand on its own. The next owner should know that this route-only turn stayed local because no specialist artifact is current, who owns next, and what local repair step comes next."
 
 
 # Declare the route-only workflow that stops honestly without rerouting.

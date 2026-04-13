@@ -628,13 +628,19 @@ output_render_profile_stmt: "render_profile" ":" name_ref _NL?
 
 ?output_record_item: record_text
                    | guarded_output_section
+                   | guarded_output_scalar_item
                    | output_readable_block
                    | output_record_keyed_item
                    | output_record_ref_item
 
 guarded_output_section: CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
+guarded_output_scalar_item: CNAME ":" string "when" expr _NL output_record_item_body?
+                         | CNAME ":" path_ref "when" expr _NL output_record_item_body?
+                         | CNAME ":" name_ref "when" expr _NL output_record_item_body?
 output_record_body: output_record_item+
-output_record_keyed_item: CNAME ":" record_head _NL output_record_item_body?
+output_record_keyed_item: CNAME ":" string _NL output_record_item_body?
+                      | CNAME ":" path_ref _NL output_record_item_body?
+                      | CNAME ":" name_ref _NL output_record_item_body?
 output_record_ref_item: name_ref _NL output_record_item_body?
 output_record_item_body: _INDENT output_record_body _DEDENT
 

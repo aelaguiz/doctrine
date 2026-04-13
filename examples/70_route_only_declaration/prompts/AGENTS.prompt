@@ -5,7 +5,7 @@ input RouteFacts: "Route Facts"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the host-provided route facts that say whether route repair is active, whether the current specialist output is missing, which owner should take the next pass, whether rewrite mode is live, and what the next step is."
+    "Use the host route facts. They say whether route repair is active, whether the current specialist output is missing, which owner takes the next pass, whether rewrite mode is live, and what the next step is."
 
 
 output RouteRepairComment: "Route Repair Comment"
@@ -18,7 +18,7 @@ output RouteRepairComment: "Route Repair Comment"
             "Say the route-only state now in force."
 
         next_owner: "Next Owner"
-            "Name the next owner, including {{DraftAuthor}} when repair returns to draft work and {{RoutingOwner}} when routing keeps the issue local."
+            "Name the next owner. Use {{DraftAuthor}} when repair goes back to draft work and {{RoutingOwner}} when routing keeps the issue local."
 
         next_step: "Next Step"
             "Say the next concrete step now."
@@ -27,11 +27,11 @@ output RouteRepairComment: "Route Repair Comment"
         "Say plainly that later metadata must be rewritten instead of inherited."
 
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, and what the next concrete step is."
+        "This comment should stand on its own. The next owner should know that no specialist artifact is current, which route-only state is active, who owns next, and what step comes next."
 
 
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue safely."
+    role: "Handle reroutes when specialist work cannot continue safely."
     workflow: "Route"
         "Take back the same issue when the next specialist owner is still not justified."
 

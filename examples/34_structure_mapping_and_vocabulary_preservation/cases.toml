@@ -44,7 +44,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+  "This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
 
 [[cases]]
@@ -90,7 +90,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+  "This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
 
 [[cases]]
@@ -136,7 +136,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+  "This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
 
 [[cases]]
@@ -181,7 +181,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+  "This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
 
 [[cases]]
@@ -217,7 +217,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+  "This output should stand on its own. The next owner should know which artifact remains current now.",
   "",
   "### Review Plan",
   "",
@@ -231,13 +231,13 @@ expected_lines = [
   "",
   "##### Scope",
   "",
-  "_Required · section_",
+  "_Required \u00b7 section_",
   "",
   "State the review scope.",
   "",
   "##### Acceptance",
   "",
-  "_Required · section_",
+  "_Required \u00b7 section_",
   "",
   "State what acceptance looks like.",
 ]

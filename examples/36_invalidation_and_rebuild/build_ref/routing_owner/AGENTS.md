@@ -1,4 +1,4 @@
-Own explicit reroutes when specialist work cannot continue.
+Handle reroutes when specialist work cannot continue.
 
 ## Instructions
 

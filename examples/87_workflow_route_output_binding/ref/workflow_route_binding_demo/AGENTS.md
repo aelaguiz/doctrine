@@ -6,7 +6,7 @@ Always route the turn through compiler-owned workflow-law routing.
 
 This pass runs only when true.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: Reply and stop.
 

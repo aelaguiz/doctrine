@@ -6,7 +6,7 @@ Stop when the specialist output is missing but the next owner is clear enough to
 
 This pass runs only when current specialist output is missing and next owner is not unknown.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: No specialist artifact is current for this turn.
 
@@ -18,7 +18,7 @@ Stop: No specialist artifact is current for this turn.
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided route facts that say whether the current specialist output is missing, whether the next owner is still unclear, and what the current owner should do next before rerouting is justified.
+Use the host route facts. They say whether the current specialist output is missing, whether the next owner is still unclear, and what the current owner should do next before rerouting makes sense.
 
 ## Outputs
 
@@ -30,7 +30,7 @@ Use the host-provided route facts that say whether the current specialist output
 
 #### Current Route
 
-Say plainly that this is a route-only local-ownership turn: no specialist artifact is current, so ownership stays local until rerouting is justified.
+Say this is a route-only local turn. No specialist artifact is current, so ownership stays local until rerouting makes sense.
 
 #### Next Owner
 
@@ -42,4 +42,4 @@ Name the next local repair step from the route facts.
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and understand that this route-only turn stayed local because no specialist artifact is current, who owns next, and what the next local repair step is.
+This comment should stand on its own. The next owner should know that this route-only turn stayed local because no specialist artifact is current, who owns next, and what local repair step comes next.

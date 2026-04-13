@@ -4,7 +4,7 @@ Do not keep reviewing against invalidated downstream truth.
 
 This pass runs only when section review invalidated.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: Section Review is invalidated until rebuild work completes.
 
@@ -38,4 +38,4 @@ Name any artifacts that are still no longer current.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is no longer current.
+This output should stand on its own. The next owner should know what is no longer current.

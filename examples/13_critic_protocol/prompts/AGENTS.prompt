@@ -125,7 +125,7 @@ output CriticReviewOutput: "Critic Review Output"
             "RUN_GATE_LOG.md must record the validation evidence the critic actually relied on."
 
     standalone_read: "Standalone Read"
-        "A downstream reader should be able to read REVIEW_VERDICT.md and RUN_GATE_LOG.md and understand the verdict, route, and review basis."
+        "REVIEW_VERDICT.md and RUN_GATE_LOG.md should stand on their own and say the verdict, route, and review basis."
 
 
 agent ProjectLead:

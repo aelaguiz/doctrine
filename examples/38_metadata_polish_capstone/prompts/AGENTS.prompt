@@ -18,7 +18,7 @@ input CurrentHandoff: "Current Handoff"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the host-provided handoff facts that say whether metadata polish is owed, which mode is active, which preserve basis remains authoritative, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed."
+    "Use the host handoff facts. They say whether metadata polish is owed, which mode is active, which preserve basis still decides, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed."
 
 
 # Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
@@ -85,7 +85,7 @@ output BaseCoordinationHandoff: "Base Coordination Handoff"
 
     # This field tells the next owner which upstream source still controls the decisions.
     preserve_basis: "Preserve Basis"
-        "Name the upstream declaration whose decisions remain authoritative."
+        "Name the upstream declaration that still decides."
 
     # This field lists read-only comparison help that informed the pass without becoming truth.
     comparison_basis: "Comparison Basis"
@@ -100,7 +100,7 @@ output BaseCoordinationHandoff: "Base Coordination Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now, which mode is active, and why that preserve basis remains authoritative."
+        "This output should stand on its own. The next owner should know what is current, which mode is active, and why that preserve basis still decides."
 
 
 # Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
@@ -119,7 +119,7 @@ output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
 
     # This field tells the next owner which upstream source still controls the decisions.
     preserve_basis: "Preserve Basis"
-        "Name the upstream declaration whose decisions remain authoritative."
+        "Name the upstream declaration that still decides."
 
     # This field lists read-only comparison help that informed the pass without becoming truth.
     comparison_basis: "Comparison Basis"
@@ -144,7 +144,7 @@ output RewriteAwareCoordinationHandoff: "Rewrite-Aware Coordination Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now, which mode is active, why that preserve basis remains authoritative, what old wording does not count as rewrite evidence on rewrite passes, and what is no longer current when structure changed."
+        "This output should stand on its own. The next owner should know what is current, which mode is active, why that preserve basis still decides, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed."
 
 
 # Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.

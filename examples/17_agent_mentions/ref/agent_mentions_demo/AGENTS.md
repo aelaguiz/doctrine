@@ -1,4 +1,4 @@
-Keep owner names readable in workflow prose without pretending that a mention is a route.
+Keep owner names easy to read in workflow prose without treating a mention like a route.
 
 ## Handoff Mentions
 

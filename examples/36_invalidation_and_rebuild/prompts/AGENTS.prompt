@@ -46,7 +46,7 @@ output InvalidationHandoff: "Invalidation Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
+        "This output should stand on its own. The next owner should know what is current now and what is no longer current."
 
 
 # Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
@@ -65,7 +65,7 @@ output BlockedReviewHandoff: "Blocked Review Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is no longer current."
+        "This output should stand on its own. The next owner should know what is no longer current."
 
 
 # Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
@@ -84,12 +84,12 @@ output RebuildHandoff: "Rebuild Handoff"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now."
+        "This output should stand on its own. The next owner should know what is current now."
 
 
 # Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue."
+    role: "Handle reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when rebuild work is required."
 
