@@ -8,6 +8,7 @@ from lark.exceptions import (
     UnexpectedToken,
 )
 
+
 def _extract_tree_position(obj: object) -> tuple[int | None, int | None]:
     if isinstance(obj, Token):
         return getattr(obj, "line", None), getattr(obj, "column", None)
@@ -166,4 +167,3 @@ def _format_parse_detail(exc: UnexpectedInput) -> str:
     if isinstance(exc, UnexpectedEOF):
         return "The file ended before the current declaration or block was complete."
     return "The parser could not match the current source against the shipped grammar."
-

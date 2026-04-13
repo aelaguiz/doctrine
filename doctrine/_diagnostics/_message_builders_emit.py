@@ -3,12 +3,16 @@ from __future__ import annotations
 import re
 from typing import Callable
 
-from doctrine._diagnostics.contracts import DoctrineDiagnostic
+_PatternBuilder = tuple[
+    re.Pattern[str],
+    str,
+    str,
+    Callable[[re.Match[str]], str | None],
+    tuple[str, ...],
+]
 
-_EMIT_PATTERN_BUILDERS: tuple[
-    tuple[re.Pattern[str], str, str, Callable[[re.Match[str]], str | None], tuple[str, ...]],
-    ...,
-] = (
+
+_EMIT_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
     (
         re.compile(r"^Unknown emit target: (?P<target>.+)$"),
         "E501",
@@ -157,24 +161,3 @@ _EMIT_PATTERN_BUILDERS: tuple[
         (),
     ),
 )
-
-
-def _emit_diagnostic_from_message(message: str) -> DoctrineDiagnostic:
-    for pattern, code, summary, detail_builder, hints in _EMIT_PATTERN_BUILDERS:
-        match = pattern.match(message)
-        if match is None:
-            continue
-        return DoctrineDiagnostic(
-            code=code,
-            stage="emit",
-            summary=summary,
-            detail=detail_builder(match),
-            hints=hints,
-            cause=message if message != detail_builder(match) else None,
-        )
-    return DoctrineDiagnostic(
-        code="E599",
-        stage="emit",
-        summary="Emit failure",
-        detail=message,
-    )

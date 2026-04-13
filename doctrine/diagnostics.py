@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import re
 import tomllib
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from lark import Token, Tree
 from lark.exceptions import (
     UnexpectedCharacters,
     UnexpectedEOF,
@@ -14,7 +12,6 @@ from lark.exceptions import (
     UnexpectedToken,
     VisitError,
 )
-from doctrine._diagnostics.compile_messages import _compile_diagnostic_from_message
 from doctrine._diagnostics.contracts import (
     DiagnosticExcerptLine,
     DiagnosticLocation,
@@ -22,7 +19,6 @@ from doctrine._diagnostics.contracts import (
     DoctrineDiagnostic,
     TransformParseFailure,
 )
-from doctrine._diagnostics.emit_messages import _emit_diagnostic_from_message
 from doctrine._diagnostics.formatting import (
     _build_excerpt,
     _format_block,
@@ -30,7 +26,11 @@ from doctrine._diagnostics.formatting import (
     _format_location,
     _json_safe_value,
 )
-from doctrine._diagnostics.parse import (
+from doctrine._diagnostics.message_builders import (
+    _compile_diagnostic_from_message,
+    _emit_diagnostic_from_message,
+)
+from doctrine._diagnostics.parse_errors import (
     _classify_unexpected_token,
     _extract_toml_decode_position,
     _extract_tree_position,
@@ -324,4 +324,3 @@ def _coerce_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) 
     if isinstance(error_or_diagnostic, DoctrineError):
         return error_or_diagnostic.diagnostic
     return error_or_diagnostic
-
