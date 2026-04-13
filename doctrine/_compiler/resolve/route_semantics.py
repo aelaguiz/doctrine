@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.naming import _display_addressable_ref
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    DisplayValue,
+    RouteSemanticContext,
+)
 
 
 class ResolveRouteSemanticsMixin:

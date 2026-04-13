@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+from doctrine import model
 from dataclasses import replace
 
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    IndexedUnit,
+    ResolvedAnalysisBody,
+    ResolvedAnalysisSection,
+    ResolvedAnalysisSectionItem,
+    ResolvedSectionRef,
+)
 from doctrine._compiler.support_files import _dotted_decl_name
 
 

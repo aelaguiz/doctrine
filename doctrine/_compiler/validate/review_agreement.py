@@ -1,7 +1,16 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import _REVIEW_OPTIONAL_FIELD_NAMES
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableTarget,
+    AgentContract,
+    CompileError,
+    IndexedUnit,
+    ResolvedReviewAgreementBranch,
+    ResolvedReviewGateBranch,
+    ReviewOutcomeBranch,
+)
 
 
 class ValidateReviewAgreementMixin:

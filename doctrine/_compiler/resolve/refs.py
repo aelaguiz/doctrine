@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_RENDER_PROFILE_NAMES,
@@ -7,7 +8,13 @@ from doctrine._compiler.constants import (
     _REVIEW_VERDICT_TEXT,
 )
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableRootDecl,
+    CompileError,
+    IndexedUnit,
+    ReadableDecl,
+    ResolvedRenderProfile,
+)
 
 
 class ResolveRefsMixin:

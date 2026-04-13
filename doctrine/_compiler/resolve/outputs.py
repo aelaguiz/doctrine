@@ -1,8 +1,25 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import _BUILTIN_INPUT_SOURCES, _BUILTIN_OUTPUT_TARGETS
 from doctrine._compiler.naming import _dotted_ref_name
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableNode,
+    CompileError,
+    CompiledSection,
+    ConfigSpec,
+    ContractBinding,
+    FinalOutputJsonShapeSummary,
+    IndexedUnit,
+    OutputDeclKey,
+    ResolvedIoBody,
+    ResolvedIoItem,
+    ResolvedIoRef,
+    ResolvedIoSection,
+    ResolvedRenderProfile,
+    ReviewSemanticContext,
+    RouteSemanticContext,
+)
 from doctrine._compiler.support_files import _dotted_decl_name
 
 

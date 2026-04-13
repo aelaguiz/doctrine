@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+from doctrine import model
 from pathlib import Path, PurePosixPath
 
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    CompiledSection,
+    CompiledSkillPackage,
+    CompiledSkillPackageFile,
+    IndexedUnit,
+    Path,
+)
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 

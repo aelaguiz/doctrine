@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+from doctrine import model
 from dataclasses import replace
 
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    IndexedUnit,
+    RouteChoiceMember,
+    RouteSemanticBranch,
+    RouteSemanticContext,
+)
 
 
 class ValidateRouteSemanticsContextMixin:

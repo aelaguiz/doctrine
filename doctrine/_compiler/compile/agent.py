@@ -1,9 +1,30 @@
 from __future__ import annotations
 
+from doctrine import model
 from concurrent.futures import ThreadPoolExecutor
 
 from doctrine._compiler.naming import _agent_typed_field_key, _authored_slot_allows_law
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AgentContract,
+    AgentFieldCompileSpec,
+    CompileError,
+    CompiledAgent,
+    CompiledBodyItem,
+    CompiledField,
+    CompiledFinalOutputSpec,
+    CompiledSection,
+    IndexedUnit,
+    OutputDeclKey,
+    ResolvedAbstractAgentSlot,
+    ResolvedAgentSlot,
+    ResolvedIoBody,
+    ResolvedSkillEntry,
+    ResolvedSkillsBody,
+    ResolvedSkillsSection,
+    ResolvedSkillsSectionBodyItem,
+    ReviewSemanticContext,
+    RouteSemanticContext,
+)
 from doctrine._compiler.support_files import _default_worker_count, _dotted_decl_name
 
 

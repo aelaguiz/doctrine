@@ -1,7 +1,35 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _SCHEMA_FAMILY_TITLES
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableNode,
+    AddressableRootDecl,
+    IndexedUnit,
+    ReadableColumnsTarget,
+    ReadableRowsTarget,
+    ReadableSchemaTarget,
+    ResolvedAnalysisSection,
+    ResolvedSchemaArtifact,
+    ResolvedSchemaBody,
+    ResolvedSchemaGroup,
+    ResolvedSectionBodyItem,
+    ResolvedSectionItem,
+    ResolvedSkillEntry,
+    ResolvedSkillsItem,
+    ResolvedSkillsSection,
+    ResolvedSkillsSectionBodyItem,
+    ResolvedUseItem,
+    ResolvedWorkflowItem,
+    ResolvedWorkflowSkillsItem,
+    ReviewSemanticContractFactTarget,
+    ReviewSemanticContractGateTarget,
+    ReviewSemanticContractRoot,
+    ReviewSemanticFieldTarget,
+    ReviewSemanticFieldsRoot,
+    SchemaAddressableItem,
+    SchemaFamilyTarget,
+)
 
 
 class ValidateAddressableChildrenMixin:

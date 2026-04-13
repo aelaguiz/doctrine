@@ -1,10 +1,36 @@
 from __future__ import annotations
 
+from doctrine import model
 from dataclasses import replace
 
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    CompiledBulletsBlock,
+    CompiledCalloutBlock,
+    CompiledChecklistBlock,
+    CompiledCodeBlock,
+    CompiledDefinitionsBlock,
+    CompiledFootnotesBlock,
+    CompiledGuardBlock,
+    CompiledImageBlock,
+    CompiledPropertiesBlock,
+    CompiledRawTextBlock,
+    CompiledReadableBlock,
+    CompiledRuleBlock,
+    CompiledSection,
+    CompiledSequenceBlock,
+    CompiledTableBlock,
+    CompiledTableCell,
+    CompiledTableColumn,
+    CompiledTableData,
+    CompiledTableRow,
+    IndexedUnit,
+    ResolvedRenderProfile,
+    ReviewSemanticContext,
+    RouteSemanticContext,
+)
 
 
 class CompileReadableBlocksMixin:

@@ -1,8 +1,23 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableNode,
+    CompileError,
+    IndexedUnit,
+    ResolvedReviewAgreementBranch,
+    ResolvedSchemaBody,
+    ResolvedSectionItem,
+    ResolvedWorkflowBody,
+    ResolvedWorkflowSkillsItem,
+    ReviewContractGate,
+    ReviewContractSpec,
+    ReviewSemanticContext,
+    ReviewSemanticContractRoot,
+    ReviewSemanticFieldsRoot,
+)
 from doctrine._compiler.support_files import _dotted_decl_name
 
 

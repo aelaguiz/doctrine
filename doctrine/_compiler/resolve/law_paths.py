@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT, _SCHEMA_FAMILY_TITLES
 from doctrine._compiler.naming import _name_ref_from_dotted_name
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AgentContract,
+    CompileError,
+    ContractBinding,
+    IndexedUnit,
+    LawBranch,
+    ResolvedLawPath,
+    SchemaFamilyTarget,
+)
 from doctrine._compiler.support_files import _dotted_decl_name
 
 

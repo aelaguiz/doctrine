@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+from doctrine import model
 from dataclasses import replace
 
 from doctrine._compiler.naming import _dotted_ref_name, _name_ref_from_dotted_name
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableNode,
+    AgentContract,
+    CompileError,
+    IndexedUnit,
+    LawBranch,
+    ResolvedLawPath,
+    ResolvedSchemaGroup,
+    RouteSemanticBranch,
+    RouteSemanticContext,
+    SchemaFamilyTarget,
+)
 
 _LAW_TARGET_ALLOWED_KINDS = {
     "current_artifact": ("input", "output"),

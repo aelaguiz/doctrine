@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.naming import (
     _authored_slot_allows_law,
     _authored_slot_carries_route_semantics,
 )
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AgentContract,
+    CompileError,
+    IndexedUnit,
+    OutputDeclKey,
+    ResolvedWorkflowBody,
+    ReviewContractGate,
+    ReviewSemanticContext,
+    RouteSemanticContext,
+)
 from doctrine._compiler.support_files import _dotted_decl_name
 
 

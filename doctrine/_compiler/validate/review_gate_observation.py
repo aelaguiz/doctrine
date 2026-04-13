@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine import model
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    IndexedUnit,
+    ResolvedReviewGateBranch,
+    ReviewContractSpec,
+    ReviewGateCheck,
+    ReviewGateObservation,
+    ReviewOutcomeBranch,
+)
 
 
 class ValidateReviewGateObservationMixin:

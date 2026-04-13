@@ -1,12 +1,28 @@
 from __future__ import annotations
 
+from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _REVIEW_VERDICT_TEXT
 from doctrine._compiler.naming import (
     _dotted_ref_name,
     _law_path_from_name_ref,
     _name_ref_from_dotted_name,
 )
-from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.resolved_types import (
+    AddressableNode,
+    AgentContract,
+    CompileError,
+    IndexedUnit,
+    ResolvedReviewAgreementBranch,
+    ResolvedReviewBody,
+    ResolvedReviewGateBranch,
+    ReviewContractSpec,
+    ReviewGateObservation,
+    ReviewOutcomeBranch,
+    ReviewPreOutcomeBranch,
+    ReviewSemanticContext,
+    ReviewSemanticContractRoot,
+    ReviewSemanticFieldsRoot,
+)
 from doctrine._compiler.support_files import _dotted_decl_name
 
 
