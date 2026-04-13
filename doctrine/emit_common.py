@@ -238,6 +238,10 @@ def entrypoint_output_name(entrypoint: Path) -> str:
     return f"{entrypoint.stem}.md"
 
 
+def entrypoint_contract_name(entrypoint: Path) -> str:
+    return f"{entrypoint.stem}.contract.json"
+
+
 def agent_slug(name: str) -> str:
     return CAMEL_BOUNDARY_RE.sub("_", name).lower()
 

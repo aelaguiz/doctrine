@@ -1,0 +1,17 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "ResearchSpecialist",
+    "slug": "research_specialist",
+    "entrypoint": "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
+  },
+  "final_output": {
+    "exists": false,
+    "declaration_key": null,
+    "declaration_name": null,
+    "format_mode": null,
+    "schema_profile": null,
+    "schema_file": null,
+    "example_file": null
+  }
+}

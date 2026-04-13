@@ -188,6 +188,8 @@ class CompiledFinalOutputSpec:
     schema_profile: str | None = None
     schema_file: str | None = None
     example_file: str | None = None
+    resolved_schema_file: Path | None = None
+    resolved_example_file: Path | None = None
     section: CompiledSection | None = None
 
 
@@ -614,6 +616,8 @@ class FinalOutputJsonShapeSummary:
     schema_profile: str | None
     schema_file: str | None
     example_file: str | None
+    resolved_schema_file: Path | None
+    resolved_example_file: Path | None
     payload_rows: tuple[tuple[str, str, str], ...]
     example_text: str | None
     extra_items: tuple[model.AnyRecordItem, ...]
@@ -2752,6 +2756,8 @@ class CompilationContext:
             schema_profile=json_summary.schema_profile if json_summary is not None else None,
             schema_file=json_summary.schema_file if json_summary is not None else None,
             example_file=json_summary.example_file if json_summary is not None else None,
+            resolved_schema_file=json_summary.resolved_schema_file if json_summary is not None else None,
+            resolved_example_file=json_summary.resolved_example_file if json_summary is not None else None,
             section=section,
         )
 
@@ -2880,6 +2886,16 @@ class CompilationContext:
             schema_decl=schema_decl,
             schema_file=schema_file,
         )
+        resolved_schema_file = (
+            self._resolve_declared_support_path(schema_unit, schema_file)
+            if schema_file is not None
+            else None
+        )
+        resolved_example_file = (
+            self._resolve_declared_support_path(shape_unit, example_file)
+            if example_file is not None
+            else None
+        )
         example_text = (
             self._read_required_final_output_support_text(
                 shape_unit,
@@ -2897,6 +2913,8 @@ class CompilationContext:
             schema_profile=schema_profile,
             schema_file=schema_file,
             example_file=example_file,
+            resolved_schema_file=resolved_schema_file,
+            resolved_example_file=resolved_example_file,
             payload_rows=payload_rows,
             example_text=example_text,
             extra_items=shape_extras,
@@ -3275,11 +3293,14 @@ class CompilationContext:
     ) -> str | None:
         if relative_path is None:
             return None
-        path = unit.prompt_root.parent / relative_path
+        path = self._resolve_declared_support_path(unit, relative_path)
         try:
             return path.read_text()
         except OSError:
             return None
+
+    def _resolve_declared_support_path(self, unit: IndexedUnit, relative_path: str) -> Path:
+        return (unit.prompt_root.parent / relative_path).resolve()
 
     def _read_required_final_output_support_text(
         self,

@@ -12,8 +12,8 @@ Each numbered example may contain:
 - `cases.toml`: manifest-backed proof used by `doctrine.verify_corpus`
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
-  including compiled Markdown trees and target-scoped `.flow.{d2,svg}`
-  artifacts
+  including compiled Markdown trees, companion `.contract.json` files, and
+  target-scoped `.flow.{d2,svg}` artifacts
 
 ## How To Read The Corpus
 

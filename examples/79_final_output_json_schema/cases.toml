@@ -62,6 +62,12 @@ expected_lines = [
 ]
 
 [[cases]]
+name = "json-schema final output builds the canonical emitted contract tree"
+status = "active"
+kind = "build_contract"
+build_target = "example_79_final_output_json_schema"
+
+[[cases]]
 name = "json-schema final output fails loud when the declared schema file is missing"
 status = "active"
 kind = "compile_fail"

@@ -41,3 +41,8 @@ output_dir = "examples/36_invalidation_and_rebuild/build"
 name = "example_73_flow_visualizer_showcase"
 entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
 output_dir = "examples/73_flow_visualizer_showcase/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_79_final_output_json_schema"
+entrypoint = "examples/79_final_output_json_schema/prompts/AGENTS.prompt"
+output_dir = "examples/79_final_output_json_schema/build"
