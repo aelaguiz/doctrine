@@ -1,0 +1,37 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    route_choice: "Route Choice"
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent ChangeEngineer:
+    role: "Handle requested changes."
+
+
+workflow InvalidComputedRouteFromWorkflow: "Invalid Computed Route From Workflow"
+    "Reject computed route_from selectors."
+
+    law:
+        current none
+        route_from RouteFacts.route_choice == ProofRoute.accept as ProofRoute:
+            ProofRoute.accept:
+                route "Send to AcceptanceCritic." -> AcceptanceCritic
+            ProofRoute.change:
+                route "Send to ChangeEngineer." -> ChangeEngineer
+
+
+agent InvalidComputedRouteFromDemo:
+    role: "Keep route_from selectors direct."
+    inputs: "Inputs"
+        RouteFacts
+    workflow: InvalidComputedRouteFromWorkflow

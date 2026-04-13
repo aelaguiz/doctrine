@@ -142,6 +142,9 @@ const TRUST_SURFACE_ITEM_RE = new RegExp(
 const GUARDED_OUTPUT_HEADER_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
 );
+const GUARDED_RECORD_ITEM_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN}|${DOTTED_NAME_PATTERN}|${PATH_REF_PATTERN})\\s+when\\b.*(?::\\s*)?$`,
+);
 const BRACED_EXPR_RE = /\{([^{}]+)\}/g;
 const BRACED_REF_TOKEN_RE = new RegExp(
   `\\b(${DOTTED_NAME_PATTERN})(?::(${DOTTED_NAME_PATTERN}))?\\b`,
@@ -1216,6 +1219,7 @@ function collectRecordBodySites(lineText, lineNumber, container) {
   const sites = [];
   const fieldKind = container?.fieldKind;
   const declarationKind = container?.declarationKind;
+  const isGuardedOutputItem = GUARDED_RECORD_ITEM_RE.test(lineText);
 
   const keyedPathRef = lineText.match(KEY_VALUE_PATH_REF_RE);
   if (keyedPathRef) {
@@ -1265,6 +1269,11 @@ function collectRecordBodySites(lineText, lineNumber, container) {
         requireConcrete: false,
       });
     }
+  }
+
+  if (isGuardedOutputItem) {
+    sites.push(...collectReviewSemanticSites(lineText, lineNumber));
+    sites.push(...collectShippedLawRefSites(lineText, lineNumber));
   }
 
   return sites;
@@ -3765,6 +3774,15 @@ function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
   }
 
   if (GUARDED_OUTPUT_HEADER_RE.test(lineText)) {
+    return {
+      type: "record_body",
+      fieldKind,
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
+  if (GUARDED_RECORD_ITEM_RE.test(lineText)) {
     return {
       type: "record_body",
       fieldKind,

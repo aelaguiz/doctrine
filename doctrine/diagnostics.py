@@ -2501,6 +2501,18 @@ _EMIT_PATTERN_BUILDERS: tuple[
         lambda _match: "Direct `emit_flow` mode requires both `--entrypoint` and `--output-dir`.",
         (),
     ),
+    (
+        re.compile(
+            r"^(?P<label>.+) resolves outside the target project root: (?P<path>.+) is not under (?P<root>.+)\.$"
+        ),
+        "E520",
+        "Emit target output_dir must stay within project root",
+        lambda match: (
+            f"{match.group('label')} resolves outside the target project root: "
+            f"`{match.group('path')}` is not under `{match.group('root')}`."
+        ),
+        (),
+    ),
 )
 
 

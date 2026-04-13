@@ -564,6 +564,27 @@ async function testWorkflowLawDefinitionProvider() {
   });
 
   await assertDefinitionTarget({
+    declarationSnippet: 'route_choice: "Route Choice"',
+    expectedRelativeTargetPath:
+      "examples/92_route_from_basic/prompts/AGENTS.prompt",
+    relativePath: "examples/92_route_from_basic/prompts/AGENTS.prompt",
+    sourceLineFragment: "route_from RouteFacts.route_choice as ProofRoute:",
+    sourceText: "route_choice",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'accept: "Accept"',
+    expectedRelativeTargetPath:
+      "examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'accept_summary: "Accept Summary" when route.choice == ProofRoute.accept',
+    sourceText: "accept",
+    occurrence: 2,
+  });
+
+  await assertDefinitionTarget({
     declarationSnippet: 'rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:',
     expectedRelativeTargetPath:
       "examples/39_guarded_output_sections/prompts/AGENTS.prompt",

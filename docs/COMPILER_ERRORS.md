@@ -136,7 +136,7 @@ Stability rules:
 | `E343` | Multiple route-bearing control surfaces are live | More than one live route-bearing surface, such as `workflow` law and `handoff_routing` law, would supply shared `route.*` truth for the same concrete turn. |
 | `E344` | `handoff_routing` law uses a non-routing statement | `handoff_routing` law used something outside its route-only subset, such as `current artifact`, `current none`, `own only`, `preserve`, or `invalidate`. |
 | `E345` | Law is not allowed on this authored slot | `law:` was attached to an authored slot other than `workflow:` or `handoff_routing:`. |
-| `E346` | `route_from` selector reads invalid source | A `route_from` selector read a workflow-local binding or another source outside declared inputs, emitted outputs, or enum members. |
+| `E346` | `route_from` selector reads invalid source | A `route_from` selector was not one direct ref to a declared input field, an emitted output field on the concrete turn, or an enum member. |
 | `E347` | Route detail needs one selected branch | `route.label` or `route.summary` was read while more than one route branch still stayed live. |
 | `E348` | Duplicate `route_from` arm | A `route_from` block named the same enum member twice or used `else` more than once. |
 | `E351` | Owned scope is outside the allowed modeled surface | `own only` points at a path that is not rooted in the current artifact, an emitted output surface the concrete turn owns, or a declared schema family. |
@@ -213,6 +213,7 @@ Stability rules:
 | `E517` | Emit flow CLI requires exactly one resolution mode | `emit_flow` was invoked with both configured-target mode and direct mode, or with neither mode. |
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
 | `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
+| `E520` | Emit target output_dir must stay within project root | A configured or direct emit output directory resolved outside the owning project's root. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

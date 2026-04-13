@@ -60,7 +60,7 @@ Important rules:
 - They are required only when their guard resolves true.
 - On ordinary outputs, guards may read declared inputs, enum members, and
   `route.exists` when the active workflow-law branches expose route semantics.
-- When the active route source uses `route_from`, guards may also read
+- When every live routed branch comes from `route_from`, guards may also read
   `route.choice`.
 - They may not read workflow-local bindings, emitted output fields, or
   undeclared runtime names.
@@ -85,6 +85,8 @@ Important rules:
 - unguarded `route.*` reads fail loudly when some active branches may not route
 - `when route.exists:` is the ordinary output-side guard for route-specific
   readback, whether the guarded item is one scalar field or one section
+- `route.choice.*` is live only when every live routed branch comes from
+  `route_from`
 - `route.next_owner.*` may stay live across several `route_from` branches. It
   means the selected route owner.
 - `route.label` and `route.summary` still need one selected branch. Guard them
@@ -129,11 +131,14 @@ law:
 Important rules:
 
 - `route_from` is legal on `workflow` law and `handoff_routing` law.
-- The selector may read declared inputs, emitted outputs, or enum members.
-- Do not read workflow-local bindings in the selector.
+- The selector must stay one direct ref.
+- It may point at a declared input field, an emitted output field on the
+  concrete turn, or an enum member.
+- Do not compute inside the selector or read workflow-local bindings there.
 - Each arm selects one route.
 - Name each enum member at most once. Use `else` at most once.
-- `route.choice.*` is live only when the active route source uses `route_from`.
+- `route.choice.*` is live only when every live routed branch comes from
+  `route_from`.
 - `route.next_owner.*` works on the selected route even when several
   `route_from` branches stay live at compile time.
 - `route.label` and `route.summary` still need one selected branch.

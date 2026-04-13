@@ -1,0 +1,235 @@
+>enum ProofRoute: "Proof Route"
+#^^^^ source.doctrine keyword.declaration.doctrine
+#    ^ source.doctrine
+#     ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                  ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>    accept: "Accept"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    change: "Change"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>output ProofResult: "Proof Result"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: Comment
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    route_choice: "Route Choice"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>output RouteChoiceReply: "Route Choice Reply"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: Comment
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    accept_summary: "Accept Summary" when route.choice == ProofRoute.accept
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                     ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                    ^ source.doctrine
+#                                     ^^^^ source.doctrine keyword.control.doctrine
+#                                         ^ source.doctrine
+#                                          ^^^^^ source.doctrine support.type.reference.doctrine
+#                                               ^ source.doctrine punctuation.separator.interpolation.doctrine
+#                                                ^^^^^^ source.doctrine variable.other.member.doctrine
+#                                                      ^^^^^^^^^^^^^^^ source.doctrine
+#                                                                     ^^^^^^ source.doctrine keyword.control.doctrine
+>        "{{route.summary}}"
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#           ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                        ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    change_owner: "Change Owner" when route.choice == ProofRoute.change
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                               ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                ^ source.doctrine
+#                                 ^^^^ source.doctrine keyword.control.doctrine
+#                                     ^ source.doctrine
+#                                      ^^^^^ source.doctrine support.type.reference.doctrine
+#                                           ^ source.doctrine punctuation.separator.interpolation.doctrine
+#                                            ^^^^^^ source.doctrine variable.other.member.doctrine
+#                                                  ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>        "{{route.next_owner.title}}"
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                 ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent AcceptanceCritic:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Accept routed work."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent ChangeEngineer:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Handle requested changes."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent RouteChoiceGuardDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Use route.choice to narrow route detail."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        ProofResult
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        RouteChoiceReply
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    handoff_routing: "Handoff Routing"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        law:
+#^^^^^^^^ source.doctrine
+#        ^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+>            route_from ProofResult.route_choice as ProofRoute:
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^^^ source.doctrine keyword.control.doctrine
+#                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                ^^ source.doctrine keyword.control.doctrine
+#                                                  ^^^^^^^^^^^^^ source.doctrine
+>                ProofRoute.accept:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                           ^^^^^^ source.doctrine keyword.control.doctrine
+#                                 ^^ source.doctrine
+>                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+#^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                    ^^^^^ source.doctrine keyword.control.doctrine
+#                         ^ source.doctrine
+#                          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                     ^ source.doctrine
+#                                                      ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                        ^ source.doctrine
+#                                                         ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>                ProofRoute.change:
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>                    route "Send to ChangeEngineer." -> ChangeEngineer
+#^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                    ^^^^^ source.doctrine keyword.control.doctrine
+#                         ^ source.doctrine
+#                          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                           ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                   ^ source.doctrine
+#                                                    ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                      ^ source.doctrine
+#                                                       ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

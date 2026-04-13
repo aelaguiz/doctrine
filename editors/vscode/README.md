@@ -48,8 +48,8 @@ Workflow-law support here uses the same vocabulary as
 `trust_surface`, guarded output headers, carrier refs, trust-surface field
 items, enum-backed mode refs, named law subsection `inherit` / `override`
 keys, lower-case and mixed-case bound roots in workflow-law carrier and
-artifact paths, and route targets inside `law` branches, including conditional
-route lines.
+artifact paths, `route_from` selectors, output-side `route.*` readback, and
+route targets inside `law` branches, including conditional route lines.
 
 Review support here uses the same vocabulary as
 [../../docs/REVIEW_SPEC.md](../../docs/REVIEW_SPEC.md): `review`,
@@ -154,7 +154,11 @@ local editor is actually running the newest VSIX before changing the grammar.
    `examples/50_bound_currentness_roots/prompts/AGENTS.prompt` for lower-case
    bound root clicks in `current artifact ... via ...`, and
    `examples/51_inherited_bound_io_roots/prompts/AGENTS.prompt` for inherited
-   bound-root clicks.
+   bound-root clicks,
+   `examples/92_route_from_basic/prompts/AGENTS.prompt` for `route_from`
+   selector field clicks, and
+   `examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt` for
+   `route.choice` colorization plus enum-member clicks in route-choice guards.
 9. For the review ladder, smoke-check:
    `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
    for `review:` slot clicks and top-level review colorization,

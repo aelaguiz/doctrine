@@ -68,3 +68,15 @@ message_contains = [
   "route.summary",
   "needs one selected route branch",
 ]
+
+[[cases]]
+name = "route.choice guards need every live route branch to come from route_from"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MIXED_ROUTE_CHOICE_GUARD.prompt"
+agent = "InvalidMixedRouteChoiceGuardDemo"
+exception_type = "CompileError"
+error_code = "E338"
+message_contains = [
+  "route.choice",
+]

@@ -230,7 +230,7 @@ class ResolveMixin:
                     return DisplayValue(text=branch.target_name, kind="symbol")
                 if len(parts) == 3 and parts[2] == "title":
                     return DisplayValue(text=self._route_semantic_branch_title(branch), kind="title")
-            if all(branch.choice_members for branch in branches):
+            if self._route_choice_branches_are_live(branches):
                 if len(parts) == 2 or (len(parts) == 3 and parts[2] == "title"):
                     return DisplayValue(text="the selected route's next owner", kind="title")
                 if len(parts) == 3 and parts[2] in {"name", "key"}:

@@ -96,7 +96,8 @@ Important rules:
   `route.next_owner.title`, `route.label`, and `route.summary` when the active
   workflow-law, `handoff_routing` law, `route_only`, `grounding`, or review
   branch resolves a real route.
-- When that route comes from `route_from`, outputs may also read
+- When every live routed branch on that turn comes from `route_from`, outputs
+  may also read
   `route.choice`, `route.choice.key`, `route.choice.title`, and
   `route.choice.wire`.
 - `route.next_owner.*` may stay live across several `route_from` branches. It
@@ -107,7 +108,8 @@ Important rules:
   route. Guard route-specific readback with `when route.exists:` when the
   route is not live on every branch.
 - Guard branch-specific route detail with `when route.choice == Enum.member`
-  when several routed branches stay live.
+  when several routed branches stay live and every live routed branch comes
+  from `route_from`.
 - On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
   Prose route lines inside `handoff_routing` are still readable text only.
 - When a review points `comment_output:` at an imported reusable `output`,

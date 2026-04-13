@@ -674,6 +674,20 @@ class ValidateMixin:
             for member in members
         )
 
+    def _route_choice_branches_are_live(
+        self,
+        branches: tuple[RouteSemanticBranch, ...],
+    ) -> bool:
+        return bool(branches) and all(branch.choice_members for branch in branches)
+
+    def _route_choice_is_live(
+        self,
+        route_semantics: RouteSemanticContext | None,
+    ) -> bool:
+        return route_semantics is not None and self._route_choice_branches_are_live(
+            route_semantics.branches
+        )
+
     def _route_guard_exists_state(self, expr: model.Expr) -> bool | None:
         if isinstance(expr, model.ExprRef):
             return True if expr.parts == ("route", "exists") else None
@@ -791,6 +805,8 @@ class ValidateMixin:
         *,
         unit: IndexedUnit,
     ) -> RouteSemanticContext:
+        if not self._route_choice_branches_are_live(route_semantics.branches):
+            return route_semantics
         if isinstance(expr, model.ExprBinary) and expr.op == "and":
             narrowed = self._narrow_route_semantics_for_choice(route_semantics, expr.left, unit=unit)
             return self._narrow_route_semantics_for_choice(narrowed, expr.right, unit=unit)
@@ -912,6 +928,14 @@ class ValidateMixin:
         ref_label: str,
         detail_label: str,
     ) -> RouteChoiceMember:
+        if not any(branch.choice_members for branch in branches):
+            raise CompileError(
+                f"Missing {detail_label} in {surface_label} {owner_label}: {ref_label}"
+            )
+        if not self._route_choice_branches_are_live(branches):
+            raise CompileError(
+                f"Ambiguous {detail_label} in {surface_label} {owner_label}: {ref_label}"
+            )
         members: list[RouteChoiceMember] = []
         seen: set[tuple[tuple[str, ...], str, str, str]] = set()
         for branch in branches:
@@ -926,10 +950,6 @@ class ValidateMixin:
                     continue
                 seen.add(key)
                 members.append(member)
-        if not members:
-            raise CompileError(
-                f"Missing {detail_label} in {surface_label} {owner_label}: {ref_label}"
-            )
         if len(members) != 1:
             raise CompileError(
                 f"Ambiguous {detail_label} in {surface_label} {owner_label}: {ref_label}"
@@ -4094,13 +4114,13 @@ class ValidateMixin:
         if len(ref.parts) == 2 and ref.parts[1] in {"label", "summary", "next_owner"}:
             return True
         if len(ref.parts) == 2 and ref.parts[1] == "choice":
-            return any(branch.choice_members for branch in route_semantics.branches)
+            return self._route_choice_is_live(route_semantics)
         if len(ref.parts) == 3 and ref.parts[1] == "choice" and ref.parts[2] in {
             "key",
             "title",
             "wire",
         }:
-            return any(branch.choice_members for branch in route_semantics.branches)
+            return self._route_choice_is_live(route_semantics)
         return len(ref.parts) == 3 and ref.parts[1] == "next_owner" and ref.parts[2] in {
             "name",
             "key",
@@ -5621,10 +5641,10 @@ class ValidateMixin:
         agent_contract: AgentContract,
         owner_label: str,
     ) -> None:
-        _ = agent_contract
         self._validate_handoff_routing_law_stmt_tree(
             items,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
         )
 
@@ -5633,6 +5653,7 @@ class ValidateMixin:
         items: tuple[model.LawStmt, ...],
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract,
         owner_label: str,
         mode_bindings: dict[str, model.ModeStmt] | None = None,
     ) -> None:
@@ -5653,6 +5674,7 @@ class ValidateMixin:
                     self._validate_handoff_routing_law_stmt_tree(
                         case.items,
                         unit=unit,
+                        agent_contract=agent_contract,
                         owner_label=owner_label,
                         mode_bindings=local_mode_bindings,
                     )
@@ -5661,6 +5683,7 @@ class ValidateMixin:
                 self._validate_route_from_stmt(
                     item,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                 )
                 continue
@@ -5668,6 +5691,7 @@ class ValidateMixin:
                 self._validate_handoff_routing_law_stmt_tree(
                     item.items,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=local_mode_bindings,
                 )
@@ -5921,6 +5945,7 @@ class ValidateMixin:
                 self._validate_route_from_stmt(
                     item,
                     unit=unit,
+                    agent_contract=agent_contract,
                     owner_label=owner_label,
                 )
                 continue
@@ -6050,6 +6075,7 @@ class ValidateMixin:
         stmt: model.RouteFromStmt,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract,
         owner_label: str,
     ) -> None:
         enum_unit, enum_decl = self._resolve_decl_ref(
@@ -6081,6 +6107,7 @@ class ValidateMixin:
         self._validate_route_from_selector_expr(
             stmt.expr,
             unit=unit,
+            agent_contract=agent_contract,
             owner_label=owner_label,
         )
         fixed_choice = self._resolve_constant_enum_member(stmt.expr, unit=unit)
@@ -6129,30 +6156,76 @@ class ValidateMixin:
         expr: model.Expr,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract,
         owner_label: str,
     ) -> None:
-        if isinstance(expr, model.ExprRef):
-            if (
-                self._expr_ref_matches_input_decl(expr, unit=unit)
-                or self._expr_ref_matches_output_decl(expr, unit=unit)
-                or self._expr_ref_matches_enum_member(expr, unit=unit)
-            ):
-                return
+        if not isinstance(expr, model.ExprRef):
             raise CompileError(
-                f"route_from selector reads invalid source in {owner_label}: {'.'.join(expr.parts)}"
+                "route_from selector reads invalid source in "
+                f"{owner_label}: {self._render_expr(expr, unit=unit)}"
             )
-        if isinstance(expr, model.ExprBinary):
-            self._validate_route_from_selector_expr(expr.left, unit=unit, owner_label=owner_label)
-            self._validate_route_from_selector_expr(expr.right, unit=unit, owner_label=owner_label)
+        if self._expr_ref_matches_enum_member(expr, unit=unit):
             return
-        if isinstance(expr, model.ExprCall):
-            for arg in expr.args:
-                self._validate_route_from_selector_expr(arg, unit=unit, owner_label=owner_label)
-            return
-        if isinstance(expr, model.ExprSet):
-            for item in expr.items:
-                self._validate_route_from_selector_expr(item, unit=unit, owner_label=owner_label)
-            return
+        self._validate_route_from_selector_ref(
+            expr,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
+
+    def _validate_route_from_selector_ref(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> None:
+        for split_at in range(len(ref.parts), 0, -1):
+            root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
+            field_path = ref.parts[split_at:]
+            if self._ref_exists_in_registry(root, unit=unit, registry_name="inputs_by_name"):
+                input_unit, input_decl = self._resolve_input_decl(root, unit=unit)
+                if self._resolve_route_from_selector_field_node(
+                    input_decl,
+                    field_path=field_path,
+                    unit=input_unit,
+                ) is not None:
+                    return
+                break
+            if self._ref_exists_in_registry(root, unit=unit, registry_name="outputs_by_name"):
+                output_unit, output_decl = self._resolve_output_decl(root, unit=unit)
+                if (output_unit.module_parts, output_decl.name) not in agent_contract.outputs:
+                    break
+                if self._resolve_route_from_selector_field_node(
+                    output_decl,
+                    field_path=field_path,
+                    unit=output_unit,
+                ) is not None:
+                    return
+                break
+        raise CompileError(
+            f"route_from selector reads invalid source in {owner_label}: {'.'.join(ref.parts)}"
+        )
+
+    def _resolve_route_from_selector_field_node(
+        self,
+        decl: model.InputDecl | model.OutputDecl,
+        *,
+        field_path: tuple[str, ...],
+        unit: IndexedUnit,
+    ) -> AddressableNode | None:
+        if not field_path:
+            return None
+        current = AddressableNode(unit=unit, root_decl=decl, target=decl)
+        for segment in field_path:
+            children = self._get_addressable_children(current)
+            if children is None:
+                return None
+            current = children.get(segment)
+            if current is None:
+                return None
+        return current
 
     def _resolve_route_from_member(
         self,

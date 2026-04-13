@@ -72,6 +72,8 @@ Important rules:
 - `entrypoint` must live under a `prompts/` tree. The emit pipeline preserves
   the subdirectory beneath that `prompts/` root.
 - `output_dir` must resolve to a directory path, not an existing file.
+- In configured target mode, `output_dir` must stay within the target project
+  root.
 - Multiple targets may exist in one repo, and both emit commands use the same
   target registry.
 
@@ -132,6 +134,8 @@ Useful CLI rules:
   directory until it finds `pyproject.toml` for configured target mode.
 - Direct `emit_flow` mode resolves compile config from the entrypoint's nearest
   `pyproject.toml` unless `--pyproject` explicitly overrides it.
+- When direct `emit_flow` resolves a project root, `--output-dir` must stay
+  within that root.
 - `emit_docs` reuses one indexed prompt graph per target instead of reparsing
   the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad

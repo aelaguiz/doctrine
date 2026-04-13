@@ -50,3 +50,29 @@ expected_lines = [
   "If the route choice is Change:",
   "- Send to ChangeEngineer.",
 ]
+
+[[cases]]
+name = "handoff_routing route_from selector must name a declared emitted output field"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SELECTOR_UNKNOWN_OUTPUT_FIELD.prompt"
+agent = "InvalidHandoffRouteFromFieldDemo"
+exception_type = "CompileError"
+error_code = "E346"
+message_contains = [
+  "route_from selector",
+  "ProofResult.missing_choice",
+]
+
+[[cases]]
+name = "handoff_routing route_from selector must stay on emitted outputs"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SELECTOR_NON_EMITTED_OUTPUT.prompt"
+agent = "InvalidHandoffRouteFromOutputDemo"
+exception_type = "CompileError"
+error_code = "E346"
+message_contains = [
+  "route_from selector",
+  "HiddenResult.route_choice",
+]

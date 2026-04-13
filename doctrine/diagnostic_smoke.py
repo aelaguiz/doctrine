@@ -66,11 +66,13 @@ def main() -> int:
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_rejects_support_files_outside_project_root()
+    _check_emit_docs_rejects_output_dir_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_flow_graph_extracts_routes_and_shared_io()
     _check_emit_flow_uses_entrypoint_stem_for_output_name()
     _check_emit_flow_direct_mode_groups_shared_surfaces()
     _check_emit_flow_direct_mode_requires_output_dir()
+    _check_emit_flow_direct_mode_rejects_output_dir_outside_project_root()
     _check_diagnostic_to_dict_is_json_safe()
     print("diagnostic smoke checks passed")
     return 0
@@ -1242,6 +1244,37 @@ output_dir = "build"
         _expect("outside the target project root" in output, output)
 
 
+def _check_emit_docs_rejects_output_dir_outside_project_root() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts"
+        prompts.mkdir(parents=True)
+        (prompts / "AGENTS.prompt").write_text(
+            """agent DemoAgent:
+    role: "Own the emitted surface."
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "../outside"
+""",
+            encoding="utf-8",
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_docs_main(["--pyproject", str(pyproject), "--target", "demo"])
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E520 emit error" in output, output)
+        _expect("outside the target project root" in output, output)
+
+
 def _check_emit_docs_uses_entrypoint_stem_for_output_name() -> None:
     with TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
@@ -1551,6 +1584,43 @@ version = "0.0.0"
         _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
         _expect("E518 emit error" in output, output)
         _expect("Direct emit flow mode requires entrypoint and output_dir" in output, output)
+
+
+def _check_emit_flow_direct_mode_rejects_output_dir_outside_project_root() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts"
+        prompts.mkdir()
+        entrypoint = prompts / "AGENTS.prompt"
+        entrypoint.write_text(
+            """agent DemoAgent:
+    role: "Own the demo flow."
+"""
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[project]
+name = "doctrine-smoke"
+version = "0.0.0"
+"""
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_flow_main(
+                [
+                    "--pyproject",
+                    str(pyproject),
+                    "--entrypoint",
+                    str(entrypoint.relative_to(root)),
+                    "--output-dir",
+                    "../outside",
+                ]
+            )
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E520 emit error" in output, output)
+        _expect("outside the target project root" in output, output)
 
 
 def _check_diagnostic_to_dict_is_json_safe() -> None:

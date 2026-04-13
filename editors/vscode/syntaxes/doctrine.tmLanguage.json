@@ -124,6 +124,9 @@
       "include": "#secondWaveKeyword"
     },
     {
+      "include": "#routeSemanticRef"
+    },
+    {
       "include": "#reviewSemanticRef"
     },
     {
@@ -1010,6 +1013,20 @@
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
       "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
+    },
+    "routeSemanticRef": {
+      "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",
+      "captures": {
+        "1": {
+          "name": "support.type.reference.doctrine"
+        },
+        "2": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "3": {
+          "name": "variable.other.member.doctrine"
+        }
+      }
     },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",

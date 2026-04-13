@@ -1,0 +1,56 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    use_direct: "Use Direct"
+    route_choice: "Route Choice"
+
+
+output RouteChoiceReply: "Route Choice Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    accept_owner: "Accept Owner" when route.choice == ProofRoute.accept
+        "{{route.next_owner.title}}"
+
+
+agent DirectOwner:
+    role: "Handle direct work."
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent ChangeEngineer:
+    role: "Handle requested changes."
+
+
+workflow MixedRouteChoiceWorkflow: "Mixed Route Choice Workflow"
+    "Mix plain routes and route_from branches."
+
+    law:
+        current none
+        when RouteFacts.use_direct:
+            route "Send to DirectOwner." -> DirectOwner
+        when RouteFacts.use_direct == false:
+            route_from RouteFacts.route_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer
+
+
+agent InvalidMixedRouteChoiceGuardDemo:
+    role: "Reject route.choice guards when some live route branches are plain routes."
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteChoiceReply
+    workflow: MixedRouteChoiceWorkflow

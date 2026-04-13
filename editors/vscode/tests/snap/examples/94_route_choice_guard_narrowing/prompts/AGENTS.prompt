@@ -1,0 +1,45 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+
+output ProofResult: "Proof Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    route_choice: "Route Choice"
+
+
+output RouteChoiceReply: "Route Choice Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    accept_summary: "Accept Summary" when route.choice == ProofRoute.accept
+        "{{route.summary}}"
+
+    change_owner: "Change Owner" when route.choice == ProofRoute.change
+        "{{route.next_owner.title}}"
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent ChangeEngineer:
+    role: "Handle requested changes."
+
+
+agent RouteChoiceGuardDemo:
+    role: "Use route.choice to narrow route detail."
+    outputs: "Outputs"
+        ProofResult
+        RouteChoiceReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            route_from ProofResult.route_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer

@@ -114,7 +114,8 @@ Important rules:
   `route.next_owner.title`, `route.label`, and `route.summary` when workflow
   law, `handoff_routing` law, `route_only`, `grounding`, or review resolves a
   real route.
-- When that route comes from `route_from`, outputs may also read
+- When every live routed branch on that turn comes from `route_from`, outputs
+  may also read
   `route.choice`, `route.choice.key`, `route.choice.title`, and
   `route.choice.wire`.
 - On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
@@ -225,8 +226,8 @@ Important rules:
 - Guarded output items are still output-owned fields.
 - Guarded scalar items and guarded sections may be keyed, nested, addressed,
   and interpolated like other output structure.
-- Route-bound output guards may read `route.choice` when the active route
-  source uses `route_from`.
+- Route-bound output guards may read `route.choice` when every live routed
+  branch comes from `route_from`.
 - On ordinary outputs, guards may read declared inputs, enum members, and
   `route.exists` when the active turn resolves route semantics.
 - On review-bound outputs, guards may also read resolved review semantic names
