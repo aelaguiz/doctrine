@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from doctrine._compiler.shared import *  # noqa: F401,F403
-from doctrine._compiler.shared import (
+import json
+from dataclasses import replace
+from pathlib import Path
+
+from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_INPUT_SOURCES,
     _BUILTIN_OUTPUT_TARGETS,
@@ -16,20 +19,22 @@ from doctrine._compiler.shared import (
     _REVIEW_REQUIRED_FIELD_NAMES,
     _REVIEW_VERDICT_TEXT,
     _SCHEMA_FAMILY_TITLES,
+    _resolve_render_profile_mode,
+    _semantic_render_target_for_block,
+)
+from doctrine._compiler.naming import (
     _agent_typed_field_key,
     _authored_slot_allows_law,
     _authored_slot_carries_route_semantics,
-    _default_worker_count,
     _display_addressable_ref,
-    _dotted_decl_name,
     _dotted_ref_name,
     _humanize_key,
     _law_path_from_name_ref,
     _lowercase_initial,
     _name_ref_from_dotted_name,
-    _resolve_render_profile_mode,
-    _semantic_render_target_for_block,
 )
+from doctrine._compiler.resolved_types import *  # noqa: F401,F403
+from doctrine._compiler.support_files import _default_worker_count, _dotted_decl_name
 
 _LAW_TARGET_ALLOWED_KINDS = {
     "current_artifact": ("input", "output"),

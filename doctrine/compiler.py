@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Stable public boundary; real compiler implementation lives under doctrine._compiler.
-from doctrine._compiler import shared as _shared
+from doctrine._compiler import resolved_types as _resolved_types
 from doctrine._compiler.session import CompilationSession, compile_prompt, extract_target_flow_graph
 
-_PUBLIC_SHARED_EXPORTS = [
+_PUBLIC_RESOLVED_EXPORTS = [
     "AddressableNode",
     "AddressableProjectionTarget",
     "AddressableRootDecl",
@@ -112,10 +112,10 @@ _PUBLIC_SHARED_EXPORTS = [
     "SchemaFamilyTarget",
 ]
 
-globals().update({name: getattr(_shared, name) for name in _PUBLIC_SHARED_EXPORTS})
+globals().update({name: getattr(_resolved_types, name) for name in _PUBLIC_RESOLVED_EXPORTS})
 
 __all__ = [
-    *_PUBLIC_SHARED_EXPORTS,
+    *_PUBLIC_RESOLVED_EXPORTS,
     "CompilationSession",
     "compile_prompt",
     "extract_target_flow_graph",

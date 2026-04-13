@@ -4,7 +4,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-from doctrine import model
+from doctrine._model.core import ProseLine, RenderProfileRule, RoleScalar
+from doctrine._model.readable import (
+    ReadableDefinitionItem,
+    ReadableFootnoteItem,
+    ReadableInlineSchemaData,
+    ReadablePropertyItem,
+)
 
 # Renderer and flow-renderer import this module directly because it is the
 # canonical owner for shared compiled data contracts.
@@ -24,37 +30,37 @@ class CompiledSection:
 @dataclass(slots=True, frozen=True)
 class CompiledSequenceBlock:
     title: str
-    items: tuple[model.ProseLine, ...]
+    items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
-    item_schema: model.ReadableInlineSchemaData | None = None
+    item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledBulletsBlock:
     title: str
-    items: tuple[model.ProseLine, ...]
+    items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
-    item_schema: model.ReadableInlineSchemaData | None = None
+    item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledChecklistBlock:
     title: str
-    items: tuple[model.ProseLine, ...]
+    items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
-    item_schema: model.ReadableInlineSchemaData | None = None
+    item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledDefinitionsBlock:
     title: str
-    items: tuple[model.ReadableDefinitionItem, ...]
+    items: tuple[ReadableDefinitionItem, ...]
     requirement: str | None = None
     when_text: str | None = None
 
@@ -62,7 +68,7 @@ class CompiledDefinitionsBlock:
 @dataclass(slots=True, frozen=True)
 class CompiledPropertiesBlock:
     title: str | None
-    entries: tuple[model.ReadablePropertyItem, ...]
+    entries: tuple[ReadablePropertyItem, ...]
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
@@ -79,7 +85,7 @@ class CompiledTableCell:
 class CompiledTableColumn:
     key: str
     title: str
-    body: tuple[model.ProseLine, ...]
+    body: tuple[ProseLine, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -92,8 +98,8 @@ class CompiledTableRow:
 class CompiledTableData:
     columns: tuple[CompiledTableColumn, ...]
     rows: tuple[CompiledTableRow, ...] = ()
-    notes: tuple[model.ProseLine, ...] = ()
-    row_schema: model.ReadableInlineSchemaData | None = None
+    notes: tuple[ProseLine, ...] = ()
+    row_schema: ReadableInlineSchemaData | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -107,7 +113,7 @@ class CompiledTableBlock:
 @dataclass(slots=True, frozen=True)
 class CompiledCalloutBlock:
     title: str
-    body: tuple[model.ProseLine, ...]
+    body: tuple[ProseLine, ...]
     kind: str | None = None
     requirement: str | None = None
     when_text: str | None = None
@@ -134,7 +140,7 @@ class CompiledRawTextBlock:
 @dataclass(slots=True, frozen=True)
 class CompiledFootnotesBlock:
     title: str
-    entries: tuple[model.ReadableFootnoteItem, ...]
+    entries: tuple[ReadableFootnoteItem, ...]
     requirement: str | None = None
     when_text: str | None = None
 
@@ -275,11 +281,11 @@ CompiledReadableBlock: TypeAlias = (
     | CompiledGuardBlock
     | CompiledRuleBlock
 )
-CompiledBodyItem: TypeAlias = model.ProseLine | CompiledReadableBlock
-CompiledField: TypeAlias = model.RoleScalar | CompiledReadableBlock
+CompiledBodyItem: TypeAlias = ProseLine | CompiledReadableBlock
+CompiledField: TypeAlias = RoleScalar | CompiledReadableBlock
 
 
 @dataclass(slots=True, frozen=True)
 class ResolvedRenderProfile:
     name: str
-    rules: tuple[model.RenderProfileRule, ...] = ()
+    rules: tuple[RenderProfileRule, ...] = ()

@@ -4,7 +4,7 @@ import threading
 import tomllib
 from concurrent.futures import ThreadPoolExecutor
 
-from doctrine import model
+import doctrine._model.declarations as model
 from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey, index_unit, load_module
 from doctrine._compiler.types import (
     CompiledAgent,

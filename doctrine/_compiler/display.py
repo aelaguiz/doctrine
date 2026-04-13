@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from doctrine._compiler.shared import *  # noqa: F401,F403
-from doctrine._compiler.shared import (
+from doctrine._compiler.constants import (
     _REVIEW_VERDICT_TEXT,
+    _resolve_render_profile_mode,
+)
+from doctrine._compiler.naming import (
     _display_addressable_ref,
     _humanize_key,
     _lowercase_initial,
     _name_ref_from_dotted_name,
-    _resolve_render_profile_mode,
 )
+from doctrine._compiler.resolved_types import *  # noqa: F401,F403
 
 
 class DisplayMixin:
