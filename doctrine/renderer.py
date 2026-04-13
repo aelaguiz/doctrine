@@ -20,42 +20,18 @@ from doctrine._compiler.types import (
     CompiledTableBlock,
     ResolvedRenderProfile,
 )
+from doctrine._renderer.semantic import (
+    DEFAULT_PROFILE as _DEFAULT_PROFILE,
+    flatten_body_to_sentence as _flatten_body_to_sentence,
+    humanize_key as _humanize_key,
+    render_semantic_section as _render_semantic_section,
+    resolve_profile_mode as _resolve_profile_mode,
+)
+from doctrine._renderer.tables import (
+    render_pipe_table as _render_pipe_table,
+    render_structured_table as _render_structured_table,
+)
 from doctrine.model import EmphasizedLine, ReadableInlineSchemaData, RoleScalar
-
-
-_DEFAULT_PROFILE = ResolvedRenderProfile(name="ContractMarkdown")
-_BUILTIN_PROFILE_MODES = {
-    "ContractMarkdown": {
-        "properties": "titled_section",
-        "guarded_sections": "titled_section",
-        "analysis.stages": "titled_section",
-        "review.contract_checks": "titled_section",
-        "control.invalidations": "expanded_sequence",
-        "identity.owner": "title",
-        "identity.debug": "title",
-        "identity.enum_wire": "title",
-    },
-    "ArtifactMarkdown": {
-        "properties": "sentence",
-        "guarded_sections": "concise_explanatory_shell",
-        "analysis.stages": "natural_ordered_prose",
-        "review.contract_checks": "sentence",
-        "control.invalidations": "expanded_sequence",
-        "identity.owner": "title",
-        "identity.debug": "title",
-        "identity.enum_wire": "title",
-    },
-    "CommentMarkdown": {
-        "properties": "sentence",
-        "guarded_sections": "concise_explanatory_shell",
-        "analysis.stages": "natural_ordered_prose",
-        "review.contract_checks": "sentence",
-        "control.invalidations": "expanded_sequence",
-        "identity.owner": "title",
-        "identity.debug": "title",
-        "identity.enum_wire": "title",
-    },
-}
 
 
 def render_markdown(agent: CompiledAgent) -> str:
@@ -82,8 +58,12 @@ def _render_block(
         active_profile = block.render_profile or profile
         semantic_render = _render_semantic_section(
             block,
-            depth=depth,
             profile=active_profile,
+            flatten_body_to_sentence=lambda body, *, profile: _flatten_body_to_sentence(
+                body,
+                profile=profile,
+                render_prose_line=_render_prose_line,
+            ),
         )
         if semantic_render is not None:
             return semantic_render
@@ -306,46 +286,17 @@ def _render_properties_block(
 
     return "\n".join(rendered_entries).rstrip()
 
-
-def _render_semantic_section(
-    block: CompiledSection,
-    *,
-    depth: int,
-    profile: ResolvedRenderProfile,
-) -> str | None:
-    if (
-        block.semantic_target == "review.contract_checks"
-        and _resolve_profile_mode(profile, "review.contract_checks") == "sentence"
-    ):
-        text = _flatten_body_to_sentence(block.body, profile=profile)
-        if text is not None:
-            return f"{block.title}: {text}"
-    return None
-
-
-def _flatten_body_to_sentence(
-    body: tuple[CompiledBodyItem, ...],
-    *,
-    profile: ResolvedRenderProfile,
-) -> str | None:
-    parts: list[str] = []
-    for item in body:
-        if item == "":
-            continue
-        if isinstance(item, (str, EmphasizedLine)):
-            parts.append(_render_prose_line(item, profile=profile))
-            continue
-        return None
-    return " ".join(part.strip() for part in parts if part.strip()) or None
-
-
 def _render_analysis_stage_lines(
     block: CompiledSection,
     *,
     index: int,
     profile: ResolvedRenderProfile,
 ) -> list[str]:
-    intro = _flatten_body_to_sentence(block.body, profile=profile)
+    intro = _flatten_body_to_sentence(
+        block.body,
+        profile=profile,
+        render_prose_line=_render_prose_line,
+    )
     head = f"{index}. **{block.title}**"
     if intro is not None:
         return [f"{head} — {intro}"]
@@ -467,7 +418,15 @@ def _render_table_block(
         lines.append("")
 
     if any(cell.body is not None for row in block.table.rows for cell in row.cells):
-        lines.extend(_render_structured_table(block, depth=depth, profile=profile))
+        lines.extend(
+            _render_structured_table(
+                block,
+                depth=depth,
+                profile=profile,
+                render_body_lines=_render_body_lines,
+                humanize_key=_humanize_key,
+            )
+        )
     elif block.table.rows:
         lines.extend(_render_pipe_table(block))
     else:
@@ -483,53 +442,6 @@ def _render_table_block(
         lines.extend(_render_prose_line(note, profile=profile) for note in block.table.notes)
 
     return "\n".join(lines).rstrip()
-
-
-def _render_pipe_table(block: CompiledTableBlock) -> list[str]:
-    lines: list[str] = []
-    headers = [column.title for column in block.table.columns]
-    lines.append("| " + " | ".join(headers) + " |")
-    lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
-    for row in block.table.rows:
-        cell_map = {cell.key: cell.text or "" for cell in row.cells}
-        lines.append(
-            "| "
-            + " | ".join(cell_map.get(column.key, "") for column in block.table.columns)
-            + " |"
-        )
-    return lines
-
-
-def _render_structured_table(
-    block: CompiledTableBlock,
-    *,
-    depth: int,
-    profile: ResolvedRenderProfile,
-) -> list[str]:
-    lines: list[str] = []
-    for row in block.table.rows:
-        if lines:
-            lines.append("")
-        lines.append(f"{'#' * (depth + 1)} {_humanize_key(row.key)}")
-        lines.append("")
-        cell_map = {cell.key: cell for cell in row.cells}
-        for column in block.table.columns:
-            cell = cell_map.get(column.key)
-            if cell is None:
-                continue
-            if cell.body is None:
-                lines.append(f"- {column.title}: {cell.text or ''}".rstrip())
-                continue
-            if lines and lines[-1] != "":
-                lines.append("")
-            lines.append(f"{'#' * (depth + 2)} {column.title}")
-            lines.append("")
-            lines.extend(_render_body_lines(cell.body, depth=depth + 2, profile=profile))
-            lines.append("")
-        while lines and lines[-1] == "":
-            lines.pop()
-    return lines
-
 
 def _render_callout_block(block: CompiledCalloutBlock, *, profile: ResolvedRenderProfile) -> str:
     label = (block.kind or "note").upper()
@@ -660,21 +572,3 @@ def _render_prose_line(item: CompiledBodyItem, *, profile: ResolvedRenderProfile
     if isinstance(item, str):
         return item
     return _render_block(item, depth=0, profile=profile)
-
-
-def _resolve_profile_mode(profile: ResolvedRenderProfile, *targets: str) -> str | None:
-    authored = {".".join(rule.target_parts): rule.mode for rule in profile.rules}
-    for target in targets:
-        mode = authored.get(target)
-        if mode is not None:
-            return mode
-    builtin = _BUILTIN_PROFILE_MODES.get(profile.name, {})
-    for target in targets:
-        mode = builtin.get(target)
-        if mode is not None:
-            return mode
-    return None
-
-
-def _humanize_key(value: str) -> str:
-    return value.replace("_", " ").strip().title()

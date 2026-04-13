@@ -4,14 +4,11 @@ from dataclasses import dataclass as _dataclass
 from pathlib import Path as _Path
 from typing import TypeAlias as _TypeAlias
 
+from doctrine._model.agent import Agent
 from doctrine._model.analysis import AnalysisDecl, DecisionDecl
 from doctrine._model.core import ImportDecl, RenderProfileDecl
-from doctrine._model.readable import DocumentDecl
-from doctrine._model.review import ReviewDecl
-from doctrine._model.schema import SchemaDecl
-from doctrine._model.workflow import (
-    Agent,
-    GroundingDecl,
+from doctrine._model.io import (
+    EnumDecl,
     InputDecl,
     InputSourceDecl,
     InputsDecl,
@@ -20,12 +17,17 @@ from doctrine._model.workflow import (
     OutputShapeDecl,
     OutputTargetDecl,
     OutputsDecl,
-    RouteOnlyDecl,
     SkillDecl,
     SkillPackageDecl,
+)
+from doctrine._model.readable import DocumentDecl
+from doctrine._model.review import ReviewDecl
+from doctrine._model.schema import SchemaDecl
+from doctrine._model.workflow import (
+    GroundingDecl,
+    RouteOnlyDecl,
     SkillsDecl,
     WorkflowDecl,
-    EnumDecl,
 )
 
 

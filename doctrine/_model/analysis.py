@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass as _dataclass
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import Expr, InheritItem, LawPathSet, NameRef, ProseLine, SectionBodyRef
+from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine, SectionBodyRef
+from doctrine._model.law import LawPathSet
 
 
 @_dataclass(slots=True, frozen=True)

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import re
 
-from doctrine._model.core import AddressableRef, LawPath, NameRef
-from doctrine._model.workflow import (
+from doctrine._model.agent import (
     AnalysisField,
     DecisionField,
     Field,
@@ -13,6 +12,8 @@ from doctrine._model.workflow import (
     ReviewField,
     SkillsField,
 )
+from doctrine._model.core import AddressableRef, NameRef
+from doctrine._model.law import LawPath
 from doctrine._compiler.constants import (
     _LAW_BEARING_AUTHORED_SLOT_KEYS,
     _ROUTE_BEARING_AUTHORED_SLOT_KEYS,

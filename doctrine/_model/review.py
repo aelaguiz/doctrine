@@ -3,15 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass as _dataclass
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import (
-    Expr,
-    IgnoreStmt,
-    InheritItem,
-    NameRef,
-    PreserveStmt,
-    ProseLine,
-    SupportOnlyStmt,
-)
+from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine
+from doctrine._model.law import IgnoreStmt, PreserveStmt, SupportOnlyStmt
 
 
 @_dataclass(slots=True, frozen=True)

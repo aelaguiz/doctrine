@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-from doctrine import model
+import doctrine._model as model
 from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey
 from doctrine._compiler.types import (
     CompiledAgent,
