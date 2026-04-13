@@ -320,6 +320,13 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "finalOutputField",
+        ["    final_output: FinalReply"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "reviewConfigFieldRef",
         [
             "    subject: DraftSpec",

@@ -1,0 +1,43 @@
+output ReleaseSummaryResponse: "Release Summary Response"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+    format_notes: "Expected Structure"
+        "Lead with the shipped outcome."
+        "End with the next owner or step when one matters."
+
+    standalone_read: "Standalone Read"
+        "The user should understand what changed and what happens next."
+
+
+output ReleaseNotesFile: "Release Notes File"
+    target: File
+        path: "artifacts/RELEASE_NOTES.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read RELEASE_NOTES.md alone and understand what shipped."
+
+
+outputs SharedOutputs: "Outputs"
+    final_response: "Final Answer"
+        ReleaseSummaryResponse
+    side_artifact: "Side Artifact"
+        ReleaseNotesFile
+
+
+abstract agent BaseReleaseAgent:
+    role: "Use reusable outputs."
+    outputs: SharedOutputs
+
+
+agent ReusableReleaseAgent[BaseReleaseAgent]:
+    role: "Ship the change through reusable outputs and still end with the dedicated final answer."
+    workflow: "Ship"
+        "Do the work, inherit the reusable outputs contract, and end with the declared final output."
+    outputs[SharedOutputs]: "Outputs"
+        inherit final_response
+        inherit side_artifact
+    final_output: ReleaseSummaryResponse

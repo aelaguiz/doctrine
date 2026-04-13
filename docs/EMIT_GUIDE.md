@@ -3,14 +3,15 @@
 Doctrine ships two emit commands that share one prompts-root-aware emit
 pipeline:
 
-- `doctrine.emit_docs` writes the runtime Markdown tree that existing coding
-  agent tools consume.
+- `doctrine.emit_docs` writes the runtime Markdown tree plus a versioned
+  machine-readable companion contract for each concrete emitted agent.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
 
-Use `emit_docs` when you need the compiled runtime prompt surface. Use
-`emit_flow` when you need a reviewable graph of how declared inputs, concrete
-agents, outputs, and route edges fit together for one entrypoint.
+Use `emit_docs` when you need the compiled runtime prompt surface and its
+machine-readable final-output metadata companion. Use `emit_flow` when you need
+a reviewable graph of how declared inputs, concrete agents, outputs, and route
+edges fit together for one entrypoint.
 
 Important mode split:
 
@@ -74,6 +75,30 @@ Important rules:
 - Multiple targets may exist in one repo, and both emit commands use the same
   target registry.
 
+## Cross-Root Compile Config
+
+Emit target mode and direct mode both compile through the same shared Doctrine
+project-config contract:
+
+```toml
+[tool.doctrine.compile]
+additional_prompt_roots = ["shared/prompts"]
+```
+
+Important rules:
+
+- `additional_prompt_roots` entries resolve relative to the authoritative
+  `pyproject.toml`.
+- Absolute imports may search the entrypoint-local `prompts/` root plus the
+  configured additional roots.
+- Relative imports stay inside the importing module's own `prompts/` root.
+- Emit output layout does not widen with import search. Doctrine still places
+  emitted files relative to the entrypoint's own local `prompts/` root.
+- In configured target mode, emit passes the already-resolved target
+  `pyproject.toml` through to compilation.
+- In direct `emit_flow` mode without `--pyproject`, Doctrine resolves compile
+  config from the entrypoint's nearest `pyproject.toml`.
+
 ## Run The Commands
 
 Emit compiled Markdown for one or more configured targets:
@@ -104,7 +129,9 @@ Useful CLI rules:
 - `emit_flow` direct mode requires both `--entrypoint` and `--output-dir`.
 - `emit_flow` accepts either `--target` or direct mode, but not both at once.
 - If `--pyproject` is omitted, Doctrine walks upward from the current working
-  directory until it finds `pyproject.toml`.
+  directory until it finds `pyproject.toml` for configured target mode.
+- Direct `emit_flow` mode resolves compile config from the entrypoint's nearest
+  `pyproject.toml` unless `--pyproject` explicitly overrides it.
 - `emit_docs` reuses one indexed prompt graph per target instead of reparsing
   the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad
@@ -123,15 +150,19 @@ uv run --locked python -m doctrine.emit_flow \
 
 Direct mode keeps the same prompts-root validation and the same output layout
 rules as configured target mode. It only skips the named target lookup.
+Compile-time import search may widen through
+`[tool.doctrine.compile].additional_prompt_roots`, but emitted output placement
+still stays anchored to the entrypoint's own local `prompts/` root.
 
 ## Output Layout
 
 Both emitters preserve the entrypoint's path beneath `prompts/`.
 
-For runtime Markdown, Doctrine writes one file per concrete root agent:
+For runtime prompt output, Doctrine writes two files per concrete root agent:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.md
+<output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.contract.json
 ```
 
 If the entrypoint-relative directory already ends with the agent slug, Doctrine
@@ -149,12 +180,25 @@ Concrete shipped examples:
 
 ```text
 examples/07_handoffs/build/project_lead/AGENTS.md
+examples/07_handoffs/build/project_lead/AGENTS.contract.json
 examples/07_handoffs/build/research_specialist/AGENTS.md
+examples/07_handoffs/build/research_specialist/AGENTS.contract.json
 examples/07_handoffs/build/writing_specialist/AGENTS.md
+examples/07_handoffs/build/writing_specialist/AGENTS.contract.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
 ```
+
+The companion contract is compiler-owned emitted truth. In v1 it carries:
+
+- concrete agent identity
+- whether `final_output` exists
+- final-output declaration key and name
+- `format_mode`
+- `schema_profile`
+- stable project-relative `schema_file` and `example_file` paths when the final
+  output is schema-backed
 
 ## How To Read `emit_flow` Output
 
@@ -206,7 +250,9 @@ If you changed emit diagnostics or the emit CLI error surface, also run:
 make verify-diagnostics
 ```
 
-The canonical checked-in flow proofs live in:
+The canonical checked-in build proofs live in `build_ref/` trees and may include
+compiled Markdown, companion `.contract.json` files, and target-scoped flow
+artifacts. The flagship checked-in flow proofs live in:
 
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`

@@ -64,7 +64,7 @@ Important rules:
   declaration name available.
 - Every concrete agent needs a `role`.
 - Reserved typed agent fields include `inputs`, `outputs`, `analysis`,
-  `decision`, `skills`, and `review`.
+  `decision`, `skills`, `review`, and `final_output`.
 - Any other keyed field is an authored workflow slot. Those slots can point at
   a named `workflow` or define an inline workflow body.
 - `abstract <slot_key>` marks an authored slot that concrete children must
@@ -81,6 +81,24 @@ Important rules:
   ordinary concrete turn.
 - `decision:` attaches one reusable `decision` declaration to an otherwise
   ordinary concrete turn.
+- `final_output:` optionally points at one emitted `output` declaration and
+  marks that `TurnResponse` artifact as the turn-ending assistant message.
+- On review-driven agents, `final_output:` may either reuse the review's
+  `comment_output:` or point at another emitted `TurnResponse` output.
+  `comment_output:` stays the review carrier, while a separate `final_output:`
+  still inherits the review semantic refs and guards.
+- Any emitted output may also read shared compiler-owned route semantics
+  through `route.exists`, `route.next_owner`, `route.next_owner.key`,
+  `route.next_owner.title`, `route.label`, and `route.summary` when the active
+  workflow-law or review branch resolves a real route.
+- Unguarded `route.*` reads fail loudly when some active branches may not
+  route. Guard route-specific readback with `when route.exists:` when the
+  route is not live on every branch.
+- When a review points `comment_output:` at an imported reusable `output`,
+  bare refs inside that output still resolve locally first, then may bind the
+  concrete review's local declarations when the imported module does not
+  define them. Shared review comments therefore can still name local routed
+  owners without moving the output declaration.
 
 `role` has two shipped shapes:
 
@@ -170,6 +188,8 @@ Important rules:
 
 - `route_only` lowers through the same workflow-law `current none`, route, and
   standalone-read validation path the earlier route-only ladder already used.
+- The lowered route-only branches also feed the same shared output-facing
+  `route.*` semantics ordinary workflow-law outputs and review outputs use.
 - The dedicated declaration does not create a second route engine.
 - Guarded route-only keys must line up with guarded top-level output sections
   on the declared `handoff_output`.
@@ -469,6 +489,17 @@ Important rules:
 - `json schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
+- `final_output:` on an agent designates one emitted `TurnResponse` output as
+  the final assistant message.
+- When that designated output's `output shape` carries a `json schema`, the
+  final assistant message is structured JSON. Otherwise it stays ordinary
+  prose or markdown according to the output contract.
+- On review-driven agents, the designated final output may be either the
+  review's `comment_output:` or a second emitted `TurnResponse`.
+  `comment_output:` still remains the review carrier for routing and
+  currentness semantics.
+- The designated final output renders under a dedicated `Final Output`
+  section and is omitted from ordinary `Outputs` rendering for that agent.
 
 Output bodies may also contain:
 
@@ -493,12 +524,22 @@ import ..common.roles
 
 Important rules:
 
-- Import resolution is rooted in the nearest `prompts/` tree.
+- Each prompt file still owns its nearest local `prompts/` tree.
+- Absolute imports may also search explicitly configured shared authored roots
+  from `[tool.doctrine.compile].additional_prompt_roots` in the nearest
+  `pyproject.toml`.
+- Each `additional_prompt_roots` entry resolves relative to that
+  `pyproject.toml` and must point at an existing directory literally named
+  `prompts`.
 - Absolute and relative imports both keep typed declaration identity.
+- Relative imports stay rooted in the importing module's own `prompts/` tree.
+  They do not hop across configured roots.
 - Imported symbols are still used through normal declaration refs such as
   `shared.contracts.ReviewContract`.
+- Duplicate dotted modules across configured roots fail loudly instead of using
+  root precedence heuristics.
 - Missing modules, missing declarations, duplicate declarations, and module
-  cycles fail loudly.
+  cycles still fail loudly.
 
 ## Readable Refs, Addressable Paths, And Interpolation
 

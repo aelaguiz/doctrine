@@ -12,8 +12,8 @@ Each numbered example may contain:
 - `cases.toml`: manifest-backed proof used by `doctrine.verify_corpus`
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
-  including compiled Markdown trees and target-scoped `.flow.{d2,svg}`
-  artifacts
+  including compiled Markdown trees, companion `.contract.json` files, and
+  target-scoped `.flow.{d2,svg}` artifacts
 
 ## How To Read The Corpus
 
@@ -36,7 +36,7 @@ Each numbered example may contain:
   invalidation, guarded output sections, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `74`: second-wave integration surfaces for `analysis`,
+- `54` through `81`: second-wave integration surfaces for `analysis`,
   owner-aware `schema:` / `structure:` attachments, readable markdown
   documents and descendants, schema artifact inventories and reusable groups,
   shared readable block reuse, multiline code blocks, schema-backed review
@@ -46,8 +46,10 @@ Each numbered example may contain:
   readable blocks such as raw `markdown`, `html`, `footnotes`, `image`, and
   structured nested table cells, plus `review_family`, case-selected review
   families, dedicated `route_only`, dedicated `grounding`, schema-group
-  invalidation, and first-class `decision` attachments for candidate-pool,
-  sequencing-proof, and winner-selection scaffolds
+  invalidation, first-class `decision` attachments for candidate-pool,
+  sequencing-proof, and winner-selection scaffolds, plus optional
+  agent-scoped `final_output:` designation for prose and JSON-schema final
+  assistant messages
 - `73` and `74`: the flagship multi-agent flow visualizer showcase and the
   decision-attachment capstone for reusable candidate-pool readback
 - `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
@@ -55,6 +57,17 @@ Each numbered example may contain:
   and checked-in `.flow.{d2,svg}` artifacts
 - `74`: first-class `decision` attachments with typed candidate-pool, ranking,
   rejection, sequencing-proof, and winner-selection obligations
+- `75`: repo-level compile config plus cross-root standard-library imports
+  proven across multiple entrypoints and fail-loud ambiguity/config cases
+- `76` through `86`: optional `final_output:` designation, dedicated
+  final-answer rendering, schema-backed JSON final answers, fail-loud
+  invalid-target / wrong-kind cases, and review-driven final answers that may
+  either reuse `comment_output` or split the review comment from a separate
+  control-only final output, plus imported reusable review comment outputs
+  that still bind local routed owners
+- `87` through `90`: shared output-facing route semantics for ordinary
+  workflow-law outputs, review comments, dedicated `route_only`, and split
+  review `final_output:` contracts
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -138,6 +151,22 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
 | `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, a route-first handoff lane, a routed return loop, a shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
 | `74_decision_attachment` | First-class `decision` declarations plus concrete-agent `decision:` attachments for candidate-pool, sequencing-proof, and winner-selection scaffolds. |
+| `75_cross_root_standard_library_imports` | Repo-level `[tool.doctrine.compile].additional_prompt_roots`, shared authored `prompts/` roots, multiple entrypoints, and fail-loud ambiguity/config proofs for cross-root imports. |
+| `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
+| `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |
+| `78_final_output_and_side_artifacts` | Final assistant messages stay separate from ordinary emitted artifacts. |
+| `79_final_output_json_schema` | Schema-backed JSON `final_output:` with payload preview and example shape. |
+| `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
+| `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
+| `82_review_final_output_prose_basic` | Review-driven prose `final_output:` may reuse `comment_output` as the dedicated final answer. |
+| `83_review_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
+| `84_review_split_final_output_prose` | Review-driven prose `final_output:` may split from `comment_output` while the separate final message still inherits review semantics. |
+| `85_review_split_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
+| `86_imported_review_comment_local_routes` | Imported reusable `comment_output` declarations may still structurally bind local routed owners on the concrete review. |
+| `87_workflow_route_output_binding` | Ordinary workflow-law outputs may read shared compiler-owned `route.*` semantics, and unguarded reads fail loudly when some branches do not route. |
+| `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
+| `89_route_only_shared_route_semantics` | Dedicated `route_only` lowers onto the same shared `route.*` output surface. |
+| `90_split_handoff_and_final_output_shared_route_semantics` | A durable review comment and a separate JSON `final_output:` may consume the same shared `route.*` truth without merging into one output. |
 
 ## Useful Commands
 
@@ -162,5 +191,5 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 ```
 
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
-example. Its `build_ref/` tree includes both compiled Markdown and
-`AGENTS.flow.{d2,svg}` proof artifacts.
+example. Its `build_ref/` tree includes compiled Markdown, companion contract
+JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.

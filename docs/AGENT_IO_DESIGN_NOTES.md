@@ -15,6 +15,8 @@ use [EMIT_GUIDE.md](EMIT_GUIDE.md).
 
 - `input` and `inputs` describe consumed artifacts.
 - `output` and `outputs` describe emitted artifacts.
+- `final_output` marks the turn-ending assistant message when one emitted
+  output should be treated specially.
 - `trust_surface` marks portable downstream readback.
 - Guarded output sections keep conditional readback on the output contract.
 - Workflow law and review decide currentness, invalidation, verdicts, and
@@ -107,6 +109,20 @@ Important rules:
   `output`.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
+- Any emitted output may read shared compiler-owned route semantics through
+  `route.exists`, `route.next_owner`, `route.next_owner.key`,
+  `route.next_owner.title`, `route.label`, and `route.summary` when workflow
+  law, `route_only`, `grounding`, or review resolves a real route.
+- `final_output:` on an agent points at one emitted `TurnResponse` output and
+  gives it a dedicated `Final Output` render.
+- On review-driven agents, `final_output:` may reuse `comment_output:` or
+  point at another emitted `TurnResponse` output. `comment_output:` remains
+  the review carrier, and a separate `final_output:` still inherits review
+  semantic refs, guards, and any shared `route.*` reads that are live on that
+  output.
+- When that designated output's `output shape` carries a `json schema`, the
+  final assistant message is structured JSON. Otherwise it stays ordinary
+  prose or markdown according to the output contract.
 
 Shipped markdown render defaults:
 
@@ -174,9 +190,9 @@ Carrier rules:
   expand to concrete member artifacts in authored group order
 - `standalone_read` explains the contract to humans, but it does not create a
   second trust channel
-- compiled `AGENTS.md` emission and target-scoped workflow-flow emission are
-  separate build layers configured outside the prompt language; they are not
-  `output target` declarations
+- compiled `AGENTS.md` plus companion `.contract.json` emission and
+  target-scoped workflow-flow emission are separate build layers configured
+  outside the prompt language; they are not `output target` declarations
 
 ## Guarded Output Sections
 
@@ -193,9 +209,13 @@ Important rules:
 - Guarded sections are still output-owned fields.
 - They can be keyed, nested, addressed, and interpolated like other output
   structure.
-- On ordinary outputs, guards may read declared inputs and enum members.
+- On ordinary outputs, guards may read declared inputs, enum members, and
+  `route.exists` when the active turn resolves route semantics.
 - On review-bound outputs, guards may also read resolved review semantic names
   such as `verdict`, `contract.*`, and `fields.*`.
+- Route-specific readback should be guarded with `when route.exists:` when some
+  active branches may not route. Unguarded `route.*` reads fail loudly instead
+  of defaulting to fake local or terminal route values.
 - A guarded output section does not become portable truth unless it is also
   listed in `trust_surface`.
 
@@ -231,8 +251,16 @@ Instead:
 
 - `comment_output` names one ordinary `output`
 - `fields:` binds review semantic channels into paths under that output
+- `final_output:` may designate that same `comment_output` or another emitted
+  `TurnResponse` when the review should end with a dedicated final-answer
+  contract, including a schema-backed JSON result
+- when `final_output:` is separate, `comment_output` stays the durable review
+  carrier while the separate final output inherits the same review semantic
+  refs, guards, and shared `route.*` reads
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
+- imported reusable `comment_output` declarations may still bind local routed
+  owners on the concrete review without copying the output declaration local
 - review currentness still uses direct carriers such as
   `current artifact DraftSpec via ReviewComment.current_artifact`
 - carried review state such as `active_mode` and `trigger_reason` still lives
@@ -276,3 +304,9 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `66`: explicit raw `markdown` / `html`, `footnotes`, `image`, and structured nested table cells
 - `67`: semantic render-profile lowering targets plus `document render_profile:`
   surviving `output structure:` lowering
+- `87`: shared `route.*` reads on ordinary workflow-law outputs plus fail-loud
+  unguarded route reads
+- `88`: review comments mixing review semantics and shared `route.*`
+- `89`: dedicated `route_only` feeding the same shared `route.*` output surface
+- `90`: split durable review comment plus JSON `final_output:` consuming the
+  same shared routed-owner truth

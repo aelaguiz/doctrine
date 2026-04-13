@@ -1,0 +1,2 @@
+workflow SharedStandardTurn: "Shared Standard Turn"
+    "This shared module lives in the first configured root."

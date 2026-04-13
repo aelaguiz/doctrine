@@ -1,0 +1,2 @@
+agent InvalidRootConfig:
+    role: "This compile should fail before imports resolve."

@@ -76,6 +76,12 @@ Stability rules:
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
 | `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
 | `E210` | Abstract authored slot must be defined directly | An inherited abstract authored slot was handled with `inherit` or `override` instead of a direct `slot_key: ...` definition. |
+| `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. |
+| `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
+| `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
+| `E214` | Retired | Reserved error code. Review-driven `final_output:` may now differ from `comment_output:`. |
+| `E215` | Final output support file is missing or unreadable | A schema-backed `final_output:` declares a schema or example support file that the compiler cannot read. |
+| `E216` | Final output schema file must contain a JSON object | A schema-backed `final_output:` points at a schema file that is not valid JSON object text. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
@@ -91,11 +97,14 @@ Stability rules:
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
 | `E276` | Missing local declaration reference | A local readable, analysis, or addressable ref points at a declaration that does not exist. |
-| `E280` | Missing import module | An imported module could not be found under the current `prompts/` root. |
+| `E280` | Missing import module | An imported module could not be found in the active import-root registry. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
 | `E283` | Cyclic workflow composition | `use`-based workflow composition forms a cycle. |
 | `E284` | Duplicate record key | A record body repeats the same key where the current surface expects uniqueness. |
+| `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]` or a bad `additional_prompt_roots` entry. |
+| `E286` | Duplicate configured prompts root | A configured additional `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
+| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one configured `prompts/` root. |
 | `E288` | Duplicate declaration name | One module defines the same declaration name more than once. |
 | `E289` | Cyclic import module | Import resolution forms a module cycle. |
 | `E290` | Relative import walks above prompts root | A relative import escapes above the current `prompts/` root. |
@@ -197,6 +206,7 @@ Stability rules:
 | `E516` | Pinned D2 renderer failed | `emit_flow` produced `.flow.d2`, but the pinned D2 renderer failed while producing `.flow.svg`. |
 | `E517` | Emit flow CLI requires exactly one resolution mode | `emit_flow` was invoked with both configured-target mode and direct mode, or with neither mode. |
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
+| `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

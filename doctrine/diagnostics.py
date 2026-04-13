@@ -709,6 +709,66 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         ("Define the slot directly with `slot_key: ...`.",),
     ),
     (
+        re.compile(
+            r"^E211 final_output must point at an output declaration in (?P<owner>[^:]+): (?P<ref>.+) resolves to (?P<kind>.+)$"
+        ),
+        "E211",
+        "Final output must point at output declaration",
+        lambda match: (
+            f"`final_output` in {match.group('owner')} points at `{match.group('ref')}`, "
+            f"which resolves to {match.group('kind')} instead of an `output` declaration."
+        ),
+        ("Point `final_output:` at a declared `output`.",),
+    ),
+    (
+        re.compile(
+            r"^E212 final_output output is not emitted by the concrete turn in agent (?P<agent>[^:]+): (?P<output>.+)$"
+        ),
+        "E212",
+        "Final output is not emitted by the concrete turn",
+        lambda match: (
+            f"Agent `{match.group('agent')}` declares `final_output` as "
+            f"`{match.group('output')}`, but that output is not emitted by the concrete turn."
+        ),
+        ("Add the output to the agent `outputs:` contract, or point `final_output:` at one that already is.",),
+    ),
+    (
+        re.compile(
+            r"^E213 final_output must designate one TurnResponse output, not files or another target, in agent (?P<agent>[^:]+): (?P<output>.+)$"
+        ),
+        "E213",
+        "Final output must designate one TurnResponse message",
+        lambda match: (
+            f"Agent `{match.group('agent')}` points `final_output` at `{match.group('output')}`, "
+            "but the designated output is not one `TurnResponse` assistant message."
+        ),
+        ("Use a typed `output` with `target: TurnResponse` and no `files:` bundle.",),
+    ),
+    (
+        re.compile(
+            r"^E215 final_output support file is missing or unreadable in (?P<owner>[^:]+): (?P<path>.+)$"
+        ),
+        "E215",
+        "Final output support file is missing or unreadable",
+        lambda match: (
+            f"`final_output` needs support file `{match.group('path')}` in "
+            f"{match.group('owner')}, but the compiler could not read it."
+        ),
+        ("Fix the relative path or add the declared support file.",),
+    ),
+    (
+        re.compile(
+            r"^E216 final_output schema file must contain valid JSON object in (?P<owner>[^:]+): (?P<path>.+)$"
+        ),
+        "E216",
+        "Final output schema file must contain a JSON object",
+        lambda match: (
+            f"`final_output` schema file `{match.group('path')}` in "
+            f"{match.group('owner')} must decode to one JSON object."
+        ),
+        ("Fix the declared schema file so it contains valid JSON object text.",),
+    ),
+    (
         re.compile(r"^Cyclic agent inheritance: (?P<detail>.+)$"),
         "E207",
         "Cyclic agent inheritance",
@@ -1010,10 +1070,57 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(r"^Doctrine compile config must be a TOML table\.$"),
+        "E285",
+        "Invalid compile config",
+        lambda _match: "Doctrine compile config must be a TOML table.",
+        (),
+    ),
+    (
+        re.compile(r"^Doctrine compile config additional_prompt_roots must be an array of strings\.$"),
+        "E285",
+        "Invalid compile config",
+        lambda _match: (
+            "Doctrine compile config `additional_prompt_roots` must be an array of strings."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Configured additional prompts root must be an existing prompts directory: (?P<path>.+)$"
+        ),
+        "E285",
+        "Invalid compile config",
+        lambda match: (
+            f"Configured additional prompts root must be an existing `prompts/` directory: `{match.group('path')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate configured prompts root: (?P<path>.+)$"),
+        "E286",
+        "Duplicate configured prompts root",
+        lambda match: f"Configured prompts root `{match.group('path')}` is duplicated.",
+        (),
+    ),
+    (
+        re.compile(
+            r"^Ambiguous import module: (?P<module>.+) \(matching prompts roots: (?P<roots>.+)\)$"
+        ),
+        "E287",
+        "Ambiguous import module",
+        lambda match: (
+            f"Import module `{match.group('module')}` matches more than one configured prompts root: {match.group('roots')}."
+        ),
+        (),
+    ),
+    (
         re.compile(r"^Missing import module: (?P<module>.+)$"),
         "E280",
         "Missing import module",
-        lambda match: f"Import module `{match.group('module')}` could not be found under the current prompts root.",
+        lambda match: (
+            f"Import module `{match.group('module')}` could not be found in the active prompts roots."
+        ),
         (),
     ),
     (

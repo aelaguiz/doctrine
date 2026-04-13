@@ -1,0 +1,11 @@
+input SharedBrief: "Shared Brief"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+
+inputs SharedLibraryInputs: "Shared Inputs"
+    "Read the shared brief before you act."
+
+    shared_brief: "Shared Brief"
+        SharedBrief

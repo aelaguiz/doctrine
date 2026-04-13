@@ -1,0 +1,33 @@
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+
+output WorkflowRouteBindingComment: "Workflow Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+    next_owner_key: route.next_owner.key
+
+    route_summary: "Route Summary"
+        "{{route.summary}}"
+
+
+workflow RoutedWorkflow: "Routed Workflow"
+    "Always route the turn through compiler-owned workflow-law routing."
+
+    law:
+        active when true
+        current none
+        stop "Reply and stop."
+        route "Hand off to ReviewLead." -> ReviewLead
+
+
+agent WorkflowRouteBindingDemo:
+    role: "Bind ordinary output fields from compiler-owned route semantics."
+    workflow: RoutedWorkflow
+    outputs: "Outputs"
+        WorkflowRouteBindingComment

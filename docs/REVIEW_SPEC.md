@@ -15,6 +15,8 @@ The governing split is:
 - `review` decides what was reviewed, what failed, what passed, what remains
   current, and who owns next
 - `output` still decides what the review emits
+- routed-owner readback on emitted outputs may use the shared `route.*`
+  semantic surface when the review resolves a real route
 - `trust_surface` still marks which emitted fields downstream owners may trust
 
 This is the same split workflow law uses for producer turns:
@@ -42,6 +44,12 @@ Important rules:
 - a concrete agent may attach a `review_family` directly only when the family
   is already concrete, such as an exhaustive case-selected family
 - the concrete agent must still emit the review's declared `comment_output`
+- when a review-driven agent uses `final_output:`, it may either reuse that
+  same `comment_output` or point at another emitted `TurnResponse`; the
+  review's `comment_output` still remains the review carrier
+- `comment_output:` may point at an imported reusable `output`, and that
+  shared output may still structurally bind local routed owners on the
+  concrete review without cloning the declaration into the local module
 
 ## Review Contracts
 
@@ -187,6 +195,32 @@ Important rule:
 - `fields:` does not alias currentness. Review currentness still uses the
   direct carrier form `current artifact ... via output_root.field`.
 
+## Review Outputs And Shared Route Semantics
+
+Review-specific semantic names stay on the review surface:
+
+- `verdict`
+- `contract.*`
+- `fields.*`
+
+When a review branch also resolves a real route, any emitted output on that
+turn may additionally read shared route semantics through:
+
+- `route.exists`
+- `route.next_owner`
+- `route.next_owner.key`
+- `route.next_owner.title`
+- `route.label`
+- `route.summary`
+
+Important rules:
+
+- `route.*` is derived compiler truth, not another authored review field
+- use verdict guards, `when route.exists:`, or both when some review branches
+  do not share the same routed owner
+- split review `final_output:` contracts may consume the same `route.*` truth
+  without replacing `comment_output` as the durable review carrier
+
 ## Pre-Outcome Review Logic
 
 Before the review resolves to accept or reject, it can evaluate:
@@ -321,6 +355,17 @@ Because `comment_output` is still an ordinary `output`, review comments may
 also use the shared readable block kinds that ordinary outputs ship, such as
 `definitions`, `properties`, explicit `guard` shells, `callout`, or `code`,
 alongside guarded sections.
+That same `comment_output` may also be the agent's `final_output:` when the
+review should end with a dedicated prose or schema-backed JSON final-answer
+contract.
+A review-driven agent may also point `final_output:` at a second emitted
+`TurnResponse` output. In that split shape, `comment_output` stays the durable
+review carrier while the separate final output inherits the same review
+semantic refs and guards.
+Imported reusable review comments keep that same behavior: the bound output
+field still lives on the imported `comment_output`, while bare owner refs that
+are missing from the imported module may still bind the concrete review's
+local routed agents.
 
 ## Multi-Subject Review And Carried State
 
@@ -403,3 +448,7 @@ Read the review examples in this order:
 - `68_review_family_shared_scaffold`: dedicated `review_family` reuse with
   explicit inherited scaffold accounting
 - `69_case_selected_review_family`: exhaustive case-selected review families
+- `88_review_route_semantics_shared_binding`: review comments mixing review
+  semantics and shared `route.*`
+- `90_split_handoff_and_final_output_shared_route_semantics`: split durable
+  review comments plus route-aware JSON `final_output:`

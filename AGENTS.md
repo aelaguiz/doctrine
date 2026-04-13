@@ -21,6 +21,8 @@
 - Never delete docs without first making a restore-point commit that contains the pre-deletion state.
 - Do this even when the docs look stale, low-quality, or obviously wrong.
 - If you are not making that commit in the current task, do not delete the docs.
+- After that restore-point commit, delete stale docs instead of moving them into an archive directory.
+- Git history is the archive. Do not keep or create `docs/archive/` as a long-term holding area.
 
 ## Shipped Truth
 
@@ -35,7 +37,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/73_flow_visualizer_showcase`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/86_imported_review_comment_local_routes`.
 
 ## Authoring Rules
 
@@ -61,7 +63,6 @@
 - `docs/LANGUAGE_DESIGN_NOTES.md`: current language decisions
 - `docs/AGENT_IO_DESIGN_NOTES.md`: shipped I/O model and non-goals
 - `docs/COMPILER_ERRORS.md`: canonical error catalog
-- `docs/GBRAIN_SKILLPACK.md`: deep reference for brain-first lookup, enrichment, and citation discipline
 - `examples/README.md`: how to read the examples and manifests
 
 ## Editing Notes

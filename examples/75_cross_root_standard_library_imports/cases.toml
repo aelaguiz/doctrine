@@ -1,0 +1,114 @@
+schema_version = 1
+default_prompt = "flow_alpha/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "local entrypoint composes local and shared authored roots"
+status = "active"
+kind = "render_contract"
+agent = "CrossRootAlpha"
+approx_ref = "ref/flow_alpha_AGENTS.md"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the alpha cross-root agent.",
+  "",
+  "## Alpha Turn",
+  "",
+  "This local module fans into the shared standard-library workflow.",
+  "",
+  "### Shared Standard Turn",
+  "",
+  "This workflow comes from the shared authored root.",
+  "",
+  "#### Opening",
+  "",
+  "Start from the shared topic.",
+  "",
+  "##### Topic Context",
+  "",
+  "State the shared standard-library topic exactly once.",
+  "",
+  "#### Closing",
+  "",
+  "End with the shared wrap-up.",
+  "",
+  "## Shared Inputs",
+  "",
+  "Read the shared brief before you act.",
+  "",
+  "### Shared Brief",
+  "",
+  "#### Shared Brief",
+  "",
+  "- Source: Prompt",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "second entrypoint reuses the same shared authored modules"
+status = "active"
+kind = "render_contract"
+prompt = "flow_beta/prompts/AGENTS.prompt"
+agent = "CrossRootBeta"
+approx_ref = "ref/flow_beta_AGENTS.md"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the beta cross-root agent.",
+  "",
+  "## Shared Standard Turn",
+  "",
+  "This workflow comes from the shared authored root.",
+  "",
+  "### Opening",
+  "",
+  "Start from the shared topic.",
+  "",
+  "#### Topic Context",
+  "",
+  "State the shared standard-library topic exactly once.",
+  "",
+  "### Closing",
+  "",
+  "End with the shared wrap-up.",
+  "",
+  "## Shared Inputs",
+  "",
+  "Read the shared brief before you act.",
+  "",
+  "### Shared Brief",
+  "",
+  "#### Shared Brief",
+  "",
+  "- Source: Prompt",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "invalid additional prompt root fails before compilation continues"
+status = "active"
+kind = "compile_fail"
+prompt = "invalid_root_config/prompts/AGENTS.prompt"
+agent = "InvalidRootConfig"
+exception_type = "CompileError"
+error_code = "E285"
+message_contains = [
+  "Invalid compile config",
+  "Configured additional prompts root",
+  "not_prompts",
+]
+
+[[cases]]
+name = "duplicate dotted modules across configured roots fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "invalid_ambiguous/prompts/AGENTS.prompt"
+agent = "AmbiguousSharedImport"
+exception_type = "CompileError"
+error_code = "E287"
+message_contains = [
+  "Ambiguous import module",
+  "library.workflows.common_turn",
+  "shared_one/prompts",
+  "shared_two/prompts",
+]

@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "description": "Review verdict."
+    },
+    "reviewed_artifact": {
+      "type": "string",
+      "description": "Reviewed artifact name."
+    },
+    "current_artifact": {
+      "type": "string",
+      "description": "Current artifact after review."
+    },
+    "next_owner": {
+      "type": "string",
+      "description": "Next owner after review."
+    }
+  }
+}

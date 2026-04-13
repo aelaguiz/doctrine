@@ -1,0 +1,54 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "workflow-owned outputs may bind compiler-owned route semantics"
+status = "active"
+kind = "render_contract"
+agent = "WorkflowRouteBindingDemo"
+approx_ref = "ref/workflow_route_binding_demo/AGENTS.md"
+assertion = "exact_lines"
+expected_lines = [
+  "Bind ordinary output fields from compiler-owned route semantics.",
+  "",
+  "## Routed Workflow",
+  "",
+  "Always route the turn through compiler-owned workflow-law routing.",
+  "",
+  "This pass runs only when true.",
+  "",
+  "There is no current artifact for this turn.",
+  "",
+  "Stop: Reply and stop.",
+  "",
+  "Hand off to ReviewLead.",
+  "",
+  "## Outputs",
+  "",
+  "### Workflow Route Binding Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Next Owner: Review Lead",
+  "- Next Owner Key: ReviewLead",
+  "",
+  "#### Route Summary",
+  "",
+  "Hand off to ReviewLead. Next owner: Review Lead.",
+]
+
+[[cases]]
+name = "unguarded route reads fail loudly when workflow law may stay unrouted"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
+agent = "InvalidWorkflowRouteBindingDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "route semantics are not live on every branch",
+  "MaybeRoutedComment.next_owner",
+  "guard the read with `route.exists`",
+]

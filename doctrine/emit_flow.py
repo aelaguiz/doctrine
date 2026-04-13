@@ -29,7 +29,11 @@ from doctrine.parser import parse_file
 def main(argv: list[str] | None = None) -> int:
     try:
         args = _build_arg_parser().parse_args(argv)
-        config_path = resolve_pyproject_path(args.pyproject)
+        config_path = (
+            resolve_pyproject_path(args.pyproject)
+            if args.target
+            else Path(args.pyproject).resolve() if args.pyproject else None
+        )
         for target in _resolve_requested_targets(args, config_path):
             emitted = emit_target_flow(target)
             print(
@@ -70,7 +74,7 @@ def emit_target_flow(
     d2_path = emitted_dir / f"{output_name}.d2"
     svg_path = emitted_dir / f"{output_name}.svg"
 
-    session = CompilationSession(prompt_file)
+    session = CompilationSession(prompt_file, project_config=target.project_config)
     try:
         graph = session.extract_target_flow_graph(agent_names)
     except DoctrineError as exc:
@@ -144,7 +148,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 def _resolve_requested_targets(
     args: argparse.Namespace,
-    config_path: Path,
+    config_path: Path | None,
 ) -> tuple[EmitTarget, ...]:
     target_mode = bool(args.target)
     direct_mode = args.entrypoint is not None or args.output_dir is not None
@@ -159,6 +163,8 @@ def _resolve_requested_targets(
         )
 
     if target_mode:
+        if config_path is None:
+            config_path = resolve_pyproject_path(args.pyproject)
         targets = load_emit_targets(config_path)
         resolved: list[EmitTarget] = []
         for target_name in args.target:
@@ -189,6 +195,7 @@ def _resolve_requested_targets(
         return (
             resolve_direct_emit_target(
                 pyproject_path=config_path,
+                start_dir=Path.cwd(),
                 entrypoint=args.entrypoint,
                 output_dir=args.output_dir,
             ),

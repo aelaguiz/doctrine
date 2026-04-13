@@ -11,6 +11,7 @@ from doctrine.emit_common import (
     agent_slug,
     display_path,
     emit_error,
+    entrypoint_contract_name,
     entrypoint_output_name,
     entrypoint_relative_dir,
     load_emit_targets,
@@ -18,6 +19,7 @@ from doctrine.emit_common import (
     resolve_pyproject_path,
     root_concrete_agents,
 )
+from doctrine.emit_contract import render_compiled_agent_contract
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -91,28 +93,44 @@ def emit_target(
     output_root = (output_dir_override or target.output_dir).resolve()
     emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
 
-    planned_emits: list[tuple[str, Path]] = []
+    planned_emits: list[tuple[str, Path, Path]] = []
     seen_paths: dict[Path, str] = {}
     for agent_name in agent_names:
-        emit_path = _emit_path_for_agent(
+        markdown_path = _emit_path_for_agent(
             emitted_dir,
             agent_name,
             output_name=entrypoint_output_name(target.entrypoint),
         )
-        prior_agent = seen_paths.get(emit_path)
+        contract_path = _emit_path_for_agent(
+            emitted_dir,
+            agent_name,
+            output_name=entrypoint_contract_name(target.entrypoint),
+        )
+        prior_agent = seen_paths.get(markdown_path)
         if prior_agent is not None:
             raise emit_error(
                 "E505",
                 "Emit target path collision",
-                f"Emit target `{target.name}` maps both `{prior_agent}` and `{agent_name}` to `{emit_path}`.",
-                location=path_location(emit_path),
+                f"Emit target `{target.name}` maps both `{prior_agent}` and `{agent_name}` to `{markdown_path}`.",
+                location=path_location(markdown_path),
             )
-        seen_paths[emit_path] = agent_name
-        planned_emits.append((agent_name, emit_path))
+        if contract_path in seen_paths:
+            prior_agent = seen_paths[contract_path]
+            raise emit_error(
+                "E505",
+                "Emit target path collision",
+                f"Emit target `{target.name}` maps both `{prior_agent}` and `{agent_name}` to `{contract_path}`.",
+                location=path_location(contract_path),
+            )
+        seen_paths[markdown_path] = agent_name
+        seen_paths[contract_path] = agent_name
+        planned_emits.append((agent_name, markdown_path, contract_path))
 
-    session = CompilationSession(prompt_file)
+    session = CompilationSession(prompt_file, project_config=target.project_config)
     try:
-        compiled_agents = session.compile_agents(tuple(agent_name for agent_name, _ in planned_emits))
+        compiled_agents = session.compile_agents(
+            tuple(agent_name for agent_name, _, _ in planned_emits)
+        )
     except DoctrineError as exc:
         raise exc.prepend_trace(
             f"emit target `{target.name}`",
@@ -120,11 +138,17 @@ def emit_target(
         )
 
     emitted_paths: list[Path] = []
-    for (agent_name, emit_path), compiled in zip(planned_emits, compiled_agents, strict=True):
+    for (_agent_name, markdown_path, contract_path), compiled in zip(
+        planned_emits,
+        compiled_agents,
+        strict=True,
+    ):
         rendered = render_markdown(compiled)
-        emit_path.parent.mkdir(parents=True, exist_ok=True)
-        emit_path.write_text(rendered)
-        emitted_paths.append(emit_path)
+        contract_json = render_compiled_agent_contract(compiled=compiled, target=target)
+        markdown_path.parent.mkdir(parents=True, exist_ok=True)
+        markdown_path.write_text(rendered)
+        contract_path.write_text(contract_json)
+        emitted_paths.extend((markdown_path, contract_path))
 
     return tuple(emitted_paths)
 

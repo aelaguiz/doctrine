@@ -54,5 +54,8 @@
         "path": "./syntaxes/doctrine.tmLanguage.json"
       }
     ]
+  },
+  "dependencies": {
+    "@iarna/toml": "2.2.5"
   }
 }

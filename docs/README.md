@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/74_decision_attachment`.
+`examples/90_split_handoff_and_final_output_shared_route_semantics`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -34,53 +34,19 @@ parallelism.
   error codes
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
-- [archive/README.md](archive/README.md): historical proposals, plans, and
-  worklogs that are not part of the live docs path
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-## Historical Phase Docs
-
-These documents organize the earlier second-wave language work into
-implementation order. They are still useful historical implementation notes,
-but they are not the current live completeness story now that shipped truth
-also includes the first-class `decision` surface and
-`examples/74_decision_attachment`.
-
-For the current shipped language surface, use
-[LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md),
-[WORKFLOW_LAW.md](WORKFLOW_LAW.md), and
-[../examples/README.md](../examples/README.md) first.
-
-- [01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md](01_TYPED_MARKDOWN_FOUNDATION_AND_DOCUMENT_SYSTEM.md):
-  phase 1 typed-markdown foundation, first-class `document`, the readable block
-  family, multiline strings, `structure:`, and the base renderer conversion
-- [02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md](02_ANALYSIS_SCHEMA_AND_OUTPUT_CONTRACTS.md):
-  phase 2 `analysis`, `schema`, owner-aware `schema:` rules, schema
-  artifacts/groups, output contracts, diagnostics, and proof ordering
-- [03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md](03_ADVANCED_TYPED_MARKDOWN_RENDER_POLICY_AND_EXTENSION_SURFACES.md):
-  phase 3 advanced readable-markdown surfaces such as `properties`, explicit
-  guard shells, `render_profile`, typed row/item schemas, and later block
-  extensions, now proved in `examples/64_*` through `examples/67_*`
-- [04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md](04_REVIEW_ROUTE_ONLY_GROUNDING_AND_CONTROL_PLANE_INTEGRATION.md):
-  phase 4 schema-backed review integration, review families, `route_only`,
-  `grounding`, and control-plane convergence, now proved in `examples/68_*`
-  through `examples/72_*`
-
 ## Historical Design Context
 
-The shipped docs above are the only live reference path. For second-wave
-history, provenance, and archived implementation passes, use
-[archive/second_wave/README.md](archive/second_wave/README.md).
+The shipped docs above are the only live reference path. Earlier plans,
+worklogs, audits, and one-off investigations are deleted after a restore-point
+commit. If you need that old context, use git history.
 
-The raw design inputs
-`ANALYSIS_AND_SCHEMA_SPEC.md`, `READABLE_MARKDOWN_SPEC.md`,
-`INTEGRATION_SURFACES_SPEC.md`, `LANGUAGE_MECHANICS_SPEC.md`, and
-`SECOND_WAVE_LANGUAGE_NOTES.md` still remain in the root `docs/` tree because
-archived implementation docs cite their current paths directly, and moving them
-would force a broad historical ref rewrite. Treat those files as drafting
-artifacts kept for provenance and link stability, not as the primary
-implementation-order view or the canonical shipped reference.
+The earlier second-wave draft specs, phase plans, and the implemented
+`final_output` design proposal were deleted after restore-point commits once
+their durable truth landed in the live docs and verified example corpus. Use
+git history if you need that design-phase context.
 
 ## Repo Truth
 
@@ -91,6 +57,9 @@ implementation-order view or the canonical shipped reference.
 - The shared emit registry drives configured Markdown and flow builds, and
   `emit_flow` also supports direct quick-start entrypoints on the same
   prompts-root-aware pipeline.
+- Absolute imports may also span explicitly configured shared `prompts/`
+  roots through `[tool.doctrine.compile].additional_prompt_roots`, while
+  relative imports stay rooted in the importing module's own `prompts/` tree.
 - Emit and verification surfaces reuse shared compile sessions and preserve
   authored ordering even when batch compilation fans out across threads.
 
@@ -98,7 +67,5 @@ implementation-order view or the canonical shipped reference.
 
 Dated proposals, plans, worklogs, and exploratory notes are intentionally
 excluded from this index. They are not part of Doctrine's evergreen open
-source documentation set. For historical materials that are still worth
-keeping in-repo, use [archive/README.md](archive/README.md), including the
-dedicated [archive/second_wave/README.md](archive/second_wave/README.md) index
-for second-wave historical context.
+source documentation set. After a restore-point commit, delete them. Git
+history is the archive.

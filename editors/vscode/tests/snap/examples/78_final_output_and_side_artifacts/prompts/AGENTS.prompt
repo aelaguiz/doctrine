@@ -1,0 +1,31 @@
+output ReleaseSummaryResponse: "Release Summary Response"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+    format_notes: "Expected Structure"
+        "Lead with the shipped outcome."
+        "End with the next owner or step when one matters."
+
+    standalone_read: "Standalone Read"
+        "The user should understand what changed and what happens next."
+
+
+output ReleaseNotesFile: "Release Notes File"
+    target: File
+        path: "artifacts/RELEASE_NOTES.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read RELEASE_NOTES.md alone and understand what shipped."
+
+
+agent ReleaseAgent:
+    role: "Ship the change and leave both a user-facing answer and a file artifact."
+    workflow: "Ship"
+        "Do the work, emit the file artifact, and end with the declared final output."
+    outputs: "Outputs"
+        ReleaseSummaryResponse
+        ReleaseNotesFile
+    final_output: ReleaseSummaryResponse

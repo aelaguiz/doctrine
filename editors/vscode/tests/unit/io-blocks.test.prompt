@@ -19,6 +19,10 @@ agent Reviewer:
 #   ^^^^^^ keyword.other.field.doctrine
 #           ^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
+    final_output: CoordinationHandoff
+#   ^^^^^^^^^^^^ keyword.other.field.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
     outputs[SharedOutputs]: "Your Outputs"
 #   ^^^^^^^ keyword.other.field.doctrine
 #          ^ punctuation.section.inheritance.begin.doctrine

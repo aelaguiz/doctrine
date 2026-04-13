@@ -1,0 +1,7 @@
+import library.workflows.common_turn
+
+
+workflow AlphaTurn: "Alpha Turn"
+    "This local module fans into the shared standard-library workflow."
+
+    use shared_turn: library.workflows.common_turn.SharedStandardTurn

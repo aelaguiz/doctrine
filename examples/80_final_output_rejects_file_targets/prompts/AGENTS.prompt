@@ -1,0 +1,14 @@
+output ReleaseNotesFile: "Release Notes File"
+    target: File
+        path: "artifacts/RELEASE_NOTES.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+agent InvalidFileFinalOutputAgent:
+    role: "Try to end the turn with a file artifact."
+    workflow: "Reply"
+        "Reply and stop."
+    outputs: "Outputs"
+        ReleaseNotesFile
+    final_output: ReleaseNotesFile

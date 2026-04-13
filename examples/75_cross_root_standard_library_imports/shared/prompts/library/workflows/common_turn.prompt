@@ -1,0 +1,9 @@
+import .opening
+import .closing
+
+
+workflow SharedStandardTurn: "Shared Standard Turn"
+    "This workflow comes from the shared authored root."
+
+    use opening: library.workflows.opening.OpeningStep
+    use closing: library.workflows.closing.ClosingStep

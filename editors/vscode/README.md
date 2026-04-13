@@ -13,7 +13,7 @@ Repo-local VS Code language support for `.prompt` files.
   clickable surface:
   parent declaration refs, authored-slot refs and overrides, workflow `use`
   refs, workflow `skills` refs and override refs, route targets, `analysis`,
-  `decision`, `skills`,
+  `decision`, `skills`, `final_output`,
   `inputs`, `outputs`, patch-parent refs, `source`, `target`, `shape`,
   owner-aware `schema` refs on `output shape` and `output`, `structure` refs
   on markdown-bearing `input` and `output` surfaces, standalone input/output
@@ -37,8 +37,11 @@ Repo-local VS Code language support for `.prompt` files.
 - enables `#` comments, off-side folding, and narrow Enter indentation rules
 - keeps keyword coverage aligned with `doctrine/grammars/doctrine.lark`
 
-The extension resolves Doctrine imports from the nearest `prompts/` root using
-the same absolute and relative module rules the compiler ships.
+The extension resolves Doctrine imports from the same repo-level compile config
+the compiler ships: absolute imports may search the local `prompts/` root plus
+configured `[tool.doctrine.compile].additional_prompt_roots`, while relative
+imports stay rooted in the importing module's own `prompts/` tree and
+ambiguous absolute module identities fail closed in navigation.
 
 Workflow-law support here uses the same vocabulary as
 [../../docs/WORKFLOW_LAW.md](../../docs/WORKFLOW_LAW.md): `law`,
@@ -57,7 +60,7 @@ and semantic refs on the review comment surface.
 
 Second-wave support here also follows the shipped language guides: top-level
 `render_profile`, `analysis`, `decision`, `schema`, and `document`
-declarations, agent `analysis:` / `decision:` slots, typed
+declarations, agent `analysis:` / `decision:` / `final_output:` slots, typed
 `schema:` / `structure:` / `render_profile:`
 attachments, addressable analysis or document paths such as `Decl:section.title`,
 family-namespaced schema paths such as
@@ -134,13 +137,14 @@ local editor is actually running the newest VSIX before changing the grammar.
 2. Reinstall the newest generated `.vsix`.
 3. Reload the editor window.
 4. Open `examples/03_imports/prompts/AGENTS.prompt`.
-5. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
+5. Open `examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt`.
+6. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
    the emitted scopes and the theme rule that matched.
-6. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
+7. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
    import path, one readable ref, one addressable path segment, one
    addressable `title` segment, one enum member, and one structural
    inheritance key.
-7. For the workflow-law ladder, smoke-check:
+8. For the workflow-law ladder, smoke-check:
    `examples/39_guarded_output_sections/prompts/AGENTS.prompt` for guarded
    headers and guarded path clicks,
    `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt` for routed
@@ -151,7 +155,7 @@ local editor is actually running the newest VSIX before changing the grammar.
    bound root clicks in `current artifact ... via ...`, and
    `examples/51_inherited_bound_io_roots/prompts/AGENTS.prompt` for inherited
    bound-root clicks.
-8. For the review ladder, smoke-check:
+9. For the review ladder, smoke-check:
    `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
    for `review:` slot clicks and top-level review colorization,
    `examples/47_review_multi_subject_mode_and_trigger_carry/prompts/AGENTS.prompt`
@@ -161,11 +165,17 @@ local editor is actually running the newest VSIX before changing the grammar.
    carrier paths, plus
    `examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt` for
    lower-case review carrier roots and carried-field path clicks.
-9. For the second-wave ladder, smoke-check:
+10. For the second-wave ladder, smoke-check:
    `examples/54_analysis_attachment/prompts/AGENTS.prompt` for `analysis:`
    slot clicks and `ReleaseAnalysis:stages.title`,
    `examples/74_decision_attachment/prompts/AGENTS.prompt` for `decision:`
    slot clicks and decision declaration roots,
+   `examples/76_final_output_prose_basic/prompts/AGENTS.prompt` for
+   `final_output:` clicks into the referenced `output`,
+   `examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt`
+   for cross-root absolute import clicks and
+   `examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening.prompt`
+   for root-local parent-relative shared-root import clicks,
    `examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt` for
    owner-aware `schema:` clicks on both `output shape` and `output`,
    `examples/56_document_structure_attachments/prompts/AGENTS.prompt` for

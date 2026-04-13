@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from doctrine.compiler import FlowAgentNode, FlowEdge, FlowGraph, FlowInputNode, FlowOutputNode
+from doctrine._compiler.types import FlowAgentNode, FlowEdge, FlowGraph, FlowInputNode, FlowOutputNode
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 D2_HELPER_PATH = Path(__file__).resolve().with_name("flow_svg.mjs")

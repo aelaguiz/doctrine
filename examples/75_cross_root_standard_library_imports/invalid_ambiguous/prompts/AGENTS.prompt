@@ -1,0 +1,6 @@
+import library.workflows.common_turn
+
+
+agent AmbiguousSharedImport:
+    role: "This compile should fail because the shared module path is ambiguous."
+    workflow: library.workflows.common_turn.SharedStandardTurn
