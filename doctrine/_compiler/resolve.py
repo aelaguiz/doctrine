@@ -1578,7 +1578,10 @@ class ResolveMixin:
             and len(expr.args[0].parts) == 1
         ):
             field_name = expr.args[0].parts[0]
-            is_present = any(carry.field_name == field_name for carry in branch.carries)
+            if field_name == "blocked_gate" and branch.blocked_gate_present is not None:
+                is_present = branch.blocked_gate_present
+            else:
+                is_present = any(carry.field_name == field_name for carry in branch.carries)
             return is_present if expr.name == "present" else not is_present
         if isinstance(expr, model.ExprBinary):
             return self._evaluate_review_condition(expr, unit=unit, branch=branch)
@@ -5424,6 +5427,41 @@ class ResolveMixin:
                             wildcard=path.wildcard,
                         )
                     )
+            if "grounding" in allowed_kinds:
+                grounding_decl = lookup_unit.groundings_by_name.get(ref.declaration_name)
+                if grounding_decl is not None:
+                    matches.append(
+                        ResolvedLawPath(
+                            unit=lookup_unit,
+                            decl=grounding_decl,
+                            remainder=remainder,
+                            wildcard=path.wildcard,
+                        )
+                    )
+            if "schema_family" in allowed_kinds:
+                schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
+                if schema_decl is not None and remainder:
+                    resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                    family_items_by_key = {
+                        "sections": resolved_schema.sections,
+                        "gates": resolved_schema.gates,
+                        "artifacts": resolved_schema.artifacts,
+                        "groups": resolved_schema.groups,
+                    }
+                    family_items = family_items_by_key.get(remainder[0])
+                    if family_items is not None:
+                        matches.append(
+                            ResolvedLawPath(
+                                unit=lookup_unit,
+                                decl=SchemaFamilyTarget(
+                                    family_key=remainder[0],
+                                    title=_SCHEMA_FAMILY_TITLES[remainder[0]],
+                                    items=family_items,
+                                ),
+                                remainder=remainder[1:],
+                                wildcard=path.wildcard,
+                            )
+                        )
             if "schema_group" in allowed_kinds:
                 schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
                 if schema_decl is not None and len(remainder) >= 2 and remainder[0] == "groups":
@@ -5455,7 +5493,7 @@ class ResolveMixin:
             return unique_matches[0]
         if len(unique_matches) > 1:
             choices = ", ".join(
-                _dotted_decl_name(match.unit.module_parts, match.decl.name)
+                _dotted_decl_name(match.unit.module_parts, self._law_path_decl_identity(match.decl))
                 for match in unique_matches
             )
             raise CompileError(

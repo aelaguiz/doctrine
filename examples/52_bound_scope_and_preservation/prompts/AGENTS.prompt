@@ -13,6 +13,16 @@ input ApprovedBoundary: "Approved Boundary"
     requirement: Required
 
 
+document ReviewNotesDocument: "Review Notes Document"
+    definitions findings: "Findings" required
+        summary: "Summary"
+            "Summarize the owned review findings."
+
+    definitions evidence: "Evidence" required
+        support: "Support"
+            "Summarize the owned supporting evidence."
+
+
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
     shape: Comment
@@ -28,6 +38,28 @@ output CoordinationHandoff: "Coordination Handoff"
         "A downstream owner must be able to read this output alone and know which artifact is current now."
 
 
+output ReviewNotes: "Review Notes"
+    target: File
+        path: "unit_root/REVIEW_NOTES.md"
+    shape: MarkdownDocument
+    structure: ReviewNotesDocument
+    requirement: Required
+
+
+schema SurfaceInventory: "Surface Inventory"
+    sections:
+        summary: "Summary"
+            "Summarize the modeled surface inventory."
+
+    artifacts:
+        review_notes: "Review Notes"
+            ref: ReviewNotes
+
+    groups:
+        downstream_review: "Downstream Review"
+            review_notes
+
+
 workflow BoundScopeAndPreservation: "Bound Scope And Preservation"
     "Keep narrow ownership and preserved upstream truth attached to named bindings."
 
@@ -35,6 +67,26 @@ workflow BoundScopeAndPreservation: "Bound Scope And Preservation"
         current artifact section_metadata via coordination_handoff.current_artifact
         own only {section_metadata.name, section_metadata.description}
         preserve exact section_metadata.* except {section_metadata.name, section_metadata.description}
+        preserve structure approved_boundary
+
+
+workflow OutputScopedOwnershipWithoutCurrentnessShift: "Output-Scoped Ownership Without Currentness Shift"
+    "Keep a modeled emitted output writable without making it the current artifact."
+
+    law:
+        current artifact section_metadata via coordination_handoff.current_artifact
+        own only {review_notes.findings, review_notes.evidence}
+        preserve exact review_notes.* except {review_notes.findings, review_notes.evidence}
+        preserve structure approved_boundary
+
+
+workflow SchemaFamilyOwnershipWithoutCurrentnessShift: "Schema-Family Ownership Without Currentness Shift"
+    "Keep a modeled schema family writable without turning it into current truth."
+
+    law:
+        current artifact section_metadata via coordination_handoff.current_artifact
+        own only SurfaceInventory.groups
+        preserve exact {SurfaceInventory.sections, SurfaceInventory.artifacts}
         preserve structure approved_boundary
 
 
@@ -50,3 +102,37 @@ agent BoundScopeAndPreservationDemo:
     outputs: "Outputs"
         coordination_handoff: "Coordination Handoff Binding"
             CoordinationHandoff
+
+
+agent OutputScopedOwnershipDemo:
+    role: "Keep a modeled emitted output writable without moving current truth."
+    workflow: OutputScopedOwnershipWithoutCurrentnessShift
+    inputs: "Inputs"
+        section_metadata: "Section Metadata Binding"
+            SectionMetadata
+
+        approved_boundary: "Approved Boundary Binding"
+            ApprovedBoundary
+    outputs: "Outputs"
+        coordination_handoff: "Coordination Handoff Binding"
+            CoordinationHandoff
+
+        review_notes: "Review Notes Binding"
+            ReviewNotes
+
+
+agent SchemaFamilyOwnershipDemo:
+    role: "Keep a modeled schema family writable without moving current truth."
+    workflow: SchemaFamilyOwnershipWithoutCurrentnessShift
+    inputs: "Inputs"
+        section_metadata: "Section Metadata Binding"
+            SectionMetadata
+
+        approved_boundary: "Approved Boundary Binding"
+            ApprovedBoundary
+    outputs: "Outputs"
+        coordination_handoff: "Coordination Handoff Binding"
+            CoordinationHandoff
+
+        review_notes: "Review Notes Binding"
+            ReviewNotes

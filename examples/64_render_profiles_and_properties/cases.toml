@@ -31,6 +31,35 @@ expected_lines = [
 ]
 
 [[cases]]
+name = "render profiles apply through wrapped CommentText output shapes"
+status = "active"
+kind = "render_contract"
+agent = "WrappedReviewCommentDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use the same compact render profile on a wrapped `CommentText` output shape.",
+  "",
+  "## Review",
+  "",
+  "Write the wrapped review comment.",
+  "",
+  "## Outputs",
+  "",
+  "### Wrapped Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Wrapped Comment Text",
+  "- Requirement: Required",
+  "",
+  "- Verdict: Use changes requested when the contract fails.",
+  "- Next Owner: Route back to section-author with Project Lead (`ProjectLead`).",
+  "",
+  "_Rendered only when section-author is section-author._",
+  "",
+  "- Escalation: Explain what still blocks the wrapped handoff.",
+]
+
+[[cases]]
 name = "properties reject duplicate local keys"
 status = "active"
 kind = "compile_fail"

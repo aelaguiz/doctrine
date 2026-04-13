@@ -110,7 +110,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `31_currentness_and_trust_surface` | Portable current truth plus `trust_surface`. |
 | `32_modes_and_match` | Enum-backed `mode` plus exhaustive `match`. |
 | `33_scope_and_exact_preservation` | `own only`, `preserve exact`, and overlap checks. |
-| `34_structure_mapping_and_vocabulary_preservation` | Preserving structure, mapping, and vocabulary. |
+| `34_structure_mapping_and_vocabulary_preservation` | Preserving structure, mapping, and vocabulary across artifact and schema-family roots. |
 | `35_basis_roles_and_rewrite_evidence` | Comparison-only support and rewrite-evidence exclusions. |
 | `36_invalidation_and_rebuild` | Invalidation as a truth transition plus rebuild routing. |
 | `37_law_reuse_and_patching` | Named workflow-law subsections and explicit law patching. |
@@ -122,13 +122,13 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `43_review_basic_verdict_and_route_coupling` | Smallest first-class `review`. |
 | `44_review_handoff_first_block_gates` | `block` gates and `blocked_gate`. |
 | `45_review_contract_gate_export_and_exact_failures` | Exact contract gate export and faithful `failing_gates`. |
-| `46_review_current_truth_and_trust_surface` | Review current truth on trusted output carriers. |
+| `46_review_current_truth_and_trust_surface` | Review current truth on trusted output carriers, including blocked-gate-guarded currentness. |
 | `47_review_multi_subject_mode_and_trigger_carry` | Multi-subject review plus carried mode and trigger reason. |
 | `48_review_inheritance_and_explicit_patching` | `abstract review` and explicit review patching. |
 | `49_review_capstone` | Full review capstone with blocked review, exact gates, carried state, and current truth. |
 | `50_bound_currentness_roots` | Bound roots for workflow-law currentness carriers. |
 | `51_inherited_bound_io_roots` | Inherited bound I/O roots staying visible to workflow law. |
-| `52_bound_scope_and_preservation` | Bound roots for ownership and preservation law. |
+| `52_bound_scope_and_preservation` | Bound roots for ownership and preservation law, including emitted-output and schema-family roots. |
 | `53_review_bound_carrier_roots` | Bound review carriers and carried review state. |
 | `54_analysis_attachment` | Concrete-agent `analysis:` attachment, `prove`, and analysis-root addressability. |
 | `55_owner_aware_schema_attachments` | Owner-aware split between `output shape.schema` and `output.schema`. |
@@ -140,17 +140,17 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `61_multiline_code_and_readable_failures` | Multiline readable code blocks plus compile-negative readable validation. |
 | `62_identity_titles_keys_and_wire` | Titled concrete-agent identities plus enum member key/title/wire projections. |
 | `63_schema_artifacts_and_groups` | First-class schema `artifacts:` / `groups:` plus family-namespaced schema addressability. |
-| `64_render_profiles_and_properties` | Authored `render_profile`, compact `properties`, and explicit readable `guard` shells. |
+| `64_render_profiles_and_properties` | Authored `render_profile`, compact `properties`, explicit readable `guard` shells, and wrapped `CommentText` lowering. |
 | `65_row_and_item_schemas` | Typed `item_schema:` / `row_schema:` descendants on readable list and table blocks. |
 | `66_late_extension_blocks` | Explicit raw `markdown` / `html`, `footnotes`, `image`, and structured nested table cells. |
 | `67_semantic_profile_lowering` | Semantic render-profile lowering for `analysis.stages`, `review.contract_checks`, and `control.invalidations`, plus document-attached profile inheritance through `output structure:`. |
 | `68_review_family_shared_scaffold` | Dedicated `review_family` reuse with explicit inherited scaffold accounting. |
 | `69_case_selected_review_family` | Case-selected `review_family` with exhaustive enum-backed cases. |
 | `70_route_only_declaration` | Dedicated `route_only` lowered through the shipped route-only workflow-law path. |
-| `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy and ordinary routing. |
+| `71_grounding_declaration` | Dedicated `grounding` protocol with explicit policy, ordinary routing, and grounding-root preservation mapping. |
 | `72_schema_group_invalidation` | `schema.groups.*` invalidation expansion in authored group order. |
 | `73_flow_visualizer_showcase` | Flagship multi-agent flow visualizer proof with shared inputs, a route-first handoff lane, a routed return loop, a shared carrier output, and checked-in `.flow.{d2,svg}` artifacts. |
-| `74_decision_attachment` | First-class `decision` declarations plus concrete-agent `decision:` attachments for candidate-pool, sequencing-proof, and winner-selection scaffolds. |
+| `74_decision_attachment` | First-class `decision` declarations plus multiple concrete-agent `decision:` attachments, duplicate-ref rejection, and winner-selection scaffolds. |
 | `75_cross_root_standard_library_imports` | Repo-level `[tool.doctrine.compile].additional_prompt_roots`, shared authored `prompts/` roots, multiple entrypoints, and fail-loud ambiguity/config proofs for cross-root imports. |
 | `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
 | `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |

@@ -2563,11 +2563,16 @@ class ToAst(Transformer):
         return model.SectionGateRef(key=key)
 
     @v_args(inline=True)
-    def current_review_artifact_stmt(self, artifact_ref, carrier):
-        return model.ReviewCurrentArtifactStmt(artifact_ref=artifact_ref, carrier=carrier)
+    def current_review_artifact_stmt(self, artifact_ref, carrier, when_expr=None):
+        return model.ReviewCurrentArtifactStmt(
+            artifact_ref=artifact_ref,
+            carrier=carrier,
+            when_expr=when_expr,
+        )
 
-    def current_review_none_stmt(self, _items):
-        return model.ReviewCurrentNoneStmt()
+    @v_args(inline=True)
+    def current_review_none_stmt(self, when_expr=None):
+        return model.ReviewCurrentNoneStmt(when_expr=when_expr)
 
     @v_args(inline=True)
     def carry_stmt(self, field_name, expr):

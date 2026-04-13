@@ -1,0 +1,13 @@
+decision PlayableStrategyChoice: "Playable Strategy Choice"
+    candidates minimum 3
+    rank required
+    rejects required
+    winner required
+
+
+agent InvalidDuplicateDecisionRefDemo:
+    role: "Do not attach the same decision declaration twice."
+    workflow: "Choose"
+        "Use the attached decision scaffold once."
+    decision: PlayableStrategyChoice
+    decision: PlayableStrategyChoice

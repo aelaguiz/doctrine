@@ -140,6 +140,109 @@ expected_lines = [
 ]
 
 [[cases]]
+name = "preserve mapping can keep schema-family gate maps stable"
+status = "active"
+kind = "render_contract"
+agent = "PreserveSchemaFamilyMappingDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep schema gate mappings stable during a narrow update.",
+  "",
+  "## Preserve Schema Family Mapping",
+  "",
+  "Current artifact: Slot Mapping.",
+  "",
+  "Preserve mapping `ReviewInventory.gates`.",
+  "",
+  "## Inputs",
+  "",
+  "### Slot Mapping",
+  "",
+  "- Source: File",
+  "- Path: `unit_root/_authoring/slot_mapping.json`",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+]
+
+[[cases]]
+name = "preserve vocabulary can keep document-section labels stable"
+status = "active"
+kind = "render_contract"
+agent = "PreserveDocumentVocabularyDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep document section labels stable during a narrow rewrite.",
+  "",
+  "## Preserve Document Vocabulary",
+  "",
+  "Current artifact: Review Plan.",
+  "",
+  "Preserve vocabulary {`ReviewPlan.scope`, `ReviewPlan.acceptance`}.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner must be able to read this output alone and know which artifact remains current now.",
+  "",
+  "### Review Plan",
+  "",
+  "- Target: File",
+  "- Path: `unit_root/REVIEW_PLAN.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "- Structure: Review Plan Document",
+  "",
+  "#### Structure: Review Plan Document",
+  "",
+  "##### Scope",
+  "",
+  "_Required · section_",
+  "",
+  "State the review scope.",
+  "",
+  "##### Acceptance",
+  "",
+  "_Required · section_",
+  "",
+  "State what acceptance looks like.",
+]
+
+[[cases]]
 name = "structure preservation targets must be addressable"
 status = "active"
 kind = "compile_fail"

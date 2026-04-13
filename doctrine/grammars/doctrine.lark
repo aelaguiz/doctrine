@@ -225,8 +225,8 @@ accept_stmt: "accept" gate_label "when" expr _NL
 contract_gate_ref: "contract" "." CNAME
 section_gate_ref: CNAME
 
-current_review_artifact_stmt: "current" "artifact" artifact_ref "via" output_field_ref _NL
-current_review_none_stmt: "current" "none" _NL
+current_review_artifact_stmt: "current" "artifact" artifact_ref "via" output_field_ref law_when_clause? _NL
+current_review_none_stmt: "current" "none" law_when_clause? _NL
 carry_stmt: "carry" carried_field "=" expr _NL
 carried_field: "active_mode" -> carried_field_active_mode
              | "trigger_reason" -> carried_field_trigger_reason
