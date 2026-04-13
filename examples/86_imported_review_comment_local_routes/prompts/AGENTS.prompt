@@ -24,6 +24,21 @@ agent DraftAuthor:
         "Revise the same draft when review requests changes."
 
 
+output DraftReviewDecision: "Draft Review Decision"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+    trust_surface:
+        current_artifact
+
+    control_summary: "Control Summary"
+        "End with one short control summary for the routed owner."
+
+    standalone_read: "Standalone Read"
+        "The final control summary should stand on its own for the routed owner."
+
+
 review DraftReview: "Draft Review"
     subject: DraftSpec
     contract: DraftReviewContract
@@ -57,3 +72,14 @@ agent ImportedDraftReviewDemo:
         DraftSpec
     outputs: "Outputs"
         shared.review.DraftReviewComment
+
+
+agent ImportedDraftReviewSplitDemo:
+    role: "Use an imported review comment output and a local control-only final output."
+    review: DraftReview
+    inputs: "Inputs"
+        DraftSpec
+    outputs: "Outputs"
+        shared.review.DraftReviewComment
+        DraftReviewDecision
+    final_output: DraftReviewDecision

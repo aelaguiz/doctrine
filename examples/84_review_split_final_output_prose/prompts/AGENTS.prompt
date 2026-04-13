@@ -61,6 +61,9 @@ output DraftReviewDecision: "Draft Review Decision"
     shape: CommentText
     requirement: Required
 
+    trust_surface:
+        current_artifact
+
     control_summary: "Control Summary"
         "End with one short control summary for the routed owner."
 

@@ -2972,6 +2972,7 @@ class CompilationContext:
             self._compile_trust_surface_section(
                 output_decl,
                 unit=unit,
+                review_semantics=review_semantics,
                 render_profile=render_profile,
             )
             if output_decl.trust_surface
@@ -5593,6 +5594,7 @@ class CompilationContext:
             self._compile_trust_surface_section(
                 decl,
                 unit=unit,
+                review_semantics=review_semantics,
                 render_profile=render_profile,
             )
             if decl.trust_surface
@@ -9392,6 +9394,7 @@ class CompilationContext:
         decl: model.OutputDecl,
         *,
         unit: IndexedUnit,
+        review_semantics: ReviewSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledSection:
         lines: list[CompiledBodyItem] = []
@@ -9402,6 +9405,7 @@ class CompilationContext:
                 unit=unit,
                 owner_label=f"output {decl.name}",
                 surface_label="trust_surface",
+                review_semantics=review_semantics,
             )
             label = self._display_addressable_target_value(
                 field_node,
@@ -16741,19 +16745,46 @@ class CompilationContext:
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
     ) -> AddressableNode:
-        current_node = AddressableNode(unit=unit, root_decl=decl, target=decl)
-        if not path:
+        def resolve_from_root(
+            root_decl: model.OutputDecl,
+            *,
+            root_unit: IndexedUnit,
+            field_path: tuple[str, ...],
+        ) -> AddressableNode | None:
+            current_node = AddressableNode(unit=root_unit, root_decl=root_decl, target=root_decl)
+            if not field_path:
+                return current_node
+            for segment in field_path:
+                children = self._get_addressable_children(current_node)
+                if children is None or segment not in children:
+                    return None
+                current_node = children[segment]
             return current_node
-        for segment in path:
-            children = self._get_addressable_children(current_node)
-            if children is None or segment not in children:
-                raise CompileError(
-                    f"Unknown output field on {surface_label} in {owner_label}: "
-                    f"{decl.name}.{'.'.join(path)}"
+
+        current_node = resolve_from_root(decl, root_unit=unit, field_path=path)
+        if current_node is not None:
+            return current_node
+
+        if review_semantics is not None and path:
+            semantic_field_path = self._review_semantic_field_path(review_semantics, path[0])
+            if semantic_field_path is not None:
+                semantic_unit, semantic_output_decl = self._resolve_review_semantic_output_decl(
+                    review_semantics
                 )
-            current_node = children[segment]
-        return current_node
+                semantic_node = resolve_from_root(
+                    semantic_output_decl,
+                    root_unit=semantic_unit,
+                    field_path=(*semantic_field_path, *path[1:]),
+                )
+                if semantic_node is not None:
+                    return semantic_node
+
+        raise CompileError(
+            f"Unknown output field on {surface_label} in {owner_label}: "
+            f"{decl.name}.{'.'.join(path)}"
+        )
 
     def _law_paths_match(
         self,

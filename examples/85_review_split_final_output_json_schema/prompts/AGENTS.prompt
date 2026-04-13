@@ -82,6 +82,9 @@ output AcceptanceControlFinalResponse: "Acceptance Control Final Response"
     shape: AcceptanceControlJson
     requirement: Required
 
+    trust_surface:
+        current_artifact
+
     changes_requested_note: "Changes Requested Note" when verdict == ReviewVerdict.changes_requested:
         "Only emit this retry control when the review requests changes."
 

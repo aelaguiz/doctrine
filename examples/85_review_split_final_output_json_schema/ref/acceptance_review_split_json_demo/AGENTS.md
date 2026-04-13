@@ -129,6 +129,10 @@ Rendered only when verdict is changes requested.
 
 Only emit this retry control when the review requests changes.
 
+#### Trust Surface
+
+- Current Artifact
+
 #### Read It Cold
 
 This final JSON should be enough for the next owner to route the review result.

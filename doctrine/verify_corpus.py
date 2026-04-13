@@ -279,7 +279,7 @@ def _resolve_manifest_paths(manifest_args: list[str] | None) -> tuple[Path, ...]
 
     missing = [path for path in resolved if not path.is_file()]
     if missing:
-        formatted = ", ".join(str(path.relative_to(REPO_ROOT)) for path in missing)
+        formatted = ", ".join(_display_path(path) for path in missing)
         raise ManifestError(f"Missing manifest file(s): {formatted}")
 
     return resolved

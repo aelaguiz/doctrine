@@ -708,6 +708,9 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("List exact failing gates, including Outline Complete when it fails.", rendered)
 
     def test_review_driven_final_output_can_split_from_comment_output(self) -> None:
+        # Split review final outputs still need the same readable current-artifact
+        # trust surface as the review comment, even though that field is bound by
+        # review semantics rather than declared directly on the split output.
         agent = self._compile_agent(
             """
             input DraftSpec: "Draft Spec"
@@ -767,6 +770,9 @@ class FinalOutputTests(unittest.TestCase):
                 target: TurnResponse
                 shape: CommentText
                 requirement: Required
+
+                trust_surface:
+                    current_artifact
 
                 control_summary: "Control Summary"
                     "End with one short control summary for the routed owner."
@@ -829,9 +835,14 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Retry Note", final_output_block)
         self.assertIn("Rendered only when verdict is changes requested.", final_output_block)
         self.assertIn("Keep the control summary aligned with Current Artifact.", final_output_block)
+        self.assertIn("#### Trust Surface", final_output_block)
+        self.assertIn("- Current Artifact", final_output_block)
         self.assertIn("#### Read It Cold", final_output_block)
 
     def test_review_driven_schema_backed_final_output_can_split_from_comment_output(self) -> None:
+        # Schema-backed control outputs should keep the review's current-artifact
+        # trust surface visible on the final JSON contract instead of rejecting it
+        # just because the bound field lives on the review comment output.
         agent = self._compile_agent(
             """
             json schema AcceptanceControlSchema: "Acceptance Control Schema"
@@ -909,6 +920,9 @@ class FinalOutputTests(unittest.TestCase):
                 target: TurnResponse
                 shape: AcceptanceControlJson
                 requirement: Required
+
+                trust_surface:
+                    current_artifact
 
                 changes_requested_note: "Changes Requested Note" when verdict == ReviewVerdict.changes_requested:
                     "Only emit this retry control when the review requests changes."
@@ -1003,6 +1017,8 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("Use `route` value `revise` only when Outline Complete fails.", final_output_block)
         self.assertIn("#### Changes Requested Note", final_output_block)
         self.assertIn("Rendered only when verdict is changes requested.", final_output_block)
+        self.assertIn("#### Trust Surface", final_output_block)
+        self.assertIn("- Current Artifact", final_output_block)
 
     def test_final_output_requires_output_declaration(self) -> None:
         error = self._compile_error(

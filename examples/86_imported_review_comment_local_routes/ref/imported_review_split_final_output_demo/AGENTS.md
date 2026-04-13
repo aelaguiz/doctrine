@@ -1,4 +1,4 @@
-Emit the rich review comment and a small final control summary.
+Use an imported review comment output and a local control-only final output.
 
 ## Draft Review
 
@@ -95,16 +95,6 @@ A downstream owner should be able to read this review alone and understand the v
 #### Control Summary
 
 End with one short control summary for the routed owner.
-
-#### Retry Note
-
-Rendered only when verdict is changes requested.
-
-Only include this note when the review requests changes.
-
-#### Current Artifact Alignment
-
-Keep the control summary aligned with Current Artifact.
 
 #### Trust Surface
 
