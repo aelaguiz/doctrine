@@ -246,7 +246,7 @@ output CopyPassOutput: "Copy Pass Output"
             "COPY_GROUNDING.md should record what validation ran after the copy pass."
 
     standalone_read: "Standalone Read"
-        "A downstream reader should be able to read COPY_GROUNDING.md and lesson_manifest.json and understand what changed and what was validated."
+        "COPY_GROUNDING.md and lesson_manifest.json should stand on their own and say what changed and what was checked."
 
 
 skill ReleaseFollowthroughSkill: "release-followthrough"

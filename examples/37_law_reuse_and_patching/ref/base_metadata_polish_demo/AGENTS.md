@@ -57,4 +57,4 @@ Name any comparison-only artifacts used in this pass.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now and what was comparison-only.
+This output should stand on its own. The next owner should know what is current now and what was comparison-only.

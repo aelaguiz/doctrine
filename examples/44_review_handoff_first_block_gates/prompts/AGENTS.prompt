@@ -43,7 +43,7 @@ output HandoffReviewComment: "Handoff Review Comment"
 
     # This field states the compiler-owned verdict.
     verdict: "Verdict"
-        "Say whether the review accepted the handoff or requested changes."
+        "Say whether the review accepted the handoff or asked for changes."
 
     # This field names the artifact the review actually judged.
     reviewed_artifact: "Reviewed Artifact"
@@ -67,12 +67,12 @@ output HandoffReviewComment: "Handoff Review Comment"
             "Name the first blocking gate when the review stopped before content review started."
 
         failing_gates: "Failing Gates"
-            "Name every failing review gate in authored order, including the blocked gate when review stopped before content review started."
+            "List each failed review gate in authored order. Include the blocked gate when review stopped before content review began."
 
     # This block says what a downstream owner should understand from the
     # review comment alone.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand that handoff quality is checked first, that blocked review still produces changes requested, what artifact was actually reviewed, who owns next, and what the next repair step is."
+        "This comment should stand on its own. The next owner should know that handoff quality is checked first, that a blocked review still asks for changes, what artifact was reviewed, who owns next, and what repair step comes next."
 
 
 # Declare the handoff-first review itself.
@@ -104,11 +104,11 @@ review HandoffFirstReview: "Handoff-First Review"
 
     on_accept: "If Accepted"
         current none
-        route "Accepted handoff returns to ReviewLead." -> ReviewLead
+        route "Accepted handoff goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current none
-        route "Blocked or rejected handoff returns to DraftAuthor." -> DraftAuthor
+        route "Blocked or rejected handoff goes to DraftAuthor." -> DraftAuthor
 
 
 # Declare the concrete reviewer agent.

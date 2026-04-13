@@ -26,13 +26,13 @@ output BrokenCapstoneReviewComment: "Broken Capstone Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the selected subject or requested changes."
+        "Say whether the review accepted the selected subject or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the exact artifact identity this review judged."
 
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict."
+        "Sum up the review work that led to the verdict."
 
     output_contents_that_matter: "Output Contents That Matter"
         "Summarize the exact contents the next owner must read first."
@@ -66,11 +66,11 @@ review BrokenCapstoneReview: "Broken Capstone Review"
 
     on_accept: "If Accepted"
         current none
-        route "Accepted draft rewrite returns to DraftAuthor." -> DraftAuthor
+        route "Accepted draft rewrite goes to DraftAuthor." -> DraftAuthor
 
     on_reject: "If Rejected"
         current none
-        route "Rejected draft rewrite returns to DraftAuthor." -> DraftAuthor
+        route "Rejected draft rewrite goes to DraftAuthor." -> DraftAuthor
 
 
 agent InvalidGuardReadsOutputFieldDemo:

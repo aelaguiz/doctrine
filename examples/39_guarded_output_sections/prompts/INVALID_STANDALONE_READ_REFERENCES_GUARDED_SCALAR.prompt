@@ -1,0 +1,24 @@
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    section_status: "Section Status"
+
+
+output BrokenGuardedScalarComment: "Broken Guarded Scalar Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    rewrite_note: "Rewrite applies." when RouteFacts.section_status in {"new", "full_rewrite"}
+
+    standalone_read: "Standalone Read"
+        "{{BrokenGuardedScalarComment:rewrite_note}}"
+
+
+agent InvalidStandaloneReadGuardedScalarDemo:
+    role: "Fail loud when standalone_read reaches guarded scalar detail."
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        BrokenGuardedScalarComment

@@ -681,7 +681,7 @@ class ValidateMixin:
             target=root,
         )
 
-    def _output_path_has_guarded_section(
+    def _output_path_has_guarded_detail(
         self,
         output_decl: model.OutputDecl,
         *,
@@ -1184,19 +1184,19 @@ class ValidateMixin:
         top_level_guards = {
             item.key: item
             for item in output_decl.items
-            if isinstance(item, model.GuardedOutputSection)
+            if isinstance(item, (model.GuardedOutputSection, model.GuardedOutputScalar))
         }
         for guard in guarded:
             output_guard = top_level_guards.get(guard.key)
             if output_guard is None:
                 raise CompileError(
-                    f"route_only guarded section is missing from {output_decl.name} in {owner_label}: "
+                    f"route_only guarded output item is missing from {output_decl.name} in {owner_label}: "
                     f"{guard.key}"
                 )
             expected_expr = self._prefix_route_only_expr(guard.expr, facts_ref)
             if output_guard.when_expr != expected_expr:
                 raise CompileError(
-                    f"route_only guarded section does not match output guard in {owner_label}: "
+                    f"route_only guarded output item does not match output guard in {owner_label}: "
                     f"{guard.key}"
                 )
 
@@ -2075,17 +2075,19 @@ class ValidateMixin:
         referenced_contract_gate_ids: set[str],
     ) -> None:
         for item in items:
-            if isinstance(item, model.GuardedOutputSection):
+            if isinstance(item, (model.GuardedOutputSection, model.GuardedOutputScalar)):
                 self._collect_review_gate_observation_from_expr(
                     item.when_expr,
                     flags=flags,
                     referenced_contract_gate_ids=referenced_contract_gate_ids,
                 )
-                self._collect_review_gate_observation_from_output_items(
-                    item.items,
-                    flags=flags,
-                    referenced_contract_gate_ids=referenced_contract_gate_ids,
-                )
+                nested_items = item.items if isinstance(item, model.GuardedOutputSection) else item.body
+                if nested_items is not None:
+                    self._collect_review_gate_observation_from_output_items(
+                        nested_items,
+                        flags=flags,
+                        referenced_contract_gate_ids=referenced_contract_gate_ids,
+                    )
                 continue
             if isinstance(item, model.RecordSection):
                 self._collect_review_gate_observation_from_output_items(
@@ -2658,7 +2660,15 @@ class ValidateMixin:
         for segment in path:
             matched_item: model.AnyRecordItem | None = None
             for item in current_items:
-                if isinstance(item, (model.RecordSection, model.GuardedOutputSection, model.RecordScalar)):
+                if isinstance(
+                    item,
+                    (
+                        model.RecordSection,
+                        model.GuardedOutputSection,
+                        model.GuardedOutputScalar,
+                        model.RecordScalar,
+                    ),
+                ):
                     if item.key == segment:
                         matched_item = item
                         break
@@ -2667,6 +2677,10 @@ class ValidateMixin:
             if isinstance(matched_item, model.GuardedOutputSection):
                 guards.append(matched_item.when_expr)
                 current_items = matched_item.items
+                continue
+            if isinstance(matched_item, model.GuardedOutputScalar):
+                guards.append(matched_item.when_expr)
+                current_items = matched_item.body or ()
                 continue
             if isinstance(matched_item, model.RecordSection):
                 current_items = matched_item.items
@@ -3201,7 +3215,12 @@ class ValidateMixin:
         target = field_node.target
         if not isinstance(
             target,
-            (model.RecordScalar, model.RecordSection, model.GuardedOutputSection),
+            (
+                model.RecordScalar,
+                model.RecordSection,
+                model.GuardedOutputSection,
+                model.GuardedOutputScalar,
+            ),
         ):
             raise CompileError(
                 f"Review next_owner binding must point at an output field in {owner_label}: "
@@ -3328,7 +3347,7 @@ class ValidateMixin:
         route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         for item in items:
-            if isinstance(item, model.GuardedOutputSection):
+            if isinstance(item, (model.GuardedOutputSection, model.GuardedOutputScalar)):
                 guarded_route_semantics = self._narrow_route_semantics(
                     route_semantics,
                     item.when_expr,
@@ -3344,16 +3363,18 @@ class ValidateMixin:
                     review_semantics=review_semantics,
                     route_semantics=route_semantics,
                 )
-                self._validate_output_record_items(
-                    item.items,
-                    decl=decl,
-                    unit=unit,
-                    owner_label=f"{owner_label}.{item.key}",
-                    allow_review_semantics=allow_review_semantics,
-                    allow_route_semantics=allow_route_semantics,
-                    review_semantics=review_semantics,
-                    route_semantics=guarded_route_semantics,
-                )
+                nested_items = item.items if isinstance(item, model.GuardedOutputSection) else item.body
+                if nested_items is not None:
+                    self._validate_output_record_items(
+                        nested_items,
+                        decl=decl,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        allow_review_semantics=allow_review_semantics,
+                        allow_route_semantics=allow_route_semantics,
+                        review_semantics=review_semantics,
+                        route_semantics=guarded_route_semantics,
+                    )
                 continue
             if isinstance(item, model.RecordSection):
                 self._validate_output_record_items(
@@ -3534,7 +3555,7 @@ class ValidateMixin:
                 continue
             owner_label = f"output {decl.name}.{'.'.join(path)}"
             for ref in self._iter_record_item_interpolation_refs(item):
-                if self._interpolation_ref_enters_guarded_output_section(
+                if self._interpolation_ref_enters_guarded_output_detail(
                     ref,
                     unit=unit,
                     owner_label=owner_label,
@@ -3564,6 +3585,12 @@ class ValidateMixin:
                 entries.append((path, item))
                 entries.extend(self._iter_output_items_with_paths(item.items, prefix=path))
                 continue
+            if isinstance(item, model.GuardedOutputScalar):
+                path = (*prefix, item.key)
+                entries.append((path, item))
+                if item.body is not None:
+                    entries.extend(self._iter_output_items_with_paths(item.body, prefix=path))
+                continue
             if isinstance(item, model.RecordScalar):
                 path = (*prefix, item.key)
                 entries.append((path, item))
@@ -3578,6 +3605,11 @@ class ValidateMixin:
         self,
         item: model.AnyRecordItem,
     ) -> tuple[model.AddressableRef, ...]:
+        if isinstance(item, model.GuardedOutputScalar):
+            refs = self._interpolation_refs_from_scalar_value(item.value)
+            if item.body is not None:
+                refs = (*refs, *self._iter_record_body_interpolation_refs(item.body))
+            return refs
         if isinstance(item, model.RecordScalar):
             refs = self._interpolation_refs_from_scalar_value(item.value)
             if item.body is not None:
@@ -3646,7 +3678,7 @@ class ValidateMixin:
             path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
         )
 
-    def _interpolation_ref_enters_guarded_output_section(
+    def _interpolation_ref_enters_guarded_output_detail(
         self,
         ref: model.AddressableRef,
         *,
@@ -3666,7 +3698,7 @@ class ValidateMixin:
             if field_path is None:
                 return False
             _output_unit, output_decl = self._resolve_review_semantic_output_decl(review_semantics)
-            return self._output_path_has_guarded_section(
+            return self._output_path_has_guarded_detail(
                 output_decl,
                 path=(*field_path, *semantic_parts[2:]),
             )
@@ -3693,7 +3725,7 @@ class ValidateMixin:
             current = children.get(segment)
             if current is None:
                 return False
-            if isinstance(current.target, model.GuardedOutputSection):
+            if isinstance(current.target, (model.GuardedOutputSection, model.GuardedOutputScalar)):
                 return True
         return False
 
@@ -4337,6 +4369,14 @@ class ValidateMixin:
                 unit=node.unit,
                 root_decl=node.root_decl,
             )
+        if isinstance(target, model.GuardedOutputScalar):
+            if target.body is None:
+                return None
+            return self._record_items_to_addressable_children(
+                target.body,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
         if isinstance(target, model.WorkflowDecl):
             workflow_body = self._resolve_workflow_for_addressable_paths(
                 target,
@@ -4463,6 +4503,7 @@ class ValidateMixin:
                     model.RecordScalar,
                     model.RecordSection,
                     model.GuardedOutputSection,
+                    model.GuardedOutputScalar,
                     model.ReadableBlock,
                 ),
             ):
@@ -4911,6 +4952,17 @@ class ValidateMixin:
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, (model.RecordSection, model.GuardedOutputSection)):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.GuardedOutputScalar):
+            if target.body is not None:
+                return DisplayValue(text=_humanize_key(target.key), kind="title")
+            return self._display_scalar_value(
+                target.value,
+                unit=node.unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
+            )
         if isinstance(target, model.RecordScalar):
             if target.body is not None:
                 return DisplayValue(
@@ -5313,7 +5365,7 @@ class ValidateMixin:
         route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
         if (
-            isinstance(item, model.RecordScalar)
+            isinstance(item, (model.RecordScalar, model.GuardedOutputScalar))
             and isinstance(item.value, model.NameRef)
             and self._name_ref_matches_agent(
                 item.value,
@@ -5326,7 +5378,7 @@ class ValidateMixin:
         ):
             return True
         if (
-            isinstance(item, model.RecordScalar)
+            isinstance(item, (model.RecordScalar, model.GuardedOutputScalar))
             and isinstance(item.value, model.NameRef)
             and self._addressable_ref_matches_agent(
                 model.AddressableRef(root=item.value, path=()),

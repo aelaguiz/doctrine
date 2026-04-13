@@ -17,13 +17,13 @@ Accept only if The shared draft review contract passes.
 
 There is no current artifact for this outcome.
 
-Accepted draft returns to ReviewLead.
+Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
 There is no current artifact for this outcome.
 
-Rejected draft returns to DraftAuthor.
+Rejected draft goes to DraftAuthor.
 
 ## Inputs
 
@@ -34,7 +34,7 @@ Rejected draft returns to DraftAuthor.
 - Shape: Markdown Document
 - Requirement: Required
 
-Use the current draft specification as the reviewed artifact.
+Use the current draft spec as the reviewed artifact.
 
 ## Outputs
 
@@ -46,7 +46,7 @@ Use the current draft specification as the reviewed artifact.
 
 #### Verdict
 
-Say whether the review accepted the draft or requested changes.
+Say whether the review accepted the draft or asked for changes.
 
 #### Reviewed Artifact
 
@@ -54,7 +54,7 @@ Name the reviewed artifact this review judged.
 
 #### Analysis Performed
 
-Summarize the review analysis that led to the verdict.
+Sum up the review work that led to the verdict.
 
 #### Output Contents That Matter
 
@@ -62,7 +62,7 @@ Summarize the parts of the draft the next owner must read first.
 
 #### Next Owner
 
-Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.
+Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
 
 #### Failure Detail
 
@@ -74,4 +74,4 @@ Name the failing review gates in authored order.
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.
+This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.

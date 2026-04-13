@@ -145,7 +145,7 @@ Output bodies can include:
 - authored fields and sections
 - readable declaration refs
 - readable block kinds such as `definitions`, `table`, `callout`, and `code`
-- guarded sections
+- guarded output items
 - `standalone_read`
 - `trust_surface`
 
@@ -194,9 +194,15 @@ Carrier rules:
   target-scoped workflow-flow emission are separate build layers configured
   outside the prompt language; they are not `output target` declarations
 
-## Guarded Output Sections
+## Guarded Output Items
 
-Guarded sections keep conditional readback on the output contract itself:
+Guarded output items keep conditional readback on the output contract itself:
+
+```prompt
+next_owner: route.next_owner when route.exists
+```
+
+Guarded sections still work too:
 
 ```prompt
 failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
@@ -206,9 +212,9 @@ failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested
 
 Important rules:
 
-- Guarded sections are still output-owned fields.
-- They can be keyed, nested, addressed, and interpolated like other output
-  structure.
+- Guarded output items are still output-owned fields.
+- Guarded scalar items and guarded sections may be keyed, nested, addressed,
+  and interpolated like other output structure.
 - On ordinary outputs, guards may read declared inputs, enum members, and
   `route.exists` when the active turn resolves route semantics.
 - On review-bound outputs, guards may also read resolved review semantic names
@@ -216,7 +222,7 @@ Important rules:
 - Route-specific readback should be guarded with `when route.exists:` when some
   active branches may not route. Unguarded `route.*` reads fail loudly instead
   of defaulting to fake local or terminal route values.
-- A guarded output section does not become portable truth unless it is also
+- A guarded output item does not become portable truth unless it is also
   listed in `trust_surface`.
 
 ## Bindings And Bound Roots
@@ -288,7 +294,7 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `18`: richer I/O record structure
 - `23` through `25`: first-class `inputs` and `outputs` blocks plus inheritance
 - `31`: currentness plus `trust_surface`
-- `39`: guarded output sections in isolation
+- `39`: guarded output items in isolation
 - `46`: review current truth on trusted output carriers
 - `47` and `49`: carried review state on output fields
 - `50` through `53`: bound roots for workflow law and review carriers

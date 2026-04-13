@@ -63,7 +63,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know what is current now and what is no longer current.",
+  "This output should stand on its own. The next owner should know what is current now and what is no longer current.",
 ]
 
 [[cases]]
@@ -114,7 +114,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know what is no longer current.",
+  "This output should stand on its own. The next owner should know what is no longer current.",
 ]
 
 [[cases]]
@@ -168,7 +168,7 @@ expected_lines = [
   "",
   "#### Standalone Read",
   "",
-  "A downstream owner must be able to read this output alone and know what is current now.",
+  "This output should stand on its own. The next owner should know what is current now.",
 ]
 
 [[cases]]

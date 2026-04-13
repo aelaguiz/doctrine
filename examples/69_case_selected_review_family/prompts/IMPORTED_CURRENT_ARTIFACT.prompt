@@ -28,10 +28,10 @@ review_family ImportedSelectedReviewFamily: "Selected Review"
                 accept "The draft review contract passes." when contract.passes
             on_accept:
                 current artifact shared_review_refs.DraftSpec via shared_review_refs.SelectedReviewComment.current_artifact
-                route "Accepted draft rewrite returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+                route "Accepted draft rewrite goes to RevisionOwner." -> shared_review_refs.RevisionOwner
             on_reject:
                 current artifact shared_review_refs.DraftSpec via shared_review_refs.SelectedReviewComment.current_artifact
-                route "Rejected draft rewrite returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+                route "Rejected draft rewrite goes to RevisionOwner." -> shared_review_refs.RevisionOwner
 
         metadata_path: "Metadata Path"
             when shared_review_refs.ReviewMode.metadata_refresh
@@ -41,10 +41,10 @@ review_family ImportedSelectedReviewFamily: "Selected Review"
                 accept "The metadata review contract passes." when contract.passes
             on_accept:
                 current artifact shared_review_refs.MetadataRecord via shared_review_refs.SelectedReviewComment.current_artifact
-                route "Accepted metadata refresh returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+                route "Accepted metadata refresh goes to RevisionOwner." -> shared_review_refs.RevisionOwner
             on_reject:
                 current artifact shared_review_refs.MetadataRecord via shared_review_refs.SelectedReviewComment.current_artifact
-                route "Rejected metadata refresh returns to RevisionOwner." -> shared_review_refs.RevisionOwner
+                route "Rejected metadata refresh goes to RevisionOwner." -> shared_review_refs.RevisionOwner
 
 
 agent ImportedSelectedReviewFamilyDemo:

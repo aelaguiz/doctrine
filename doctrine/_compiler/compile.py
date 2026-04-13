@@ -2362,6 +2362,39 @@ class CompileMixin:
                 body.extend(compiled_items)
             return (CompiledSection(title=item.title, body=tuple(body)),)
 
+        if isinstance(item, model.GuardedOutputScalar):
+            guarded_route_semantics = self._narrow_route_semantics(
+                route_semantics,
+                item.when_expr,
+                unit=unit,
+            )
+            label = _humanize_key(item.key)
+            condition = self._render_condition_expr(item.when_expr, unit=unit)
+            value = self._format_scalar_value(
+                item.value,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+                review_semantics=review_semantics,
+                route_semantics=guarded_route_semantics,
+                render_profile=render_profile,
+            )
+            body: list[CompiledBodyItem] = [f"Rendered only when {condition}.", "", value]
+            if item.body is not None:
+                compiled_items = self._compile_record_support_items(
+                    item.body,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=guarded_route_semantics,
+                    render_profile=render_profile,
+                )
+                if compiled_items:
+                    body.append("")
+                    body.extend(compiled_items)
+            return (CompiledSection(title=label, body=tuple(body)),)
+
         if isinstance(item, model.RecordScalar):
             return self._compile_fallback_scalar(
                 item,

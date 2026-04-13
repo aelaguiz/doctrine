@@ -1598,7 +1598,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         ),
         (
             "Read only declared inputs and enum members in output guards.",
-            "Do not read workflow-local bindings or emitted output fields inside guarded output sections.",
+            "Do not read workflow-local bindings or emitted output fields inside guarded output items.",
         ),
     ),
     (
@@ -1628,7 +1628,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         ),
         (
             "Keep `standalone_read` at branch-level readback only.",
-            "Do not interpolate guarded section titles or guarded fields inside `standalone_read`.",
+            "Do not interpolate guarded item detail inside `standalone_read`.",
         ),
     ),
     (

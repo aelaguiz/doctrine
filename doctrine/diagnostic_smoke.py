@@ -579,7 +579,7 @@ def _check_review_multiple_currentness_has_specific_code() -> None:
         on_accept_body="""
         current none
         current none
-        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+        route "Accepted draft goes to AcceptOwner." -> AcceptOwner
 """,
     )
     with TemporaryDirectory() as tmp_dir:
@@ -600,7 +600,7 @@ def _check_review_outcome_not_total_has_specific_code() -> None:
         on_accept_body="""
         when DraftSpec.needs_follow_up:
             current none
-            route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+            route "Accepted draft goes to AcceptOwner." -> AcceptOwner
 """,
     )
     with TemporaryDirectory() as tmp_dir:
@@ -620,7 +620,7 @@ def _check_review_next_owner_alignment_has_specific_code() -> None:
     source = _review_smoke_source(
         on_accept_body="""
         current none
-        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+        route "Accepted draft goes to AcceptOwner." -> AcceptOwner
 """,
         next_owner_text='"Name the next owner without naming the routed owner."',
     )
@@ -641,7 +641,7 @@ def _check_review_failure_detail_guard_has_specific_code() -> None:
     source = _review_smoke_source(
         on_accept_body="""
         current none
-        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+        route "Accepted draft goes to AcceptOwner." -> AcceptOwner
 """,
         failure_detail_guard="verdict == ReviewVerdict.accept",
     )
@@ -662,7 +662,7 @@ def _check_review_semantic_addressability_renders() -> None:
     source = _review_smoke_source(
         on_accept_body="""
         current none
-        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+        route "Accepted draft goes to AcceptOwner." -> AcceptOwner
 """,
     )
     with TemporaryDirectory() as tmp_dir:
@@ -672,7 +672,7 @@ def _check_review_semantic_addressability_renders() -> None:
         _expect("{{fields." not in rendered, rendered)
         _expect("{{contract." not in rendered, rendered)
         _expect("Use Completeness before you route Next Owner." in rendered, rendered)
-        _expect("compare Reviewed Artifact against Completeness." in rendered, rendered)
+        _expect("compare Reviewed Artifact with Completeness." in rendered, rendered)
 
 
 def _check_route_output_read_requires_guard() -> None:
@@ -743,7 +743,7 @@ output RouteOnlyHandoffOutput: "Routing Handoff Comment"
             "{{route.summary}}"
 
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue safely."
+    role: "Handle reroutes when specialist work cannot continue safely."
     workflow: "Instructions"
         "Take back the same issue when the next specialist owner is still not justified."
 
@@ -754,7 +754,7 @@ workflow RouteOnlyTurns: "Routing-Only Turns"
         active when true
         current none
         stop "No specialist artifact is current for this turn."
-        route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown
+        route "Keep the issue on RoutingOwner until the next specialist owner is clear." -> RoutingOwner when RouteFacts.next_owner_unknown
 
 agent RouteOnlyRouteBindingDemo:
     role: "Read route truth from a route-only comment output."
@@ -772,7 +772,7 @@ agent RouteOnlyRouteBindingDemo:
         _expect("Rendered only when a routed owner exists." in rendered, rendered)
         _expect("- Next Owner: Routing Owner" in rendered, rendered)
         _expect(
-            "Keep the issue on RoutingOwner until the next specialist owner is actually justified. Next owner: Routing Owner."
+            "Keep the issue on RoutingOwner until the next specialist owner is clear. Next owner: Routing Owner."
             in rendered,
             rendered,
         )
@@ -1260,13 +1260,13 @@ output DraftReviewComment: "Draft Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the draft or requested changes."
+        "Say whether the review accepted the draft or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the reviewed artifact this review judged."
 
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict and compare {{{{fields.reviewed_artifact}}}} against {{{{contract.completeness}}}}."
+        "Sum up the review work that led to the verdict and compare {{{{fields.reviewed_artifact}}}} with {{{{contract.completeness}}}}."
 
     output_contents_that_matter: "Output Contents That Matter"
         "Summarize the parts of the draft the next owner must read first."
@@ -1300,7 +1300,7 @@ review DraftReview: "Draft Review"
 
     on_reject:
         current none
-        route "Rejected draft returns to RejectOwner." -> RejectOwner
+        route "Rejected draft goes to RejectOwner." -> RejectOwner
 
 agent ReviewDemo:
     role: "Keep review routing aligned."
@@ -1492,11 +1492,11 @@ review DraftReview: "Draft Review"
 
     on_accept:
         current none
-        route "Accepted draft returns to AcceptOwner." -> AcceptOwner
+        route "Accepted draft goes to AcceptOwner." -> AcceptOwner
 
     on_reject:
         current none
-        route "Rejected draft returns to RejectOwner." -> RejectOwner
+        route "Rejected draft goes to RejectOwner." -> RejectOwner
 
 agent AcceptOwner:
     role: "Own accepted drafts."
@@ -1568,7 +1568,7 @@ input ReviewFacts: "Review Facts"
         '    inputs: "Inputs"\n        DraftSpec\n        ReviewFacts\n',
     )
     source = source.replace(
-        '            "Name the exact exported shared-contract gate identities in authored order, including {{contract.completeness}}, {{contract.clarity}}, and {{contract.handoff_truth}} when they fail."',
+        '            "List the exact shared-contract gate names in authored order, including {{contract.completeness}}, {{contract.clarity}}, and {{contract.handoff_truth}} when they fail."',
         f'            "Name the exact exported shared-contract gate identities in authored order, including {gate_refs} when they fail."',
     )
     source = re.sub(
@@ -1825,7 +1825,7 @@ output DraftReviewComment: "Draft Review Comment"
         current_artifact
 
     standalone_read: "Standalone Read"
-        "A downstream owner should understand the review verdict, current artifact, and next owner from this output alone."
+        "From this output alone, a downstream owner should know the review verdict, current artifact, and next owner."
 
 review DraftReview: "Draft Review"
     subject: DraftSpec
@@ -1846,11 +1846,11 @@ review DraftReview: "Draft Review"
 
     on_accept: "If Accepted"
         current artifact DraftSpec via DraftReviewComment.current_artifact
-        route "Accepted draft returns to ReviewLead." -> ReviewLead
+        route "Accepted draft goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current artifact DraftSpec via DraftReviewComment.current_artifact
-        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+        route "Rejected draft goes to DraftAuthor." -> DraftAuthor
 
 agent ReviewFinalOutputAgent:
     role: "Keep review final outputs aligned."
@@ -1965,7 +1965,7 @@ output AcceptanceReviewComment: "Acceptance Review Comment"
         current_artifact
 
     standalone_read: "Standalone Read"
-        "A downstream owner should understand the acceptance verdict, current artifact, and next owner from this output alone."
+        "From this output alone, a downstream owner should know the acceptance verdict, current artifact, and next owner."
 
 output AcceptanceControlFinalResponse: "Acceptance Control Final Response"
     target: TurnResponse
@@ -1997,11 +1997,11 @@ review AcceptanceReview: "Acceptance Review"
 
     on_accept: "If Accepted"
         current artifact DraftPlan via AcceptanceReviewComment.current_artifact
-        route "Accepted plan returns to ReviewLead." -> ReviewLead
+        route "Accepted plan goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current artifact DraftPlan via AcceptanceReviewComment.current_artifact
-        route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+        route "Rejected plan goes to PlanAuthor." -> PlanAuthor
 
 agent ReviewSplitJsonFinalOutputAgent:
     role: "Emit the review comment and end with a control-only JSON result."

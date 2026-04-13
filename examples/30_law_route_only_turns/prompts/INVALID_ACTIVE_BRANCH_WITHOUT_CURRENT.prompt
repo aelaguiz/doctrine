@@ -10,7 +10,7 @@ input CurrentHandoff: "Current Handoff"
 
 # The declarations below are just enough setup to isolate the one broken rule this file is testing.
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue."
+    role: "Handle reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when route-only work cannot continue safely."
 

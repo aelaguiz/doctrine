@@ -1,19 +1,19 @@
-# This file shows the guarded output-section surface in isolation.
+# This file shows the guarded output-item surface in isolation.
 # The point is to keep conditional readback on `output`, not to smuggle it into
 # workflow law or a second control plane.
 
-# Declare the host facts that guarded output sections are allowed to read.
+# Declare the host facts that guarded output items are allowed to read.
 input RouteFacts: "Route Facts"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn."
+    "Use the host route facts. They say whether the current section is new or a full rewrite, whether the same critic miss happened again, and which status facts drove the turn."
 
 
-# Declare a reusable workflow that reads guarded sections directly from the same
+# Declare a reusable workflow that reads guarded output items directly from the same
 # output contract the agent emits.
 workflow ReadGuardedSections: "Read First"
-    "Read the guarded sections directly from the emitted output contract."
+    "Read the guarded output items directly from the emitted output contract."
 
     read_now: "Read Now"
         GuardedReadbackComment:rewrite_mode
@@ -21,10 +21,10 @@ workflow ReadGuardedSections: "Read First"
         "Read {{GuardedReadbackComment:rewrite_mode.title}} and {{GuardedReadbackComment:repeated_problem.title}} when the conditional readback matters for this turn."
 
 
-# Declare a reusable workflow that reads nested guarded sections directly from
+# Declare a reusable workflow that reads nested guarded output items directly from
 # the same output contract the agent emits.
 workflow ReadNestedGuardedSections: "Read First"
-    "Read the nested guarded sections directly from the emitted output contract."
+    "Read the nested guarded output items directly from the emitted output contract."
 
     read_now: "Read Now"
         NestedGuardedReadbackComment:detail_panel.status_summary
@@ -50,7 +50,7 @@ output GuardedReadbackComment: "Guarded Readback Comment"
     # This block says what a downstream owner should understand from the output
     # contract alone.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and know which conditional readback blocks might appear."
+        "This comment should stand on its own. The next owner should know which conditional readback blocks might appear."
 
 
 # Declare an output that nests one guarded section under an ordinary titled
@@ -75,7 +75,19 @@ output NestedGuardedReadbackComment: "Nested Guarded Readback Comment"
     # This block says what a downstream owner should understand from the output
     # contract alone.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and know which nested conditional details might appear."
+        "This comment should stand on its own. The next owner should know which nested conditional details might appear."
+
+
+# Declare an output that keeps one guarded scalar item on the output contract.
+output GuardedScalarReadbackComment: "Guarded Scalar Readback Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    rewrite_note: "Rewrite applies." when RouteFacts.section_status in {"new", "full_rewrite"}
+
+    standalone_read: "Standalone Read"
+        "This comment should stand on its own. The next owner should know when guarded fields may appear."
 
 
 # Declare a concrete agent that proves guarded-section addressability without
@@ -98,3 +110,12 @@ agent NestedGuardedOutputSectionsDemo:
         RouteFacts
     outputs: "Outputs"
         NestedGuardedReadbackComment
+
+
+# Declare a concrete agent that proves guarded scalar items stay on `output`.
+agent GuardedOutputItemsDemo:
+    role: "Keep guarded output items explicit."
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        GuardedScalarReadbackComment

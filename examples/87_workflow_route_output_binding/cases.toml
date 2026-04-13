@@ -52,3 +52,49 @@ message_contains = [
   "MaybeRoutedComment.next_owner",
   "guard the read with `route.exists`",
 ]
+
+[[cases]]
+name = "guarded scalar route reads can bind next_owner on maybe-routed workflows"
+status = "active"
+kind = "render_contract"
+agent = "GuardedWorkflowRouteBindingDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Guard route-specific fields with route.exists.",
+  "",
+  "## Maybe Routed Workflow",
+  "",
+  "Route only when host route facts require it.",
+  "",
+  "This pass runs only when true.",
+  "",
+  "There is no current artifact for this turn.",
+  "",
+  "Stop: Reply and stop.",
+  "",
+  "When RouteFacts.should_route, hand off to ReviewLead.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "- Should Route: `Should Route`",
+  "",
+  "## Outputs",
+  "",
+  "### Guarded Workflow Route Binding Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Next Owner",
+  "",
+  "Rendered only when a routed owner exists.",
+  "",
+  "Review Lead",
+]

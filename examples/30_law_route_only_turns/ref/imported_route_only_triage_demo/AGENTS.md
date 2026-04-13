@@ -32,4 +32,4 @@ Use the host-provided handoff facts that say whether the current handoff is miss
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and understand that no current artifact was carried forward.
+This comment should stand on its own. The next owner should know that no current artifact was carried forward.
