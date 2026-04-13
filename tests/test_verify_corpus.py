@@ -6,6 +6,10 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
+from unittest.mock import patch
+
+from doctrine.diagnostics import DiagnosticLocation, EmitError
+from doctrine.verify_corpus import CaseSpec, VerificationError, _run_build_contract
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +54,33 @@ class VerifyCorpusCliTests(unittest.TestCase):
         self.assertIn("Manifest errors:", result.stdout)
         self.assertIn(f"- Missing manifest file(s): {missing_manifest}", result.stdout)
         self.assertIn("Case results:\n- None.", result.stdout)
+
+
+class VerifyCorpusBuildContractTests(unittest.TestCase):
+    def test_emit_target_loading_failure_becomes_a_verification_error(self) -> None:
+        case = CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/01_hello_world/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/01_hello_world").resolve(),
+            name="emit target loading surfaces cleanly",
+            kind="build_contract",
+            prompt_path=(REPO_ROOT / "examples/01_hello_world/prompts/AGENTS.prompt").resolve(),
+            build_target="missing-target",
+            approx_ref_path=None,
+        )
+        emit_error = EmitError.from_parts(
+            code="E503",
+            summary="Missing emit targets",
+            detail="The current `pyproject.toml` does not define any `[tool.doctrine.emit.targets]`.",
+            location=DiagnosticLocation(path=(REPO_ROOT / "pyproject.toml").resolve()),
+        )
+
+        # Manifest-backed proof runs should report emit-target loading problems as
+        # ordinary verification failures instead of crashing the verifier itself.
+        with patch("doctrine.verify_corpus.load_emit_targets", side_effect=emit_error):
+            with self.assertRaises(VerificationError) as ctx:
+                _run_build_contract(case)
+
+        self.assertIn("Missing emit targets", str(ctx.exception))
 
 
 if __name__ == "__main__":

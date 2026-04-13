@@ -2,6 +2,7 @@
 .DS_Store
 .venv/
 .codex/
+/_audit_ledger.md
 __pycache__/
 *.egg-info/
 *.swp

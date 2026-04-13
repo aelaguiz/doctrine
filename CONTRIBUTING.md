@@ -10,8 +10,13 @@ and verified examples aligned.
 
 ```bash
 uv sync
+npm ci
+make tests
 make verify-examples
 ```
+
+`make setup` wraps the `uv sync` and `npm ci` bootstrap steps, and `make
+check` runs the Python unit tests plus the shipped verify targets.
 
 If you change diagnostics, also run:
 

@@ -57,11 +57,15 @@ class TransformParseFailure(ValueError):
         code: str = "E199",
         summary: str = "Parse failure",
         hints: tuple[str, ...] = (),
+        line: int | None = None,
+        column: int | None = None,
     ) -> None:
         super().__init__(detail)
         self.code = code
         self.summary = summary
         self.hints = hints
+        self.line = line
+        self.column = column
 
 
 def diagnostic_to_dict(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -> dict[str, Any]:
@@ -263,7 +267,10 @@ class ParseError(DoctrineError):
         path: Path | None,
         exc: VisitError,
     ) -> ParseError:
-        line, column = _extract_tree_position(exc.obj)
+        line = getattr(exc.orig_exc, "line", None)
+        column = getattr(exc.orig_exc, "column", None)
+        if line is None:
+            line, column = _extract_tree_position(exc.obj)
         location = DiagnosticLocation(path=path, line=line, column=column)
         excerpt, caret_column = _build_excerpt(source, line=line, column=column)
         detail = str(exc.orig_exc)

@@ -39,12 +39,68 @@ class InputBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class InputStructurePart:
+    config: model.InputStructureConfig
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class OutputBodyParts:
     items: tuple[model.OutputRecordItem, ...]
     schema: model.OutputSchemaConfig | None
     structure: model.OutputStructureConfig | None
     render_profile_ref: model.NameRef | None
     trust_surface: tuple[model.TrustSurfaceItem, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class OutputSchemaPart:
+    config: model.OutputSchemaConfig
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class OutputStructurePart:
+    config: model.OutputStructureConfig
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class OutputRecordSectionPart:
+    section: model.RecordSection
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class BodyProsePart:
+    value: model.ProseLine
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class RenderProfilePart:
+    ref: model.NameRef
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaItemPart:
+    item: model.SchemaItem
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class TrustSurfacePart:
+    items: tuple[model.TrustSurfaceItem, ...]
+    line: int | None = None
+    column: int | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -84,6 +140,13 @@ class DecisionBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class DecisionItemPart:
+    item: model.DecisionItem
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class SchemaBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.SchemaItem, ...]
@@ -103,6 +166,127 @@ class ReadablePayloadParts:
     payload: object
     item_schema: model.ReadableInlineSchemaData | None = None
     row_schema: model.ReadableInlineSchemaData | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class WorkflowLawPart:
+    body: model.LawBody
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ReadableFieldPart:
+    key: str
+    value: object
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class EnumMemberFieldPart:
+    key: str
+    value: str
+    line: int | None = None
+    column: int | None = None
+
+
+def _meta_line_column(meta: object) -> tuple[int | None, int | None]:
+    return getattr(meta, "line", None), getattr(meta, "column", None)
+
+
+def _item_line_column(item: object) -> tuple[int | None, int | None]:
+    return getattr(item, "line", None), getattr(item, "column", None)
+
+
+def _positioned_body_prose(meta: object, value: model.ProseLine) -> BodyProsePart:
+    line, column = _meta_line_column(meta)
+    return BodyProsePart(value=value, line=line, column=column)
+
+
+def _positioned_input_structure(meta: object, ref: model.NameRef) -> InputStructurePart:
+    line, column = _meta_line_column(meta)
+    return InputStructurePart(
+        config=model.InputStructureConfig(structure_ref=ref),
+        line=line,
+        column=column,
+    )
+
+
+def _positioned_render_profile(meta: object, ref: model.NameRef) -> RenderProfilePart:
+    line, column = _meta_line_column(meta)
+    return RenderProfilePart(ref=ref, line=line, column=column)
+
+
+def _positioned_schema_item(meta: object, item: model.SchemaItem) -> SchemaItemPart:
+    line, column = _meta_line_column(meta)
+    return SchemaItemPart(item=item, line=line, column=column)
+
+
+def _positioned_trust_surface(
+    meta: object,
+    items: tuple[model.TrustSurfaceItem, ...],
+) -> TrustSurfacePart:
+    line, column = _meta_line_column(meta)
+    return TrustSurfacePart(items=items, line=line, column=column)
+
+
+def _positioned_decision_item(meta: object, item: model.DecisionItem) -> DecisionItemPart:
+    line, column = _meta_line_column(meta)
+    return DecisionItemPart(item=item, line=line, column=column)
+
+
+def _positioned_workflow_law(meta: object, body: model.LawBody) -> WorkflowLawPart:
+    line, column = _meta_line_column(meta)
+    return WorkflowLawPart(body=body, line=line, column=column)
+
+
+def _positioned_readable_field(meta: object, key: str, value: object) -> ReadableFieldPart:
+    line, column = _meta_line_column(meta)
+    return ReadableFieldPart(key=key, value=value, line=line, column=column)
+
+
+def _positioned_enum_member_field(meta: object, key: str, value: str) -> EnumMemberFieldPart:
+    line, column = _meta_line_column(meta)
+    return EnumMemberFieldPart(key=key, value=value, line=line, column=column)
+
+
+def _body_prose_value(item: object) -> model.ProseLine | None:
+    if isinstance(item, BodyProsePart):
+        return item.value
+    if isinstance(item, (str, model.EmphasizedLine)):
+        return item
+    return None
+
+
+def _body_prose_location(item: object) -> tuple[int | None, int | None]:
+    if isinstance(item, BodyProsePart):
+        return _item_line_column(item)
+    return None, None
+
+
+def _schema_item_value(item: object) -> model.SchemaItem:
+    if isinstance(item, SchemaItemPart):
+        return item.item
+    return item
+
+
+def _schema_item_location(item: object) -> tuple[int | None, int | None]:
+    if isinstance(item, SchemaItemPart):
+        return item.line, item.column
+    return None, None
+
+
+def _schema_block_key(item: model.SchemaItem) -> str | None:
+    if isinstance(item, (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock)):
+        return "sections"
+    if isinstance(item, (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock)):
+        return "gates"
+    if isinstance(item, (model.SchemaArtifactsBlock, model.SchemaOverrideArtifactsBlock)):
+        return "artifacts"
+    if isinstance(item, (model.SchemaGroupsBlock, model.SchemaOverrideGroupsBlock)):
+        return "groups"
+    return None
 
 
 class ToAst(Transformer):
@@ -511,20 +695,22 @@ class ToAst(Transformer):
         record_items: list[model.RecordItem] = []
         structure: model.InputStructureConfig | None = None
         for item in items:
-            if isinstance(item, model.InputStructureConfig):
+            if isinstance(item, InputStructurePart):
                 if structure is not None:
                     raise TransformParseFailure(
                         "Input declarations may define `structure:` only once.",
                         hints=("Keep exactly one `structure:` attachment per input declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                structure = item
+                structure = item.config
                 continue
             record_items.append(item)
         return InputBodyParts(items=tuple(record_items), structure=structure)
 
-    @v_args(inline=True)
-    def input_structure_stmt(self, ref):
-        return model.InputStructureConfig(structure_ref=ref)
+    @v_args(meta=True, inline=True)
+    def input_structure_stmt(self, meta, ref):
+        return _positioned_input_structure(meta, ref)
 
     @v_args(inline=True)
     def input_source_decl(self, name, title, items):
@@ -552,59 +738,94 @@ class ToAst(Transformer):
         structure: model.OutputStructureConfig | None = None
         render_profile_ref: model.NameRef | None = None
         trust_surface: tuple[model.TrustSurfaceItem, ...] = ()
+        has_must_include = False
         for item in items:
-            if isinstance(item, tuple) and item and item[0] == "render_profile":
+            if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
                     raise TransformParseFailure(
                         "Output declarations may define `render_profile:` only once.",
                         hints=("Keep exactly one `render_profile:` attachment per output declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                render_profile_ref = item[1]
+                render_profile_ref = item.ref
                 continue
-            if isinstance(item, tuple) and item and isinstance(item[0], model.TrustSurfaceItem):
+            if isinstance(item, TrustSurfacePart):
                 if trust_surface:
                     raise TransformParseFailure(
                         "Output declarations may define `trust_surface` only once.",
                         hints=("Keep exactly one `trust_surface:` block per output declaration.",),
-                )
-                trust_surface = tuple(item)
+                        line=item.line,
+                        column=item.column,
+                    )
+                trust_surface = item.items
                 continue
-            if isinstance(item, model.OutputSchemaConfig):
+            if isinstance(item, OutputSchemaPart):
                 if schema is not None:
                     raise TransformParseFailure(
                         "Output declarations may define `schema:` only once.",
                         hints=("Keep exactly one `schema:` attachment per output declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                schema = item
+                if structure is not None:
+                    raise TransformParseFailure(
+                        "Outputs may not define both `schema:` and `structure:`.",
+                        hints=(
+                            "Pick one artifact owner per markdown output declaration.",
+                            "Use `schema:` for reusable inventory ownership or `structure:` for reusable markdown structure, not both.",
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                if has_must_include:
+                    raise TransformParseFailure(
+                        "Outputs may not define both `schema:` and `must_include:`.",
+                        hints=(
+                            "Pick one inventory owner per output declaration.",
+                            "Use `schema:` for reusable inventory ownership or keep local `must_include:` prose, not both.",
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                schema = item.config
                 continue
-            if isinstance(item, model.OutputStructureConfig):
+            if isinstance(item, OutputStructurePart):
                 if structure is not None:
                     raise TransformParseFailure(
                         "Output declarations may define `structure:` only once.",
                         hints=("Keep exactly one `structure:` attachment per output declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                structure = item
+                if schema is not None:
+                    raise TransformParseFailure(
+                        "Outputs may not define both `schema:` and `structure:`.",
+                        hints=(
+                            "Pick one artifact owner per markdown output declaration.",
+                            "Use `schema:` for reusable inventory ownership or `structure:` for reusable markdown structure, not both.",
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                structure = item.config
+                continue
+            if isinstance(item, OutputRecordSectionPart):
+                if item.section.key == "must_include":
+                    if schema is not None:
+                        raise TransformParseFailure(
+                            "Outputs may not define both `schema:` and `must_include:`.",
+                            hints=(
+                                "Pick one inventory owner per output declaration.",
+                                "Use `schema:` for reusable inventory ownership or keep local `must_include:` prose, not both.",
+                            ),
+                            line=item.line,
+                            column=item.column,
+                        )
+                    has_must_include = True
+                record_items.append(item.section)
                 continue
             record_items.append(item)
-        if schema is not None and any(
-            isinstance(item, model.RecordSection) and item.key == "must_include"
-            for item in record_items
-        ):
-            raise TransformParseFailure(
-                "Outputs may not define both `schema:` and `must_include:`.",
-                hints=(
-                    "Pick one inventory owner per output declaration.",
-                    "Use `schema:` for reusable inventory ownership or keep local `must_include:` prose, not both.",
-                ),
-            )
-        if schema is not None and structure is not None:
-            raise TransformParseFailure(
-                "Outputs may not define both `schema:` and `structure:`.",
-                hints=(
-                    "Pick one artifact owner per markdown output declaration.",
-                    "Use `schema:` for reusable inventory ownership or `structure:` for reusable markdown structure, not both.",
-                ),
-            )
         return OutputBodyParts(
             items=tuple(record_items),
             schema=schema,
@@ -613,20 +834,33 @@ class ToAst(Transformer):
             trust_surface=trust_surface,
         )
 
-    @v_args(inline=True)
-    def output_schema_stmt(self, ref):
-        return model.OutputSchemaConfig(schema_ref=ref)
+    @v_args(meta=True, inline=True)
+    def output_schema_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return OutputSchemaPart(
+            config=model.OutputSchemaConfig(schema_ref=ref),
+            line=line,
+            column=column,
+        )
 
-    @v_args(inline=True)
-    def output_structure_stmt(self, ref):
-        return model.OutputStructureConfig(structure_ref=ref)
+    @v_args(meta=True, inline=True)
+    def output_structure_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return OutputStructurePart(
+            config=model.OutputStructureConfig(structure_ref=ref),
+            line=line,
+            column=column,
+        )
 
-    @v_args(inline=True)
-    def output_render_profile_stmt(self, ref):
-        return ("render_profile", ref)
+    @v_args(meta=True, inline=True)
+    def output_render_profile_stmt(self, meta, ref):
+        return _positioned_render_profile(meta, ref)
 
     def output_record_body(self, items):
-        return tuple(items)
+        return tuple(
+            item.section if isinstance(item, OutputRecordSectionPart) else item
+            for item in items
+        )
 
     @v_args(inline=True)
     def output_record_item(self, value):
@@ -635,40 +869,46 @@ class ToAst(Transformer):
     def output_record_item_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def analysis_string(self, value):
-        return value
+    @v_args(meta=True, inline=True)
+    def analysis_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def analysis_body_line(self, value):
         return value
 
-    @v_args(inline=True)
-    def analysis_render_profile_stmt(self, ref):
-        return ("render_profile", ref)
+    @v_args(meta=True, inline=True)
+    def analysis_render_profile_stmt(self, meta, ref):
+        return _positioned_render_profile(meta, ref)
 
     def analysis_body(self, items):
         preamble: list[model.ProseLine] = []
         analysis_items: list[model.AnalysisItem] = []
         render_profile_ref: model.NameRef | None = None
         for item in items:
-            if isinstance(item, tuple) and item and item[0] == "render_profile":
+            if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
                     raise TransformParseFailure(
                         "Analysis declarations may define `render_profile:` only once.",
                         hints=("Keep exactly one `render_profile:` attachment per analysis declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                render_profile_ref = item[1]
+                render_profile_ref = item.ref
                 continue
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if analysis_items:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Analysis prose lines must appear before keyed analysis entries.",
                         hints=(
                             "Move prose lines to the top of the analysis body or put them inside a titled analysis section.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
             analysis_items.append(item)
         return AnalysisBodyParts(
@@ -733,13 +973,17 @@ class ToAst(Transformer):
     def defend_stmt(self, target_title, basis):
         return model.DefendStmt(target_title=target_title, basis=basis)
 
-    @v_args(inline=True)
-    def decision_render_profile_stmt(self, ref):
-        return ("render_profile", ref)
+    @v_args(meta=True, inline=True)
+    def decision_render_profile_stmt(self, meta, ref):
+        return _positioned_render_profile(meta, ref)
 
     @v_args(inline=True)
     def decision_string(self, value):
         return value
+
+    @v_args(meta=True, inline=True)
+    def decision_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def decision_body_line(self, value):
@@ -751,43 +995,54 @@ class ToAst(Transformer):
         render_profile_ref: model.NameRef | None = None
         seen_entries: set[str] = set()
         for item in items:
-            if isinstance(item, tuple) and item and item[0] == "render_profile":
+            if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
                     raise TransformParseFailure(
                         "Decision declarations may define `render_profile:` only once.",
                         hints=("Keep exactly one `render_profile:` attachment per decision declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                render_profile_ref = item[1]
+                render_profile_ref = item.ref
                 continue
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if decision_items:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Decision prose lines must appear before typed decision entries.",
                         hints=(
                             "Move prose lines to the top of the decision body before typed decision requirements.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
 
-            if isinstance(item, model.DecisionMinimumCandidates):
+            decision_item = item.item if isinstance(item, DecisionItemPart) else item
+            line, column = _item_line_column(item)
+
+            if isinstance(decision_item, model.DecisionMinimumCandidates):
                 dedupe_key = "minimum_candidates"
-            elif isinstance(item, model.DecisionRequiredItem):
-                dedupe_key = f"required:{item.key}"
-            elif isinstance(item, model.DecisionChooseWinner):
+            elif isinstance(decision_item, model.DecisionRequiredItem):
+                dedupe_key = f"required:{decision_item.key}"
+            elif isinstance(decision_item, model.DecisionChooseWinner):
                 dedupe_key = "choose_winner"
-            elif isinstance(item, model.DecisionRankBy):
+            elif isinstance(decision_item, model.DecisionRankBy):
                 dedupe_key = "rank_by"
             else:
-                dedupe_key = type(item).__name__
+                dedupe_key = type(decision_item).__name__
 
             if dedupe_key in seen_entries:
                 raise TransformParseFailure(
                     f"Decision declarations may account for `{dedupe_key}` only once.",
                     hints=("Keep each decision requirement explicit only once per declaration.",),
+                    line=line,
+                    column=column,
                 )
             seen_entries.add(dedupe_key)
-            decision_items.append(item)
+            decision_items.append(decision_item)
 
         return DecisionBodyParts(
             preamble=tuple(preamble),
@@ -795,129 +1050,153 @@ class ToAst(Transformer):
             render_profile_ref=render_profile_ref,
         )
 
-    @v_args(inline=True)
-    def decision_candidates_minimum_stmt(self, count):
+    @v_args(meta=True, inline=True)
+    def decision_candidates_minimum_stmt(self, meta, count):
         parsed = int(count)
         if parsed < 1:
+            line, column = _meta_line_column(meta)
             raise TransformParseFailure(
                 "Decision candidate minimum must be at least 1.",
                 hints=("Use `candidates minimum <positive number>`.",),
+                line=line,
+                column=column,
             )
-        return model.DecisionMinimumCandidates(count=parsed)
+        return _positioned_decision_item(meta, model.DecisionMinimumCandidates(count=parsed))
 
-    def decision_rank_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="rank")
+    @v_args(meta=True)
+    def decision_rank_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="rank"))
 
-    def decision_rejects_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="rejects")
+    @v_args(meta=True)
+    def decision_rejects_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="rejects"))
 
-    def decision_candidate_pool_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="candidate_pool")
+    @v_args(meta=True)
+    def decision_candidate_pool_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="candidate_pool"))
 
-    def decision_kept_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="kept")
+    @v_args(meta=True)
+    def decision_kept_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="kept"))
 
-    def decision_rejected_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="rejected")
+    @v_args(meta=True)
+    def decision_rejected_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="rejected"))
 
-    def decision_sequencing_proof_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="sequencing_proof")
+    @v_args(meta=True)
+    def decision_sequencing_proof_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="sequencing_proof"))
 
-    def decision_winner_reasons_required_stmt(self, _items):
-        return model.DecisionRequiredItem(key="winner_reasons")
+    @v_args(meta=True)
+    def decision_winner_reasons_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionRequiredItem(key="winner_reasons"))
 
-    def decision_winner_required_stmt(self, _items):
-        return model.DecisionChooseWinner()
+    @v_args(meta=True)
+    def decision_winner_required_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionChooseWinner())
 
-    def decision_choose_one_winner_stmt(self, _items):
-        return model.DecisionChooseWinner()
+    @v_args(meta=True)
+    def decision_choose_one_winner_stmt(self, meta, _items):
+        return _positioned_decision_item(meta, model.DecisionChooseWinner())
 
-    def decision_rank_by_stmt(self, items):
-        return model.DecisionRankBy(dimensions=tuple(items))
+    @v_args(meta=True)
+    def decision_rank_by_stmt(self, meta, items):
+        return _positioned_decision_item(meta, model.DecisionRankBy(dimensions=tuple(items)))
 
-    @v_args(inline=True)
-    def schema_string(self, value):
-        return value
+    @v_args(meta=True, inline=True)
+    def schema_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def schema_body_line(self, value):
         return value
 
-    @v_args(inline=True)
-    def schema_render_profile_stmt(self, ref):
-        return ("render_profile", ref)
+    @v_args(meta=True, inline=True)
+    def schema_render_profile_stmt(self, meta, ref):
+        return _positioned_render_profile(meta, ref)
 
     def schema_body(self, items):
         preamble: list[model.ProseLine] = []
         schema_items: list[model.SchemaItem] = []
         render_profile_ref: model.NameRef | None = None
+        block_hints = {
+            "sections": "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
+            "gates": "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
+            "artifacts": "Use exactly one of `artifacts:`, `inherit artifacts`, or `override artifacts:`.",
+            "groups": "Use exactly one of `groups:`, `inherit groups`, or `override groups:`.",
+        }
+        block_claims: dict[str, str] = {}
         for item in items:
-            if isinstance(item, tuple) and item and item[0] == "render_profile":
+            if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
                     raise TransformParseFailure(
                         "Schema declarations may define `render_profile:` only once.",
                         hints=("Keep exactly one `render_profile:` attachment per schema declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                render_profile_ref = item[1]
+                render_profile_ref = item.ref
                 continue
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if schema_items:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Schema prose lines must appear before typed schema blocks.",
                         hints=(
                             "Move prose lines to the top of the schema body or put them inside a schema section or gate body.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
-            schema_items.append(item)
-        inherited_keys = {item.key for item in schema_items if isinstance(item, model.InheritItem)}
-        block_specs = (
-            (
-                "sections",
-                (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock),
-                "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
-            ),
-            (
-                "gates",
-                (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock),
-                "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
-            ),
-            (
-                "artifacts",
-                (model.SchemaArtifactsBlock, model.SchemaOverrideArtifactsBlock),
-                "Use exactly one of `artifacts:`, `inherit artifacts`, or `override artifacts:`.",
-            ),
-            (
-                "groups",
-                (model.SchemaGroupsBlock, model.SchemaOverrideGroupsBlock),
-                "Use exactly one of `groups:`, `inherit groups`, or `override groups:`.",
-            ),
-        )
-        for block_key, block_types, hint in block_specs:
-            blocks = [item for item in schema_items if isinstance(item, block_types)]
-            if len(blocks) > 1 or (block_key in inherited_keys and blocks):
-                raise TransformParseFailure(
-                    f"Schema declarations may account for `{block_key}` only once.",
-                    hints=(hint,),
-                )
+            schema_item = _schema_item_value(item)
+            line, column = _schema_item_location(item)
+            if isinstance(schema_item, model.InheritItem):
+                if schema_item.key in block_hints and block_claims.get(schema_item.key) == "block":
+                    raise TransformParseFailure(
+                        f"Schema declarations may account for `{schema_item.key}` only once.",
+                        hints=(block_hints[schema_item.key],),
+                        line=line,
+                        column=column,
+                    )
+                if schema_item.key in block_hints:
+                    block_claims.setdefault(schema_item.key, "inherit")
+                schema_items.append(schema_item)
+                continue
+            block_key = _schema_block_key(schema_item)
+            if block_key is not None:
+                if block_key in block_claims:
+                    raise TransformParseFailure(
+                        f"Schema declarations may account for `{block_key}` only once.",
+                        hints=(block_hints[block_key],),
+                        line=line,
+                        column=column,
+                    )
+                block_claims[block_key] = "block"
+            schema_items.append(schema_item)
         return SchemaBodyParts(
             preamble=tuple(preamble),
             items=tuple(schema_items),
             render_profile_ref=render_profile_ref,
         )
 
-    def schema_sections_block(self, items):
-        return model.SchemaSectionsBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_sections_block(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaSectionsBlock(items=tuple(items)))
 
-    def schema_gates_block(self, items):
-        return model.SchemaGatesBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_gates_block(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaGatesBlock(items=tuple(items)))
 
-    def schema_artifacts_block(self, items):
-        return model.SchemaArtifactsBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_artifacts_block(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaArtifactsBlock(items=tuple(items)))
 
-    def schema_groups_block(self, items):
-        return model.SchemaGroupsBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_groups_block(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaGroupsBlock(items=tuple(items)))
 
     @v_args(inline=True)
     def schema_section_item(self, key, title, body=None):
@@ -968,21 +1247,25 @@ class ToAst(Transformer):
     def schema_group_member(self, key):
         return key
 
-    @v_args(inline=True)
-    def schema_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def schema_inherit(self, meta, key):
+        return _positioned_schema_item(meta, model.InheritItem(key=key))
 
-    def schema_override_sections(self, items):
-        return model.SchemaOverrideSectionsBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_override_sections(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaOverrideSectionsBlock(items=tuple(items)))
 
-    def schema_override_gates(self, items):
-        return model.SchemaOverrideGatesBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_override_gates(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaOverrideGatesBlock(items=tuple(items)))
 
-    def schema_override_artifacts(self, items):
-        return model.SchemaOverrideArtifactsBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_override_artifacts(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaOverrideArtifactsBlock(items=tuple(items)))
 
-    def schema_override_groups(self, items):
-        return model.SchemaOverrideGroupsBlock(items=tuple(items))
+    @v_args(meta=True)
+    def schema_override_groups(self, meta, items):
+        return _positioned_schema_item(meta, model.SchemaOverrideGroupsBlock(items=tuple(items)))
 
     def schema_block_key_sections(self, _items):
         return "sections"
@@ -996,40 +1279,46 @@ class ToAst(Transformer):
     def schema_block_key_groups(self, _items):
         return "groups"
 
-    @v_args(inline=True)
-    def document_string(self, value):
-        return value
+    @v_args(meta=True, inline=True)
+    def document_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def document_body_line(self, value):
         return value
 
-    @v_args(inline=True)
-    def document_render_profile_stmt(self, ref):
-        return ("render_profile", ref)
+    @v_args(meta=True, inline=True)
+    def document_render_profile_stmt(self, meta, ref):
+        return _positioned_render_profile(meta, ref)
 
     def document_body(self, items):
         preamble: list[model.ProseLine] = []
         document_items: list[model.DocumentItem] = []
         render_profile_ref: model.NameRef | None = None
         for item in items:
-            if isinstance(item, tuple) and item and item[0] == "render_profile":
+            if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
                     raise TransformParseFailure(
                         "Document declarations may define `render_profile:` only once.",
                         hints=("Keep exactly one `render_profile:` attachment per document declaration.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                render_profile_ref = item[1]
+                render_profile_ref = item.ref
                 continue
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if document_items:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Document prose lines must appear before keyed document blocks.",
                         hints=(
                             "Move prose lines to the top of the document body or put them inside a document block.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
             document_items.append(item)
         return DocumentBodyParts(
@@ -1254,13 +1543,15 @@ class ToAst(Transformer):
         rendered_items: list[model.ReadableListItem] = []
         item_schema: model.ReadableInlineSchemaData | None = None
         for item in items:
-            if isinstance(item, tuple) and item and item[0] == "item_schema":
+            if isinstance(item, ReadableFieldPart) and item.key == "item_schema":
                 if item_schema is not None:
                     raise TransformParseFailure(
                         "Readable list bodies may define `item_schema:` only once.",
                         hints=("Keep exactly one `item_schema:` block per readable list.",),
+                        line=item.line,
+                        column=item.column,
                     )
-                item_schema = item[1]
+                item_schema = item.value
                 continue
             if isinstance(item, model.ReadableListItem):
                 rendered_items.append(item)
@@ -1272,8 +1563,13 @@ class ToAst(Transformer):
     def readable_list_keyed_item(self, key, text):
         return model.ReadableListItem(key=key, text=text)
 
-    def readable_item_schema_block(self, items):
-        return ("item_schema", model.ReadableInlineSchemaData(entries=tuple(items)))
+    @v_args(meta=True)
+    def readable_item_schema_block(self, meta, items):
+        return _positioned_readable_field(
+            meta,
+            "item_schema",
+            model.ReadableInlineSchemaData(entries=tuple(items)),
+        )
 
     def readable_properties_body(self, items):
         return model.ReadablePropertiesData(entries=tuple(items))
@@ -1304,7 +1600,14 @@ class ToAst(Transformer):
         rows: tuple[model.ReadableTableRow, ...] = ()
         notes: tuple[model.ProseLine, ...] = ()
         row_schema: model.ReadableInlineSchemaData | None = None
-        for block_kind, block_value in items:
+        for item in items:
+            if isinstance(item, ReadableFieldPart):
+                block_kind = item.key
+                block_value = item.value
+                line, column = item.line, item.column
+            else:
+                block_kind, block_value = item
+                line, column = None, None
             if block_kind == "columns":
                 columns = block_value
             elif block_kind == "rows":
@@ -1316,6 +1619,8 @@ class ToAst(Transformer):
                     raise TransformParseFailure(
                         "Readable table bodies may define `row_schema:` only once.",
                         hints=("Keep exactly one `row_schema:` block per readable table.",),
+                        line=line,
+                        column=column,
                     )
                 row_schema = block_value
         return ReadablePayloadParts(
@@ -1328,8 +1633,13 @@ class ToAst(Transformer):
             row_schema=row_schema,
         )
 
-    def readable_row_schema_block(self, items):
-        return ("row_schema", model.ReadableInlineSchemaData(entries=tuple(items)))
+    @v_args(meta=True)
+    def readable_row_schema_block(self, meta, items):
+        return _positioned_readable_field(
+            meta,
+            "row_schema",
+            model.ReadableInlineSchemaData(entries=tuple(items)),
+        )
 
     def readable_table_columns_block(self, items):
         return ("columns", tuple(items))
@@ -1409,22 +1719,31 @@ class ToAst(Transformer):
     def readable_raw_text_body(self, items):
         text: str | None = None
         for item in items:
-            if item[0] != "text":
+            if isinstance(item, ReadableFieldPart):
+                item_key = item.key
+                item_value = item.value
+                line, column = item.line, item.column
+            else:
+                item_key, item_value = item
+                line, column = None, None
+            if item_key != "text":
                 continue
             if text is not None:
                 raise TransformParseFailure(
                     "Raw text readable blocks may define `text:` only once.",
                     hints=("Keep exactly one `text:` field in the block body.",),
+                    line=line,
+                    column=column,
                 )
-            text = item[1]
+            text = item_value
         return model.ReadableRawTextData(text="" if text is None else text)
 
     def readable_raw_text_line(self, items):
         return items[0]
 
-    @v_args(inline=True)
-    def readable_raw_text_text(self, text):
-        return ("text", text)
+    @v_args(meta=True, inline=True)
+    def readable_raw_text_text(self, meta, text):
+        return _positioned_readable_field(meta, "text", text)
 
     def readable_footnotes_body(self, items):
         return model.ReadableFootnotesData(entries=tuple(items))
@@ -1438,27 +1757,40 @@ class ToAst(Transformer):
         alt: str | None = None
         caption: str | None = None
         for item in items:
-            if item[0] == "src":
+            if isinstance(item, ReadableFieldPart):
+                item_key = item.key
+                item_value = item.value
+                line, column = item.line, item.column
+            else:
+                item_key, item_value = item
+                line, column = None, None
+            if item_key == "src":
                 if src is not None:
                     raise TransformParseFailure(
                         "Image readable blocks may define `src:` only once.",
                         hints=("Keep exactly one `src:` field in the image block body.",),
+                        line=line,
+                        column=column,
                     )
-                src = item[1]
-            elif item[0] == "alt":
+                src = item_value
+            elif item_key == "alt":
                 if alt is not None:
                     raise TransformParseFailure(
                         "Image readable blocks may define `alt:` only once.",
                         hints=("Keep exactly one `alt:` field in the image block body.",),
+                        line=line,
+                        column=column,
                     )
-                alt = item[1]
-            elif item[0] == "caption":
+                alt = item_value
+            elif item_key == "caption":
                 if caption is not None:
                     raise TransformParseFailure(
                         "Image readable blocks may define `caption:` only once.",
                         hints=("Keep exactly one `caption:` field in the image block body.",),
+                        line=line,
+                        column=column,
                     )
-                caption = item[1]
+                caption = item_value
         if src is None or alt is None:
             raise TransformParseFailure(
                 "Image readable blocks require both `src:` and `alt:`.",
@@ -1466,17 +1798,17 @@ class ToAst(Transformer):
             )
         return model.ReadableImageData(src=src, alt=alt, caption=caption)
 
-    @v_args(inline=True)
-    def readable_image_src(self, text):
-        return ("src", text)
+    @v_args(meta=True, inline=True)
+    def readable_image_src(self, meta, text):
+        return _positioned_readable_field(meta, "src", text)
 
-    @v_args(inline=True)
-    def readable_image_alt(self, text):
-        return ("alt", text)
+    @v_args(meta=True, inline=True)
+    def readable_image_alt(self, meta, text):
+        return _positioned_readable_field(meta, "alt", text)
 
-    @v_args(inline=True)
-    def readable_image_caption(self, text):
-        return ("caption", text)
+    @v_args(meta=True, inline=True)
+    def readable_image_caption(self, meta, text):
+        return _positioned_readable_field(meta, "caption", text)
 
     def readable_requirement_required(self, _items):
         return ("requirement", "required")
@@ -1512,10 +1844,15 @@ class ToAst(Transformer):
             row_schema=row_schema,
         )
 
-    @v_args(inline=True)
-    def output_record_keyed_item(self, key, head, body=None):
+    @v_args(meta=True, inline=True)
+    def output_record_keyed_item(self, meta, key, head, body=None):
         if isinstance(head, str) and body is not None:
-            return model.RecordSection(key=key, title=head, items=tuple(body))
+            line, column = _meta_line_column(meta)
+            return OutputRecordSectionPart(
+                section=model.RecordSection(key=key, title=head, items=tuple(body)),
+                line=line,
+                column=column,
+            )
         return model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body))
 
     @v_args(inline=True)
@@ -1531,8 +1868,9 @@ class ToAst(Transformer):
             items=tuple(items),
         )
 
-    def trust_surface_block(self, items):
-        return tuple(items)
+    @v_args(meta=True)
+    def trust_surface_block(self, meta, items):
+        return _positioned_trust_surface(meta, tuple(items))
 
     @v_args(inline=True)
     def trust_surface_item(self, path, when_expr=None):
@@ -1583,16 +1921,27 @@ class ToAst(Transformer):
     @v_args(inline=True)
     def enum_member(self, key, title, body=None):
         wire: str | None = None
-        for field_key, field_value in body or ():
+        for item in body or ():
+            if isinstance(item, EnumMemberFieldPart):
+                field_key = item.key
+                field_value = item.value
+                line, column = item.line, item.column
+            else:
+                field_key, field_value = item
+                line, column = None, None
             if field_key != "wire":
                 raise TransformParseFailure(
                     f"Unknown enum member field: {field_key}",
                     hints=("Only `wire:` is legal inside an enum-member body.",),
+                    line=line,
+                    column=column,
                 )
             if wire is not None:
                 raise TransformParseFailure(
                     "Enum member may declare `wire` at most once.",
                     hints=("Keep one `wire:` field per enum member.",),
+                    line=line,
+                    column=column,
                 )
             wire = field_value
         return model.EnumMember(key=key, title=title, wire=wire)
@@ -1604,9 +1953,9 @@ class ToAst(Transformer):
     def enum_member_body_line(self, value):
         return value
 
-    @v_args(inline=True)
-    def enum_member_wire_stmt(self, value):
-        return ("wire", value)
+    @v_args(meta=True, inline=True)
+    def enum_member_wire_stmt(self, meta, value):
+        return _positioned_enum_member_field(meta, "wire", value)
 
     def review_body(self, items):
         return ReviewBodyParts(items=tuple(items))
@@ -1947,17 +2296,17 @@ class ToAst(Transformer):
     def workflow_items(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def workflow_string(self, value):
-        return value
+    @v_args(meta=True, inline=True)
+    def workflow_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def workflow_body_line(self, value):
         return value
 
-    @v_args(inline=True)
-    def skills_string(self, value):
-        return value
+    @v_args(meta=True, inline=True)
+    def skills_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def skills_body_line(self, value):
@@ -1984,23 +2333,31 @@ class ToAst(Transformer):
         workflow_items: list[model.WorkflowItem] = []
         law: model.LawBody | None = None
         for item in items:
-            if isinstance(item, model.LawBody):
+            law_body = item.body if isinstance(item, WorkflowLawPart) else item if isinstance(item, model.LawBody) else None
+            if law_body is not None:
                 if law is not None:
+                    line, column = _item_line_column(item)
                     raise TransformParseFailure(
                         "Workflow declarations may define `law` only once.",
                         hints=("Keep exactly one `law:` block per workflow body.",),
+                        line=line,
+                        column=column,
                     )
-                law = item
+                law = law_body
                 continue
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if workflow_items or law is not None:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Workflow prose lines must appear before keyed workflow entries.",
                         hints=(
                             "Move prose lines to the top of the workflow body or put them inside a titled section.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
             workflow_items.append(item)
         return WorkflowBodyParts(
@@ -2089,9 +2446,9 @@ class ToAst(Transformer):
     def workflow_override_use(self, key, target):
         return model.OverrideUse(key=key, target=target)
 
-    @v_args(inline=True)
-    def law_block(self, body):
-        return body
+    @v_args(meta=True, inline=True)
+    def law_block(self, meta, body):
+        return _positioned_workflow_law(meta, body)
 
     def law_body(self, items):
         return model.LawBody(items=tuple(items))
@@ -2432,9 +2789,9 @@ class ToAst(Transformer):
             items=tuple(section_items),
         )
 
-    @v_args(inline=True)
-    def io_string(self, value):
-        return value
+    @v_args(meta=True, inline=True)
+    def io_string(self, meta, value):
+        return _positioned_body_prose(meta, value)
 
     @v_args(inline=True)
     def io_body_line(self, value):
@@ -2444,15 +2801,19 @@ class ToAst(Transformer):
         preamble: list[model.ProseLine] = []
         io_items: list[model.IoItem] = []
         for item in items:
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if io_items:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Inputs and outputs prose lines must appear before keyed entries.",
                         hints=(
                             "Move prose lines to the top of the inputs or outputs body or put them inside a titled section.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
             io_items.append(item)
         return IoBodyParts(preamble=tuple(preamble), items=tuple(io_items))
@@ -2538,15 +2899,19 @@ class ToAst(Transformer):
         preamble: list[model.ProseLine] = []
         skills_items: list[model.SkillsItem] = []
         for item in items:
-            if isinstance(item, (str, model.EmphasizedLine)):
+            prose_value = _body_prose_value(item)
+            if prose_value is not None:
                 if skills_items:
+                    line, column = _body_prose_location(item)
                     raise TransformParseFailure(
                         "Skills prose lines must appear before keyed skills entries.",
                         hints=(
                             "Move prose lines to the top of the skills body or put them inside a titled skills section.",
                         ),
+                        line=line,
+                        column=column,
                     )
-                preamble.append(item)
+                preamble.append(prose_value)
                 continue
             skills_items.append(item)
         return SkillsBodyParts(preamble=tuple(preamble), items=tuple(skills_items))
@@ -2672,6 +3037,7 @@ def build_lark_parser() -> Lark:
             postlex=DoctrineIndenter(),
             strict=True,
             maybe_placeholders=False,
+            propagate_positions=True,
         )
         _THREAD_LOCAL_STATE.lark_parser = parser
     return parser

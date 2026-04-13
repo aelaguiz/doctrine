@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from doctrine.compiler import CompilationSession, compile_prompt
-from doctrine.diagnostics import DoctrineError
+from doctrine.diagnostics import DoctrineError, EmitError
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
