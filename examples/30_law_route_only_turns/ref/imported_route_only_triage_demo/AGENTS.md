@@ -6,7 +6,7 @@ Prove that workflow-law route labels interpolate imported agent refs too.
 
 This pass runs only when current handoff is missing.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: Current handoff is missing.
 

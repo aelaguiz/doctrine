@@ -31,13 +31,13 @@ Use the host route facts. They say whether the current section is new or a full 
 
 #### Rewrite Mode
 
-Rendered only when route facts section status is new or full rewrite.
+Show this only when route facts section status is new or full rewrite.
 
 Name whether the section is brand new or undergoing a full rewrite.
 
 #### Repeated Problem
 
-Rendered only when critic miss is repeated.
+Show this only when critic miss is repeated.
 
 Say whether the same critic miss has repeated.
 

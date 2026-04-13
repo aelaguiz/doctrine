@@ -25,7 +25,7 @@ expected_lines = [
   "- Verdict: Use changes requested when the contract fails.",
   "- Next Owner: Route back to section-author with Project Lead (`ProjectLead`).",
   "",
-  "_Rendered only when section-author is section-author._",
+  "_Show this only when section-author is section-author._",
   "",
   "- Escalation: Explain what still blocks the handoff.",
 ]
@@ -54,7 +54,7 @@ expected_lines = [
   "- Verdict: Use changes requested when the contract fails.",
   "- Next Owner: Route back to section-author with Project Lead (`ProjectLead`).",
   "",
-  "_Rendered only when section-author is section-author._",
+  "_Show this only when section-author is section-author._",
   "",
   "- Escalation: Explain what still blocks the wrapped handoff.",
 ]

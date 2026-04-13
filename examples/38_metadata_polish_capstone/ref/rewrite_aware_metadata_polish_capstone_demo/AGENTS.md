@@ -8,7 +8,7 @@ Active mode: section-summary.
 
 Current artifact: Section Metadata.
 
-Must current_handoff.preserve_basis == approved_structure.
+Make sure current_handoff.preserve_basis == approved_structure.
 
 Own only {`section_metadata.name`, `section_metadata.description`}.
 
@@ -18,7 +18,7 @@ Preserve decisions `approved_structure`.
 
 Do not modify {`section_metadata.taxonomy`, `section_metadata.flags`}.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 When pass_mode is section-summary and current_handoff.rewrite_regime is rewrite, ignore {`section_metadata.name`, `section_metadata.description`} for rewrite evidence.
 

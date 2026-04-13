@@ -64,7 +64,7 @@ Name ReviewLead when accepted and DraftAuthor when rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -72,13 +72,13 @@ Name the failing review gates in authored order.
 
 #### Accepted Route
 
-Rendered only when verdict is accepted and a routed owner exists.
+Show this only when verdict is accepted and a routed owner exists.
 
 Accepted draft goes to ReviewLead. Next owner: Review Lead.
 
 #### Retry Route
 
-Rendered only when verdict is changes requested and a routed owner exists.
+Show this only when verdict is changes requested and a routed owner exists.
 
 Draft Author
 

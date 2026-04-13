@@ -16,13 +16,13 @@ class DisplayMixin:
 
     def _render_decision_required_item(self, item: model.DecisionRequiredItem) -> str:
         decision_required_text = {
-            "rank": "Ranking is required.",
-            "rejects": "Explicit rejects are required.",
-            "candidate_pool": "A candidate pool is required.",
-            "kept": "Kept candidates are required.",
-            "rejected": "Rejected candidates are required.",
-            "sequencing_proof": "Sequencing proof is required.",
-            "winner_reasons": "Winner reasons are required.",
+            "rank": "You must rank the candidates.",
+            "rejects": "You must name clear rejects.",
+            "candidate_pool": "You must show the candidate pool.",
+            "kept": "You must show the kept candidates.",
+            "rejected": "You must show the rejected candidates.",
+            "sequencing_proof": "You must show the sequencing proof.",
+            "winner_reasons": "You must explain why the winner won.",
         }
         text = decision_required_text.get(item.key)
         if text is None:
@@ -197,7 +197,7 @@ class DisplayMixin:
                 )
             return [text]
         if isinstance(item, model.ReviewCurrentNoneStmt):
-            text = "There is no current artifact for this outcome."
+            text = "No artifact is current for this outcome."
             if item.when_expr is not None:
                 text = (
                     f"When {self._render_condition_expr(item.when_expr, unit=unit)}, "
@@ -357,14 +357,14 @@ class DisplayMixin:
             for case in stmt.cases
             if case.head is not None
         ]
-        lines = ["Work in exactly one mode:"]
+        lines = ["Use exactly one mode:"]
         lines.extend(f"- {label}" for label in labels)
         for case in stmt.cases:
             if case.head is None:
                 heading = "Else:"
             else:
                 heading = (
-                    f"If mode is {case.display_label or self._render_expr(case.head, unit=unit)}:"
+                    f"If the mode is {case.display_label or self._render_expr(case.head, unit=unit)}:"
                 )
             lines.extend(["", heading])
             lines.extend(
@@ -464,7 +464,7 @@ class DisplayMixin:
         if isinstance(stmt, model.CurrentArtifactStmt):
             text = f"Current artifact: {self._display_law_path_root(stmt.target, unit=unit, agent_contract=agent_contract)}."
         elif isinstance(stmt, model.CurrentNoneStmt):
-            text = "There is no current artifact for this turn."
+            text = "No artifact is current for this turn."
         elif isinstance(stmt, model.MustStmt):
             text = self._render_must_stmt(stmt, unit=unit)
         elif isinstance(stmt, model.OwnOnlyStmt):
@@ -473,7 +473,7 @@ class DisplayMixin:
             text = f"Preserve {stmt.kind} {self._render_path_set(stmt.target)}."
         elif isinstance(stmt, model.SupportOnlyStmt):
             text = (
-                f"{self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} is comparison-only support."
+                f"{self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} is support only for comparison."
             )
         elif isinstance(stmt, model.IgnoreStmt):
             text = self._render_ignore_stmt(stmt, unit=unit, agent_contract=agent_contract)
@@ -512,7 +512,7 @@ class DisplayMixin:
                     f"{_lowercase_initial(text)}"
                 )
         elif isinstance(stmt, model.ActiveWhenStmt):
-            text = f"This pass runs only when {self._render_condition_expr(stmt.expr, unit=unit)}."
+            text = f"Run this pass only when {self._render_condition_expr(stmt.expr, unit=unit)}."
         elif isinstance(stmt, model.ModeStmt):
             fixed_mode = self._resolve_constant_enum_member(stmt.expr, unit=unit)
             return [] if fixed_mode is None else [f"Active mode: {fixed_mode}."]
@@ -529,8 +529,8 @@ class DisplayMixin:
             and stmt.expr.op == "=="
             and isinstance(stmt.expr.left, model.ExprRef)
         ):
-            return f"Must {self._render_expr(stmt.expr.left, unit=unit)} == {self._render_expr(stmt.expr.right, unit=unit)}."
-        return f"Must {self._render_expr(stmt.expr, unit=unit)}."
+            return f"Make sure {self._render_expr(stmt.expr.left, unit=unit)} == {self._render_expr(stmt.expr.right, unit=unit)}."
+        return f"Make sure {self._render_expr(stmt.expr, unit=unit)}."
 
     def _render_ignore_stmt(
         self,
@@ -546,7 +546,7 @@ class DisplayMixin:
                 prefix = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, ignore"
             return f"{prefix} {target} for rewrite evidence."
         if stmt.bases == ("truth",) or not stmt.bases:
-            return f"{self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} does not count as truth for this pass."
+            return f"Do not treat {self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} as truth for this pass."
         return f"Ignore {target} for {', '.join(stmt.bases)}."
 
     def _render_path_set_subject(

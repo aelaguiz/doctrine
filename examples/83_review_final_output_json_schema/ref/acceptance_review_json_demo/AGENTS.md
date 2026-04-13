@@ -39,11 +39,11 @@ Rejected plan goes to PlanAuthor.
 ### Acceptance Review Response
 
 > **Final answer contract**
-> End the turn with one schema-backed final assistant message.
+> End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Structured JSON |
 | Shape | Acceptance Review JSON |
 | Schema | Acceptance Review Schema |
@@ -52,7 +52,7 @@ Rejected plan goes to PlanAuthor.
 | Example file | `examples/acceptance_review.example.json` |
 | Requirement | Required |
 
-#### Payload Shape
+#### Payload Fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ Rejected plan goes to PlanAuthor.
 | `current_artifact` | string | Current artifact after review. |
 | `next_owner` | string | Next owner after review. |
 
-#### Example Shape
+#### Example
 
 ```json
 {
@@ -103,7 +103,7 @@ Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -113,6 +113,6 @@ List exact failing gates, including Outline Complete when it fails.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner.

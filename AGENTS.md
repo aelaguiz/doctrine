@@ -50,14 +50,14 @@
 
 ## Plain Language Hard Requirement
 
-- Treat 7th grade reading level as a hard requirement for bundled prose, docs, diagnostics, examples, and agent replies.
+- Treat 7th grade reading level as a hard requirement for shipped bundled Markdown prose and agent replies.
 - Prefer short sentences, common words, and direct verbs.
 - Split dense instructions into two sentences when that keeps the meaning clear.
 - Keep Doctrine terms that carry exact meaning, but simplify the rest of the sentence around them.
 - Bad: `A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner.`
 - Good: `This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner.`
-- Bad: `Use host-provided route facts that say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local.`
-- Good: `Use host route facts. They say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local.`
+- Bad: `Rendered only when route facts section status is new or full rewrite.`
+- Good: `Show this only when the route facts say the section is new or a full rewrite.`
 
 ## Communication
 

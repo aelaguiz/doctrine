@@ -64,7 +64,7 @@ Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor w
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -83,11 +83,11 @@ This review should stand on its own. A downstream owner should know the verdict,
 ### Draft Review Decision
 
 > **Final answer contract**
-> End the turn with one final assistant message that satisfies this contract.
+> End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Natural-language markdown |
 | Shape | Comment Text |
 | Requirement | Required |
@@ -98,7 +98,7 @@ End with one short control summary for the routed owner.
 
 #### Retry Note
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 Only include this note when the review requests changes.
 
@@ -110,6 +110,6 @@ Keep the control summary aligned with Current Artifact.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 The final control summary should stand on its own for the routed owner.

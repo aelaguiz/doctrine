@@ -102,10 +102,10 @@ class FinalOutputTests(unittest.TestCase):
         rendered = render_markdown(agent)
         self.assertIn("## Final Output", rendered)
         self.assertIn("### Final Reply", rendered)
-        self.assertIn("| Message kind | Final assistant message |", rendered)
+        self.assertIn("| Message type | Final assistant message |", rendered)
         self.assertIn("| Format | Natural-language markdown |", rendered)
         self.assertIn("#### Expected Structure", rendered)
-        self.assertIn("#### Read It Cold", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
         self.assertNotIn("## Outputs", rendered)
 
     def test_json_final_output_exposes_schema_metadata_and_payload_preview(self) -> None:
@@ -193,9 +193,9 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("| Format | Structured JSON |", rendered)
         self.assertIn("| Schema | Repo Status Schema |", rendered)
         self.assertIn("| Profile | OpenAIStructuredOutput |", rendered)
-        self.assertIn("#### Payload Shape", rendered)
+        self.assertIn("#### Payload Fields", rendered)
         self.assertIn("| `next_step` | string \\| null | Null only when no follow-up is needed. |", rendered)
-        self.assertIn("#### Example Shape", rendered)
+        self.assertIn("#### Example", rendered)
         self.assertIn("```json", rendered)
 
     def test_json_final_output_requires_readable_schema_file(self) -> None:
@@ -456,7 +456,7 @@ class FinalOutputTests(unittest.TestCase):
         rendered = render_markdown(agent)
         self.assertIn("## Final Output", rendered)
         self.assertIn("### Imported Final Reply", rendered)
-        self.assertIn("#### Read It Cold", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
         self.assertNotIn("## Outputs", rendered)
 
     def test_review_driven_final_output_renders_dedicated_prose_contract(self) -> None:
@@ -559,8 +559,8 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Trust Surface", rendered)
         self.assertIn("- Current Artifact", rendered)
         self.assertIn("#### Failure Detail", rendered)
-        self.assertIn("Rendered only when verdict is changes requested.", rendered)
-        self.assertIn("#### Read It Cold", rendered)
+        self.assertIn("Show this only when verdict is changes requested.", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
 
     def test_review_driven_final_output_renders_schema_backed_json_contract(self) -> None:
         agent = self._compile_agent(
@@ -708,7 +708,7 @@ class FinalOutputTests(unittest.TestCase):
         self.assertNotIn("## Outputs", rendered)
         self.assertIn("| Format | Structured JSON |", rendered)
         self.assertIn("| Schema | Acceptance Review Schema |", rendered)
-        self.assertIn("#### Payload Shape", rendered)
+        self.assertIn("#### Payload Fields", rendered)
         self.assertIn("| `verdict` | string | Review verdict. |", rendered)
         self.assertIn("#### Trust Surface", rendered)
         self.assertIn("- Current Artifact", rendered)
@@ -841,11 +841,11 @@ class FinalOutputTests(unittest.TestCase):
         self.assertNotIn("### Draft Review Decision", outputs_block)
         self.assertIn("### Draft Review Decision", final_output_block)
         self.assertIn("#### Retry Note", final_output_block)
-        self.assertIn("Rendered only when verdict is changes requested.", final_output_block)
+        self.assertIn("Show this only when verdict is changes requested.", final_output_block)
         self.assertIn("Keep the control summary aligned with Current Artifact.", final_output_block)
         self.assertIn("#### Trust Surface", final_output_block)
         self.assertIn("- Current Artifact", final_output_block)
-        self.assertIn("#### Read It Cold", final_output_block)
+        self.assertIn("#### Read on Its Own", final_output_block)
 
     def test_review_driven_split_final_output_can_render_route_semantics(self) -> None:
         agent = self._compile_agent(
@@ -958,10 +958,10 @@ class FinalOutputTests(unittest.TestCase):
         rendered = render_markdown(agent)
         final_output_block = rendered.split("## Final Output", 1)[1]
         self.assertIn("#### Accepted Route", final_output_block)
-        self.assertIn("Rendered only when verdict is accepted and a routed owner exists.", final_output_block)
+        self.assertIn("Show this only when verdict is accepted and a routed owner exists.", final_output_block)
         self.assertIn("Accepted draft returns to ReviewLead. Next owner: Review Lead.", final_output_block)
         self.assertIn("#### Retry Route", final_output_block)
-        self.assertIn("Rendered only when verdict is changes requested and a routed owner exists.", final_output_block)
+        self.assertIn("Show this only when verdict is changes requested and a routed owner exists.", final_output_block)
         self.assertIn("Draft Author", final_output_block)
 
     def test_review_driven_schema_backed_final_output_can_split_from_comment_output(self) -> None:
@@ -1136,12 +1136,12 @@ class FinalOutputTests(unittest.TestCase):
         self.assertNotIn("### Acceptance Control Final Response", outputs_block)
         self.assertIn("### Acceptance Control Final Response", final_output_block)
         self.assertIn("| Schema | Acceptance Control Schema |", final_output_block)
-        self.assertIn("#### Payload Shape", final_output_block)
+        self.assertIn("#### Payload Fields", final_output_block)
         self.assertIn("#### Field Notes", final_output_block)
         self.assertIn("Keep `current_artifact` aligned with Current Artifact.", final_output_block)
         self.assertIn("Use `route` value `revise` only when Outline Complete fails.", final_output_block)
         self.assertIn("#### Changes Requested Note", final_output_block)
-        self.assertIn("Rendered only when verdict is changes requested.", final_output_block)
+        self.assertIn("Show this only when verdict is changes requested.", final_output_block)
         self.assertIn("#### Trust Surface", final_output_block)
         self.assertIn("- Current Artifact", final_output_block)
 
@@ -1304,10 +1304,10 @@ class FinalOutputTests(unittest.TestCase):
         rendered = render_markdown(agent)
         final_output_block = rendered.split("## Final Output", 1)[1]
         self.assertIn("#### Accepted Route", final_output_block)
-        self.assertIn("Rendered only when verdict is accepted and a routed owner exists.", final_output_block)
+        self.assertIn("Show this only when verdict is accepted and a routed owner exists.", final_output_block)
         self.assertIn("Accepted plan returns to ReviewLead. Next owner: Review Lead.", final_output_block)
         self.assertIn("#### Retry Route", final_output_block)
-        self.assertIn("Rendered only when verdict is changes requested and a routed owner exists.", final_output_block)
+        self.assertIn("Show this only when verdict is changes requested and a routed owner exists.", final_output_block)
         self.assertIn("PlanAuthor", final_output_block)
 
     def test_final_output_requires_output_declaration(self) -> None:

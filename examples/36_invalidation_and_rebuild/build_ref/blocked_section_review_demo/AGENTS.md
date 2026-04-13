@@ -4,7 +4,7 @@ Do not keep reviewing against invalidated downstream truth.
 
 This pass runs only when section review invalidated.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: Section Review is invalidated until rebuild work completes.
 

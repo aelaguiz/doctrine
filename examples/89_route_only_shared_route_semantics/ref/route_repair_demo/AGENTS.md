@@ -6,14 +6,14 @@ Emit Route Repair Comment.
 
 This pass runs only when RouteFacts.live_job is route_repair and current specialist output is missing.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: No specialist artifact is current for this turn.
 
-Work in exactly one mode:
+Use exactly one mode:
 - Routing Owner
 
-If mode is Routing Owner:
+If the mode is Routing Owner:
 - Route to Routing Owner.
 
 ## Inputs
@@ -36,7 +36,7 @@ Use the host route facts. They say whether route repair is active, whether the c
 
 #### Route Handoff
 
-Rendered only when a routed owner exists.
+Show this only when a routed owner exists.
 
 - Next Owner: Routing Owner
 

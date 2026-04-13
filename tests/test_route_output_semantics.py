@@ -178,7 +178,7 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("Rendered only when a routed owner exists.", rendered)
+        self.assertIn("Show this only when a routed owner exists.", rendered)
         self.assertIn("- Next Owner: Review Lead", rendered)
         self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
 
@@ -225,7 +225,7 @@ class RouteOutputSemanticsTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn("#### Next Owner", rendered)
-        self.assertIn("Rendered only when a routed owner exists.", rendered)
+        self.assertIn("Show this only when a routed owner exists.", rendered)
         self.assertIn("Review Lead", rendered)
         self.assertNotIn("- Next Owner: Review Lead", rendered)
 
@@ -325,9 +325,9 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("Rendered only when verdict is accepted and a routed owner exists.", rendered)
+        self.assertIn("Show this only when verdict is accepted and a routed owner exists.", rendered)
         self.assertIn("Accepted draft returns to ReviewLead. Next owner: Review Lead.", rendered)
-        self.assertIn("Rendered only when verdict is changes requested and a routed owner exists.", rendered)
+        self.assertIn("Show this only when verdict is changes requested and a routed owner exists.", rendered)
         self.assertIn("Draft Author", rendered)
 
     def test_route_only_output_can_interpolate_route_next_owner(self) -> None:
@@ -377,7 +377,7 @@ class RouteOutputSemanticsTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn("#### Route Handoff", rendered)
-        self.assertIn("Rendered only when a routed owner exists.", rendered)
+        self.assertIn("Show this only when a routed owner exists.", rendered)
         self.assertIn("- Next Owner: Routing Owner", rendered)
         self.assertIn("Keep the issue on RoutingOwner until the next specialist owner is actually justified. Next owner: Routing Owner.", rendered)
 

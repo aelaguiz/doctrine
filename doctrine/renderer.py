@@ -556,7 +556,7 @@ def _render_guard_block(
 ) -> str:
     mode = _resolve_profile_mode(profile, "guarded_sections", "guard")
     if mode == "concise_explanatory_shell":
-        lines = [f"_Rendered only when {block.when_text}._"]
+        lines = [f"_Show this only when {block.when_text}._"]
         body_lines = _render_body_lines(block.body, depth=depth, profile=profile)
         if body_lines:
             lines.extend(["", *body_lines])

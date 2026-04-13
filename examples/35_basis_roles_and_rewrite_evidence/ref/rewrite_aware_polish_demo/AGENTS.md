@@ -4,11 +4,11 @@ Separate comparison help, live truth, and rewrite evidence.
 
 Current artifact: Section Metadata.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 When CurrentHandoff.rewrite_regime is rewrite, ignore {`SectionMetadata.name`, `SectionMetadata.description`} for rewrite evidence.
 
-Stale Metadata Notes does not count as truth for this pass.
+Do not treat Stale Metadata Notes as truth for this pass.
 
 ## Inputs
 

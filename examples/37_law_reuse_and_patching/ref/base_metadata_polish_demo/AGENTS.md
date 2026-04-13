@@ -4,7 +4,7 @@ Keep reusable law subsections explicit in the base workflow.
 
 Current artifact: Section Metadata.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 If unclear(CurrentHandoff.preserve_basis):
 - Stop: Preserve basis is unclear.

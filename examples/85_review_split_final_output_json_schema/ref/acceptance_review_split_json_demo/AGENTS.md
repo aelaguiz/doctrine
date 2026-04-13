@@ -68,7 +68,7 @@ Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
@@ -87,11 +87,11 @@ This review should stand on its own. A downstream owner should know the acceptan
 ### Acceptance Control Final Response
 
 > **Final answer contract**
-> End the turn with one schema-backed final assistant message.
+> End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
 | --- | --- |
-| Message kind | Final assistant message |
+| Message type | Final assistant message |
 | Format | Structured JSON |
 | Shape | Acceptance Control JSON |
 | Schema | Acceptance Control Schema |
@@ -100,7 +100,7 @@ This review should stand on its own. A downstream owner should know the acceptan
 | Example file | `examples/acceptance_control.example.json` |
 | Requirement | Required |
 
-#### Payload Shape
+#### Payload Fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -108,7 +108,7 @@ This review should stand on its own. A downstream owner should know the acceptan
 | `current_artifact` | string | Current artifact after review. |
 | `next_owner` | string | Next owner after review. |
 
-#### Example Shape
+#### Example
 
 ```json
 {
@@ -125,7 +125,7 @@ Use `route` value `revise` only when Outline Complete fails.
 
 #### Changes Requested Note
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 Only emit this retry control when the review requests changes.
 
@@ -133,6 +133,6 @@ Only emit this retry control when the review requests changes.
 
 - Current Artifact
 
-#### Read It Cold
+#### Read on Its Own
 
 This final JSON should be enough for the next owner to route the review result.

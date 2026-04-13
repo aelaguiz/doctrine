@@ -8,7 +8,7 @@ If unclear(CurrentHandoff.preserve_basis):
 
 Current artifact: Section Metadata.
 
-Accepted Peer Set is comparison-only support.
+Accepted Peer Set is support only for comparison.
 
 When CurrentHandoff.rewrite_regime is rewrite, ignore `SectionMetadata.description` for rewrite evidence.
 

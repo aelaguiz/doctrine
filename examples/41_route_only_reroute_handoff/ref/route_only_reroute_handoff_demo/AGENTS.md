@@ -6,7 +6,7 @@ Stop and reroute when the specialist output is missing and the next owner is sti
 
 This pass runs only when current specialist output is missing and next owner is unknown.
 
-There is no current artifact for this turn.
+No artifact is current for this turn.
 
 Stop: No specialist artifact is current for this turn.
 

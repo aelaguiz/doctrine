@@ -33,7 +33,7 @@ expected_lines = [
   "",
   "Ground the current claim before you write.",
   "",
-  "> **NOTE — Usage Note**",
+  "> **NOTE \u2014 Usage Note**",
   "> _callout_",
   "> Use this before you summarize evidence.",
   "",
@@ -49,6 +49,6 @@ expected_lines = [
   "",
   "_definitions_",
   "",
-  "- **Summary** — Summarize the release outcome.",
-  "- **Next Owner** — Name who owns the next action.",
+  "- **Summary** \u2014 Summarize the release outcome.",
+  "- **Next Owner** \u2014 Name who owns the next action.",
 ]

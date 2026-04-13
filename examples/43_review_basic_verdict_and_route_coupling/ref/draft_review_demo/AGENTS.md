@@ -15,13 +15,13 @@ Accept only if The shared draft review contract passes.
 
 ### If Accepted
 
-There is no current artifact for this outcome.
+No artifact is current for this outcome.
 
 Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
-There is no current artifact for this outcome.
+No artifact is current for this outcome.
 
 Rejected draft goes to DraftAuthor.
 
@@ -66,7 +66,7 @@ Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor w
 
 #### Failure Detail
 
-Rendered only when verdict is changes requested.
+Show this only when verdict is changes requested.
 
 ##### Failing Gates
 
