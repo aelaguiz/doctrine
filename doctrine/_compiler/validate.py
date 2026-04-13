@@ -254,6 +254,7 @@ class ValidateMixin:
             if not isinstance(field, model.ReviewField):
                 continue
             review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
+            self._ensure_concrete_review_decl(review_decl, unit=review_unit)
             resolved = self._resolve_review_decl(review_decl, unit=review_unit)
             if resolved.comment_output is None:
                 continue
@@ -369,14 +370,18 @@ class ValidateMixin:
         *,
         unit: IndexedUnit,
         resolved_slots: dict[str, ResolvedWorkflowBody],
+        agent_contract: AgentContract,
     ) -> tuple[tuple[str, RouteSemanticContext], ...]:
         sources: list[tuple[str, RouteSemanticContext]] = []
         review_fields = [field for field in agent.fields if isinstance(field, model.ReviewField)]
         if review_fields:
             review_unit, review_decl = self._resolve_review_ref(review_fields[0].value, unit=unit)
+            self._ensure_concrete_review_decl(review_decl, unit=review_unit)
             review_context = self._route_semantic_context_from_review_decl(
                 review_decl,
                 unit=review_unit,
+                agent_contract=agent_contract,
+                owner_label=f"agent {agent.name} review",
             )
             if review_context is not None:
                 sources.append(("review", review_context))
@@ -410,11 +415,13 @@ class ValidateMixin:
         *,
         unit: IndexedUnit,
         resolved_slots: dict[str, ResolvedWorkflowBody],
+        agent_contract: AgentContract,
     ) -> RouteSemanticContext | None:
         sources = self._route_semantic_sources_for_agent(
             agent,
             unit=unit,
             resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
         )
         if len(sources) > 1:
             labels = ", ".join(source for source, _context in sources)
@@ -424,6 +431,18 @@ class ValidateMixin:
         if not sources:
             return None
         return sources[0][1]
+
+    def _ensure_concrete_review_decl(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        if review_decl.abstract:
+            raise CompileError(
+                "Concrete agents may not attach abstract reviews directly: "
+                f"{_dotted_decl_name(unit.module_parts, review_decl.name)}"
+            )
 
     def _route_output_contexts_for_agent(
         self,
@@ -441,6 +460,7 @@ class ValidateMixin:
             agent,
             unit=unit,
             resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
         )
         if context is None:
             return frozenset()
@@ -461,49 +481,37 @@ class ValidateMixin:
         review_decl: model.ReviewDecl,
         *,
         unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
     ) -> RouteSemanticContext | None:
-        resolved = self._resolve_review_decl(review_decl, unit=unit)
+        resolved_review = self._resolve_compiled_review(
+            review_decl,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
         branches: list[RouteSemanticBranch] = []
         has_unrouted_branch = False
-
-        def collect_section(
-            section: model.ReviewOutcomeSection,
-            *,
-            verdict: str,
-        ) -> None:
-            nonlocal has_unrouted_branch
-            for branch in self._collect_review_outcome_leaf_branches(section.items, unit=unit):
-                if not branch.routes:
-                    has_unrouted_branch = True
-                    continue
-                for route in branch.routes:
-                    branches.append(
-                        self._route_semantic_branch_from_route(
-                            route,
-                            label=route.label,
-                            unit=unit,
-                            review_verdict=verdict,
-                        )
-                    )
-
-        if resolved.cases:
-            for case in resolved.cases:
-                collect_section(case.on_accept, verdict=_REVIEW_VERDICT_TEXT["accept"])
-                collect_section(case.on_reject, verdict=_REVIEW_VERDICT_TEXT["changes_requested"])
-        else:
-            for item in resolved.items:
-                if not isinstance(item, model.ReviewOutcomeSection):
-                    continue
-                verdict = (
-                    _REVIEW_VERDICT_TEXT["accept"]
-                    if item.key == "on_accept"
-                    else _REVIEW_VERDICT_TEXT["changes_requested"]
+        unrouted_review_verdicts: set[str] = set()
+        for branch in (*resolved_review.accept_branches, *resolved_review.reject_branches):
+            live_route = self._resolved_review_route(branch, unit=unit)
+            if live_route is None:
+                has_unrouted_branch = True
+                unrouted_review_verdicts.add(branch.verdict)
+                continue
+            branches.append(
+                self._route_semantic_branch_from_route(
+                    live_route,
+                    label=live_route.label,
+                    unit=unit,
+                    review_verdict=branch.verdict,
                 )
-                collect_section(item, verdict=verdict)
+            )
 
         return self._build_route_semantic_context(
             branches,
             has_unrouted_branch=has_unrouted_branch,
+            unrouted_review_verdicts=frozenset(unrouted_review_verdicts),
         )
 
     def _route_semantic_context_from_law_items(
@@ -572,6 +580,7 @@ class ValidateMixin:
         branches: list[RouteSemanticBranch],
         *,
         has_unrouted_branch: bool,
+        unrouted_review_verdicts: frozenset[str] = frozenset(),
     ) -> RouteSemanticContext | None:
         if not branches and not has_unrouted_branch:
             return None
@@ -600,6 +609,7 @@ class ValidateMixin:
         return RouteSemanticContext(
             branches=tuple(deduped),
             has_unrouted_branch=has_unrouted_branch,
+            unrouted_review_verdicts=unrouted_review_verdicts,
         )
 
     def _narrow_route_semantics(
@@ -830,6 +840,7 @@ class ValidateMixin:
             branches=tuple(matching),
             has_unrouted_branch=has_unrouted_branch,
             route_required=route_semantics.route_required,
+            unrouted_review_verdicts=route_semantics.unrouted_review_verdicts,
         )
 
     def _route_choice_member_matches(
@@ -857,11 +868,18 @@ class ValidateMixin:
         matching = tuple(
             branch for branch in route_semantics.branches if branch.review_verdict in {None, verdict}
         )
-        has_unrouted_branch = route_semantics.has_unrouted_branch and not matching
+        verdict_has_unrouted_branch = verdict in route_semantics.unrouted_review_verdicts
+        has_unrouted_branch = verdict_has_unrouted_branch or (
+            route_semantics.has_unrouted_branch
+            and not route_semantics.unrouted_review_verdicts
+        )
         return RouteSemanticContext(
             branches=matching,
             has_unrouted_branch=has_unrouted_branch,
             route_required=route_semantics.route_required,
+            unrouted_review_verdicts=(
+                frozenset({verdict}) if verdict_has_unrouted_branch else frozenset()
+            ),
         )
 
     def _route_semantic_branch_title(self, branch: RouteSemanticBranch) -> str:
@@ -2729,7 +2747,8 @@ class ValidateMixin:
                 f"{owner_label}: {output_decl.name}.{'.'.join(verdict_path)}"
             )
 
-        if branch.route is not None:
+        route = self._resolved_review_route(branch, unit=unit)
+        if route is not None:
             if not self._review_output_path_is_live(
                 output_decl,
                 path=next_owner_field_path,
@@ -2739,10 +2758,10 @@ class ValidateMixin:
                 raise CompileError(
                     "Review next_owner field is not live for routed target in "
                     f"{owner_label}: {output_decl.name}.{'.'.join(next_owner_field_path)} -> "
-                    f"{branch.route.target.declaration_name}"
+                    f"{route.target.declaration_name}"
                 )
             self._validate_review_next_owner_binding(
-                branch.route,
+                route,
                 review_unit=unit,
                 output_decl=output_decl,
                 output_unit=output_unit,
@@ -2926,7 +2945,8 @@ class ValidateMixin:
                     )
 
                 if field_name == "next_owner":
-                    if branch.route is None:
+                    route = self._resolved_review_route(branch, unit=review_unit)
+                    if route is None:
                         if not self._review_output_path_is_live(
                             output_decl,
                             path=bound_path,
@@ -2947,10 +2967,10 @@ class ValidateMixin:
                         raise CompileError(
                             "Review next_owner field is not live for routed target in "
                             f"{owner_label}: {output_decl.name}.{'.'.join(bound_path)} -> "
-                            f"{branch.route.target.declaration_name}"
+                            f"{route.target.declaration_name}"
                         )
                     self._validate_review_next_owner_binding(
-                        branch.route,
+                        route,
                         review_unit=review_unit,
                         output_decl=output_decl,
                         output_unit=output_unit,
@@ -3178,6 +3198,27 @@ class ValidateMixin:
             return ref.parts[1]
         return None
 
+    def _resolved_review_route(
+        self,
+        branch: ResolvedReviewAgreementBranch,
+        *,
+        unit: IndexedUnit,
+    ) -> model.ReviewOutcomeRouteStmt | None:
+        if branch.route is None:
+            return None
+        if branch.route.when_expr is None:
+            return branch.route
+        return (
+            branch.route
+            if self._evaluate_review_semantic_guard(
+                branch.route.when_expr,
+                unit=unit,
+                branch=branch,
+            )
+            is True
+            else None
+        )
+
     def _review_semantic_ref_value(
         self,
         field_name: str,
@@ -3188,7 +3229,8 @@ class ValidateMixin:
         if field_name == "verdict":
             return branch.verdict
         if field_name == "next_owner":
-            return None if branch.route is None else branch.route.target.declaration_name
+            route = self._resolved_review_route(branch, unit=unit)
+            return None if route is None else route.target.declaration_name
         if field_name == "current_artifact":
             if branch.current_subject_key is None:
                 return None

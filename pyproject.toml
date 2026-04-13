@@ -48,6 +48,11 @@ entrypoint = "examples/79_final_output_json_schema/prompts/AGENTS.prompt"
 output_dir = "examples/79_final_output_json_schema/build"
 
 [[tool.doctrine.emit.targets]]
+name = "example_84_review_split_final_output_prose"
+entrypoint = "examples/84_review_split_final_output_prose/prompts/AGENTS.prompt"
+output_dir = "examples/84_review_split_final_output_prose/build"
+
+[[tool.doctrine.emit.targets]]
 name = "example_95_skill_package_minimal"
 entrypoint = "examples/95_skill_package_minimal/prompts/SKILL.prompt"
 output_dir = "examples/95_skill_package_minimal/build"

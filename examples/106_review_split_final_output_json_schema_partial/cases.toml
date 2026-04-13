@@ -189,3 +189,17 @@ message_contains = [
   "review_fields",
   "split final responses",
 ]
+
+[[cases]]
+name = "split final_output route reads still need route.exists on blocked review branches"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_FINAL_OUTPUT_VERDICT_GUARD_OMITS_ROUTE_EXISTS.prompt"
+agent = "InvalidSplitFinalOutputRouteGuardDemo"
+exception_type = "CompileError"
+error_code = "E299"
+message_contains = [
+  "route semantics are not live on every branch",
+  "AcceptanceControlFinalResponse.retry_route",
+  "guard the read with `route.exists`",
+]

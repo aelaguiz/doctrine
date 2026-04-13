@@ -446,6 +446,7 @@ class RouteSemanticContext:
     branches: tuple[RouteSemanticBranch, ...] = ()
     has_unrouted_branch: bool = False
     route_required: bool = False
+    unrouted_review_verdicts: frozenset[str] = frozenset()
 
 
 @dataclass(slots=True, frozen=True)

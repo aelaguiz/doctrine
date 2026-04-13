@@ -10,6 +10,8 @@ Each numbered example may contain:
 
 - `prompts/`: authored `.prompt` source
 - `cases.toml`: manifest-backed proof used by `doctrine.verify_corpus`
+- `schema_version` inside `cases.toml`: the manifest format version, not the
+  Doctrine language version
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
   including compiled Markdown trees, `SKILL.md` package trees, companion
@@ -22,6 +24,8 @@ Each numbered example may contain:
 - Read the examples in numeric order. The sequence is intentional.
 - The manifest is the proof surface. A checked-in ref file is not proof on its
   own.
+- `schema_version` is the manifest contract version. It is not the Doctrine
+  language version.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
 - Keep new examples narrow. One new idea per example is the design rule.
@@ -86,6 +90,8 @@ For the shipped workflow-law reference, use
 reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 For the shipped skill-package authoring guide, use
 [../docs/SKILL_PACKAGE_AUTHORING.md](../docs/SKILL_PACKAGE_AUTHORING.md).
+For versioning and breaking-change guidance, use
+[../docs/VERSIONING.md](../docs/VERSIONING.md).
 
 ## Corpus Index
 

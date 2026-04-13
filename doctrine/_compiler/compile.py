@@ -297,6 +297,7 @@ class CompileMixin:
             agent,
             unit=unit,
             resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
         )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
         route_output_contexts = self._route_output_contexts_for_agent(
@@ -539,11 +540,7 @@ class CompileMixin:
             return self._compile_skills_field(field, unit=unit)
         if isinstance(field, model.ReviewField):
             review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
-            if review_decl.abstract:
-                raise CompileError(
-                    "Concrete agents may not attach abstract reviews directly: "
-                    f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
-                )
+            self._ensure_concrete_review_decl(review_decl, unit=review_unit)
             return self._compile_review_decl(
                 review_decl,
                 unit=review_unit,
@@ -593,11 +590,7 @@ class CompileMixin:
 
         review_field = review_fields[0]
         review_unit, review_decl = self._resolve_review_ref(review_field.value, unit=unit)
-        if review_decl.abstract:
-            raise CompileError(
-                "Concrete agents may not attach abstract reviews directly: "
-                f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
-            )
+        self._ensure_concrete_review_decl(review_decl, unit=review_unit)
 
         resolved_review = self._resolve_compiled_review(
             review_decl,
@@ -664,6 +657,7 @@ class CompileMixin:
                     )
                 control_ready = self._review_final_response_is_control_ready(
                     all_branches,
+                    review_unit=review_unit,
                     field_bindings=final_response_fields,
                 )
 
@@ -687,7 +681,8 @@ class CompileMixin:
                         exists=bool(resolved_review.accept_branches),
                         verdict="accept",
                         route_behavior=self._review_route_behavior(
-                            resolved_review.accept_branches
+                            resolved_review.accept_branches,
+                            review_unit=review_unit,
                         ),
                     ),
                 ),
@@ -697,7 +692,8 @@ class CompileMixin:
                         exists=bool(resolved_review.reject_branches),
                         verdict="changes_requested",
                         route_behavior=self._review_route_behavior(
-                            resolved_review.reject_branches
+                            resolved_review.reject_branches,
+                            review_unit=review_unit,
                         ),
                     ),
                 ),
@@ -714,7 +710,8 @@ class CompileMixin:
                                 branch
                                 for branch in resolved_review.reject_branches
                                 if branch.blocked_gate_id is not None
-                            )
+                            ),
+                            review_unit=review_unit,
                         ),
                     ),
                 ),
@@ -1149,11 +1146,15 @@ class CompileMixin:
         self,
         branches: tuple[ResolvedReviewAgreementBranch, ...],
         *,
+        review_unit: IndexedUnit,
         field_bindings: dict[str, tuple[str, ...]],
     ) -> bool:
         if "verdict" not in field_bindings:
             return False
-        if any(branch.route is not None for branch in branches) and "next_owner" not in field_bindings:
+        if (
+            any(self._resolved_review_route(branch, unit=review_unit) is not None for branch in branches)
+            and "next_owner" not in field_bindings
+        ):
             return False
         if any(branch.blocked_gate_id is not None for branch in branches) and "blocked_gate" not in field_bindings:
             return False
@@ -1162,10 +1163,16 @@ class CompileMixin:
     def _review_route_behavior(
         self,
         branches: tuple[ResolvedReviewAgreementBranch, ...],
+        *,
+        review_unit: IndexedUnit,
     ) -> str:
         if not branches:
             return "never"
-        routed = sum(1 for branch in branches if branch.route is not None)
+        routed = sum(
+            1
+            for branch in branches
+            if self._resolved_review_route(branch, unit=review_unit) is not None
+        )
         if routed == len(branches):
             return "always"
         if routed == 0:

@@ -138,6 +138,11 @@ def load_emit_targets(
             require_str(raw_target, "entrypoint", label=f"emit target {name}"),
             label=f"emit target {name} entrypoint",
         )
+        _validate_entrypoint_within_project_root(
+            entrypoint,
+            project_root=project_config.config_dir,
+            detail_prefix=f"Emit target `{name}` entrypoint",
+        )
         ensure_supported_entrypoint(
             entrypoint,
             allowed_entrypoints=SUPPORTED_ENTRYPOINTS,
@@ -282,21 +287,53 @@ def _validate_output_dir_within_project_root(
     project_root: Path | None,
     detail_prefix: str,
 ) -> None:
+    _validate_path_within_project_root(
+        candidate_path=output_dir,
+        project_root=project_root,
+        detail_prefix=detail_prefix,
+        code="E520",
+        summary="Emit target output_dir must stay within project root",
+    )
+
+
+def _validate_entrypoint_within_project_root(
+    entrypoint: Path,
+    *,
+    project_root: Path | None,
+    detail_prefix: str,
+) -> None:
+    _validate_path_within_project_root(
+        candidate_path=entrypoint,
+        project_root=project_root,
+        detail_prefix=detail_prefix,
+        code="E521",
+        summary="Emit target entrypoint must stay within project root",
+    )
+
+
+def _validate_path_within_project_root(
+    *,
+    candidate_path: Path,
+    project_root: Path | None,
+    detail_prefix: str,
+    code: str,
+    summary: str,
+) -> None:
     if project_root is None:
         return
 
-    resolved_output_dir = output_dir.resolve()
+    resolved_candidate_path = candidate_path.resolve()
     resolved_project_root = project_root.resolve()
     try:
-        resolved_output_dir.relative_to(resolved_project_root)
+        resolved_candidate_path.relative_to(resolved_project_root)
     except ValueError as exc:
         raise emit_error(
-            "E520",
-            "Emit target output_dir must stay within project root",
+            code,
+            summary,
             f"{detail_prefix} resolves outside the target project root: "
-            f"`{display_path(resolved_output_dir)}` is not under "
+            f"`{display_path(resolved_candidate_path)}` is not under "
             f"`{display_path(resolved_project_root)}`.",
-            location=path_location(output_dir),
+            location=path_location(candidate_path),
         ) from exc
 
 

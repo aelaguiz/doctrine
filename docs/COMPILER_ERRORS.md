@@ -215,6 +215,7 @@ Stability rules:
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
 | `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
 | `E520` | Emit target output_dir must stay within project root | A configured or direct emit output directory resolved outside the owning project's root. |
+| `E521` | Emit target entrypoint must stay within project root | A configured emit target resolved its entrypoint outside the owning project's root. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

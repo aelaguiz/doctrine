@@ -85,6 +85,8 @@ Important rules:
   `AGENTS.prompt` or `SOUL.prompt` and rejects `SKILL.prompt`.
 - `entrypoint` must live under a `prompts/` tree. The emit pipeline preserves
   the subdirectory beneath that `prompts/` root.
+- In configured target mode, `entrypoint` must stay within the target project
+  root.
 - `output_dir` must resolve to a directory path, not an existing file.
 - In configured target mode, `output_dir` must stay within the target project
   root.
@@ -246,6 +248,10 @@ examples/103_skill_package_binary_assets/build/assets/icon.png
 ```
 
 The companion contract is compiler-owned emitted truth. In v1 it carries:
+
+- `contract_version = 1` for the emitted JSON contract shape only. It is not
+  the Doctrine language version. For the repo-wide versioning guide, use
+  [VERSIONING.md](VERSIONING.md).
 
 - concrete agent identity
 - whether `final_output` exists
