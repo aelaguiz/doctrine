@@ -69,4 +69,4 @@ Name any fields whose old values do not count as rewrite evidence.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know what is current now, what was comparison-only, and what old wording no longer counts as rewrite evidence.
+This output should stand on its own. The next owner should know what is current, what was comparison-only, and what old wording no longer counts as rewrite evidence.

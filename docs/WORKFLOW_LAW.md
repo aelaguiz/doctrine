@@ -32,7 +32,7 @@ The governing split is:
   semantics on that same turn
 - `trust_surface` inside `output` marks which emitted fields downstream owners
   may trust
-- guarded output sections keep conditional readback on the output contract
+- guarded output items keep conditional readback on the output contract
   instead of creating a second control plane
 
 ## Where The Syntax Lives
@@ -56,7 +56,7 @@ output RouteOnlyHandoffOutput: "Routing Handoff Comment"
 
 Important rules:
 
-- Guarded output sections are still output-owned fields.
+- Guarded output items are still output-owned fields.
 - They are required only when their guard resolves true.
 - On ordinary outputs, guards may read declared inputs, enum members, and
   `route.exists` when the active workflow-law branches expose route semantics.
@@ -78,7 +78,7 @@ Important rules:
   statements
 - unguarded `route.*` reads fail loudly when some active branches may not route
 - `when route.exists:` is the ordinary output-side guard for route-specific
-  readback
+  readback, whether the guarded item is one scalar field or one section
 
 ## Branch Model
 

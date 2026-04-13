@@ -451,14 +451,22 @@ class GuardedOutputSection:
 
 
 @dataclass(slots=True, frozen=True)
+class GuardedOutputScalar:
+    key: str
+    value: RecordScalarValue
+    when_expr: Expr
+    body: tuple["AnyRecordItem", ...] | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class RecordRef:
     ref: NameRef
     body: tuple["AnyRecordItem", ...] | None = None
 
 
 RecordItem: TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
-AnyRecordItem: TypeAlias = RecordItem | GuardedOutputSection
-OutputRecordItem: TypeAlias = RecordItem | GuardedOutputSection
+AnyRecordItem: TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
+OutputRecordItem: TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
 
 
 @dataclass(slots=True, frozen=True)

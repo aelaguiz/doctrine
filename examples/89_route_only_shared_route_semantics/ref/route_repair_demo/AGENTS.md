@@ -24,7 +24,7 @@ If mode is Routing Owner:
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided route facts that say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local.
+Use the host route facts. They say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local.
 
 ## Outputs
 

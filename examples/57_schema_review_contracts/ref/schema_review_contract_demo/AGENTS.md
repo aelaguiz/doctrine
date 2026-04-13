@@ -17,13 +17,13 @@ Accept only if The schema review contract passes.
 
 There is no current artifact for this outcome.
 
-Accepted plan returns to ReviewLead.
+Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
 There is no current artifact for this outcome.
 
-Rejected plan returns to PlanAuthor.
+Rejected plan goes to PlanAuthor.
 
 ## Inputs
 

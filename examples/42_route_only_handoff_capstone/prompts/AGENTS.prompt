@@ -1,13 +1,13 @@
 # This file is the full generic Slice A route-only handoff example.
 # It keeps the semantics in `workflow` + `law`, keeps the produced contract on
-# `output`, and keeps conditional readback as output-owned guarded sections.
+# `output`, and keeps conditional readback as output-owned guarded items.
 
 # Declare the host facts that ground the full route-only handoff comment.
 input RouteFacts: "Route Facts"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use host-provided route facts that say what live job is in force, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or full rewrite, whether a critic miss repeated, what the next concrete step is, what keeps failing, which role returned the issue, and what the next concrete fix is."
+    "Use host route facts. They say which live job is active, whether the current specialist output is missing, whether the next owner is still unclear, whether the section is new or a full rewrite, whether the same critic miss happened again, what step comes next, what keeps failing, which role sent the issue back, and what fix comes next."
 
 
 # Declare the rich route-only handoff comment. The workflow law decides when
@@ -26,7 +26,7 @@ output RouteOnlyHandoffOutput: "Routing Handoff Comment"
 
         # This field says who owns next under the allowed route-only outcomes.
         next_owner: "Next Owner"
-            "Name the next owner when ownership is changing now. If ownership stays local, say plainly that it stays local. If the earliest clear owner is still unclear, say plainly that {{RoutingOwner}} keeps the issue."
+            "Name the next owner when ownership changes. If ownership stays local, say so. If no clear next owner is known yet, say that {{RoutingOwner}} keeps the issue."
 
         # This field says what should happen next.
         next_step: "Next Step"
@@ -53,12 +53,12 @@ output RouteOnlyHandoffOutput: "Routing Handoff Comment"
     # This block says what a downstream owner should understand from the
     # comment alone.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand that no specialist artifact is current, what route-only state is now in force, who owns next, and what the next concrete step is."
+        "This comment should stand on its own. The next owner should know that no specialist artifact is current, which route-only state is active, who owns next, and what step comes next."
 
 
 # Declare the concrete reroute owner for the unknown-next-owner branch.
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue safely."
+    role: "Handle reroutes when specialist work cannot continue safely."
     workflow: "Instructions"
         "Take back the same issue when the next specialist owner is still not justified."
 
@@ -79,7 +79,7 @@ workflow RouteOnlyTurns: "Routing-Only Turns"
 
         # This line sends the issue back to RoutingOwner only when the
         # next specialist owner is still not justified.
-        route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown
+        route "Keep the issue on RoutingOwner until the next specialist owner is clear." -> RoutingOwner when RouteFacts.next_owner_unknown
 
 
 # Declare a concrete agent that wires the canonical Slice A workflow and

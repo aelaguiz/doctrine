@@ -58,11 +58,11 @@ review DraftReview: "Draft Review"
 
     on_accept: "If Accepted"
         current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
-        route "Accepted draft returns to ReviewLead." -> ReviewLead
+        route "Accepted draft goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
-        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+        route "Rejected draft goes to DraftAuthor." -> DraftAuthor
 
 
 agent ImportedDraftReviewDemo:

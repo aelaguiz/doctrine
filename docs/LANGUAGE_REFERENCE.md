@@ -509,6 +509,8 @@ Output bodies may also contain:
 - authored fields and sections
 - readable declaration refs
 - `standalone_read`
+- guarded output items such as
+  `next_owner: route.next_owner when route.exists`
 - keyed guarded sections such as
   `failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:`
 - `trust_surface`
@@ -646,7 +648,7 @@ The shipped expression surface supports:
   `unclear(...)`
 - boolean operators and comparison operators
 
-Those expressions are used in `when`, `match`, guarded output sections,
+Those expressions are used in `when`, `match`, guarded output items,
 workflow law, and review semantics.
 
 ## Markdown Emission

@@ -13,13 +13,13 @@ Accept only if The shared draft review contract passes.
 
 Current artifact: Draft Spec.
 
-Accepted draft returns to ReviewLead.
+Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Spec.
 
-Rejected draft returns to DraftAuthor.
+Rejected draft goes to DraftAuthor.
 
 ## Inputs
 

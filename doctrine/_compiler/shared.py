@@ -87,6 +87,7 @@ AddressableTarget: TypeAlias = (
     | model.RecordScalar
     | model.RecordSection
     | model.GuardedOutputSection
+    | model.GuardedOutputScalar
     | model.SchemaSection
     | model.SchemaGate
     | "ResolvedSchemaArtifact"

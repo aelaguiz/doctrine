@@ -31,4 +31,4 @@ Name the one artifact that is current now.
 
 #### Standalone Read
 
-A downstream owner must be able to read this output alone and know which artifact is current now.
+This output should stand on its own. The next owner should know which artifact is current now.

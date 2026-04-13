@@ -19,7 +19,7 @@ Carry active mode: draft-rewrite.
 
 Carry trigger reason: structure-gap.
 
-Accepted draft returns to ReviewLead.
+Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
@@ -29,7 +29,7 @@ Carry active mode: draft-rewrite.
 
 Carry trigger reason: structure-gap.
 
-Rejected draft returns to DraftAuthor.
+Rejected draft goes to DraftAuthor.
 
 ## Inputs
 
@@ -42,7 +42,7 @@ Rejected draft returns to DraftAuthor.
 - Shape: Markdown Document
 - Requirement: Required
 
-Use the current draft specification as the reviewed artifact.
+Use the current draft spec as the reviewed artifact.
 
 ### Review Facts Binding
 
@@ -66,7 +66,7 @@ Use the host facts that say whether the draft still needs changes.
 
 ##### Verdict
 
-Say whether the review accepted the draft or requested changes.
+Say whether the review accepted the draft or asked for changes.
 
 ##### Reviewed Artifact
 
@@ -74,7 +74,7 @@ Name the reviewed artifact this review judged.
 
 ##### Analysis Performed
 
-Summarize the review analysis that led to the verdict.
+Sum up the review work that led to the verdict.
 
 ##### Output Contents That Matter
 
@@ -82,7 +82,7 @@ Summarize the parts of the draft the next owner must read first.
 
 ##### Next Owner
 
-Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.
+Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
 
 ##### Current Artifact
 
@@ -92,13 +92,13 @@ Name the artifact that remains current after this review outcome.
 
 Rendered only when present(active_mode).
 
-Name the active review mode that selected the current artifact.
+Name the active review mode for the current artifact.
 
 ##### Trigger Reason
 
 Rendered only when present(trigger_reason).
 
-Name the trigger reason that explains why this current artifact and mode are live.
+Name the trigger reason for the live artifact and mode.
 
 ##### Failure Detail
 
@@ -116,4 +116,4 @@ Name the failing review gates in authored order.
 
 ##### Standalone Read
 
-A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, what remains current now, what mode and trigger reason are live, who owns next, and which parts of the draft matter now.
+This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, what is still current, which mode and trigger reason are live, who owns next, and which parts of the draft still matter.

@@ -15,7 +15,7 @@ Do the work, emit the file artifact, and end with the declared final output.
 
 #### Standalone Read
 
-A downstream owner should be able to read RELEASE_NOTES.md alone and understand what shipped.
+RELEASE_NOTES.md should stand on its own and say what shipped.
 
 ## Final Output
 

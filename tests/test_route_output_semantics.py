@@ -182,6 +182,53 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertIn("- Next Owner: Review Lead", rendered)
         self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
 
+    def test_guarded_output_scalar_can_read_route_semantics(self) -> None:
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+                should_route: "Should Route"
+
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output MaybeRoutedReply: "Maybe Routed Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner when route.exists
+
+            workflow MaybeRoutedWorkflow: "Maybe Routed Workflow"
+                "Route only when host route facts require it."
+
+                law:
+                    active when true
+                    current none
+                    stop "Reply and stop."
+                    route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+            agent GuardedRouteScalarDemo:
+                role: "Guard route-specific readback with route.exists."
+                workflow: MaybeRoutedWorkflow
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    MaybeRoutedReply
+            """,
+            agent_name="GuardedRouteScalarDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("#### Next Owner", rendered)
+        self.assertIn("Rendered only when a routed owner exists.", rendered)
+        self.assertIn("Review Lead", rendered)
+        self.assertNotIn("- Next Owner: Review Lead", rendered)
+
     def test_review_output_can_combine_review_and_route_semantics(self) -> None:
         agent = self._compile_agent(
             """

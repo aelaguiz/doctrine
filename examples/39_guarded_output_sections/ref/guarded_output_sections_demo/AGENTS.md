@@ -2,7 +2,7 @@ Keep conditional output readback explicit and addressable.
 
 ## Read First
 
-Read the guarded sections directly from the emitted output contract.
+Read the guarded output items directly from the emitted output contract.
 
 ### Read Now
 
@@ -19,7 +19,7 @@ Read Rewrite Mode and Repeated Problem when the conditional readback matters for
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided route facts that say whether the current section is new or a full rewrite, whether the same critic miss repeated, and what status facts drove the turn.
+Use the host route facts. They say whether the current section is new or a full rewrite, whether the same critic miss happened again, and which status facts drove the turn.
 
 ## Outputs
 
@@ -43,4 +43,4 @@ Say whether the same critic miss has repeated.
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and know which conditional readback blocks might appear.
+This comment should stand on its own. The next owner should know which conditional readback blocks might appear.

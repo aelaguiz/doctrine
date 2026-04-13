@@ -11,7 +11,7 @@ workflow ReadFirst: "Read First"
         SectionConceptsTermsFileOutput:title
         SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table.title
         SectionConceptsTermsFileOutput:must_include.analysis.tables.concept_ladder_table
-        "Build {{SectionConceptsTermsFileOutput:must_include.analysis.tables.title}} inside {{SectionConceptsTermsFileOutput:title}} before you finalize `{{SectionConceptsTermsFileOutput:target.path}}`."
+        "Build {{SectionConceptsTermsFileOutput:must_include.analysis.tables.title}} in {{SectionConceptsTermsFileOutput:title}} before you finish `{{SectionConceptsTermsFileOutput:target.path}}`."
 
 
 output SectionConceptsTermsFileOutput: "Section Concepts Terms File"

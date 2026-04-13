@@ -2,7 +2,7 @@ input RouteFacts: "Route Facts"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the host-provided route facts that say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local."
+    "Use the host route facts. They say whether route repair is active, whether the current specialist output is missing, and whether routing should stay local."
 
 
 output RouteRepairComment: "Route Repair Comment"
@@ -18,7 +18,7 @@ output RouteRepairComment: "Route Repair Comment"
 
 
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue safely."
+    role: "Handle reroutes when specialist work cannot continue safely."
     workflow: "Route"
         "Take back the same issue when the next specialist owner is still not justified."
 

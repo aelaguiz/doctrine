@@ -13,13 +13,13 @@ Accept only if The shared draft review contract passes.
 
 Current artifact: Draft Spec.
 
-Accepted draft returns to ReviewLead.
+Accepted draft goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Spec.
 
-Rejected draft returns to DraftAuthor.
+Rejected draft goes to DraftAuthor.
 
 ## Inputs
 
@@ -40,7 +40,7 @@ Rejected draft returns to DraftAuthor.
 
 #### Verdict
 
-Say whether the review accepted the draft or requested changes.
+Say whether the review accepted the draft or asked for changes.
 
 #### Reviewed Artifact
 
@@ -74,7 +74,7 @@ Name the failing review gates in authored order.
 
 Rendered only when verdict is accepted and a routed owner exists.
 
-Accepted draft returns to ReviewLead. Next owner: Review Lead.
+Accepted draft goes to ReviewLead. Next owner: Review Lead.
 
 #### Retry Route
 

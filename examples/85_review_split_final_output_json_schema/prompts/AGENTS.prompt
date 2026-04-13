@@ -74,7 +74,7 @@ output AcceptanceReviewComment: "Acceptance Review Comment"
         current_artifact
 
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this review alone and understand the acceptance verdict, current artifact, and next owner."
+        "This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner."
 
 
 output AcceptanceControlFinalResponse: "Acceptance Control Final Response"
@@ -112,11 +112,11 @@ review AcceptanceReview: "Acceptance Review"
 
     on_accept: "If Accepted"
         current artifact DraftPlan via AcceptanceReviewComment.current_artifact
-        route "Accepted plan returns to ReviewLead." -> ReviewLead
+        route "Accepted plan goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current artifact DraftPlan via AcceptanceReviewComment.current_artifact
-        route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+        route "Rejected plan goes to PlanAuthor." -> PlanAuthor
 
 
 agent AcceptanceReviewSplitJsonDemo:

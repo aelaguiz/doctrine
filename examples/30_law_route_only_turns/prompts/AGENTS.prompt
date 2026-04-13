@@ -19,12 +19,12 @@ output CoordinationComment: "Coordination Comment"
 
     # This block says what a downstream owner should understand just from reading this output.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand that no current artifact was carried forward."
+        "This comment should stand on its own. The next owner should know that no current artifact was carried forward."
 
 
 # Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent RoutingOwner:
-    role: "Own explicit reroutes when specialist work cannot continue."
+    role: "Handle reroutes when specialist work cannot continue."
     workflow: "Instructions"
         "Take back the same issue when route-only work cannot continue safely."
 

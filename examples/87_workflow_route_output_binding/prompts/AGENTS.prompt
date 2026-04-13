@@ -4,6 +4,13 @@ agent ReviewLead:
         "Take the routed follow-up."
 
 
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    should_route: "Should Route"
+
+
 output WorkflowRouteBindingComment: "Workflow Route Binding Comment"
     target: TurnResponse
     shape: Comment
@@ -31,3 +38,30 @@ agent WorkflowRouteBindingDemo:
     workflow: RoutedWorkflow
     outputs: "Outputs"
         WorkflowRouteBindingComment
+
+
+output GuardedWorkflowRouteBindingComment: "Guarded Workflow Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner when route.exists
+
+
+workflow MaybeRoutedWorkflow: "Maybe Routed Workflow"
+    "Route only when host route facts require it."
+
+    law:
+        active when true
+        current none
+        stop "Reply and stop."
+        route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+
+agent GuardedWorkflowRouteBindingDemo:
+    role: "Guard route-specific fields with route.exists."
+    workflow: MaybeRoutedWorkflow
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        GuardedWorkflowRouteBindingComment

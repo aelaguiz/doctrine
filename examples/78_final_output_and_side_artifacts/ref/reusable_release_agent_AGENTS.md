@@ -17,7 +17,7 @@ Do the work, inherit the reusable outputs contract, and end with the declared fi
 
 ##### Standalone Read
 
-A downstream owner should be able to read RELEASE_NOTES.md alone and understand what shipped.
+RELEASE_NOTES.md should stand on its own and say what shipped.
 
 ## Final Output
 

@@ -338,7 +338,11 @@ Review logic and review-bound outputs can read resolved semantic names such as:
 - `fields.<semantic_field>`
 - helper-style expressions such as `present(active_mode)`
 
-That is why guarded output sections like this are legal on review comments:
+That is why guarded output items like these are legal on review comments:
+
+```prompt
+next_owner: route.next_owner when route.exists
+```
 
 ```prompt
 failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
@@ -366,7 +370,7 @@ Review does not invent a second trust channel.
 Because `comment_output` is still an ordinary `output`, review comments may
 also use the shared readable block kinds that ordinary outputs ship, such as
 `definitions`, `properties`, explicit `guard` shells, `callout`, or `code`,
-alongside guarded sections.
+alongside guarded output items.
 That same `comment_output` may also be the agent's `final_output:` when the
 review should end with a dedicated prose or schema-backed JSON final-answer
 contract.

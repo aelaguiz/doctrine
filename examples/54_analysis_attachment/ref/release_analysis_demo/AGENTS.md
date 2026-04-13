@@ -1,4 +1,4 @@
-Follow Stages from Release Analysis.
+Use Release Analysis and follow Stages.
 
 ## Ship
 

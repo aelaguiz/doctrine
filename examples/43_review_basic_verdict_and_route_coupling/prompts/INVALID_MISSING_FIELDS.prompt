@@ -6,7 +6,7 @@ input DraftSpec: "Draft Spec"
         path: "unit_root/DRAFT_SPEC.md"
     shape: MarkdownDocument
     requirement: Required
-    "Use the current draft specification as the reviewed artifact."
+    "Use the current draft spec as the reviewed artifact."
 
 
 workflow DraftReviewContract: "Draft Review Contract"
@@ -42,11 +42,11 @@ review DraftReview: "Draft Review"
 
     on_accept: "If Accepted"
         current none
-        route "Accepted draft returns to ReviewLead." -> ReviewLead
+        route "Accepted draft goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current none
-        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+        route "Rejected draft goes to DraftAuthor." -> DraftAuthor
 
 
 agent InvalidMissingFieldsDemo:

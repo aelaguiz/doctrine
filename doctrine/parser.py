@@ -1868,6 +1868,15 @@ class ToAst(Transformer):
             items=tuple(items),
         )
 
+    @v_args(inline=True)
+    def guarded_output_scalar_item(self, key, head, when_expr, body=None):
+        return model.GuardedOutputScalar(
+            key=key,
+            value=head,
+            when_expr=when_expr,
+            body=None if body is None else tuple(body),
+        )
+
     @v_args(meta=True)
     def trust_surface_block(self, meta, items):
         return _positioned_trust_surface(meta, tuple(items))

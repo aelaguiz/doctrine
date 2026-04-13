@@ -45,7 +45,7 @@ output RebuildHandoff: "Rebuild Handoff"
         invalidations
 
     standalone_read: "Standalone Read"
-        "A downstream owner must be able to read this output alone and know what is current now and what is no longer current."
+        "This output should stand on its own. The next owner should know what is current now and what is no longer current."
 
 
 schema BuildSurfaceSchema: "Build Surface Schema"

@@ -8,7 +8,7 @@ input DraftSpec: "Draft Spec"
         path: "unit_root/DRAFT_SPEC.md"
     shape: MarkdownDocument
     requirement: Required
-    "Use the current draft specification as the reviewed artifact."
+    "Use the current draft spec as the reviewed artifact."
 
 
 # Declare the shared review contract whose first-level sections export review
@@ -43,7 +43,7 @@ output DraftReviewComment: "Draft Review Comment"
 
     # This field states the compiler-owned verdict.
     verdict: "Verdict"
-        "Say whether the review accepted the draft or requested changes."
+        "Say whether the review accepted the draft or asked for changes."
 
     # This field names the artifact the review judged.
     reviewed_artifact: "Reviewed Artifact"
@@ -51,7 +51,7 @@ output DraftReviewComment: "Draft Review Comment"
 
     # This field holds the human review analysis.
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict."
+        "Sum up the review work that led to the verdict."
 
     # This field says what a downstream owner should read first.
     output_contents_that_matter: "Output Contents That Matter"
@@ -59,7 +59,7 @@ output DraftReviewComment: "Draft Review Comment"
 
     # This field says who owns next under the review outcome.
     next_owner: "Next Owner"
-        "Name the next owner, including {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when the draft is rejected."
+        "Name the next owner. Use {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when it is rejected."
 
     # This guarded section appears only when the verdict requests changes.
     failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
@@ -69,7 +69,7 @@ output DraftReviewComment: "Draft Review Comment"
     # This block says what a downstream owner should understand from the
     # review comment alone.
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now."
+        "This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now."
 
 
 # Declare the smallest concrete review.
@@ -94,11 +94,11 @@ review DraftReview: "Draft Review"
 
     on_accept: "If Accepted"
         current none
-        route "Accepted draft returns to ReviewLead." -> ReviewLead
+        route "Accepted draft goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current none
-        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+        route "Rejected draft goes to DraftAuthor." -> DraftAuthor
 
 
 # Declare the concrete reviewer agent.

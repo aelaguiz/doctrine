@@ -8,7 +8,7 @@ Keep deep contract paths readable without flattening the contract.
 - Concept Ladder Table
 - Concept Ladder Table
 
-Build Tables inside Section Concepts Terms File before you finalize `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`.
+Build Tables in Section Concepts Terms File before you finish `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`.
 
 ## Skills
 

@@ -6,7 +6,7 @@ input ProducerHandoff: "Producer Handoff"
     source: Prompt
     shape: JsonObject
     requirement: Required
-    "Use the producer handoff that says whether review blocked before content review began."
+    "Use the producer handoff that says if review stopped before content review began."
 
 
 input DraftSpec: "Draft Spec"
@@ -40,13 +40,13 @@ output GuardedCurrentTruthReviewComment: "Guarded Current Truth Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the draft or requested changes."
+        "Say whether the review accepted the draft or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the reviewed artifact this review judged. When review blocks before content review starts, name the producer handoff instead of pretending the draft stayed current."
 
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict."
+        "Sum up the review work that led to the verdict."
 
     output_contents_that_matter: "Output Contents That Matter"
         "Summarize the parts of the draft or producer handoff the next owner must read first."
@@ -62,10 +62,10 @@ output GuardedCurrentTruthReviewComment: "Guarded Current Truth Review Comment"
             "Name the first blocking gate when the review stopped before content review started."
 
         failing_gates: "Failing Gates"
-            "Name the failing review gates in authored order, including the blocked gate when review stopped before content review started."
+            "List the failed review gates in authored order. Include the blocked gate when review stopped before content review began."
 
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this comment alone and understand whether review blocked before content review began, what remains current now when something remains current, who owns next, and which parts of the draft or producer handoff matter now."
+        "This comment should stand on its own. The next owner should know if review stopped before content review began, what is still current, who owns next, and which parts of the draft or producer handoff still matter."
 
     trust_surface:
         current_artifact when present(current_artifact)
@@ -94,7 +94,7 @@ review GuardedCurrentTruthReview: "Guarded Current Truth Review"
 
     on_accept: "If Accepted"
         current artifact DraftSpec via GuardedCurrentTruthReviewComment.current_artifact
-        route "Accepted draft returns to ReviewLead." -> ReviewLead
+        route "Accepted draft goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current artifact DraftSpec via GuardedCurrentTruthReviewComment.current_artifact when missing(blocked_gate)

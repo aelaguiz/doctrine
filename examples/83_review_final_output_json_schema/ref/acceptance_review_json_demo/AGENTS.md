@@ -15,13 +15,13 @@ Accept only if The acceptance review contract passes.
 
 Current artifact: Draft Plan.
 
-Accepted plan returns to ReviewLead.
+Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
 Current artifact: Draft Plan.
 
-Rejected plan returns to PlanAuthor.
+Rejected plan goes to PlanAuthor.
 
 ## Inputs
 
@@ -115,4 +115,4 @@ List exact failing gates, including Outline Complete when it fails.
 
 #### Read It Cold
 
-A downstream owner should be able to read this review alone and understand the acceptance verdict, current artifact, and next owner.
+This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner.

@@ -28,13 +28,13 @@ output DraftReviewComment: "Draft Review Comment"
     requirement: Required
 
     verdict: "Verdict"
-        "Say whether the review accepted the draft or requested changes."
+        "Say whether the review accepted the draft or asked for changes."
 
     reviewed_artifact: "Reviewed Artifact"
         "Name the reviewed artifact this review judged."
 
     analysis_performed: "Analysis Performed"
-        "Summarize the review analysis that led to the verdict."
+        "Sum up the review work that led to the verdict."
 
     output_contents_that_matter: "Output Contents That Matter"
         "Summarize the parts of the draft the next owner must read first."
@@ -43,7 +43,7 @@ output DraftReviewComment: "Draft Review Comment"
         "Name the artifact that remains current after review."
 
     next_owner: "Next Owner"
-        "Name the next owner, including {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when the draft is rejected."
+        "Name the next owner. Use {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when it is rejected."
 
     failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
         failing_gates: "Failing Gates"
@@ -53,7 +53,7 @@ output DraftReviewComment: "Draft Review Comment"
         current_artifact
 
     standalone_read: "Standalone Read"
-        "A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner."
+        "This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner."
 
 
 review DraftReview: "Draft Review"
@@ -75,15 +75,15 @@ review DraftReview: "Draft Review"
 
     on_accept: "If Accepted"
         current artifact DraftSpec via DraftReviewComment.current_artifact
-        route "Accepted draft returns to ReviewLead." -> ReviewLead
+        route "Accepted draft goes to ReviewLead." -> ReviewLead
 
     on_reject: "If Rejected"
         current artifact DraftSpec via DraftReviewComment.current_artifact
-        route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+        route "Rejected draft goes to DraftAuthor." -> DraftAuthor
 
 
 agent DraftReviewFinalOutputDemo:
-    role: "Keep review final outputs aligned without introducing a second message surface."
+    role: "Keep review final outputs aligned without adding a second message surface."
     review: DraftReview
     inputs: "Inputs"
         DraftSpec

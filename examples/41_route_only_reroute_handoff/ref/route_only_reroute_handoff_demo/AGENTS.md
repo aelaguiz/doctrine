@@ -20,7 +20,7 @@ Route the same issue back to RoutingOwner.
 - Shape: Json Object
 - Requirement: Required
 
-Use the host-provided route facts that say whether the current specialist output is missing, whether the next owner is still unclear, and what RoutingOwner should do next after the reroute.
+Use the host route facts. They say whether the current specialist output is missing, whether the next owner is still unclear, and what RoutingOwner should do next after the reroute.
 
 ## Outputs
 
@@ -32,7 +32,7 @@ Use the host-provided route facts that say whether the current specialist output
 
 #### Current Route
 
-Say plainly that this is a route-only reroute turn: no specialist artifact is current and the issue is returning to RoutingOwner.
+Say this is a route-only reroute turn. No specialist artifact is current, and the issue goes back to RoutingOwner.
 
 #### Next Owner
 
@@ -44,4 +44,4 @@ Name the next reroute follow-up step from the route facts.
 
 #### Standalone Read
 
-A downstream owner should be able to read this comment alone and understand that this route-only turn rerouted because no specialist artifact is current, who owns next, and what the next reroute step is.
+This comment should stand on its own. The next owner should know that this route-only turn rerouted because no specialist artifact is current, who owns next, and what reroute step comes next.
