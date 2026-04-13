@@ -26,9 +26,9 @@ Plan doc: [docs/SKILL_PACKAGE_AUTHORING_VIA_DOCTRINE_2026-04-13.md](./SKILL_PACK
 - Work completed:
   - Added `doctrine/emit_skill.py` for the minimal `SKILL.md` package tree.
   - Wired build-contract verification to dispatch `SKILL.prompt` targets through the new package emitter.
-  - Landed `examples/91_skill_package_minimal` with a checked-in `SKILL.md` tree and a parser failure contract for unknown package metadata.
+  - Landed `examples/95_skill_package_minimal` with a checked-in `SKILL.md` tree and a parser failure contract for unknown package metadata.
 - Tests run + results:
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/91_skill_package_minimal/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/95_skill_package_minimal/cases.toml` — PASS
 - Issues / deviations:
   - This pass only covers the minimal package tree. `references/`, `scripts/`, `assets/`, and path/case edge families from the full Phase 2 checklist remain unfinished.
 - Next steps:
@@ -48,15 +48,15 @@ Plan doc: [docs/SKILL_PACKAGE_AUTHORING_VIA_DOCTRINE_2026-04-13.md](./SKILL_PACK
   - Reworked skill-package compilation around the directory that contains `SKILL.prompt`: the package body still compiles to `SKILL.md`, and ordinary bundled non-`.prompt` files now emit under the same relative paths.
   - Added generic bundled-path validation for reserved `SKILL.md` collisions, source-root-relative path safety, and case-folding collisions instead of hard-coded family roots.
   - Reserved descendant directories that contain their own `.prompt` files as prompt-bearing subtrees so the main package does not copy those files through as ordinary bundle content.
-  - Rebuilt `examples/92_skill_package_references`, `examples/93_skill_package_scripts`, and `examples/98_skill_package_path_case_preservation` around authored source-root files in the prompt tree instead of declaration-generated companions.
+  - Rebuilt `examples/96_skill_package_references`, `examples/97_skill_package_scripts`, and `examples/102_skill_package_path_case_preservation` around authored source-root files in the prompt tree instead of declaration-generated companions.
   - Moved the path/case negative proof for example `98` into a prompt-bearing subtree under `prompts/invalid/` so the main package build stays clean while the invalid package still proves the reserved-name collision.
 - Tests run + results:
   - `uv sync` — PASS
   - `npm ci` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/91_skill_package_minimal/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/92_skill_package_references/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/93_skill_package_scripts/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/98_skill_package_path_case_preservation/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/95_skill_package_minimal/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/96_skill_package_references/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/97_skill_package_scripts/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/102_skill_package_path_case_preservation/cases.toml` — PASS
   - `uv run --locked python -m doctrine.verify_corpus --manifest examples/11_skills_and_tools/cases.toml` — PASS
   - `uv run --locked python -m doctrine.verify_corpus --manifest examples/21_first_class_skills_blocks/cases.toml` — PASS
   - `uv run --locked python -m doctrine.verify_corpus --manifest examples/22_skills_block_inheritance/cases.toml` — PASS
@@ -77,14 +77,14 @@ Plan doc: [docs/SKILL_PACKAGE_AUTHORING_VIA_DOCTRINE_2026-04-13.md](./SKILL_PACK
   - Updated the compiler error catalog entry for `E510` so it reflects the emitter-specific entrypoint split instead of the old agent-only wording.
   - Updated the VS Code grammar, resolver, unit coverage, integration coverage, alignment rules, and editor README for first-class `skill package` / `SKILL.prompt` support.
 - Tests run + results:
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/94_skill_package_runtime_metadata/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/95_skill_package_plugin_metadata/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/96_skill_package_bundled_agents/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/97_skill_package_compendium/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/91_skill_package_minimal/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/92_skill_package_references/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/93_skill_package_scripts/cases.toml` — PASS
-  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/98_skill_package_path_case_preservation/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/98_skill_package_runtime_metadata/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/99_skill_package_plugin_metadata/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/100_skill_package_bundled_agents/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/101_skill_package_compendium/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/95_skill_package_minimal/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/96_skill_package_references/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/97_skill_package_scripts/cases.toml` — PASS
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/102_skill_package_path_case_preservation/cases.toml` — PASS
   - `uv run --locked python -m doctrine.verify_corpus --manifest examples/11_skills_and_tools/cases.toml` — PASS
   - `make verify-diagnostics` — PASS
   - `cd editors/vscode && make` — PASS

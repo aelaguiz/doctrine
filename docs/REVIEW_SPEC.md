@@ -212,10 +212,16 @@ turn may additionally read shared route semantics through:
 - `route.next_owner.title`
 - `route.label`
 - `route.summary`
+- `route.choice`
+- `route.choice.key`
+- `route.choice.title`
+- `route.choice.wire`
 
 Important rules:
 
 - `route.*` is derived compiler truth, not another authored review field
+- `route.choice.*` is live only when every live routed branch comes from
+  `route_from`
 - use verdict guards, `when route.exists:`, or both when some review branches
   do not share the same routed owner
 - split review `final_output:` contracts may consume the same `route.*` truth

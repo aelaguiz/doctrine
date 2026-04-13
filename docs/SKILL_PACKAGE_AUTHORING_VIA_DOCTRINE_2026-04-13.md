@@ -612,10 +612,15 @@ and [example_agents/markdown_agents.md](../example_agents/markdown_agents.md).
     [pyproject.toml](../pyproject.toml) and the checked-in `build_ref/` trees —
     preservation signal for existing emit behavior if package emission widens
     the shared emit pipeline
-- Observed local package shapes that the architecture must cover:
-  - `~/.agents/skills` with bare `SKILL.md`, `SKILL.md` plus `references/`,
-    `SKILL.md` plus `references/` plus `scripts/`, scripts-only, reference-only,
-    and agents-only package shapes
+- The current numbered corpus boundary is the live docs index and
+  [examples/README.md](../examples/README.md), which run through
+  `examples/103_skill_package_binary_assets`; avoid
+  older doc text that still names an earlier boundary.
+- Observed local package shapes that the architecture must cover include:
+  - `~/.agents/skills` with 25 bare `SKILL.md` packages, 17 packages with
+    `agents/openai.yaml` plus `references/`, 15 with those plus `scripts/`,
+    3 reference-only packages, 2 singular-`reference/` packages, 1
+    scripts-only package, and 1 agents-only package
   - path-layout outliers such as
     [critique/reference/personas.md](</Users/aelaguiz/.agents/skills/critique/reference/personas.md>),
     [frontend-design/reference/typography.md](</Users/aelaguiz/.agents/skills/frontend-design/reference/typography.md>),
@@ -949,14 +954,15 @@ The target architecture enforces these boundaries:
   - the public teaching path must ship with the feature
   - the package example gallery is compiler-owned proof, not commentary
 - first shipped slice is explicit:
-  - `91_skill_package_minimal`
-  - `92_skill_package_references`
-  - `93_skill_package_scripts`
-  - `94_skill_package_runtime_metadata`
-  - `95_skill_package_plugin_metadata`
-  - `96_skill_package_bundled_agents`
-  - `97_skill_package_compendium`
-  - `98_skill_package_path_case_preservation`
+  - `95_skill_package_minimal`
+  - `96_skill_package_references`
+  - `97_skill_package_scripts`
+  - `98_skill_package_runtime_metadata`
+  - `99_skill_package_plugin_metadata`
+  - `100_skill_package_bundled_agents`
+  - `101_skill_package_compendium`
+  - `102_skill_package_path_case_preservation`
+  - `103_skill_package_binary_assets`
 - scoped ambition:
   - support real skill-package shapes first
   - do not widen into general support for every markdown instruction family
@@ -995,14 +1001,14 @@ Required docs/example work products under that last row:
 - `docs/EMIT_GUIDE.md`: explain package emission, output layout, and target/config behavior.
 - `docs/SKILL_PACKAGE_AUTHORING.md`: the canonical end-to-end authoring guide.
 - `examples/README.md`: explain how to read the skill-package example gallery and what each example teaches.
-- `examples/91_skill_package_minimal`: minimal single-file package.
-- `examples/92_skill_package_references`: reference-heavy package.
-- `examples/93_skill_package_scripts`: script-backed package.
-- `examples/94_skill_package_runtime_metadata`: runtime-flagged package with companion metadata.
-- `examples/95_skill_package_plugin_metadata`: plugin-style split metadata package.
-- `examples/96_skill_package_bundled_agents`: bundled-subagent orchestrator package.
-- `examples/97_skill_package_compendium`: compendium-style package.
-- `examples/98_skill_package_path_case_preservation`: path/case edge-case package.
+- `examples/95_skill_package_minimal`: minimal single-file package.
+- `examples/96_skill_package_references`: reference-heavy package.
+- `examples/97_skill_package_scripts`: script-backed package.
+- `examples/98_skill_package_runtime_metadata`: runtime-flagged package with companion metadata.
+- `examples/99_skill_package_plugin_metadata`: plugin-style split metadata package.
+- `examples/100_skill_package_bundled_agents`: bundled-subagent orchestrator package.
+- `examples/101_skill_package_compendium`: compendium-style package.
+- `examples/102_skill_package_path_case_preservation`: path/case edge-case package.
 
 ## 6.2 Migration notes
 
@@ -1117,7 +1123,7 @@ Verification (smallest signal)
 - Targeted parser/model/compiler coverage for the new package-root nodes and
   invalid forms.
 - One focused manifest-backed proof for
-  `examples/91_skill_package_minimal/cases.toml`.
+  `examples/95_skill_package_minimal/cases.toml`.
 - Preservation check that the current inline-skill examples still pass on
   their existing manifests, especially `11`, `21`, `22`, and `60`.
 
@@ -1178,9 +1184,9 @@ Work
   after the fact.
 - Wire package-tree verification into `doctrine/verify_corpus.py` and land the
   foundational gallery examples:
-  `91_skill_package_minimal`, `92_skill_package_references`,
-  `93_skill_package_scripts`, and
-  `98_skill_package_path_case_preservation`, where `references/`,
+  `95_skill_package_minimal`, `96_skill_package_references`,
+  `97_skill_package_scripts`, and
+  `102_skill_package_path_case_preservation`, where `references/`,
   `reference/`, `scripts/`, and `assets/` are example layouts rather than
   compiler-owned package families.
 
@@ -1216,14 +1222,14 @@ Completed work:
   `SKILL.md` package tree
 - wired `doctrine.verify_corpus` build-contract runs to dispatch `SKILL.prompt`
   targets through the new package emitter
-- landed `examples/91_skill_package_minimal` with a checked-in `SKILL.md`
+- landed `examples/95_skill_package_minimal` with a checked-in `SKILL.md`
   reference tree and a parser failure contract for unknown package metadata
 - extended package compilation and `emit_skill` to discover and copy bundled
   non-`.prompt` source-root files under preserved relative paths and exact
   filename casing
-- landed `examples/92_skill_package_references`,
-  `examples/93_skill_package_scripts`, and
-  `examples/98_skill_package_path_case_preservation` to prove `references/`,
+- landed `examples/96_skill_package_references`,
+  `examples/97_skill_package_scripts`, and
+  `examples/102_skill_package_path_case_preservation` to prove `references/`,
   `reference/`, `scripts/`, `assets/`, relative-link preservation, and
   path/case validation as representative layouts
 - reserved nested prompt-bearing subtrees as compiler-owned follow-up work for
@@ -1256,10 +1262,10 @@ Work
 - Update the VS Code extension grammar, resolver, tests, alignment checks, and
   `editors/vscode/README.md` for the new entrypoint and declaration surface.
 - Land the remaining first-slice gallery examples:
-  `94_skill_package_runtime_metadata`,
-  `95_skill_package_plugin_metadata`,
-  `96_skill_package_bundled_agents`, and
-  `97_skill_package_compendium`.
+  `98_skill_package_runtime_metadata`,
+  `99_skill_package_plugin_metadata`,
+  `100_skill_package_bundled_agents`, and
+  `101_skill_package_compendium`.
 
 Verification (smallest signal)
 

@@ -112,7 +112,18 @@ Important rules:
 - Any emitted output may read shared compiler-owned route semantics through
   `route.exists`, `route.next_owner`, `route.next_owner.key`,
   `route.next_owner.title`, `route.label`, and `route.summary` when workflow
-  law, `route_only`, `grounding`, or review resolves a real route.
+  law, `handoff_routing` law, `route_only`, `grounding`, or review resolves a
+  real route.
+- When every live routed branch on that turn comes from `route_from`, outputs
+  may also read
+  `route.choice`, `route.choice.key`, `route.choice.title`, and
+  `route.choice.wire`.
+- On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
+  Prose route lines there stay readable only.
+- `route.next_owner.*` may stay live across several `route_from` branches. It
+  means the selected route owner.
+- `route.label` and `route.summary` still need one selected branch. Guard them
+  with `route.choice` when several route branches stay live.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
@@ -215,6 +226,8 @@ Important rules:
 - Guarded output items are still output-owned fields.
 - Guarded scalar items and guarded sections may be keyed, nested, addressed,
   and interpolated like other output structure.
+- Route-bound output guards may read `route.choice` when every live routed
+  branch comes from `route_from`.
 - On ordinary outputs, guards may read declared inputs, enum members, and
   `route.exists` when the active turn resolves route semantics.
 - On review-bound outputs, guards may also read resolved review semantic names
@@ -316,3 +329,9 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `89`: dedicated `route_only` feeding the same shared `route.*` output surface
 - `90`: split durable review comment plus JSON `final_output:` consuming the
   same shared routed-owner truth
+- `91`: `handoff_routing` law feeding shared `route.*` semantics into ordinary
+  outputs and `final_output:`
+- `92`: first-class `route_from` on workflow law
+- `93`: emitted-output route selection on `handoff_routing` plus
+  `final_output:`
+- `94`: `route.choice` guards narrowing branch-specific route detail

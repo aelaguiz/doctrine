@@ -70,10 +70,12 @@ Each numbered example may contain:
   either reuse `comment_output` or split the review comment from a separate
   control-only final output, plus imported reusable review comment outputs
   that still bind local routed owners
-- `87` through `90`: shared output-facing route semantics for ordinary
-  workflow-law outputs, review comments, dedicated `route_only`, and split
-  review `final_output:` contracts
-- `91` through `99`: first-class skill-package authoring with `SKILL.prompt`,
+- `87` through `94`: shared output-facing route semantics for ordinary
+  workflow-law outputs, review comments, dedicated `route_only`,
+  `handoff_routing` law, split review `final_output:` contracts, first-class
+  `route_from`, output-selected handoff routing, and `route.choice` guard
+  narrowing
+- `95` through `103`: first-class skill-package authoring with `SKILL.prompt`,
   source-root bundle copy-through, runtime and plugin metadata roots, bundled
   agent companions, larger compendium trees, exact path and case
   preservation, and binary assets
@@ -178,15 +180,19 @@ For the shipped skill-package authoring guide, use
 | `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
 | `89_route_only_shared_route_semantics` | Dedicated `route_only` lowers onto the same shared `route.*` output surface. |
 | `90_split_handoff_and_final_output_shared_route_semantics` | A durable review comment and a separate JSON `final_output:` may consume the same shared `route.*` truth without merging into one output. |
-| `91_skill_package_minimal` | Smallest `SKILL.prompt` and top-level `skill package` surface. |
-| `92_skill_package_references` | Ordinary bundled reference documents copied through from the package source root. |
-| `93_skill_package_scripts` | Ordinary bundled script files copied through from the package source root. |
-| `94_skill_package_runtime_metadata` | Runtime metadata roots such as `agents/openai.yaml` in the source-root bundle model. |
-| `95_skill_package_plugin_metadata` | Plugin-style split metadata roots such as `.codex-plugin/plugin.json`, `.app.json`, and `agents/openai.yaml`. |
-| `96_skill_package_bundled_agents` | Bundled `agents/**/*.prompt` modules that emit markdown companions while normal files in the same `agents/` tree still bundle. |
-| `97_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
-| `98_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
-| `99_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
+| `91_handoff_routing_route_output_binding` | `handoff_routing` may feed the same shared `route.*` semantics into ordinary outputs and `final_output:` when its `law:` block resolves the route. |
+| `92_route_from_basic` | Workflow law may pick one routed owner from a typed selector with first-class `route_from`. |
+| `93_handoff_routing_route_from_final_output` | `handoff_routing` may bind `final_output:` route owner truth from an emitted output with `route_from`. |
+| `94_route_choice_guard_narrowing` | `route.choice` guards may narrow branch-specific route detail, while unguarded `route.summary` still fails loud. |
+| `95_skill_package_minimal` | Smallest `SKILL.prompt` and top-level `skill package` surface. |
+| `96_skill_package_references` | Ordinary bundled reference documents copied through from the package source root. |
+| `97_skill_package_scripts` | Ordinary bundled script files copied through from the package source root. |
+| `98_skill_package_runtime_metadata` | Runtime metadata roots such as `agents/openai.yaml` in the source-root bundle model. |
+| `99_skill_package_plugin_metadata` | Plugin-style split metadata roots such as `.codex-plugin/plugin.json`, `.app.json`, and `agents/openai.yaml`. |
+| `100_skill_package_bundled_agents` | Bundled `agents/**/*.prompt` modules that emit markdown companions while normal files in the same `agents/` tree still bundle. |
+| `101_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
+| `102_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
+| `103_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
 
 ## Useful Commands
 
@@ -207,8 +213,8 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
-uv run --locked python -m doctrine.emit_skill --target example_91_skill_package_minimal
-uv run --locked python -m doctrine.emit_skill --target example_96_skill_package_bundled_agents
+uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
+uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 ```
 

@@ -127,6 +127,9 @@
       "include": "#secondWaveKeyword"
     },
     {
+      "include": "#routeSemanticRef"
+    },
+    {
       "include": "#reviewSemanticRef"
     },
     {
@@ -984,7 +987,7 @@
       }
     },
     "lawKeyword": {
-      "match": "\\b(accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|stop|structure|support_only|true|truth|via|vocabulary|when)\\b",
+      "match": "\\b(accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|route_from|stop|structure|support_only|true|truth|via|vocabulary|when)\\b",
       "name": "keyword.control.doctrine"
     },
     "elseMatchArm": {
@@ -1034,6 +1037,20 @@
       "name": "keyword.control.doctrine",
       "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
     },
+    "routeSemanticRef": {
+      "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",
+      "captures": {
+        "1": {
+          "name": "support.type.reference.doctrine"
+        },
+        "2": {
+          "name": "punctuation.separator.interpolation.doctrine"
+        },
+        "3": {
+          "name": "variable.other.member.doctrine"
+        }
+      }
+    },
     "reviewSemanticRef": {
       "match": "\\b(contract|fields)(\\.)([A-Za-z_][A-Za-z0-9_]*)\\b",
       "captures": {
@@ -1049,7 +1066,7 @@
       }
     },
     "boundDottedReference": {
-      "match": "\\b(?!(?:accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|route|stop|structure|support_only|true|truth|unclear|via|vocabulary|when)\\b)([a-z_][A-Za-z0-9_]*)(\\.)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\b",
+      "match": "\\b(?!(?:accept|active|and|artifact|as|block|carry|comparison|current|decisions|else|exact|except|failed|false|for|forbid|ignore|in|invalidate|mapping|match|missing|mode|must|none|not|only|or|own|passed|present|preserve|reject|rewrite_evidence|route|route_from|stop|structure|support_only|true|truth|unclear|via|vocabulary|when)\\b)([a-z_][A-Za-z0-9_]*)(\\.)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\b",
       "captures": {
         "1": {
           "name": "support.type.reference.doctrine"

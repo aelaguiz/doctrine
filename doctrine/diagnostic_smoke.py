@@ -55,10 +55,19 @@ def main() -> int:
     _check_review_exact_contract_gate_modes_do_not_blow_up()
     _check_review_semantic_addressability_renders()
     _check_route_output_read_requires_guard()
+    _check_handoff_routing_output_can_render_route_semantics()
+    _check_route_from_final_output_can_render_selected_owner()
+    _check_route_choice_guard_can_narrow_route_summary()
+    _check_route_from_selector_rejects_workflow_local_mode()
+    _check_route_from_rejects_duplicate_route_choice()
+    _check_route_summary_needs_one_selected_branch()
+    _check_handoff_routing_law_rejects_currentness_statements()
+    _check_non_route_slot_law_has_specific_code()
     _check_route_only_output_can_render_route_semantics()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_rejects_support_files_outside_project_root()
+    _check_emit_docs_rejects_output_dir_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_emit_skill_uses_source_root_bundle_outputs()
     _check_emit_skill_keeps_mixed_agents_tree_files()
@@ -68,6 +77,7 @@ def main() -> int:
     _check_emit_flow_rejects_skill_entrypoints()
     _check_emit_flow_direct_mode_groups_shared_surfaces()
     _check_emit_flow_direct_mode_requires_output_dir()
+    _check_emit_flow_direct_mode_rejects_output_dir_outside_project_root()
     _check_diagnostic_to_dict_is_json_safe()
     print("diagnostic smoke checks passed")
     return 0
@@ -729,6 +739,344 @@ agent MaybeRouteBindingDemo:
         raise SmokeFailure("expected compile failure for unguarded route output read, but compilation succeeded")
 
 
+def _check_handoff_routing_output_can_render_route_semantics() -> None:
+    source = """agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+    route_summary: "Route Summary"
+        "{{route.summary}}"
+
+agent HandoffRouteBindingDemo:
+    role: "Read route truth from handoff routing."
+    outputs: "Outputs"
+        HandoffRouteBindingComment
+
+    handoff_routing: "Handoff Routing"
+        "Route through compiler-owned handoff routing."
+
+        law:
+            active when true
+            stop "Hand off or finish the turn."
+            route "Hand off to ReviewLead." -> ReviewLead
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "HandoffRouteBindingDemo"))
+        _expect("## Handoff Routing" in rendered, rendered)
+        _expect("- Next Owner: Review Lead" in rendered, rendered)
+        _expect("Hand off to ReviewLead. Next owner: Review Lead." in rendered, rendered)
+
+
+def _check_route_from_final_output_can_render_selected_owner() -> None:
+    source = """enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+output ProofResult: "Proof Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    route_choice: "Route Choice"
+
+output RouteFromReply: "Route From Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner.key
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+agent ChangeEngineer:
+    role: "Change routed work."
+
+agent RouteFromFinalOutputDemo:
+    role: "Read selected owner truth from route_from."
+    outputs: "Outputs"
+        ProofResult
+        RouteFromReply
+    final_output: RouteFromReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            route_from ProofResult.route_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "RouteFromFinalOutputDemo"))
+        # route_from can leave several route branches live until the host picks one.
+        # The rendered contract must tell the user that next-owner truth is still selected at runtime.
+        _expect("- Next Owner: the selected route's next owner key" in rendered, rendered)
+        _expect("Select one route from ProofResult.route_choice." in rendered, rendered)
+
+
+def _check_route_choice_guard_can_narrow_route_summary() -> None:
+    source = """enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+output ProofResult: "Proof Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    route_choice: "Route Choice"
+
+output RouteChoiceReply: "Route Choice Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    accept_summary: "Accept Summary" when route.choice == ProofRoute.accept
+        "{{route.summary}}"
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+agent ChangeEngineer:
+    role: "Change routed work."
+
+agent RouteChoiceGuardDemo:
+    role: "Use route.choice to narrow route detail."
+    outputs: "Outputs"
+        ProofResult
+        RouteChoiceReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            route_from ProofResult.route_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "RouteChoiceGuardDemo"))
+        # route.choice guards are the user-facing narrowing step for branch-specific
+        # route detail, so the rendered contract must explain the active branch clearly.
+        _expect("Show this only when route.choice is Accept." in rendered, rendered)
+        _expect("Send to AcceptanceCritic. Next owner: Acceptance Critic." in rendered, rendered)
+
+
+def _check_route_from_selector_rejects_workflow_local_mode() -> None:
+    source = """enum ProofRoute: "Proof Route"
+    accept: "Accept"
+
+output ProofResult: "Proof Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+agent InvalidRouteFromSelectorDemo:
+    role: "Keep route_from selectors on declared surfaces."
+    outputs: "Outputs"
+        ProofResult
+
+    handoff_routing: "Handoff Routing"
+        law:
+            mode pass_mode = ProofRoute.accept as ProofRoute
+            route_from pass_mode as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidRouteFromSelectorDemo")
+        except Exception as exc:
+            # route_from selectors must stay on declared surfaces. If a workflow-local
+            # mode leaked through here, routing could depend on hidden compile-time state.
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E346", f"expected E346, got {getattr(exc, 'code', None)}")
+            _expect("pass_mode" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for invalid route_from selector, but compilation succeeded")
+
+
+def _check_route_from_rejects_duplicate_route_choice() -> None:
+    source = """enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    route_choice: "Route Choice"
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+agent BackupCritic:
+    role: "Backup routed work."
+
+agent ChangeEngineer:
+    role: "Change routed work."
+
+workflow DuplicateRouteFromWorkflow: "Duplicate Route From Workflow"
+    law:
+        current none
+        route_from RouteFacts.route_choice as ProofRoute:
+            ProofRoute.accept:
+                route "Send to AcceptanceCritic." -> AcceptanceCritic
+            ProofRoute.accept:
+                route "Send to BackupCritic." -> BackupCritic
+            ProofRoute.change:
+                route "Send to ChangeEngineer." -> ChangeEngineer
+
+agent DuplicateRouteFromDemo:
+    role: "Reject duplicate route_from choices."
+    inputs: "Inputs"
+        RouteFacts
+    workflow: DuplicateRouteFromWorkflow
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "DuplicateRouteFromDemo")
+        except Exception as exc:
+            # route_from owns one selected route choice. Duplicate arms would let the
+            # same choice point at conflicting routes instead of failing loud.
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E348", f"expected E348, got {getattr(exc, 'code', None)}")
+            _expect("Accept" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for duplicate route_from choice, but compilation succeeded")
+
+
+def _check_route_summary_needs_one_selected_branch() -> None:
+    source = """enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+output ProofResult: "Proof Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    route_choice: "Route Choice"
+
+output RouteSummaryReply: "Route Summary Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    route_summary: "Route Summary"
+        "{{route.summary}}"
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+agent ChangeEngineer:
+    role: "Change routed work."
+
+agent AmbiguousRouteSummaryDemo:
+    role: "Do not read branch-specific route detail without narrowing."
+    outputs: "Outputs"
+        ProofResult
+        RouteSummaryReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            route_from ProofResult.route_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "AmbiguousRouteSummaryDemo")
+        except Exception as exc:
+            # route.summary is branch-specific detail. It must fail loud until one
+            # route branch is selected, or the user could see a made-up merged summary.
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E347", f"expected E347, got {getattr(exc, 'code', None)}")
+            _expect("route.summary" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for ambiguous route.summary, but compilation succeeded")
+
+
+def _check_handoff_routing_law_rejects_currentness_statements() -> None:
+    source = """output SimpleReply: "Simple Reply"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+agent InvalidHandoffLawDemo:
+    role: "Keep handoff routing limited to route semantics."
+    outputs: "Outputs"
+        SimpleReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            current none
+            stop "Reply and stop."
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidHandoffLawDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E344", f"expected E344, got {getattr(exc, 'code', None)}")
+            _expect("current none" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for invalid handoff_routing law, but compilation succeeded")
+
+
+def _check_non_route_slot_law_has_specific_code() -> None:
+    source = """output SimpleReply: "Simple Reply"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+agent InvalidSlotLawDemo:
+    role: "Keep law off plain authored slots."
+    outputs: "Outputs"
+        SimpleReply
+
+    your_job: "Your Job"
+        law:
+            stop "Reply and stop."
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidSlotLawDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E345", f"expected E345, got {getattr(exc, 'code', None)}")
+            _expect("your_job" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for law on plain authored slot, but compilation succeeded")
+
+
 def _check_route_only_output_can_render_route_semantics() -> None:
     source = """input RouteFacts: "Route Facts"
     source: Prompt
@@ -898,6 +1246,37 @@ output_dir = "build"
         output = stderr.getvalue()
         _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
         _expect("E519 emit error" in output, output)
+        _expect("outside the target project root" in output, output)
+
+
+def _check_emit_docs_rejects_output_dir_outside_project_root() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts"
+        prompts.mkdir(parents=True)
+        (prompts / "AGENTS.prompt").write_text(
+            """agent DemoAgent:
+    role: "Own the emitted surface."
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "../outside"
+""",
+            encoding="utf-8",
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_docs_main(["--pyproject", str(pyproject), "--target", "demo"])
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E520 emit error" in output, output)
         _expect("outside the target project root" in output, output)
 
 
@@ -1405,6 +1784,43 @@ version = "0.0.0"
         _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
         _expect("E518 emit error" in output, output)
         _expect("Direct emit flow mode requires entrypoint and output_dir" in output, output)
+
+
+def _check_emit_flow_direct_mode_rejects_output_dir_outside_project_root() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts"
+        prompts.mkdir()
+        entrypoint = prompts / "AGENTS.prompt"
+        entrypoint.write_text(
+            """agent DemoAgent:
+    role: "Own the demo flow."
+"""
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[project]
+name = "doctrine-smoke"
+version = "0.0.0"
+"""
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_flow_main(
+                [
+                    "--pyproject",
+                    str(pyproject),
+                    "--entrypoint",
+                    str(entrypoint.relative_to(root)),
+                    "--output-dir",
+                    "../outside",
+                ]
+            )
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E520 emit error" in output, output)
+        _expect("outside the target project root" in output, output)
 
 
 def _check_diagnostic_to_dict_is_json_safe() -> None:

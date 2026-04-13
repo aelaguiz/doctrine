@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from doctrine import model
-from doctrine.diagnostics import DiagnosticLocation, EmitError
+from doctrine._compiler.support import path_location
+from doctrine.diagnostics import EmitError
 from doctrine.project_config import (
     PYPROJECT_FILE_NAME,
     ProjectConfig,
@@ -154,6 +155,11 @@ def load_emit_targets(
                 f"Emit target `{name}` output_dir is a file: `{output_dir}`.",
                 location=path_location(output_dir),
             )
+        _validate_output_dir_within_project_root(
+            output_dir,
+            project_root=project_config.config_dir,
+            detail_prefix=f"Emit target `{name}` output_dir",
+        )
 
         targets[name] = EmitTarget(
             name=name,
@@ -208,6 +214,11 @@ def resolve_direct_emit_target(
 
     if project_config is None:
         project_config = _load_compile_project_config_for_entrypoint(entrypoint_path)
+    _validate_output_dir_within_project_root(
+        output_dir_path,
+        project_root=project_config.config_dir,
+        detail_prefix="Direct emit output_dir",
+    )
 
     return EmitTarget(
         name=name or entrypoint_path.stem.lower(),
@@ -265,6 +276,30 @@ def entrypoint_contract_name(entrypoint: Path) -> str:
     return f"{entrypoint.stem}.contract.json"
 
 
+def _validate_output_dir_within_project_root(
+    output_dir: Path,
+    *,
+    project_root: Path | None,
+    detail_prefix: str,
+) -> None:
+    if project_root is None:
+        return
+
+    resolved_output_dir = output_dir.resolve()
+    resolved_project_root = project_root.resolve()
+    try:
+        resolved_output_dir.relative_to(resolved_project_root)
+    except ValueError as exc:
+        raise emit_error(
+            "E520",
+            "Emit target output_dir must stay within project root",
+            f"{detail_prefix} resolves outside the target project root: "
+            f"`{display_path(resolved_output_dir)}` is not under "
+            f"`{display_path(resolved_project_root)}`.",
+            location=path_location(output_dir),
+        ) from exc
+
+
 def agent_slug(name: str) -> str:
     return CAMEL_BOUNDARY_RE.sub("_", name).lower()
 
@@ -304,12 +339,6 @@ def display_path(path: Path) -> str:
         return str(path.relative_to(REPO_ROOT))
     except ValueError:
         return str(path)
-
-
-def path_location(path: Path | None) -> DiagnosticLocation | None:
-    if path is None:
-        return None
-    return DiagnosticLocation(path=path.resolve())
 
 
 def emit_error(

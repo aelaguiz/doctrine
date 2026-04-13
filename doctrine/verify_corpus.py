@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import tempfile
 import threading
 import tomllib
@@ -13,6 +12,7 @@ from typing import Any
 
 from doctrine.compiler import CompilationSession, compile_prompt
 from doctrine.diagnostics import DoctrineError, EmitError
+from doctrine._compiler.support import default_worker_count
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
@@ -199,7 +199,7 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     if compile_case_indexes:
         session_cache = _CompilationSessionCache()
         with ThreadPoolExecutor(
-            max_workers=_compile_case_worker_count(len(compile_case_indexes))
+            max_workers=default_worker_count(len(compile_case_indexes))
         ) as executor:
             futures = {
                 executor.submit(_run_compile_case, cases[index], session_cache): index
@@ -256,13 +256,6 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         ref_diffs=ref_diffs,
         surfaced_inconsistencies=surfaced_inconsistencies,
     )
-
-
-def _compile_case_worker_count(case_count: int) -> int:
-    if case_count <= 1:
-        return 1
-    cpu_count = os.cpu_count() or 1
-    return min(case_count, max(2, cpu_count))
 
 
 def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:

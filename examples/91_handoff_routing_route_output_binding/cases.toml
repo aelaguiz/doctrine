@@ -1,0 +1,184 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "handoff_routing law may feed shared route semantics into ordinary outputs"
+status = "active"
+kind = "render_contract"
+agent = "HandoffRouteBindingDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Read route truth from handoff routing.",
+  "",
+  "## Outputs",
+  "",
+  "### Handoff Route Binding Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Next Owner: Review Lead",
+  "",
+  "## Handoff Routing",
+  "",
+  "Route through compiler-owned handoff routing.",
+  "",
+  "This pass runs only when true.",
+  "",
+  "Stop: Hand off or finish the turn.",
+  "",
+  "Hand off to ReviewLead.",
+]
+
+[[cases]]
+name = "handoff_routing may feed guarded route semantics into maybe-routed outputs"
+status = "active"
+kind = "render_contract"
+agent = "HandoffMaybeRouteDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep route truth on the output contract.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "- Should Route: `Should Route`",
+  "",
+  "## Outputs",
+  "",
+  "### Handoff Guarded Turn Result",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Kind",
+  "",
+  "Show this only when a routed owner exists.",
+  "",
+  "`handoff`",
+  "",
+  "#### Next Owner",
+  "",
+  "Show this only when a routed owner exists.",
+  "",
+  "ReviewLead",
+  "",
+  "#### Kind",
+  "",
+  "Show this only when not (a routed owner exists).",
+  "",
+  "`done`",
+  "",
+  "#### Summary",
+  "",
+  "Show this only when not (a routed owner exists).",
+  "",
+  "`Write one short closeout summary.`",
+  "",
+  "## Handoff Routing",
+  "",
+  "Route only when the host route facts require it.",
+  "",
+  "This pass runs only when true.",
+  "",
+  "Stop: Hand off or finish the turn.",
+  "",
+  "When RouteFacts.should_route, hand off to ReviewLead.",
+]
+
+[[cases]]
+name = "handoff_routing may feed shared route semantics into final_output"
+status = "active"
+kind = "render_contract"
+agent = "HandoffFinalOutputDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "End with a route-aware final JSON result.",
+  "",
+  "## Final Output",
+  "",
+  "### Handoff Route Final Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this schema.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Structured JSON |",
+  "| Shape | Turn Result JSON |",
+  "| Schema | Turn Result Schema |",
+  "| Profile | OpenAIStructuredOutput |",
+  "| Schema file | `schemas/turn_result.schema.json` |",
+  "| Example file | `examples/turn_result.example.json` |",
+  "| Requirement | Required |",
+  "",
+  "#### Payload Fields",
+  "",
+  "| Field | Type | Meaning |",
+  "| --- | --- | --- |",
+  "| `next_owner` | string | The routed next owner key. |",
+  "| `summary` | string | Short closeout summary. |",
+  "",
+  "#### Example",
+  "",
+  "```json",
+  "{",
+  "  \"next_owner\": \"ReviewLead\",",
+  "  \"summary\": \"Hand off to ReviewLead.\"",
+  "}",
+  "```",
+  "",
+  "- Next Owner: ReviewLead",
+  "",
+  "#### Route Summary",
+  "",
+  "Hand off to ReviewLead. Next owner: Review Lead.",
+  "",
+  "#### Read on Its Own",
+  "",
+  "This final JSON should stand on its own.",
+  "",
+  "## Handoff Routing",
+  "",
+  "Route through compiler-owned handoff routing.",
+  "",
+  "This pass runs only when true.",
+  "",
+  "Stop: Hand off or finish the turn.",
+  "",
+  "Hand off to ReviewLead.",
+]
+
+[[cases]]
+name = "prose-only handoff_routing does not make route guards live"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_PROSE_ONLY_ROUTE_READ.prompt"
+agent = "ProseOnlyHandoffDemo"
+exception_type = "CompileError"
+error_code = "E338"
+message_contains = [
+  "Output guard in output HandoffRouteBindingComment.next_owner reads disallowed source",
+  "route.exists",
+]
+
+[[cases]]
+name = "handoff_routing conflicts with another live route-bearing surface"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_CONFLICTING_ROUTE_SURFACES.prompt"
+agent = "ConflictingRouteSurfaceDemo"
+exception_type = "CompileError"
+error_code = "E343"
+message_contains = [
+  "more than one live route-bearing control surface",
+  "workflow, handoff_routing",
+]

@@ -44,15 +44,15 @@ Register a normal emit target in `pyproject.toml`:
 
 ```toml
 [[tool.doctrine.emit.targets]]
-name = "example_91_skill_package_minimal"
-entrypoint = "examples/91_skill_package_minimal/prompts/SKILL.prompt"
-output_dir = "examples/91_skill_package_minimal/build"
+name = "example_95_skill_package_minimal"
+entrypoint = "examples/95_skill_package_minimal/prompts/SKILL.prompt"
+output_dir = "examples/95_skill_package_minimal/build"
 ```
 
 Emit the package:
 
 ```bash
-uv run --locked python -m doctrine.emit_skill --target example_91_skill_package_minimal
+uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
 ```
 
 The emitted tree is:
@@ -102,9 +102,9 @@ build/
 ```
 
 This is why examples such as
-`92_skill_package_references`,
-`93_skill_package_scripts`, and
-`98_skill_package_path_case_preservation`
+`96_skill_package_references`,
+`97_skill_package_scripts`, and
+`102_skill_package_path_case_preservation`
 are authored as ordinary source-root bundles instead of compiler-owned special
 file-family declarations.
 
@@ -214,30 +214,30 @@ Important fail-loud cases:
 - bundled paths must use `/` separators
 - bundled files preserve their bytes exactly
 
-Example `98_skill_package_path_case_preservation` proves the exact-path and
+Example `102_skill_package_path_case_preservation` proves the exact-path and
 case-preservation boundary, including a negative collision case.
 
 ## Example Gallery
 
-The canonical package authoring ladder is `91` through `99`.
+The canonical package authoring ladder is `95` through `103`.
 
-- `91_skill_package_minimal`: smallest `SKILL.prompt` plus `skill package`
+- `95_skill_package_minimal`: smallest `SKILL.prompt` plus `skill package`
   surface
-- `92_skill_package_references`: ordinary bundled reference documents beside
+- `96_skill_package_references`: ordinary bundled reference documents beside
   `SKILL.prompt`
-- `93_skill_package_scripts`: ordinary bundled script files beside
+- `97_skill_package_scripts`: ordinary bundled script files beside
   `SKILL.prompt`
-- `94_skill_package_runtime_metadata`: runtime metadata roots such as
+- `98_skill_package_runtime_metadata`: runtime metadata roots such as
   `agents/openai.yaml`
-- `95_skill_package_plugin_metadata`: plugin-style split metadata roots such as
+- `99_skill_package_plugin_metadata`: plugin-style split metadata roots such as
   `.codex-plugin/plugin.json`, `.app.json`, and `agents/openai.yaml`
-- `96_skill_package_bundled_agents`: bundled `agents/**/*.prompt` modules that
+- `100_skill_package_bundled_agents`: bundled `agents/**/*.prompt` modules that
   emit markdown companions while normal files in the same tree still bundle
-- `97_skill_package_compendium`: larger source-root compendium and reference
+- `101_skill_package_compendium`: larger source-root compendium and reference
   tree preservation
-- `98_skill_package_path_case_preservation`: exact path and case preservation
+- `102_skill_package_path_case_preservation`: exact path and case preservation
   plus negative collision proof
-- `99_skill_package_binary_assets`: bundled binary assets such as `assets/*.png`
+- `103_skill_package_binary_assets`: bundled binary assets such as `assets/*.png`
   preserved byte for byte
 
 This gallery is generic on purpose, but it is shaped to match the real skill
@@ -251,7 +251,7 @@ path-sensitive bundles, including binary assets.
 For one package example:
 
 ```bash
-uv run --locked python -m doctrine.verify_corpus --manifest examples/91_skill_package_minimal/cases.toml
+uv run --locked python -m doctrine.verify_corpus --manifest examples/95_skill_package_minimal/cases.toml
 ```
 
 For the full shipped corpus:

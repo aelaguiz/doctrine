@@ -64,9 +64,9 @@ entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
 output_dir = "examples/73_flow_visualizer_showcase/build"
 
 [[tool.doctrine.emit.targets]]
-name = "example_91_skill_package_minimal"
-entrypoint = "examples/91_skill_package_minimal/prompts/SKILL.prompt"
-output_dir = "examples/91_skill_package_minimal/build"
+name = "example_95_skill_package_minimal"
+entrypoint = "examples/95_skill_package_minimal/prompts/SKILL.prompt"
+output_dir = "examples/95_skill_package_minimal/build"
 ```
 
 Each target field has one job:
@@ -86,6 +86,8 @@ Important rules:
 - `entrypoint` must live under a `prompts/` tree. The emit pipeline preserves
   the subdirectory beneath that `prompts/` root.
 - `output_dir` must resolve to a directory path, not an existing file.
+- In configured target mode, `output_dir` must stay within the target project
+  root.
 - Multiple targets may exist in one repo, and all emit commands use the same
   target registry.
 
@@ -125,8 +127,8 @@ uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 Emit compiled skill-package trees for one or more configured targets:
 
 ```bash
-uv run --locked python -m doctrine.emit_skill --target example_91_skill_package_minimal
-uv run --locked python -m doctrine.emit_skill --target example_96_skill_package_bundled_agents
+uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
+uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
 ```
 
 Emit one workflow data-flow graph from a configured target:
@@ -154,6 +156,8 @@ Useful CLI rules:
   directory until it finds `pyproject.toml` for configured target mode.
 - Direct `emit_flow` mode resolves compile config from the entrypoint's nearest
   `pyproject.toml` unless `--pyproject` explicitly overrides it.
+- When direct `emit_flow` resolves a project root, `--output-dir` must stay
+  within that root.
 - `emit_docs` reuses one indexed prompt graph per target instead of reparsing
   the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad
@@ -232,13 +236,13 @@ examples/07_handoffs/build/writing_specialist/AGENTS.contract.json
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
 
-examples/91_skill_package_minimal/build/SKILL.md
-examples/92_skill_package_references/build/references/checklist.md
-examples/93_skill_package_scripts/build/scripts/greet.py
-examples/95_skill_package_plugin_metadata/build/.codex-plugin/plugin.json
-examples/96_skill_package_bundled_agents/build/agents/cold_reviewer.md
-examples/96_skill_package_bundled_agents/build/agents/openai.yaml
-examples/99_skill_package_binary_assets/build/assets/icon.png
+examples/95_skill_package_minimal/build/SKILL.md
+examples/96_skill_package_references/build/references/checklist.md
+examples/97_skill_package_scripts/build/scripts/greet.py
+examples/99_skill_package_plugin_metadata/build/.codex-plugin/plugin.json
+examples/100_skill_package_bundled_agents/build/agents/cold_reviewer.md
+examples/100_skill_package_bundled_agents/build/agents/openai.yaml
+examples/103_skill_package_binary_assets/build/assets/icon.png
 ```
 
 The companion contract is compiler-owned emitted truth. In v1 it carries:
@@ -307,8 +311,8 @@ include compiled Markdown, `SKILL.md` package trees, companion
 verifier-owned checked-in proof, not part of Doctrine's public authoring model.
 Representative checked-in proofs live in:
 
-- `examples/91_skill_package_minimal/build_ref/SKILL.md`
-- `examples/96_skill_package_bundled_agents/build_ref/agents/cold_reviewer.md`
+- `examples/95_skill_package_minimal/build_ref/SKILL.md`
+- `examples/100_skill_package_bundled_agents/build_ref/agents/cold_reviewer.md`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
 - `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.d2`

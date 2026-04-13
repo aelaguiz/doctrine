@@ -49,8 +49,8 @@ Workflow-law support here uses the same vocabulary as
 `trust_surface`, guarded output headers, carrier refs, trust-surface field
 items, enum-backed mode refs, named law subsection `inherit` / `override`
 keys, lower-case and mixed-case bound roots in workflow-law carrier and
-artifact paths, and route targets inside `law` branches, including conditional
-route lines.
+artifact paths, `route_from` selectors, output-side `route.*` readback, and
+route targets inside `law` branches, including conditional route lines.
 
 Review support here uses the same vocabulary as
 [../../docs/REVIEW_SPEC.md](../../docs/REVIEW_SPEC.md): `review`,
@@ -139,7 +139,7 @@ local editor is actually running the newest VSIX before changing the grammar.
 3. Reload the editor window.
 4. Open `examples/03_imports/prompts/AGENTS.prompt`.
 5. Open `examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt`.
-6. Open `examples/96_skill_package_bundled_agents/prompts/SKILL.prompt`.
+6. Open `examples/100_skill_package_bundled_agents/prompts/SKILL.prompt`.
 7. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
    the emitted scopes and the theme rule that matched.
 8. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
@@ -147,7 +147,7 @@ local editor is actually running the newest VSIX before changing the grammar.
    addressable `title` segment, one enum member, and one structural
    inheritance key.
 9. For the skill-package surface, smoke-check
-   `examples/96_skill_package_bundled_agents/prompts/SKILL.prompt` for
+   `examples/100_skill_package_bundled_agents/prompts/SKILL.prompt` for
    `skill package` declaration highlighting and import-path clicks into bundled
    agent prompts.
 10. For the workflow-law ladder, smoke-check:
@@ -160,7 +160,11 @@ local editor is actually running the newest VSIX before changing the grammar.
    `examples/50_bound_currentness_roots/prompts/AGENTS.prompt` for lower-case
    bound root clicks in `current artifact ... via ...`, and
    `examples/51_inherited_bound_io_roots/prompts/AGENTS.prompt` for inherited
-   bound-root clicks.
+   bound-root clicks,
+   `examples/92_route_from_basic/prompts/AGENTS.prompt` for `route_from`
+   selector field clicks, and
+   `examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt` for
+   `route.choice` colorization plus enum-member clicks in route-choice guards.
 11. For the review ladder, smoke-check:
    `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
    for `review:` slot clicks and top-level review colorization,

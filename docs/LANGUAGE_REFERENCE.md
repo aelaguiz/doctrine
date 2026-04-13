@@ -72,6 +72,9 @@ Important rules:
   `decision`, `skills`, `review`, and `final_output`.
 - Any other keyed field is an authored workflow slot. Those slots can point at
   a named `workflow` or define an inline workflow body.
+- `handoff_routing:` may also carry a route-only `law:` block. That law may
+  use `active when`, `mode`, `when`, `match`, `route_from`, `stop`, and
+  `route`.
 - `abstract <slot_key>` marks an authored slot that concrete children must
   define directly.
 - `inherit <slot_key>` keeps an inherited authored slot unchanged.
@@ -96,10 +99,24 @@ Important rules:
 - Any emitted output may also read shared compiler-owned route semantics
   through `route.exists`, `route.next_owner`, `route.next_owner.key`,
   `route.next_owner.title`, `route.label`, and `route.summary` when the active
-  workflow-law or review branch resolves a real route.
+  workflow-law, `handoff_routing` law, `route_only`, `grounding`, or review
+  branch resolves a real route.
+- When every live routed branch on that turn comes from `route_from`, outputs
+  may also read
+  `route.choice`, `route.choice.key`, `route.choice.title`, and
+  `route.choice.wire`.
+- `route.next_owner.*` may stay live across several `route_from` branches. It
+  means the selected route owner. `route.label` and `route.summary` still need
+  one selected branch.
+- Name each `route_from` enum member once. Use `else` at most once.
 - Unguarded `route.*` reads fail loudly when some active branches may not
   route. Guard route-specific readback with `when route.exists:` when the
   route is not live on every branch.
+- Guard branch-specific route detail with `when route.choice == Enum.member`
+  when several routed branches stay live and every live routed branch comes
+  from `route_from`.
+- On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
+  Prose route lines inside `handoff_routing` are still readable text only.
 - When a review points `comment_output:` at an imported reusable `output`,
   bare refs inside that output still resolve locally first, then may bind the
   concrete review's local declarations when the imported module does not
@@ -142,6 +159,8 @@ Important rules:
   sections, readable declaration refs, and readable block kinds such as
   `section`, `sequence`, `bullets`, `checklist`, `definitions`, `table`,
   `callout`, `code`, and `rule`.
+- Workflow law may use `route_from` to pick one route from a typed input or
+  emitted output fact.
 
 ### Workflow Inheritance
 
@@ -195,7 +214,8 @@ Important rules:
 - `route_only` lowers through the same workflow-law `current none`, route, and
   standalone-read validation path the earlier route-only ladder already used.
 - The lowered route-only branches also feed the same shared output-facing
-  `route.*` semantics ordinary workflow-law outputs and review outputs use.
+  `route.*` semantics ordinary workflow-law outputs, `handoff_routing` law,
+  and review outputs use.
 - The dedicated declaration does not create a second route engine.
 - Guarded route-only keys must line up with guarded top-level output sections
   on the declared `handoff_output`.

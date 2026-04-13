@@ -1,0 +1,101 @@
+json schema TurnResultSchema: "Turn Result Schema"
+    profile: OpenAIStructuredOutput
+    file: "schemas/turn_result.schema.json"
+
+
+output shape TurnResultJson: "Turn Result JSON"
+    kind: JsonObject
+    schema: TurnResultSchema
+    example_file: "examples/turn_result.example.json"
+
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    should_route: "Should Route"
+
+
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+
+output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+
+output HandoffGuardedTurnResult: "Handoff Guarded Turn Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    kind: "handoff" when route.exists
+    next_owner: route.next_owner.key when route.exists
+
+    kind: "done" when route.exists == false
+    summary: "Write one short closeout summary." when route.exists == false
+
+
+output HandoffRouteFinalResponse: "Handoff Route Final Response"
+    target: TurnResponse
+    shape: TurnResultJson
+    requirement: Required
+
+    next_owner: route.next_owner.key
+
+    route_summary: "Route Summary"
+        "{{route.summary}}"
+
+    standalone_read: "Standalone Read"
+        "This final JSON should stand on its own."
+
+
+agent HandoffRouteBindingDemo:
+    role: "Read route truth from handoff routing."
+    outputs: "Outputs"
+        HandoffRouteBindingComment
+
+    handoff_routing: "Handoff Routing"
+        "Route through compiler-owned handoff routing."
+
+        law:
+            active when true
+            stop "Hand off or finish the turn."
+            route "Hand off to ReviewLead." -> ReviewLead
+
+
+agent HandoffMaybeRouteDemo:
+    role: "Keep route truth on the output contract."
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        HandoffGuardedTurnResult
+
+    handoff_routing: "Handoff Routing"
+        "Route only when the host route facts require it."
+
+        law:
+            active when true
+            stop "Hand off or finish the turn."
+            route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+
+agent HandoffFinalOutputDemo:
+    role: "End with a route-aware final JSON result."
+    outputs: "Outputs"
+        HandoffRouteFinalResponse
+    final_output: HandoffRouteFinalResponse
+
+    handoff_routing: "Handoff Routing"
+        "Route through compiler-owned handoff routing."
+
+        law:
+            active when true
+            stop "Hand off or finish the turn."
+            route "Hand off to ReviewLead." -> ReviewLead

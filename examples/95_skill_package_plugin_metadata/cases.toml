@@ -1,8 +1,0 @@
-schema_version = 1
-default_prompt = "prompts/SKILL.prompt"
-
-[[cases]]
-name = "plugin metadata files emit with preserved relative paths"
-status = "active"
-kind = "build_contract"
-build_target = "example_95_skill_package_plugin_metadata"

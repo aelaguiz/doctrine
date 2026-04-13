@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "next_owner": {
+      "type": "string",
+      "description": "The routed next owner key."
+    },
+    "summary": {
+      "type": "string",
+      "description": "Short closeout summary."
+    }
+  }
+}

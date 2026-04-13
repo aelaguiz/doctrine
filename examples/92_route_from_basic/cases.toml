@@ -1,0 +1,90 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "workflow law may select a route with route_from"
+status = "active"
+kind = "render_contract"
+agent = "RouteFromWorkflowDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Select the next owner from typed route facts.",
+  "",
+  "## Route From Workflow",
+  "",
+  "Pick the next owner from typed route facts.",
+  "",
+  "No artifact is current for this turn.",
+  "",
+  "Stop: Hand off or finish the turn.",
+  "",
+  "Select one route from RouteFacts.route_choice.",
+  "Use exactly one route choice:",
+  "- Accept",
+  "- Change",
+  "",
+  "If the route choice is Accept:",
+  "- Send to AcceptanceCritic.",
+  "",
+  "If the route choice is Change:",
+  "- Send to ChangeEngineer.",
+  "",
+  "## Inputs",
+  "",
+  "### Route Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "- Route Choice: `Route Choice`",
+  "",
+  "## Outputs",
+  "",
+  "### Route From Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Next Owner: the selected route's next owner key",
+]
+
+[[cases]]
+name = "route_from selector must stay on declared input or output surfaces"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SELECTOR_LOCAL_MODE.prompt"
+agent = "InvalidRouteFromSelectorDemo"
+exception_type = "CompileError"
+error_code = "E346"
+message_contains = [
+  "route_from selector",
+  "pass_mode",
+]
+
+[[cases]]
+name = "route_from selector must stay direct and not use computed expressions"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_SELECTOR_COMPUTED_EXPR.prompt"
+agent = "InvalidComputedRouteFromDemo"
+exception_type = "CompileError"
+error_code = "E346"
+message_contains = [
+  "route_from selector",
+  "RouteFacts.route_choice == Accept",
+]
+
+[[cases]]
+name = "route_from must reject duplicate route choices"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_ROUTE_MEMBER.prompt"
+agent = "InvalidDuplicateRouteFromDemo"
+exception_type = "CompileError"
+error_code = "E348"
+message_contains = [
+  "Duplicate route_from arm",
+  "Accept",
+]

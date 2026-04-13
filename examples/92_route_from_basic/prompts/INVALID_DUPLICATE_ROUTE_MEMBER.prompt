@@ -1,0 +1,43 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    route_choice: "Route Choice"
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent BackupCritic:
+    role: "Backup routed work."
+
+
+agent ChangeEngineer:
+    role: "Handle requested changes."
+
+
+workflow DuplicateRouteFromWorkflow: "Duplicate Route From Workflow"
+    "Fail loud when one route choice points at two routes."
+
+    law:
+        current none
+        route_from RouteFacts.route_choice as ProofRoute:
+            ProofRoute.accept:
+                route "Send to AcceptanceCritic." -> AcceptanceCritic
+            ProofRoute.accept:
+                route "Send to BackupCritic." -> BackupCritic
+            ProofRoute.change:
+                route "Send to ChangeEngineer." -> ChangeEngineer
+
+
+agent InvalidDuplicateRouteFromDemo:
+    role: "Reject duplicate route_from choices."
+    inputs: "Inputs"
+        RouteFacts
+    workflow: DuplicateRouteFromWorkflow

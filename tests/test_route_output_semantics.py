@@ -381,6 +381,197 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertIn("- Next Owner: Routing Owner", rendered)
         self.assertIn("Keep the issue on RoutingOwner until the next specialist owner is actually justified. Next owner: Routing Owner.", rendered)
 
+    def test_handoff_routing_outputs_can_bind_route_fields_from_law(self) -> None:
+        agent = self._compile_agent(
+            """
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner
+                next_owner_key: route.next_owner.key
+
+                route_summary: "Route Summary"
+                    "{{route.summary}}"
+
+            agent HandoffRouteBindingDemo:
+                role: "Read route truth from handoff routing."
+                outputs: "Outputs"
+                    HandoffRouteBindingComment
+
+                handoff_routing: "Handoff Routing"
+                    "Route through compiler-owned handoff routing."
+
+                    law:
+                        active when true
+                        stop "Hand off or finish the turn."
+                        route "Hand off to ReviewLead." -> ReviewLead
+            """,
+            agent_name="HandoffRouteBindingDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Handoff Routing", rendered)
+        self.assertIn("Route through compiler-owned handoff routing.", rendered)
+        self.assertIn("- Next Owner: Review Lead", rendered)
+        self.assertIn("- Next Owner Key: ReviewLead", rendered)
+        self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
+
+    def test_handoff_routing_outputs_require_route_exists_guards_on_maybe_routed_branches(self) -> None:
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+                should_route: "Should Route"
+
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output TurnResultComment: "Turn Result Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                kind: "handoff" when route.exists
+                next_owner: route.next_owner.key when route.exists
+
+                kind: "done" when route.exists == false
+                summary: "Write one short closeout summary." when route.exists == false
+
+            agent HandoffMaybeRouteDemo:
+                role: "Keep route truth in the output contract."
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    TurnResultComment
+
+                handoff_routing: "Handoff Routing"
+                    "Route only when the host route facts require it."
+
+                    law:
+                        active when true
+                        stop "Hand off or finish the turn."
+                        route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+            """,
+            agent_name="HandoffMaybeRouteDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("#### Kind", rendered)
+        self.assertIn("Show this only when a routed owner exists.", rendered)
+        self.assertIn("Show this only when not (a routed owner exists).", rendered)
+        self.assertIn("#### Next Owner", rendered)
+        self.assertIn("ReviewLead", rendered)
+
+    def test_handoff_routing_prose_routes_do_not_seed_route_semantics(self) -> None:
+        error = self._compile_error(
+            """
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner when route.exists
+
+            agent ProseOnlyHandoffDemo:
+                role: "Keep prose handoff routes readable."
+                outputs: "Outputs"
+                    HandoffRouteBindingComment
+
+                handoff_routing: "Handoff Routing"
+                    ready_for_review: "Ready For Review"
+                        route "Hand off to ReviewLead." -> ReviewLead
+            """,
+            agent_name="ProseOnlyHandoffDemo",
+        )
+
+        self.assertEqual(error.code, "E338")
+        self.assertIn("disallowed source", str(error))
+        self.assertIn("route.exists", str(error))
+
+    def test_handoff_routing_conflicts_with_other_live_route_surface(self) -> None:
+        error = self._compile_error(
+            """
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner
+
+            workflow RoutedWorkflow: "Routed Workflow"
+                "Always route through workflow law."
+
+                law:
+                    active when true
+                    current none
+                    stop "Reply and stop."
+                    route "Hand off to ReviewLead." -> ReviewLead
+
+            agent ConflictingRouteSurfaceDemo:
+                role: "Do not let two route surfaces drive one output."
+                workflow: RoutedWorkflow
+                outputs: "Outputs"
+                    HandoffRouteBindingComment
+
+                handoff_routing: "Handoff Routing"
+                    "Route through handoff routing too."
+
+                    law:
+                        active when true
+                        stop "Hand off or finish the turn."
+                        route "Hand off to ReviewLead from handoff routing." -> ReviewLead
+            """,
+            agent_name="ConflictingRouteSurfaceDemo",
+        )
+
+        self.assertEqual(error.code, "E343")
+        self.assertIn("workflow, handoff_routing", str(error))
+
+    def test_handoff_routing_law_rejects_currentness_statements(self) -> None:
+        error = self._compile_error(
+            """
+            output SimpleReply: "Simple Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent InvalidHandoffLawDemo:
+                role: "Keep handoff routing limited to route semantics."
+                outputs: "Outputs"
+                    SimpleReply
+
+                handoff_routing: "Handoff Routing"
+                    law:
+                        current none
+                        stop "Reply and stop."
+            """,
+            agent_name="InvalidHandoffLawDemo",
+        )
+
+        self.assertEqual(error.code, "E344")
+        self.assertIn("unsupported statement `current none`", str(error))
+
 
 if __name__ == "__main__":
     unittest.main()

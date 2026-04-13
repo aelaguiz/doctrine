@@ -5,7 +5,8 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from doctrine.emit_common import load_emit_targets
+from doctrine.diagnostics import EmitError
+from doctrine.emit_common import load_emit_targets, resolve_direct_emit_target
 from doctrine.project_config import ProjectConfigError, load_project_config
 
 
@@ -86,6 +87,63 @@ class ProjectConfigTests(unittest.TestCase):
 
             self.assertIn("demo", targets)
             self.assertEqual(targets["demo"].project_config.path, pyproject.resolve())
+
+    def test_emit_targets_reject_output_dir_outside_project_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                """agent Demo:\n    role: "Own the emitted surface."\n"""
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "../outside"
+                    """
+                )
+            )
+
+            with self.assertRaises(EmitError) as exc_info:
+                load_emit_targets(pyproject)
+
+            self.assertEqual(exc_info.exception.code, "E520")
+            self.assertIn("outside the target project root", str(exc_info.exception))
+
+    def test_direct_emit_target_rejects_output_dir_outside_project_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                """agent Demo:\n    role: "Own the emitted surface."\n"""
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [project]
+                    name = "demo"
+                    version = "0.0.0"
+                    """
+                )
+            )
+
+            with self.assertRaises(EmitError) as exc_info:
+                resolve_direct_emit_target(
+                    pyproject_path=pyproject,
+                    entrypoint="prompts/AGENTS.prompt",
+                    output_dir="../outside",
+                )
+
+            self.assertEqual(exc_info.exception.code, "E520")
+            self.assertIn("outside the target project root", str(exc_info.exception))
 
 
 if __name__ == "__main__":
