@@ -1,0 +1,70 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "route.choice guards may narrow branch-specific route detail"
+status = "active"
+kind = "render_contract"
+agent = "RouteChoiceGuardDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use route.choice to narrow route detail.",
+  "",
+  "## Outputs",
+  "",
+  "### Proof Result",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Route Choice: `Route Choice`",
+  "",
+  "### Route Choice Reply",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Accept Summary",
+  "",
+  "Show this only when route.choice is Accept.",
+  "",
+  "`Accept Summary`",
+  "",
+  "Send to AcceptanceCritic. Next owner: Acceptance Critic.",
+  "",
+  "#### Change Owner",
+  "",
+  "Show this only when route.choice is Change.",
+  "",
+  "`Change Owner`",
+  "",
+  "Change Engineer",
+  "",
+  "## Handoff Routing",
+  "",
+  "Select one route from ProofResult.route_choice.",
+  "Use exactly one route choice:",
+  "- Accept",
+  "- Change",
+  "",
+  "If the route choice is Accept:",
+  "- Send to AcceptanceCritic.",
+  "",
+  "If the route choice is Change:",
+  "- Send to ChangeEngineer.",
+]
+
+[[cases]]
+name = "route.summary still needs one selected branch"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNGUARDED_ROUTE_SUMMARY.prompt"
+agent = "InvalidRouteSummaryDemo"
+exception_type = "CompileError"
+error_code = "E347"
+message_contains = [
+  "route.summary",
+  "needs one selected route branch",
+]

@@ -1,0 +1,48 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    route_choice: "Route Choice"
+
+
+output RouteFromComment: "Route From Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner.key
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent ChangeEngineer:
+    role: "Handle requested changes."
+
+
+workflow RouteFromWorkflow: "Route From Workflow"
+    "Pick the next owner from typed route facts."
+
+    law:
+        current none
+        stop "Hand off or finish the turn."
+        route_from RouteFacts.route_choice as ProofRoute:
+            ProofRoute.accept:
+                route "Send to AcceptanceCritic." -> AcceptanceCritic
+            ProofRoute.change:
+                route "Send to ChangeEngineer." -> ChangeEngineer
+
+
+agent RouteFromWorkflowDemo:
+    role: "Select the next owner from typed route facts."
+    workflow: RouteFromWorkflow
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteFromComment
