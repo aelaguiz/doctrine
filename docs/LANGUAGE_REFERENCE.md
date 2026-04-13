@@ -80,7 +80,8 @@ Important rules:
 - `analysis:` attaches one reusable `analysis` declaration to an otherwise
   ordinary concrete turn.
 - `decision:` attaches one reusable `decision` declaration to an otherwise
-  ordinary concrete turn.
+  ordinary concrete turn. A concrete agent may attach more than one
+  `decision:` field when each points at a different `decision` declaration.
 - `final_output:` optionally points at one emitted `output` declaration and
   marks that `TurnResponse` artifact as the turn-ending assistant message.
 - On review-driven agents, `final_output:` may either reuse the review's
@@ -270,6 +271,8 @@ Important rules:
   rejection, and winner-selection obligations typed instead of prose-only.
 - `decision` may attach `render_profile:` to control how its readable body
   renders when Doctrine lowers it into markdown.
+- Concrete agents may attach more than one `decision:` field, but repeating
+  the same `decision` declaration on one agent is invalid.
 - The shipped typed statements are `candidates minimum <n>`, `rank required`,
   `rejects required`, `candidate_pool required`, `kept required`,
   `rejected required`, `sequencing_proof required`,

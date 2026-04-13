@@ -66,7 +66,7 @@ For the motivating use case and the runtime rationale, read
 - session-based compilation, once-per-session import loading, and deterministic
   default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
-  `examples/86_imported_review_comment_local_routes`
+  `examples/90_split_handoff_and_final_output_shared_route_semantics`
 - a repo-local emit pipeline for compiled Markdown plus compiler-owned workflow
   flow artifacts, and a VS Code extension for `.prompt` files
 
@@ -116,18 +116,28 @@ Leave one honest handoff and stop.
 
 ## Get Started
 
-Sync the repo, then run the shipped corpus:
+Sync the repo, install the pinned flow-render dependency, then run the Python
+unit tests and shipped corpus:
 
 ```bash
 uv sync
 npm ci
+make tests
 make verify-examples
 ```
+
+Or use `make setup` to run `uv sync` plus `npm ci` together.
 
 If you change diagnostics, also run:
 
 ```bash
 make verify-diagnostics
+```
+
+For the full repo-local Python gate, run:
+
+```bash
+make check
 ```
 
 For one manifest-backed example:
@@ -201,6 +211,12 @@ Build the installable VSIX with:
 ```bash
 cd editors/vscode
 make
+```
+
+Or from the repo root:
+
+```bash
+make vscode-package
 ```
 
 For extension details, see

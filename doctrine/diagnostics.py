@@ -57,11 +57,15 @@ class TransformParseFailure(ValueError):
         code: str = "E199",
         summary: str = "Parse failure",
         hints: tuple[str, ...] = (),
+        line: int | None = None,
+        column: int | None = None,
     ) -> None:
         super().__init__(detail)
         self.code = code
         self.summary = summary
         self.hints = hints
+        self.line = line
+        self.column = column
 
 
 def diagnostic_to_dict(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -> dict[str, Any]:
@@ -263,7 +267,10 @@ class ParseError(DoctrineError):
         path: Path | None,
         exc: VisitError,
     ) -> ParseError:
-        line, column = _extract_tree_position(exc.obj)
+        line = getattr(exc.orig_exc, "line", None)
+        column = getattr(exc.orig_exc, "column", None)
+        if line is None:
+            line, column = _extract_tree_position(exc.obj)
         location = DiagnosticLocation(path=path, line=line, column=column)
         excerpt, caret_column = _build_excerpt(source, line=line, column=column)
         detail = str(exc.orig_exc)
@@ -1645,24 +1652,26 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
-        re.compile(r"^own only must stay rooted in the current artifact in (?P<owner>.+): (?P<path>.+)$"),
+        re.compile(
+            r"^own only must stay rooted in the current artifact, an emitted output surface, or a declared schema family in (?P<owner>.+): (?P<path>.+)$"
+        ),
         "E351",
-        "Owned scope is outside the current artifact",
+        "Owned scope is outside the allowed modeled surface",
         lambda match: (
-            f"Owned scope `{match.group('path')}` is not rooted in the current artifact in "
-            f"{match.group('owner')}."
+            f"Owned scope `{match.group('path')}` is not rooted in the current artifact, "
+            f"an emitted output surface, or a declared schema family in {match.group('owner')}."
         ),
         (),
     ),
     (
         re.compile(
-            r"^own only target must resolve to a (?:declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output) in (?P<owner>.+): (?P<path>.+)$"
+            r"^own only target must resolve to a (?:declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family) in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E352",
         "Owned scope target is unknown",
         lambda match: (
             f"Owned scope target `{match.group('path')}` must resolve to a declared or bound "
-            f"concrete-turn input or output in {match.group('owner')}."
+            f"concrete-turn input or output or a declared schema family in {match.group('owner')}."
         ),
         (),
     ),
@@ -1686,7 +1695,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^preserve (?P<kind>structure|mapping|vocabulary) target must resolve to a (?P<label>declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared enum) in (?P<owner>.+): (?P<path>.+)$"
+            r"^preserve (?P<kind>structure|mapping|vocabulary|exact|decisions) target must resolve to a (?P<label>declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared enum|declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family or declared grounding|declared enum or declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family|declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family) in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E355",
         "Preserve target is unknown",

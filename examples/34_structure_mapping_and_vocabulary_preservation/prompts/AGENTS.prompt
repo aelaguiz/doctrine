@@ -31,6 +31,35 @@ input ReviewTemplate: "Review Template"
     requirement: Required
 
 
+document ReviewPlanDocument: "Review Plan Document"
+    section scope: "Scope" required
+        "State the review scope."
+
+    section acceptance: "Acceptance" required
+        "State what acceptance looks like."
+
+
+schema ReviewInventory: "Review Inventory"
+    sections:
+        summary: "Summary"
+            "Summarize the stable review contract."
+
+    gates:
+        scope_grounded: "Scope Grounded"
+            "Confirm the review scope stayed grounded."
+
+        acceptance_clear: "Acceptance Clear"
+            "Confirm the acceptance bar stayed explicit."
+
+
+output ReviewPlan: "Review Plan"
+    target: File
+        path: "unit_root/REVIEW_PLAN.md"
+    shape: MarkdownDocument
+    structure: ReviewPlanDocument
+    requirement: Required
+
+
 # Declare an output this turn can emit. The nested fields explain where it goes and what downstream readers learn from it.
 output CoordinationHandoff: "Coordination Handoff"
     target: TurnResponse
@@ -80,6 +109,18 @@ workflow PreserveVocabulary: "Preserve Vocabulary"
         preserve vocabulary CriticVerdict
 
 
+workflow PreserveSchemaFamilyMapping: "Preserve Schema Family Mapping"
+    law:
+        current artifact SlotMapping via CoordinationHandoff.current_artifact
+        preserve mapping ReviewInventory.gates
+
+
+workflow PreserveDocumentVocabulary: "Preserve Document Vocabulary"
+    law:
+        current artifact ReviewPlan via CoordinationHandoff.current_artifact
+        preserve vocabulary {ReviewPlan.scope, ReviewPlan.acceptance}
+
+
 # Declare a concrete agent that wires role text, workflow rules, and the needed inputs and outputs together.
 agent PreserveStructureDemo:
     role: "Preserve document skeletons while allowing a narrow wording pass."
@@ -108,3 +149,20 @@ agent PreserveVocabularyDemo:
         ReviewTemplate
     outputs: "Outputs"
         CoordinationHandoff
+
+
+agent PreserveSchemaFamilyMappingDemo:
+    role: "Keep schema gate mappings stable during a narrow update."
+    workflow: PreserveSchemaFamilyMapping
+    inputs: "Inputs"
+        SlotMapping
+    outputs: "Outputs"
+        CoordinationHandoff
+
+
+agent PreserveDocumentVocabularyDemo:
+    role: "Keep document section labels stable during a narrow rewrite."
+    workflow: PreserveDocumentVocabulary
+    outputs: "Outputs"
+        CoordinationHandoff
+        ReviewPlan

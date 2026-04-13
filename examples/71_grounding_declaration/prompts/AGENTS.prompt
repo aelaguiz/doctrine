@@ -8,6 +8,21 @@ input RepoFacts: "Repo Facts"
     "Use the host facts that ground the current wording claim."
 
 
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner can read this output alone and know what remains current."
+
+
 agent ReviewLead:
     role: "Own review when grounded wording still needs follow-up."
     workflow: "Review"
@@ -24,8 +39,23 @@ grounding ClaimGrounding: "Claim Grounding"
         if needs_review -> route ReviewLead
 
 
+workflow PreserveGroundingMapping: "Preserve Grounding Mapping"
+    law:
+        current artifact RepoFacts via CoordinationHandoff.current_artifact
+        preserve mapping ClaimGrounding
+
+
 agent ClaimGroundingDemo:
     role: "Keep grounding policy explicit and route review when the wording still needs follow-up."
     workflow: ClaimGrounding
     inputs: "Inputs"
         RepoFacts
+
+
+agent ClaimGroundingMappingDemo:
+    role: "Keep the grounding source-to-target map stable during a narrow wording pass."
+    workflow: PreserveGroundingMapping
+    inputs: "Inputs"
+        RepoFacts
+    outputs: "Outputs"
+        CoordinationHandoff

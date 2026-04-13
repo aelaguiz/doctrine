@@ -16,6 +16,7 @@ from doctrine._compiler.shared import (
     _REVIEW_REQUIRED_FIELD_NAMES,
     _REVIEW_VERDICT_TEXT,
     _SCHEMA_FAMILY_TITLES,
+    _agent_typed_field_key,
     _default_worker_count,
     _display_addressable_ref,
     _dotted_decl_name,
@@ -27,6 +28,20 @@ from doctrine._compiler.shared import (
     _resolve_render_profile_mode,
     _semantic_render_target_for_block,
 )
+
+_LAW_TARGET_ALLOWED_KINDS = {
+    "current_artifact": ("input", "output"),
+    "invalidate": ("input", "output", "schema_group"),
+    "own_only": ("input", "output", "schema_family"),
+    "path_set": ("input", "output"),
+}
+_PRESERVE_TARGET_ALLOWED_KINDS = {
+    "exact": ("input", "output", "schema_family"),
+    "structure": ("input", "output"),
+    "decisions": ("input", "output"),
+    "mapping": ("input", "output", "schema_family", "grounding"),
+    "vocabulary": ("enum", "input", "output", "schema_family"),
+}
 
 
 class ValidateMixin:
@@ -675,19 +690,7 @@ class ValidateMixin:
         return bool(self._output_path_guards(output_decl.items, path=path))
 
     def _typed_field_key(self, field: model.Field) -> str:
-        if isinstance(field, model.InputsField):
-            return "inputs"
-        if isinstance(field, model.OutputsField):
-            return "outputs"
-        if isinstance(field, model.AnalysisField):
-            return "analysis"
-        if isinstance(field, model.SkillsField):
-            return "skills"
-        if isinstance(field, model.ReviewField):
-            return "review"
-        if isinstance(field, model.FinalOutputField):
-            return "final_output"
-        return type(field).__name__
+        return _agent_typed_field_key(field)
 
     def _summarize_contract_field(
         self,
@@ -1470,6 +1473,16 @@ class ValidateMixin:
                     owner_label=owner_label,
                 )
                 continue
+            if isinstance(item, model.OwnOnlyStmt):
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label=self._law_stmt_name(item),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
+                )
+                continue
             if isinstance(item, (model.SupportOnlyStmt, model.IgnoreStmt)):
                 self._validate_path_set_roots(
                     item.target,
@@ -1477,18 +1490,17 @@ class ValidateMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=self._law_stmt_name(item),
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["path_set"],
                 )
                 continue
             if isinstance(item, model.PreserveStmt):
-                allowed_kinds = ("enum",) if item.kind == "vocabulary" else ("input", "output")
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=f"preserve {item.kind}",
-                    allowed_kinds=allowed_kinds,
+                    allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS[item.kind],
                 )
 
     def _validate_review_gate_label(
@@ -2204,6 +2216,11 @@ class ValidateMixin:
                 )
 
             for gate_branch in gate_branches:
+                if (
+                    branch.blocked_gate_present is not None
+                    and branch.blocked_gate_present != (gate_branch.blocked_gate_id is not None)
+                ):
+                    continue
                 resolved_branch = self._resolve_review_agreement_branch(
                     branch,
                     section_key=section.key,
@@ -2859,7 +2876,38 @@ class ValidateMixin:
         unit: IndexedUnit,
     ) -> tuple[ReviewOutcomeBranch, ...]:
         if isinstance(stmt, (model.ReviewCurrentArtifactStmt, model.ReviewCurrentNoneStmt)):
-            return (replace(branch, currents=(*branch.currents, stmt)),)
+            if stmt.when_expr is None:
+                return (replace(branch, currents=(*branch.currents, stmt)),)
+            condition = self._evaluate_review_condition(
+                stmt.when_expr,
+                unit=unit,
+                branch=branch,
+            )
+            if condition is True:
+                return (replace(branch, currents=(*branch.currents, stmt)),)
+            if condition is False:
+                return (branch,)
+            true_branch = self._assume_review_outcome_condition(
+                branch,
+                stmt.when_expr,
+                expected=True,
+            )
+            false_branch = self._assume_review_outcome_condition(
+                branch,
+                stmt.when_expr,
+                expected=False,
+            )
+            branches: list[ReviewOutcomeBranch] = []
+            if true_branch is not None:
+                branches.append(replace(true_branch, currents=(*true_branch.currents, stmt)))
+            if false_branch is not None:
+                branches.append(false_branch)
+            if branches:
+                return tuple(branches)
+            return (
+                replace(branch, currents=(*branch.currents, stmt)),
+                branch,
+            )
         if isinstance(stmt, model.ReviewCarryStmt):
             return (replace(branch, carries=(*branch.carries, stmt)),)
         if isinstance(stmt, model.ReviewOutcomeRouteStmt):
@@ -2897,6 +2945,29 @@ class ValidateMixin:
                 branch,
             )
         return (branch,)
+
+    def _assume_review_outcome_condition(
+        self,
+        branch: ReviewOutcomeBranch,
+        expr: model.Expr,
+        *,
+        expected: bool,
+    ) -> ReviewOutcomeBranch | None:
+        if (
+            isinstance(expr, model.ExprCall)
+            and expr.name in {"present", "missing"}
+            and len(expr.args) == 1
+            and isinstance(expr.args[0], model.ExprRef)
+            and expr.args[0].parts == ("blocked_gate",)
+        ):
+            blocked_gate_present = expected if expr.name == "present" else not expected
+            if (
+                branch.blocked_gate_present is not None
+                and branch.blocked_gate_present != blocked_gate_present
+            ):
+                return None
+            return replace(branch, blocked_gate_present=blocked_gate_present)
+        return None
 
     def _collect_review_outcome_match_branches(
         self,
@@ -5130,6 +5201,7 @@ class ValidateMixin:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label="workflow law",
+                        allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
                     ):
                         raise CompileError(
                             f"Owned and forbidden scope overlap in {owner_label}"
@@ -5143,6 +5215,7 @@ class ValidateMixin:
                             agent_contract=agent_contract,
                             owner_label=owner_label,
                             statement_label="workflow law",
+                            allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS["exact"],
                         )
                         for path in own_target.paths
                     ):
@@ -5415,7 +5488,7 @@ class ValidateMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="current artifact",
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["current_artifact"],
                 )
                 continue
             if isinstance(item, model.InvalidateStmt):
@@ -5425,38 +5498,38 @@ class ValidateMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="invalidate",
-                    allowed_kinds=("input", "output", "schema_group"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["invalidate"],
                 )
                 continue
-            if isinstance(item, (model.OwnOnlyStmt, model.SupportOnlyStmt, model.IgnoreStmt, model.ForbidStmt)):
+            if isinstance(item, model.OwnOnlyStmt):
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=self._law_stmt_name(item),
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
+                )
+                continue
+            if isinstance(item, (model.SupportOnlyStmt, model.IgnoreStmt, model.ForbidStmt)):
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label=self._law_stmt_name(item),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["path_set"],
                 )
                 continue
             if isinstance(item, model.PreserveStmt):
-                if item.kind == "vocabulary":
-                    self._validate_path_set_roots(
-                        item.target,
-                        unit=unit,
-                        agent_contract=agent_contract,
-                        owner_label=owner_label,
-                        statement_label="preserve vocabulary",
-                        allowed_kinds=("enum",),
-                    )
-                else:
-                    self._validate_path_set_roots(
-                        item.target,
-                        unit=unit,
-                        agent_contract=agent_contract,
-                        owner_label=owner_label,
-                        statement_label=f"preserve {item.kind}",
-                        allowed_kinds=("input", "output"),
-                    )
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label=f"preserve {item.kind}",
+                    allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS[item.kind],
+                )
                 continue
             if isinstance(item, model.LawRouteStmt):
                 self._validate_route_target(item.target, unit=unit)
@@ -5763,7 +5836,7 @@ class ValidateMixin:
             agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="current artifact",
-            allowed_kinds=("input", "output"),
+            allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["current_artifact"],
         )
         for path in target.paths:
             resolved = self._validate_law_path_root(
@@ -5772,16 +5845,26 @@ class ValidateMixin:
                 agent_contract=agent_contract,
                 owner_label=owner_label,
                 statement_label="own only",
-                allowed_kinds=("input", "output"),
+                allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
             )
             if (
-                resolved.unit.module_parts != current_root.unit.module_parts
-                or resolved.decl.name != current_root.decl.name
+                resolved.unit.module_parts == current_root.unit.module_parts
+                and isinstance(resolved.decl, type(current_root.decl))
+                and self._law_path_decl_identity(resolved.decl)
+                == self._law_path_decl_identity(current_root.decl)
             ):
-                raise CompileError(
-                    f"own only must stay rooted in the current artifact in {owner_label}: "
-                    f"{'.'.join(path.parts)}"
-                )
+                continue
+            if isinstance(resolved.decl, model.OutputDecl):
+                output_key = (resolved.unit.module_parts, resolved.decl.name)
+                if output_key in agent_contract.outputs:
+                    continue
+            if isinstance(resolved.decl, SchemaFamilyTarget):
+                continue
+            raise CompileError(
+                "own only must stay rooted in the current artifact, an emitted output "
+                f"surface, or a declared schema family in {owner_label}: "
+                f"{'.'.join(path.parts)}"
+            )
 
     def _validate_path_set_roots(
         self,
@@ -5822,9 +5905,12 @@ class ValidateMixin:
             statement_label=statement_label,
             allowed_kinds=allowed_kinds,
         )
-        if isinstance(resolved.decl, (model.EnumDecl, ResolvedSchemaGroup)) and resolved.remainder:
+        if isinstance(
+            resolved.decl,
+            (model.EnumDecl, SchemaFamilyTarget, ResolvedSchemaGroup, model.GroundingDecl),
+        ) and resolved.remainder:
             raise CompileError(
-                f"{statement_label} enum and schema-group targets must not descend through fields in {owner_label}: "
+                f"{statement_label} enum, schema-family, schema-group, and grounding targets must not descend through fields in {owner_label}: "
                 f"{'.'.join(path.parts)}"
             )
         return resolved
@@ -5864,6 +5950,12 @@ class ValidateMixin:
                 continue
             if kind == "enum":
                 labels.append("declared enum")
+                continue
+            if kind == "grounding":
+                labels.append("declared grounding")
+                continue
+            if kind == "schema_family":
+                labels.append("declared schema family")
                 continue
             if kind == "schema_group":
                 labels.append("declared schema group")
@@ -6005,8 +6097,17 @@ class ValidateMixin:
 
     def _law_path_decl_identity(
         self,
-        decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup,
+        decl: (
+            model.InputDecl
+            | model.OutputDecl
+            | model.EnumDecl
+            | model.GroundingDecl
+            | SchemaFamilyTarget
+            | ResolvedSchemaGroup
+        ),
     ) -> str:
+        if isinstance(decl, SchemaFamilyTarget):
+            return decl.family_key
         if isinstance(decl, ResolvedSchemaGroup):
             return decl.key
         return decl.name

@@ -283,7 +283,9 @@ Every concrete review must define:
 Outcome sections may contain:
 
 - `current artifact ... via ...`
+- `current artifact ... via ... when expr`
 - `current none`
+- `current none when expr`
 - `carry active_mode = ...`
 - `carry trigger_reason = ...`
 - `route "..." -> Agent`
@@ -304,11 +306,21 @@ on_reject: "If Rejected"
     route "Rejected draft returns to DraftAuthor." -> DraftAuthor
 ```
 
+Blocked review outcomes may also split currentness explicitly:
+
+```prompt
+on_reject: "If Rejected"
+    current artifact DraftSpec via DraftReviewComment.current_artifact when missing(blocked_gate)
+    current none when present(blocked_gate)
+    route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+```
+
 Important rules:
 
 - every terminal review branch must resolve exactly one route
 - every terminal review branch must resolve exactly one currentness result
-- blocked outcomes may use `current none`
+- blocked outcomes may use `current none`, including guarded
+  `current none when present(blocked_gate)` splits
 - carried fields remain on emitted output fields, not on routes
 
 ## Verdicts And Semantic Refs
@@ -436,7 +448,7 @@ Read the review examples in this order:
 - `45_review_contract_gate_export_and_exact_failures`: exact contract gate
   export and faithful `failing_gates`
 - `46_review_current_truth_and_trust_surface`: review-owned current truth on a
-  trusted output carrier
+  trusted output carrier, including blocked-gate-guarded currentness
 - `47_review_multi_subject_mode_and_trigger_carry`: subject families and
   carried downstream state
 - `48_review_inheritance_and_explicit_patching`: `abstract review` plus

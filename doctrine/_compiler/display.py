@@ -189,9 +189,21 @@ class DisplayMixin:
                 review_semantics=review_semantics,
             )
         if isinstance(item, model.ReviewCurrentArtifactStmt):
-            return [f"Current artifact: {self._display_ref(item.artifact_ref, unit=unit)}."]
+            text = f"Current artifact: {self._display_ref(item.artifact_ref, unit=unit)}."
+            if item.when_expr is not None:
+                text = (
+                    f"When {self._render_condition_expr(item.when_expr, unit=unit)}, "
+                    f"{_lowercase_initial(text)}"
+                )
+            return [text]
         if isinstance(item, model.ReviewCurrentNoneStmt):
-            return ["There is no current artifact for this outcome."]
+            text = "There is no current artifact for this outcome."
+            if item.when_expr is not None:
+                text = (
+                    f"When {self._render_condition_expr(item.when_expr, unit=unit)}, "
+                    f"{_lowercase_initial(text)}"
+                )
+            return [text]
         if isinstance(item, model.ReviewCarryStmt):
             return [
                 f"Carry {_humanize_key(item.field_name).lower()}: {self._render_expr(item.expr, unit=unit)}."

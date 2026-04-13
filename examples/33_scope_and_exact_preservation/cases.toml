@@ -106,7 +106,7 @@ agent = "InvalidOwnPathNotRootedInCurrentArtifact"
 exception_type = "CompileError"
 error_code = "E351"
 message_contains = [
-  "Owned scope is outside the current artifact",
+  "Owned scope is outside the allowed modeled surface",
   "PrimaryManifest.title",
 ]
 

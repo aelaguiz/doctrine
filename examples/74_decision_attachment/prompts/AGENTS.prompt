@@ -28,3 +28,11 @@ agent RepDecisionDemo:
     workflow: "Choose"
         "Use the attached decision scaffold before you freeze the reps."
     decision: RepChoice
+
+
+agent MultiDecisionDemo:
+    role: "Follow {{PlayableStrategyChoice:title}} and {{RepChoice:title}} before you lock the plan."
+    workflow: "Choose"
+        "Use both attached decision scaffolds before you freeze the route and reps."
+    decision: PlayableStrategyChoice
+    decision: RepChoice

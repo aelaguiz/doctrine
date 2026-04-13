@@ -475,6 +475,7 @@ class ReviewOutcomeBranch:
     carries: tuple[model.ReviewCarryStmt, ...] = ()
     routes: tuple[model.ReviewOutcomeRouteStmt, ...] = ()
     route_selected: bool = False
+    blocked_gate_present: bool | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -540,7 +541,14 @@ OutputDeclKey = tuple[tuple[str, ...], str]
 @dataclass(slots=True, frozen=True)
 class ResolvedLawPath:
     unit: IndexedUnit
-    decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup
+    decl: (
+        model.InputDecl
+        | model.OutputDecl
+        | model.EnumDecl
+        | model.GroundingDecl
+        | SchemaFamilyTarget
+        | ResolvedSchemaGroup
+    )
     remainder: tuple[str, ...]
     wildcard: bool = False
     binding_path: tuple[str, ...] | None = None
@@ -549,7 +557,14 @@ class ResolvedLawPath:
 @dataclass(slots=True, frozen=True)
 class CanonicalLawPath:
     unit: IndexedUnit
-    decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup
+    decl: (
+        model.InputDecl
+        | model.OutputDecl
+        | model.EnumDecl
+        | model.GroundingDecl
+        | SchemaFamilyTarget
+        | ResolvedSchemaGroup
+    )
     remainder: tuple[str, ...]
     wildcard: bool = False
 
@@ -702,6 +717,24 @@ _REVIEW_CONTRACT_FACT_KEYS = ("passes", "failed_gates", "first_failed_gate")
 
 def _dotted_ref_name(ref: model.NameRef) -> str:
     return ".".join((*ref.module_parts, ref.declaration_name))
+
+
+def _agent_typed_field_key(field: model.Field) -> str:
+    if isinstance(field, model.InputsField):
+        return "inputs"
+    if isinstance(field, model.OutputsField):
+        return "outputs"
+    if isinstance(field, model.AnalysisField):
+        return "analysis"
+    if isinstance(field, model.DecisionField):
+        return f"decision:{_dotted_ref_name(field.value)}"
+    if isinstance(field, model.SkillsField):
+        return "skills"
+    if isinstance(field, model.ReviewField):
+        return "review"
+    if isinstance(field, model.FinalOutputField):
+        return "final_output"
+    return type(field).__name__
 
 
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:

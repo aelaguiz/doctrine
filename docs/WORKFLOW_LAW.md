@@ -185,8 +185,20 @@ Use these statements for different jobs:
 
 Compiler-owned checks keep this honest:
 
-- owned paths must stay rooted in the current artifact
+- owned paths may root only in the current artifact, an emitted output surface
+  the concrete turn owns, or a declared schema family
 - owned paths must stay addressable
+- `own only` does not target declared groundings
+- `preserve exact` may target declared or bound concrete-turn inputs or
+  outputs plus declared schema families
+- `preserve structure` and `preserve decisions` may target declared or bound
+  concrete-turn inputs or outputs
+- `preserve mapping` may target declared or bound concrete-turn inputs or
+  outputs plus declared schema families and declared groundings
+- `preserve vocabulary` may target declared enums plus declared or bound
+  concrete-turn inputs or outputs and declared schema families
+- schema families and groundings participate as modeled roots, not arbitrary
+  field-descent surfaces
 - overlaps are checked after normalization, not by raw authored text alone
 - `own only` cannot overlap `preserve exact` without an explicit `except`
 - `own only` cannot overlap `forbid`
@@ -234,7 +246,8 @@ Important rules:
 
 - bound roots work for currentness, invalidation, scope, and preservation
 - inherited `inputs` and `outputs` blocks keep their bound roots visible
-- examples `50`, `51`, and `52` are the canonical shipped proof for this model
+- examples `50`, `51`, and `52` are the canonical shipped proof for this
+  model, including emitted-output and schema-family ownership roots
 
 ## Law Reuse And Patching
 
@@ -285,7 +298,8 @@ Read the workflow-law examples in this order:
   carriers
 - `32_modes_and_match`: enum-backed mode selection and exhaustive branching
 - `33_scope_and_exact_preservation`: narrow ownership and exact preservation
-- `34_structure_mapping_and_vocabulary_preservation`: preserved non-exact truth
+- `34_structure_mapping_and_vocabulary_preservation`: preserved non-exact
+  truth, including schema-family mapping and vocabulary roots
 - `35_basis_roles_and_rewrite_evidence`: comparison-only help and rewrite
   exclusions
 - `36_invalidation_and_rebuild`: invalidation and rebuild routing
@@ -300,7 +314,7 @@ Read the workflow-law examples in this order:
 - `89_route_only_shared_route_semantics`: dedicated `route_only` feeding the
   same shared output-facing route semantics
 - `71_grounding_declaration`: explicit grounding protocol with ordinary route
-  targets
+  targets plus grounding-root preservation mapping
 - `72_schema_group_invalidation`: schema-group invalidation expansion in
   authored order
 - `50` through `52`: bound roots for currentness, inherited bindings, and

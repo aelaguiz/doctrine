@@ -16,6 +16,7 @@ from doctrine._compiler.shared import (
     _REVIEW_REQUIRED_FIELD_NAMES,
     _REVIEW_VERDICT_TEXT,
     _SCHEMA_FAMILY_TITLES,
+    _agent_typed_field_key,
     _default_worker_count,
     _display_addressable_ref,
     _dotted_decl_name,
@@ -108,7 +109,7 @@ class CompileMixin:
                 field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
                 continue
 
-            field_key = self._typed_field_key(field)
+            field_key = _agent_typed_field_key(field)
             if field_key in seen_typed_fields:
                 raise CompileError(f"Duplicate typed field in agent {agent.name}: {field_key}")
             seen_typed_fields.add(field_key)
