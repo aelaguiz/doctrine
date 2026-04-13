@@ -17,6 +17,7 @@ from doctrine._compiler.shared import (
     _REVIEW_VERDICT_TEXT,
     _SCHEMA_FAMILY_TITLES,
     _agent_typed_field_key,
+    _authored_slot_allows_law,
     _default_worker_count,
     _display_addressable_ref,
     _dotted_decl_name,
@@ -63,6 +64,17 @@ class CompileMixin:
             raise CompileError(
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
             )
+        self._validate_agent_slot_laws(
+            agent,
+            unit=unit,
+            resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
+        )
+        _ = self._route_semantic_context_for_agent(
+            agent,
+            unit=unit,
+            resolved_slots=resolved_slots,
+        )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
         route_output_contexts = self._route_output_contexts_for_agent(
             agent,
@@ -248,8 +260,21 @@ class CompileMixin:
                     unit=unit,
                     agent_contract=agent_contract,
                     owner_label=f"agent {agent_name} workflow",
+                    slot_key=field.key,
                 )
-            return self._compile_resolved_workflow(spec.slot_body)
+            if field.key == "handoff_routing":
+                return self._compile_resolved_workflow(
+                    spec.slot_body,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=f"agent {agent_name} slot {field.key}",
+                    slot_key=field.key,
+                )
+            if spec.slot_body.law is not None and not _authored_slot_allows_law(field.key):
+                raise CompileError(
+                    f"law may appear only on workflow or handoff_routing in agent {agent_name}: {field.key}"
+                )
+            return self._compile_resolved_workflow(spec.slot_body, slot_key=field.key)
 
         if isinstance(field, model.InputsField):
             return self._compile_inputs_field(
@@ -2934,6 +2959,7 @@ class CompileMixin:
         *,
         unit: IndexedUnit,
         agent_contract: AgentContract | None = None,
+        slot_key: str = "workflow",
     ) -> CompiledSection:
         workflow_key = (unit.module_parts, workflow_decl.name)
         if workflow_key in self._workflow_compile_stack:
@@ -2950,6 +2976,7 @@ class CompileMixin:
                 unit=unit,
                 agent_contract=agent_contract,
                 owner_label=f"workflow {_dotted_decl_name(unit.module_parts, workflow_decl.name)}",
+                slot_key=slot_key,
             )
         finally:
             self._workflow_compile_stack.pop()
@@ -2961,6 +2988,7 @@ class CompileMixin:
         unit: IndexedUnit | None = None,
         agent_contract: AgentContract | None = None,
         owner_label: str | None = None,
+        slot_key: str = "workflow",
     ) -> CompiledSection:
         body: list[CompiledBodyItem] = list(workflow_body.preamble)
         if workflow_body.law is not None:
@@ -2968,16 +2996,30 @@ class CompileMixin:
                 raise CompileError(
                     "Internal compiler error: workflow law requires unit, agent contract, and owner label"
                 )
+            if not _authored_slot_allows_law(slot_key):
+                raise CompileError(
+                    f"law may appear only on workflow or handoff_routing in {owner_label}: {slot_key}"
+                )
             if body and body[-1] != "":
                 body.append("")
-            body.extend(
-                self._compile_workflow_law(
-                    workflow_body.law,
-                    unit=unit,
-                    agent_contract=agent_contract,
-                    owner_label=owner_label,
+            if slot_key == "handoff_routing":
+                body.extend(
+                    self._compile_handoff_routing_law(
+                        workflow_body.law,
+                        unit=unit,
+                        agent_contract=agent_contract,
+                        owner_label=owner_label,
+                    )
                 )
-            )
+            else:
+                body.extend(
+                    self._compile_workflow_law(
+                        workflow_body.law,
+                        unit=unit,
+                        agent_contract=agent_contract,
+                        owner_label=owner_label,
+                    )
+                )
         for item in workflow_body.items:
             if body and body[-1] != "":
                 body.append("")
@@ -3003,6 +3045,7 @@ class CompileMixin:
                     item.workflow_decl,
                     unit=item.target_unit,
                     agent_contract=agent_contract,
+                    slot_key=slot_key,
                 )
             )
 
@@ -3063,6 +3106,71 @@ class CompileMixin:
                         item,
                         unit=unit,
                         agent_contract=agent_contract,
+                        owner_label=owner_label,
+                        bullet=False,
+                    )
+                )
+
+            if not rendered:
+                continue
+            if lines:
+                lines.append("")
+            lines.extend(rendered)
+
+        return tuple(lines)
+
+    def _compile_handoff_routing_law(
+        self,
+        law_body: model.LawBody,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> tuple[CompiledBodyItem, ...]:
+        flat_items = self._flatten_law_items(law_body, owner_label=owner_label)
+        self._validate_handoff_routing_law(
+            flat_items,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
+
+        lines: list[str] = []
+        mode_bindings: dict[str, model.ModeStmt] = {}
+        for item in flat_items:
+            rendered: list[str] = []
+            if isinstance(item, model.ActiveWhenStmt):
+                rendered.append(
+                    f"This pass runs only when {self._render_condition_expr(item.expr, unit=unit)}."
+                )
+            elif isinstance(item, model.ModeStmt):
+                mode_bindings[item.name] = item
+                fixed_mode = self._resolve_constant_enum_member(item.expr, unit=unit)
+                if fixed_mode is not None:
+                    rendered.append(f"Active mode: {fixed_mode}.")
+            elif isinstance(item, model.MatchStmt):
+                rendered.extend(
+                    self._render_match_stmt(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        mode_bindings=mode_bindings,
+                    )
+                )
+            elif isinstance(item, model.WhenStmt):
+                rendered.extend(
+                    self._render_when_stmt(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                        mode_bindings=mode_bindings,
+                    )
+                )
+            else:
+                rendered.extend(
+                    self._render_law_stmt_lines(
+                        item,
+                        unit=unit,
                         owner_label=owner_label,
                         bullet=False,
                     )

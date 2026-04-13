@@ -80,6 +80,25 @@ Important rules:
 - `when route.exists:` is the ordinary output-side guard for route-specific
   readback, whether the guarded item is one scalar field or one section
 
+## Handoff Routing Reuses The Same Route Surface
+
+`handoff_routing:` may also carry a route-only `law:` block.
+
+Use that when a turn needs compiler-owned route truth on `output` or
+`final_output:`, but does not need workflow-law currentness, preservation, or
+invalidation.
+
+Important rules:
+
+- `handoff_routing` law supports only `active when`, `mode`, `when`, `match`,
+  `stop`, and `route`
+- currentness, preservation, invalidation, and basis-role controls stay on
+  `workflow`
+- prose route lines inside `handoff_routing` do not make `route.*` live
+- `handoff_routing` uses the same output-side `route.exists`,
+  `route.next_owner`, `route.next_owner.key`, `route.next_owner.title`,
+  `route.label`, and `route.summary` surface ordinary workflow law already uses
+
 ## Branch Model
 
 Workflow law is evaluated per active leaf branch, not as one flat list.
@@ -313,6 +332,9 @@ Read the workflow-law examples in this order:
   workflow-law outputs plus fail-loud unguarded route reads
 - `89_route_only_shared_route_semantics`: dedicated `route_only` feeding the
   same shared output-facing route semantics
+- `91_handoff_routing_route_output_binding`: `handoff_routing` law feeding the
+  same shared output-facing route semantics into ordinary outputs and
+  `final_output:`
 - `71_grounding_declaration`: explicit grounding protocol with ordinary route
   targets plus grounding-root preservation mapping
 - `72_schema_group_invalidation`: schema-group invalidation expansion in

@@ -54,6 +54,9 @@ def main() -> int:
     _check_review_exact_contract_gate_modes_do_not_blow_up()
     _check_review_semantic_addressability_renders()
     _check_route_output_read_requires_guard()
+    _check_handoff_routing_output_can_render_route_semantics()
+    _check_handoff_routing_law_rejects_currentness_statements()
+    _check_non_route_slot_law_has_specific_code()
     _check_route_only_output_can_render_route_semantics()
     _check_emit_docs_handles_invalid_toml_without_traceback()
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
@@ -722,6 +725,101 @@ agent MaybeRouteBindingDemo:
             _expect("guard the read with `route.exists`" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for unguarded route output read, but compilation succeeded")
+
+
+def _check_handoff_routing_output_can_render_route_semantics() -> None:
+    source = """agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+    route_summary: "Route Summary"
+        "{{route.summary}}"
+
+agent HandoffRouteBindingDemo:
+    role: "Read route truth from handoff routing."
+    outputs: "Outputs"
+        HandoffRouteBindingComment
+
+    handoff_routing: "Handoff Routing"
+        "Route through compiler-owned handoff routing."
+
+        law:
+            active when true
+            stop "Hand off or finish the turn."
+            route "Hand off to ReviewLead." -> ReviewLead
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        rendered = render_markdown(compile_prompt(prompt, "HandoffRouteBindingDemo"))
+        _expect("## Handoff Routing" in rendered, rendered)
+        _expect("- Next Owner: Review Lead" in rendered, rendered)
+        _expect("Hand off to ReviewLead. Next owner: Review Lead." in rendered, rendered)
+
+
+def _check_handoff_routing_law_rejects_currentness_statements() -> None:
+    source = """output SimpleReply: "Simple Reply"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+agent InvalidHandoffLawDemo:
+    role: "Keep handoff routing limited to route semantics."
+    outputs: "Outputs"
+        SimpleReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            current none
+            stop "Reply and stop."
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidHandoffLawDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E344", f"expected E344, got {getattr(exc, 'code', None)}")
+            _expect("current none" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for invalid handoff_routing law, but compilation succeeded")
+
+
+def _check_non_route_slot_law_has_specific_code() -> None:
+    source = """output SimpleReply: "Simple Reply"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+agent InvalidSlotLawDemo:
+    role: "Keep law off plain authored slots."
+    outputs: "Outputs"
+        SimpleReply
+
+    your_job: "Your Job"
+        law:
+            stop "Reply and stop."
+"""
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidSlotLawDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E345", f"expected E345, got {getattr(exc, 'code', None)}")
+            _expect("your_job" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for law on plain authored slot, but compilation succeeded")
 
 
 def _check_route_only_output_can_render_route_semantics() -> None:

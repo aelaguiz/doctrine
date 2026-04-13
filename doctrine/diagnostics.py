@@ -1653,6 +1653,51 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
+            r"^Multiple route-bearing control surfaces are live in agent (?P<agent>.+): (?P<sources>.+)$"
+        ),
+        "E343",
+        "Multiple route-bearing control surfaces are live",
+        lambda match: (
+            f"Agent `{match.group('agent')}` has more than one live route-bearing control "
+            f"surface: {match.group('sources')}."
+        ),
+        (
+            "Keep shared `route.*` truth on exactly one surface per concrete turn.",
+            "Use one of `workflow:`, `review:`, or `handoff_routing:` to supply route semantics.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^handoff_routing law only supports active when, mode, when, match, stop, and route in (?P<owner>.+): (?P<stmt>.+)$"
+        ),
+        "E344",
+        "handoff_routing law uses a non-routing statement",
+        lambda match: (
+            f"`handoff_routing` law in {match.group('owner')} uses unsupported statement "
+            f"`{match.group('stmt')}`."
+        ),
+        (
+            "Use only `active when`, `mode`, `when`, `match`, `stop`, and `route` in `handoff_routing` law.",
+            "Keep currentness, preservation, invalidation, and other workflow-law truth controls on `workflow:`.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^law may appear only on workflow or handoff_routing in (?P<owner>.+): (?P<slot>.+)$"
+        ),
+        "E345",
+        "Law is not allowed on this authored slot",
+        lambda match: (
+            f"`law:` is not allowed on authored slot `{match.group('slot')}` in "
+            f"{match.group('owner')}."
+        ),
+        (
+            "Attach `law:` only to `workflow:` or `handoff_routing:`.",
+            "Keep other authored slots as readable instruction surfaces.",
+        ),
+    ),
+    (
+        re.compile(
             r"^own only must stay rooted in the current artifact, an emitted output surface, or a declared schema family in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E351",

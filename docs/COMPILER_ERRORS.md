@@ -133,6 +133,9 @@ Stability rules:
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
 | `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
+| `E343` | Multiple route-bearing control surfaces are live | More than one live route-bearing surface, such as `workflow` law and `handoff_routing` law, would supply shared `route.*` truth for the same concrete turn. |
+| `E344` | `handoff_routing` law uses a non-routing statement | `handoff_routing` law used something outside its route-only subset, such as `current artifact`, `current none`, `own only`, `preserve`, or `invalidate`. |
+| `E345` | Law is not allowed on this authored slot | `law:` was attached to an authored slot other than `workflow:` or `handoff_routing:`. |
 | `E351` | Owned scope is outside the allowed modeled surface | `own only` points at a path that is not rooted in the current artifact, an emitted output surface the concrete turn owns, or a declared schema family. |
 | `E352` | Owned scope target is unknown | `own only` points at something that does not resolve to a declared or bound concrete-turn input or output or a declared schema family. |
 | `E353` | Owned scope overlaps exact preservation | `own only` overlaps `preserve exact` without an explicit `except`. |

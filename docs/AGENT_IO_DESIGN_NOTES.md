@@ -112,7 +112,10 @@ Important rules:
 - Any emitted output may read shared compiler-owned route semantics through
   `route.exists`, `route.next_owner`, `route.next_owner.key`,
   `route.next_owner.title`, `route.label`, and `route.summary` when workflow
-  law, `route_only`, `grounding`, or review resolves a real route.
+  law, `handoff_routing` law, `route_only`, `grounding`, or review resolves a
+  real route.
+- On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
+  Prose route lines there stay readable only.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
@@ -316,3 +319,5 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `89`: dedicated `route_only` feeding the same shared `route.*` output surface
 - `90`: split durable review comment plus JSON `final_output:` consuming the
   same shared routed-owner truth
+- `91`: `handoff_routing` law feeding shared `route.*` semantics into ordinary
+  outputs and `final_output:`

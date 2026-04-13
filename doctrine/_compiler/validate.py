@@ -17,6 +17,8 @@ from doctrine._compiler.shared import (
     _REVIEW_VERDICT_TEXT,
     _SCHEMA_FAMILY_TITLES,
     _agent_typed_field_key,
+    _authored_slot_allows_law,
+    _authored_slot_carries_route_semantics,
     _default_worker_count,
     _display_addressable_ref,
     _dotted_decl_name,
@@ -332,6 +334,97 @@ class ValidateMixin:
             key=lambda item: _dotted_decl_name(item[0][0], item[0][1]),
         )[0]
 
+    def _validate_agent_slot_laws(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+        resolved_slots: dict[str, ResolvedWorkflowBody],
+        agent_contract: AgentContract,
+    ) -> None:
+        for slot_key, slot_body in resolved_slots.items():
+            if slot_body.law is None:
+                continue
+            if slot_key == "workflow":
+                continue
+            if slot_key == "handoff_routing":
+                self._validate_handoff_routing_law(
+                    self._flatten_law_items(
+                        slot_body.law,
+                        owner_label=f"agent {agent.name} slot {slot_key}",
+                    ),
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=f"agent {agent.name} slot {slot_key}",
+                )
+                continue
+            if not _authored_slot_allows_law(slot_key):
+                raise CompileError(
+                    f"law may appear only on workflow or handoff_routing in agent {agent.name}: {slot_key}"
+                )
+
+    def _route_semantic_sources_for_agent(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+        resolved_slots: dict[str, ResolvedWorkflowBody],
+    ) -> tuple[tuple[str, RouteSemanticContext], ...]:
+        sources: list[tuple[str, RouteSemanticContext]] = []
+        review_fields = [field for field in agent.fields if isinstance(field, model.ReviewField)]
+        if review_fields:
+            review_unit, review_decl = self._resolve_review_ref(review_fields[0].value, unit=unit)
+            review_context = self._route_semantic_context_from_review_decl(
+                review_decl,
+                unit=review_unit,
+            )
+            if review_context is not None:
+                sources.append(("review", review_context))
+
+        workflow_body = resolved_slots.get("workflow")
+        if workflow_body is not None and workflow_body.law is not None:
+            workflow_context = self._route_semantic_context_from_law_body(
+                workflow_body.law,
+                unit=unit,
+                owner_label=f"agent {agent.name} workflow",
+            )
+            if workflow_context is not None:
+                sources.append(("workflow", workflow_context))
+
+        for slot_key, slot_body in resolved_slots.items():
+            if not _authored_slot_carries_route_semantics(slot_key) or slot_body.law is None:
+                continue
+            slot_context = self._route_semantic_context_from_law_body(
+                slot_body.law,
+                unit=unit,
+                owner_label=f"agent {agent.name} slot {slot_key}",
+            )
+            if slot_context is not None:
+                sources.append((slot_key, slot_context))
+
+        return tuple(sources)
+
+    def _route_semantic_context_for_agent(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+        resolved_slots: dict[str, ResolvedWorkflowBody],
+    ) -> RouteSemanticContext | None:
+        sources = self._route_semantic_sources_for_agent(
+            agent,
+            unit=unit,
+            resolved_slots=resolved_slots,
+        )
+        if len(sources) > 1:
+            labels = ", ".join(source for source, _context in sources)
+            raise CompileError(
+                f"Multiple route-bearing control surfaces are live in agent {agent.name}: {labels}"
+            )
+        if not sources:
+            return None
+        return sources[0][1]
+
     def _route_output_contexts_for_agent(
         self,
         agent: model.Agent,
@@ -344,20 +437,11 @@ class ValidateMixin:
         if not emitted_output_keys:
             return frozenset()
 
-        context: RouteSemanticContext | None = None
-        review_fields = [field for field in agent.fields if isinstance(field, model.ReviewField)]
-        if review_fields:
-            review_unit, review_decl = self._resolve_review_ref(review_fields[0].value, unit=unit)
-            context = self._route_semantic_context_from_review_decl(
-                review_decl,
-                unit=review_unit,
-            )
-        elif (workflow_body := resolved_slots.get("workflow")) is not None and workflow_body.law is not None:
-            context = self._route_semantic_context_from_law_items(
-                workflow_body.law.items,
-                unit=unit,
-            )
-
+        context = self._route_semantic_context_for_agent(
+            agent,
+            unit=unit,
+            resolved_slots=resolved_slots,
+        )
         if context is None:
             return frozenset()
         return frozenset((output_key, context) for output_key in emitted_output_keys)
@@ -447,6 +531,18 @@ class ValidateMixin:
         return self._build_route_semantic_context(
             branches,
             has_unrouted_branch=has_unrouted_branch,
+        )
+
+    def _route_semantic_context_from_law_body(
+        self,
+        law_body: model.LawBody,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> RouteSemanticContext | None:
+        return self._route_semantic_context_from_law_items(
+            self._flatten_law_items(law_body, owner_label=owner_label),
+            unit=unit,
         )
 
     def _route_semantic_branch_from_route(
@@ -5289,6 +5385,68 @@ class ValidateMixin:
                 owner_label=owner_label,
             )
 
+    def _validate_handoff_routing_law(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> None:
+        _ = agent_contract
+        self._validate_handoff_routing_law_stmt_tree(
+            items,
+            unit=unit,
+            owner_label=owner_label,
+        )
+
+    def _validate_handoff_routing_law_stmt_tree(
+        self,
+        items: tuple[model.LawStmt, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        mode_bindings: dict[str, model.ModeStmt] | None = None,
+    ) -> None:
+        local_mode_bindings = dict(mode_bindings or {})
+        for item in items:
+            if isinstance(item, model.ModeStmt):
+                self._validate_mode_stmt(item, unit=unit, owner_label=owner_label)
+                local_mode_bindings[item.name] = item
+                continue
+            if isinstance(item, model.MatchStmt):
+                self._validate_match_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    mode_bindings=local_mode_bindings,
+                )
+                for case in item.cases:
+                    self._validate_handoff_routing_law_stmt_tree(
+                        case.items,
+                        unit=unit,
+                        owner_label=owner_label,
+                        mode_bindings=local_mode_bindings,
+                    )
+                continue
+            if isinstance(item, model.WhenStmt):
+                self._validate_handoff_routing_law_stmt_tree(
+                    item.items,
+                    unit=unit,
+                    owner_label=owner_label,
+                    mode_bindings=local_mode_bindings,
+                )
+                continue
+            if isinstance(item, model.LawRouteStmt):
+                self._validate_route_target(item.target, unit=unit)
+                continue
+            if isinstance(item, (model.ActiveWhenStmt, model.StopStmt)):
+                continue
+            raise CompileError(
+                "handoff_routing law only supports active when, mode, when, match, stop, "
+                f"and route in {owner_label}: {self._law_stmt_name(item)}"
+            )
+
     def _validate_route_only_next_owner_contract(
         self,
         branch: LawBranch,
@@ -6270,14 +6428,36 @@ class ValidateMixin:
         return model.LawPathSet(paths=(target,))
 
     def _law_stmt_name(self, stmt: model.LawStmt) -> str:
+        if isinstance(stmt, model.ActiveWhenStmt):
+            return "active when"
+        if isinstance(stmt, model.ModeStmt):
+            return "mode"
+        if isinstance(stmt, model.MatchStmt):
+            return "match"
+        if isinstance(stmt, model.WhenStmt):
+            return "when"
+        if isinstance(stmt, model.CurrentArtifactStmt):
+            return "current artifact"
+        if isinstance(stmt, model.CurrentNoneStmt):
+            return "current none"
+        if isinstance(stmt, model.MustStmt):
+            return "must"
         if isinstance(stmt, model.OwnOnlyStmt):
             return "own only"
+        if isinstance(stmt, model.PreserveStmt):
+            return f"preserve {stmt.kind}"
         if isinstance(stmt, model.SupportOnlyStmt):
             return "support_only"
         if isinstance(stmt, model.IgnoreStmt):
             return "ignore"
         if isinstance(stmt, model.ForbidStmt):
             return "forbid"
+        if isinstance(stmt, model.InvalidateStmt):
+            return "invalidate"
+        if isinstance(stmt, model.StopStmt):
+            return "stop"
+        if isinstance(stmt, model.LawRouteStmt):
+            return "route"
         return type(stmt).__name__
 
     def _split_record_items(

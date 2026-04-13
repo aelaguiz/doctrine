@@ -37,7 +37,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/90_split_handoff_and_final_output_shared_route_semantics`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/91_handoff_routing_route_output_binding`.
 
 ## Authoring Rules
 

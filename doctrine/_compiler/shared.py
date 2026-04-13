@@ -631,6 +631,8 @@ _RESERVED_AGENT_FIELD_KEYS = {
     "review",
     "final_output",
 }
+_LAW_BEARING_AUTHORED_SLOT_KEYS = frozenset({"workflow", "handoff_routing"})
+_ROUTE_BEARING_AUTHORED_SLOT_KEYS = frozenset({"handoff_routing"})
 
 _BUILTIN_INPUT_SOURCES = {
     "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
@@ -736,6 +738,14 @@ def _agent_typed_field_key(field: model.Field) -> str:
     if isinstance(field, model.FinalOutputField):
         return "final_output"
     return type(field).__name__
+
+
+def _authored_slot_allows_law(key: str) -> bool:
+    return key in _LAW_BEARING_AUTHORED_SLOT_KEYS
+
+
+def _authored_slot_carries_route_semantics(key: str) -> bool:
+    return key in _ROUTE_BEARING_AUTHORED_SLOT_KEYS
 
 
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
