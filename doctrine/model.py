@@ -1253,6 +1253,7 @@ class ReviewField:
 @dataclass(slots=True, frozen=True)
 class FinalOutputField:
     value: NameRef
+    review_fields: ReviewFieldsConfig | None = None
 
 
 Field: TypeAlias = (

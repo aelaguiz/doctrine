@@ -183,10 +183,41 @@ class CompiledFinalOutputSpec:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledReviewOutputSpec:
+    output_key: "OutputDeclKey"
+    output_name: str
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledReviewFinalResponseSpec:
+    mode: str
+    output_key: "OutputDeclKey" | None = None
+    output_name: str | None = None
+    review_fields: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    control_ready: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledReviewOutcomeSpec:
+    exists: bool
+    verdict: str
+    route_behavior: str
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledReviewSpec:
+    comment_output: CompiledReviewOutputSpec
+    carrier_fields: tuple[tuple[str, tuple[str, ...]], ...]
+    final_response: CompiledReviewFinalResponseSpec
+    outcomes: tuple[tuple[str, CompiledReviewOutcomeSpec], ...]
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
     final_output: CompiledFinalOutputSpec | None = None
+    review: CompiledReviewSpec | None = None
 
 
 @dataclass(slots=True, frozen=True)

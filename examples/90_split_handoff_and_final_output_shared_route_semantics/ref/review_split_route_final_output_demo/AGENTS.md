@@ -114,6 +114,14 @@ From this output alone, a downstream owner should know the acceptance verdict, c
 }
 ```
 
+#### Review Response Semantics
+
+This final response is separate from the review carrier: AcceptanceReviewComment.
+
+This final response does not carry review fields on its own.
+
+This final response is not control-ready. Read the review carrier for the full review outcome.
+
 #### Accepted Route
 
 Show this only when verdict is accepted and a routed owner exists.

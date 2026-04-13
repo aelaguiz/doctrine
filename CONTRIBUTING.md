@@ -40,10 +40,13 @@ make
 - Prefer fail-loud behavior over silent fallback when you change grammar or compiler behavior.
 - Keep public docs and examples generic. Do not import private product names, internal skill slugs, or company-specific workflow terms from other repos.
 - Update docs and instructions when behavior changes.
+- If a change affects public compatibility or a versioned surface, update
+  `docs/VERSIONING.md` in the same change.
 
 ## Docs
 
 - Start with `docs/README.md` for the live docs set.
+- Use `docs/VERSIONING.md` for versioning and breaking-change guidance.
 - Put durable public guidance in README or `docs/`.
 - Do not keep one-off plans, worklogs, or stale research notes in the live docs tree.
 

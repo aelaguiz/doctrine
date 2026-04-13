@@ -15,6 +15,8 @@
 - Run the relevant verify command for the surface you changed.
 - Keep implementation, examples, docs, and instructions aligned.
 - If behavior changed, update the manifest-backed proof or say plainly why it did not need to change.
+- If a change affects public compatibility or a versioned surface, update
+  `docs/VERSIONING.md`.
 
 ## Doc Deletion Safety
 
@@ -37,7 +39,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/103_skill_package_binary_assets`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/106_review_split_final_output_json_schema_partial`.
 
 ## Authoring Rules
 
@@ -69,6 +71,7 @@
 ## Docs Map
 
 - `docs/README.md`: live docs index
+- `docs/VERSIONING.md`: canonical versioning and breaking-change guide
 - `docs/WHY_DOCTRINE.md`: product story and motivating use case
 - `docs/EMIT_GUIDE.md`: canonical guide to emit targets, `emit_docs`, `emit_flow`, and output layout
 - `docs/LANGUAGE_DESIGN_NOTES.md`: current language decisions

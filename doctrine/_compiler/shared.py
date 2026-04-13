@@ -18,6 +18,10 @@ from doctrine._compiler.types import (
     CompiledDefinitionsBlock,
     CompiledField,
     CompiledFinalOutputSpec,
+    CompiledReviewFinalResponseSpec,
+    CompiledReviewOutcomeSpec,
+    CompiledReviewOutputSpec,
+    CompiledReviewSpec,
     CompiledFootnotesBlock,
     CompiledGuardBlock,
     CompiledImageBlock,
@@ -442,6 +446,7 @@ class RouteSemanticContext:
     branches: tuple[RouteSemanticBranch, ...] = ()
     has_unrouted_branch: bool = False
     route_required: bool = False
+    unrouted_review_verdicts: frozenset[str] = frozenset()
 
 
 @dataclass(slots=True, frozen=True)
@@ -524,7 +529,7 @@ class ResolvedReviewGateBranch:
 class ResolvedReviewAgreementBranch:
     section_key: str
     verdict: str
-    route: model.ReviewOutcomeRouteStmt
+    route: model.ReviewOutcomeRouteStmt | None
     current: model.ReviewCurrentArtifactStmt | model.ReviewCurrentNoneStmt
     current_carrier_path: tuple[str, ...] | None = None
     current_subject_key: tuple[tuple[str, ...], str] | None = None

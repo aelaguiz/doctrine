@@ -118,6 +118,14 @@ This review should stand on its own. A downstream owner should know the acceptan
 }
 ```
 
+#### Review Response Semantics
+
+This final response is separate from the review carrier: AcceptanceReviewComment.
+
+This final response does not carry review fields on its own.
+
+This final response is not control-ready. Read the review carrier for the full review outcome.
+
 #### Field Notes
 
 Keep `current_artifact` aligned with Current Artifact.
