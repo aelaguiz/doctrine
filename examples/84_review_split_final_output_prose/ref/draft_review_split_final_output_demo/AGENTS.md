@@ -92,6 +92,14 @@ This review should stand on its own. A downstream owner should know the verdict,
 | Shape | Comment Text |
 | Requirement | Required |
 
+#### Review Response Semantics
+
+This final response is separate from the review carrier: DraftReviewComment.
+
+This final response does not carry review fields on its own.
+
+This final response is not control-ready. Read the review carrier for the full review outcome.
+
 #### Control Summary
 
 End with one short control summary for the routed owner.

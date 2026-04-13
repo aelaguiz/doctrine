@@ -2325,6 +2325,18 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(
+            r"^final_output review_fields are invalid in agent (?P<agent>.+): (?P<detail>.+)$"
+        ),
+        "E500",
+        "final_output review_fields are used in an invalid place",
+        lambda match: (
+            f"Agent `{match.group('agent')}` uses `final_output.review_fields` in an invalid way: "
+            f"{match.group('detail')}."
+        ),
+        (),
+    ),
+    (
         re.compile(r"^Could not resolve prompts/ root for (?P<path>.+)\.$"),
         "E292",
         "Could not resolve prompts root",

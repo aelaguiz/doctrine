@@ -323,8 +323,10 @@ on_reject: "If Rejected"
 
 Important rules:
 
-- every terminal review branch must resolve exactly one route
 - every terminal review branch must resolve exactly one currentness result
+- a terminal review branch may route or stop without a route
+- when some review outcomes route and others do not, the companion contract
+  reports that route behavior per normalized outcome
 - blocked outcomes may use `current none`, including guarded
   `current none when present(blocked_gate)` splits
 - carried fields remain on emitted output fields, not on routes
@@ -384,6 +386,20 @@ A review-driven agent may also point `final_output:` at a second emitted
 `TurnResponse` output. In that split shape, `comment_output` stays the durable
 review carrier while the separate final output inherits the same review
 semantic refs and guards.
+That split final output may also bind a review-semantic subset:
+
+```prompt
+final_output:
+    output: AcceptanceControlFinalResponse
+    review_fields:
+        verdict: verdict
+        current_artifact: current_artifact
+        next_owner: next_owner
+        blocked_gate: blocked_gate
+```
+
+The compiler emits whether that split final response is `control_ready`.
+Authors do not declare that mode by hand.
 Imported reusable review comments keep that same behavior: the bound output
 field still lives on the imported `comment_output`, while bare owner refs that
 are missing from the imported module may still bind the concrete review's

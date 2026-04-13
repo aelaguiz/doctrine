@@ -33,8 +33,8 @@ Stability rules:
 | `E001`-`E099` | reserved canonical language-rule errors |
 | `E100`-`E199` | parse errors |
 | `E200`-`E468` | semantic compile errors |
-| `E469`-`E499` | review-specific parse and compile errors |
-| `E500`-`E699` | emit and build-target errors |
+| `E469`-`E500` | review-specific parse and compile errors |
+| `E501`-`E699` | emit and build-target errors |
 | `E900`-`E999` | internal compiler bugs or invariant failures |
 
 ## Current Stable Codes
@@ -189,6 +189,7 @@ Stability rules:
 | `E497` | compile | Review currentness does not match the declared carrier field | The declared currentness carrier field is not guaranteed to reflect the resolved review currentness, including branches that resolve `current none`. |
 | `E498` | compile | Required carried review field is omitted when semantic value exists | A carried semantic field can be live on a branch without the bound output field also being live. |
 | `E499` | compile | Required conditional review output section is missing after its guard resolves true | A review-bound conditional output field or section does not stay aligned with the resolved review semantics. |
+| `E500` | compile | `final_output.review_fields` is used in an invalid place | Split-final review bindings were used on a non-review agent or on the review carrier itself. |
 
 ### Emit codes
 

@@ -1380,8 +1380,9 @@ class ResolveMixin:
         blocked_gate_required: bool,
         gate_branch: ResolvedReviewGateBranch,
     ) -> ResolvedReviewAgreementBranch:
-        route = branch.routes[0]
-        self._validate_route_target(route.target, unit=unit)
+        route = branch.routes[0] if branch.routes else None
+        if route is not None:
+            self._validate_route_target(route.target, unit=unit)
 
         current = branch.currents[0]
         current_carrier_path: tuple[str, ...] | None = None

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from doctrine._compiler.shared import *  # noqa: F401,F403
@@ -33,6 +34,17 @@ from doctrine._compiler.shared import (
 )
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown, render_readable_block
+
+
+@dataclass(slots=True, frozen=True)
+class _ResolvedCompiledReview:
+    review_unit: IndexedUnit
+    review_decl: model.ReviewDecl
+    comment_output_unit: IndexedUnit
+    comment_output_decl: model.OutputDecl
+    carrier_field_bindings: dict[str, tuple[str, ...]]
+    accept_branches: tuple[ResolvedReviewAgreementBranch, ...]
+    reject_branches: tuple[ResolvedReviewAgreementBranch, ...]
 
 
 class CompileMixin:
@@ -341,21 +353,29 @@ class CompileMixin:
         if not seen_role:
             raise CompileError(f"Concrete agent is missing role field: {agent.name}")
 
+        final_output_field = final_output_fields[0] if final_output_fields else None
+        review_contract = self._compile_agent_review_contract(
+            agent=agent,
+            unit=unit,
+            agent_contract=agent_contract,
+            final_output_field=final_output_field,
+        )
         final_output = (
             self._compile_final_output_spec(
                 agent_name=agent.name,
-                field=final_output_fields[0],
+                field=final_output_field,
                 unit=unit,
                 agent_contract=agent_contract,
                 review_output_contexts=review_output_contexts,
                 route_output_contexts=route_output_contexts,
+                review_contract=review_contract,
                 fallback_review_semantics=(
                     primary_review_output_context[1]
                     if primary_review_output_context is not None
                     else None
                 ),
             )
-            if final_output_fields
+            if final_output_field is not None
             else None
         )
         compiled_fields = self._compile_agent_fields(
@@ -367,7 +387,12 @@ class CompileMixin:
             route_output_contexts=route_output_contexts,
             final_output=final_output,
         )
-        return CompiledAgent(name=agent.name, fields=compiled_fields, final_output=final_output)
+        return CompiledAgent(
+            name=agent.name,
+            fields=compiled_fields,
+            final_output=final_output,
+            review=review_contract,
+        )
 
     def _compile_agent_fields(
         self,
@@ -536,6 +561,617 @@ class CompileMixin:
             f"Unsupported agent field in {agent_name}: {type(field).__name__}"
         )
 
+    def _invalid_final_output_review_fields(
+        self,
+        *,
+        agent_name: str,
+        detail: str,
+    ) -> None:
+        raise CompileError(
+            f"final_output review_fields are invalid in agent {agent_name}: {detail}"
+        )
+
+    def _compile_agent_review_contract(
+        self,
+        *,
+        agent: model.Agent,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        final_output_field: model.FinalOutputField | None,
+    ) -> CompiledReviewSpec | None:
+        review_fields = [field for field in agent.fields if isinstance(field, model.ReviewField)]
+        authored_review_fields = (
+            final_output_field.review_fields if final_output_field is not None else None
+        )
+        if not review_fields:
+            if authored_review_fields is not None:
+                self._invalid_final_output_review_fields(
+                    agent_name=agent.name,
+                    detail="review_fields require a review-driven agent",
+                )
+            return None
+
+        review_field = review_fields[0]
+        review_unit, review_decl = self._resolve_review_ref(review_field.value, unit=unit)
+        if review_decl.abstract:
+            raise CompileError(
+                "Concrete agents may not attach abstract reviews directly: "
+                f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+            )
+
+        resolved_review = self._resolve_compiled_review(
+            review_decl,
+            unit=review_unit,
+            agent_contract=agent_contract,
+            owner_label=f"agent {agent.name} review",
+        )
+        comment_output_key = (
+            resolved_review.comment_output_unit.module_parts,
+            resolved_review.comment_output_decl.name,
+        )
+        all_branches = (
+            *resolved_review.accept_branches,
+            *resolved_review.reject_branches,
+        )
+
+        final_mode = "none"
+        final_output_key: OutputDeclKey | None = None
+        final_output_name: str | None = None
+        final_response_fields: dict[str, tuple[str, ...]] = {}
+        control_ready = False
+
+        if final_output_field is not None:
+            final_output_unit, final_output_decl = self._resolve_final_output_decl(
+                final_output_field.value,
+                unit=unit,
+                owner_label=f"agent {agent.name} final_output",
+            )
+            final_output_key = (final_output_unit.module_parts, final_output_decl.name)
+            final_output_name = final_output_decl.name
+            if final_output_key not in agent_contract.outputs:
+                raise CompileError(
+                    "E212 final_output output is not emitted by the concrete turn in "
+                    f"agent {agent.name}: {_dotted_decl_name(final_output_unit.module_parts, final_output_decl.name)}"
+                )
+            if final_output_key == comment_output_key:
+                if authored_review_fields is not None:
+                    self._invalid_final_output_review_fields(
+                        agent_name=agent.name,
+                        detail="review_fields may appear only on split final responses",
+                    )
+                final_mode = "carrier"
+                control_ready = True
+            else:
+                final_mode = "split"
+                if authored_review_fields is not None:
+                    final_response_fields = self._validate_review_field_bindings(
+                        authored_review_fields,
+                        output_decl=final_output_decl,
+                        output_unit=final_output_unit,
+                        owner_label=f"agent {agent.name} final_output.review_fields",
+                        require_core_fields=False,
+                        require_blocked_gate=False,
+                        require_active_mode=False,
+                        require_trigger_reason=False,
+                    )
+                    self._validate_review_semantic_output_bindings(
+                        all_branches,
+                        review_unit=review_unit,
+                        output_decl=final_output_decl,
+                        output_unit=final_output_unit,
+                        field_bindings=final_response_fields,
+                        owner_label=f"agent {agent.name} final_output.review_fields",
+                    )
+                control_ready = self._review_final_response_is_control_ready(
+                    all_branches,
+                    field_bindings=final_response_fields,
+                )
+
+        return CompiledReviewSpec(
+            comment_output=CompiledReviewOutputSpec(
+                output_key=comment_output_key,
+                output_name=resolved_review.comment_output_decl.name,
+            ),
+            carrier_fields=tuple(resolved_review.carrier_field_bindings.items()),
+            final_response=CompiledReviewFinalResponseSpec(
+                mode=final_mode,
+                output_key=final_output_key,
+                output_name=final_output_name,
+                review_fields=tuple(final_response_fields.items()),
+                control_ready=control_ready,
+            ),
+            outcomes=(
+                (
+                    "accept",
+                    CompiledReviewOutcomeSpec(
+                        exists=bool(resolved_review.accept_branches),
+                        verdict="accept",
+                        route_behavior=self._review_route_behavior(
+                            resolved_review.accept_branches
+                        ),
+                    ),
+                ),
+                (
+                    "changes_requested",
+                    CompiledReviewOutcomeSpec(
+                        exists=bool(resolved_review.reject_branches),
+                        verdict="changes_requested",
+                        route_behavior=self._review_route_behavior(
+                            resolved_review.reject_branches
+                        ),
+                    ),
+                ),
+                (
+                    "blocked",
+                    CompiledReviewOutcomeSpec(
+                        exists=any(
+                            branch.blocked_gate_id is not None
+                            for branch in resolved_review.reject_branches
+                        ),
+                        verdict="changes_requested",
+                        route_behavior=self._review_route_behavior(
+                            tuple(
+                                branch
+                                for branch in resolved_review.reject_branches
+                                if branch.blocked_gate_id is not None
+                            )
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+    def _resolve_compiled_review(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> _ResolvedCompiledReview:
+        resolved = self._resolve_review_decl(review_decl, unit=unit)
+        if resolved.comment_output is None:
+            raise CompileError(f"Review is missing comment_output: {review_decl.name}")
+        if resolved.fields is None:
+            raise CompileError(f"Review is missing fields: {review_decl.name}")
+        if resolved.cases:
+            return self._resolve_case_selected_compiled_review(
+                review_decl,
+                resolved=resolved,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+            )
+        return self._resolve_standard_compiled_review(
+            review_decl,
+            resolved=resolved,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
+
+    def _resolve_standard_compiled_review(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        resolved: ResolvedReviewBody,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> _ResolvedCompiledReview:
+        if resolved.subject is None:
+            raise CompileError(f"Review is missing subject: {review_decl.name}")
+        if resolved.contract is None:
+            raise CompileError(f"Review is missing contract: {review_decl.name}")
+
+        subjects = self._resolve_review_subjects(
+            resolved.subject,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        subject_keys = {
+            (subject_unit.module_parts, subject_decl.name)
+            for subject_unit, subject_decl in subjects
+        }
+        if resolved.subject_map is not None:
+            self._resolved_review_subject_map(
+                resolved.subject_map,
+                unit=unit,
+                owner_label=owner_label,
+                subject_keys=subject_keys,
+            )
+        contract_spec = self._resolve_review_contract_spec(
+            resolved.contract.contract_ref,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        comment_output_unit, comment_output_decl = self._resolve_output_decl(
+            resolved.comment_output.output_ref,
+            unit=unit,
+        )
+        comment_output_key = (comment_output_unit.module_parts, comment_output_decl.name)
+        if comment_output_key not in agent_contract.outputs:
+            raise CompileError(
+                f"Review comment_output must be emitted by the concrete turn in {owner_label}: "
+                f"{comment_output_decl.name}"
+            )
+
+        pre_sections: list[model.ReviewSection] = []
+        on_accept: model.ReviewOutcomeSection | None = None
+        on_reject: model.ReviewOutcomeSection | None = None
+        for item in resolved.items:
+            if isinstance(item, model.ReviewSection):
+                pre_sections.append(item)
+                continue
+            if item.key == "on_accept":
+                on_accept = item
+            elif item.key == "on_reject":
+                on_reject = item
+
+        if on_accept is None:
+            raise CompileError(f"Review is missing on_accept: {review_decl.name}")
+        if on_reject is None:
+            raise CompileError(f"Review is missing on_reject: {review_decl.name}")
+
+        section_titles = {section.key: self._review_section_title(section) for section in pre_sections}
+        gate_observation = self._review_gate_observation(comment_output_decl)
+        accept_gate_count = 0
+        any_block_gates = False
+        for section in pre_sections:
+            accept_gate_count += self._count_review_accept_stmts(section.items)
+            any_block_gates = any_block_gates or self._review_items_contain_blocks(section.items)
+            self._validate_review_pre_outcome_items(
+                section.items,
+                unit=unit,
+                owner_label=f"{owner_label}.{section.key}",
+                contract_spec=contract_spec,
+                section_titles=section_titles,
+                agent_contract=agent_contract,
+            )
+        if accept_gate_count != 1:
+            raise CompileError(
+                f"Review must define exactly one accept gate in {owner_label}: found {accept_gate_count}"
+            )
+
+        pre_outcome_branches = self._resolve_review_pre_outcome_branches(
+            pre_sections,
+            unit=unit,
+            contract_spec=contract_spec,
+            section_titles=section_titles,
+            owner_label=owner_label,
+            gate_observation=gate_observation,
+        )
+        accept_gate_branches = tuple(
+            branch
+            for branch in pre_outcome_branches
+            if branch.verdict == _REVIEW_VERDICT_TEXT["accept"]
+        )
+        reject_gate_branches = tuple(
+            branch
+            for branch in pre_outcome_branches
+            if branch.verdict == _REVIEW_VERDICT_TEXT["changes_requested"]
+        )
+
+        carried_fields = {
+            field_name
+            for field_name in (
+                *self._collect_review_carried_fields(on_accept.items),
+                *self._collect_review_carried_fields(on_reject.items),
+            )
+        }
+        field_bindings = self._validate_review_field_bindings(
+            resolved.fields,
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+            require_blocked_gate=any_block_gates,
+            require_active_mode="active_mode" in carried_fields,
+            require_trigger_reason="trigger_reason" in carried_fields,
+        )
+
+        accept_branches = self._validate_review_outcome_section(
+            on_accept,
+            unit=unit,
+            owner_label=owner_label,
+            agent_contract=agent_contract,
+            comment_output_decl=comment_output_decl,
+            comment_output_unit=comment_output_unit,
+            next_owner_field_path=field_bindings["next_owner"],
+            field_bindings=field_bindings,
+            subject_keys=subject_keys,
+            subject_map=resolved.subject_map,
+            blocked_gate_required=any_block_gates,
+            gate_branches=accept_gate_branches,
+        )
+        reject_branches = self._validate_review_outcome_section(
+            on_reject,
+            unit=unit,
+            owner_label=owner_label,
+            agent_contract=agent_contract,
+            comment_output_decl=comment_output_decl,
+            comment_output_unit=comment_output_unit,
+            next_owner_field_path=field_bindings["next_owner"],
+            field_bindings=field_bindings,
+            subject_keys=subject_keys,
+            subject_map=resolved.subject_map,
+            blocked_gate_required=any_block_gates,
+            gate_branches=reject_gate_branches,
+        )
+        self._validate_review_current_artifact_alignment(
+            (*accept_branches, *reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+        )
+        self._validate_review_optional_field_alignment(
+            (*accept_branches, *reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            field_bindings=field_bindings,
+            owner_label=owner_label,
+        )
+
+        return _ResolvedCompiledReview(
+            review_unit=unit,
+            review_decl=review_decl,
+            comment_output_unit=comment_output_unit,
+            comment_output_decl=comment_output_decl,
+            carrier_field_bindings=field_bindings,
+            accept_branches=accept_branches,
+            reject_branches=reject_branches,
+        )
+
+    def _resolve_case_selected_compiled_review(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        resolved: ResolvedReviewBody,
+        unit: IndexedUnit,
+        agent_contract: AgentContract,
+        owner_label: str,
+    ) -> _ResolvedCompiledReview:
+        if resolved.selector is None:
+            raise CompileError(
+                f"Case-selected review is missing selector: {review_decl.name}"
+            )
+        if (
+            resolved.subject is not None
+            or resolved.contract is not None
+            or resolved.subject_map is not None
+        ):
+            raise CompileError(
+                f"Case-selected review must declare subject and contract inside cases: {review_decl.name}"
+            )
+
+        comment_output_unit, comment_output_decl = self._resolve_output_decl(
+            resolved.comment_output.output_ref,
+            unit=unit,
+        )
+        comment_output_key = (comment_output_unit.module_parts, comment_output_decl.name)
+        if comment_output_key not in agent_contract.outputs:
+            raise CompileError(
+                f"Review comment_output must be emitted by the concrete turn in {owner_label}: "
+                f"{comment_output_decl.name}"
+            )
+
+        pre_sections = [
+            item for item in resolved.items if isinstance(item, model.ReviewSection)
+        ]
+        outcome_sections = [
+            item for item in resolved.items if isinstance(item, model.ReviewOutcomeSection)
+        ]
+        if outcome_sections:
+            raise CompileError(
+                f"Case-selected review must keep on_accept and on_reject inside cases: {review_decl.name}"
+            )
+
+        enum_decl = self._try_resolve_enum_decl(resolved.selector.enum_ref, unit=unit)
+        if enum_decl is None:
+            raise CompileError(
+                f"Review selector must resolve to a closed enum in {owner_label}: "
+                f"{_dotted_ref_name(resolved.selector.enum_ref)}"
+            )
+
+        seen_case_members: dict[str, str] = {}
+        expected_case_members = {member.value for member in enum_decl.members}
+        for case in resolved.cases:
+            if len(case.subject.subjects) != 1:
+                raise CompileError(
+                    f"Review case must declare exactly one subject in {owner_label}: {case.key}"
+                )
+            for option in case.head.options:
+                resolved_option = self._resolve_review_match_option(option, unit=unit)
+                if resolved_option is None:
+                    raise CompileError(
+                        f"Review case selector must resolve to {enum_decl.name} in {owner_label}: {case.key}"
+                    )
+                option_enum_decl, member_value = resolved_option
+                if option_enum_decl.name != enum_decl.name:
+                    raise CompileError(
+                        f"Review case selector must resolve to {enum_decl.name} in {owner_label}: {case.key}"
+                    )
+                previous_case = seen_case_members.get(member_value)
+                if previous_case is not None:
+                    raise CompileError(
+                        f"Review cases overlap in {owner_label}: {previous_case}, {case.key}"
+                    )
+                seen_case_members[member_value] = case.key
+        if set(seen_case_members) != expected_case_members:
+            raise CompileError(f"Review cases must be exhaustive in {owner_label}")
+
+        shared_titles = {
+            section.key: self._review_section_title(section) for section in pre_sections
+        }
+        gate_observation = self._review_gate_observation(comment_output_decl)
+        all_accept_branches: list[ResolvedReviewAgreementBranch] = []
+        all_reject_branches: list[ResolvedReviewAgreementBranch] = []
+
+        carried_fields = {
+            field_name
+            for case in resolved.cases
+            for field_name in (
+                *self._collect_review_carried_fields(case.on_accept.items),
+                *self._collect_review_carried_fields(case.on_reject.items),
+            )
+        }
+        field_bindings = self._validate_review_field_bindings(
+            resolved.fields,
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+            require_blocked_gate=any(
+                self._review_items_contain_blocks(section.items) for section in pre_sections
+            )
+            or any(self._review_items_contain_blocks(case.checks) for case in resolved.cases),
+            require_active_mode=(
+                resolved.selector.field_name == "active_mode" or "active_mode" in carried_fields
+            ),
+            require_trigger_reason="trigger_reason" in carried_fields,
+        )
+
+        for case in resolved.cases:
+            subjects = self._resolve_review_subjects(
+                case.subject,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+            )
+            subject_keys = {
+                (subject_unit.module_parts, subject_decl.name)
+                for subject_unit, subject_decl in subjects
+            }
+            contract_spec = self._resolve_review_contract_spec(
+                case.contract.contract_ref,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+            )
+            case_checks = model.ReviewSection(
+                key=f"{case.key}_checks",
+                title="Checks",
+                items=case.checks,
+            )
+            case_pre_sections = [*pre_sections, case_checks]
+            case_titles = {
+                **shared_titles,
+                case_checks.key: self._review_section_title(case_checks),
+            }
+            accept_gate_count = 0
+            any_block_gates = False
+            for section in case_pre_sections:
+                accept_gate_count += self._count_review_accept_stmts(section.items)
+                any_block_gates = any_block_gates or self._review_items_contain_blocks(section.items)
+                self._validate_review_pre_outcome_items(
+                    section.items,
+                    unit=unit,
+                    owner_label=f"{owner_label}.cases.{case.key}.{section.key}",
+                    contract_spec=contract_spec,
+                    section_titles=case_titles,
+                    agent_contract=agent_contract,
+                )
+            if accept_gate_count != 1:
+                raise CompileError(
+                    f"Review case must define exactly one accept gate in {owner_label}: {case.key}"
+                )
+
+            pre_outcome_branches = self._resolve_review_pre_outcome_branches(
+                case_pre_sections,
+                unit=unit,
+                contract_spec=contract_spec,
+                section_titles=case_titles,
+                owner_label=f"{owner_label}.cases.{case.key}",
+                gate_observation=gate_observation,
+            )
+            accept_gate_branches = tuple(
+                branch
+                for branch in pre_outcome_branches
+                if branch.verdict == _REVIEW_VERDICT_TEXT["accept"]
+            )
+            reject_gate_branches = tuple(
+                branch
+                for branch in pre_outcome_branches
+                if branch.verdict == _REVIEW_VERDICT_TEXT["changes_requested"]
+            )
+            accept_branches = self._validate_review_outcome_section(
+                case.on_accept,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+                agent_contract=agent_contract,
+                comment_output_decl=comment_output_decl,
+                comment_output_unit=comment_output_unit,
+                next_owner_field_path=field_bindings["next_owner"],
+                field_bindings=field_bindings,
+                subject_keys=subject_keys,
+                subject_map=None,
+                blocked_gate_required=any_block_gates,
+                gate_branches=accept_gate_branches,
+            )
+            reject_branches = self._validate_review_outcome_section(
+                case.on_reject,
+                unit=unit,
+                owner_label=f"{owner_label}.cases.{case.key}",
+                agent_contract=agent_contract,
+                comment_output_decl=comment_output_decl,
+                comment_output_unit=comment_output_unit,
+                next_owner_field_path=field_bindings["next_owner"],
+                field_bindings=field_bindings,
+                subject_keys=subject_keys,
+                subject_map=None,
+                blocked_gate_required=any_block_gates,
+                gate_branches=reject_gate_branches,
+            )
+            all_accept_branches.extend(accept_branches)
+            all_reject_branches.extend(reject_branches)
+
+        self._validate_review_current_artifact_alignment(
+            (*all_accept_branches, *all_reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            owner_label=owner_label,
+        )
+        self._validate_review_optional_field_alignment(
+            (*all_accept_branches, *all_reject_branches),
+            output_decl=comment_output_decl,
+            output_unit=comment_output_unit,
+            field_bindings=field_bindings,
+            owner_label=owner_label,
+        )
+
+        return _ResolvedCompiledReview(
+            review_unit=unit,
+            review_decl=review_decl,
+            comment_output_unit=comment_output_unit,
+            comment_output_decl=comment_output_decl,
+            carrier_field_bindings=field_bindings,
+            accept_branches=tuple(all_accept_branches),
+            reject_branches=tuple(all_reject_branches),
+        )
+
+    def _review_final_response_is_control_ready(
+        self,
+        branches: tuple[ResolvedReviewAgreementBranch, ...],
+        *,
+        field_bindings: dict[str, tuple[str, ...]],
+    ) -> bool:
+        if "verdict" not in field_bindings:
+            return False
+        if any(branch.route is not None for branch in branches) and "next_owner" not in field_bindings:
+            return False
+        if any(branch.blocked_gate_id is not None for branch in branches) and "blocked_gate" not in field_bindings:
+            return False
+        return True
+
+    def _review_route_behavior(
+        self,
+        branches: tuple[ResolvedReviewAgreementBranch, ...],
+    ) -> str:
+        if not branches:
+            return "never"
+        routed = sum(1 for branch in branches if branch.route is not None)
+        if routed == len(branches):
+            return "always"
+        if routed == 0:
+            return "never"
+        return "conditional"
+
     def _compile_final_output_spec(
         self,
         *,
@@ -545,6 +1181,7 @@ class CompileMixin:
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+        review_contract: CompiledReviewSpec | None = None,
         fallback_review_semantics: ReviewSemanticContext | None = None,
     ) -> CompiledFinalOutputSpec:
         owner_label = f"agent {agent_name} final_output"
@@ -637,6 +1274,7 @@ class CompileMixin:
             extras=extras,
             review_semantics=review_semantics,
             route_semantics=route_semantics,
+            review_contract=review_contract,
             render_profile=render_profile,
             explicit_render_profile=explicit_render_profile,
         )
@@ -670,6 +1308,7 @@ class CompileMixin:
         extras: tuple[model.AnyRecordItem, ...],
         review_semantics: ReviewSemanticContext | None,
         route_semantics: RouteSemanticContext | None,
+        review_contract: CompiledReviewSpec | None,
         render_profile: ResolvedRenderProfile | None,
         explicit_render_profile: ResolvedRenderProfile | None,
     ) -> CompiledSection:
@@ -732,6 +1371,12 @@ class CompileMixin:
                     ),
                 ]
             )
+
+        review_response_semantics = self._compile_final_output_review_response_semantics(
+            review_contract=review_contract,
+        )
+        if review_response_semantics is not None:
+            body.extend(["", review_response_semantics])
 
         if output_decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(output_decl.schema_ref, unit=unit)
@@ -816,6 +1461,55 @@ class CompileMixin:
                     render_profile=render_profile,
                 ),
             ),
+        )
+
+    def _compile_final_output_review_response_semantics(
+        self,
+        *,
+        review_contract: CompiledReviewSpec | None,
+    ) -> CompiledSection | None:
+        if review_contract is None or review_contract.final_response.mode != "split":
+            return None
+
+        body: list[CompiledBodyItem] = [
+            (
+                "This final response is separate from the review carrier: "
+                f"{review_contract.comment_output.output_name}."
+            )
+        ]
+
+        if review_contract.final_response.review_fields:
+            body.extend(
+                [
+                    "",
+                    *self._pipe_table_lines(
+                        ("Meaning", "Field"),
+                        tuple(
+                            (
+                                _humanize_key(field_name),
+                                f"`{'.'.join(field_path)}`",
+                            )
+                            for field_name, field_path in review_contract.final_response.review_fields
+                        ),
+                    ),
+                ]
+            )
+        else:
+            body.extend(["", "This final response does not carry review fields on its own."])
+
+        body.extend([""])
+        if review_contract.final_response.control_ready:
+            body.append(
+                "This final response is control-ready. A host may read it as the review outcome."
+            )
+        else:
+            body.append(
+                "This final response is not control-ready. Read the review carrier for the full review outcome."
+            )
+
+        return CompiledSection(
+            title="Review Response Semantics",
+            body=tuple(body),
         )
 
     def _compile_output_support_items(

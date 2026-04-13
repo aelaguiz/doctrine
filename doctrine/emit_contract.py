@@ -24,7 +24,7 @@ def build_compiled_agent_contract_payload(
     compiled: CompiledAgent,
     target: EmitTarget,
 ) -> dict[str, Any]:
-    return {
+    payload = {
         "contract_version": COMPILED_AGENT_CONTRACT_VERSION,
         "agent": {
             "name": compiled.name,
@@ -37,6 +37,9 @@ def build_compiled_agent_contract_payload(
         },
         "final_output": _final_output_payload(compiled=compiled, target=target),
     }
+    if compiled.review is not None:
+        payload["review"] = _review_payload(compiled=compiled)
+    return payload
 
 
 def _final_output_payload(
@@ -72,6 +75,45 @@ def _final_output_payload(
             target=target,
             surface_label="example_file",
         ),
+    }
+
+
+def _review_payload(*, compiled: CompiledAgent) -> dict[str, Any]:
+    if compiled.review is None:
+        raise ValueError("review payload requested for non-review agent")
+
+    return {
+        "exists": True,
+        "comment_output": {
+            "declaration_key": _render_output_key(compiled.review.comment_output.output_key),
+            "declaration_name": compiled.review.comment_output.output_name,
+        },
+        "carrier_fields": {
+            field_name: ".".join(field_path)
+            for field_name, field_path in compiled.review.carrier_fields
+        },
+        "final_response": {
+            "mode": compiled.review.final_response.mode,
+            "declaration_key": (
+                _render_output_key(compiled.review.final_response.output_key)
+                if compiled.review.final_response.output_key is not None
+                else None
+            ),
+            "declaration_name": compiled.review.final_response.output_name,
+            "review_fields": {
+                field_name: ".".join(field_path)
+                for field_name, field_path in compiled.review.final_response.review_fields
+            },
+            "control_ready": compiled.review.final_response.control_ready,
+        },
+        "outcomes": {
+            key: {
+                "exists": outcome.exists,
+                "verdict": outcome.verdict,
+                "route_behavior": outcome.route_behavior,
+            }
+            for key, outcome in compiled.review.outcomes
+        },
     }
 
 

@@ -1,9 +1,13 @@
-Emit the review comment and end with a control-only JSON result.
+Emit the review comment and end with a control-ready JSON result.
 
 ## Acceptance Review
 
 Review subject: Draft Plan.
 Shared review contract: Plan Review Contract.
+
+### Basis Checks
+
+Block: The review basis is missing.
 
 ### Contract Checks
 
@@ -19,9 +23,9 @@ Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
-Current artifact: Draft Plan.
+When present(blocked_gate), no artifact is current for this outcome.
 
-Rejected plan goes to PlanAuthor.
+When missing(blocked_gate), current artifact: Draft Plan.
 
 ## Inputs
 
@@ -32,6 +36,7 @@ Rejected plan goes to PlanAuthor.
 - Shape: Markdown Document
 - Requirement: Required
 
+- Basis Missing: `Basis Missing`
 - Outline Missing: `Outline Missing`
 
 ## Outputs
@@ -44,7 +49,7 @@ Rejected plan goes to PlanAuthor.
 
 #### Verdict
 
-State whether the plan passed review.
+State whether the plan passed review or asked for changes.
 
 #### Reviewed Artifact
 
@@ -60,19 +65,29 @@ State what the next owner should read first.
 
 #### Current Artifact
 
+Show this only when present(current_artifact).
+
 Name the artifact that remains current after review.
 
 #### Next Owner
 
-Name ReviewLead when accepted and PlanAuthor when rejected.
+Show this only when present(next_owner).
+
+Name ReviewLead when the review accepts the plan.
 
 #### Failure Detail
 
 Show this only when verdict is changes requested.
 
+##### Blocked Gate
+
+Show this only when present(blocked_gate).
+
+Name the blocking gate when review stopped before the normal content check.
+
 ##### Failing Gates
 
-List exact failing gates, including Outline Complete when it fails.
+List exact failing gates in authored order.
 
 #### Trust Surface
 
@@ -80,7 +95,7 @@ List exact failing gates, including Outline Complete when it fails.
 
 #### Standalone Read
 
-This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner.
+This review should stand on its own. A downstream owner should know the verdict, current artifact when one remains, and whether a next owner exists.
 
 ## Final Output
 
@@ -104,15 +119,16 @@ This review should stand on its own. A downstream owner should know the acceptan
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `route` | string | Control route for the next owner. |
+| `verdict` | string | Review verdict. |
 | `current_artifact` | string | Current artifact after review. |
-| `next_owner` | string | Next owner after review. |
+| `next_owner` | string | Next owner after review when one exists. |
+| `blocked_gate` | string | Blocking gate when review stopped early. |
 
 #### Example
 
 ```json
 {
-  "route": "follow_up",
+  "verdict": "accept",
   "current_artifact": "Draft Plan",
   "next_owner": "ReviewLead"
 }
@@ -122,25 +138,42 @@ This review should stand on its own. A downstream owner should know the acceptan
 
 This final response is separate from the review carrier: AcceptanceReviewComment.
 
-This final response does not carry review fields on its own.
+| Meaning | Field |
+| --- | --- |
+| Verdict | `verdict` |
+| Current Artifact | `current_artifact` |
+| Next Owner | `next_owner` |
+| Blocked Gate | `blocked_gate` |
 
-This final response is not control-ready. Read the review carrier for the full review outcome.
+This final response is control-ready. A host may read it as the review outcome.
 
 #### Field Notes
 
-Keep `current_artifact` aligned with Current Artifact.
-Use `route` value `revise` only when Outline Complete fails.
+Keep `verdict` aligned with the review verdict.
+Only emit `next_owner` when this review routes.
 
-#### Changes Requested Note
+#### Verdict
 
-Show this only when verdict is changes requested.
+State whether the review accepted the plan or asked for changes.
 
-Only emit this retry control when the review requests changes.
+#### Current Artifact
 
-#### Trust Surface
+Show this only when present(current_artifact).
 
-- Current Artifact
+Name the current artifact after review.
+
+#### Next Owner
+
+Show this only when present(next_owner).
+
+Name ReviewLead when the review accepts the plan.
+
+#### Blocked Gate
+
+Show this only when present(blocked_gate).
+
+Name the blocking gate when review stopped before the normal content check.
 
 #### Read on Its Own
 
-This final JSON should be enough for the next owner to route the review result.
+This final JSON should be enough for a host to read the review outcome.

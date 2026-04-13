@@ -5,6 +5,7 @@ import io
 import json
 import re
 import signal
+import shutil
 import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -54,6 +55,10 @@ def main() -> int:
     _check_review_failure_detail_guard_has_specific_code()
     _check_review_exact_contract_gate_modes_do_not_blow_up()
     _check_review_semantic_addressability_renders()
+    _check_review_split_control_ready_metadata_renders()
+    _check_review_split_partial_metadata_renders()
+    _check_final_output_review_fields_require_review_has_specific_code()
+    _check_final_output_review_fields_reject_carrier_has_specific_code()
     _check_route_output_read_requires_guard()
     _check_handoff_routing_output_can_render_route_semantics()
     _check_route_from_final_output_can_render_selected_owner()
@@ -688,6 +693,75 @@ def _check_review_semantic_addressability_renders() -> None:
         _expect("{{contract." not in rendered, rendered)
         _expect("Use Completeness before you route Next Owner." in rendered, rendered)
         _expect("compare Reviewed Artifact with Completeness." in rendered, rendered)
+
+
+def _check_review_split_control_ready_metadata_renders() -> None:
+    example_root = Path(__file__).resolve().parents[1] / "examples" / "105_review_split_final_output_json_schema_control_ready"
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        shutil.copytree(example_root / "prompts", root / "prompts")
+        shutil.copytree(example_root / "schemas", root / "schemas")
+        shutil.copytree(example_root / "examples", root / "examples")
+        prompt = parse_file(root / "prompts" / "AGENTS.prompt")
+        compiled = compile_prompt(prompt, "AcceptanceReviewSplitControlReadyDemo")
+        _expect(compiled.review is not None, "expected compiled review metadata")
+        _expect(compiled.review.final_response.mode == "split", str(compiled.review))
+        _expect(compiled.review.final_response.control_ready, str(compiled.review.final_response))
+        outcomes = dict(compiled.review.outcomes)
+        _expect(outcomes["accept"].route_behavior == "always", str(outcomes))
+        _expect(outcomes["blocked"].route_behavior == "never", str(outcomes))
+        rendered = render_markdown(compiled)
+        _expect("This final response is control-ready." in rendered, rendered)
+        _expect("| Verdict | `verdict` |" in rendered, rendered)
+
+
+def _check_review_split_partial_metadata_renders() -> None:
+    example_root = Path(__file__).resolve().parents[1] / "examples" / "106_review_split_final_output_json_schema_partial"
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        shutil.copytree(example_root / "prompts", root / "prompts")
+        shutil.copytree(example_root / "schemas", root / "schemas")
+        shutil.copytree(example_root / "examples", root / "examples")
+        prompt = parse_file(root / "prompts" / "AGENTS.prompt")
+        compiled = compile_prompt(prompt, "AcceptanceReviewSplitPartialDemo")
+        _expect(compiled.review is not None, "expected compiled review metadata")
+        _expect(compiled.review.final_response.mode == "split", str(compiled.review))
+        _expect(not compiled.review.final_response.control_ready, str(compiled.review.final_response))
+        rendered = render_markdown(compiled)
+        _expect("This final response is not control-ready." in rendered, rendered)
+        _expect("| Current Artifact | `current_artifact` |" in rendered, rendered)
+
+
+def _check_final_output_review_fields_require_review_has_specific_code() -> None:
+    example_root = Path(__file__).resolve().parents[1] / "examples" / "106_review_split_final_output_json_schema_partial"
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        shutil.copytree(example_root / "prompts", root / "prompts")
+        prompt = parse_file(root / "prompts" / "AGENTS.prompt")
+        try:
+            compile_prompt(prompt, "InvalidFinalOutputReviewFieldsWithoutReviewDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E500", f"expected E500, got {getattr(exc, 'code', None)}")
+            _expect("review-driven agent" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for final_output.review_fields without review, but compilation succeeded")
+
+
+def _check_final_output_review_fields_reject_carrier_has_specific_code() -> None:
+    example_root = Path(__file__).resolve().parents[1] / "examples" / "106_review_split_final_output_json_schema_partial"
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        shutil.copytree(example_root / "prompts", root / "prompts")
+        prompt = parse_file(root / "prompts" / "AGENTS.prompt")
+        try:
+            compile_prompt(prompt, "InvalidFinalOutputReviewFieldsOnCarrierDemo")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E500", f"expected E500, got {getattr(exc, 'code', None)}")
+            _expect("split final responses" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for carrier final_output.review_fields, but compilation succeeded")
 
 
 def _check_route_output_read_requires_guard() -> None:

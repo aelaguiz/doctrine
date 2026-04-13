@@ -109,6 +109,26 @@ class ReviewBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class FinalOutputOutputPart:
+    ref: model.NameRef
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class FinalOutputReviewFieldsPart:
+    config: model.ReviewFieldsConfig
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class FinalOutputBodyParts:
+    output_ref: model.NameRef
+    review_fields: model.ReviewFieldsConfig | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class RouteOnlyBodyParts:
     facts_ref: model.NameRef | None = None
     when_exprs: tuple[model.Expr, ...] = ()
@@ -495,8 +515,62 @@ class ToAst(Transformer):
         return model.ReviewField(value=ref)
 
     @v_args(inline=True)
-    def final_output_field(self, ref):
-        return model.FinalOutputField(value=ref)
+    def final_output_field(self, ref_or_body):
+        if isinstance(ref_or_body, FinalOutputBodyParts):
+            return model.FinalOutputField(
+                value=ref_or_body.output_ref,
+                review_fields=ref_or_body.review_fields,
+            )
+        return model.FinalOutputField(value=ref_or_body)
+
+    @v_args(meta=True, inline=True)
+    def final_output_output_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return FinalOutputOutputPart(ref=ref, line=line, column=column)
+
+    @v_args(meta=True)
+    def final_output_review_fields_stmt(self, meta, items):
+        line, column = _meta_line_column(meta)
+        return FinalOutputReviewFieldsPart(
+            config=model.ReviewFieldsConfig(bindings=tuple(items)),
+            line=line,
+            column=column,
+        )
+
+    def final_output_body(self, items):
+        output_ref: model.NameRef | None = None
+        review_fields: model.ReviewFieldsConfig | None = None
+
+        for item in items:
+            if isinstance(item, FinalOutputOutputPart):
+                if output_ref is not None:
+                    raise TransformParseFailure(
+                        "final_output block may define `output:` only once.",
+                        hints=("Keep exactly one `output:` entry inside the final_output block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                output_ref = item.ref
+                continue
+            if isinstance(item, FinalOutputReviewFieldsPart):
+                if review_fields is not None:
+                    raise TransformParseFailure(
+                        "final_output block may define `review_fields:` only once.",
+                        hints=(
+                            "Keep exactly one `review_fields:` block inside the final_output block.",
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                review_fields = item.config
+
+        if output_ref is None:
+            raise TransformParseFailure(
+                "final_output block is missing `output:`.",
+                hints=("Add `output: OutputName` inside the final_output block.",),
+            )
+
+        return FinalOutputBodyParts(output_ref=output_ref, review_fields=review_fields)
 
     @v_args(inline=True)
     def agent_slot_field(self, key, value, body=None):

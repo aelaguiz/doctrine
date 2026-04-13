@@ -254,6 +254,14 @@ The companion contract is compiler-owned emitted truth. In v1 it carries:
 - `schema_profile`
 - stable project-relative `schema_file` and `example_file` paths when the final
   output is schema-backed
+- for review-driven agents, a root `review` object that says:
+  - which output is the review carrier
+  - which output is the final response
+  - whether the final response is the carrier, a split response, or absent
+  - which carrier and final-response fields map to review semantics
+  - whether a split final response is `control_ready`
+  - normalized outcome summaries for `accept`, `changes_requested`, and
+    `blocked`, including route behavior
 
 ## How To Read `emit_flow` Output
 

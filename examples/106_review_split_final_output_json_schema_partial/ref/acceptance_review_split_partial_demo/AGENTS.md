@@ -1,11 +1,17 @@
-Emit the review comment and end with a route-aware JSON control result.
+Emit the review comment and end with a small partial JSON result.
 
 ## Acceptance Review
 
 Review subject: Draft Plan.
 Shared review contract: Plan Review Contract.
 
+### Basis Checks
+
+Block: The review basis is missing.
+
 ### Contract Checks
+
+Reject: Outline Complete.
 
 Accept only if The acceptance review contract passes.
 
@@ -17,9 +23,9 @@ Accepted plan goes to ReviewLead.
 
 ### If Rejected
 
-Current artifact: Draft Plan.
+When present(blocked_gate), no artifact is current for this outcome.
 
-Rejected plan goes to PlanAuthor.
+When missing(blocked_gate), current artifact: Draft Plan.
 
 ## Inputs
 
@@ -29,6 +35,9 @@ Rejected plan goes to PlanAuthor.
 - Path: `unit_root/DRAFT_PLAN.md`
 - Shape: Markdown Document
 - Requirement: Required
+
+- Basis Missing: `Basis Missing`
+- Outline Missing: `Outline Missing`
 
 ## Outputs
 
@@ -40,7 +49,7 @@ Rejected plan goes to PlanAuthor.
 
 #### Verdict
 
-State whether the plan passed review.
+State whether the plan passed review or asked for changes.
 
 #### Reviewed Artifact
 
@@ -52,31 +61,37 @@ Summarize the review analysis.
 
 #### Output Contents That Matter
 
-Summarize what the next owner should read first.
+State what the next owner should read first.
 
 #### Current Artifact
+
+Show this only when present(current_artifact).
 
 Name the artifact that remains current after review.
 
 #### Next Owner
 
-Name ReviewLead when accepted and PlanAuthor when rejected.
+Show this only when present(next_owner).
+
+Name ReviewLead when the review accepts the plan.
 
 #### Failure Detail
 
 Show this only when verdict is changes requested.
 
+##### Blocked Gate
+
+Show this only when present(blocked_gate).
+
+Name the blocking gate when review stopped before the normal content check.
+
 ##### Failing Gates
 
-List exact failing gates, including Outline Complete when it fails.
+List exact failing gates in authored order.
 
 #### Trust Surface
 
 - Current Artifact
-
-#### Standalone Read
-
-From this output alone, a downstream owner should know the acceptance verdict, current artifact, and next owner.
 
 ## Final Output
 
@@ -100,15 +115,13 @@ From this output alone, a downstream owner should know the acceptance verdict, c
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `route` | string | Control route for the next owner. |
 | `current_artifact` | string | Current artifact after review. |
-| `next_owner` | string | Next owner after review. |
+| `next_owner` | string | Next owner after review when one exists. |
 
 #### Example
 
 ```json
 {
-  "route": "follow_up",
   "current_artifact": "Draft Plan",
   "next_owner": "ReviewLead"
 }
@@ -118,22 +131,25 @@ From this output alone, a downstream owner should know the acceptance verdict, c
 
 This final response is separate from the review carrier: AcceptanceReviewComment.
 
-This final response does not carry review fields on its own.
+| Meaning | Field |
+| --- | --- |
+| Current Artifact | `current_artifact` |
+| Next Owner | `next_owner` |
 
 This final response is not control-ready. Read the review carrier for the full review outcome.
 
-#### Accepted Route
+#### Current Artifact
 
-Show this only when verdict is accepted and a routed owner exists.
+Show this only when present(current_artifact).
 
-Accepted plan goes to ReviewLead. Next owner: Review Lead.
+Name the current artifact after review.
 
-#### Retry Route
+#### Next Owner
 
-Show this only when verdict is changes requested and a routed owner exists.
+Show this only when present(next_owner).
 
-PlanAuthor
+Name ReviewLead when the review accepts the plan.
 
 #### Read on Its Own
 
-This final JSON should be enough for the next owner to route the review result.
+This final JSON is a small control readback, not the full review.

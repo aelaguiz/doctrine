@@ -131,6 +131,20 @@ Important rules:
   the review carrier, and a separate `final_output:` still inherits review
   semantic refs, guards, and any shared `route.*` reads that are live on that
   output.
+- On split review finals, the block form may also bind review semantics into
+  the final response:
+
+```prompt
+final_output:
+    output: AcceptanceControlFinalResponse
+    review_fields:
+        verdict: verdict
+        current_artifact: current_artifact
+        next_owner: next_owner
+```
+
+- The compiler emits whether that split final response is `control_ready`.
+  Authors do not declare that mode by hand.
 - When that designated output's `output shape` carries a `json schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
@@ -276,6 +290,10 @@ Instead:
 - when `final_output:` is separate, `comment_output` stays the durable review
   carrier while the separate final output inherits the same review semantic
   refs, guards, and shared `route.*` reads
+- that separate final output may bind a review-semantic subset through
+  `final_output.review_fields:`
+- the emitted companion contract tells hosts whether the split final output is
+  partial or `control_ready`
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
 - imported reusable `comment_output` declarations may still bind local routed

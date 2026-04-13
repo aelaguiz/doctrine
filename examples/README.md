@@ -75,10 +75,11 @@ Each numbered example may contain:
   `handoff_routing` law, split review `final_output:` contracts, first-class
   `route_from`, output-selected handoff routing, and `route.choice` guard
   narrowing
-- `95` through `103`: first-class skill-package authoring with `SKILL.prompt`,
+- `95` through `106`: first-class skill-package authoring with `SKILL.prompt`,
   source-root bundle copy-through, runtime and plugin metadata roots, bundled
   agent companions, larger compendium trees, exact path and case
-  preservation, and binary assets
+  preservation, binary assets, and review-native final-response metadata for
+  carrier, split control-ready, and split partial review finals
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -193,6 +194,9 @@ For the shipped skill-package authoring guide, use
 | `101_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
 | `102_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
 | `103_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
+| `104_review_final_output_json_schema_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
+| `105_review_split_final_output_json_schema_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
+| `106_review_split_final_output_json_schema_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
 
 ## Useful Commands
 

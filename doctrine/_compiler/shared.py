@@ -18,6 +18,10 @@ from doctrine._compiler.types import (
     CompiledDefinitionsBlock,
     CompiledField,
     CompiledFinalOutputSpec,
+    CompiledReviewFinalResponseSpec,
+    CompiledReviewOutcomeSpec,
+    CompiledReviewOutputSpec,
+    CompiledReviewSpec,
     CompiledFootnotesBlock,
     CompiledGuardBlock,
     CompiledImageBlock,
@@ -524,7 +528,7 @@ class ResolvedReviewGateBranch:
 class ResolvedReviewAgreementBranch:
     section_key: str
     verdict: str
-    route: model.ReviewOutcomeRouteStmt
+    route: model.ReviewOutcomeRouteStmt | None
     current: model.ReviewCurrentArtifactStmt | model.ReviewCurrentNoneStmt
     current_carrier_path: tuple[str, ...] | None = None
     current_subject_key: tuple[tuple[str, ...], str] | None = None
