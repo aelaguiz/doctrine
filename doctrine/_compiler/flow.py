@@ -16,6 +16,7 @@ from doctrine._compiler.shared import (
     _REVIEW_REQUIRED_FIELD_NAMES,
     _REVIEW_VERDICT_TEXT,
     _SCHEMA_FAMILY_TITLES,
+    _authored_slot_allows_law,
     _default_worker_count,
     _display_addressable_ref,
     _dotted_decl_name,
@@ -67,6 +68,23 @@ class FlowMixin:
             self._flow_upsert_agent_node(agent_nodes, agent, unit=unit)
 
             agent_contract = self._resolve_agent_contract(agent, unit=unit)
+            resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
+            resolved_slots = {
+                slot.key: slot.body
+                for slot in resolved_slot_states
+                if isinstance(slot, ResolvedAgentSlot)
+            }
+            self._validate_agent_slot_laws(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            _ = self._route_semantic_context_for_agent(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+            )
             for input_key, (input_unit, input_decl) in sorted(agent_contract.inputs.items()):
                 self._flow_upsert_input_node(input_nodes, input_decl, unit=input_unit)
                 self._flow_add_edge(
@@ -99,7 +117,7 @@ class FlowMixin:
                     ),
                 )
 
-            for slot_state in self._resolve_agent_slots(agent, unit=unit):
+            for slot_state in resolved_slot_states:
                 if not isinstance(slot_state, ResolvedAgentSlot):
                     continue
                 self._collect_flow_from_workflow_body(
@@ -115,6 +133,7 @@ class FlowMixin:
                     output_notes=output_notes,
                     edges=edges,
                     owner_label=f"agent {agent.name} slot {slot_state.key}",
+                    slot_key=slot_state.key,
                     workflow_stack=(),
                 )
 
@@ -189,6 +208,7 @@ class FlowMixin:
             FlowEdge,
         ],
         owner_label: str,
+        slot_key: str,
         workflow_stack: tuple[tuple[tuple[str, ...], str], ...],
     ) -> None:
         agent_key = (agent_unit.module_parts, agent.name)
@@ -226,19 +246,32 @@ class FlowMixin:
                 output_notes=output_notes,
                 edges=edges,
                 owner_label=f"workflow {_dotted_decl_name(item.target_unit.module_parts, item.workflow_decl.name)}",
+                slot_key=slot_key,
                 workflow_stack=(*workflow_stack, workflow_key),
             )
 
         if workflow_body.law is None:
             return
 
+        if not _authored_slot_allows_law(slot_key):
+            raise CompileError(
+                f"law may appear only on workflow or handoff_routing in {owner_label}: {slot_key}"
+            )
         flat_items = self._flatten_law_items(workflow_body.law, owner_label=owner_label)
-        self._validate_workflow_law(
-            flat_items,
-            unit=workflow_unit,
-            agent_contract=agent_contract,
-            owner_label=owner_label,
-        )
+        if slot_key == "handoff_routing":
+            self._validate_handoff_routing_law(
+                flat_items,
+                unit=workflow_unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+            )
+        else:
+            self._validate_workflow_law(
+                flat_items,
+                unit=workflow_unit,
+                agent_contract=agent_contract,
+                owner_label=owner_label,
+            )
         branches = self._collect_law_leaf_branches(flat_items, unit=workflow_unit)
         if not branches:
             branches = (LawBranch(),)

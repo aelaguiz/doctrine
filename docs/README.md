@@ -2,7 +2,7 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/90_split_handoff_and_final_output_shared_route_semantics`.
+`examples/103_skill_package_binary_assets`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
@@ -13,9 +13,13 @@ parallelism.
   runtime stays Markdown
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
   the shipped declaration model, composition rules, refs, interpolation, and
-  Markdown emission
+  Markdown emission, including `skill package`
+- [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
+  `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
+  example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
-  Markdown, generate workflow flow diagrams, and troubleshoot emit failures
+  Markdown, generate skill-package trees, generate workflow flow diagrams, and
+  troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
@@ -54,14 +58,18 @@ git history if you need that design-phase context.
 - The example corpus is proof, not just illustration.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
-- The shared emit registry drives configured Markdown and flow builds, and
-  `emit_flow` also supports direct quick-start entrypoints on the same
-  prompts-root-aware pipeline.
+- The shared emit registry drives configured agent-doc, skill-package, and
+  flow builds, and `emit_flow` also supports direct quick-start entrypoints on
+  the same prompts-root-aware pipeline.
+- `AGENTS.prompt` and `SOUL.prompt` stay the agent-runtime entrypoints.
+  `SKILL.prompt` is the skill-package entrypoint.
 - Absolute imports may also span explicitly configured shared `prompts/`
   roots through `[tool.doctrine.compile].additional_prompt_roots`, while
   relative imports stay rooted in the importing module's own `prompts/` tree.
 - Emit and verification surfaces reuse shared compile sessions and preserve
   authored ordering even when batch compilation fans out across threads.
+- `build_ref/` is verifier-owned checked-in proof, not part of the public
+  authoring model.
 
 ## Not Part Of The Live Docs Path
 

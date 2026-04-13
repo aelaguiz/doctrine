@@ -6,7 +6,8 @@ Repo-local VS Code language support for `.prompt` files.
 
 - registers `*.prompt` as the `doctrine` language
 - adds full TextMate colorization for the shipped Doctrine grammar, including
-  first-class `review` declarations and review-local semantic refs
+  first-class `review` declarations, top-level `skill package`, and
+  review-local semantic refs
 - supports Go to Definition and Ctrl/Cmd-click navigation on raw `import`
   paths
 - supports Go to Definition and Ctrl/Cmd-click across the full shipped
@@ -48,8 +49,8 @@ Workflow-law support here uses the same vocabulary as
 `trust_surface`, guarded output headers, carrier refs, trust-surface field
 items, enum-backed mode refs, named law subsection `inherit` / `override`
 keys, lower-case and mixed-case bound roots in workflow-law carrier and
-artifact paths, and route targets inside `law` branches, including conditional
-route lines.
+artifact paths, `route_from` selectors, output-side `route.*` readback, and
+route targets inside `law` branches, including conditional route lines.
 
 Review support here uses the same vocabulary as
 [../../docs/REVIEW_SPEC.md](../../docs/REVIEW_SPEC.md): `review`,
@@ -138,13 +139,18 @@ local editor is actually running the newest VSIX before changing the grammar.
 3. Reload the editor window.
 4. Open `examples/03_imports/prompts/AGENTS.prompt`.
 5. Open `examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt`.
-6. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
+6. Open `examples/100_skill_package_bundled_agents/prompts/SKILL.prompt`.
+7. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
    the emitted scopes and the theme rule that matched.
-7. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
+8. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
    import path, one readable ref, one addressable path segment, one
    addressable `title` segment, one enum member, and one structural
    inheritance key.
-8. For the workflow-law ladder, smoke-check:
+9. For the skill-package surface, smoke-check
+   `examples/100_skill_package_bundled_agents/prompts/SKILL.prompt` for
+   `skill package` declaration highlighting and import-path clicks into bundled
+   agent prompts.
+10. For the workflow-law ladder, smoke-check:
    `examples/39_guarded_output_sections/prompts/AGENTS.prompt` for guarded
    headers and guarded path clicks,
    `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt` for routed
@@ -154,8 +160,12 @@ local editor is actually running the newest VSIX before changing the grammar.
    `examples/50_bound_currentness_roots/prompts/AGENTS.prompt` for lower-case
    bound root clicks in `current artifact ... via ...`, and
    `examples/51_inherited_bound_io_roots/prompts/AGENTS.prompt` for inherited
-   bound-root clicks.
-9. For the review ladder, smoke-check:
+   bound-root clicks,
+   `examples/92_route_from_basic/prompts/AGENTS.prompt` for `route_from`
+   selector field clicks, and
+   `examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt` for
+   `route.choice` colorization plus enum-member clicks in route-choice guards.
+11. For the review ladder, smoke-check:
    `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
    for `review:` slot clicks and top-level review colorization,
    `examples/47_review_multi_subject_mode_and_trigger_carry/prompts/AGENTS.prompt`
@@ -165,7 +175,7 @@ local editor is actually running the newest VSIX before changing the grammar.
    carrier paths, plus
    `examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt` for
    lower-case review carrier roots and carried-field path clicks.
-10. For the second-wave ladder, smoke-check:
+12. For the second-wave ladder, smoke-check:
    `examples/54_analysis_attachment/prompts/AGENTS.prompt` for `analysis:`
    slot clicks and `ReleaseAnalysis:stages.title`,
    `examples/74_decision_attachment/prompts/AGENTS.prompt` for `decision:`

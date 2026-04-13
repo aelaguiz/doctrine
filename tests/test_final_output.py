@@ -1401,5 +1401,87 @@ class FinalOutputTests(unittest.TestCase):
         self.assertEqual(error.code, "E213")
         self.assertIn("another target", str(error))
 
+    def test_handoff_routing_final_output_can_bind_route_fields(self) -> None:
+        agent = self._compile_agent(
+            """
+            json schema TurnResultSchema: "Turn Result Schema"
+                profile: OpenAIStructuredOutput
+                file: "schemas/turn_result.schema.json"
+
+            output shape TurnResultJson: "Turn Result JSON"
+                kind: JsonObject
+                schema: TurnResultSchema
+                example_file: "examples/turn_result.example.json"
+
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output TurnResultFinalResponse: "Turn Result Final Response"
+                target: TurnResponse
+                shape: TurnResultJson
+                requirement: Required
+
+                next_owner: route.next_owner.key
+
+                route_summary: "Route Summary"
+                    "{{route.summary}}"
+
+                standalone_read: "Standalone Read"
+                    "This final JSON should stand on its own."
+
+            agent HandoffFinalOutputDemo:
+                role: "End with a route-aware final JSON result."
+                outputs: "Outputs"
+                    TurnResultFinalResponse
+                final_output: TurnResultFinalResponse
+
+                handoff_routing: "Handoff Routing"
+                    "Route through compiler-owned handoff routing."
+
+                    law:
+                        active when true
+                        stop "Hand off or finish the turn."
+                        route "Hand off to ReviewLead." -> ReviewLead
+            """,
+            agent_name="HandoffFinalOutputDemo",
+            extra_files={
+                "schemas/turn_result.schema.json": textwrap.dedent(
+                    """\
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "next_owner": {
+                          "type": "string",
+                          "description": "The routed next owner key."
+                        },
+                        "summary": {
+                          "type": "string",
+                          "description": "Short closeout summary."
+                        }
+                      }
+                    }
+                    """
+                ),
+                "examples/turn_result.example.json": textwrap.dedent(
+                    """\
+                    {
+                      "next_owner": "ReviewLead",
+                      "summary": "Hand off to ReviewLead."
+                    }
+                    """
+                ),
+            },
+        )
+
+        self.assertIsNotNone(agent.final_output)
+        rendered = render_markdown(agent)
+        final_output_block = rendered.split("## Final Output", 1)[1]
+        self.assertIn("### Turn Result Final Response", final_output_block)
+        self.assertIn("- Next Owner: ReviewLead", final_output_block)
+        self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", final_output_block)
+
 if __name__ == "__main__":
     unittest.main()

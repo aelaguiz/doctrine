@@ -1,0 +1,4 @@
+skill package AgentOutputCollision: "Agent Output Collision"
+    metadata:
+        name: "agent-output-collision"
+    "This prompt should fail because a bundled file collides with a compiled bundled agent markdown path."

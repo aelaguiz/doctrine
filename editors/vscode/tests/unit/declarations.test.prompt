@@ -46,3 +46,8 @@ agent Reviewer[shared.roles.BaseRole]:
 skill CopyRewriteSkill: "copy-rewrite"
 # <---- keyword.declaration.doctrine
 #      ^ entity.name.type.doctrine
+
+skill package BundledReviewPackage: "Bundled Review Package"
+# <---- keyword.declaration.doctrine
+#     ^^^^^^^ keyword.declaration.doctrine
+#             ^ entity.name.type.doctrine

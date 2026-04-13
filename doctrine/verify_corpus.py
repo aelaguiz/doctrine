@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import tempfile
 import threading
 import tomllib
@@ -13,9 +12,11 @@ from typing import Any
 
 from doctrine.compiler import CompilationSession, compile_prompt
 from doctrine.diagnostics import DoctrineError, EmitError
+from doctrine._compiler.support import default_worker_count
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
+from doctrine.emit_skill import emit_target_skill
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown, render_readable_block
 
@@ -198,7 +199,7 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
     if compile_case_indexes:
         session_cache = _CompilationSessionCache()
         with ThreadPoolExecutor(
-            max_workers=_compile_case_worker_count(len(compile_case_indexes))
+            max_workers=default_worker_count(len(compile_case_indexes))
         ) as executor:
             futures = {
                 executor.submit(_run_compile_case, cases[index], session_cache): index
@@ -255,13 +256,6 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         ref_diffs=ref_diffs,
         surfaced_inconsistencies=surfaced_inconsistencies,
     )
-
-
-def _compile_case_worker_count(case_count: int) -> int:
-    if case_count <= 1:
-        return 1
-    cpu_count = os.cpu_count() or 1
-    return min(case_count, max(2, cpu_count))
 
 
 def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:
@@ -447,9 +441,9 @@ def _load_case(
         raw_case, "message_contains", case_index=case_index
     )
 
-    agent: str | None = None
-    if kind == "compile_fail":
-        agent = _require_str(raw_case, "agent", case_index=case_index)
+    agent = raw_case.get("agent")
+    if agent is not None and not isinstance(agent, str):
+        raise ManifestError(f"cases[{case_index}].agent must be a string when provided.")
 
     return CaseSpec(
         manifest_path=manifest_path,
@@ -588,8 +582,11 @@ def _run_build_contract(case: CaseSpec) -> CaseResult:
     with tempfile.TemporaryDirectory() as temp_dir:
         actual_root = Path(temp_dir)
         try:
-            emit_target(target, output_dir_override=actual_root)
-            if _build_ref_has_flow_artifacts(expected_root):
+            if target.entrypoint.name == "SKILL.prompt":
+                emit_target_skill(target, output_dir_override=actual_root)
+            else:
+                emit_target(target, output_dir_override=actual_root)
+            if target.entrypoint.name != "SKILL.prompt" and _build_ref_has_flow_artifacts(expected_root):
                 emit_target_flow(
                     target,
                     output_dir_override=actual_root,
@@ -618,13 +615,23 @@ def _run_compile_fail(
     session_cache: _CompilationSessionCache | None = None,
 ) -> CaseResult:
     try:
+        active_session: CompilationSession
         if session_cache is not None:
-            session_cache.get(case.prompt_path).compile_agent(case.agent or "")
+            active_session = session_cache.get(case.prompt_path)
         elif session is not None:
-            session.compile_agent(case.agent or "")
+            active_session = session
         else:
             prompt_file = parse_file(case.prompt_path)
-            compile_prompt(prompt_file, case.agent or "")
+            active_session = CompilationSession(prompt_file)
+
+        if case.agent is not None:
+            active_session.compile_agent(case.agent)
+        elif active_session.root_unit.skill_packages_by_name:
+            active_session.compile_skill_package()
+        else:
+            raise VerificationError(
+                "compile_fail case omitted `agent`, but the prompt does not define a skill package."
+            )
     except Exception as exc:
         _assert_expected_exception(case, exc)
         return CaseResult(case=case, result="PASS", detail="compile failed as expected")
@@ -738,9 +745,20 @@ def _build_tree_diff(*, expected_root: Path, actual_root: Path) -> str | None:
 
     common = sorted(expected_files.keys() & actual_files.keys())
     for rel_path in common:
-        expected_lines = tuple(expected_files[rel_path].read_text().splitlines())
-        actual_lines = tuple(actual_files[rel_path].read_text().splitlines())
-        if expected_lines == actual_lines:
+        expected_bytes = expected_files[rel_path].read_bytes()
+        actual_bytes = actual_files[rel_path].read_bytes()
+        if expected_bytes == actual_bytes:
+            continue
+        expected_lines = _decode_utf8_lines(expected_bytes)
+        actual_lines = _decode_utf8_lines(actual_bytes)
+        if expected_lines is None or actual_lines is None:
+            if lines:
+                lines.append("")
+            rel_label = rel_path.as_posix()
+            lines.append(
+                "Binary file mismatch: "
+                f"{rel_label} (expected {len(expected_bytes)} bytes, emitted {len(actual_bytes)} bytes)"
+            )
             continue
         if lines:
             lines.append("")
@@ -755,6 +773,13 @@ def _build_tree_diff(*, expected_root: Path, actual_root: Path) -> str | None:
         )
 
     return "\n".join(lines) if lines else None
+
+
+def _decode_utf8_lines(payload: bytes) -> tuple[str, ...] | None:
+    try:
+        return tuple(payload.decode("utf-8").splitlines())
+    except UnicodeDecodeError:
+        return None
 
 
 def _build_ref_has_flow_artifacts(expected_root: Path) -> bool:

@@ -1,0 +1,26 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+
+
+output RouteFromComment: "Route From Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent InvalidRouteFromSelectorDemo:
+    role: "Keep route_from selectors on declared surfaces."
+    outputs: "Outputs"
+        RouteFromComment
+
+    workflow: "Workflow"
+        law:
+            current none
+            mode pass_mode = ProofRoute.accept as ProofRoute
+            route_from pass_mode as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic

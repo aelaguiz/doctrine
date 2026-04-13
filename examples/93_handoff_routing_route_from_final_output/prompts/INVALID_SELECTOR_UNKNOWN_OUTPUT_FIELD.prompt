@@ -1,0 +1,42 @@
+enum ProofRoute: "Proof Route"
+    accept: "Accept"
+    change: "Change"
+
+
+output ProofResult: "Proof Result"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    route_choice: "Route Choice"
+
+
+output RouteFromFinalReply: "Route From Final Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner.key
+
+
+agent AcceptanceCritic:
+    role: "Accept routed work."
+
+
+agent ChangeEngineer:
+    role: "Handle requested changes."
+
+
+agent InvalidHandoffRouteFromFieldDemo:
+    role: "Read a missing output field in route_from."
+    outputs: "Outputs"
+        ProofResult
+        RouteFromFinalReply
+    final_output: RouteFromFinalReply
+
+    handoff_routing: "Handoff Routing"
+        law:
+            route_from ProofResult.missing_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer

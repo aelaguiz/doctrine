@@ -1,0 +1,7 @@
+skill package ReleaseCompendium: "Release Compendium"
+    metadata:
+        name: "release-compendium"
+        description: "Ship a multi-file release compendium beside the main skill."
+        version: "1.0.0"
+        license: "MIT"
+    "Read `references/checklists.md` and `references/rubric.md` before you approve a release."

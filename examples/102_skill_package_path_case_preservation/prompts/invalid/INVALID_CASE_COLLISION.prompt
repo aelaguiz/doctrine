@@ -1,0 +1,4 @@
+skill package PathCollision: "Path Collision"
+    metadata:
+        name: "path-collision"
+    "This prompt should fail because the bundled source tree case-collides with `SKILL.md`."

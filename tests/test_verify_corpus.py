@@ -9,7 +9,12 @@ from pathlib import Path
 from unittest.mock import patch
 
 from doctrine.diagnostics import DiagnosticLocation, EmitError
-from doctrine.verify_corpus import CaseSpec, VerificationError, _run_build_contract
+from doctrine.verify_corpus import (
+    CaseSpec,
+    VerificationError,
+    _build_tree_diff,
+    _run_build_contract,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +86,26 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
                 _run_build_contract(case)
 
         self.assertIn("Missing emit targets", str(ctx.exception))
+
+    def test_binary_build_diff_reports_a_binary_mismatch_cleanly(self) -> None:
+        # This protects the verifier path for bundled binary assets. When bytes
+        # differ, the user should get a clear path-level mismatch report instead
+        # of a Unicode decode crash or a lossy text diff.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            expected_root = root / "expected"
+            actual_root = root / "actual"
+            expected_root.mkdir()
+            actual_root.mkdir()
+            (expected_root / "icon.png").write_bytes(b"\x89PNGexpected")
+            (actual_root / "icon.png").write_bytes(b"\x89PNGactual")
+
+            diff = _build_tree_diff(expected_root=expected_root, actual_root=actual_root)
+
+        self.assertIsNotNone(diff)
+        self.assertIn("Binary file mismatch: icon.png", diff)
+        self.assertIn("expected 12 bytes", diff)
+        self.assertIn("emitted 10 bytes", diff)
 
 
 if __name__ == "__main__":

@@ -209,6 +209,7 @@ def main() -> int:
         [
             "support_only",
             "rewrite_evidence",
+            "route_from",
         ],
         should_match=True,
         errors=errors,
@@ -347,6 +348,13 @@ def main() -> int:
         repository,
         "reviewFieldsField",
         ["    fields:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "metadataField",
+        ["    metadata:"],
         should_match=True,
         errors=errors,
     )

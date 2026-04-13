@@ -1,0 +1,22 @@
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+
+output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner when route.exists
+
+
+agent ProseOnlyHandoffDemo:
+    role: "Keep prose handoff routes readable."
+    outputs: "Outputs"
+        HandoffRouteBindingComment
+
+    handoff_routing: "Handoff Routing"
+        ready_for_review: "Ready For Review"
+            route "Hand off to ReviewLead." -> ReviewLead

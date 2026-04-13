@@ -33,6 +33,7 @@ prompt_file: _NL* declaration+ _NL*
             | output_shape_decl
             | output_decl
             | json_schema_decl
+            | skill_package_decl
             | skill_decl
             | enum_decl
             | abstract_agent
@@ -62,6 +63,7 @@ output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _
 output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_decl: "output" CNAME ":" string _NL _INDENT output_body _DEDENT
 json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
+skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
@@ -652,6 +654,12 @@ record_body: record_item+
             | record_keyed_item
             | record_ref_item
 
+skill_package_body: skill_package_item+
+?skill_package_item: package_metadata_block
+                   | record_item
+package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDENT
+package_metadata_item: CNAME ":" string _NL?
+
 record_readable_block: record_section_block
                      | readable_nonsection_block
 record_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT record_body _DEDENT
@@ -702,6 +710,7 @@ law_override_section: "override" CNAME ":" _NL _INDENT law_stmt+ _DEDENT
          | forbid_stmt
          | when_stmt
          | match_stmt
+         | route_from_stmt
          | stop_stmt
          | law_route_stmt
 
@@ -719,12 +728,14 @@ invalidate_stmt: "invalidate" law_path "via" law_path law_when_clause? _NL
 forbid_stmt: "forbid" path_set_expr law_when_clause? _NL
 when_stmt: "when" expr ":" _NL _INDENT law_stmt+ _DEDENT
 match_stmt: "match" expr ":" _NL _INDENT match_case+ _DEDENT
+route_from_stmt: "route_from" expr "as" name_ref ":" _NL _INDENT route_from_case+ _DEDENT
 stop_stmt: "stop" string law_when_clause? _NL
          | "stop" law_when_clause _NL
          | "stop" _NL
 law_route_stmt: "route" string "->" name_ref law_when_clause? _NL
 
 match_case: match_head ":" _NL _INDENT law_stmt+ _DEDENT
+route_from_case: match_head ":" _NL _INDENT law_route_stmt _DEDENT
 ?match_head: expr
            | "else" -> else_match_head
 

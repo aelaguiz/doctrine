@@ -7,9 +7,11 @@ from pathlib import Path
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import (
+    DOCS_ENTRYPOINTS,
     EmitTarget,
     agent_slug,
     display_path,
+    ensure_supported_entrypoint,
     emit_error,
     entrypoint_contract_name,
     entrypoint_output_name,
@@ -74,6 +76,11 @@ def emit_target(
     *,
     output_dir_override: Path | None = None,
 ) -> tuple[Path, ...]:
+    ensure_supported_entrypoint(
+        target.entrypoint,
+        allowed_entrypoints=DOCS_ENTRYPOINTS,
+        owner_label=f"emit_docs target `{target.name}`",
+    )
     try:
         prompt_file = parse_file(target.entrypoint)
     except DoctrineError as exc:

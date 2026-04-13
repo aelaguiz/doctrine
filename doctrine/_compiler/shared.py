@@ -27,6 +27,8 @@ from doctrine._compiler.types import (
     CompiledRuleBlock,
     CompiledSection,
     CompiledSequenceBlock,
+    CompiledSkillPackageFile,
+    CompiledSkillPackage,
     CompiledTableBlock,
     CompiledTableCell,
     CompiledTableColumn,
@@ -432,6 +434,7 @@ class RouteSemanticBranch:
     target_title: str | None
     label: str
     review_verdict: str | None = None
+    choice_members: tuple["RouteChoiceMember", ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -439,6 +442,15 @@ class RouteSemanticContext:
     branches: tuple[RouteSemanticBranch, ...] = ()
     has_unrouted_branch: bool = False
     route_required: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class RouteChoiceMember:
+    enum_module_parts: tuple[str, ...]
+    enum_name: str
+    member_key: str
+    member_title: str
+    member_wire: str
 
 
 @dataclass(slots=True, frozen=True)
@@ -631,6 +643,8 @@ _RESERVED_AGENT_FIELD_KEYS = {
     "review",
     "final_output",
 }
+_LAW_BEARING_AUTHORED_SLOT_KEYS = frozenset({"workflow", "handoff_routing"})
+_ROUTE_BEARING_AUTHORED_SLOT_KEYS = frozenset({"handoff_routing"})
 
 _BUILTIN_INPUT_SOURCES = {
     "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
@@ -736,6 +750,14 @@ def _agent_typed_field_key(field: model.Field) -> str:
     if isinstance(field, model.FinalOutputField):
         return "final_output"
     return type(field).__name__
+
+
+def _authored_slot_allows_law(key: str) -> bool:
+    return key in _LAW_BEARING_AUTHORED_SLOT_KEYS
+
+
+def _authored_slot_carries_route_semantics(key: str) -> bool:
+    return key in _ROUTE_BEARING_AUTHORED_SLOT_KEYS
 
 
 def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:

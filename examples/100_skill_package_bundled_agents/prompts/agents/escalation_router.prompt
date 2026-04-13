@@ -1,0 +1,5 @@
+agent EscalationRouter:
+    role: "Escalate unresolved package risks."
+    workflow: "Escalation"
+        "Read the bundled cold review."
+        "Route unresolved risks to the correct owner."

@@ -1,0 +1,37 @@
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+
+output HandoffRouteBindingComment: "Handoff Route Binding Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+
+workflow RoutedWorkflow: "Routed Workflow"
+    "Always route through workflow law."
+
+    law:
+        active when true
+        current none
+        stop "Reply and stop."
+        route "Hand off to ReviewLead." -> ReviewLead
+
+
+agent ConflictingRouteSurfaceDemo:
+    role: "Do not let two route surfaces drive one output."
+    workflow: RoutedWorkflow
+    outputs: "Outputs"
+        HandoffRouteBindingComment
+
+    handoff_routing: "Handoff Routing"
+        "Route through handoff routing too."
+
+        law:
+            active when true
+            stop "Hand off or finish the turn."
+            route "Hand off to ReviewLead from handoff routing." -> ReviewLead

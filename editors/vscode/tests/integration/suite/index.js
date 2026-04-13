@@ -10,6 +10,7 @@ const REPO_ROOT = process.env.DOCTRINE_REPO_ROOT
 async function run() {
   await activateDoctrineExtension();
   await testImportLinks();
+  await testSkillPackageImportLinks();
   await testCrossRootImportLinks();
   await testDefinitionProvider();
   await testCrossRootDefinitionProvider();
@@ -62,6 +63,32 @@ async function testImportLinks() {
     sourceLineFragment: "import chains.relative.entry",
     sourceText: "chains.relative.entry",
   });
+}
+
+async function testSkillPackageImportLinks() {
+  const document = await openPrompt(
+    "examples/100_skill_package_bundled_agents/prompts/SKILL.prompt",
+  );
+  const links = await vscode.commands.executeCommand(
+    "_executeLinkProvider",
+    document.uri,
+    100,
+  );
+
+  assert.ok(Array.isArray(links), "Skill package links should return an array.");
+
+  assertLinkTarget(
+    links,
+    document,
+    "agents.cold_reviewer",
+    "examples/100_skill_package_bundled_agents/prompts/agents/cold_reviewer.prompt",
+  );
+  assertLinkTarget(
+    links,
+    document,
+    "agents.escalation_router",
+    "examples/100_skill_package_bundled_agents/prompts/agents/escalation_router.prompt",
+  );
 }
 
 async function testDefinitionProvider() {
@@ -564,6 +591,27 @@ async function testWorkflowLawDefinitionProvider() {
   });
 
   await assertDefinitionTarget({
+    declarationSnippet: 'route_choice: "Route Choice"',
+    expectedRelativeTargetPath:
+      "examples/92_route_from_basic/prompts/AGENTS.prompt",
+    relativePath: "examples/92_route_from_basic/prompts/AGENTS.prompt",
+    sourceLineFragment: "route_from RouteFacts.route_choice as ProofRoute:",
+    sourceText: "route_choice",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'accept: "Accept"',
+    expectedRelativeTargetPath:
+      "examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'accept_summary: "Accept Summary" when route.choice == ProofRoute.accept',
+    sourceText: "accept",
+    occurrence: 2,
+  });
+
+  await assertDefinitionTarget({
     declarationSnippet: 'rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:',
     expectedRelativeTargetPath:
       "examples/39_guarded_output_sections/prompts/AGENTS.prompt",
@@ -589,7 +637,7 @@ async function testWorkflowLawDefinitionProvider() {
       "examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt",
     relativePath: "examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt",
     sourceLineFragment:
-      'route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown',
+      'route "Keep the issue on RoutingOwner until the next specialist owner is clear." -> RoutingOwner when RouteFacts.next_owner_unknown',
     sourceText: "RoutingOwner",
     occurrence: 2,
   });
@@ -774,7 +822,7 @@ async function testReviewDefinitionProvider() {
     expectedRelativeTargetPath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     relativePath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     sourceLineFragment:
-      '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
+      '"Sum up the review work that led to the verdict. Say how {{fields.reviewed_artifact}} met or did not meet {{contract.clarity}}. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
     sourceText: "clarity",
   });
 
@@ -783,7 +831,7 @@ async function testReviewDefinitionProvider() {
     expectedRelativeTargetPath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     relativePath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     sourceLineFragment:
-      '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
+      '"Sum up the review work that led to the verdict. Say how {{fields.reviewed_artifact}} met or did not meet {{contract.clarity}}. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
     sourceText: "reviewed_artifact",
   });
 

@@ -185,6 +185,20 @@ class MatchStmt:
 
 
 @dataclass(slots=True, frozen=True)
+class RouteFromArm:
+    head: Expr | None
+    route: "LawRouteStmt"
+    display_label: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class RouteFromStmt:
+    expr: Expr
+    enum_ref: NameRef
+    cases: tuple[RouteFromArm, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class StopStmt:
     message: str | None = None
     when_expr: Expr | None = None
@@ -195,6 +209,9 @@ class LawRouteStmt:
     label: str
     target: NameRef
     when_expr: Expr | None = None
+    choice_enum_ref: NameRef | None = None
+    choice_case_heads: tuple[Expr, ...] = ()
+    choice_else: bool = False
 
 
 LawStmt: TypeAlias = (
@@ -211,6 +228,7 @@ LawStmt: TypeAlias = (
     | ForbidStmt
     | WhenStmt
     | MatchStmt
+    | RouteFromStmt
     | StopStmt
     | LawRouteStmt
 )
@@ -1359,6 +1377,22 @@ class SkillDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class SkillPackageMetadata:
+    name: str | None = None
+    description: str | None = None
+    version: str | None = None
+    license: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+    metadata: SkillPackageMetadata
+
+
+@dataclass(slots=True, frozen=True)
 class EnumMember:
     key: str
     title: str
@@ -1398,6 +1432,7 @@ Declaration: TypeAlias = (
     | OutputShapeDecl
     | JsonSchemaDecl
     | SkillDecl
+    | SkillPackageDecl
     | EnumDecl
 )
 

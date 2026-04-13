@@ -60,6 +60,8 @@ Important rules:
 - They are required only when their guard resolves true.
 - On ordinary outputs, guards may read declared inputs, enum members, and
   `route.exists` when the active workflow-law branches expose route semantics.
+- When every live routed branch comes from `route_from`, guards may also read
+  `route.choice`.
 - They may not read workflow-local bindings, emitted output fields, or
   undeclared runtime names.
 
@@ -71,6 +73,10 @@ When workflow law resolves a real route, emitted outputs may read:
 - `route.next_owner.title`
 - `route.label`
 - `route.summary`
+- `route.choice`
+- `route.choice.key`
+- `route.choice.title`
+- `route.choice.wire`
 
 Important rules:
 
@@ -79,6 +85,63 @@ Important rules:
 - unguarded `route.*` reads fail loudly when some active branches may not route
 - `when route.exists:` is the ordinary output-side guard for route-specific
   readback, whether the guarded item is one scalar field or one section
+- `route.choice.*` is live only when every live routed branch comes from
+  `route_from`
+- `route.next_owner.*` may stay live across several `route_from` branches. It
+  means the selected route owner.
+- `route.label` and `route.summary` still need one selected branch. Guard them
+  with `route.choice` when more than one route branch stays live.
+
+## Handoff Routing Reuses The Same Route Surface
+
+`handoff_routing:` may also carry a route-only `law:` block.
+
+Use that when a turn needs compiler-owned route truth on `output` or
+`final_output:`, but does not need workflow-law currentness, preservation, or
+invalidation.
+
+Important rules:
+
+- `handoff_routing` law supports only `active when`, `mode`, `when`, `match`,
+  `route_from`, `stop`, and `route`
+- currentness, preservation, invalidation, and basis-role controls stay on
+  `workflow`
+- prose route lines inside `handoff_routing` do not make `route.*` live
+- `handoff_routing` uses the same output-side `route.exists`,
+  `route.next_owner`, `route.next_owner.key`, `route.next_owner.title`,
+  `route.label`, `route.summary`, and `route.choice.*` surface ordinary
+  workflow law already uses
+
+## route_from
+
+`route_from` selects one route from a typed selector.
+
+Use it when the turn already receives or emits a typed route fact and you want
+Doctrine to own the selected route truth.
+
+```prompt
+law:
+    route_from ProofResult.route_choice as ProofRoute:
+        ProofRoute.accept:
+            route "Send to AcceptanceCritic." -> AcceptanceCritic
+        ProofRoute.change:
+            route "Send to ChangeEngineer." -> ChangeEngineer
+```
+
+Important rules:
+
+- `route_from` is legal on `workflow` law and `handoff_routing` law.
+- The selector must stay one direct ref.
+- It may point at a declared input field, an emitted output field on the
+  concrete turn, or an enum member.
+- Do not compute inside the selector or read workflow-local bindings there.
+- Each arm selects one route.
+- Name each enum member at most once. Use `else` at most once.
+- `route.choice.*` is live only when every live routed branch comes from
+  `route_from`.
+- `route.next_owner.*` works on the selected route even when several
+  `route_from` branches stay live at compile time.
+- `route.label` and `route.summary` still need one selected branch.
 
 ## Branch Model
 
@@ -90,6 +153,7 @@ The branch-shaping tools are:
 - `when`
 - `mode`
 - `match`
+- `route_from`
 - `must`
 
 Example:
@@ -313,6 +377,14 @@ Read the workflow-law examples in this order:
   workflow-law outputs plus fail-loud unguarded route reads
 - `89_route_only_shared_route_semantics`: dedicated `route_only` feeding the
   same shared output-facing route semantics
+- `91_handoff_routing_route_output_binding`: `handoff_routing` law feeding the
+  same shared output-facing route semantics into ordinary outputs and
+  `final_output:`
+- `92_route_from_basic`: first-class `route_from` on workflow law
+- `93_handoff_routing_route_from_final_output`: emitted-output route selection
+  on `handoff_routing` plus `final_output:`
+- `94_route_choice_guard_narrowing`: `route.choice` guards narrowing
+  `route.summary`
 - `71_grounding_declaration`: explicit grounding protocol with ordinary route
   targets plus grounding-root preservation mapping
 - `72_schema_group_invalidation`: schema-group invalidation expansion in

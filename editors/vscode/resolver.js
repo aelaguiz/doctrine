@@ -134,12 +134,16 @@ const LAW_OVERRIDE_SECTION_RE = new RegExp(
 const LAW_SECTION_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*$`);
 const LAW_WHEN_RE = /^\s*when\b.*:\s*$/;
 const LAW_MATCH_RE = /^\s*match\b.*:\s*$/;
+const LAW_ROUTE_FROM_RE = /^\s*route_from\b.*:\s*$/;
 const LAW_MATCH_ARM_RE = new RegExp(`^\\s*(else|${DOTTED_NAME_PATTERN})\\s*:\\s*$`);
 const TRUST_SURFACE_ITEM_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})(?:\\s+when\\b.*)?\\s*$`,
 );
 const GUARDED_OUTPUT_HEADER_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
+);
+const GUARDED_RECORD_ITEM_RE = new RegExp(
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN}|${DOTTED_NAME_PATTERN}|${PATH_REF_PATTERN})\\s+when\\b.*(?::\\s*)?$`,
 );
 const BRACED_EXPR_RE = /\{([^{}]+)\}/g;
 const BRACED_REF_TOKEN_RE = new RegExp(
@@ -187,6 +191,7 @@ const NON_BINDING_LAW_TOKENS = new Set([
   "reject",
   "rewrite_evidence",
   "route",
+  "route_from",
   "stop",
   "structure",
   "support_only",
@@ -238,6 +243,7 @@ const DECLARATION_KIND = Object.freeze({
   OUTPUT_TARGET: "output_target",
   OUTPUT_SHAPE: "output_shape",
   JSON_SCHEMA: "json_schema",
+  SKILL_PACKAGE: "skill_package",
   SKILL: "skill",
   ENUM: "enum",
   RENDER_PROFILE: "render_profile",
@@ -406,6 +412,11 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     regex: new RegExp(
       `^\\s*json\\s+schema\\s+(${IDENTIFIER_PATTERN})\\s*:`,
     ),
+    nameGroup: 1,
+  },
+  {
+    kind: DECLARATION_KIND.SKILL_PACKAGE,
+    regex: new RegExp(`^\\s*skill\\s+package\\s+(${IDENTIFIER_PATTERN})\\s*:`),
     nameGroup: 1,
   },
   {
@@ -1214,6 +1225,7 @@ function collectRecordBodySites(lineText, lineNumber, container) {
   const sites = [];
   const fieldKind = container?.fieldKind;
   const declarationKind = container?.declarationKind;
+  const isGuardedOutputItem = GUARDED_RECORD_ITEM_RE.test(lineText);
 
   const keyedPathRef = lineText.match(KEY_VALUE_PATH_REF_RE);
   if (keyedPathRef) {
@@ -1263,6 +1275,11 @@ function collectRecordBodySites(lineText, lineNumber, container) {
         requireConcrete: false,
       });
     }
+  }
+
+  if (isGuardedOutputItem) {
+    sites.push(...collectReviewSemanticSites(lineText, lineNumber));
+    sites.push(...collectShippedLawRefSites(lineText, lineNumber));
   }
 
   return sites;
@@ -3641,7 +3658,7 @@ function getWorkflowSectionChildBodySpec(lineText, lineNumber) {
 }
 
 function getLawBodyChildBodySpec(lineText, lineNumber, allowStructural) {
-  if (LAW_MATCH_RE.test(lineText)) {
+  if (LAW_MATCH_RE.test(lineText) || LAW_ROUTE_FROM_RE.test(lineText)) {
     return {
       type: "law_match_body",
       indent: leadingSpaces(lineText),
@@ -3763,6 +3780,15 @@ function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
   }
 
   if (GUARDED_OUTPUT_HEADER_RE.test(lineText)) {
+    return {
+      type: "record_body",
+      fieldKind,
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
+  if (GUARDED_RECORD_ITEM_RE.test(lineText)) {
     return {
       type: "record_body",
       fieldKind,
