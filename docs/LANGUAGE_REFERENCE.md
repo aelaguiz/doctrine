@@ -79,8 +79,10 @@ Important rules:
   `review_family`.
 - `analysis:` attaches one reusable `analysis` declaration to an otherwise
   ordinary concrete turn.
-- `decision:` attaches one reusable `decision` declaration to an otherwise
-  ordinary concrete turn.
+- Each `decision:` attaches one reusable `decision` declaration to an
+  otherwise ordinary concrete turn.
+- A concrete agent may attach more than one `decision:` field when it owns
+  more than one typed candidate-pool decision.
 
 `role` has two shipped shapes:
 

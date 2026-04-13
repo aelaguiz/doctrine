@@ -161,7 +161,7 @@ review LessonPlanReview[ProducerArtifactReview]: "Lesson Plan Review"
         route "Accepted lesson plan returns to LessonsSituationSynthesizer." -> LessonsSituationSynthesizer
 
     on_reject:
-        current artifact lesson_plan via CriticVerdictAndHandoffOutput.current_artifact when not present(blocked_gate)
+        current artifact lesson_plan via CriticVerdictAndHandoffOutput.current_artifact when missing(blocked_gate)
         current none when present(blocked_gate)
         route "Rejected lesson plan returns to LessonsLessonArchitect." -> LessonsLessonArchitect
 ```
@@ -196,7 +196,7 @@ review LessonPlanReview[ProducerArtifactReview]: "Lesson Plan Review"
         route -> LessonsSituationSynthesizer
 
     on_reject:
-        current artifact lesson_plan via critic_handoff.current_artifact when not present(blocked_gate)
+        current artifact lesson_plan via critic_handoff.current_artifact when missing(blocked_gate)
         current none when present(blocked_gate)
         route -> LessonsLessonArchitect
 ```

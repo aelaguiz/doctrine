@@ -996,11 +996,12 @@ class ReviewOutputFieldRef:
 class ReviewCurrentArtifactStmt:
     artifact_ref: NameRef
     carrier: ReviewOutputFieldRef
+    when_expr: Expr | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class ReviewCurrentNoneStmt:
-    pass
+    when_expr: Expr | None = None
 
 
 @dataclass(slots=True, frozen=True)

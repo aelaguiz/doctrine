@@ -124,11 +124,11 @@ Stability rules:
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
 | `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
-| `E351` | Owned scope is outside the current artifact | `own only` points at a path that is not rooted in the current artifact. |
-| `E352` | Owned scope target is unknown | `own only` points at an undeclared or unbound concrete-turn input or output target. |
+| `E351` | Owned scope is outside the allowed modeled surface | `own only` points at a path that is not rooted in the current artifact, an emitted output surface, or a declared schema family. |
+| `E352` | Owned scope target is unknown | `own only` points at an undeclared or unbound concrete-turn input or output target or a missing declared schema family. |
 | `E353` | Owned scope overlaps exact preservation | `own only` overlaps `preserve exact` without an explicit `except`. |
 | `E354` | Owned scope overlaps forbidden scope | `own only` overlaps `forbid`. |
-| `E355` | Preserve target is unknown | `preserve structure`, `preserve mapping`, or `preserve vocabulary` points at an unknown declared or bound concrete-turn target. |
+| `E355` | Preserve target is unknown | `preserve structure`, `preserve mapping`, or `preserve vocabulary` points at an unknown declared or bound concrete-turn target, schema family, grounding declaration, or enum target allowed by that preserve kind. |
 | `E361` | Current artifact ignored for truth | The current artifact is also ignored for truth in the same active branch. |
 | `E362` | Comparison-only basis contradiction | `support_only ... for comparison` and `ignore ... for comparison` contradict each other. |
 | `E371` | Current artifact invalidated in same branch | The current artifact is invalidated in the same active branch that declares it current. |

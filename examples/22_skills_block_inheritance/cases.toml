@@ -22,7 +22,7 @@ expected_lines = [
   "",
   "Rewrite reader-facing text without changing the underlying guide job.",
   "",
-  "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
+  "This skill is required for this role.",
   "",
   "#### Reason",
   "",

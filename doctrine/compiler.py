@@ -673,6 +673,7 @@ class ReviewOutcomeBranch:
     carries: tuple[model.ReviewCarryStmt, ...] = ()
     routes: tuple[model.ReviewOutcomeRouteStmt, ...] = ()
     route_selected: bool = False
+    blocked_gate_present: bool | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -883,6 +884,7 @@ _READABLE_DECL_REGISTRIES = (
     ("agent declaration", "agents_by_name"),
     ("analysis declaration", "analyses_by_name"),
     ("decision declaration", "decisions_by_name"),
+    ("grounding declaration", "groundings_by_name"),
     ("schema declaration", "schemas_by_name"),
     ("document declaration", "documents_by_name"),
     ("input declaration", "inputs_by_name"),
@@ -905,6 +907,19 @@ _SCHEMA_FAMILY_TITLES = {
     "gates": "Contract Gates",
     "artifacts": "Artifact Inventory",
     "groups": "Surface Groups",
+}
+_LAW_TARGET_ALLOWED_KINDS = {
+    "current_artifact": ("input", "output"),
+    "invalidate": ("input", "output", "schema_group"),
+    "own_only": ("input", "output", "schema_family"),
+    "path_set": ("input", "output"),
+}
+_PRESERVE_TARGET_ALLOWED_KINDS = {
+    "exact": ("input", "output", "schema_family"),
+    "structure": ("input", "output"),
+    "decisions": ("input", "output"),
+    "mapping": ("input", "output", "schema_family", "grounding"),
+    "vocabulary": ("enum", "input", "output", "schema_family"),
 }
 
 _REVIEW_REQUIRED_FIELD_NAMES = frozenset(
@@ -1653,7 +1668,7 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="current artifact",
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["current_artifact"],
                 )
                 if target.remainder or target.wildcard:
                     raise CompileError(
@@ -1691,7 +1706,7 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="invalidate",
-                    allowed_kinds=("input", "output", "schema_group"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["invalidate"],
                 )
                 if target.remainder or target.wildcard:
                     raise CompileError(
@@ -2393,7 +2408,12 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=f"agent {agent_name} workflow",
                 )
-            return self._compile_resolved_workflow(spec.slot_body)
+            return self._compile_resolved_workflow(
+                spec.slot_body,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=f"agent {agent_name} {field.key}",
+            )
 
         if isinstance(field, model.InputsField):
             return self._compile_inputs_field(
@@ -2632,6 +2652,8 @@ class CompilationContext:
             return "outputs"
         if isinstance(field, model.AnalysisField):
             return "analysis"
+        if isinstance(field, model.DecisionField):
+            return f"decision:{_dotted_ref_name(field.value)}"
         if isinstance(field, model.SkillsField):
             return "skills"
         if isinstance(field, model.ReviewField):
@@ -4004,7 +4026,7 @@ class CompilationContext:
             purpose_body.extend(
                 [
                     "",
-                    "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
+                    "This skill is required for this role.",
                 ]
             )
         body.append(CompiledSection(title="Purpose", body=tuple(purpose_body)))
@@ -5639,18 +5661,17 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=self._law_stmt_name(item),
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["path_set"],
                 )
                 continue
             if isinstance(item, model.PreserveStmt):
-                allowed_kinds = ("enum",) if item.kind == "vocabulary" else ("input", "output")
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=f"preserve {item.kind}",
-                    allowed_kinds=allowed_kinds,
+                    allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS[item.kind],
                 )
 
     def _validate_review_gate_label(
@@ -6616,6 +6637,11 @@ class CompilationContext:
                 )
 
             for gate_branch in gate_branches:
+                if (
+                    branch.blocked_gate_present is not None
+                    and branch.blocked_gate_present != (gate_branch.blocked_gate_id is not None)
+                ):
+                    continue
                 resolved_branch = self._resolve_review_agreement_branch(
                     branch,
                     section_key=section.key,
@@ -7472,7 +7498,38 @@ class CompilationContext:
         unit: IndexedUnit,
     ) -> tuple[ReviewOutcomeBranch, ...]:
         if isinstance(stmt, (model.ReviewCurrentArtifactStmt, model.ReviewCurrentNoneStmt)):
-            return (replace(branch, currents=(*branch.currents, stmt)),)
+            if stmt.when_expr is None:
+                return (replace(branch, currents=(*branch.currents, stmt)),)
+            condition = self._evaluate_review_condition(
+                stmt.when_expr,
+                unit=unit,
+                branch=branch,
+            )
+            if condition is True:
+                return (replace(branch, currents=(*branch.currents, stmt)),)
+            if condition is False:
+                return (branch,)
+            true_branch = self._assume_review_outcome_condition(
+                branch,
+                stmt.when_expr,
+                expected=True,
+            )
+            false_branch = self._assume_review_outcome_condition(
+                branch,
+                stmt.when_expr,
+                expected=False,
+            )
+            branches: list[ReviewOutcomeBranch] = []
+            if true_branch is not None:
+                branches.append(replace(true_branch, currents=(*true_branch.currents, stmt)))
+            if false_branch is not None:
+                branches.append(false_branch)
+            if branches:
+                return tuple(branches)
+            return (
+                replace(branch, currents=(*branch.currents, stmt)),
+                branch,
+            )
         if isinstance(stmt, model.ReviewCarryStmt):
             return (replace(branch, carries=(*branch.carries, stmt)),)
         if isinstance(stmt, model.ReviewOutcomeRouteStmt):
@@ -7510,6 +7567,29 @@ class CompilationContext:
                 branch,
             )
         return (branch,)
+
+    def _assume_review_outcome_condition(
+        self,
+        branch: ReviewOutcomeBranch,
+        expr: model.Expr,
+        *,
+        expected: bool,
+    ) -> ReviewOutcomeBranch | None:
+        if (
+            isinstance(expr, model.ExprCall)
+            and expr.name in {"present", "missing"}
+            and len(expr.args) == 1
+            and isinstance(expr.args[0], model.ExprRef)
+            and expr.args[0].parts == ("blocked_gate",)
+        ):
+            blocked_gate_present = expected if expr.name == "present" else not expected
+            if (
+                branch.blocked_gate_present is not None
+                and branch.blocked_gate_present != blocked_gate_present
+            ):
+                return None
+            return replace(branch, blocked_gate_present=blocked_gate_present)
+        return None
 
     def _collect_review_outcome_match_branches(
         self,
@@ -7709,7 +7789,10 @@ class CompilationContext:
             and len(expr.args[0].parts) == 1
         ):
             field_name = expr.args[0].parts[0]
-            is_present = any(carry.field_name == field_name for carry in branch.carries)
+            if field_name == "blocked_gate" and branch.blocked_gate_present is not None:
+                is_present = branch.blocked_gate_present
+            else:
+                is_present = any(carry.field_name == field_name for carry in branch.carries)
             return is_present if expr.name == "present" else not is_present
         if isinstance(expr, model.ExprBinary):
             return self._evaluate_review_condition(expr, unit=unit, branch=branch)
@@ -8009,9 +8092,21 @@ class CompilationContext:
                 review_semantics=review_semantics,
             )
         if isinstance(item, model.ReviewCurrentArtifactStmt):
-            return [f"Current artifact: {self._display_ref(item.artifact_ref, unit=unit)}."]
+            text = f"Current artifact: {self._display_ref(item.artifact_ref, unit=unit)}."
+            if item.when_expr is not None:
+                text = (
+                    f"When {self._render_condition_expr(item.when_expr, unit=unit)}, "
+                    f"{_lowercase_initial(text)}"
+                )
+            return [text]
         if isinstance(item, model.ReviewCurrentNoneStmt):
-            return ["There is no current artifact for this outcome."]
+            text = "There is no current artifact for this outcome."
+            if item.when_expr is not None:
+                text = (
+                    f"When {self._render_condition_expr(item.when_expr, unit=unit)}, "
+                    f"{_lowercase_initial(text)}"
+                )
+            return [text]
         if isinstance(item, model.ReviewCarryStmt):
             return [
                 f"Carry {_humanize_key(item.field_name).lower()}: {self._render_expr(item.expr, unit=unit)}."
@@ -9349,8 +9444,6 @@ class CompilationContext:
         unit: IndexedUnit,
     ) -> bool:
         markdown_shape_names = {"MarkdownDocument", "AgentOutputDocument"}
-        if isinstance(value, model.AddressableRef):
-            return False
         if isinstance(value, str):
             return value in markdown_shape_names
         if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
@@ -9377,8 +9470,6 @@ class CompilationContext:
         unit: IndexedUnit,
     ) -> bool:
         comment_shape_names = {"Comment", "CommentText"}
-        if isinstance(value, model.AddressableRef):
-            return False
         if isinstance(value, str):
             return value in comment_shape_names
         if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
@@ -13970,6 +14061,8 @@ class CompilationContext:
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DecisionDecl):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.GroundingDecl):
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaDecl):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentDecl):
@@ -14859,7 +14952,7 @@ class CompilationContext:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label="workflow law",
-                        allowed_kinds=("input", "output", "schema_group"),
+                        allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["invalidate"],
                     ):
                         raise CompileError(
                             f"The current artifact cannot be invalidated in the same active branch in {owner_label}"
@@ -14907,6 +15000,7 @@ class CompilationContext:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label="workflow law",
+                        allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
                     ):
                         raise CompileError(
                             f"Owned and forbidden scope overlap in {owner_label}"
@@ -14920,6 +15014,7 @@ class CompilationContext:
                             agent_contract=agent_contract,
                             owner_label=owner_label,
                             statement_label="workflow law",
+                            allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS["exact"],
                         )
                         for path in own_target.paths
                     ):
@@ -15110,7 +15205,7 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="current artifact",
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["current_artifact"],
                 )
                 continue
             if isinstance(item, model.InvalidateStmt):
@@ -15120,17 +15215,27 @@ class CompilationContext:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label="invalidate",
-                    allowed_kinds=("input", "output", "schema_group"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["invalidate"],
                 )
                 continue
-            if isinstance(item, (model.OwnOnlyStmt, model.SupportOnlyStmt, model.IgnoreStmt, model.ForbidStmt)):
+            if isinstance(item, model.OwnOnlyStmt):
                 self._validate_path_set_roots(
                     item.target,
                     unit=unit,
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     statement_label=self._law_stmt_name(item),
-                    allowed_kinds=("input", "output"),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
+                )
+                continue
+            if isinstance(item, (model.SupportOnlyStmt, model.IgnoreStmt, model.ForbidStmt)):
+                self._validate_path_set_roots(
+                    item.target,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=owner_label,
+                    statement_label=self._law_stmt_name(item),
+                    allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["path_set"],
                 )
                 continue
             if isinstance(item, model.PreserveStmt):
@@ -15141,7 +15246,7 @@ class CompilationContext:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label="preserve vocabulary",
-                        allowed_kinds=("enum",),
+                        allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS["vocabulary"],
                     )
                 else:
                     self._validate_path_set_roots(
@@ -15150,7 +15255,7 @@ class CompilationContext:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         statement_label=f"preserve {item.kind}",
-                        allowed_kinds=("input", "output"),
+                        allowed_kinds=_PRESERVE_TARGET_ALLOWED_KINDS[item.kind],
                     )
                 continue
             if isinstance(item, model.LawRouteStmt):
@@ -15377,7 +15482,7 @@ class CompilationContext:
             agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="current artifact",
-            allowed_kinds=("input", "output"),
+            allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["current_artifact"],
         )
         if target.remainder or target.wildcard:
             raise CompileError(
@@ -15415,7 +15520,7 @@ class CompilationContext:
             agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="invalidate",
-            allowed_kinds=("input", "output", "schema_group"),
+            allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["invalidate"],
         )
         if target.remainder or target.wildcard:
             raise CompileError(
@@ -15493,7 +15598,7 @@ class CompilationContext:
             agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="current artifact",
-            allowed_kinds=("input", "output"),
+            allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["current_artifact"],
         )
         for path in target.paths:
             resolved = self._validate_law_path_root(
@@ -15502,16 +15607,26 @@ class CompilationContext:
                 agent_contract=agent_contract,
                 owner_label=owner_label,
                 statement_label="own only",
-                allowed_kinds=("input", "output"),
+                allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
             )
             if (
-                resolved.unit.module_parts != current_root.unit.module_parts
-                or resolved.decl.name != current_root.decl.name
+                resolved.unit.module_parts == current_root.unit.module_parts
+                and isinstance(resolved.decl, type(current_root.decl))
+                and self._law_path_decl_identity(resolved.decl)
+                == self._law_path_decl_identity(current_root.decl)
             ):
-                raise CompileError(
-                    f"own only must stay rooted in the current artifact in {owner_label}: "
-                    f"{'.'.join(path.parts)}"
-                )
+                continue
+            if isinstance(resolved.decl, model.OutputDecl):
+                output_key = (resolved.unit.module_parts, resolved.decl.name)
+                if output_key in agent_contract.outputs:
+                    continue
+            if isinstance(resolved.decl, SchemaFamilyTarget):
+                continue
+            raise CompileError(
+                "own only must stay rooted in the current artifact, an emitted output "
+                f"surface, or a declared schema family in {owner_label}: "
+                f"{'.'.join(path.parts)}"
+            )
 
     def _validate_path_set_roots(
         self,
@@ -15552,9 +15667,12 @@ class CompilationContext:
             statement_label=statement_label,
             allowed_kinds=allowed_kinds,
         )
-        if isinstance(resolved.decl, (model.EnumDecl, ResolvedSchemaGroup)) and resolved.remainder:
+        if isinstance(
+            resolved.decl,
+            (model.EnumDecl, SchemaFamilyTarget, ResolvedSchemaGroup, model.GroundingDecl),
+        ) and resolved.remainder:
             raise CompileError(
-                f"{statement_label} enum and schema-group targets must not descend through fields in {owner_label}: "
+                f"{statement_label} enum, schema-family, schema-group, and grounding targets must not descend through fields in {owner_label}: "
                 f"{'.'.join(path.parts)}"
             )
         return resolved
@@ -15621,6 +15739,41 @@ class CompilationContext:
                             wildcard=path.wildcard,
                         )
                     )
+            if "grounding" in allowed_kinds:
+                grounding_decl = lookup_unit.groundings_by_name.get(ref.declaration_name)
+                if grounding_decl is not None:
+                    matches.append(
+                        ResolvedLawPath(
+                            unit=lookup_unit,
+                            decl=grounding_decl,
+                            remainder=remainder,
+                            wildcard=path.wildcard,
+                        )
+                    )
+            if "schema_family" in allowed_kinds:
+                schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
+                if schema_decl is not None and remainder:
+                    resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                    family_items_by_key = {
+                        "sections": resolved_schema.sections,
+                        "gates": resolved_schema.gates,
+                        "artifacts": resolved_schema.artifacts,
+                        "groups": resolved_schema.groups,
+                    }
+                    family_items = family_items_by_key.get(remainder[0])
+                    if family_items is not None:
+                        matches.append(
+                            ResolvedLawPath(
+                                unit=lookup_unit,
+                                decl=SchemaFamilyTarget(
+                                    family_key=remainder[0],
+                                    title=_SCHEMA_FAMILY_TITLES[remainder[0]],
+                                    items=family_items,
+                                ),
+                                remainder=remainder[1:],
+                                wildcard=path.wildcard,
+                            )
+                        )
             if "schema_group" in allowed_kinds:
                 schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
                 if schema_decl is not None and len(remainder) >= 2 and remainder[0] == "groups":
@@ -15652,7 +15805,7 @@ class CompilationContext:
             return unique_matches[0]
         if len(unique_matches) > 1:
             choices = ", ".join(
-                _dotted_decl_name(match.unit.module_parts, match.decl.name)
+                _dotted_decl_name(match.unit.module_parts, self._law_path_decl_identity(match.decl))
                 for match in unique_matches
             )
             raise CompileError(
@@ -15736,6 +15889,12 @@ class CompilationContext:
                 continue
             if kind == "enum":
                 labels.append("declared enum")
+                continue
+            if kind == "grounding":
+                labels.append("declared grounding")
+                continue
+            if kind == "schema_family":
+                labels.append("declared schema family")
                 continue
             if kind == "schema_group":
                 labels.append("declared schema group")
@@ -15899,8 +16058,15 @@ class CompilationContext:
 
     def _law_path_decl_identity(
         self,
-        decl: model.InputDecl | model.OutputDecl | model.EnumDecl | ResolvedSchemaGroup,
+        decl: model.InputDecl
+        | model.OutputDecl
+        | model.EnumDecl
+        | model.GroundingDecl
+        | SchemaFamilyTarget
+        | ResolvedSchemaGroup,
     ) -> str:
+        if isinstance(decl, SchemaFamilyTarget):
+            return decl.family_key
         if isinstance(decl, ResolvedSchemaGroup):
             return decl.key
         return decl.name
@@ -16022,7 +16188,7 @@ class CompilationContext:
                 agent_contract=agent_contract,
                 owner_label="workflow law",
                 statement_label="invalidate",
-                allowed_kinds=("input", "output", "schema_group"),
+                allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["invalidate"],
             )
         except CompileError:
             return (".".join(path.parts),)

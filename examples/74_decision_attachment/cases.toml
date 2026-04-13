@@ -56,3 +56,33 @@ message_contains = [
   "decision declaration",
   "MissingDecision",
 ]
+
+[[cases]]
+name = "multiple decision attachments render both decision scaffolds in order"
+status = "active"
+kind = "render_contract"
+agent = "MultiDecisionDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Follow Playable Strategy Choice and Rep Choice before you lock the plan.",
+  "",
+  "## Choose",
+  "",
+  "Use both attached decision scaffolds before you freeze the route and reps.",
+  "",
+  "## Playable Strategy Choice",
+  "",
+  "Build at least 3 candidates before choosing a winner.",
+  "Ranking is required.",
+  "Explicit rejects are required.",
+  "Choose exactly one winner.",
+  "Rank by Teaching Fit, Product Reality, Capstone Coherence, and Downstream Preservability.",
+  "",
+  "## Rep Choice",
+  "",
+  "A candidate pool is required.",
+  "Kept candidates are required.",
+  "Rejected candidates are required.",
+  "Sequencing proof is required.",
+  "Winner reasons are required.",
+]

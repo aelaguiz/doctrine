@@ -18,7 +18,7 @@ Core job: turn an approved lesson manifest into grounded reader copy without cha
 
 Ground reader-facing domain wording against current source truth.
 
-This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.
+This skill is required for this role.
 
 ##### Use When
 

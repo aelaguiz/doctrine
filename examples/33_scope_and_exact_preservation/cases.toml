@@ -98,7 +98,7 @@ message_contains = [
 ]
 
 [[cases]]
-name = "owned paths must stay rooted in the current artifact"
+name = "owned paths must stay rooted in the allowed modeled surface"
 status = "active"
 kind = "compile_fail"
 prompt = "prompts/INVALID_OWN_PATH_NOT_ROOTED_IN_CURRENT_ARTIFACT.prompt"
@@ -106,7 +106,7 @@ agent = "InvalidOwnPathNotRootedInCurrentArtifact"
 exception_type = "CompileError"
 error_code = "E351"
 message_contains = [
-  "Owned scope is outside the current artifact",
+  "Owned scope is outside the allowed modeled surface",
   "PrimaryManifest.title",
 ]
 

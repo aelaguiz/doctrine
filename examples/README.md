@@ -109,7 +109,7 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `43_review_basic_verdict_and_route_coupling` | Smallest first-class `review`. |
 | `44_review_handoff_first_block_gates` | `block` gates and `blocked_gate`. |
 | `45_review_contract_gate_export_and_exact_failures` | Exact contract gate export and faithful `failing_gates`. |
-| `46_review_current_truth_and_trust_surface` | Review current truth on trusted output carriers. |
+| `46_review_current_truth_and_trust_surface` | Review current truth on trusted output carriers, including blocked-gate guarded currentness. |
 | `47_review_multi_subject_mode_and_trigger_carry` | Multi-subject review plus carried mode and trigger reason. |
 | `48_review_inheritance_and_explicit_patching` | `abstract review` and explicit review patching. |
 | `49_review_capstone` | Full review capstone with blocked review, exact gates, carried state, and current truth. |

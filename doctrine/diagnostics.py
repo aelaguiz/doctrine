@@ -1538,24 +1538,26 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
-        re.compile(r"^own only must stay rooted in the current artifact in (?P<owner>.+): (?P<path>.+)$"),
+        re.compile(
+            r"^own only must stay rooted in the current artifact, an emitted output surface, or a declared schema family in (?P<owner>.+): (?P<path>.+)$"
+        ),
         "E351",
-        "Owned scope is outside the current artifact",
+        "Owned scope is outside the allowed modeled surface",
         lambda match: (
-            f"Owned scope `{match.group('path')}` is not rooted in the current artifact in "
-            f"{match.group('owner')}."
+            f"Owned scope `{match.group('path')}` is not rooted in the current artifact, "
+            f"an emitted output surface, or a declared schema family in {match.group('owner')}."
         ),
         (),
     ),
     (
         re.compile(
-            r"^own only target must resolve to a (?:declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output) in (?P<owner>.+): (?P<path>.+)$"
+            r"^own only target must resolve to a (?:declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family) in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E352",
         "Owned scope target is unknown",
         lambda match: (
             f"Owned scope target `{match.group('path')}` must resolve to a declared or bound "
-            f"concrete-turn input or output in {match.group('owner')}."
+            f"concrete-turn input or output or a declared schema family in {match.group('owner')}."
         ),
         (),
     ),
@@ -1579,7 +1581,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^preserve (?P<kind>structure|mapping|vocabulary) target must resolve to a (?P<label>declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared enum) in (?P<owner>.+): (?P<path>.+)$"
+            r"^preserve (?P<kind>structure|mapping|vocabulary) target must resolve to a (?P<label>declared input or output|declared or bound concrete-turn input or declared or bound concrete-turn output|declared enum|declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family or declared grounding|declared enum or declared or bound concrete-turn input or declared or bound concrete-turn output or declared schema family) in (?P<owner>.+): (?P<path>.+)$"
         ),
         "E355",
         "Preserve target is unknown",

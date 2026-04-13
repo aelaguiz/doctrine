@@ -42,3 +42,49 @@ message_contains = [
   "Route target must be a concrete agent",
   "ReviewLead",
 ]
+
+[[cases]]
+name = "preserve mapping can keep grounding source-to-target maps stable"
+status = "active"
+kind = "render_contract"
+agent = "ClaimGroundingMappingDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep the grounding source-to-target map stable during a narrow wording pass.",
+  "",
+  "## Preserve Grounding Mapping",
+  "",
+  "Current artifact: Repo Facts.",
+  "",
+  "Preserve mapping `ClaimGrounding`.",
+  "",
+  "## Inputs",
+  "",
+  "### Repo Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "Use the host facts that ground the current wording claim.",
+  "",
+  "## Outputs",
+  "",
+  "### Coordination Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the one artifact that is current now.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "#### Standalone Read",
+  "",
+  "A downstream owner can read this output alone and know what remains current.",
+]

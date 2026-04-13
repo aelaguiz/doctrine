@@ -391,7 +391,7 @@ Read the review examples in this order:
 - `45_review_contract_gate_export_and_exact_failures`: exact contract gate
   export and faithful `failing_gates`
 - `46_review_current_truth_and_trust_surface`: review-owned current truth on a
-  trusted output carrier
+  trusted output carrier, including blocked-gate guarded currentness
 - `47_review_multi_subject_mode_and_trigger_carry`: subject families and
   carried downstream state
 - `48_review_inheritance_and_explicit_patching`: `abstract review` plus

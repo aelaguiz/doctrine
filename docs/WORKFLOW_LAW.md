@@ -155,9 +155,19 @@ law:
 Use these statements for different jobs:
 
 - `own only`: the writable scope for the active branch
+  - owned paths may stay rooted in the current artifact, an emitted output
+    surface the concrete turn owns, or a declared schema family when the
+    writable contract is a modeled schema boundary rather than portable
+    current truth
 - `preserve exact`: exact stability outside owned scope
 - `preserve structure`, `preserve decisions`, `preserve mapping`,
   `preserve vocabulary`: non-exact truth that must remain stable
+  - `preserve mapping` may target concrete-turn inputs or outputs, declared
+    schema families such as `ContractSchema.gates`, and declared `grounding`
+    protocols when the source-to-target map itself is the stable contract.
+  - `preserve vocabulary` may target enums, concrete-turn inputs or outputs,
+    and declared schema families when stable labels or gate sets must stay
+    fixed.
 - `forbid`: narrow scope the role must not modify
 - `support_only ... for comparison`: comparison help that does not become truth
 - `ignore ... for truth|comparison|rewrite_evidence`: declared exclusions from
@@ -165,7 +175,8 @@ Use these statements for different jobs:
 
 Compiler-owned checks keep this honest:
 
-- owned paths must stay rooted in the current artifact
+- owned paths must stay rooted in the current artifact, an emitted output
+  surface the concrete turn owns, or a declared schema family
 - owned paths must stay addressable
 - overlaps are checked after normalization, not by raw authored text alone
 - `own only` cannot overlap `preserve exact` without an explicit `except`

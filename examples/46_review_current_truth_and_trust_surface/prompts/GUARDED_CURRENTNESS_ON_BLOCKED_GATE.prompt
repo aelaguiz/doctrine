@@ -1,0 +1,112 @@
+# This file proves that review-owned currentness can switch inline on blocked
+# rejects without forcing a nested `when` or `match` wrapper around the whole
+# outcome body.
+
+input ProducerHandoff: "Producer Handoff"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the producer handoff that says whether review blocked before content review began."
+
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+    "Use the current draft specification as the reviewed artifact once content review begins."
+
+
+workflow CurrentTruthReviewContract: "Current Truth Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+
+agent ReviewLead:
+    role: "Own accepted draft follow-up."
+    workflow: "Follow Up"
+        "Take the accepted draft to the next planning step."
+
+
+agent DraftAuthor:
+    role: "Repair blocked or rejected draft defects."
+    workflow: "Revise"
+        "Revise the same draft when review requests changes."
+
+
+output GuardedCurrentTruthReviewComment: "Guarded Current Truth Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the draft or requested changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged. When review blocks before content review starts, name the producer handoff instead of pretending the draft stayed current."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Summarize the parts of the draft or producer handoff the next owner must read first."
+
+    current_artifact: "Current Artifact" when present(current_artifact):
+        "Name the artifact that remains current after this review outcome."
+
+    next_owner: "Next Owner"
+        "Name the next owner, including {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when review blocks or rejects the draft."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        blocked_gate: "Blocked Gate" when present(blocked_gate):
+            "Name the first blocking gate when the review stopped before content review started."
+
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order, including the blocked gate when review stopped before content review started."
+
+    standalone_read: "Standalone Read"
+        "A downstream owner should be able to read this comment alone and understand whether review blocked before content review began, what remains current now when something remains current, who owns next, and which parts of the draft or producer handoff matter now."
+
+    trust_surface:
+        current_artifact when present(current_artifact)
+
+
+review GuardedCurrentTruthReview: "Guarded Current Truth Review"
+    subject: DraftSpec
+    contract: CurrentTruthReviewContract
+    comment_output: GuardedCurrentTruthReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        blocked_gate: failure_detail.blocked_gate
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    handoff_first: "Handoff First"
+        block "The producer handoff is incomplete." when ProducerHandoff.incomplete
+
+    current_truth_checks: "Current Truth Checks"
+        reject "The draft still leaves the core decision unclear." when DraftSpec.decision_unclear
+        accept "The shared review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact DraftSpec via GuardedCurrentTruthReviewComment.current_artifact
+        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current artifact DraftSpec via GuardedCurrentTruthReviewComment.current_artifact when missing(blocked_gate)
+        current none when present(blocked_gate)
+        route "Draft follow-up remains with DraftAuthor." -> DraftAuthor
+
+
+agent GuardedCurrentTruthReviewDemo:
+    role: "Keep blocked review currentness explicit without wrapping the whole outcome."
+    review: GuardedCurrentTruthReview
+    inputs: "Inputs"
+        ProducerHandoff
+        DraftSpec
+    outputs: "Outputs"
+        GuardedCurrentTruthReviewComment

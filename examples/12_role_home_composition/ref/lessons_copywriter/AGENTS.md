@@ -134,7 +134,7 @@ Stop when reader-facing copy and post-copy validation are explicit enough for re
 
 Ground reader-facing domain wording against current source truth.
 
-This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.
+This skill is required for this role.
 
 ##### Use When
 
