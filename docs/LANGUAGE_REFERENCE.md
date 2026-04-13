@@ -1,10 +1,10 @@
 # Shipped Language Reference
 
-Doctrine prompt files compile structured source into runtime Markdown. The
-authoring surface is a small set of named declarations plus explicit
-composition and fail-loud compiler rules. The shipped compiler reuses loaded
-prompt graphs so larger prompt families remain practical, not just toy-sized
-examples.
+Doctrine prompt files compile structured source into runtime Markdown and
+skill-package trees. The authoring surface is a small set of named
+declarations plus explicit composition and fail-loud compiler rules. The
+shipped compiler reuses loaded prompt graphs so larger prompt families remain
+practical, not just toy-sized examples.
 
 For the motivation behind the project, start with [WHY_DOCTRINE.md](WHY_DOCTRINE.md).
 For the numbered teaching corpus, use [../examples/README.md](../examples/README.md).
@@ -13,6 +13,7 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 - A prompt file is the source of truth.
 - Concrete agents are the runtime entrypoints.
+- Skill packages are filesystem emit roots.
 - Abstract declarations exist for reuse and inheritance, not direct emission.
 - Keys are compiler identities. Authored titles and prose are the human-facing
   runtime surface.
@@ -27,19 +28,23 @@ A prompt file may contain imports and any mix of shipped declarations:
 - `agent`, `abstract agent`
 - `workflow`, `route_only`, `grounding`
 - `review`, `review_family`, `abstract review`
+- `skill package`
 - `skill`, `skills`
 - `input`, `inputs`, `input source`
 - `output`, `outputs`, `output target`, `output shape`, `json schema`
 - `enum`
 
-The normal authoring entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The
-emit pipeline compiles each concrete agent in the entrypoint into a Markdown
-runtime artifact whose basename matches the entrypoint stem.
-Doctrine does that work through a shared compilation session, so module loading
-and indexing happen once per entrypoint and batch emit or verification surfaces
-can fan out safely while preserving deterministic output order.
+The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
+skill-package entrypoint is `SKILL.prompt`. `emit_docs` compiles concrete
+agents from the agent entrypoints into runtime Markdown artifacts whose
+basename matches the entrypoint stem. `emit_skill` compiles one top-level
+`skill package` from `SKILL.prompt` into `SKILL.md` plus bundled source-root
+files. Doctrine does that work through shared compilation and indexing so
+module loading happens once per entrypoint and batch emit or verification
+surfaces can fan out safely while preserving deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
-[EMIT_GUIDE.md](EMIT_GUIDE.md).
+[EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
+[SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
 
 ## Agents
 
@@ -432,6 +437,46 @@ Skill relationships are authored where they are used:
   `definitions`, `callout`, or `code`
 - inherited `skills` blocks with the same explicit patching model used
   elsewhere
+- when Doctrine should own a real skill-package filesystem tree instead of an
+  inline reusable capability, use `skill package` in `SKILL.prompt`
+
+## Skill Packages
+
+Doctrine also ships a first-class package surface for real skill bundles.
+
+```prompt
+skill package GreetingSkill: "Greeting Skill"
+    metadata:
+        name: "greeting-skill"
+        description: "Write short, friendly greetings that sound human."
+        version: "1.0.0"
+        license: "MIT"
+    "Write short, friendly greetings that fit the current conversation."
+```
+
+Important rules:
+
+- `SKILL.prompt` is the package entrypoint.
+- A package entrypoint owns one top-level `skill package`.
+- The `skill package` body uses the same record and readable-block family used
+  by other readable markdown-bearing surfaces.
+- `metadata:` currently accepts `name`, `description`, `version`, and
+  `license`.
+- If `metadata.name` is omitted, the emitted frontmatter falls back to the
+  package declaration key.
+- The directory that contains `SKILL.prompt` is the package source root.
+- `SKILL.prompt` compiles to `SKILL.md`.
+- Ordinary bundled UTF-8 text files beside or below `SKILL.prompt` emit under
+  the same relative paths, so relative Markdown links keep working after emit.
+- Bundled agent prompts under `agents/**/*.prompt` compile to markdown
+  companions under the same relative paths, with `.prompt` replaced by `.md`.
+- Other descendant prompt-bearing subtrees stay compiler-owned; Doctrine does
+  not copy `.prompt` files through as ordinary bundle files.
+- Reserved-path and case-collision errors fail loudly. `SKILL.md` is
+  compiler-owned output, not an authored source file.
+- Use inline `skill` and `skills` when the capability only needs reusable
+  semantics inside agent doctrine. Use `skill package` when Doctrine should
+  author and emit the package tree itself.
 
 ## Inputs And Outputs
 
@@ -537,6 +582,8 @@ Important rules:
 - Absolute and relative imports both keep typed declaration identity.
 - Relative imports stay rooted in the importing module's own `prompts/` tree.
   They do not hop across configured roots.
+- `SKILL.prompt` uses the same import rules, including bundled package modules
+  such as `agents.cold_reviewer`.
 - Imported symbols are still used through normal declaration refs such as
   `shared.contracts.ReviewContract`.
 - Duplicate dotted modules across configured roots fail loudly instead of using

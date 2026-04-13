@@ -7,8 +7,10 @@ from pathlib import Path
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import (
+    DOCS_ENTRYPOINTS,
     EmitTarget,
     display_path,
+    ensure_supported_entrypoint,
     emit_error,
     entrypoint_relative_dir,
     load_emit_targets,
@@ -51,6 +53,11 @@ def emit_target_flow(
     output_dir_override: Path | None = None,
     include_svg: bool = True,
 ) -> tuple[Path, ...]:
+    ensure_supported_entrypoint(
+        target.entrypoint,
+        allowed_entrypoints=DOCS_ENTRYPOINTS,
+        owner_label=f"emit_flow target `{target.name}`",
+    )
     try:
         prompt_file = parse_file(target.entrypoint)
     except DoctrineError as exc:
@@ -198,6 +205,7 @@ def _resolve_requested_targets(
                 start_dir=Path.cwd(),
                 entrypoint=args.entrypoint,
                 output_dir=args.output_dir,
+                allowed_entrypoints=DOCS_ENTRYPOINTS,
             ),
         )
 

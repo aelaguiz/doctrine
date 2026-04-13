@@ -16,6 +16,7 @@ from doctrine.diagnostics import DoctrineError, EmitError
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
+from doctrine.emit_skill import emit_target_skill
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown, render_readable_block
 
@@ -447,9 +448,9 @@ def _load_case(
         raw_case, "message_contains", case_index=case_index
     )
 
-    agent: str | None = None
-    if kind == "compile_fail":
-        agent = _require_str(raw_case, "agent", case_index=case_index)
+    agent = raw_case.get("agent")
+    if agent is not None and not isinstance(agent, str):
+        raise ManifestError(f"cases[{case_index}].agent must be a string when provided.")
 
     return CaseSpec(
         manifest_path=manifest_path,
@@ -588,8 +589,11 @@ def _run_build_contract(case: CaseSpec) -> CaseResult:
     with tempfile.TemporaryDirectory() as temp_dir:
         actual_root = Path(temp_dir)
         try:
-            emit_target(target, output_dir_override=actual_root)
-            if _build_ref_has_flow_artifacts(expected_root):
+            if target.entrypoint.name == "SKILL.prompt":
+                emit_target_skill(target, output_dir_override=actual_root)
+            else:
+                emit_target(target, output_dir_override=actual_root)
+            if target.entrypoint.name != "SKILL.prompt" and _build_ref_has_flow_artifacts(expected_root):
                 emit_target_flow(
                     target,
                     output_dir_override=actual_root,
@@ -618,13 +622,23 @@ def _run_compile_fail(
     session_cache: _CompilationSessionCache | None = None,
 ) -> CaseResult:
     try:
+        active_session: CompilationSession
         if session_cache is not None:
-            session_cache.get(case.prompt_path).compile_agent(case.agent or "")
+            active_session = session_cache.get(case.prompt_path)
         elif session is not None:
-            session.compile_agent(case.agent or "")
+            active_session = session
         else:
             prompt_file = parse_file(case.prompt_path)
-            compile_prompt(prompt_file, case.agent or "")
+            active_session = CompilationSession(prompt_file)
+
+        if case.agent is not None:
+            active_session.compile_agent(case.agent)
+        elif active_session.root_unit.skill_packages_by_name:
+            active_session.compile_skill_package()
+        else:
+            raise VerificationError(
+                "compile_fail case omitted `agent`, but the prompt does not define a skill package."
+            )
     except Exception as exc:
         _assert_expected_exception(case, exc)
         return CaseResult(case=case, result="PASS", detail="compile failed as expected")

@@ -64,6 +64,9 @@
       "include": "#skillEntry"
     },
     {
+      "include": "#skillPackage"
+    },
+    {
       "include": "#skill"
     },
     {
@@ -179,6 +182,9 @@
     },
     {
       "include": "#reviewFieldsField"
+    },
+    {
+      "include": "#metadataField"
     },
     {
       "include": "#reviewOutcomeField"
@@ -611,6 +617,23 @@
           "name": "entity.name.type.doctrine"
         },
         "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "skillPackage": {
+      "match": "^(\\s*)(skill)(\\s+)(package)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "6": {
+          "name": "entity.name.type.doctrine"
+        },
+        "8": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
@@ -1283,6 +1306,17 @@
     },
     "reviewFieldsField": {
       "match": "^(\\s*)(fields)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "metadataField": {
+      "match": "^(\\s*)(metadata)(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.other.field.doctrine"

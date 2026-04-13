@@ -10,6 +10,7 @@ const REPO_ROOT = process.env.DOCTRINE_REPO_ROOT
 async function run() {
   await activateDoctrineExtension();
   await testImportLinks();
+  await testSkillPackageImportLinks();
   await testCrossRootImportLinks();
   await testDefinitionProvider();
   await testCrossRootDefinitionProvider();
@@ -62,6 +63,32 @@ async function testImportLinks() {
     sourceLineFragment: "import chains.relative.entry",
     sourceText: "chains.relative.entry",
   });
+}
+
+async function testSkillPackageImportLinks() {
+  const document = await openPrompt(
+    "examples/96_skill_package_bundled_agents/prompts/SKILL.prompt",
+  );
+  const links = await vscode.commands.executeCommand(
+    "_executeLinkProvider",
+    document.uri,
+    100,
+  );
+
+  assert.ok(Array.isArray(links), "Skill package links should return an array.");
+
+  assertLinkTarget(
+    links,
+    document,
+    "agents.cold_reviewer",
+    "examples/96_skill_package_bundled_agents/prompts/agents/cold_reviewer.prompt",
+  );
+  assertLinkTarget(
+    links,
+    document,
+    "agents.escalation_router",
+    "examples/96_skill_package_bundled_agents/prompts/agents/escalation_router.prompt",
+  );
 }
 
 async function testDefinitionProvider() {

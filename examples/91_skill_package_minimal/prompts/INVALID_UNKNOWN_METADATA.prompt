@@ -1,0 +1,4 @@
+skill package BrokenSkill: "Broken Skill"
+    metadata:
+        nonsense: "Nope"
+    "This prompt should fail in the parser."

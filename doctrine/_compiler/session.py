@@ -11,6 +11,7 @@ from doctrine._compiler.types import (
     CompiledField,
     CompiledFinalOutputSpec,
     CompiledSection,
+    CompiledSkillPackage,
     FlowGraph,
 )
 from doctrine.diagnostics import CompileError, DoctrineError
@@ -102,6 +103,25 @@ class CompilationSession:
                 for agent_name in agent_names
             }
             return tuple(futures[agent_name].result() for agent_name in agent_names)
+
+    def compile_skill_package(
+        self,
+        package_name: str | None = None,
+    ) -> CompiledSkillPackage:
+        from doctrine._compiler.context import CompilationContext
+
+        try:
+            return CompilationContext(self).compile_skill_package(package_name)
+        except DoctrineError as exc:
+            label = (
+                f"compile skill package `{package_name}`"
+                if package_name is not None
+                else "compile skill package"
+            )
+            raise exc.prepend_trace(
+                label,
+                location=path_location(self.root_unit.prompt_file.source_path),
+            ).ensure_location(path=self.root_unit.prompt_file.source_path)
 
     def compile_readable_declaration(
         self, declaration_kind: str, declaration_name: str

@@ -1,27 +1,31 @@
 # Emit Guide
 
-Doctrine ships two emit commands that share one prompts-root-aware emit
+Doctrine ships three emit commands that share one prompts-root-aware emit
 pipeline:
 
 - `doctrine.emit_docs` writes the runtime Markdown tree plus a versioned
   machine-readable companion contract for each concrete emitted agent.
+- `doctrine.emit_skill` writes compiled `SKILL.md` package trees plus bundled
+  source-root companion files.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
 
 Use `emit_docs` when you need the compiled runtime prompt surface and its
-machine-readable final-output metadata companion. Use `emit_flow` when you need
-a reviewable graph of how declared inputs, concrete agents, outputs, and route
-edges fit together for one entrypoint.
+machine-readable final-output metadata companion. Use `emit_skill` when you
+need Doctrine to emit a real skill-package tree from `SKILL.prompt`. Use
+`emit_flow` when you need a reviewable graph of how declared inputs, concrete
+agents, outputs, and route edges fit together for one entrypoint.
 
 Important mode split:
 
 - `emit_docs` runs on named targets from `pyproject.toml`.
+- `emit_skill` runs on named targets from `pyproject.toml`.
 - `emit_flow` can run on a named target or in direct quick-start mode with
   `--entrypoint` plus `--output-dir`.
 
-Both emit commands reuse one compilation session per entrypoint. `emit_docs`
-also compiles concrete root agents with safe default thread fan-out, while
-still writing outputs in deterministic authored order.
+All three emit commands reuse the same prompts-root-aware target plumbing.
+`emit_docs` also compiles concrete root agents with safe default thread
+fan-out, while still writing outputs in deterministic authored order.
 
 ## Prerequisites
 
@@ -39,7 +43,7 @@ npm ci
 
 Important details:
 
-- `emit_docs` only needs the Python environment.
+- `emit_docs` and `emit_skill` only need the Python environment.
 - `emit_flow` also needs a working local `node` runtime plus the pinned
   `@terrastruct/d2` package from `package-lock.json`.
 - `emit_flow` writes `.flow.d2` first and then renders `.flow.svg`. If the D2
@@ -58,6 +62,11 @@ Doctrine reads emit targets from `[tool.doctrine.emit.targets]` in
 name = "example_73_flow_visualizer_showcase"
 entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
 output_dir = "examples/73_flow_visualizer_showcase/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_91_skill_package_minimal"
+entrypoint = "examples/91_skill_package_minimal/prompts/SKILL.prompt"
+output_dir = "examples/91_skill_package_minimal/build"
 ```
 
 Each target field has one job:
@@ -68,11 +77,16 @@ Each target field has one job:
 
 Important rules:
 
-- `entrypoint` must point at `AGENTS.prompt` or `SOUL.prompt`.
+- `entrypoint` must point at `AGENTS.prompt`, `SOUL.prompt`, or
+  `SKILL.prompt`.
+- `emit_docs` accepts `AGENTS.prompt` or `SOUL.prompt`.
+- `emit_skill` accepts `SKILL.prompt`.
+- `emit_flow` remains agent and workflow oriented. It accepts
+  `AGENTS.prompt` or `SOUL.prompt` and rejects `SKILL.prompt`.
 - `entrypoint` must live under a `prompts/` tree. The emit pipeline preserves
   the subdirectory beneath that `prompts/` root.
 - `output_dir` must resolve to a directory path, not an existing file.
-- Multiple targets may exist in one repo, and both emit commands use the same
+- Multiple targets may exist in one repo, and all emit commands use the same
   target registry.
 
 ## Cross-Root Compile Config
@@ -108,6 +122,13 @@ uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 ```
 
+Emit compiled skill-package trees for one or more configured targets:
+
+```bash
+uv run --locked python -m doctrine.emit_skill --target example_91_skill_package_minimal
+uv run --locked python -m doctrine.emit_skill --target example_96_skill_package_bundled_agents
+```
+
 Emit one workflow data-flow graph from a configured target:
 
 ```bash
@@ -126,6 +147,7 @@ uv run --locked python -m doctrine.emit_flow \
 Useful CLI rules:
 
 - Repeat `--target` to emit multiple configured targets in one command.
+- `emit_docs` and `emit_skill` currently run on configured targets only.
 - `emit_flow` direct mode requires both `--entrypoint` and `--output-dir`.
 - `emit_flow` accepts either `--target` or direct mode, but not both at once.
 - If `--pyproject` is omitted, Doctrine walks upward from the current working
@@ -152,11 +174,12 @@ Direct mode keeps the same prompts-root validation and the same output layout
 rules as configured target mode. It only skips the named target lookup.
 Compile-time import search may widen through
 `[tool.doctrine.compile].additional_prompt_roots`, but emitted output placement
-still stays anchored to the entrypoint's own local `prompts/` root.
+still stays anchored to the entrypoint's own local `prompts/` root. `emit_docs`
+and `emit_skill` do not currently provide a direct quick-start mode.
 
 ## Output Layout
 
-Both emitters preserve the entrypoint's path beneath `prompts/`.
+All emitters preserve the entrypoint's path beneath `prompts/`.
 
 For runtime prompt output, Doctrine writes two files per concrete root agent:
 
@@ -176,6 +199,25 @@ entrypoint:
 <output_dir>/<entrypoint-relative-dir>/<ENTRYPOINT_STEM>.flow.svg
 ```
 
+For skill-package output, Doctrine writes one emitted tree per package
+entrypoint:
+
+```text
+<output_dir>/<entrypoint-relative-dir>/SKILL.md
+<output_dir>/<entrypoint-relative-dir>/<bundled-relative-path>
+```
+
+Important package rules:
+
+- `SKILL.prompt` compiles to `SKILL.md`.
+- The directory that contains `SKILL.prompt` is the package source root.
+- Ordinary bundled UTF-8 text files emit under the same relative paths from
+  that source root.
+- Bundled agent prompts under `agents/**/*.prompt` emit compiled markdown
+  companions under the same relative paths, with `.prompt` replaced by `.md`.
+- `SKILL.md` is compiler-owned emitted output, so authored bundled files may
+  not collide with that path.
+
 Concrete shipped examples:
 
 ```text
@@ -188,6 +230,12 @@ examples/07_handoffs/build/writing_specialist/AGENTS.contract.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
+
+examples/91_skill_package_minimal/build/SKILL.md
+examples/92_skill_package_references/build/references/checklist.md
+examples/93_skill_package_scripts/build/scripts/greet.py
+examples/95_skill_package_plugin_metadata/build/.codex-plugin/plugin.json
+examples/96_skill_package_bundled_agents/build/agents/cold_reviewer.md
 ```
 
 The companion contract is compiler-owned emitted truth. In v1 it carries:
@@ -250,10 +298,14 @@ If you changed emit diagnostics or the emit CLI error surface, also run:
 make verify-diagnostics
 ```
 
-The canonical checked-in build proofs live in `build_ref/` trees and may include
-compiled Markdown, companion `.contract.json` files, and target-scoped flow
-artifacts. The flagship checked-in flow proofs live in:
+The canonical checked-in build proofs live in `build_ref/` trees and may
+include compiled Markdown, `SKILL.md` package trees, companion
+`.contract.json` files, and target-scoped flow artifacts. `build_ref/` is
+verifier-owned checked-in proof, not part of Doctrine's public authoring model.
+Representative checked-in proofs live in:
 
+- `examples/91_skill_package_minimal/build_ref/SKILL.md`
+- `examples/96_skill_package_bundled_agents/build_ref/agents/cold_reviewer.md`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg`
 - `examples/36_invalidation_and_rebuild/build_ref/AGENTS.flow.d2`
@@ -267,7 +319,7 @@ Common emit failures:
   `pyproject.toml`.
 - `E503` or `E504`: Doctrine could not find or load the emit config. Run from
   the repo root or pass `--pyproject`.
-- `E510`: the target entrypoint is not `AGENTS.prompt` or `SOUL.prompt`.
+- `E510`: the target entrypoint does not match the emitter surface.
 - `E514`: the target entrypoint is not under a `prompts/` tree, so Doctrine
   cannot preserve the relative output layout.
 - `E515`: the pinned D2 dependency is missing. Run `npm ci`.

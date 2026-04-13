@@ -352,6 +352,13 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "metadataField",
+        ["    metadata:"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "reviewOutcomeField",
         ['    on_accept: "If Accepted"', "    on_reject:"],
         should_match=True,

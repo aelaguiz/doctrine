@@ -12,8 +12,10 @@ Each numbered example may contain:
 - `cases.toml`: manifest-backed proof used by `doctrine.verify_corpus`
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
-  including compiled Markdown trees, companion `.contract.json` files, and
-  target-scoped `.flow.{d2,svg}` artifacts
+  including compiled Markdown trees, `SKILL.md` package trees, companion
+  `.contract.json` files, and target-scoped `.flow.{d2,svg}` artifacts.
+  `build_ref/` is verifier-owned proof, not a compiler or authoring
+  convention.
 
 ## How To Read The Corpus
 
@@ -23,6 +25,9 @@ Each numbered example may contain:
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
 - Keep new examples narrow. One new idea per example is the design rule.
+- Package examples `91` through `98` use `SKILL.prompt` and teach the
+  source-root bundle model. They do not make `build_ref/` part of the public
+  authoring story.
 - Batch verification and emit commands are expected to stay scalable on this
   corpus without changing emitted language or manifest order.
 
@@ -68,10 +73,16 @@ Each numbered example may contain:
 - `87` through `90`: shared output-facing route semantics for ordinary
   workflow-law outputs, review comments, dedicated `route_only`, and split
   review `final_output:` contracts
+- `91` through `98`: first-class skill-package authoring with `SKILL.prompt`,
+  source-root bundle copy-through, runtime and plugin metadata roots, bundled
+  agent companions, larger compendium trees, and exact path and case
+  preservation
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
 reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
+For the shipped skill-package authoring guide, use
+[../docs/SKILL_PACKAGE_AUTHORING.md](../docs/SKILL_PACKAGE_AUTHORING.md).
 
 ## Corpus Index
 
@@ -167,6 +178,14 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
 | `89_route_only_shared_route_semantics` | Dedicated `route_only` lowers onto the same shared `route.*` output surface. |
 | `90_split_handoff_and_final_output_shared_route_semantics` | A durable review comment and a separate JSON `final_output:` may consume the same shared `route.*` truth without merging into one output. |
+| `91_skill_package_minimal` | Smallest `SKILL.prompt` and top-level `skill package` surface. |
+| `92_skill_package_references` | Ordinary bundled reference documents copied through from the package source root. |
+| `93_skill_package_scripts` | Ordinary bundled script files copied through from the package source root. |
+| `94_skill_package_runtime_metadata` | Runtime metadata roots such as `agents/openai.yaml` in the source-root bundle model. |
+| `95_skill_package_plugin_metadata` | Plugin-style split metadata roots such as `.codex-plugin/plugin.json`, `.app.json`, and `agents/openai.yaml`. |
+| `96_skill_package_bundled_agents` | Bundled `agents/**/*.prompt` modules that emit markdown companions. |
+| `97_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
+| `98_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
 
 ## Useful Commands
 
@@ -187,9 +206,14 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_skill --target example_91_skill_package_minimal
+uv run --locked python -m doctrine.emit_skill --target example_96_skill_package_bundled_agents
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 ```
 
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
 example. Its `build_ref/` tree includes compiled Markdown, companion contract
 JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.
+Examples `91` through `98` are the canonical checked-in skill-package gallery.
+Their `build_ref/` trees are expected emitted package proof, not public
+authoring input.

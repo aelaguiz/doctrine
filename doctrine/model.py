@@ -1351,6 +1351,22 @@ class SkillDecl:
 
 
 @dataclass(slots=True, frozen=True)
+class SkillPackageMetadata:
+    name: str | None = None
+    description: str | None = None
+    version: str | None = None
+    license: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageDecl:
+    name: str
+    title: str
+    items: tuple[RecordItem, ...]
+    metadata: SkillPackageMetadata
+
+
+@dataclass(slots=True, frozen=True)
 class EnumMember:
     key: str
     title: str
@@ -1390,6 +1406,7 @@ Declaration: TypeAlias = (
     | OutputShapeDecl
     | JsonSchemaDecl
     | SkillDecl
+    | SkillPackageDecl
     | EnumDecl
 )
 

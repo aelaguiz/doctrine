@@ -17,7 +17,9 @@ from doctrine.project_config import (
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
-SUPPORTED_ENTRYPOINTS = ("AGENTS.prompt", "SOUL.prompt")
+DOCS_ENTRYPOINTS = ("AGENTS.prompt", "SOUL.prompt")
+SKILL_ENTRYPOINTS = ("SKILL.prompt",)
+SUPPORTED_ENTRYPOINTS = DOCS_ENTRYPOINTS + SKILL_ENTRYPOINTS
 
 
 @dataclass(slots=True, frozen=True)
@@ -26,6 +28,31 @@ class EmitTarget:
     entrypoint: Path
     output_dir: Path
     project_config: ProjectConfig
+
+
+def _entrypoint_options_text(entrypoints: tuple[str, ...]) -> str:
+    if len(entrypoints) == 1:
+        return f"`{entrypoints[0]}`"
+    if len(entrypoints) == 2:
+        return f"`{entrypoints[0]}` or `{entrypoints[1]}`"
+    quoted = ", ".join(f"`{value}`" for value in entrypoints[:-1])
+    return f"{quoted}, or `{entrypoints[-1]}`"
+
+
+def ensure_supported_entrypoint(
+    entrypoint: Path,
+    *,
+    allowed_entrypoints: tuple[str, ...],
+    owner_label: str,
+) -> None:
+    if entrypoint.name in allowed_entrypoints:
+        return
+    raise emit_error(
+        "E510",
+        "Emit target entrypoint must match the emitter surface",
+        f"{owner_label} must point at {_entrypoint_options_text(allowed_entrypoints)}, got `{entrypoint.name}`.",
+        location=path_location(entrypoint),
+    )
 
 
 def resolve_pyproject_path(
@@ -110,13 +137,11 @@ def load_emit_targets(
             require_str(raw_target, "entrypoint", label=f"emit target {name}"),
             label=f"emit target {name} entrypoint",
         )
-        if entrypoint.name not in SUPPORTED_ENTRYPOINTS:
-            raise emit_error(
-                "E510",
-                "Emit target entrypoint must be AGENTS.prompt or SOUL.prompt",
-                f"Emit target `{name}` must point at an `AGENTS.prompt` or `SOUL.prompt` entrypoint, got `{entrypoint.name}`.",
-                location=path_location(entrypoint),
-            )
+        ensure_supported_entrypoint(
+            entrypoint,
+            allowed_entrypoints=SUPPORTED_ENTRYPOINTS,
+            owner_label=f"Emit target `{name}`",
+        )
 
         output_dir = resolve_config_path(
             config_dir,
@@ -147,6 +172,7 @@ def resolve_direct_emit_target(
     pyproject_path: str | Path | None = None,
     start_dir: str | Path | None = None,
     name: str | None = None,
+    allowed_entrypoints: tuple[str, ...] = SUPPORTED_ENTRYPOINTS,
 ) -> EmitTarget:
     base_dir = (Path(start_dir) if start_dir is not None else Path.cwd()).resolve()
     if pyproject_path is not None:
@@ -162,14 +188,11 @@ def resolve_direct_emit_target(
         str(entrypoint),
         label="direct emit entrypoint",
     )
-    if entrypoint_path.name not in SUPPORTED_ENTRYPOINTS:
-        raise emit_error(
-            "E510",
-            "Emit target entrypoint must be AGENTS.prompt or SOUL.prompt",
-            "Direct emit entrypoint must point at an `AGENTS.prompt` or `SOUL.prompt` file, "
-            f"got `{entrypoint_path.name}`.",
-            location=path_location(entrypoint_path),
-        )
+    ensure_supported_entrypoint(
+        entrypoint_path,
+        allowed_entrypoints=allowed_entrypoints,
+        owner_label="Direct emit entrypoint",
+    )
 
     # Reuse the same prompts-root validation the configured target path uses.
     entrypoint_relative_dir(entrypoint_path)

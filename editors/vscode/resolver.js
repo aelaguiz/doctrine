@@ -238,6 +238,7 @@ const DECLARATION_KIND = Object.freeze({
   OUTPUT_TARGET: "output_target",
   OUTPUT_SHAPE: "output_shape",
   JSON_SCHEMA: "json_schema",
+  SKILL_PACKAGE: "skill_package",
   SKILL: "skill",
   ENUM: "enum",
   RENDER_PROFILE: "render_profile",
@@ -406,6 +407,11 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     regex: new RegExp(
       `^\\s*json\\s+schema\\s+(${IDENTIFIER_PATTERN})\\s*:`,
     ),
+    nameGroup: 1,
+  },
+  {
+    kind: DECLARATION_KIND.SKILL_PACKAGE,
+    regex: new RegExp(`^\\s*skill\\s+package\\s+(${IDENTIFIER_PATTERN})\\s*:`),
     nameGroup: 1,
   },
   {

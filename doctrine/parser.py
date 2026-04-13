@@ -147,6 +147,27 @@ class DecisionItemPart:
 
 
 @dataclass(slots=True, frozen=True)
+class SkillPackageMetadataFieldPart:
+    key: str
+    value: str
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageMetadataBlockPart:
+    fields: tuple[SkillPackageMetadataFieldPart, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageBodyParts:
+    items: tuple[model.RecordItem, ...]
+    metadata: model.SkillPackageMetadata
+
+
+@dataclass(slots=True, frozen=True)
 class SchemaBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.SchemaItem, ...]
@@ -314,6 +335,38 @@ class ToAst(Transformer):
 
     def prompt_file(self, items):
         return model.PromptFile(declarations=tuple(items))
+
+    def _skill_package_metadata(
+        self,
+        fields: tuple[SkillPackageMetadataFieldPart, ...],
+    ) -> model.SkillPackageMetadata:
+        supported_keys = {"name", "description", "version", "license"}
+        values: dict[str, str] = {}
+        for field in fields:
+            if field.key not in supported_keys:
+                supported = ", ".join(sorted(supported_keys))
+                raise TransformParseFailure(
+                    f"Unknown skill package metadata field: {field.key}",
+                    hints=(
+                        f"Supported `metadata:` fields are {supported}.",
+                    ),
+                    line=field.line,
+                    column=field.column,
+                )
+            if field.key in values:
+                raise TransformParseFailure(
+                    f"Duplicate skill package metadata field: {field.key}",
+                    hints=("Keep exactly one value per `metadata:` field.",),
+                    line=field.line,
+                    column=field.column,
+                )
+            values[field.key] = field.value
+        return model.SkillPackageMetadata(
+            name=values.get("name"),
+            description=values.get("description"),
+            version=values.get("version"),
+            license=values.get("license"),
+        )
 
     @v_args(inline=True)
     def inheritance(self, parent_ref):
@@ -1908,6 +1961,15 @@ class ToAst(Transformer):
         return model.JsonSchemaDecl(name=name, title=title, items=tuple(items))
 
     @v_args(inline=True)
+    def skill_package_decl(self, name, title, body):
+        return model.SkillPackageDecl(
+            name=name,
+            title=title,
+            items=body.items,
+            metadata=body.metadata,
+        )
+
+    @v_args(inline=True)
     def skill_decl(self, name, title, items):
         return model.SkillDecl(name=name, title=title, items=tuple(items))
 
@@ -2847,9 +2909,50 @@ class ToAst(Transformer):
     def record_body(self, items):
         return tuple(items)
 
+    def skill_package_body(self, items):
+        record_items: list[model.RecordItem] = []
+        metadata = model.SkillPackageMetadata()
+        seen_metadata = False
+        for item in items:
+            if isinstance(item, SkillPackageMetadataBlockPart):
+                if seen_metadata:
+                    raise TransformParseFailure(
+                        "Skill packages may define `metadata:` only once.",
+                        hints=("Keep exactly one `metadata:` block per skill package.",),
+                        line=item.line,
+                        column=item.column,
+                )
+                metadata = self._skill_package_metadata(item.fields)
+                seen_metadata = True
+                continue
+            record_items.append(item)
+        return SkillPackageBodyParts(
+            items=tuple(record_items),
+            metadata=metadata,
+        )
+
     @v_args(inline=True)
     def record_text(self, value):
         return value
+
+    @v_args(meta=True)
+    def package_metadata_block(self, meta, items):
+        line, column = _meta_line_column(meta)
+        return SkillPackageMetadataBlockPart(
+            fields=tuple(items),
+            line=line,
+            column=column,
+        )
+
+    @v_args(meta=True, inline=True)
+    def package_metadata_item(self, meta, key, value):
+        line, column = _meta_line_column(meta)
+        return SkillPackageMetadataFieldPart(
+            key=key,
+            value=value,
+            line=line,
+            column=column,
+        )
 
     @v_args(inline=True)
     def record_readable_block(self, value):

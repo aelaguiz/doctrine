@@ -190,6 +190,21 @@ class CompiledAgent:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledSkillPackage:
+    name: str
+    title: str
+    frontmatter: tuple[tuple[str, str], ...]
+    root: CompiledSection
+    files: tuple["CompiledSkillPackageFile", ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledSkillPackageFile:
+    path: str
+    content: str
+
+
+@dataclass(slots=True, frozen=True)
 class FlowAgentNode:
     module_parts: tuple[str, ...]
     name: str

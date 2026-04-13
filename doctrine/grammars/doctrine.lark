@@ -33,6 +33,7 @@ prompt_file: _NL* declaration+ _NL*
             | output_shape_decl
             | output_decl
             | json_schema_decl
+            | skill_package_decl
             | skill_decl
             | enum_decl
             | abstract_agent
@@ -62,6 +63,7 @@ output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _
 output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_decl: "output" CNAME ":" string _NL _INDENT output_body _DEDENT
 json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
+skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
@@ -645,6 +647,12 @@ record_body: record_item+
             | record_readable_block
             | record_keyed_item
             | record_ref_item
+
+skill_package_body: skill_package_item+
+?skill_package_item: package_metadata_block
+                   | record_item
+package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDENT
+package_metadata_item: CNAME ":" string _NL?
 
 record_readable_block: record_section_block
                      | readable_nonsection_block

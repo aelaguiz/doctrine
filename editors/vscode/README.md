@@ -6,7 +6,8 @@ Repo-local VS Code language support for `.prompt` files.
 
 - registers `*.prompt` as the `doctrine` language
 - adds full TextMate colorization for the shipped Doctrine grammar, including
-  first-class `review` declarations and review-local semantic refs
+  first-class `review` declarations, top-level `skill package`, and
+  review-local semantic refs
 - supports Go to Definition and Ctrl/Cmd-click navigation on raw `import`
   paths
 - supports Go to Definition and Ctrl/Cmd-click across the full shipped
@@ -138,13 +139,18 @@ local editor is actually running the newest VSIX before changing the grammar.
 3. Reload the editor window.
 4. Open `examples/03_imports/prompts/AGENTS.prompt`.
 5. Open `examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt`.
-6. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
+6. Open `examples/96_skill_package_bundled_agents/prompts/SKILL.prompt`.
+7. Run `Developer: Inspect Editor Tokens and Scopes` on an import path to see
    the emitted scopes and the theme rule that matched.
-7. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
+8. Try Ctrl/Cmd-click on a raw import path and Go to Definition on one supported
    import path, one readable ref, one addressable path segment, one
    addressable `title` segment, one enum member, and one structural
    inheritance key.
-8. For the workflow-law ladder, smoke-check:
+9. For the skill-package surface, smoke-check
+   `examples/96_skill_package_bundled_agents/prompts/SKILL.prompt` for
+   `skill package` declaration highlighting and import-path clicks into bundled
+   agent prompts.
+10. For the workflow-law ladder, smoke-check:
    `examples/39_guarded_output_sections/prompts/AGENTS.prompt` for guarded
    headers and guarded path clicks,
    `examples/41_route_only_reroute_handoff/prompts/AGENTS.prompt` for routed
@@ -155,7 +161,7 @@ local editor is actually running the newest VSIX before changing the grammar.
    bound root clicks in `current artifact ... via ...`, and
    `examples/51_inherited_bound_io_roots/prompts/AGENTS.prompt` for inherited
    bound-root clicks.
-9. For the review ladder, smoke-check:
+11. For the review ladder, smoke-check:
    `examples/43_review_basic_verdict_and_route_coupling/prompts/AGENTS.prompt`
    for `review:` slot clicks and top-level review colorization,
    `examples/47_review_multi_subject_mode_and_trigger_carry/prompts/AGENTS.prompt`
@@ -165,7 +171,7 @@ local editor is actually running the newest VSIX before changing the grammar.
    carrier paths, plus
    `examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt` for
    lower-case review carrier roots and carried-field path clicks.
-10. For the second-wave ladder, smoke-check:
+12. For the second-wave ladder, smoke-check:
    `examples/54_analysis_attachment/prompts/AGENTS.prompt` for `analysis:`
    slot clicks and `ReleaseAnalysis:stages.title`,
    `examples/74_decision_attachment/prompts/AGENTS.prompt` for `decision:`

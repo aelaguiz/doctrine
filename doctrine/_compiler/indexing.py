@@ -81,6 +81,7 @@ class IndexedUnit:
     output_shapes_by_name: dict[str, model.OutputShapeDecl]
     json_schemas_by_name: dict[str, model.JsonSchemaDecl]
     skills_by_name: dict[str, model.SkillDecl]
+    skill_packages_by_name: dict[str, model.SkillPackageDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
@@ -189,6 +190,7 @@ def index_unit(
     output_shapes_by_name: dict[str, model.OutputShapeDecl] = {}
     json_schemas_by_name: dict[str, model.JsonSchemaDecl] = {}
     skills_by_name: dict[str, model.SkillDecl] = {}
+    skill_packages_by_name: dict[str, model.SkillPackageDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
 
@@ -276,6 +278,10 @@ def index_unit(
             _register_decl(skills_by_name, declaration.name, module_parts)
             skills_by_name[declaration.name] = declaration
             continue
+        if isinstance(declaration, model.SkillPackageDecl):
+            _register_decl(skill_packages_by_name, declaration.name, module_parts)
+            skill_packages_by_name[declaration.name] = declaration
+            continue
         if isinstance(declaration, model.EnumDecl):
             _register_decl(enums_by_name, declaration.name, module_parts)
             _validate_enum_decl(
@@ -323,6 +329,7 @@ def index_unit(
         output_shapes_by_name=output_shapes_by_name,
         json_schemas_by_name=json_schemas_by_name,
         skills_by_name=skills_by_name,
+        skill_packages_by_name=skill_packages_by_name,
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,

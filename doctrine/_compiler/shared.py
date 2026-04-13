@@ -27,6 +27,8 @@ from doctrine._compiler.types import (
     CompiledRuleBlock,
     CompiledSection,
     CompiledSequenceBlock,
+    CompiledSkillPackageFile,
+    CompiledSkillPackage,
     CompiledTableBlock,
     CompiledTableCell,
     CompiledTableColumn,

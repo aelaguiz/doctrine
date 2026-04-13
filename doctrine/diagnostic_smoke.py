@@ -13,6 +13,7 @@ from doctrine.compiler import compile_prompt, extract_target_flow_graph
 from doctrine.diagnostics import diagnostic_to_dict
 from doctrine.emit_docs import main as emit_docs_main
 from doctrine.emit_flow import main as emit_flow_main
+from doctrine.emit_skill import main as emit_skill_main
 from doctrine.parser import parse_file, parse_text
 from doctrine.renderer import render_markdown
 
@@ -59,8 +60,10 @@ def main() -> int:
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_rejects_support_files_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
+    _check_emit_skill_uses_source_root_bundle_outputs()
     _check_flow_graph_extracts_routes_and_shared_io()
     _check_emit_flow_uses_entrypoint_stem_for_output_name()
+    _check_emit_flow_rejects_skill_entrypoints()
     _check_emit_flow_direct_mode_groups_shared_surfaces()
     _check_emit_flow_direct_mode_requires_output_dir()
     _check_diagnostic_to_dict_is_json_safe()
@@ -958,6 +961,63 @@ output_dir = "build"
         )
 
 
+def _check_emit_skill_uses_source_root_bundle_outputs() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "skills" / "demo_package"
+        (prompts / "agents").mkdir(parents=True)
+        (prompts / "references").mkdir(parents=True)
+        skill_prompt = prompts / "SKILL.prompt"
+        skill_prompt.write_text(
+            """skill package DemoPackage: "Demo Package"
+    metadata:
+        name: "demo-package"
+        description: "Emit bundled package files from the source root."
+        version: "1.0.0"
+        license: "MIT"
+    "Consult the bundled files before you continue."
+"""
+        )
+        (prompts / "references" / "checklist.md").write_text(
+            "# Checklist\n\nReview the package before you ship it.\n"
+        )
+        (prompts / "agents" / "reviewer.prompt").write_text(
+            """agent Reviewer:
+    role: "Review the package."
+    workflow: "Review"
+        "Read the package cold."
+"""
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo_skill"
+entrypoint = "prompts/skills/demo_package/SKILL.prompt"
+output_dir = "build"
+"""
+        )
+        exit_code = emit_skill_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "demo_skill",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        skill_path = root / "build" / "skills" / "demo_package" / "SKILL.md"
+        checklist_path = (
+            root / "build" / "skills" / "demo_package" / "references" / "checklist.md"
+        )
+        reviewer_path = (
+            root / "build" / "skills" / "demo_package" / "agents" / "reviewer.md"
+        )
+        _expect(skill_path.is_file(), f"missing emitted SKILL.md: {skill_path}")
+        _expect(checklist_path.is_file(), f"missing bundled reference file: {checklist_path}")
+        _expect(reviewer_path.is_file(), f"missing compiled bundled agent file: {reviewer_path}")
+
+
 def _check_flow_graph_extracts_routes_and_shared_io() -> None:
     source = """input SharedInput: "Shared Input"
     source: Prompt
@@ -1109,6 +1169,45 @@ output_dir = "build"
         _expect(agents_svg.is_file(), f"missing emitted AGENTS.flow.svg: {agents_svg}")
         _expect(soul_d2.is_file(), f"missing emitted SOUL.flow.d2: {soul_d2}")
         _expect(soul_svg.is_file(), f"missing emitted SOUL.flow.svg: {soul_svg}")
+
+
+def _check_emit_flow_rejects_skill_entrypoints() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "skill_pkg"
+        prompts.mkdir(parents=True)
+        entrypoint = prompts / "SKILL.prompt"
+        entrypoint.write_text(
+            """skill package DemoSkill: "Demo Skill"
+    metadata:
+        name: "demo-skill"
+    "This package should not emit flow artifacts."
+"""
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo_skill"
+entrypoint = "prompts/skill_pkg/SKILL.prompt"
+output_dir = "build"
+"""
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_flow_main(
+                [
+                    "--pyproject",
+                    str(pyproject),
+                    "--target",
+                    "demo_skill",
+                ]
+            )
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E510 emit error" in output, output)
+        _expect("must point at `AGENTS.prompt` or `SOUL.prompt`" in output, output)
 
 
 def _check_emit_flow_direct_mode_groups_shared_surfaces() -> None:

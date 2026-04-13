@@ -46,3 +46,43 @@ output_dir = "examples/73_flow_visualizer_showcase/build"
 name = "example_79_final_output_json_schema"
 entrypoint = "examples/79_final_output_json_schema/prompts/AGENTS.prompt"
 output_dir = "examples/79_final_output_json_schema/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_91_skill_package_minimal"
+entrypoint = "examples/91_skill_package_minimal/prompts/SKILL.prompt"
+output_dir = "examples/91_skill_package_minimal/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_92_skill_package_references"
+entrypoint = "examples/92_skill_package_references/prompts/SKILL.prompt"
+output_dir = "examples/92_skill_package_references/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_93_skill_package_scripts"
+entrypoint = "examples/93_skill_package_scripts/prompts/SKILL.prompt"
+output_dir = "examples/93_skill_package_scripts/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_94_skill_package_runtime_metadata"
+entrypoint = "examples/94_skill_package_runtime_metadata/prompts/SKILL.prompt"
+output_dir = "examples/94_skill_package_runtime_metadata/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_95_skill_package_plugin_metadata"
+entrypoint = "examples/95_skill_package_plugin_metadata/prompts/SKILL.prompt"
+output_dir = "examples/95_skill_package_plugin_metadata/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_96_skill_package_bundled_agents"
+entrypoint = "examples/96_skill_package_bundled_agents/prompts/SKILL.prompt"
+output_dir = "examples/96_skill_package_bundled_agents/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_97_skill_package_compendium"
+entrypoint = "examples/97_skill_package_compendium/prompts/SKILL.prompt"
+output_dir = "examples/97_skill_package_compendium/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_98_skill_package_path_case_preservation"
+entrypoint = "examples/98_skill_package_path_case_preservation/prompts/SKILL.prompt"
+output_dir = "examples/98_skill_package_path_case_preservation/build"

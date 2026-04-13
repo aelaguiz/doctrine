@@ -98,6 +98,25 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             raise CompileError(f"Abstract agent does not render: {agent_name}")
         return self._compile_agent_decl(agent, unit=self.root_unit)
 
+    def compile_skill_package(
+        self,
+        package_name: str | None = None,
+    ) -> CompiledSkillPackage:
+        if package_name is None:
+            packages = tuple(self.root_unit.skill_packages_by_name.values())
+            if not packages:
+                raise CompileError("Missing target skill package.")
+            if len(packages) != 1:
+                raise CompileError(
+                    "Prompt file defines multiple skill packages; choose one explicitly."
+                )
+            declaration = packages[0]
+        else:
+            declaration = self.root_unit.skill_packages_by_name.get(package_name)
+            if declaration is None:
+                raise CompileError(f"Missing target skill package: {package_name}")
+        return self._compile_skill_package_decl(declaration, unit=self.root_unit)
+
     def compile_readable_declaration(
         self, declaration_kind: str, declaration_name: str
     ) -> CompiledSection:
