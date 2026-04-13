@@ -209,6 +209,7 @@ def main() -> int:
         [
             "support_only",
             "rewrite_evidence",
+            "route_from",
         ],
         should_match=True,
         errors=errors,

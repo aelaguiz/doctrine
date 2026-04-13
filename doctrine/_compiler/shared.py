@@ -432,6 +432,7 @@ class RouteSemanticBranch:
     target_title: str | None
     label: str
     review_verdict: str | None = None
+    choice_members: tuple["RouteChoiceMember", ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -439,6 +440,15 @@ class RouteSemanticContext:
     branches: tuple[RouteSemanticBranch, ...] = ()
     has_unrouted_branch: bool = False
     route_required: bool = False
+
+
+@dataclass(slots=True, frozen=True)
+class RouteChoiceMember:
+    enum_module_parts: tuple[str, ...]
+    enum_name: str
+    member_key: str
+    member_title: str
+    member_wire: str
 
 
 @dataclass(slots=True, frozen=True)

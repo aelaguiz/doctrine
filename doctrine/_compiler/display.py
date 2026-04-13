@@ -378,6 +378,62 @@ class DisplayMixin:
             )
         return lines
 
+    def _render_route_from_stmt(
+        self,
+        stmt: model.RouteFromStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> list[str]:
+        fixed_choice = self._resolve_constant_enum_member(stmt.expr, unit=unit)
+        if fixed_choice is not None:
+            for case in stmt.cases:
+                if (
+                    case.head is not None
+                    and self._resolve_constant_enum_member(case.head, unit=unit) == fixed_choice
+                ):
+                    return self._render_law_stmt_lines(
+                        case.route,
+                        unit=unit,
+                        owner_label=owner_label,
+                        bullet=False,
+                    )
+            for case in stmt.cases:
+                if case.head is None:
+                    return self._render_law_stmt_lines(
+                        case.route,
+                        unit=unit,
+                        owner_label=owner_label,
+                        bullet=False,
+                    )
+            return []
+
+        lines = [
+            f"Select one route from {self._render_expr(stmt.expr, unit=unit)}.",
+            "Use exactly one route choice:",
+        ]
+        lines.extend(
+            f"- {self._render_expr(case.head, unit=unit)}"
+            for case in stmt.cases
+            if case.head is not None
+        )
+        for case in stmt.cases:
+            heading = (
+                "Else:"
+                if case.head is None
+                else f"If the route choice is {self._render_expr(case.head, unit=unit)}:"
+            )
+            lines.extend(["", heading])
+            lines.extend(
+                self._render_law_stmt_lines(
+                    case.route,
+                    unit=unit,
+                    owner_label=owner_label,
+                    bullet=True,
+                )
+            )
+        return lines
+
     def _render_when_stmt(
         self,
         stmt: model.WhenStmt,
@@ -422,6 +478,12 @@ class DisplayMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=mode_bindings,
+                )
+            elif isinstance(item, model.RouteFromStmt):
+                rendered = self._render_route_from_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
                 )
             elif isinstance(item, model.WhenStmt):
                 rendered = self._render_when_stmt(

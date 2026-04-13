@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from doctrine import model
-from doctrine.diagnostics import DiagnosticLocation, EmitError
+from doctrine._compiler.support import path_location
+from doctrine.diagnostics import EmitError
 from doctrine.project_config import (
     PYPROJECT_FILE_NAME,
     ProjectConfig,
@@ -281,12 +282,6 @@ def display_path(path: Path) -> str:
         return str(path.relative_to(REPO_ROOT))
     except ValueError:
         return str(path)
-
-
-def path_location(path: Path | None) -> DiagnosticLocation | None:
-    if path is None:
-        return None
-    return DiagnosticLocation(path=path.resolve())
 
 
 def emit_error(

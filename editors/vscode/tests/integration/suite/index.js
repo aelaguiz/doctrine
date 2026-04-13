@@ -589,7 +589,7 @@ async function testWorkflowLawDefinitionProvider() {
       "examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt",
     relativePath: "examples/42_route_only_handoff_capstone/prompts/AGENTS.prompt",
     sourceLineFragment:
-      'route "Keep the issue on RoutingOwner until the next specialist owner is actually justified." -> RoutingOwner when RouteFacts.next_owner_unknown',
+      'route "Keep the issue on RoutingOwner until the next specialist owner is clear." -> RoutingOwner when RouteFacts.next_owner_unknown',
     sourceText: "RoutingOwner",
     occurrence: 2,
   });
@@ -774,7 +774,7 @@ async function testReviewDefinitionProvider() {
     expectedRelativeTargetPath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     relativePath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     sourceLineFragment:
-      '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
+      '"Sum up the review work that led to the verdict. Say how {{fields.reviewed_artifact}} met or did not meet {{contract.clarity}}. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
     sourceText: "clarity",
   });
 
@@ -783,7 +783,7 @@ async function testReviewDefinitionProvider() {
     expectedRelativeTargetPath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     relativePath: "examples/49_review_capstone/prompts/AGENTS.prompt",
     sourceLineFragment:
-      '"Summarize the review analysis that led to the verdict, including how {{fields.reviewed_artifact}} did or did not satisfy {{contract.clarity}}, plus any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
+      '"Sum up the review work that led to the verdict. Say how {{fields.reviewed_artifact}} met or did not meet {{contract.clarity}}. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered."',
     sourceText: "reviewed_artifact",
   });
 

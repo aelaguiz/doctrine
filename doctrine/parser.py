@@ -2537,6 +2537,16 @@ class ToAst(Transformer):
             head = None
         return model.MatchArm(head=head, items=tuple(items[1:]))
 
+    @v_args(inline=True)
+    def route_from_stmt(self, expr, enum_ref, *cases):
+        return model.RouteFromStmt(expr=expr, enum_ref=enum_ref, cases=tuple(cases))
+
+    def route_from_case(self, items):
+        head = items[0]
+        if head == "__ELSE__":
+            head = None
+        return model.RouteFromArm(head=head, route=items[1])
+
     def else_match_head(self, _items):
         return "__ELSE__"
 

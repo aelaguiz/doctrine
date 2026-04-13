@@ -702,6 +702,7 @@ law_override_section: "override" CNAME ":" _NL _INDENT law_stmt+ _DEDENT
          | forbid_stmt
          | when_stmt
          | match_stmt
+         | route_from_stmt
          | stop_stmt
          | law_route_stmt
 
@@ -719,12 +720,14 @@ invalidate_stmt: "invalidate" law_path "via" law_path law_when_clause? _NL
 forbid_stmt: "forbid" path_set_expr law_when_clause? _NL
 when_stmt: "when" expr ":" _NL _INDENT law_stmt+ _DEDENT
 match_stmt: "match" expr ":" _NL _INDENT match_case+ _DEDENT
+route_from_stmt: "route_from" expr "as" name_ref ":" _NL _INDENT route_from_case+ _DEDENT
 stop_stmt: "stop" string law_when_clause? _NL
          | "stop" law_when_clause _NL
          | "stop" _NL
 law_route_stmt: "route" string "->" name_ref law_when_clause? _NL
 
 match_case: match_head ":" _NL _INDENT law_stmt+ _DEDENT
+route_from_case: match_head ":" _NL _INDENT law_route_stmt _DEDENT
 ?match_head: expr
            | "else" -> else_match_head
 

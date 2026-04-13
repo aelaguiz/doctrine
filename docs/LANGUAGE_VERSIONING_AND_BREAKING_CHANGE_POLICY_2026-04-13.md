@@ -244,8 +244,7 @@ language version at all when the language did not change.
 ## 2.1 What exists today
 
 - Doctrine's shipped language truth lives in `doctrine/`, with the numbered
-  corpus through `examples/90_split_handoff_and_final_output_shared_route_semantics`
-  as proof.
+  corpus through `examples/94_route_choice_guard_narrowing` as proof.
 - The live docs path is `README.md`, `docs/README.md`,
   `docs/LANGUAGE_REFERENCE.md`, `docs/LANGUAGE_DESIGN_NOTES.md`,
   `docs/COMPILER_ERRORS.md`, and `examples/README.md`.

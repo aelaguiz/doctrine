@@ -383,7 +383,7 @@ and [example_agents/markdown_agents.md](../example_agents/markdown_agents.md).
   `example_agents/harvested/` and in the local skill corpora outside the repo.
 - The current numbered corpus boundary is the live docs index and
   [examples/README.md](../examples/README.md), which run through
-  `examples/90_split_handoff_and_final_output_shared_route_semantics`; avoid
+  `examples/94_route_choice_guard_narrowing`; avoid
   older doc text that still names an earlier boundary.
 - Observed local package shapes that the architecture must cover include:
   - `~/.agents/skills` with 25 bare `SKILL.md` packages, 17 packages with

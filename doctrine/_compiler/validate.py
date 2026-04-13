@@ -479,7 +479,7 @@ class ValidateMixin:
                 for route in branch.routes:
                     branches.append(
                         self._route_semantic_branch_from_route(
-                            route.target,
+                            route,
                             label=route.label,
                             unit=unit,
                             review_verdict=verdict,
@@ -523,7 +523,7 @@ class ValidateMixin:
             for route in branch.routes:
                 branches.append(
                     self._route_semantic_branch_from_route(
-                        route.target,
+                        route,
                         label=route.label,
                         unit=unit,
                     )
@@ -547,19 +547,24 @@ class ValidateMixin:
 
     def _route_semantic_branch_from_route(
         self,
-        target: model.NameRef,
+        route: model.LawRouteStmt | model.ReviewOutcomeRouteStmt,
         *,
         label: str,
         unit: IndexedUnit,
         review_verdict: str | None = None,
     ) -> RouteSemanticBranch:
-        route_unit, route_agent = self._resolve_agent_ref(target, unit=unit)
+        route_unit, route_agent = self._resolve_agent_ref(route.target, unit=unit)
         return RouteSemanticBranch(
             target_module_parts=route_unit.module_parts,
             target_name=route_agent.name,
             target_title=route_agent.title,
             label=label,
             review_verdict=review_verdict,
+            choice_members=(
+                self._route_choice_members_from_route(route, unit=unit)
+                if isinstance(route, model.LawRouteStmt)
+                else ()
+            ),
         )
 
     def _build_route_semantic_context(
@@ -578,6 +583,15 @@ class ValidateMixin:
                 branch.target_name,
                 branch.label,
                 branch.review_verdict,
+                tuple(
+                    (
+                        member.enum_module_parts,
+                        member.enum_name,
+                        member.member_key,
+                        member.member_wire,
+                    )
+                    for member in branch.choice_members
+                ),
             )
             if key in seen:
                 continue
@@ -608,7 +622,57 @@ class ValidateMixin:
         verdict = self._route_guard_review_verdict(expr, unit=unit)
         if verdict is not None:
             narrowed = self._route_semantics_for_review_verdict(narrowed, verdict)
+        narrowed = self._narrow_route_semantics_for_choice(
+            narrowed,
+            expr,
+            unit=unit,
+        )
         return narrowed
+
+    def _route_choice_members_from_route(
+        self,
+        route: model.LawRouteStmt,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[RouteChoiceMember, ...]:
+        if route.choice_enum_ref is None:
+            return ()
+        enum_unit, enum_decl = self._resolve_decl_ref(
+            route.choice_enum_ref,
+            unit=unit,
+            registry_name="enums_by_name",
+            missing_label="enum declaration",
+        )
+        if route.choice_else:
+            excluded = {
+                self._resolve_constant_enum_member(head, unit=unit)
+                for head in route.choice_case_heads
+            }
+            members = tuple(
+                member
+                for member in enum_decl.members
+                if member.value not in excluded
+            )
+        else:
+            members = tuple(
+                self._resolve_route_from_member(
+                    head,
+                    enum_decl=enum_decl,
+                    enum_unit=enum_unit,
+                    owner_label=f"route_from {enum_decl.name}",
+                )
+                for head in route.choice_case_heads
+            )
+        return tuple(
+            RouteChoiceMember(
+                enum_module_parts=enum_unit.module_parts,
+                enum_name=enum_decl.name,
+                member_key=member.key,
+                member_title=member.title,
+                member_wire=member.value,
+            )
+            for member in members
+        )
 
     def _route_guard_exists_state(self, expr: model.Expr) -> bool | None:
         if isinstance(expr, model.ExprRef):
@@ -659,6 +723,115 @@ class ValidateMixin:
                 if right_is_verdict:
                     return self._resolve_constant_enum_member(expr.left, unit=unit)
         return None
+
+    def _route_guard_choice_match(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[str, str, bool] | None:
+        if not isinstance(expr, model.ExprBinary):
+            return None
+        if expr.op == "and":
+            return None
+        if expr.op not in {"==", "!="}:
+            return None
+        left_parts = expr.left.parts if isinstance(expr.left, model.ExprRef) else None
+        right_parts = expr.right.parts if isinstance(expr.right, model.ExprRef) else None
+        invert = expr.op == "!="
+        if left_parts is not None:
+            expected = self._route_guard_choice_expected_value(
+                left_parts,
+                expr.right,
+                unit=unit,
+            )
+            if expected is not None:
+                return (left_parts[-1] if len(left_parts) > 2 else "choice", expected, invert)
+        if right_parts is not None:
+            expected = self._route_guard_choice_expected_value(
+                right_parts,
+                expr.left,
+                unit=unit,
+            )
+            if expected is not None:
+                return (right_parts[-1] if len(right_parts) > 2 else "choice", expected, invert)
+        return None
+
+    def _route_guard_choice_expected_value(
+        self,
+        parts: tuple[str, ...],
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        if not parts or parts[0] != "route" or parts[1] != "choice":
+            return None
+        if len(parts) == 2:
+            return self._resolve_constant_enum_member(expr, unit=unit)
+        if len(parts) != 3:
+            return None
+        if parts[2] == "key":
+            if isinstance(expr, str):
+                return expr
+            if isinstance(expr, model.ExprRef):
+                identity = self._resolve_enum_member_identity(expr, unit=unit)
+                if identity is not None:
+                    return identity[2]
+            return None
+        if parts[2] == "wire":
+            return self._resolve_constant_enum_member(expr, unit=unit)
+        if parts[2] == "title":
+            return expr if isinstance(expr, str) else None
+        return None
+
+    def _narrow_route_semantics_for_choice(
+        self,
+        route_semantics: RouteSemanticContext,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> RouteSemanticContext:
+        if isinstance(expr, model.ExprBinary) and expr.op == "and":
+            narrowed = self._narrow_route_semantics_for_choice(route_semantics, expr.left, unit=unit)
+            return self._narrow_route_semantics_for_choice(narrowed, expr.right, unit=unit)
+        match = self._route_guard_choice_match(expr, unit=unit)
+        if match is None:
+            return route_semantics
+        field_name, expected, invert = match
+        matching: list[RouteSemanticBranch] = []
+        for branch in route_semantics.branches:
+            filtered = tuple(
+                member
+                for member in branch.choice_members
+                if self._route_choice_member_matches(member, field_name=field_name, expected=expected)
+                != invert
+            )
+            if not filtered:
+                continue
+            matching.append(replace(branch, choice_members=filtered))
+        has_unrouted_branch = route_semantics.has_unrouted_branch and not matching
+        return RouteSemanticContext(
+            branches=tuple(matching),
+            has_unrouted_branch=has_unrouted_branch,
+            route_required=route_semantics.route_required,
+        )
+
+    def _route_choice_member_matches(
+        self,
+        member: RouteChoiceMember,
+        *,
+        field_name: str,
+        expected: str,
+    ) -> bool:
+        if field_name == "choice":
+            return member.member_wire == expected
+        if field_name == "key":
+            return member.member_key == expected
+        if field_name == "title":
+            return member.member_title == expected
+        if field_name == "wire":
+            return member.member_wire == expected
+        return False
 
     def _route_semantics_for_review_verdict(
         self,
@@ -729,6 +902,39 @@ class ValidateMixin:
                 f"Ambiguous {detail_label} in {surface_label} {owner_label}: {ref_label}"
             )
         return branches[0]
+
+    def _unique_route_choice_member(
+        self,
+        branches: tuple[RouteSemanticBranch, ...],
+        *,
+        owner_label: str,
+        surface_label: str,
+        ref_label: str,
+        detail_label: str,
+    ) -> RouteChoiceMember:
+        members: list[RouteChoiceMember] = []
+        seen: set[tuple[tuple[str, ...], str, str, str]] = set()
+        for branch in branches:
+            for member in branch.choice_members:
+                key = (
+                    member.enum_module_parts,
+                    member.enum_name,
+                    member.member_key,
+                    member.member_wire,
+                )
+                if key in seen:
+                    continue
+                seen.add(key)
+                members.append(member)
+        if not members:
+            raise CompileError(
+                f"Missing {detail_label} in {surface_label} {owner_label}: {ref_label}"
+            )
+        if len(members) != 1:
+            raise CompileError(
+                f"Ambiguous {detail_label} in {surface_label} {owner_label}: {ref_label}"
+            )
+        return members[0]
 
     def _review_semantic_field_path(
         self,
@@ -3323,7 +3529,7 @@ class ValidateMixin:
                 f"{output_decl.name}.{'.'.join(field_path)}"
             )
         route_branch = self._route_semantic_branch_from_route(
-            route.target,
+            route,
             label=route.label,
             unit=review_unit,
         )
@@ -3839,6 +4045,20 @@ class ValidateMixin:
             return True
         return False
 
+    def _expr_ref_matches_output_decl(
+        self,
+        ref: model.ExprRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        for split_at in range(len(ref.parts), 0, -1):
+            root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
+            if not self._ref_exists_in_registry(root, unit=unit, registry_name="outputs_by_name"):
+                continue
+            _target_unit, _decl = self._resolve_output_decl(root, unit=unit)
+            return True
+        return False
+
     def _expr_ref_matches_review_field(self, ref: model.ExprRef) -> bool:
         return len(ref.parts) == 1 and ref.parts[0] in _REVIEW_GUARD_FIELD_NAMES
 
@@ -3873,6 +4093,14 @@ class ValidateMixin:
             return True
         if len(ref.parts) == 2 and ref.parts[1] in {"label", "summary", "next_owner"}:
             return True
+        if len(ref.parts) == 2 and ref.parts[1] == "choice":
+            return any(branch.choice_members for branch in route_semantics.branches)
+        if len(ref.parts) == 3 and ref.parts[1] == "choice" and ref.parts[2] in {
+            "key",
+            "title",
+            "wire",
+        }:
+            return any(branch.choice_members for branch in route_semantics.branches)
         return len(ref.parts) == 3 and ref.parts[1] == "next_owner" and ref.parts[2] in {
             "name",
             "key",
@@ -5429,6 +5657,13 @@ class ValidateMixin:
                         mode_bindings=local_mode_bindings,
                     )
                 continue
+            if isinstance(item, model.RouteFromStmt):
+                self._validate_route_from_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                continue
             if isinstance(item, model.WhenStmt):
                 self._validate_handoff_routing_law_stmt_tree(
                     item.items,
@@ -5443,7 +5678,7 @@ class ValidateMixin:
             if isinstance(item, (model.ActiveWhenStmt, model.StopStmt)):
                 continue
             raise CompileError(
-                "handoff_routing law only supports active when, mode, when, match, stop, "
+                "handoff_routing law only supports active when, mode, when, match, route_from, stop, "
                 f"and route in {owner_label}: {self._law_stmt_name(item)}"
             )
 
@@ -5461,7 +5696,7 @@ class ValidateMixin:
 
         for route in branch.routes:
             route_branch = self._route_semantic_branch_from_route(
-                route.target,
+                route,
                 label=route.label,
                 unit=unit,
             )
@@ -5682,6 +5917,13 @@ class ValidateMixin:
                         mode_bindings=local_mode_bindings,
                     )
                 continue
+            if isinstance(item, model.RouteFromStmt):
+                self._validate_route_from_stmt(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                continue
             if isinstance(item, model.WhenStmt):
                 self._validate_law_stmt_tree(
                     item.items,
@@ -5803,6 +6045,137 @@ class ValidateMixin:
                 f"match on {enum_decl.name} must be exhaustive or include else in {owner_label}"
             )
 
+    def _validate_route_from_stmt(
+        self,
+        stmt: model.RouteFromStmt,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        enum_unit, enum_decl = self._resolve_decl_ref(
+            stmt.enum_ref,
+            unit=unit,
+            registry_name="enums_by_name",
+            missing_label="enum declaration",
+        )
+        seen_members: set[str] = set()
+        saw_else = False
+        for case in stmt.cases:
+            if case.head is None:
+                if saw_else:
+                    raise CompileError(f"Duplicate route_from arm in {owner_label}: else")
+                saw_else = True
+                continue
+            member = self._resolve_route_from_member(
+                case.head,
+                enum_decl=enum_decl,
+                enum_unit=enum_unit,
+                owner_label=owner_label,
+            )
+            if member.value in seen_members:
+                raise CompileError(
+                    f"Duplicate route_from arm in {owner_label}: {member.value}"
+                )
+            seen_members.add(member.value)
+
+        self._validate_route_from_selector_expr(
+            stmt.expr,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        fixed_choice = self._resolve_constant_enum_member(stmt.expr, unit=unit)
+        if fixed_choice is not None and not any(member.value == fixed_choice for member in enum_decl.members):
+            raise CompileError(
+                f"route_from selector is outside enum {enum_decl.name} in {owner_label}: {fixed_choice}"
+            )
+
+        if any(case.head is None for case in stmt.cases):
+            explicit_values: set[str] = set()
+            for case in stmt.cases:
+                if case.head is None:
+                    continue
+                member = self._resolve_route_from_member(
+                    case.head,
+                    enum_decl=enum_decl,
+                    enum_unit=enum_unit,
+                    owner_label=owner_label,
+                )
+                explicit_values.add(member.value)
+            if explicit_values == {member.value for member in enum_decl.members}:
+                raise CompileError(
+                    f"route_from else is unreachable in {owner_label}: {enum_decl.name}"
+                )
+        else:
+            seen_members: set[str] = set()
+            for case in stmt.cases:
+                member = self._resolve_route_from_member(
+                    case.head,
+                    enum_decl=enum_decl,
+                    enum_unit=enum_unit,
+                    owner_label=owner_label,
+                )
+                seen_members.add(member.value)
+            expected_members = {member.value for member in enum_decl.members}
+            if seen_members != expected_members:
+                raise CompileError(
+                    f"route_from on {enum_decl.name} must be exhaustive or include else in {owner_label}"
+                )
+
+        for case in stmt.cases:
+            self._validate_route_target(case.route.target, unit=unit)
+
+    def _validate_route_from_selector_expr(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if isinstance(expr, model.ExprRef):
+            if (
+                self._expr_ref_matches_input_decl(expr, unit=unit)
+                or self._expr_ref_matches_output_decl(expr, unit=unit)
+                or self._expr_ref_matches_enum_member(expr, unit=unit)
+            ):
+                return
+            raise CompileError(
+                f"route_from selector reads invalid source in {owner_label}: {'.'.join(expr.parts)}"
+            )
+        if isinstance(expr, model.ExprBinary):
+            self._validate_route_from_selector_expr(expr.left, unit=unit, owner_label=owner_label)
+            self._validate_route_from_selector_expr(expr.right, unit=unit, owner_label=owner_label)
+            return
+        if isinstance(expr, model.ExprCall):
+            for arg in expr.args:
+                self._validate_route_from_selector_expr(arg, unit=unit, owner_label=owner_label)
+            return
+        if isinstance(expr, model.ExprSet):
+            for item in expr.items:
+                self._validate_route_from_selector_expr(item, unit=unit, owner_label=owner_label)
+            return
+
+    def _resolve_route_from_member(
+        self,
+        expr: model.Expr | None,
+        *,
+        enum_decl: model.EnumDecl,
+        enum_unit: IndexedUnit,
+        owner_label: str,
+    ) -> model.EnumMember:
+        if expr is None:
+            raise CompileError(f"route_from arm must name an enum member in {owner_label}")
+        member_value = self._resolve_constant_enum_member(expr, unit=enum_unit)
+        if member_value is None:
+            raise CompileError(
+                f"route_from arm must name a member of {enum_decl.name} in {owner_label}"
+            )
+        member = next((item for item in enum_decl.members if item.value == member_value), None)
+        if member is None:
+            raise CompileError(
+                f"route_from arm is outside enum {enum_decl.name} in {owner_label}: {member_value}"
+            )
+        return member
+
     def _collect_law_leaf_branches(
         self,
         items: tuple[model.LawStmt, ...],
@@ -5861,6 +6234,22 @@ class ValidateMixin:
                 branches = tuple(next_branches)
                 index += 1
                 continue
+            if isinstance(item, model.RouteFromStmt):
+                next_branches = []
+                for current_branch in branches:
+                    for case in self._select_route_from_cases(
+                        item,
+                        unit=unit,
+                    ):
+                        next_branches.append(
+                            self._branch_with_stmt(
+                                current_branch,
+                                self._route_from_case_route(item, case),
+                            )
+                        )
+                branches = tuple(next_branches)
+                index += 1
+                continue
             branches = tuple(self._branch_with_stmt(current_branch, item) for current_branch in branches)
             index += 1
         return branches
@@ -5888,6 +6277,47 @@ class ValidateMixin:
         if else_matches:
             return else_matches
         return stmt.cases
+
+    def _select_route_from_cases(
+        self,
+        stmt: model.RouteFromStmt,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[model.RouteFromArm, ...]:
+        fixed_value = self._resolve_constant_enum_member(stmt.expr, unit=unit)
+        if fixed_value is None:
+            return stmt.cases
+
+        exact_matches = tuple(
+            case
+            for case in stmt.cases
+            if case.head is not None
+            and self._resolve_constant_enum_member(case.head, unit=unit) == fixed_value
+        )
+        if exact_matches:
+            return exact_matches
+        else_matches = tuple(case for case in stmt.cases if case.head is None)
+        if else_matches:
+            return else_matches
+        return stmt.cases
+
+    def _route_from_case_route(
+        self,
+        stmt: model.RouteFromStmt,
+        case: model.RouteFromArm,
+    ) -> model.LawRouteStmt:
+        explicit_heads = tuple(
+            arm.head
+            for arm in stmt.cases
+            if arm.head is not None
+        )
+        choice_heads = explicit_heads if case.head is None else (case.head,)
+        return replace(
+            case.route,
+            choice_enum_ref=stmt.enum_ref,
+            choice_case_heads=choice_heads,
+            choice_else=case.head is None,
+        )
 
     def _branch_with_stmt(self, branch: LawBranch, stmt: model.LawStmt) -> LawBranch:
         if isinstance(stmt, model.ActiveWhenStmt):
@@ -6434,6 +6864,8 @@ class ValidateMixin:
             return "mode"
         if isinstance(stmt, model.MatchStmt):
             return "match"
+        if isinstance(stmt, model.RouteFromStmt):
+            return "route_from"
         if isinstance(stmt, model.WhenStmt):
             return "when"
         if isinstance(stmt, model.CurrentArtifactStmt):

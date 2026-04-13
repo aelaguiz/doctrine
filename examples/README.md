@@ -65,9 +65,11 @@ Each numbered example may contain:
   either reuse `comment_output` or split the review comment from a separate
   control-only final output, plus imported reusable review comment outputs
   that still bind local routed owners
-- `87` through `91`: shared output-facing route semantics for ordinary
+- `87` through `94`: shared output-facing route semantics for ordinary
   workflow-law outputs, review comments, dedicated `route_only`,
-  `handoff_routing` law, and split review `final_output:` contracts
+  `handoff_routing` law, split review `final_output:` contracts, first-class
+  `route_from`, output-selected handoff routing, and `route.choice` guard
+  narrowing
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -168,6 +170,9 @@ reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
 | `89_route_only_shared_route_semantics` | Dedicated `route_only` lowers onto the same shared `route.*` output surface. |
 | `90_split_handoff_and_final_output_shared_route_semantics` | A durable review comment and a separate JSON `final_output:` may consume the same shared `route.*` truth without merging into one output. |
 | `91_handoff_routing_route_output_binding` | `handoff_routing` may feed the same shared `route.*` semantics into ordinary outputs and `final_output:` when its `law:` block resolves the route. |
+| `92_route_from_basic` | Workflow law may pick one routed owner from a typed selector with first-class `route_from`. |
+| `93_handoff_routing_route_from_final_output` | `handoff_routing` may bind `final_output:` route owner truth from an emitted output with `route_from`. |
+| `94_route_choice_guard_narrowing` | `route.choice` guards may narrow branch-specific route detail, while unguarded `route.summary` still fails loud. |
 
 ## Useful Commands
 

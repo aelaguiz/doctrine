@@ -3090,6 +3090,14 @@ class CompileMixin:
                         mode_bindings=mode_bindings,
                     )
                 )
+            elif isinstance(item, model.RouteFromStmt):
+                rendered.extend(
+                    self._render_route_from_stmt(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                )
             elif isinstance(item, model.WhenStmt):
                 rendered.extend(
                     self._render_when_stmt(
@@ -3155,6 +3163,14 @@ class CompileMixin:
                         unit=unit,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
+                    )
+                )
+            elif isinstance(item, model.RouteFromStmt):
+                rendered.extend(
+                    self._render_route_from_stmt(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
                     )
                 )
             elif isinstance(item, model.WhenStmt):

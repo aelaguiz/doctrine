@@ -1014,6 +1014,21 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (),
     ),
     (
+        re.compile(
+            r"^Ambiguous route\.(?P<detail>label|summary) in (?P<owner>[^:]+): (?P<ref>.+)$"
+        ),
+        "E347",
+        "Route detail needs one selected branch",
+        lambda match: (
+            f"`route.{match.group('detail')}` in {match.group('owner')} needs one selected route "
+            f"branch, but `{match.group('ref')}` still sees more than one."
+        ),
+        (
+            "Guard the read with `route.choice` so one route branch stays live.",
+            "Use `route.next_owner.*` when you need selected-owner truth across several route choices.",
+        ),
+    ),
+    (
         re.compile(r"^Ambiguous (?P<surface>.+) in (?P<owner>[^:]+): (?P<detail>.+)$"),
         "E270",
         "Ambiguous declaration reference",
@@ -1599,6 +1614,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (
             "Read only declared inputs and enum members in output guards.",
             "Do not read workflow-local bindings or emitted output fields inside guarded output items.",
+            "Route-bound outputs may also guard on compiler-owned route refs such as `route.exists` and `route.choice`.",
         ),
     ),
     (
@@ -1668,7 +1684,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
     ),
     (
         re.compile(
-            r"^handoff_routing law only supports active when, mode, when, match, stop, and route in (?P<owner>.+): (?P<stmt>.+)$"
+            r"^handoff_routing law only supports active when, mode, when, match, route_from, stop, and route in (?P<owner>.+): (?P<stmt>.+)$"
         ),
         "E344",
         "handoff_routing law uses a non-routing statement",
@@ -1677,7 +1693,7 @@ _COMPILE_PATTERN_BUILDERS: tuple[
             f"`{match.group('stmt')}`."
         ),
         (
-            "Use only `active when`, `mode`, `when`, `match`, `stop`, and `route` in `handoff_routing` law.",
+            "Use only `active when`, `mode`, `when`, `match`, `route_from`, `stop`, and `route` in `handoff_routing` law.",
             "Keep currentness, preservation, invalidation, and other workflow-law truth controls on `workflow:`.",
         ),
     ),
@@ -1694,6 +1710,36 @@ _COMPILE_PATTERN_BUILDERS: tuple[
         (
             "Attach `law:` only to `workflow:` or `handoff_routing:`.",
             "Keep other authored slots as readable instruction surfaces.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^route_from selector reads invalid source in (?P<owner>.+): (?P<source>.+)$"
+        ),
+        "E346",
+        "route_from selector reads invalid source",
+        lambda match: (
+            f"`route_from` selector in {match.group('owner')} reads invalid source "
+            f"`{match.group('source')}`."
+        ),
+        (
+            "Read only declared inputs, emitted outputs, or enum members in a `route_from` selector.",
+            "Do not read workflow-local bindings or other compiler-local names there.",
+        ),
+    ),
+    (
+        re.compile(
+            r"^Duplicate route_from arm in (?P<owner>.+): (?P<choice>.+)$"
+        ),
+        "E348",
+        "Duplicate route_from arm",
+        lambda match: (
+            f"`route_from` in {match.group('owner')} names "
+            f"`{match.group('choice')}` more than once."
+        ),
+        (
+            "Name each enum member at most once in `route_from`.",
+            "Use `else` at most once, and only when you need the remaining members.",
         ),
     ),
     (

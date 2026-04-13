@@ -134,6 +134,7 @@ const LAW_OVERRIDE_SECTION_RE = new RegExp(
 const LAW_SECTION_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*$`);
 const LAW_WHEN_RE = /^\s*when\b.*:\s*$/;
 const LAW_MATCH_RE = /^\s*match\b.*:\s*$/;
+const LAW_ROUTE_FROM_RE = /^\s*route_from\b.*:\s*$/;
 const LAW_MATCH_ARM_RE = new RegExp(`^\\s*(else|${DOTTED_NAME_PATTERN})\\s*:\\s*$`);
 const TRUST_SURFACE_ITEM_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})(?:\\s+when\\b.*)?\\s*$`,
@@ -187,6 +188,7 @@ const NON_BINDING_LAW_TOKENS = new Set([
   "reject",
   "rewrite_evidence",
   "route",
+  "route_from",
   "stop",
   "structure",
   "support_only",
@@ -3641,7 +3643,7 @@ function getWorkflowSectionChildBodySpec(lineText, lineNumber) {
 }
 
 function getLawBodyChildBodySpec(lineText, lineNumber, allowStructural) {
-  if (LAW_MATCH_RE.test(lineText)) {
+  if (LAW_MATCH_RE.test(lineText) || LAW_ROUTE_FROM_RE.test(lineText)) {
     return {
       type: "law_match_body",
       indent: leadingSpaces(lineText),

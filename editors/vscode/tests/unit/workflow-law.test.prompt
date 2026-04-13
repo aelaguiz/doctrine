@@ -44,6 +44,9 @@ workflow CarryCurrentTruth: "Carry Current Truth"
         match edit_mode:
 #       ^^^^^ keyword.control.doctrine
 
+        route_from NextOwner.route_choice as EditMode:
+#       ^^^^^^^^^^ keyword.control.doctrine
+
             else:
 #           ^^^^ keyword.control.doctrine
 
