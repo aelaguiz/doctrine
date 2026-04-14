@@ -55,3 +55,27 @@ Support-surface version changes: none
 ### YANKED
 - Use this only when a bad public release was superseded later.
 ```
+
+## v1.0.0 - 2026-04-14
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v1.0.0
+Language version: unchanged (still 1.0)
+Affected surfaces: Doctrine 1.0 language docs, manifest-backed corpus guidance, and the public release flow.
+Who must act: maintainers cutting public releases and users adopting Doctrine from tagged releases.
+Who does not need to act: users staying on unreleased commits and maintainers not cutting a release today.
+Upgrade steps: No upgrade from an earlier public release is required. New users can start from README.md, docs/LANGUAGE_REFERENCE.md, and examples/01_hello_world.
+Verification: uv sync && npm ci && uv run --locked python -m unittest tests.test_release_flow && make verify-examples
+Support-surface version changes: none
+
+### Added
+- Shipped the first public Doctrine 1.0 release with the live language docs, compiler-backed AGENTS.md output flow, and the full manifest-backed example corpus.
+- Added a repo-owned public release flow with `make release-prepare`, `make release-tag`, `make release-draft`, and `make release-publish`.
+
+### Changed
+- Moved versioning, release, and compatibility guidance into the canonical `docs/VERSIONING.md` and `CHANGELOG.md` pair.
+- Clarified the public docs links for release history, support, security, and collaboration rules.
+
+### Fixed
+- Corrected the skill-package example range in `examples/README.md` to `95` through `103`.

@@ -4,8 +4,8 @@ This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
 Current Doctrine language version: 1.0
-Current public Doctrine release version: none yet. After the first public
-release ships, use the latest signed annotated tag and matching GitHub release.
+Current public Doctrine release version: v1.0.0. Use the latest signed
+annotated tag and matching GitHub release as the public release record.
 
 ## The Version Lines
 
