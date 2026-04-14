@@ -133,3 +133,9 @@ expected_lines = [
   "",
   "The final control summary should stand on its own for the routed owner.",
 ]
+
+[[cases]]
+name = "review-driven prose split final_output builds the canonical emitted contract tree"
+status = "active"
+kind = "build_contract"
+build_target = "example_84_review_split_final_output_prose"

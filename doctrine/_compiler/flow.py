@@ -103,7 +103,31 @@ class FlowMixin:
                 resolved_slots=resolved_slots,
                 agent_contract=agent_contract,
             )
+            review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
+            primary_review_output_context = self._primary_review_output_context(
+                review_output_contexts
+            )
+            final_output_key: OutputDeclKey | None = None
+            for field in agent.fields:
+                if not isinstance(field, model.FinalOutputField):
+                    continue
+                final_output_unit, final_output_decl = self._resolve_final_output_decl(
+                    field.value,
+                    unit=unit,
+                    owner_label=f"agent {agent.name} final_output",
+                )
+                final_output_key = (
+                    final_output_unit.module_parts,
+                    final_output_decl.name,
+                )
+                break
             _ = self._route_semantic_context_for_agent(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            route_output_contexts = self._route_output_contexts_for_agent(
                 agent,
                 unit=unit,
                 resolved_slots=resolved_slots,
@@ -126,7 +150,22 @@ class FlowMixin:
                 )
 
             for output_key, (output_unit, output_decl) in sorted(agent_contract.outputs.items()):
-                self._flow_upsert_output_node(output_nodes, output_decl, unit=output_unit)
+                review_semantics = self._flow_review_semantics_for_output(
+                    output_key,
+                    review_output_contexts=review_output_contexts,
+                    primary_review_output_context=primary_review_output_context,
+                    final_output_key=final_output_key,
+                )
+                self._flow_upsert_output_node(
+                    output_nodes,
+                    output_decl,
+                    unit=output_unit,
+                    review_semantics=review_semantics,
+                    route_semantics=self._route_output_context_for_key(
+                        route_output_contexts,
+                        output_key,
+                    ),
+                )
                 self._flow_add_edge(
                     edges,
                     FlowEdge(
@@ -158,6 +197,10 @@ class FlowMixin:
                     edges=edges,
                     owner_label=f"agent {agent.name} slot {slot_state.key}",
                     slot_key=slot_state.key,
+                    review_output_contexts=review_output_contexts,
+                    primary_review_output_context=primary_review_output_context,
+                    final_output_key=final_output_key,
+                    route_output_contexts=route_output_contexts,
                     workflow_stack=(),
                 )
 
@@ -233,6 +276,10 @@ class FlowMixin:
         ],
         owner_label: str,
         slot_key: str,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        primary_review_output_context: tuple[OutputDeclKey, ReviewSemanticContext] | None,
+        final_output_key: OutputDeclKey | None,
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         workflow_stack: tuple[tuple[tuple[str, ...], str], ...],
     ) -> None:
         agent_key = (agent_unit.module_parts, agent.name)
@@ -271,6 +318,10 @@ class FlowMixin:
                 edges=edges,
                 owner_label=f"workflow {_dotted_decl_name(item.target_unit.module_parts, item.workflow_decl.name)}",
                 slot_key=slot_key,
+                review_output_contexts=review_output_contexts,
+                primary_review_output_context=primary_review_output_context,
+                final_output_key=final_output_key,
+                route_output_contexts=route_output_contexts,
                 workflow_stack=(*workflow_stack, workflow_key),
             )
 
@@ -425,7 +476,22 @@ class FlowMixin:
 
         for output_key, (output_unit, output_decl) in sorted(agent_contract.outputs.items()):
             if output_key not in output_nodes:
-                self._flow_upsert_output_node(output_nodes, output_decl, unit=output_unit)
+                review_semantics = self._flow_review_semantics_for_output(
+                    output_key,
+                    review_output_contexts=review_output_contexts,
+                    primary_review_output_context=primary_review_output_context,
+                    final_output_key=final_output_key,
+                )
+                self._flow_upsert_output_node(
+                    output_nodes,
+                    output_decl,
+                    unit=output_unit,
+                    review_semantics=review_semantics,
+                    route_semantics=self._route_output_context_for_key(
+                        route_output_contexts,
+                        output_key,
+                    ),
+                )
 
     def _collect_flow_from_section_items(
         self,
@@ -527,6 +593,8 @@ class FlowMixin:
         decl: model.OutputDecl,
         *,
         unit: IndexedUnit,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> None:
         key = (unit.module_parts, decl.name)
         if key in nodes:
@@ -546,7 +614,12 @@ class FlowMixin:
             shape_title=shape_title,
             requirement_title=requirement_title,
             detail_lines=detail_lines,
-            trust_surface=self._flow_trust_surface_labels(decl, unit=unit),
+            trust_surface=self._flow_trust_surface_labels(
+                decl,
+                unit=unit,
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+            ),
         )
 
     def _flow_agent_detail_lines(
@@ -797,10 +870,17 @@ class FlowMixin:
         decl: model.OutputDecl,
         *,
         unit: IndexedUnit,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
     ) -> tuple[str, ...]:
         if not decl.trust_surface:
             return ()
-        section = self._compile_trust_surface_section(decl, unit=unit)
+        section = self._compile_trust_surface_section(
+            decl,
+            unit=unit,
+            review_semantics=review_semantics,
+            route_semantics=route_semantics,
+        )
         return tuple(
             item[2:]
             for item in section.body
@@ -828,6 +908,23 @@ class FlowMixin:
             surface_label="flow graph",
         ).text
         return f"{resolved.decl.title}.{field_label}"
+
+    def _flow_review_semantics_for_output(
+        self,
+        output_key: OutputDeclKey,
+        *,
+        review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
+        primary_review_output_context: tuple[OutputDeclKey, ReviewSemanticContext] | None,
+        final_output_key: OutputDeclKey | None,
+    ) -> ReviewSemanticContext | None:
+        review_semantics = self._review_output_context_for_key(
+            review_output_contexts,
+            output_key,
+        )
+        if review_semantics is None and final_output_key is not None and output_key == final_output_key:
+            if primary_review_output_context is not None:
+                review_semantics = primary_review_output_context[1]
+        return review_semantics
 
     def _flow_append_artifact_note(
         self,

@@ -1,0 +1,57 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "DraftReviewSplitFinalOutputDemo",
+    "slug": "draft_review_split_final_output_demo",
+    "entrypoint": "examples/84_review_split_final_output_prose/prompts/AGENTS.prompt"
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "DraftReviewDecision",
+    "declaration_name": "DraftReviewDecision",
+    "format_mode": "prose",
+    "schema_profile": null,
+    "schema_file": null,
+    "example_file": null
+  },
+  "review": {
+    "exists": true,
+    "comment_output": {
+      "declaration_key": "DraftReviewComment",
+      "declaration_name": "DraftReviewComment"
+    },
+    "carrier_fields": {
+      "verdict": "verdict",
+      "reviewed_artifact": "reviewed_artifact",
+      "analysis": "analysis_performed",
+      "readback": "output_contents_that_matter",
+      "current_artifact": "current_artifact",
+      "failing_gates": "failure_detail.failing_gates",
+      "next_owner": "next_owner"
+    },
+    "final_response": {
+      "mode": "split",
+      "declaration_key": "DraftReviewDecision",
+      "declaration_name": "DraftReviewDecision",
+      "review_fields": {},
+      "control_ready": false
+    },
+    "outcomes": {
+      "accept": {
+        "exists": true,
+        "verdict": "accept",
+        "route_behavior": "always"
+      },
+      "changes_requested": {
+        "exists": true,
+        "verdict": "changes_requested",
+        "route_behavior": "always"
+      },
+      "blocked": {
+        "exists": false,
+        "verdict": "changes_requested",
+        "route_behavior": "never"
+      }
+    }
+  }
+}

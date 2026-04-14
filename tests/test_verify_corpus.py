@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
@@ -106,6 +107,62 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
         self.assertIn("Binary file mismatch: icon.png", diff)
         self.assertIn("expected 12 bytes", diff)
         self.assertIn("emitted 10 bytes", diff)
+
+    def test_build_contract_uses_repo_root_emit_targets_even_when_cwd_moves(self) -> None:
+        case = CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/07_handoffs/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/07_handoffs").resolve(),
+            name="repo-root emit target lookup stays stable",
+            kind="build_contract",
+            prompt_path=(REPO_ROOT / "examples/07_handoffs/prompts/AGENTS.prompt").resolve(),
+            build_target="example_07_handoffs",
+            approx_ref_path=None,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            original_cwd = Path.cwd()
+            os.chdir(temp_dir)
+            try:
+                # Build-contract verification is repo-owned proof. It must keep
+                # loading the repo's emit target registry even if the caller runs
+                # the verifier from another working directory.
+                result = _run_build_contract(case)
+            finally:
+                os.chdir(original_cwd)
+
+        self.assertEqual(result.result, "PASS")
+        self.assertEqual(result.detail, "build matched checked-in tree")
+
+    def test_flow_build_contract_surfaces_missing_pinned_d2_cleanly(self) -> None:
+        case = CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/73_flow_visualizer_showcase/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/73_flow_visualizer_showcase").resolve(),
+            name="flow build-contract missing pinned d2",
+            kind="build_contract",
+            prompt_path=(
+                REPO_ROOT / "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
+            ).resolve(),
+            build_target="example_73_flow_visualizer_showcase",
+            approx_ref_path=None,
+        )
+
+        missing_package = (
+            Path(tempfile.gettempdir())
+            / f"doctrine-missing-d2-{uuid.uuid4()}"
+            / "package.json"
+        ).resolve()
+
+        # Flow build-contract proof depends on the pinned D2 package. If that
+        # package is missing, the verifier should report one clean verification
+        # failure with the emit code and setup hint instead of crashing.
+        with patch("doctrine.flow_renderer.D2_PACKAGE_PATH", missing_package):
+            with self.assertRaises(VerificationError) as ctx:
+                _run_build_contract(case)
+
+        rendered = str(ctx.exception)
+        self.assertIn("E515 emit error", rendered)
+        self.assertIn("Pinned D2 dependency is unavailable", rendered)
+        self.assertIn("Run `npm ci`", rendered)
 
 
 if __name__ == "__main__":
