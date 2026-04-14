@@ -7,6 +7,8 @@
 - Run the full shipped corpus with `make verify-examples`.
 - Run `make verify-diagnostics` when you change diagnostics.
 - For release-flow work, run `uv run --locked python -m unittest tests.test_release_flow`.
+- For package metadata, publish-flow, or public install work, run
+  `make verify-package`.
 - For one manifest-backed example, use `uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml`.
 - If you change anything under `editors/vscode/`, run `cd editors/vscode && make`.
 - If a dependency is missing or a check cannot run, say that plainly.

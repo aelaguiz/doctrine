@@ -23,6 +23,11 @@ Changelog = "https://github.com/aelaguiz/doctrine/blob/main/CHANGELOG.md"
 Discussions = "https://github.com/aelaguiz/doctrine/discussions"
 Security = "https://github.com/aelaguiz/doctrine/security/policy"
 
+[tool.doctrine.package]
+import_name = "doctrine"
+pypi_environment = "pypi"
+testpypi_environment = "testpypi"
+
 [tool.setuptools.packages.find]
 include = ["doctrine*"]
 

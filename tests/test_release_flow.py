@@ -73,6 +73,7 @@ class ReleaseFlowTests(unittest.TestCase):
         self.assertIn("Requested release version: v1.1.0", worksheet)
         self.assertIn("Requested language version state: unchanged (still 1.0)", worksheet)
         self.assertIn("Package metadata status: ready (`1.1.0`)", worksheet)
+        self.assertIn("- make verify-package", worksheet)
         self.assertIn("- pyproject.toml", worksheet)
         self.assertIn(
             "make release-draft RELEASE=v1.1.0 CHANNEL=stable PREVIOUS_TAG=auto",

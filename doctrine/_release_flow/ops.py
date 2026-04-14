@@ -120,7 +120,10 @@ def render_release_worksheet(plan: ReleasePlan) -> str:
         "release-note header and body",
         "tests/test_release_flow.py",
     ]
-    verify_commands = ["uv run --locked python -m unittest tests.test_release_flow"]
+    verify_commands = [
+        "uv run --locked python -m unittest tests.test_release_flow",
+        "make verify-package",
+    ]
 
     if plan.language_version_changed:
         required_updates.extend(
@@ -324,7 +327,7 @@ def build_tag_message(release_entry: ReleaseEntry) -> str:
     lines.extend(
         [
             "",
-            "See CHANGELOG.md and docs/VERSIONING.md for the full release record.",
+            "See CHANGELOG.md for the release record and docs/VERSIONING.md for release policy.",
         ]
     )
     return "\n".join(lines)

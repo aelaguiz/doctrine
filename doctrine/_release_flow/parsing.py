@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
-import tomllib
 
+from doctrine._package_release import load_package_release_metadata
 from doctrine._release_flow.common import release_error, run_checked
 from doctrine._release_flow.models import (
     CHANGELOG_SECTION_RE,
@@ -64,45 +64,15 @@ def load_current_language_version(repo_root: Path) -> LanguageVersion:
 
 
 def load_package_metadata_version(repo_root: Path) -> str:
-    pyproject_path = repo_root / "pyproject.toml"
     try:
-        text = pyproject_path.read_text(encoding="utf-8")
-    except FileNotFoundError as exc:
+        return load_package_release_metadata(repo_root).version
+    except RuntimeError as exc:
         raise release_error(
             "E530",
             "Release package metadata version is missing or does not match",
-            "`pyproject.toml` is missing, so Doctrine cannot read `[project].version` for this release.",
-            location=pyproject_path,
+            str(exc),
+            location=repo_root / "pyproject.toml",
         ) from exc
-
-    try:
-        raw = tomllib.loads(text)
-    except tomllib.TOMLDecodeError as exc:
-        raise release_error(
-            "E530",
-            "Release package metadata version is missing or does not match",
-            "Doctrine could not parse `pyproject.toml` while reading `[project].version` for this release.",
-            location=pyproject_path,
-        ) from exc
-
-    project_table = raw.get("project")
-    if not isinstance(project_table, dict):
-        raise release_error(
-            "E530",
-            "Release package metadata version is missing or does not match",
-            "`pyproject.toml` must contain a `[project]` table with a string `version` value for this release.",
-            location=pyproject_path,
-        )
-
-    version = project_table.get("version")
-    if not isinstance(version, str) or not version.strip():
-        raise release_error(
-            "E530",
-            "Release package metadata version is missing or does not match",
-            "`pyproject.toml` must contain `[project].version` as a non-empty string for this release.",
-            location=pyproject_path,
-        )
-    return version.strip()
 
 
 def expected_package_metadata_version(release_tag: ReleaseTag) -> str:

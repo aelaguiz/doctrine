@@ -29,32 +29,23 @@ fan-out, while still writing outputs in deterministic authored order.
 
 ## Prerequisites
 
-Package-index installs use the distribution name `doctrine-agents`. The
-Python module path stays `doctrine`.
+Use [../README.md](../README.md) for the package-install command. The Python
+module path stays `doctrine`.
 
 Use a source checkout when you need `emit_flow`, the example corpus, or the
-contributor proof commands in this repo.
-
-Sync Python dependencies first:
-
-```bash
-uv sync
-```
-
-Install the pinned repo-local D2 dependency before using `emit_flow`:
-
-```bash
-npm ci
-```
+contributor proof commands in this repo. Use
+[../CONTRIBUTING.md](../CONTRIBUTING.md) for the source-checkout setup path.
+`make setup` owns the repo bootstrap commands.
 
 Important details:
 
 - `emit_docs` and `emit_skill` only need the Python environment.
 - `emit_flow` also needs a working local `node` runtime plus the pinned
-  `@terrastruct/d2` package from `package-lock.json`.
+  `@terrastruct/d2` package that `make setup` installs from
+  `package-lock.json`.
 - `emit_flow` writes `.flow.d2` first and then renders `.flow.svg`. If the D2
   dependency is missing, the command exits with `E515` and tells you to run
-  `npm ci`.
+  `make setup`.
 
 ## Configure Emit Targets
 
@@ -355,7 +346,7 @@ Common emit failures:
 - `E510`: the target entrypoint does not match the emitter surface.
 - `E514`: the target entrypoint is not under a `prompts/` tree, so Doctrine
   cannot preserve the relative output layout.
-- `E515`: the pinned D2 dependency is missing. Run `npm ci`.
+- `E515`: the pinned D2 dependency is missing. Run `make setup`.
 - `E516`: `.flow.d2` was written, but the pinned SVG renderer failed. Inspect
   the `.flow.d2` source and the command output, then rerun after fixing the
   local Node or D2 problem.

@@ -21,6 +21,14 @@ Public release entries must replace every placeholder before `make release-tag`
 or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
+### Changed
+- Moved the public release record fully onto `CHANGELOG.md`, signed tags, and
+  matching GitHub releases. `docs/VERSIONING.md` now stays policy-only.
+- Centralized package release metadata and package smoke proof so release
+  prep, CI, and publish flows use the same repo-owned path.
+- Moved source-checkout setup docs onto `make setup` and package smoke docs
+  onto `make verify-package` to reduce repeated shell instructions.
+
 ### Release Entry Template
 
 ```md

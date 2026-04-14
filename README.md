@@ -84,33 +84,33 @@ Leave one honest handoff and stop.
 
 ## Quickstart
 
-Source checkout is still the full setup path for contributor proof, the
-example corpus, and `emit_flow`.
-
 When Doctrine is installed from a package index, the distribution name is
 `doctrine-agents`. The Python module name stays `doctrine`.
 
-Want the packaged compiler instead of a source checkout?
+Want the packaged compiler?
 
 ```bash
 python -m pip install doctrine-agents
 ```
 
+Need the example corpus, repo proof, or `emit_flow`?
+
 ```bash
 git clone https://github.com/aelaguiz/doctrine.git
 cd doctrine
-uv sync
-npm ci
-make check
+make setup
 ```
 
-Want a smaller first proof?
+Use [CONTRIBUTING.md](CONTRIBUTING.md) for the full source-checkout proof
+path. `make setup` owns the repo bootstrap commands.
+
+Want a smaller first proof from a source checkout?
 
 ```bash
 uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml
 ```
 
-Want generated output right away?
+Want generated output right away from a source checkout?
 
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs

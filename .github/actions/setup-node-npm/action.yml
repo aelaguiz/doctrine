@@ -1,0 +1,21 @@
+name: Setup Node And npm Cache
+description: Set up Node with npm caching for one lockfile.
+
+inputs:
+  node-version:
+    description: Node version to install.
+    required: false
+    default: "20"
+  cache-dependency-path:
+    description: Lockfile path for npm cache reuse.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
