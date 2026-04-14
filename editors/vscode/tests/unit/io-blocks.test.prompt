@@ -23,6 +23,24 @@ agent Reviewer:
 #   ^^^^^^^^^^^^ keyword.other.field.doctrine
 #                 ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
+    # Keep split final outputs readable. Editor users should still see
+    # review_fields as a reserved field inside the nested final_output body.
+    final_output:
+#   ^^^^^^^^^^^^ keyword.other.field.doctrine
+#               ^ punctuation.separator.key-value.doctrine
+        output: CoordinationHandoff
+#       ^^^^^^ keyword.other.field.doctrine
+#             ^ punctuation.separator.key-value.doctrine
+#               ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+        review_fields:
+#       ^^^^^^^^^^^^^ keyword.other.field.doctrine
+#                    ^ punctuation.separator.key-value.doctrine
+            current_artifact: current_artifact
+#           ^^^^^^^^^^^^^^^^ keyword.other.field.doctrine
+#                           ^ punctuation.separator.key-value.doctrine
+#                             ^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
     outputs[SharedOutputs]: "Your Outputs"
 #   ^^^^^^^ keyword.other.field.doctrine
 #          ^ punctuation.section.inheritance.begin.doctrine
