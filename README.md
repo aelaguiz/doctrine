@@ -229,3 +229,4 @@ For extension details, see
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [SECURITY.md](SECURITY.md)
+- [SUPPORT.md](SUPPORT.md)

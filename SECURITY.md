@@ -10,6 +10,8 @@ lines.
 
 ## Reporting a vulnerability
 
+For non-security questions or bug reports, use [SUPPORT.md](SUPPORT.md).
+
 Do not open a public issue with exploit details.
 
 Report the issue privately to the maintainer through a channel you already use

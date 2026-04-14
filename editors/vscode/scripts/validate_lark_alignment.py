@@ -322,7 +322,17 @@ def main() -> int:
     _require_pattern_match(
         repository,
         "finalOutputField",
-        ["    final_output: FinalReply"],
+        [
+            "    final_output: FinalReply",
+            "    final_output:",
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "finalOutputOutputField",
+        ["        output: FinalReply"],
         should_match=True,
         errors=errors,
     )
@@ -347,7 +357,10 @@ def main() -> int:
     _require_pattern_match(
         repository,
         "reviewFieldsField",
-        ["    fields:"],
+        [
+            "    fields:",
+            "        review_fields:",
+        ],
         should_match=True,
         errors=errors,
     )
