@@ -4,7 +4,7 @@ This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
 Current Doctrine language version: 1.0
-Current public Doctrine release version: v1.0.0. Use the latest signed
+Current public Doctrine release version: v1.0.1. Use the latest signed
 annotated tag and matching GitHub release as the public release record.
 
 ## The Version Lines
@@ -43,8 +43,13 @@ Doctrine also ships narrower version lines.
   contract shape. It is not the Doctrine language version.
 - `schema_version` in `cases.toml` only versions the corpus-manifest format.
   It is not the Doctrine language version.
-- The package metadata version in `pyproject.toml` is package metadata only. It
-  is not the Doctrine language version or the public release version.
+- The package metadata version in `pyproject.toml` versions the published
+  Python package. It is not the Doctrine language version.
+- For public stable releases, `vX.Y.Z` maps to package version `X.Y.Z`.
+- For public beta releases, `vX.Y.Z-beta.N` maps to package version `X.Y.ZbN`.
+- For public rc releases, `vX.Y.Z-rc.N` maps to package version `X.Y.ZrcN`.
+- `make release-tag` and `make release-draft` must fail if `[project].version`
+  does not match that release-package version.
 
 For the emitted contract surface, use [EMIT_GUIDE.md](EMIT_GUIDE.md).
 For the corpus manifest surface, use [../examples/README.md](../examples/README.md).
@@ -118,16 +123,18 @@ upgrade steps.
 
 1. Update `docs/VERSIONING.md` when the language version, version rules, or
    compatibility guidance changed.
-2. Update `CHANGELOG.md`. Add the next release section with the fixed release
+2. Update `pyproject.toml`. Set `[project].version` to the package version for
+   the requested public release.
+3. Update `CHANGELOG.md`. Add the next release section with the fixed release
    header and curated change notes.
-3. Update the touched live docs and contributor instructions when the release
+4. Update the touched live docs and contributor instructions when the release
    changes their truth.
-4. Run `make release-prepare RELEASE=vX.Y.Z CLASS=internal|additive|soft-deprecated|breaking LANGUAGE_VERSION=unchanged|X.Y CHANNEL=stable|beta|rc`.
-5. Run the required proof for the touched surfaces.
-6. Run `make release-tag RELEASE=vX.Y.Z CHANNEL=stable|beta|rc`.
-7. Run `make release-draft RELEASE=vX.Y.Z CHANNEL=stable|beta|rc PREVIOUS_TAG=auto`.
-8. Review the GitHub draft release body.
-9. Run `make release-publish RELEASE=vX.Y.Z`.
+5. Run `make release-prepare RELEASE=vX.Y.Z CLASS=internal|additive|soft-deprecated|breaking LANGUAGE_VERSION=unchanged|X.Y CHANNEL=stable|beta|rc`.
+6. Run the required proof for the touched surfaces.
+7. Run `make release-tag RELEASE=vX.Y.Z CHANNEL=stable|beta|rc`.
+8. Run `make release-draft RELEASE=vX.Y.Z CHANNEL=stable|beta|rc PREVIOUS_TAG=auto`.
+9. Review the GitHub draft release body.
+10. Run `make release-publish RELEASE=vX.Y.Z`.
 
 The helper prints the fixed worksheet, the exact release-note header, the exact
 changelog header, and the next commands to run.
@@ -137,6 +144,8 @@ changelog header, and the next commands to run.
 - Public beta, rc, and stable tags must be signed annotated tags.
 - `make release-tag` fails if the git worktree is dirty or tag signing is not
   configured.
+- `make release-tag` and `make release-draft` fail if `[project].version` in
+  `pyproject.toml` does not match the requested release's package version.
 - `make release-draft` and `make release-publish` fail if the current public
   release tag is missing, lightweight, fails `git verify-tag`, is not pushed
   to `origin`, or points to a different tag object on `origin` than the
@@ -180,7 +189,7 @@ If a public release is wrong:
 - Do not infer Doctrine language compatibility from `contract_version`.
 - Do not infer Doctrine language compatibility from `schema_version`.
 - Do not treat the package metadata version in `pyproject.toml` as the Doctrine
-  language version or release version.
+  language version. It only versions the published Python package.
 
 ## Related Docs
 

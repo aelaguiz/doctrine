@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import tomllib
 
 from doctrine._release_flow.common import release_error, run_checked
 from doctrine._release_flow.models import (
@@ -27,6 +28,7 @@ PLACEHOLDER_SUBSTRINGS = (
     "placeholder",
 )
 PLACEHOLDER_VALUES = {"...", "n/a", "na", "pending"}
+
 
 def repo_root() -> Path:
     completed = run_checked(
@@ -59,6 +61,88 @@ def load_current_language_version(repo_root: Path) -> LanguageVersion:
             location=versioning_path,
         )
     return parse_language_version(match.group("version"), location=versioning_path)
+
+
+def load_package_metadata_version(repo_root: Path) -> str:
+    pyproject_path = repo_root / "pyproject.toml"
+    try:
+        text = pyproject_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise release_error(
+            "E530",
+            "Release package metadata version is missing or does not match",
+            "`pyproject.toml` is missing, so Doctrine cannot read `[project].version` for this release.",
+            location=pyproject_path,
+        ) from exc
+
+    try:
+        raw = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as exc:
+        raise release_error(
+            "E530",
+            "Release package metadata version is missing or does not match",
+            "Doctrine could not parse `pyproject.toml` while reading `[project].version` for this release.",
+            location=pyproject_path,
+        ) from exc
+
+    project_table = raw.get("project")
+    if not isinstance(project_table, dict):
+        raise release_error(
+            "E530",
+            "Release package metadata version is missing or does not match",
+            "`pyproject.toml` must contain a `[project]` table with a string `version` value for this release.",
+            location=pyproject_path,
+        )
+
+    version = project_table.get("version")
+    if not isinstance(version, str) or not version.strip():
+        raise release_error(
+            "E530",
+            "Release package metadata version is missing or does not match",
+            "`pyproject.toml` must contain `[project].version` as a non-empty string for this release.",
+            location=pyproject_path,
+        )
+    return version.strip()
+
+
+def expected_package_metadata_version(release_tag: ReleaseTag) -> str:
+    base = f"{release_tag.major}.{release_tag.minor}.{release_tag.patch}"
+    if release_tag.channel == "stable":
+        return base
+    if release_tag.channel == "beta":
+        assert release_tag.prerelease_number is not None
+        return f"{base}b{release_tag.prerelease_number}"
+    assert release_tag.prerelease_number is not None
+    return f"{base}rc{release_tag.prerelease_number}"
+
+
+def describe_package_metadata_status(
+    *,
+    current_version: str,
+    requested_tag: ReleaseTag,
+) -> str:
+    expected_version = expected_package_metadata_version(requested_tag)
+    if current_version == expected_version:
+        return f"ready (`{expected_version}`)"
+    return f"needs `[project].version = \"{expected_version}\"` in `pyproject.toml`"
+
+
+def require_matching_package_metadata_version(
+    *,
+    repo_root: Path,
+    release_tag: ReleaseTag,
+) -> str:
+    current_version = load_package_metadata_version(repo_root)
+    expected_version = expected_package_metadata_version(release_tag)
+    if current_version != expected_version:
+        raise release_error(
+            "E530",
+            "Release package metadata version is missing or does not match",
+            f"`pyproject.toml` package version `{current_version}` does not match requested release `{release_tag.raw}`. "
+            f"Set `[project].version = \"{expected_version}\"` before tagging or drafting this release.",
+            location=repo_root / "pyproject.toml",
+        )
+    return current_version
 
 
 def load_changelog_sections(repo_root: Path) -> tuple[ChangelogSection, ...]:

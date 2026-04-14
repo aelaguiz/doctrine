@@ -70,6 +70,9 @@ class ReleasePlan:
     current_language_version: LanguageVersion
     requested_language_version: LanguageVersion
     language_version_changed: bool
+    current_package_version: str
+    requested_package_version: str
+    package_version_status: str
     previous_stable_tag: ReleaseTag | None
     previous_same_channel_tag: ReleaseTag | None
     changelog_status: str

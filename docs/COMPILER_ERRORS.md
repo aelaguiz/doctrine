@@ -226,6 +226,7 @@ Stability rules:
 | `E527` | Release tag preflight failed | Release tagging could not continue because git state or tag operations failed. |
 | `E528` | Release tag signing is not configured | Doctrine could not find the git signing key needed for signed public tags. |
 | `E529` | GitHub release command failed | GitHub draft or publish release commands failed. |
+| `E530` | Release package metadata version is missing or does not match | `pyproject.toml` is missing a usable `[project].version`, or that version does not match the requested public release's package version. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

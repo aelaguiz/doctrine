@@ -56,6 +56,26 @@ Support-surface version changes: none
 - Use this only when a bad public release was superseded later.
 ```
 
+## v1.0.1 - 2026-04-14
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v1.0.1
+Language version: unchanged (still 1.0)
+Affected surfaces: Python package metadata, the public release flow, and external package install compatibility.
+Who must act: maintainers cutting Doctrine releases and users installing Doctrine through package resolvers that require `doctrine>=1.0.0,<2`.
+Who does not need to act: users pinned to repo commits and users who are not consuming Doctrine as a Python package.
+Upgrade steps: Install Doctrine v1.0.1. If you added a local `0.0.0` workaround, remove it and resolve against the released package again.
+Verification: uv run --locked python -m unittest tests.test_release_flow && make verify-diagnostics
+Support-surface version changes: package metadata 0.0.0 -> 1.0.1
+
+### Changed
+- Made the published package metadata line up with the released Doctrine 1.0 patch line.
+- Taught the release flow to check `pyproject.toml` package metadata before tagging or drafting a public release.
+
+### Fixed
+- Restored clean downstream installs for dependents that correctly require `doctrine>=1.0.0,<2`.
+
 ## v1.0.0 - 2026-04-14
 
 Release kind: Non-breaking
@@ -79,3 +99,6 @@ Support-surface version changes: none
 
 ### Fixed
 - Corrected the skill-package example range in `examples/README.md` to `95` through `103`.
+
+### YANKED
+- Superseded by v1.0.1 because `pyproject.toml` still advertised `0.0.0`, which broke package resolvers that correctly required the Doctrine 1.x line.

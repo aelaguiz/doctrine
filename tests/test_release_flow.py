@@ -33,6 +33,7 @@ class ReleaseFlowTests(unittest.TestCase):
         self._git("config", "user.email", "doctrine@example.com")
 
         (self.root / "README.md").write_text("# Doctrine test repo\n", encoding="utf-8")
+        self._write_pyproject(package_version="1.0.0")
         self._write_versioning(language_version="1.0")
         self._write_changelog(unreleased="- No public release yet.\n")
         self._commit("initial state")
@@ -42,6 +43,7 @@ class ReleaseFlowTests(unittest.TestCase):
 
     def test_prepare_release_renders_ready_minor_release_worksheet(self) -> None:
         self._tag("v1.0.0")
+        self._write_pyproject(package_version="1.1.0")
         self._write_changelog(
             unreleased="- Next release planning starts after this cut.\n",
             released_sections=(
@@ -70,8 +72,41 @@ class ReleaseFlowTests(unittest.TestCase):
         self.assertIn("Changelog entry status: ready (`v1.1.0 - 2026-04-13`)", worksheet)
         self.assertIn("Requested release version: v1.1.0", worksheet)
         self.assertIn("Requested language version state: unchanged (still 1.0)", worksheet)
+        self.assertIn("Package metadata status: ready (`1.1.0`)", worksheet)
+        self.assertIn("- pyproject.toml", worksheet)
         self.assertIn(
             "make release-draft RELEASE=v1.1.0 CHANNEL=stable PREVIOUS_TAG=auto",
+            worksheet,
+        )
+
+    def test_prepare_release_reports_package_metadata_status(self) -> None:
+        self._tag("v1.0.0")
+        self._write_changelog(
+            unreleased="- Next release planning starts after this cut.\n",
+            released_sections=(
+                self._release_section(
+                    tag="v1.0.1",
+                    release_kind="Non-breaking",
+                    channel="stable",
+                    language_version="unchanged (still 1.0)",
+                ),
+            ),
+        )
+
+        with patch("doctrine._release_flow.tags.require_public_release_tag"):
+            plan = prepare_release(
+                repo_root=self.root,
+                release="v1.0.1",
+                release_class="internal",
+                language_version="unchanged",
+                channel="stable",
+            )
+        worksheet = render_release_worksheet(plan)
+
+        self.assertIn("Current package metadata version: 1.0.0", worksheet)
+        self.assertIn("Requested package metadata version: 1.0.1", worksheet)
+        self.assertIn(
+            'Package metadata status: needs `[project].version = "1.0.1"` in `pyproject.toml`',
             worksheet,
         )
 
@@ -172,9 +207,35 @@ class ReleaseFlowTests(unittest.TestCase):
         ):
             tag_release(repo_root=self.root, release="v2.0.0", channel="stable")
 
+    def test_tag_release_rejects_mismatched_package_version(self) -> None:
+        self._tag("v1.0.0")
+        self._git("config", "user.signingkey", "fake-key")
+        self._write_changelog(
+            unreleased="- Next release planning starts after this cut.\n",
+            released_sections=(
+                self._release_section(
+                    tag="v1.0.1",
+                    release_kind="Non-breaking",
+                    channel="stable",
+                    language_version="unchanged (still 1.0)",
+                ),
+            ),
+        )
+        self._commit("prepare patch release entry with stale package version")
+
+        with (
+            patch("doctrine._release_flow.tags.require_public_release_tag"),
+            self.assertRaisesRegex(
+                RuntimeError,
+                r'E530 emit error: Release package metadata version is missing or does not match',
+            ),
+        ):
+            tag_release(repo_root=self.root, release="v1.0.1", channel="stable")
+
     def test_draft_release_builds_prerelease_github_command_and_notes(self) -> None:
         self._tag("v1.0.0")
         self._tag("v2.0.0-beta.1")
+        self._write_pyproject(package_version="2.0.0b2")
         self._write_versioning(language_version="2.0")
         self._write_changelog(
             unreleased="- Next release planning starts after this cut.\n",
@@ -230,6 +291,7 @@ class ReleaseFlowTests(unittest.TestCase):
 
     def test_draft_release_builds_stable_github_command_and_notes(self) -> None:
         self._tag("v1.0.0")
+        self._write_pyproject(package_version="1.1.0")
         self._write_changelog(
             unreleased="- Next release planning starts after this cut.\n",
             released_sections=(
@@ -506,6 +568,7 @@ class ReleaseFlowTests(unittest.TestCase):
             )
         worksheet = render_release_worksheet(plan)
 
+        self.assertIn("- pyproject.toml", worksheet)
         self.assertIn("- docs/VERSIONING.md", worksheet)
         self.assertIn("- affected live docs", worksheet)
         self.assertIn("- AGENTS.md", worksheet)
@@ -519,6 +582,18 @@ class ReleaseFlowTests(unittest.TestCase):
                 # Versioning
 
                 Current Doctrine language version: {language_version}
+                """
+            ),
+            encoding="utf-8",
+        )
+
+    def _write_pyproject(self, *, package_version: str) -> None:
+        (self.root / "pyproject.toml").write_text(
+            textwrap.dedent(
+                f"""\
+                [project]
+                name = "doctrine"
+                version = "{package_version}"
                 """
             ),
             encoding="utf-8",

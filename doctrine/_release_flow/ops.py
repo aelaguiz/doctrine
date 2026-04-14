@@ -14,10 +14,14 @@ from doctrine._release_flow.models import (
     language_header_value,
 )
 from doctrine._release_flow.parsing import (
+    describe_package_metadata_status,
     describe_changelog_status,
     find_release_section,
     load_changelog_sections,
     load_current_language_version,
+    load_package_metadata_version,
+    expected_package_metadata_version,
+    require_matching_package_metadata_version,
     require_validated_release_entry,
     resolve_requested_language_version,
 )
@@ -44,6 +48,8 @@ def prepare_release(
 ) -> ReleasePlan:
     requested_tag = parse_release_tag(release, channel=channel)
     current_language_version = load_current_language_version(repo_root)
+    current_package_version = load_package_metadata_version(repo_root)
+    requested_package_version = expected_package_metadata_version(requested_tag)
     tags = load_release_tags(repo_root)
     previous_stable_tag = latest_tag_for_channel(
         tags,
@@ -79,6 +85,10 @@ def prepare_release(
         requested_language_version=requested_language_version,
         release_kind=release_kind,
     )
+    package_version_status = describe_package_metadata_status(
+        current_version=current_package_version,
+        requested_tag=requested_tag,
+    )
 
     return ReleasePlan(
         release_tag=requested_tag,
@@ -87,6 +97,9 @@ def prepare_release(
         current_language_version=current_language_version,
         requested_language_version=requested_language_version,
         language_version_changed=requested_language_version != current_language_version,
+        current_package_version=current_package_version,
+        requested_package_version=requested_package_version,
+        package_version_status=package_version_status,
         previous_stable_tag=previous_stable_tag,
         previous_same_channel_tag=previous_same_channel_tag,
         changelog_status=changelog_status,
@@ -102,6 +115,7 @@ def prepare_release(
 
 def render_release_worksheet(plan: ReleasePlan) -> str:
     required_updates = [
+        "pyproject.toml",
         "CHANGELOG.md",
         "release-note header and body",
         "tests/test_release_flow.py",
@@ -147,6 +161,9 @@ def render_release_worksheet(plan: ReleasePlan) -> str:
         f"Previous language version: {plan.current_language_version.text}",
         f"Requested release version: {plan.release_tag.raw}",
         f"Requested language version state: {language_state_text(plan)}",
+        f"Current package metadata version: {plan.current_package_version}",
+        f"Requested package metadata version: {plan.requested_package_version}",
+        f"Package metadata status: {plan.package_version_status}",
         f"Changelog entry status: {plan.changelog_status}",
         "Required docs and proof surfaces to update:",
         *[f"- {item}" for item in required_updates],
@@ -181,6 +198,7 @@ def tag_release(*, repo_root: Path, release: str, channel: str) -> None:
             requested_tag=release_tag,
         ),
     )
+    require_matching_package_metadata_version(repo_root=repo_root, release_tag=release_tag)
     tag_message = build_tag_message(release_entry)
     run_checked(
         ["git", "tag", "-s", "-a", release_tag.raw, "-m", tag_message],
@@ -217,6 +235,7 @@ def draft_release(
             requested_tag=release_tag,
         ),
     )
+    require_matching_package_metadata_version(repo_root=repo_root, release_tag=release_tag)
     previous = resolve_previous_tag(
         repo_root=repo_root,
         requested_tag=release_tag,
