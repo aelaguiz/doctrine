@@ -22,6 +22,9 @@ or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
 ### Changed
+- Clarified the release policy to prefer the next patch version for routine
+  public work and keep minor bumps for real backward-compatible public
+  additions or soft deprecations.
 - Moved the public release record fully onto `CHANGELOG.md`, signed tags, and
   matching GitHub releases. `docs/VERSIONING.md` now stays policy-only.
 - Centralized package release metadata and package smoke proof so release

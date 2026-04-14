@@ -22,6 +22,9 @@
   release flow, update `docs/VERSIONING.md` and `CHANGELOG.md`.
 - Keep release classification, changelog entry shape, upgrade guidance, and
   release helper output aligned when the release policy changes.
+- Prefer patch bumps for routine public releases. Use `1.0.2`, not `1.2.0`,
+  unless the release adds a real backward-compatible public feature, a soft
+  deprecation, or a breaking change.
 
 ## Doc Deletion Safety
 
