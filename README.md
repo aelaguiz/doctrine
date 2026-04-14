@@ -7,11 +7,13 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aelaguiz/doctrine/badge)](https://scorecard.dev/viewer/?uri=github.com/aelaguiz/doctrine)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
-[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [VS Code extension](editors/vscode/README.md)
+[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)
 
-Write agent flows as code. Compile them to `AGENTS.md`.
+Write agent workflows in a code-like DSL. Compile them to portable instructions.
 
-Doctrine is a typed DSL and compiler for reusable agent instructions, workflows, reviews, skills, and I/O contracts. Instead of hand-editing giant `AGENTS.md` files, you author small `.prompt` files and compile deterministic runtime artifacts that current coding-agent tools can already read today.
+Doctrine is a typed DSL and compiler for agent instructions, workflows, reviews, skills, and I/O contracts that coding agents are actually good at writing and maintaining. Instead of hand-editing giant `AGENTS.md` files, letting coding agents generate markdown sprawl, or locking yourself into a proprietary Python agent framework, you author small `.prompt` files and compile deterministic runtime artifacts that current coding-agent tools can already read today.
+
+If Rally is how you run the workflow, Doctrine is how you author it. Rally gets attention through strong, stable workflow execution. Doctrine is the reason those workflows stay coherent under the hood.
 
 <p align="center">
   <img src="docs/assets/readme-doctrine-agent-example.png" alt="Side-by-side view of Doctrine source on the left and compiled AGENTS.md output on the right." width="1200">
@@ -19,10 +21,12 @@ Doctrine is a typed DSL and compiler for reusable agent instructions, workflows,
 
 Why teams reach for Doctrine:
 
-- one shared rule changes once
+- instructions read like code instead of text sludge
+- coding agents can change shared rules without duplicating markdown
 - compile-time failures catch drift before runtime
 - humans can review source and emitted runtime side by side
 - flow diagrams, verification, and editor support ship today
+- output stays portable across current agent tools and harnesses
 
 ## Runtime boundary
 
@@ -31,6 +35,12 @@ It turns typed `.prompt` source into deterministic runtime Markdown such as
 `AGENTS.md`.
 That output is meant for the agent runtime that fits your stack.
 Doctrine does not try to be the runtime, scheduler, or state store.
+
+If you want the split in one glance:
+
+- Use Doctrine when you want to author and validate the flow.
+- Use Rally when you want to run a strong, stable workflow with repo-local state, resumability, and strict turn routing.
+- The split is deliberate: Doctrine is how you author it. Rally is how you run it.
 
 ## Why Doctrine exists
 
