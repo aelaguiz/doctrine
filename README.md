@@ -5,7 +5,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/aelaguiz/doctrine/ci.yml?branch=main&label=ci)](https://github.com/aelaguiz/doctrine/actions/workflows/ci.yml)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
-[Docs](docs/README.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)
+[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)
 
 Write agent flows as code. Compile them to `AGENTS.md`.
 
@@ -125,6 +125,8 @@ The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`.
 ## Read next
 
 - [docs/README.md](docs/README.md)
+- [docs/VERSIONING.md](docs/VERSIONING.md)
+- [CHANGELOG.md](CHANGELOG.md)
 - [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)

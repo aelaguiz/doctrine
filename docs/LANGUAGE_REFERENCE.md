@@ -7,6 +7,8 @@ shipped compiler reuses loaded prompt graphs so larger prompt families remain
 practical, not just toy-sized examples.
 
 For the motivation behind the project, start with [WHY_DOCTRINE.md](WHY_DOCTRINE.md).
+For versioning, releases, and upgrade rules, use
+[VERSIONING.md](VERSIONING.md).
 For the numbered teaching corpus, use [../examples/README.md](../examples/README.md).
 
 ## Mental Model

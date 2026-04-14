@@ -5,6 +5,7 @@ This document records Doctrine's durable language choices and guardrails.
 For the shipped syntax and feature overview, use
 [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md). For the numbered proof corpus,
 use [../examples/README.md](../examples/README.md).
+For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 
 ## Core Principles
 

@@ -258,6 +258,12 @@ The companion contract is compiler-owned emitted truth. In v1 it carries:
 - final-output declaration key and name
 - `format_mode`
 - `schema_profile`
+
+Keep `contract_version` narrow. Public release tags and Doctrine language
+versions live in the versioning guide and release history instead:
+
+- [VERSIONING.md](VERSIONING.md)
+- [../CHANGELOG.md](../CHANGELOG.md)
 - stable project-relative `schema_file` and `example_file` paths when the final
   output is schema-backed
 - for review-driven agents, a root `review` object that says:

@@ -92,6 +92,7 @@ For the shipped skill-package authoring guide, use
 [../docs/SKILL_PACKAGE_AUTHORING.md](../docs/SKILL_PACKAGE_AUTHORING.md).
 For versioning and breaking-change guidance, use
 [../docs/VERSIONING.md](../docs/VERSIONING.md).
+For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 
 ## Corpus Index
 
