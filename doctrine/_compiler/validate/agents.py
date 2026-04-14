@@ -149,14 +149,18 @@ class ValidateAgentsMixin:
         *,
         unit: IndexedUnit,
         resolved_slots: dict[str, ResolvedWorkflowBody],
+        agent_contract: AgentContract,
     ) -> tuple[tuple[str, RouteSemanticContext], ...]:
         sources: list[tuple[str, RouteSemanticContext]] = []
         review_fields = [field for field in agent.fields if isinstance(field, model.ReviewField)]
         if review_fields:
             review_unit, review_decl = self._resolve_review_ref(review_fields[0].value, unit=unit)
+            self._ensure_concrete_review_decl(review_decl, unit=review_unit)
             review_context = self._route_semantic_context_from_review_decl(
                 review_decl,
                 unit=review_unit,
+                agent_contract=agent_contract,
+                owner_label=f"agent {agent.name} review",
             )
             if review_context is not None:
                 sources.append(("review", review_context))
@@ -184,17 +188,31 @@ class ValidateAgentsMixin:
 
         return tuple(sources)
 
+    def _ensure_concrete_review_decl(
+        self,
+        review_decl: model.ReviewDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        if review_decl.abstract:
+            raise CompileError(
+                "Concrete agents may not attach abstract reviews directly: "
+                f"{_dotted_decl_name(unit.module_parts, review_decl.name)}"
+            )
+
     def _route_semantic_context_for_agent(
         self,
         agent: model.Agent,
         *,
         unit: IndexedUnit,
         resolved_slots: dict[str, ResolvedWorkflowBody],
+        agent_contract: AgentContract,
     ) -> RouteSemanticContext | None:
         sources = self._route_semantic_sources_for_agent(
             agent,
             unit=unit,
             resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
         )
         if len(sources) > 1:
             labels = ", ".join(source for source, _context in sources)
@@ -221,6 +239,7 @@ class ValidateAgentsMixin:
             agent,
             unit=unit,
             resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
         )
         if context is None:
             return frozenset()

@@ -66,7 +66,7 @@ For the motivating use case and the runtime rationale, read
 - session-based compilation, once-per-session import loading, and deterministic
   default parallel batch compilation for docs emission and corpus verification
 - manifest-backed verification for the numbered corpus through
-  `examples/103_skill_package_binary_assets`
+  `examples/106_review_split_final_output_json_schema_partial`
 - a repo-local emit pipeline for compiled Markdown plus compiler-owned workflow
   flow artifacts, and a VS Code extension for `.prompt` files
 
@@ -187,6 +187,7 @@ uv run --locked python -m doctrine.emit_flow --entrypoint examples/73_flow_visua
 Start with the live docs set:
 
 - [docs/README.md](docs/README.md)
+- [docs/VERSIONING.md](docs/VERSIONING.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
 - [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)

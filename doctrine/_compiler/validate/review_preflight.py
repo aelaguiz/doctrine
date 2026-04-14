@@ -29,6 +29,7 @@ class ValidateReviewPreflightMixin:
         output_decl: model.OutputDecl,
         output_unit: IndexedUnit,
         owner_label: str,
+        require_core_fields: bool = True,
         require_blocked_gate: bool,
         require_active_mode: bool,
         require_trigger_reason: bool,
@@ -48,7 +49,7 @@ class ValidateReviewPreflightMixin:
             )
             bindings[binding.semantic_field] = binding.field_path
 
-        required = set(_REVIEW_REQUIRED_FIELD_NAMES)
+        required = set(_REVIEW_REQUIRED_FIELD_NAMES) if require_core_fields else set()
         if require_blocked_gate:
             required.add("blocked_gate")
         if require_active_mode:

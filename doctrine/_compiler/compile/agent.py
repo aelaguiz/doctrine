@@ -57,6 +57,7 @@ class CompileAgentMixin:
         final_output_fields = [
             field for field in agent.fields if isinstance(field, model.FinalOutputField)
         ]
+        final_output_field = final_output_fields[0] if final_output_fields else None
         if has_workflow_slot and review_fields:
             raise CompileError(
                 f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
@@ -71,6 +72,7 @@ class CompileAgentMixin:
             agent,
             unit=unit,
             resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
         )
         review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
         route_output_contexts = self._route_output_contexts_for_agent(
@@ -81,6 +83,12 @@ class CompileAgentMixin:
         )
         primary_review_output_context = self._primary_review_output_context(
             review_output_contexts
+        )
+        review_contract = self._compile_agent_review_contract(
+            agent=agent,
+            unit=unit,
+            agent_contract=agent_contract,
+            final_output_field=final_output_field,
         )
         field_specs: list[AgentFieldCompileSpec] = []
         seen_role = False
@@ -130,18 +138,19 @@ class CompileAgentMixin:
         final_output = (
             self._compile_final_output_spec(
                 agent_name=agent.name,
-                field=final_output_fields[0],
+                field=final_output_field,
                 unit=unit,
                 agent_contract=agent_contract,
                 review_output_contexts=review_output_contexts,
                 route_output_contexts=route_output_contexts,
+                review_contract=review_contract,
                 fallback_review_semantics=(
                     primary_review_output_context[1]
                     if primary_review_output_context is not None
                     else None
                 ),
             )
-            if final_output_fields
+            if final_output_field is not None
             else None
         )
         compiled_fields = self._compile_agent_fields(
@@ -153,7 +162,12 @@ class CompileAgentMixin:
             route_output_contexts=route_output_contexts,
             final_output=final_output,
         )
-        return CompiledAgent(name=agent.name, fields=compiled_fields, final_output=final_output)
+        return CompiledAgent(
+            name=agent.name,
+            fields=compiled_fields,
+            final_output=final_output,
+            review=review_contract,
+        )
 
     def _compile_agent_fields(
         self,

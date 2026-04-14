@@ -116,6 +116,38 @@ class ProjectConfigTests(unittest.TestCase):
             self.assertEqual(exc_info.exception.code, "E520")
             self.assertIn("outside the target project root", str(exc_info.exception))
 
+    def test_emit_targets_reject_entrypoint_outside_project_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            outside = root.parent / f"{root.name}_outside"
+            (outside / "prompts").mkdir(parents=True)
+            (outside / "prompts" / "AGENTS.prompt").write_text(
+                """agent Demo:\n    role: "Own the emitted surface."\n"""
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    f"""\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "../{outside.name}/prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                )
+            )
+
+            # Configured emit targets are part of the owning project contract.
+            # They must not pull source from a sibling prompts tree outside that
+            # project root, or repo-local builds can start depending on ambient
+            # files that are not part of the checked project.
+            with self.assertRaises(EmitError) as exc_info:
+                load_emit_targets(pyproject)
+
+            self.assertEqual(exc_info.exception.code, "E521")
+            self.assertIn("outside the target project root", str(exc_info.exception))
+
     def test_direct_emit_target_rejects_output_dir_outside_project_root(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -101,6 +101,26 @@ class ReviewBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class FinalOutputOutputPart:
+    ref: model.NameRef
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class FinalOutputReviewFieldsPart:
+    config: model.ReviewFieldsConfig
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class FinalOutputBodyParts:
+    output_ref: model.NameRef
+    review_fields: model.ReviewFieldsConfig | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class RouteOnlyBodyParts:
     facts_ref: model.NameRef | None = None
     when_exprs: tuple[model.Expr, ...] = ()

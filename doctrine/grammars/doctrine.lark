@@ -108,6 +108,12 @@ skills_field: "skills" ":" string _NL _INDENT skills_body _DEDENT
             | "skills" ":" name_ref _NL?
 review_field: "review" ":" name_ref _NL?
 final_output_field: "final_output" ":" name_ref _NL?
+                  | "final_output" ":" _NL _INDENT final_output_body _DEDENT
+final_output_body: final_output_body_item+
+?final_output_body_item: final_output_output_stmt
+                       | final_output_review_fields_stmt
+final_output_output_stmt: "output" ":" name_ref _NL?
+final_output_review_fields_stmt: "review_fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
 agent_slot_abstract: "abstract" CNAME _NL?

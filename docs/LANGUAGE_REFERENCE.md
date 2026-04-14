@@ -96,6 +96,22 @@ Important rules:
   `comment_output:` or point at another emitted `TurnResponse` output.
   `comment_output:` stays the review carrier, while a separate `final_output:`
   still inherits the review semantic refs and guards.
+- The short form stays legal:
+
+```prompt
+final_output: AcceptanceReviewResponse
+```
+
+- Review-driven split finals may also use the block form:
+
+```prompt
+final_output:
+    output: AcceptanceControlFinalResponse
+    review_fields:
+        verdict: verdict
+        current_artifact: current_artifact
+        next_owner: next_owner
+```
 - Any emitted output may also read shared compiler-owned route semantics
   through `route.exists`, `route.next_owner`, `route.next_owner.key`,
   `route.next_owner.title`, `route.label`, and `route.summary` when the active
@@ -567,6 +583,9 @@ Important rules:
   review's `comment_output:` or a second emitted `TurnResponse`.
   `comment_output:` still remains the review carrier for routing and
   currentness semantics.
+- When that second output uses `review_fields:`, the compiler binds those
+  paths to review semantics and emits whether the split final response is
+  `control_ready`.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 

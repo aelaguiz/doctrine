@@ -107,6 +107,7 @@ class FlowMixin:
                 agent,
                 unit=unit,
                 resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
             )
             for input_key, (input_unit, input_decl) in sorted(agent_contract.inputs.items()):
                 self._flow_upsert_input_node(input_nodes, input_decl, unit=input_unit)

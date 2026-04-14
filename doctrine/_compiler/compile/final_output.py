@@ -3,11 +3,13 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
+from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.resolved_types import (
     AgentContract,
     CompileError,
     CompiledBodyItem,
     CompiledFinalOutputSpec,
+    CompiledReviewSpec,
     CompiledSection,
     FinalOutputJsonShapeSummary,
     IndexedUnit,
@@ -31,6 +33,7 @@ class CompileFinalOutputMixin:
         agent_contract: AgentContract,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+        review_contract: CompiledReviewSpec | None = None,
         fallback_review_semantics: ReviewSemanticContext | None = None,
     ) -> CompiledFinalOutputSpec:
         owner_label = f"agent {agent_name} final_output"
@@ -121,6 +124,7 @@ class CompileFinalOutputMixin:
             shape_title=shape_title,
             json_summary=json_summary,
             extras=extras,
+            review_contract=review_contract,
             review_semantics=review_semantics,
             route_semantics=route_semantics,
             render_profile=render_profile,
@@ -154,6 +158,7 @@ class CompileFinalOutputMixin:
         shape_title: str,
         json_summary: FinalOutputJsonShapeSummary | None,
         extras: tuple[model.AnyRecordItem, ...],
+        review_contract: CompiledReviewSpec | None,
         review_semantics: ReviewSemanticContext | None,
         route_semantics: RouteSemanticContext | None,
         render_profile: ResolvedRenderProfile | None,
@@ -222,6 +227,12 @@ class CompileFinalOutputMixin:
                     ),
                 ]
             )
+
+        review_response_semantics = self._compile_final_output_review_response_semantics(
+            review_contract=review_contract,
+        )
+        if review_response_semantics is not None:
+            body.extend(["", review_response_semantics])
 
         if output_decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(
@@ -312,6 +323,55 @@ class CompileFinalOutputMixin:
                     render_profile=render_profile,
                 ),
             ),
+        )
+
+    def _compile_final_output_review_response_semantics(
+        self,
+        *,
+        review_contract: CompiledReviewSpec | None,
+    ) -> CompiledSection | None:
+        if review_contract is None or review_contract.final_response.mode != "split":
+            return None
+
+        body: list[CompiledBodyItem] = [
+            (
+                "This final response is separate from the review carrier: "
+                f"{review_contract.comment_output.output_name}."
+            )
+        ]
+
+        if review_contract.final_response.review_fields:
+            body.extend(
+                [
+                    "",
+                    *self._pipe_table_lines(
+                        ("Meaning", "Field"),
+                        tuple(
+                            (
+                                _humanize_key(field_name),
+                                f"`{'.'.join(field_path)}`",
+                            )
+                            for field_name, field_path in review_contract.final_response.review_fields
+                        ),
+                    ),
+                ]
+            )
+        else:
+            body.extend(["", "This final response does not carry review fields on its own."])
+
+        body.append("")
+        if review_contract.final_response.control_ready:
+            body.append(
+                "This final response is control-ready. A host may read it as the review outcome."
+            )
+        else:
+            body.append(
+                "This final response is not control-ready. Read the review carrier for the full review outcome."
+            )
+
+        return CompiledSection(
+            title="Review Response Semantics",
+            body=tuple(body),
         )
 
     def _compile_output_support_items(

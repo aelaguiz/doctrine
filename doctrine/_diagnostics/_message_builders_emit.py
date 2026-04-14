@@ -160,4 +160,16 @@ _EMIT_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
         ),
         (),
     ),
+    (
+        re.compile(
+            r"^(?P<label>.+) resolves outside the target project root: (?P<path>.+) is not under (?P<root>.+)\.$"
+        ),
+        "E521",
+        "Emit target entrypoint must stay within project root",
+        lambda match: (
+            f"{match.group('label')} resolves outside the target project root: "
+            f"`{match.group('path')}` is not under `{match.group('root')}`."
+        ),
+        (),
+    ),
 )

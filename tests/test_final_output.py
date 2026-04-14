@@ -1310,6 +1310,128 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("Show this only when verdict is changes requested and a routed owner exists.", final_output_block)
         self.assertIn("PlanAuthor", final_output_block)
 
+    def test_split_final_output_route_reads_still_need_route_exists_on_blocked_review_branches(self) -> None:
+        # A changes-requested verdict can still include blocked review branches
+        # with no route. Guarding only on the verdict is not enough to make
+        # route.* reads safe on the split final-output contract.
+        error = self._compile_error(
+            """
+            input DraftPlan: "Draft Plan"
+                source: File
+                    path: "unit_root/DRAFT_PLAN.md"
+                shape: MarkdownDocument
+                requirement: Required
+                basis_missing: "Basis Missing"
+                outline_missing: "Outline Missing"
+
+            schema PlanReviewContract: "Plan Review Contract"
+                sections:
+                    summary: "Summary"
+                        "Summarize the reviewed plan."
+
+                gates:
+                    outline_complete: "Outline Complete"
+                        "Confirm the reviewed plan includes the outline."
+
+            agent ReviewLead:
+                role: "Own accepted plan follow-up."
+                workflow: "Follow Up"
+                    "Take the accepted plan to the next step."
+
+            agent PlanAuthor:
+                role: "Repair non-blocked plan defects."
+                workflow: "Revise"
+                    "Revise the same plan when review requests changes."
+
+            output AcceptanceReviewComment: "Acceptance Review Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                verdict: "Verdict"
+                    "State whether the plan passed review or asked for changes."
+
+                reviewed_artifact: "Reviewed Artifact"
+                    "Name the reviewed artifact."
+
+                analysis_performed: "Analysis Performed"
+                    "Summarize the review analysis."
+
+                output_contents_that_matter: "Output Contents That Matter"
+                    "State what the next owner should read first."
+
+                current_artifact: "Current Artifact" when present(current_artifact):
+                    "Name the artifact that remains current after review."
+
+                next_owner: "Next Owner" when present(next_owner):
+                    "Name {{ReviewLead}} when the review accepts the plan and {{PlanAuthor}} when the review requests changes without a blocked gate."
+
+                failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                    blocked_gate: "Blocked Gate" when present(blocked_gate):
+                        "Name the blocking gate when review stopped before the normal content check."
+
+                    failing_gates: "Failing Gates"
+                        "List exact failing gates in authored order."
+
+                trust_surface:
+                    current_artifact
+
+            output AcceptanceControlFinalResponse: "Acceptance Control Final Response"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+                retry_route: "Retry Route" when verdict == ReviewVerdict.changes_requested:
+                    "{{route.summary}}"
+
+            review AcceptanceReview: "Acceptance Review"
+                subject: DraftPlan
+                contract: PlanReviewContract
+                comment_output: AcceptanceReviewComment
+
+                fields:
+                    verdict: verdict
+                    reviewed_artifact: reviewed_artifact
+                    analysis: analysis_performed
+                    readback: output_contents_that_matter
+                    current_artifact: current_artifact
+                    failing_gates: failure_detail.failing_gates
+                    blocked_gate: failure_detail.blocked_gate
+                    next_owner: next_owner
+
+                basis_checks: "Basis Checks"
+                    block "The review basis is missing." when DraftPlan.basis_missing
+
+                contract_checks: "Contract Checks"
+                    reject contract.outline_complete when DraftPlan.outline_missing
+                    accept "The acceptance review contract passes." when contract.passes
+
+                on_accept: "If Accepted"
+                    current artifact DraftPlan via AcceptanceReviewComment.current_artifact
+                    route "Accepted plan goes to ReviewLead." -> ReviewLead
+
+                on_reject: "If Rejected"
+                    current none when present(blocked_gate)
+                    current artifact DraftPlan via AcceptanceReviewComment.current_artifact when missing(blocked_gate)
+                    route "Rejected plan goes to PlanAuthor." -> PlanAuthor when missing(blocked_gate)
+
+            agent AcceptanceReviewSplitPartialDemo:
+                role: "Emit the review comment and end with a small partial result."
+                review: AcceptanceReview
+                inputs: "Inputs"
+                    DraftPlan
+                outputs: "Outputs"
+                    AcceptanceReviewComment
+                    AcceptanceControlFinalResponse
+                final_output: AcceptanceControlFinalResponse
+            """,
+            agent_name="AcceptanceReviewSplitPartialDemo",
+        )
+
+        self.assertIn("route semantics are not live on every branch", str(error))
+        self.assertIn("AcceptanceControlFinalResponse.retry_route", str(error))
+        self.assertIn("guard the read with `route.exists`", str(error))
+
     def test_final_output_requires_output_declaration(self) -> None:
         error = self._compile_error(
             """

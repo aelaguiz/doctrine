@@ -20,49 +20,37 @@ class ValidateRouteSemanticsContextMixin:
         review_decl: model.ReviewDecl,
         *,
         unit: IndexedUnit,
+        agent_contract,
+        owner_label: str,
     ) -> RouteSemanticContext | None:
-        resolved = self._resolve_review_decl(review_decl, unit=unit)
+        resolved_review = self._resolve_compiled_review(
+            review_decl,
+            unit=unit,
+            agent_contract=agent_contract,
+            owner_label=owner_label,
+        )
         branches: list[RouteSemanticBranch] = []
         has_unrouted_branch = False
-
-        def collect_section(
-            section: model.ReviewOutcomeSection,
-            *,
-            verdict: str,
-        ) -> None:
-            nonlocal has_unrouted_branch
-            for branch in self._collect_review_outcome_leaf_branches(section.items, unit=unit):
-                if not branch.routes:
-                    has_unrouted_branch = True
-                    continue
-                for route in branch.routes:
-                    branches.append(
-                        self._route_semantic_branch_from_route(
-                            route,
-                            label=route.label,
-                            unit=unit,
-                            review_verdict=verdict,
-                        )
-                    )
-
-        if resolved.cases:
-            for case in resolved.cases:
-                collect_section(case.on_accept, verdict=_REVIEW_VERDICT_TEXT["accept"])
-                collect_section(case.on_reject, verdict=_REVIEW_VERDICT_TEXT["changes_requested"])
-        else:
-            for item in resolved.items:
-                if not isinstance(item, model.ReviewOutcomeSection):
-                    continue
-                verdict = (
-                    _REVIEW_VERDICT_TEXT["accept"]
-                    if item.key == "on_accept"
-                    else _REVIEW_VERDICT_TEXT["changes_requested"]
+        unrouted_review_verdicts: set[str] = set()
+        for branch in (*resolved_review.accept_branches, *resolved_review.reject_branches):
+            live_route = self._resolved_review_route(branch, unit=unit)
+            if live_route is None:
+                has_unrouted_branch = True
+                unrouted_review_verdicts.add(branch.verdict)
+                continue
+            branches.append(
+                self._route_semantic_branch_from_route(
+                    live_route,
+                    label=live_route.label,
+                    unit=unit,
+                    review_verdict=branch.verdict,
                 )
-                collect_section(item, verdict=verdict)
+            )
 
         return self._build_route_semantic_context(
             branches,
             has_unrouted_branch=has_unrouted_branch,
+            unrouted_review_verdicts=frozenset(unrouted_review_verdicts),
         )
 
     def _route_semantic_context_from_law_items(
@@ -131,6 +119,7 @@ class ValidateRouteSemanticsContextMixin:
         branches: list[RouteSemanticBranch],
         *,
         has_unrouted_branch: bool,
+        unrouted_review_verdicts: frozenset[str] = frozenset(),
     ) -> RouteSemanticContext | None:
         if not branches and not has_unrouted_branch:
             return None
@@ -159,6 +148,7 @@ class ValidateRouteSemanticsContextMixin:
         return RouteSemanticContext(
             branches=tuple(deduped),
             has_unrouted_branch=has_unrouted_branch,
+            unrouted_review_verdicts=unrouted_review_verdicts,
         )
 
     def _narrow_route_semantics(
@@ -389,6 +379,7 @@ class ValidateRouteSemanticsContextMixin:
             branches=tuple(matching),
             has_unrouted_branch=has_unrouted_branch,
             route_required=route_semantics.route_required,
+            unrouted_review_verdicts=route_semantics.unrouted_review_verdicts,
         )
 
     def _route_choice_member_matches(
@@ -416,9 +407,16 @@ class ValidateRouteSemanticsContextMixin:
         matching = tuple(
             branch for branch in route_semantics.branches if branch.review_verdict in {None, verdict}
         )
-        has_unrouted_branch = route_semantics.has_unrouted_branch and not matching
+        verdict_has_unrouted_branch = verdict in route_semantics.unrouted_review_verdicts
+        has_unrouted_branch = verdict_has_unrouted_branch or (
+            route_semantics.has_unrouted_branch
+            and not route_semantics.unrouted_review_verdicts
+        )
         return RouteSemanticContext(
             branches=matching,
             has_unrouted_branch=has_unrouted_branch,
             route_required=route_semantics.route_required,
+            unrouted_review_verdicts=(
+                frozenset({verdict}) if verdict_has_unrouted_branch else frozenset()
+            ),
         )

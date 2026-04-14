@@ -2,13 +2,15 @@
 
 Doctrine's live documentation is anchored in the shipped implementation under
 `doctrine/` and the manifest-backed example corpus through
-`examples/103_skill_package_binary_assets`.
+`examples/106_review_split_final_output_json_schema_partial`.
 The shipped compiler stays fail-loud and deterministic while scaling to larger
 prompt graphs through shared compile sessions and safe default batch
 parallelism.
 
 ## Start Here
 
+- [VERSIONING.md](VERSIONING.md): what Doctrine versions today, and how to
+  handle breaking changes
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
   runtime stays Markdown
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for

@@ -19,6 +19,7 @@ def run_emit_checks() -> None:
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_rejects_support_files_outside_project_root()
     _check_emit_docs_rejects_output_dir_outside_project_root()
+    _check_emit_docs_rejects_entrypoint_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_emit_skill_uses_source_root_bundle_outputs()
     _check_emit_skill_keeps_mixed_agents_tree_files()
@@ -145,6 +146,37 @@ output_dir = "../outside"
         output = stderr.getvalue()
         _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
         _expect("E520 emit error" in output, output)
+        _expect("outside the target project root" in output, output)
+
+
+def _check_emit_docs_rejects_entrypoint_outside_project_root() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir).resolve()
+        outside = root.parent / f"{root.name}_outside"
+        (outside / "prompts").mkdir(parents=True)
+        (outside / "prompts" / "AGENTS.prompt").write_text(
+            """agent DemoAgent:
+    role: "Own the emitted surface."
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            f"""[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo"
+entrypoint = "../{outside.name}/prompts/AGENTS.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            exit_code = emit_docs_main(["--pyproject", str(pyproject), "--target", "demo"])
+        output = stderr.getvalue()
+        _expect(exit_code == 1, f"expected exit code 1, got {exit_code}")
+        _expect("E521 emit error" in output, output)
         _expect("outside the target project root" in output, output)
 
 

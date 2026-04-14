@@ -48,7 +48,7 @@ class ValidateReviewAgreementMixin:
 
         resolved_branches: list[ResolvedReviewAgreementBranch] = []
         for branch in branches:
-            if not branch.currents or not branch.routes:
+            if not branch.currents:
                 raise CompileError(
                     f"Review outcome is not total in {owner_label}: {section.key}"
                 )
@@ -250,25 +250,37 @@ class ValidateReviewAgreementMixin:
                 f"{owner_label}: {output_decl.name}.{'.'.join(verdict_path)}"
             )
 
-        if not self._review_output_path_is_live(
+        route = self._resolved_review_route(branch, unit=unit)
+        if route is not None:
+            if not self._review_output_path_is_live(
+                output_decl,
+                path=next_owner_field_path,
+                unit=output_unit,
+                branch=branch,
+            ):
+                raise CompileError(
+                    "Review next_owner field is not live for routed target in "
+                    f"{owner_label}: {output_decl.name}.{'.'.join(next_owner_field_path)} -> "
+                    f"{route.target.declaration_name}"
+                )
+            self._validate_review_next_owner_binding(
+                route,
+                review_unit=unit,
+                output_decl=output_decl,
+                output_unit=output_unit,
+                field_path=next_owner_field_path,
+                owner_label=owner_label,
+            )
+        elif self._review_output_path_is_live(
             output_decl,
             path=next_owner_field_path,
             unit=output_unit,
             branch=branch,
         ):
             raise CompileError(
-                "Review next_owner field is not live for routed target in "
-                f"{owner_label}: {output_decl.name}.{'.'.join(next_owner_field_path)} -> "
-                f"{branch.route.target.declaration_name}"
+                "Review conditional output field is not aligned with resolved review semantics "
+                f"in {owner_label}: next_owner -> {output_decl.name}.{'.'.join(next_owner_field_path)}"
             )
-        self._validate_review_next_owner_binding(
-            branch.route,
-            review_unit=unit,
-            output_decl=output_decl,
-            output_unit=output_unit,
-            field_path=next_owner_field_path,
-            owner_label=owner_label,
-        )
 
         if isinstance(branch.current, model.ReviewCurrentArtifactStmt):
             if branch.current_carrier_path is None:
@@ -409,3 +421,88 @@ class ValidateReviewAgreementMixin:
                     f"in {owner_label}.{branch.section_key}: {field_name} -> "
                     f"{output_decl.name}.{'.'.join(bound_path)}"
                 )
+
+    def _validate_review_semantic_output_bindings(
+        self,
+        branches: tuple[ResolvedReviewAgreementBranch, ...],
+        *,
+        review_unit: IndexedUnit,
+        output_decl: model.OutputDecl,
+        output_unit: IndexedUnit,
+        field_bindings: dict[str, tuple[str, ...]],
+        owner_label: str,
+    ) -> None:
+        for branch in branches:
+            for field_name, bound_path in field_bindings.items():
+                if field_name == "verdict":
+                    if self._review_output_path_is_live(
+                        output_decl,
+                        path=bound_path,
+                        unit=output_unit,
+                        branch=branch,
+                    ):
+                        continue
+                    raise CompileError(
+                        "Review verdict field is not live for semantic verdict in "
+                        f"{owner_label}: {output_decl.name}.{'.'.join(bound_path)}"
+                    )
+
+                if field_name == "next_owner":
+                    route = self._resolved_review_route(branch, unit=review_unit)
+                    if route is None:
+                        if not self._review_output_path_is_live(
+                            output_decl,
+                            path=bound_path,
+                            unit=output_unit,
+                            branch=branch,
+                        ):
+                            continue
+                        raise CompileError(
+                            "Review conditional output field is not aligned with resolved review semantics "
+                            f"in {owner_label}: next_owner -> {output_decl.name}.{'.'.join(bound_path)}"
+                        )
+                    if not self._review_output_path_is_live(
+                        output_decl,
+                        path=bound_path,
+                        unit=output_unit,
+                        branch=branch,
+                    ):
+                        raise CompileError(
+                            "Review next_owner field is not live for routed target in "
+                            f"{owner_label}: {output_decl.name}.{'.'.join(bound_path)} -> "
+                            f"{route.target.declaration_name}"
+                        )
+                    self._validate_review_next_owner_binding(
+                        route,
+                        review_unit=review_unit,
+                        output_decl=output_decl,
+                        output_unit=output_unit,
+                        field_path=bound_path,
+                        owner_label=owner_label,
+                    )
+                    continue
+
+                if field_name in {"analysis", "readback"}:
+                    continue
+
+                semantic_present = self._review_semantic_field_present(
+                    field_name,
+                    unit=review_unit,
+                    branch=branch,
+                )
+                field_live = self._review_output_path_is_live(
+                    output_decl,
+                    path=bound_path,
+                    unit=output_unit,
+                    branch=branch,
+                )
+                if semantic_present and not field_live:
+                    raise CompileError(
+                        "Review conditional output field is not aligned with resolved review semantics "
+                        f"in {owner_label}: {field_name} -> {output_decl.name}.{'.'.join(bound_path)}"
+                    )
+                if not semantic_present and field_live:
+                    raise CompileError(
+                        "Review conditional output field is not aligned with resolved review semantics "
+                        f"in {owner_label}: {field_name} -> {output_decl.name}.{'.'.join(bound_path)}"
+                    )

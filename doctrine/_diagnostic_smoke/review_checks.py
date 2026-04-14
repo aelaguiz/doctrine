@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import signal
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from doctrine.compiler import compile_prompt
@@ -24,12 +25,16 @@ def run_review_checks() -> None:
     _check_review_driven_final_output_renders()
     _check_review_driven_split_final_output_renders()
     _check_review_driven_split_json_final_output_renders()
+    _check_review_split_control_ready_final_output_renders()
+    _check_review_split_partial_final_output_renders()
     _check_review_illegal_statement_placement_has_specific_code()
     _check_review_invalid_guarded_match_head_has_specific_code()
     _check_review_multiple_currentness_has_specific_code()
     _check_review_outcome_not_total_has_specific_code()
     _check_review_next_owner_alignment_has_specific_code()
     _check_review_failure_detail_guard_has_specific_code()
+    _check_final_output_review_fields_require_review_agent()
+    _check_final_output_review_fields_reject_review_carrier()
     _check_review_semantic_addressability_renders()
     _check_review_exact_contract_gate_modes_do_not_blow_up()
 
@@ -120,6 +125,47 @@ def _check_review_driven_split_json_final_output_renders() -> None:
         _expect("Keep `current_artifact` aligned with Current Artifact." in final_output_block, rendered)
         _expect("Use `route` value `revise` only when Outline Complete fails." in final_output_block, rendered)
         _expect("Show this only when verdict is changes requested." in final_output_block, rendered)
+
+
+def _repo_example_prompt_path(*parts: str) -> Path:
+    return Path(__file__).resolve().parents[2] / "examples" / Path(*parts)
+
+
+def _check_review_split_control_ready_final_output_renders() -> None:
+    prompt_path = _repo_example_prompt_path(
+        "105_review_split_final_output_json_schema_control_ready",
+        "prompts",
+        "AGENTS.prompt",
+    )
+    prompt = parse_file(prompt_path)
+    rendered = render_markdown(compile_prompt(prompt, "AcceptanceReviewSplitControlReadyDemo"))
+    final_output_block = rendered.split("## Final Output", 1)[1]
+    _expect("#### Review Response Semantics" in final_output_block, rendered)
+    _expect("| Verdict | `verdict` |" in final_output_block, rendered)
+    _expect(
+        "This final response is control-ready. A host may read it as the review outcome."
+        in final_output_block,
+        rendered,
+    )
+
+
+def _check_review_split_partial_final_output_renders() -> None:
+    prompt_path = _repo_example_prompt_path(
+        "106_review_split_final_output_json_schema_partial",
+        "prompts",
+        "AGENTS.prompt",
+    )
+    prompt = parse_file(prompt_path)
+    rendered = render_markdown(compile_prompt(prompt, "AcceptanceReviewSplitPartialDemo"))
+    final_output_block = rendered.split("## Final Output", 1)[1]
+    _expect("#### Review Response Semantics" in final_output_block, rendered)
+    _expect("| Current Artifact | `current_artifact` |" in final_output_block, rendered)
+    _expect("| Next Owner | `next_owner` |" in final_output_block, rendered)
+    _expect(
+        "This final response is not control-ready. Read the review carrier for the full review outcome."
+        in final_output_block,
+        rendered,
+    )
 
 
 def _check_review_illegal_statement_placement_has_specific_code() -> None:
@@ -236,6 +282,46 @@ def _check_review_failure_detail_guard_has_specific_code() -> None:
             _expect("conditional" in str(exc).lower(), str(exc))
             return
         raise SmokeFailure("expected compile failure for review failure-detail guard mismatch, but compilation succeeded")
+
+
+def _check_final_output_review_fields_require_review_agent() -> None:
+    prompt_path = _repo_example_prompt_path(
+        "106_review_split_final_output_json_schema_partial",
+        "prompts",
+        "AGENTS.prompt",
+    )
+    prompt = parse_file(prompt_path)
+    try:
+        compile_prompt(prompt, "InvalidFinalOutputReviewFieldsWithoutReviewDemo")
+    except Exception as exc:
+        _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+        _expect(getattr(exc, "code", None) == "E500", f"expected E500, got {getattr(exc, 'code', None)}")
+        _expect("review_fields" in str(exc), str(exc))
+        _expect("review-driven agent" in str(exc), str(exc))
+        return
+    raise SmokeFailure(
+        "expected compile failure when final_output.review_fields appear on a non-review agent, but compilation succeeded"
+    )
+
+
+def _check_final_output_review_fields_reject_review_carrier() -> None:
+    prompt_path = _repo_example_prompt_path(
+        "106_review_split_final_output_json_schema_partial",
+        "prompts",
+        "AGENTS.prompt",
+    )
+    prompt = parse_file(prompt_path)
+    try:
+        compile_prompt(prompt, "InvalidFinalOutputReviewFieldsOnCarrierDemo")
+    except Exception as exc:
+        _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+        _expect(getattr(exc, "code", None) == "E500", f"expected E500, got {getattr(exc, 'code', None)}")
+        _expect("review_fields" in str(exc), str(exc))
+        _expect("split final responses" in str(exc), str(exc))
+        return
+    raise SmokeFailure(
+        "expected compile failure when final_output.review_fields appear on the review carrier, but compilation succeeded"
+    )
 
 
 def _check_review_semantic_addressability_renders() -> None:

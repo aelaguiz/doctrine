@@ -371,6 +371,27 @@ class ValidateReviewSemanticsMixin:
             return ref.parts[1]
         return None
 
+    def _resolved_review_route(
+        self,
+        branch: ResolvedReviewAgreementBranch,
+        *,
+        unit: IndexedUnit,
+    ) -> model.ReviewOutcomeRouteStmt | None:
+        if branch.route is None:
+            return None
+        if branch.route.when_expr is None:
+            return branch.route
+        return (
+            branch.route
+            if self._evaluate_review_semantic_guard(
+                branch.route.when_expr,
+                unit=unit,
+                branch=branch,
+            )
+            is True
+            else None
+        )
+
     def _review_semantic_ref_value(
         self,
         field_name: str,
@@ -381,7 +402,8 @@ class ValidateReviewSemanticsMixin:
         if field_name == "verdict":
             return branch.verdict
         if field_name == "next_owner":
-            return branch.route.target.declaration_name
+            route = self._resolved_review_route(branch, unit=unit)
+            return None if route is None else route.target.declaration_name
         if field_name == "current_artifact":
             if branch.current_subject_key is None:
                 return None

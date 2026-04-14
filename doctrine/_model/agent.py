@@ -5,6 +5,7 @@ from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import NameRef, RoleBlock, RoleScalar
 from doctrine._model.io import IoFieldValue
+from doctrine._model.review import ReviewFieldsConfig
 from doctrine._model.workflow import SkillsValue, WorkflowSlotValue
 
 
@@ -67,6 +68,7 @@ class ReviewField:
 @_dataclass(slots=True, frozen=True)
 class FinalOutputField:
     value: NameRef
+    review_fields: ReviewFieldsConfig | None = None
 
 
 Field: _TypeAlias = (

@@ -146,6 +146,20 @@ _AGENT_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
     ),
     (
         re.compile(
+            r"^E500 final_output review_fields are invalid in agent (?P<agent>[^:]+): (?P<detail>.+)$"
+        ),
+        "E500",
+        "`final_output.review_fields` is used in an invalid place",
+        lambda match: (
+            f"Agent `{match.group('agent')}` uses `final_output.review_fields` in an invalid place. "
+            f"{match.group('detail')}"
+        ),
+        (
+            "Use `review_fields:` only on split final responses for review-driven agents.",
+        ),
+    ),
+    (
+        re.compile(
             r"^E215 final_output support file is missing or unreadable in (?P<owner>[^:]+): (?P<path>.+)$"
         ),
         "E215",
