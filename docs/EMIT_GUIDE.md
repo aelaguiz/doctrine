@@ -29,6 +29,12 @@ fan-out, while still writing outputs in deterministic authored order.
 
 ## Prerequisites
 
+Package-index installs use the distribution name `doctrine-agents`. The
+Python module path stays `doctrine`.
+
+Use a source checkout when you need `emit_flow`, the example corpus, or the
+contributor proof commands in this repo.
+
 Sync Python dependencies first:
 
 ```bash

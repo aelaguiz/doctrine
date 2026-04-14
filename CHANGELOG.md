@@ -13,11 +13,15 @@ Use this section for work that is not public yet.
 ### Added
 - Added split GitHub Actions workflows for PR checks, main-branch CI, dependency review, scorecards, and release packaging.
 - Added repo-owned GitHub surfaces for `CODEOWNERS`, Dependabot, richer release-note labels, and stronger issue and PR templates.
+- Prepared the first package-index rollout under the `doctrine-agents`
+  distribution name while keeping the Python import path as `doctrine`.
 
 ### Changed
 - Updated public support and security docs for the 1.x line and GitHub private vulnerability reporting.
 - Added package metadata links for changelog, discussions, and security policy so future package pages point to live repo surfaces.
 - Documented the GitHub release publish path that builds dist artifacts, smoke tests an external install, uploads release assets, and can publish to package indexes through Trusted Publishing.
+- Wired the publish workflow for `testpypi` and `pypi` environments and staged
+  the rollout behind GitHub repo variables.
 
 When you cut a public release:
 

@@ -45,6 +45,9 @@ Doctrine also ships narrower version lines.
   It is not the Doctrine language version.
 - The package metadata version in `pyproject.toml` versions the published
   Python package. It is not the Doctrine language version.
+- The published distribution name may differ from the Python import package
+  name. Package-index installs use the published distribution name, while the
+  module path stays `doctrine`.
 - For public stable releases, `vX.Y.Z` maps to package version `X.Y.Z`.
 - For public beta releases, `vX.Y.Z-beta.N` maps to package version `X.Y.ZbN`.
 - For public rc releases, `vX.Y.Z-rc.N` maps to package version `X.Y.ZrcN`.
@@ -138,6 +141,10 @@ upgrade steps.
 11. The GitHub release publish workflow builds dist artifacts, smoke tests an
     external install, uploads release assets, and can publish to package
     indexes through Trusted Publishing when the repo settings are ready.
+12. Before the first package-index publish for a new project name, register
+    the GitHub Trusted Publishers on TestPyPI and PyPI for the package
+    project, workflow `.github/workflows/publish.yml`, and matching
+    environments such as `testpypi` and `pypi`.
 
 The helper prints the fixed worksheet, the exact release-note header, the exact
 changelog header, and the next commands to run.
