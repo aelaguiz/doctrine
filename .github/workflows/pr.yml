@@ -160,4 +160,4 @@ jobs:
 
       - name: Build VS Code extension
         if: steps.changes.outputs.changed == 'true'
-        run: cd editors/vscode && make
+        run: xvfb-run -a make -C editors/vscode
