@@ -47,16 +47,12 @@ for repo setup and proof commands.
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 
-## Historical Design Context
+## Historical Context
 
-The shipped docs above are the only live reference path. Earlier plans,
-worklogs, audits, and one-off investigations are deleted after a restore-point
-commit. If you need that old context, use git history.
-
-The earlier second-wave draft specs, phase plans, and the implemented
-`final_output` design proposal were deleted after restore-point commits once
-their durable truth landed in the live docs and verified example corpus. Use
-git history if you need that design-phase context.
+The shipped docs above are the live reference path.
+Old plans, worklogs, audits, and draft proposals are not part of that path.
+After a restore-point commit, delete them and use git history if you need the
+old context.
 
 ## Repo Truth
 
@@ -76,10 +72,3 @@ git history if you need that design-phase context.
   authored ordering even when batch compilation fans out across threads.
 - `build_ref/` is verifier-owned checked-in proof, not part of the public
   authoring model.
-
-## Not Part Of The Live Docs Path
-
-Dated proposals, plans, worklogs, and exploratory notes are intentionally
-excluded from this index. They are not part of Doctrine's evergreen open
-source documentation set. After a restore-point commit, delete them. Git
-history is the archive.

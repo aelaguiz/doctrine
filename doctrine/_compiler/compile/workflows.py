@@ -137,6 +137,7 @@ class CompileWorkflowsMixin:
 
         lines: list[str] = []
         mode_bindings: dict[str, model.ModeStmt] = {}
+        match_bindings: dict[tuple[str, ...], str] = {}
         for item in flat_items:
             rendered: list[str] = []
             if isinstance(item, model.ActiveWhenStmt):
@@ -156,6 +157,7 @@ class CompileWorkflowsMixin:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
+                        match_bindings=match_bindings,
                     )
                 )
             elif isinstance(item, model.RouteFromStmt):
@@ -164,6 +166,8 @@ class CompileWorkflowsMixin:
                         item,
                         unit=unit,
                         owner_label=owner_label,
+                        mode_bindings=mode_bindings,
+                        match_bindings=match_bindings,
                     )
                 )
             elif isinstance(item, model.WhenStmt):
@@ -174,6 +178,7 @@ class CompileWorkflowsMixin:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
+                        match_bindings=match_bindings,
                     )
                 )
             else:
@@ -213,6 +218,7 @@ class CompileWorkflowsMixin:
 
         lines: list[str] = []
         mode_bindings: dict[str, model.ModeStmt] = {}
+        match_bindings: dict[tuple[str, ...], str] = {}
         for item in flat_items:
             rendered: list[str] = []
             if isinstance(item, model.ActiveWhenStmt):
@@ -231,6 +237,7 @@ class CompileWorkflowsMixin:
                         unit=unit,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
+                        match_bindings=match_bindings,
                     )
                 )
             elif isinstance(item, model.RouteFromStmt):
@@ -239,6 +246,8 @@ class CompileWorkflowsMixin:
                         item,
                         unit=unit,
                         owner_label=owner_label,
+                        mode_bindings=mode_bindings,
+                        match_bindings=match_bindings,
                     )
                 )
             elif isinstance(item, model.WhenStmt):
@@ -248,6 +257,7 @@ class CompileWorkflowsMixin:
                         unit=unit,
                         owner_label=owner_label,
                         mode_bindings=mode_bindings,
+                        match_bindings=match_bindings,
                     )
                 )
             else:

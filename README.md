@@ -7,7 +7,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aelaguiz/doctrine/badge)](https://scorecard.dev/viewer/?uri=github.com/aelaguiz/doctrine)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
-[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)
+[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [VS Code extension](editors/vscode/README.md)
 
 Write agent flows as code. Compile them to `AGENTS.md`.
 
@@ -24,11 +24,13 @@ Why teams reach for Doctrine:
 - humans can review source and emitted runtime side by side
 - flow diagrams, verification, and editor support ship today
 
-## Doctrine and Rally
+## Runtime boundary
 
-- Use Doctrine when you want to author and validate the flow.
-- Use Rally when you want to run that flow with repo-local state, resumability, and strict turn routing.
-- The split is deliberate: Doctrine is the authoring layer, Rally is the runtime layer.
+Doctrine is the authoring and compile layer.
+It turns typed `.prompt` source into deterministic runtime Markdown such as
+`AGENTS.md`.
+That output is meant for the agent runtime that fits your stack.
+Doctrine does not try to be the runtime, scheduler, or state store.
 
 ## Why Doctrine exists
 

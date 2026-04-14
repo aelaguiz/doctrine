@@ -33,25 +33,32 @@ For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 ## Shipped Boundaries
 
 Doctrine's current shipped surface runs through the numbered corpus up to
-`examples/63_schema_artifacts_and_groups`.
+`examples/106_review_split_final_output_json_schema_partial`.
+
+Use [../examples/README.md](../examples/README.md) for the full proof ladder.
+This section keeps the boundary broad so the design notes do not stale again
+every time the corpus grows.
 
 That shipped surface includes:
 
 - agent and workflow composition
-- typed inputs, outputs, skills, and enums
+- typed inputs, outputs, skills, schemas, documents, render profiles, and
+  enums
 - readable refs, addressable paths, and interpolation
-- workflow law on `workflow`
-- first-class `review`
+- workflow law, `handoff_routing`, `route_only`, and `grounding`
+- first-class `review`, `review_family`, and review-driven `final_output`
 - concrete-turn bindings and bound roots for law and review carriers
-- `analysis`, owner-aware `schema:` / `structure:`, readable `document`
-  blocks, first-class schema artifacts/groups, multiline code blocks, and
-  schema-backed review contracts
+- `analysis`, `decision`, owner-aware `schema:` / `structure:`, readable
+  `document` blocks, first-class schema artifacts/groups, multiline code
+  blocks, schema-backed review contracts, and shared route semantics such as
+  `route_from`
 - title-bearing concrete-agent heads plus enum-member key/title/wire identity
   projections
 - authored `render_profile`, compact `properties`, explicit readable guard
   shells, profile-sensitive semantic lowering targets, typed `item_schema:` /
   `row_schema:`, and explicit late readable extensions such as raw
   `markdown`, `html`, `footnotes`, `image`, and structured nested table cells
+- first-class `skill package` authoring through `SKILL.prompt`
 
 ## Current Non-Goals
 

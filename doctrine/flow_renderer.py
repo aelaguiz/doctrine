@@ -17,7 +17,11 @@ D2_PACKAGE_PATH = REPO_ROOT / "node_modules" / "@terrastruct" / "d2" / "package.
 
 
 class FlowRenderDependencyError(RuntimeError):
-    """Raised when the pinned D2 dependency is unavailable."""
+    """Raised when flow renderer prerequisites are unavailable."""
+
+    def __init__(self, message: str, *, hints: tuple[str, ...] = ()) -> None:
+        super().__init__(message)
+        self.hints = hints
 
 
 class FlowRenderFailure(RuntimeError):
@@ -27,6 +31,7 @@ class FlowRenderFailure(RuntimeError):
 def ensure_pinned_d2_dependency() -> None:
     _ensure_pinned_d2_dependency(
         D2_PACKAGE_PATH,
+        helper_path=D2_HELPER_PATH,
         dependency_error_type=FlowRenderDependencyError,
     )
 

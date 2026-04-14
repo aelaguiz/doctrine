@@ -67,12 +67,70 @@ class ResolveLawPathsMixin:
         unit: IndexedUnit,
         branch: LawBranch,
     ) -> str | None:
-        if not isinstance(expr, model.ExprRef) or len(expr.parts) != 1:
+        if not isinstance(expr, model.ExprRef):
+            return None
+        expr_parts = tuple(expr.parts)
+        for bound_parts, bound_value in reversed(branch.match_bindings):
+            if bound_parts == expr_parts:
+                return bound_value
+        if len(expr.parts) != 1:
             return None
         for mode_stmt in reversed(branch.mode_bindings):
             if mode_stmt.name == expr.parts[0]:
                 return self._resolve_constant_enum_member(mode_stmt.expr, unit=unit)
         return None
+
+    def _resolve_match_case_fixed_value(
+        self,
+        stmt: model.MatchStmt,
+        case: model.MatchArm,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        if case.head is not None:
+            return self._resolve_constant_enum_member(case.head, unit=unit)
+        if not isinstance(stmt.expr, model.ExprRef):
+            return None
+
+        enum_identity: tuple[tuple[str, ...], str] | None = None
+        explicit_values: set[str] = set()
+        for candidate in stmt.cases:
+            if candidate.head is None:
+                continue
+            if not isinstance(candidate.head, model.ExprRef):
+                return None
+            identity = self._resolve_enum_member_identity(candidate.head, unit=unit)
+            if identity is None:
+                return None
+            candidate_identity = (identity[0], identity[1])
+            if enum_identity is None:
+                enum_identity = candidate_identity
+            elif candidate_identity != enum_identity:
+                return None
+            value = self._resolve_constant_enum_member(candidate.head, unit=unit)
+            if value is None:
+                return None
+            explicit_values.add(value)
+
+        if enum_identity is None:
+            return None
+
+        enum_unit, enum_decl = self._resolve_decl_ref(
+            model.NameRef(
+                module_parts=enum_identity[0],
+                declaration_name=enum_identity[1],
+            ),
+            unit=unit,
+            registry_name="enums_by_name",
+            missing_label="enum declaration",
+        )
+        _ = enum_unit
+        remaining = tuple(
+            member.value for member in enum_decl.members if member.value not in explicit_values
+        )
+        if len(remaining) != 1:
+            return None
+        return remaining[0]
 
     def _resolve_law_path(
         self,

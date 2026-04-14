@@ -162,6 +162,30 @@ def _module_path_for_root(prompt_root: Path, module_parts: tuple[str, ...]) -> P
     return prompt_root.joinpath(*module_parts).with_suffix(".prompt")
 
 
+def _waiting_module_key(ancestry: tuple[ModuleLoadKey, ...]) -> ModuleLoadKey | None:
+    if not ancestry:
+        return None
+    return ancestry[-1]
+
+
+def _has_module_wait_cycle(
+    session: "CompilationSession",
+    *,
+    waiting_module: ModuleLoadKey,
+    target_module: ModuleLoadKey,
+) -> bool:
+    current = target_module
+    seen: set[ModuleLoadKey] = set()
+    while current is not None:
+        if current == waiting_module:
+            return True
+        if current in seen:
+            return False
+        seen.add(current)
+        current = session._module_waits.get(current)
+    return False
+
+
 def index_unit(
     session: "CompilationSession",
     prompt_file: model.PromptFile,
@@ -415,7 +439,23 @@ def load_module(
             is_loader = False
 
     if not is_loader:
-        ready.wait()
+        waiting_module = _waiting_module_key(ancestry)
+        if waiting_module is not None:
+            with session._module_lock:
+                if _has_module_wait_cycle(
+                    session,
+                    waiting_module=waiting_module,
+                    target_module=module_key,
+                ):
+                    raise CompileError(f"Cyclic import module: {'.'.join(module_parts)}")
+                session._module_waits[waiting_module] = module_key
+        try:
+            ready.wait()
+        finally:
+            if waiting_module is not None:
+                with session._module_lock:
+                    if session._module_waits.get(waiting_module) == module_key:
+                        session._module_waits.pop(waiting_module, None)
         with session._module_lock:
             cached = session._module_cache.get(module_key)
             if cached is not None:

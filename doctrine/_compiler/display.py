@@ -356,12 +356,14 @@ class DisplayMixin:
         agent_contract: AgentContract | None = None,
         owner_label: str,
         mode_bindings: dict[str, model.ModeStmt],
+        match_bindings: dict[tuple[str, ...], str],
     ) -> list[str]:
-        fixed_mode: str | None = None
-        if isinstance(stmt.expr, model.ExprRef) and len(stmt.expr.parts) == 1:
-            mode_stmt = mode_bindings.get(stmt.expr.parts[0])
-            if mode_stmt is not None:
-                fixed_mode = self._resolve_constant_enum_member(mode_stmt.expr, unit=unit)
+        fixed_mode = self._render_fixed_match_value(
+            stmt.expr,
+            unit=unit,
+            mode_bindings=mode_bindings,
+            match_bindings=match_bindings,
+        )
 
         if fixed_mode is not None:
             for case in stmt.cases:
@@ -372,6 +374,13 @@ class DisplayMixin:
                         agent_contract=agent_contract,
                         owner_label=owner_label,
                         bullet=False,
+                        mode_bindings=mode_bindings,
+                        match_bindings=self._render_match_case_bindings(
+                            stmt,
+                            case,
+                            unit=unit,
+                            match_bindings=match_bindings,
+                        ),
                     )
             return []
 
@@ -397,6 +406,13 @@ class DisplayMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     bullet=True,
+                    mode_bindings=mode_bindings,
+                    match_bindings=self._render_match_case_bindings(
+                        stmt,
+                        case,
+                        unit=unit,
+                        match_bindings=match_bindings,
+                    ),
                 )
             )
         return lines
@@ -407,8 +423,17 @@ class DisplayMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        mode_bindings: dict[str, model.ModeStmt],
+        match_bindings: dict[tuple[str, ...], str],
     ) -> list[str]:
-        fixed_choice = self._resolve_constant_enum_member(stmt.expr, unit=unit)
+        fixed_choice = self._render_fixed_match_value(
+            stmt.expr,
+            unit=unit,
+            mode_bindings=mode_bindings,
+            match_bindings=match_bindings,
+        )
+        if fixed_choice is None:
+            fixed_choice = self._resolve_constant_enum_member(stmt.expr, unit=unit)
         if fixed_choice is not None:
             for case in stmt.cases:
                 if (
@@ -465,6 +490,7 @@ class DisplayMixin:
         agent_contract: AgentContract | None = None,
         owner_label: str,
         mode_bindings: dict[str, model.ModeStmt],
+        match_bindings: dict[tuple[str, ...], str],
     ) -> list[str]:
         lines = [f"If {self._render_condition_expr(stmt.expr, unit=unit)}:"]
         lines.extend(
@@ -475,6 +501,7 @@ class DisplayMixin:
                 owner_label=owner_label,
                 bullet=True,
                 mode_bindings=mode_bindings,
+                match_bindings=match_bindings,
             )
         )
         return lines
@@ -488,8 +515,10 @@ class DisplayMixin:
         owner_label: str,
         bullet: bool,
         mode_bindings: dict[str, model.ModeStmt] | None = None,
+        match_bindings: dict[tuple[str, ...], str] | None = None,
     ) -> list[str]:
         mode_bindings = dict(mode_bindings or {})
+        match_bindings = dict(match_bindings or {})
         lines: list[str] = []
         for item in items:
             if isinstance(item, model.ModeStmt):
@@ -501,12 +530,15 @@ class DisplayMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=mode_bindings,
+                    match_bindings=match_bindings,
                 )
             elif isinstance(item, model.RouteFromStmt):
                 rendered = self._render_route_from_stmt(
                     item,
                     unit=unit,
                     owner_label=owner_label,
+                    mode_bindings=mode_bindings,
+                    match_bindings=match_bindings,
                 )
             elif isinstance(item, model.WhenStmt):
                 rendered = self._render_when_stmt(
@@ -515,6 +547,7 @@ class DisplayMixin:
                     agent_contract=agent_contract,
                     owner_label=owner_label,
                     mode_bindings=mode_bindings,
+                    match_bindings=match_bindings,
                 )
             else:
                 rendered = self._render_law_stmt_lines(
@@ -536,6 +569,43 @@ class DisplayMixin:
                 lines.append("")
             lines.extend(rendered)
         return lines
+
+    def _render_fixed_match_value(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        mode_bindings: dict[str, model.ModeStmt],
+        match_bindings: dict[tuple[str, ...], str],
+    ) -> str | None:
+        if not isinstance(expr, model.ExprRef):
+            return None
+        bound = match_bindings.get(tuple(expr.parts))
+        if bound is not None:
+            return bound
+        if len(expr.parts) != 1:
+            return None
+        mode_stmt = mode_bindings.get(expr.parts[0])
+        if mode_stmt is None:
+            return None
+        return self._resolve_constant_enum_member(mode_stmt.expr, unit=unit)
+
+    def _render_match_case_bindings(
+        self,
+        stmt: model.MatchStmt,
+        case: model.MatchArm,
+        *,
+        unit: IndexedUnit,
+        match_bindings: dict[tuple[str, ...], str],
+    ) -> dict[tuple[str, ...], str]:
+        if not isinstance(stmt.expr, model.ExprRef):
+            return dict(match_bindings)
+        fixed_value = self._resolve_match_case_fixed_value(stmt, case, unit=unit)
+        if fixed_value is None:
+            return dict(match_bindings)
+        updated = dict(match_bindings)
+        updated[tuple(stmt.expr.parts)] = fixed_value
+        return updated
 
     def _render_law_stmt_lines(
         self,
