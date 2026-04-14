@@ -1,6 +1,8 @@
 name: Docs or example improvement
 description: Ask for a docs fix, clearer guide, or better example.
 title: "docs: "
+labels:
+  - kind:docs
 body:
   - type: textarea
     id: gap

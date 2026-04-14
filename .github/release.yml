@@ -10,6 +10,16 @@ changelog:
     - title: Additions
       labels:
         - kind:additive
+    - title: Fixes
+      labels:
+        - kind:bug
+    - title: Docs
+      labels:
+        - kind:docs
+    - title: CI and release
+      labels:
+        - kind:ci
+        - kind:packaging
     - title: Soft deprecations
       labels:
         - kind:soft-deprecated

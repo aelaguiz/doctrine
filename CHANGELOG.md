@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Use this section for work that is not public yet.
 
+### Added
+- Added split GitHub Actions workflows for PR checks, main-branch CI, dependency review, scorecards, and release packaging.
+- Added repo-owned GitHub surfaces for `CODEOWNERS`, Dependabot, richer release-note labels, and stronger issue and PR templates.
+
+### Changed
+- Updated public support and security docs for the 1.x line and GitHub private vulnerability reporting.
+- Added package metadata links for changelog, discussions, and security policy so future package pages point to live repo surfaces.
+- Documented the GitHub release publish path that builds dist artifacts, smoke tests an external install, uploads release assets, and can publish to package indexes through Trusted Publishing.
+
 When you cut a public release:
 
 1. Copy the release entry template below.
