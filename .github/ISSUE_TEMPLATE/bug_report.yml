@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a concrete Doctrine bug.
+title: "bug: "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Tell us the exact failure in plain English.
+      placeholder: The compiler rejected a valid inherited workflow with...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Smallest repro
+      description: Paste the smallest `.prompt` or command sequence that reproduces the problem.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include Python, OS, and the command you ran.
+      placeholder: Python 3.11, macOS/Linux, `uv run --locked python -m doctrine.emit_docs ...`

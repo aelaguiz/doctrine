@@ -1,0 +1,19 @@
+name: Docs or example improvement
+description: Ask for a docs fix, clearer guide, or better example.
+title: "docs: "
+body:
+  - type: textarea
+    id: gap
+    attributes:
+      label: What was confusing or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: target
+    attributes:
+      label: Which page or example should change?
+      placeholder: README, docs/EMIT_GUIDE.md, examples/README.md, etc.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement

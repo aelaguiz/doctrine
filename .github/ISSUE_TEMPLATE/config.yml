@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and design discussion
+    url: https://github.com/aelaguiz/doctrine/discussions
+    about: Use Discussions for setup help, design questions, and open-ended feedback.
+  - name: Read the docs first
+    url: https://github.com/aelaguiz/doctrine/tree/main/docs
+    about: Start with the live docs set before opening a usage question.

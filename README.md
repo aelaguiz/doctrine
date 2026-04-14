@@ -1,79 +1,45 @@
 # Doctrine
 
-Doctrine is a Python-like DSL and compiler for authoring reusable agent
-doctrine as code and emitting runtime Markdown that existing coding-agent tools
-can read today, with a compiler built to stay practical on large prompt
-graphs.
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.11%2B](https://img.shields.io/badge/python-3.11%2B-3776AB.svg)](pyproject.toml)
+[![CI](https://img.shields.io/github/actions/workflow/status/aelaguiz/doctrine/ci.yml?branch=main&label=ci)](https://github.com/aelaguiz/doctrine/actions/workflows/ci.yml)
+[![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
-It replaces copied, hand-maintained `AGENTS.md` prose with named declarations,
-explicit inheritance, typed I/O contracts, workflow law, and first-class
-review semantics.
+[Docs](docs/README.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)
 
-## A Real Agent Example
+Write agent flows as code. Compile them to `AGENTS.md`.
+
+Doctrine is a typed DSL and compiler for reusable agent instructions, workflows, reviews, skills, and I/O contracts. Instead of hand-editing giant `AGENTS.md` files, you author small `.prompt` files and compile deterministic runtime artifacts that current coding-agent tools can already read today.
 
 <p align="center">
-  <img src="docs/assets/readme-doctrine-agent-example.png" alt="Side-by-side view of a Doctrine source file for an agent and the compiled AGENTS.md runtime artifact it produces." width="1200">
+  <img src="docs/assets/readme-doctrine-agent-example.png" alt="Side-by-side view of Doctrine source on the left and compiled AGENTS.md output on the right." width="1200">
 </p>
 
-The left pane is the structured source of truth: reusable workflows, typed
-inputs and outputs, inherited sections, and skill declarations in one
-reviewable `.prompt` file. The right pane is the compiled runtime Markdown
-artifact that existing coding-agent tools actually consume.
+Why teams reach for Doctrine:
 
-That split matters in practice:
+- one shared rule changes once
+- compile-time failures catch drift before runtime
+- humans can review source and emitted runtime side by side
+- flow diagrams, verification, and editor support ship today
 
-- humans and coding agents edit one narrow source file instead of a giant
-  emitted Markdown file
-- shared policy changes land once and compile consistently into every concrete
-  agent
-- compile, emit, and verification work can reuse one indexed prompt graph and
-  parallelize safe batch work by default, so large agent families stay
-  tractable
-- reviewers can inspect intent in source and verify the exact downstream
-  runtime artifact beside it
+## Doctrine and Rally
 
-## Why Doctrine Exists
+- Use Doctrine when you want to author and validate the flow.
+- Use Rally when you want to run that flow with repo-local state, resumability, and strict turn routing.
+- The split is deliberate: Doctrine is the authoring layer, Rally is the runtime layer.
 
-Serious agent systems drift quickly when the source of truth is copied
-Markdown:
+## Why Doctrine exists
 
-- shared sections get duplicated across agents and then edited inconsistently
-- one policy change lands in one file and misses three siblings
-- large role homes become hard for humans to review and hard for coding agents
-  to modify without noise
-- the runtime surface is Markdown, but the authoring problem is structured
-  programming
+Serious agent systems drift fast when the source of truth is copied Markdown:
 
-Doctrine turns that maintenance problem into a language and compiler problem.
+- shared sections get duplicated and then edited out of sync
+- one policy fix turns into search-and-hope edits
+- large prompt trees become hard to review
+- runtime Markdown is the delivery format, not the right authoring surface
 
-For the motivating use case and the runtime rationale, read
-[docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md).
+Doctrine turns that into a language and compiler problem.
 
-## What Ships Today
-
-- concrete and abstract `agent` declarations
-- reusable and inherited `workflow` declarations with explicit ordered patching
-- first-class `review` and `abstract review` declarations
-- typed `skill`, `skills`, `input`, `inputs`, `input source`, `output`,
-  `outputs`, `output target`, `output shape`, and `json schema` declarations
-- imports, readable refs, addressable paths, authored interpolation, and enums
-- workflow law on `workflow` plus `trust_surface` and guarded sections on
-  `output`
-- portable currentness, invalidation, scope, preservation, evidence roles, and
-  route-only turns
-- review contracts, exact failing gates, carried mode and trigger state,
-  current truth, inheritance, and bound review carriers
-- session-based compilation, once-per-session import loading, and deterministic
-  default parallel batch compilation for docs emission and corpus verification
-- manifest-backed verification for the numbered corpus through
-  `examples/106_review_split_final_output_json_schema_partial`
-- a repo-local emit pipeline for compiled Markdown plus compiler-owned workflow
-  flow artifacts, and a VS Code extension for `.prompt` files
-
-The shipped implementation lives in `doctrine/`. The examples are the teaching
-surface and proof surface, not the source of truth by themselves.
-
-## Quick Example
+## Quick example
 
 ```prompt
 workflow SharedTurn: "How To Take A Turn"
@@ -114,119 +80,62 @@ Leave one honest handoff and stop.
 #### repo-search
 ```
 
-## Get Started
-
-Sync the repo, install the pinned flow-render dependency, then run the Python
-unit tests and shipped corpus:
+## Quickstart
 
 ```bash
+git clone https://github.com/aelaguiz/doctrine.git
+cd doctrine
 uv sync
 npm ci
-make tests
-make verify-examples
-```
-
-Or use `make setup` to run `uv sync` plus `npm ci` together.
-
-If you change diagnostics, also run:
-
-```bash
-make verify-diagnostics
-```
-
-For the full repo-local Python gate, run:
-
-```bash
 make check
 ```
 
-For one manifest-backed example:
+Want a smaller first proof?
 
 ```bash
 uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml
 ```
 
-## Emit Runtime Artifacts
-
-Doctrine reads configured emit targets from `pyproject.toml`. `emit_docs`
-writes a compiled Markdown tree for each concrete agent in the entrypoint.
-`emit_flow` writes one workflow data-flow artifact as deterministic `.flow.d2`
-plus same-command `.flow.svg`, and it can run either from a configured target
-or directly from `--entrypoint` plus `--output-dir`. Entrypoints may be either
-`AGENTS.prompt` or `SOUL.prompt`, and the emitted basename follows the
-entrypoint stem.
-
-Both emit and verification surfaces reuse shared compilation sessions so
-Doctrine can batch larger entrypoints quickly without giving up deterministic
-output ordering.
-
-Start with [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md) for prerequisites, target
-configuration, output layout, troubleshooting, and the exact `emit_flow`
-workflow.
-
-## Workflow Visualizer
-
-<p align="center">
-  <img src="examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, a route-first vertical handoff lane, a shared handoff carrier, and local outputs." width="1200">
-</p>
-
-The checked-in showcase above comes from
-`examples/73_flow_visualizer_showcase`. It shows shared inputs feeding a
-route-first handoff lane, an explicit return loop, one shared carrier output,
-and each agent's local artifacts in one compiler-owned graph.
+Want generated output right away?
 
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
-uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
-uv run --locked python -m doctrine.emit_flow --entrypoint examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt --output-dir examples/73_flow_visualizer_showcase/build
 ```
 
-## Documentation
+## What ships today
 
-Start with the live docs set:
+- concrete and abstract `agent` declarations
+- reusable and inherited `workflow` declarations
+- first-class `review` and `abstract review` declarations
+- typed `skills`, `inputs`, `outputs`, and JSON-schema-backed contracts
+- imports, readable refs, interpolation, enums, and workflow law
+- `emit_docs`, `emit_flow`, and `emit_skill`
+- manifest-backed verification through `examples/106_review_split_final_output_json_schema_partial`
+- a repo-local VS Code extension for `.prompt` files
+
+## Workflow visualizer
+
+<p align="center">
+  <img src="examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.svg" alt="Generated Doctrine workflow diagram showing shared inputs, a route-first handoff lane, and compiler-owned flow output." width="1200">
+</p>
+
+The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`. It proves that Doctrine can emit human-readable runtime docs and compiler-owned flow diagrams from the same source graph.
+
+## Read next
 
 - [docs/README.md](docs/README.md)
-- [docs/VERSIONING.md](docs/VERSIONING.md)
+- [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
-- [docs/WORKFLOW_LAW.md](docs/WORKFLOW_LAW.md)
-- [docs/REVIEW_SPEC.md](docs/REVIEW_SPEC.md)
 - [examples/README.md](examples/README.md)
 - [editors/vscode/README.md](editors/vscode/README.md)
-
-Dated proposals, plans, worklogs, and exploratory notes under `docs/` are
-intentionally excluded from that live path. They are not part of Doctrine's
-evergreen open source documentation set.
-After a restore-point commit, delete them. Git history is the archive.
-
-## VS Code Extension
-
-The repo-local extension under `editors/vscode/` provides syntax highlighting
-plus Ctrl/Cmd-click navigation for the shipped Doctrine surface, including
-imports, declaration refs, interpolation roots, workflow law, and first-class
-review features.
-
-Build the installable VSIX with:
-
-```bash
-cd editors/vscode
-make
-```
-
-Or from the repo root:
-
-```bash
-make vscode-package
-```
-
-For extension details, see
-[editors/vscode/README.md](editors/vscode/README.md).
-
-## Project Files
-
-- [LICENSE](LICENSE)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- [SECURITY.md](SECURITY.md)
-- [SUPPORT.md](SUPPORT.md)
+
+## Questions and contributions
+
+- Use [Discussions](https://github.com/aelaguiz/doctrine/discussions) for questions and design talk.
+- Use [Issues](https://github.com/aelaguiz/doctrine/issues) for clear bugs or scoped proposals.
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and proof commands.
+
+If this direction is useful, star the repo and watch releases.

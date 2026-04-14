@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync Python dependencies
+        run: uv sync
+
+      - name: Install flow renderer dependency
+        run: npm ci
+
+      - name: Run full verify path
+        run: make check

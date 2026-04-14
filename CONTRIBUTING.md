@@ -2,8 +2,7 @@
 
 Thanks for contributing to Doctrine.
 
-This repo is still small and moves quickly, so the best contributions are
-usually narrow, explicit changes that keep the shipped implementation, docs,
+This repo moves quickly, but the bar is simple: keep the shipped language, docs,
 and verified examples aligned.
 
 ## Setup
@@ -11,12 +10,14 @@ and verified examples aligned.
 ```bash
 uv sync
 npm ci
-make tests
-make verify-examples
+make check
 ```
 
-`make setup` wraps the `uv sync` and `npm ci` bootstrap steps, and `make
-check` runs the Python unit tests plus the shipped verify targets.
+If you only need the fastest proof path while you are iterating:
+
+```bash
+make tests
+```
 
 If you change diagnostics, also run:
 
@@ -34,21 +35,16 @@ make
 ## Repo rules
 
 - Treat `doctrine/` as the shipped source of truth for parser, compiler, and renderer behavior.
-- Treat `examples/` as design and verification inputs, not as proof of shipped behavior on their own.
-- Keep new examples disciplined: one new idea at a time, with the smallest example that proves it cleanly.
-- Preserve compiler scalability when you touch batch surfaces: avoid repeated parse or index work, prefer shared compile sessions, and keep authored output ordering deterministic when work fans out in parallel.
-- Prefer fail-loud behavior over silent fallback when you change grammar or compiler behavior.
-- Keep public docs and examples generic. Do not import private product names, internal skill slugs, or company-specific workflow terms from other repos.
+- Treat `examples/` as design and verification inputs, not as proof on their own.
+- Keep new examples narrow. Add one new idea at a time.
+- Prefer fail-loud behavior over silent fallback.
+- Keep public docs and examples generic. Do not import private product names or company-only jargon from other repos.
 - Update docs and instructions when behavior changes.
-- If a change affects public compatibility or a versioned surface, update
-  `docs/VERSIONING.md` in the same change.
 
-## Docs
+## Questions, bugs, and proposals
 
-- Start with `docs/README.md` for the live docs set.
-- Use `docs/VERSIONING.md` for versioning and breaking-change guidance.
-- Put durable public guidance in README or `docs/`.
-- Do not keep one-off plans, worklogs, or stale research notes in the live docs tree.
+- Use GitHub Discussions for questions, setup help, and open design talk.
+- Use GitHub Issues for bugs and scoped feature requests.
 
 ## Pull requests
 
