@@ -32,6 +32,9 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Release minor bumps cover backward-compatible public additions and soft
   deprecations.
 - Release patch bumps cover internal-only or other non-breaking public fixes.
+- Prefer the next patch tag for routine public work. Use `v1.0.2`, not
+  `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
+  non-breaking releases.
 - Use `CHANGELOG.md`, the latest signed annotated tag, and the matching
   GitHub release as the public release record.
 
