@@ -103,6 +103,8 @@ make setup
 
 Use [CONTRIBUTING.md](CONTRIBUTING.md) for the full source-checkout proof
 path. `make setup` owns the repo bootstrap commands.
+Use [docs/VERSIONING.md](docs/VERSIONING.md) for release rules and
+[CHANGELOG.md](CHANGELOG.md) for the public release record.
 
 Want a smaller first proof from a source checkout?
 

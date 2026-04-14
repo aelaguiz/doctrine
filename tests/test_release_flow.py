@@ -74,6 +74,7 @@ class ReleaseFlowTests(unittest.TestCase):
         self.assertIn("Requested language version state: unchanged (still 1.0)", worksheet)
         self.assertIn("Package metadata status: ready (`1.1.0`)", worksheet)
         self.assertIn("- make verify-package", worksheet)
+        self.assertIn("- uv run --locked python -m unittest tests.test_package_release", worksheet)
         self.assertIn("- pyproject.toml", worksheet)
         self.assertIn(
             "make release-draft RELEASE=v1.1.0 CHANNEL=stable PREVIOUS_TAG=auto",
@@ -571,7 +572,7 @@ class ReleaseFlowTests(unittest.TestCase):
 
         self.assertIn("- pyproject.toml", worksheet)
         self.assertIn("- docs/VERSIONING.md", worksheet)
-        self.assertIn("- affected live docs", worksheet)
+        self.assertIn("- affected live docs and contributor instructions", worksheet)
         self.assertIn("- AGENTS.md", worksheet)
         self.assertIn("- release-note header and body", worksheet)
         self.assertIn("- proof for the touched public surface", worksheet)
@@ -595,6 +596,11 @@ class ReleaseFlowTests(unittest.TestCase):
                 [project]
                 name = "doctrine"
                 version = "{package_version}"
+
+                [tool.doctrine.package]
+                import_name = "doctrine"
+                pypi_environment = "pypi"
+                testpypi_environment = "testpypi"
                 """
             ),
             encoding="utf-8",

@@ -20,12 +20,17 @@ class PackageReleaseTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def test_load_package_release_metadata_reads_distribution_and_defaults(self) -> None:
+    def test_load_package_release_metadata_reads_explicit_release_fields(self) -> None:
         self._write_pyproject(
             """\
             [project]
             name = "doctrine-agents"
             version = "1.0.2"
+
+            [tool.doctrine.package]
+            import_name = "doctrine"
+            pypi_environment = "pypi"
+            testpypi_environment = "testpypi"
             """
         )
 
@@ -42,7 +47,19 @@ class PackageReleaseTests(unittest.TestCase):
             "https://test.pypi.org/project/doctrine-agents/",
         )
 
-    def test_load_package_release_metadata_reads_tool_doctrine_package_table(self) -> None:
+    def test_load_package_release_metadata_requires_tool_doctrine_package_table(self) -> None:
+        self._write_pyproject(
+            """\
+            [project]
+            name = "doctrine-agents"
+            version = "1.0.2"
+            """
+        )
+
+        with self.assertRaisesRegex(RuntimeError, r"must contain a `\[tool.doctrine.package\]` table"):
+            load_package_release_metadata(self.root)
+
+    def test_load_package_release_metadata_requires_named_release_fields(self) -> None:
         self._write_pyproject(
             """\
             [project]
@@ -52,15 +69,14 @@ class PackageReleaseTests(unittest.TestCase):
             [tool.doctrine.package]
             import_name = "doctrine"
             pypi_environment = "release"
-            testpypi_environment = "preview"
             """
         )
 
-        metadata = load_package_release_metadata(self.root)
-
-        self.assertEqual(metadata.import_name, "doctrine")
-        self.assertEqual(metadata.pypi_environment, "release")
-        self.assertEqual(metadata.testpypi_environment, "preview")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"`\[tool.doctrine.package\]\.testpypi_environment` must be a non-empty string",
+        ):
+            load_package_release_metadata(self.root)
 
     def test_resolve_distribution_artifact_requires_exactly_one_match(self) -> None:
         dist_dir = self.root / "dist"
@@ -77,6 +93,11 @@ class PackageReleaseTests(unittest.TestCase):
             [project]
             name = "doctrine-agents"
             version = "1.0.2"
+
+            [tool.doctrine.package]
+            import_name = "doctrine"
+            pypi_environment = "pypi"
+            testpypi_environment = "testpypi"
             """
         )
         output_path = self.root / "github-output.txt"

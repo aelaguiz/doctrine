@@ -25,6 +25,12 @@ publish flow, also run:
 make verify-package
 ```
 
+If you change the public release flow, also run:
+
+```bash
+uv run --locked python -m unittest tests.test_release_flow
+```
+
 If you change diagnostics, also run:
 
 ```bash
@@ -46,6 +52,7 @@ make
 - Prefer fail-loud behavior over silent fallback.
 - Keep public docs and examples generic. Do not import private product names or company-only jargon from other repos.
 - Update docs and instructions when behavior changes.
+- Use `docs/VERSIONING.md` for public release rules and `CHANGELOG.md` for the public release record.
 
 ## Questions, bugs, and proposals
 

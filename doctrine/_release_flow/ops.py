@@ -122,6 +122,7 @@ def render_release_worksheet(plan: ReleasePlan) -> str:
     ]
     verify_commands = [
         "uv run --locked python -m unittest tests.test_release_flow",
+        "uv run --locked python -m unittest tests.test_package_release",
         "make verify-package",
     ]
 
@@ -140,7 +141,7 @@ def render_release_worksheet(plan: ReleasePlan) -> str:
         required_updates.extend(
             [
                 "docs/VERSIONING.md",
-                "affected live docs",
+                "affected live docs and contributor instructions",
             ]
         )
     if plan.release_class == "breaking":
