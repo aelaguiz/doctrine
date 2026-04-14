@@ -63,6 +63,19 @@ class VerifyCorpusCliTests(unittest.TestCase):
 
 
 class VerifyCorpusBuildContractTests(unittest.TestCase):
+    def _flow_build_contract_case(self) -> CaseSpec:
+        return CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/73_flow_visualizer_showcase/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/73_flow_visualizer_showcase").resolve(),
+            name="flow build-contract proof",
+            kind="build_contract",
+            prompt_path=(
+                REPO_ROOT / "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
+            ).resolve(),
+            build_target="example_73_flow_visualizer_showcase",
+            approx_ref_path=None,
+        )
+
     def test_emit_target_loading_failure_becomes_a_verification_error(self) -> None:
         case = CaseSpec(
             manifest_path=(REPO_ROOT / "examples/01_hello_world/cases.toml").resolve(),
@@ -134,17 +147,7 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
         self.assertEqual(result.detail, "build matched checked-in tree")
 
     def test_flow_build_contract_surfaces_missing_pinned_d2_cleanly(self) -> None:
-        case = CaseSpec(
-            manifest_path=(REPO_ROOT / "examples/73_flow_visualizer_showcase/cases.toml").resolve(),
-            example_dir=(REPO_ROOT / "examples/73_flow_visualizer_showcase").resolve(),
-            name="flow build-contract missing pinned d2",
-            kind="build_contract",
-            prompt_path=(
-                REPO_ROOT / "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
-            ).resolve(),
-            build_target="example_73_flow_visualizer_showcase",
-            approx_ref_path=None,
-        )
+        case = self._flow_build_contract_case()
 
         missing_package = (
             Path(tempfile.gettempdir())
@@ -161,8 +164,70 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
 
         rendered = str(ctx.exception)
         self.assertIn("E515 emit error", rendered)
-        self.assertIn("Pinned D2 dependency is unavailable", rendered)
+        self.assertIn("Flow renderer prerequisite is unavailable", rendered)
         self.assertIn("Run `npm ci`", rendered)
+
+    def test_flow_build_contract_surfaces_missing_helper_cleanly(self) -> None:
+        case = self._flow_build_contract_case()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_json = Path(temp_dir) / "node_modules" / "@terrastruct" / "d2" / "package.json"
+            package_json.parent.mkdir(parents=True)
+            package_json.write_text("{}\n")
+            missing_helper = Path(temp_dir) / "missing_flow_svg.mjs"
+
+            # Flow build-contract proof wraps `emit_target_flow()` through the
+            # verifier. A missing shipped helper must still become one readable
+            # verification failure instead of an uncaught filesystem error.
+            with (
+                patch("doctrine.flow_renderer.D2_PACKAGE_PATH", package_json),
+                patch("doctrine.flow_renderer.D2_HELPER_PATH", missing_helper),
+            ):
+                with self.assertRaises(VerificationError) as ctx:
+                    _run_build_contract(case)
+
+        rendered = str(ctx.exception)
+        self.assertIn("E515 emit error", rendered)
+        self.assertIn("Flow renderer prerequisite is unavailable", rendered)
+        self.assertIn("Doctrine flow renderer helper is missing", rendered)
+        self.assertIn("Restore the `flow_svg.mjs` helper file.", rendered)
+
+    def test_flow_build_contract_surfaces_renderer_failure_cleanly(self) -> None:
+        case = self._flow_build_contract_case()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_json = Path(temp_dir) / "node_modules" / "@terrastruct" / "d2" / "package.json"
+            package_json.parent.mkdir(parents=True)
+            package_json.write_text("{}\n")
+            helper = Path(temp_dir) / "flow_svg.mjs"
+            helper.write_text("// helper stub\n")
+
+            # Flow build-contract proof should keep renderer crash detail when
+            # the Node helper exits non-zero, so verifier output still tells the
+            # caller what failed inside the flow render step.
+            with (
+                patch("doctrine.flow_renderer.D2_PACKAGE_PATH", package_json),
+                patch("doctrine.flow_renderer.D2_HELPER_PATH", helper),
+                patch(
+                    "doctrine.flow_renderer.subprocess.run",
+                    return_value=subprocess.CompletedProcess(
+                        args=["node", str(helper)],
+                        returncode=9,
+                        stdout="",
+                        stderr="render crashed",
+                    ),
+                ),
+            ):
+                with self.assertRaises(VerificationError) as ctx:
+                    _run_build_contract(case)
+
+        rendered = str(ctx.exception)
+        self.assertIn("E516 emit error", rendered)
+        self.assertIn("Pinned D2 renderer failed", rendered)
+        self.assertIn(
+            "Could not render `AGENTS.flow.svg` from `AGENTS.flow.d2`: render crashed",
+            rendered,
+        )
 
 
 if __name__ == "__main__":

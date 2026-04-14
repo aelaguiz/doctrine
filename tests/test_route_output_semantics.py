@@ -330,6 +330,82 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertIn("Show this only when verdict is changes requested and a routed owner exists.", rendered)
         self.assertIn("Draft Author", rendered)
 
+    def test_route_choice_guards_ignore_dead_route_from_arms_after_match_narrowing(self) -> None:
+        # A prior match arm already fixes RouteFacts.route_choice. Dead route_from
+        # arms from the other enum members must not stay live and make the guarded
+        # route summary ambiguous for the selected route choice.
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+                route_choice: "Route Choice"
+
+            enum ProofRoute: "Proof Route"
+                accept: "Accept"
+                revise: "Revise"
+
+            agent ReviewLead:
+                role: "Own accepted follow-up."
+                workflow: "Follow Up"
+                    "Take the accepted follow-up."
+
+            agent DraftAuthor:
+                role: "Fix rejected draft defects."
+                workflow: "Revise"
+                    "Revise the same draft."
+
+            output RouteChoiceReply: "Route Choice Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                accept_summary: "Accept Summary" when route.choice == ProofRoute.accept:
+                    "{{route.summary}}"
+
+                revise_summary: "Revise Summary" when route.choice == ProofRoute.revise:
+                    "{{route.summary}}"
+
+            workflow RouteChoiceWorkflow: "Route Choice Workflow"
+                "Keep route choice details aligned with the selected match arm."
+
+                law:
+                    current none
+                    stop "Reply and stop."
+                    match RouteFacts.route_choice:
+                        ProofRoute.accept:
+                            route_from RouteFacts.route_choice as ProofRoute:
+                                ProofRoute.accept:
+                                    route "Send accepted work to ReviewLead." -> ReviewLead
+                                ProofRoute.revise:
+                                    route "Dead revise arm inside accept branch." -> DraftAuthor
+                        else:
+                            route_from RouteFacts.route_choice as ProofRoute:
+                                ProofRoute.accept:
+                                    route "Dead accept arm inside revise branch." -> ReviewLead
+                                ProofRoute.revise:
+                                    route "Send revision work to DraftAuthor." -> DraftAuthor
+
+            agent RouteChoiceGuardDemo:
+                role: "Keep dead route arms out of guarded route summaries."
+                workflow: RouteChoiceWorkflow
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    RouteChoiceReply
+            """,
+            agent_name="RouteChoiceGuardDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("Show this only when route.choice is Accept.", rendered)
+        self.assertIn("Send accepted work to ReviewLead. Next owner: Review Lead.", rendered)
+        self.assertIn("Show this only when route.choice is Revise.", rendered)
+        self.assertIn("Send revision work to DraftAuthor. Next owner: Draft Author.", rendered)
+        self.assertNotIn("Dead revise arm inside accept branch.", rendered)
+        self.assertNotIn("Dead accept arm inside revise branch.", rendered)
+
     def test_route_only_output_can_interpolate_route_next_owner(self) -> None:
         agent = self._compile_agent(
             """

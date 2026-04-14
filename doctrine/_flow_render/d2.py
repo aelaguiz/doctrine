@@ -216,7 +216,7 @@ def _render_agent_section(
 ) -> list[str]:
     section_direction = (
         "right"
-        if lane_plan.secondary_route_agents or lane_plan.standalone_agents
+        if lane_plan.route_starts or lane_plan.secondary_lanes
         else "down"
     )
     lines = [
@@ -239,11 +239,11 @@ def _render_agent_section(
         for node in graph.agents
     }
 
-    if lane_plan.secondary_route_agents:
+    if lane_plan.route_starts:
         lines.extend(
             _render_agent_cluster(
                 "route_starts",
-                lane_plan.secondary_route_agents,
+                lane_plan.route_starts,
                 agents_by_key,
                 path_map,
                 direction="down",
@@ -263,11 +263,11 @@ def _render_agent_section(
         )
         lines.append("")
 
-    if lane_plan.standalone_agents:
+    if lane_plan.secondary_lanes:
         lines.extend(
             _render_agent_cluster(
                 "secondary_lanes",
-                lane_plan.standalone_agents,
+                lane_plan.secondary_lanes,
                 agents_by_key,
                 path_map,
                 direction="down",

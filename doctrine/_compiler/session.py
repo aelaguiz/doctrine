@@ -68,6 +68,7 @@ class CompilationSession:
         self._module_cache: dict[ModuleLoadKey, IndexedUnit] = {}
         self._module_load_errors: dict[ModuleLoadKey, Exception] = {}
         self._module_loading: dict[ModuleLoadKey, threading.Event] = {}
+        self._module_waits: dict[ModuleLoadKey, ModuleLoadKey] = {}
         self._module_lock = threading.Lock()
         # Shared prompt graph data lives on the session; compile contexts stay task-local.
         self.root_unit = index_unit(

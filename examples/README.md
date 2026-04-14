@@ -37,6 +37,9 @@ Each numbered example may contain:
 
 ## Learning Paths
 
+Some bullets below cover broad ranges.
+Some call out landmark examples inside those ranges.
+
 - `01` through `06`: core syntax, sections, imports, inheritance, and explicit
   workflow patching
 - `07` through `29`: authored slots, routing, inputs, outputs, skills, refs,
@@ -45,20 +48,18 @@ Each numbered example may contain:
   invalidation, guarded output items, and route-only turns
 - `43` through `49`: first-class `review`
 - `50` through `53`: bound roots for workflow law and review carriers
-- `54` through `81`: second-wave integration surfaces for `analysis`,
-  owner-aware `schema:` / `structure:` attachments, readable markdown
-  documents and descendants, schema artifact inventories and reusable groups,
-  shared readable block reuse, multiline code blocks, schema-backed review
-  contracts, title-bearing identity projections for concrete agents and enum
-  members, authored render profiles, compact `properties`, typed row/item
+- `54` through `67`: integration and readable-document surfaces for
+  `analysis`, owner-aware `schema:` / `structure:` attachments, readable
+  markdown documents and descendants, schema artifact inventories and reusable
+  groups, shared readable block reuse, multiline code blocks, schema-backed
+  review contracts, title-bearing identity projections for concrete agents and
+  enum members, authored render profiles, compact `properties`, typed row/item
   schemas, semantic render-profile lowering targets, and late extension
   readable blocks such as raw `markdown`, `html`, `footnotes`, `image`, and
-  structured nested table cells, plus `review_family`, case-selected review
-  families, dedicated `route_only`, dedicated `grounding`, schema-group
-  invalidation, first-class `decision` attachments for candidate-pool,
-  sequencing-proof, and winner-selection scaffolds, plus optional
-  agent-scoped `final_output:` designation for prose and JSON-schema final
-  assistant messages
+  structured nested table cells
+- `68` through `75`: reusable review-family scaffolds, dedicated `route_only`
+  and `grounding`, schema-group invalidation, the flow visualizer showcase,
+  first-class `decision` attachments, and cross-root standard-library imports
 - `73` and `74`: the flagship multi-agent flow visualizer showcase and the
   decision-attachment capstone for reusable candidate-pool readback
 - `73`: the flagship multi-agent flow visualizer showcase with shared inputs,
