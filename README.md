@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.14%2B](https://img.shields.io/badge/python-3.14%2B-3776AB.svg)](pyproject.toml)
 [![CI](https://img.shields.io/github/actions/workflow/status/aelaguiz/doctrine/ci.yml?branch=main&label=ci)](https://github.com/aelaguiz/doctrine/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/doctrine-agents.svg)](https://pypi.org/project/doctrine-agents/)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aelaguiz/doctrine/badge)](https://scorecard.dev/viewer/?uri=github.com/aelaguiz/doctrine)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
@@ -88,6 +89,12 @@ example corpus, and `emit_flow`.
 
 When Doctrine is installed from a package index, the distribution name is
 `doctrine-agents`. The Python module name stays `doctrine`.
+
+Want the packaged compiler instead of a source checkout?
+
+```bash
+python -m pip install doctrine-agents
+```
 
 ```bash
 git clone https://github.com/aelaguiz/doctrine.git

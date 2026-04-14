@@ -10,19 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Use this section for work that is not public yet.
 
-### Added
-- Added split GitHub Actions workflows for PR checks, main-branch CI, dependency review, scorecards, and release packaging.
-- Added repo-owned GitHub surfaces for `CODEOWNERS`, Dependabot, richer release-note labels, and stronger issue and PR templates.
-- Prepared the first package-index rollout under the `doctrine-agents`
-  distribution name while keeping the Python import path as `doctrine`.
-
-### Changed
-- Updated public support and security docs for the 1.x line and GitHub private vulnerability reporting.
-- Added package metadata links for changelog, discussions, and security policy so future package pages point to live repo surfaces.
-- Documented the GitHub release publish path that builds dist artifacts, smoke tests an external install, uploads release assets, and can publish to package indexes through Trusted Publishing.
-- Wired the publish workflow for `testpypi` and `pypi` environments and staged
-  the rollout behind GitHub repo variables.
-
 When you cut a public release:
 
 1. Copy the release entry template below.
@@ -68,6 +55,27 @@ Support-surface version changes: none
 ### YANKED
 - Use this only when a bad public release was superseded later.
 ```
+
+## v1.0.2 - 2026-04-14
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v1.0.2
+Language version: unchanged (still 1.0)
+Affected surfaces: package-index installs, GitHub Trusted Publishing, and the public install docs.
+Who must act: users installing Doctrine from PyPI or TestPyPI and maintainers publishing Doctrine to package indexes.
+Who does not need to act: users running Doctrine from a source checkout and users of the `doctrine` Python module path or `[tool.doctrine.emit]` config surface.
+Upgrade steps: Install `doctrine-agents==1.0.2` from the package index you use. Keep using `python -m doctrine.emit_docs` and the `doctrine` module path exactly as before.
+Verification: Install `doctrine-agents==1.0.2` in a fresh venv and run `python -m doctrine.emit_docs --pyproject ... --target ...` from a temp project outside this repo.
+Support-surface version changes: package metadata 1.0.1 -> 1.0.2; distribution name doctrine -> doctrine-agents
+
+### Added
+- Added the first public package-index rollout for Doctrine under the `doctrine-agents` distribution name.
+- Added GitHub Trusted Publishing wiring for `testpypi` and `pypi`, including repo environments and gated publish workflow paths.
+
+### Changed
+- Kept the Python import path as `doctrine` while making the package-index install name explicit in the docs and README.
+- Added a package-index smoke path that builds the wheel, installs it in a fresh environment, and compiles a temp project outside the repo root.
 
 ## v1.0.1 - 2026-04-14
 
