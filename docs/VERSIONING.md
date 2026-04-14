@@ -4,8 +4,6 @@ This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
 Current Doctrine language version: 1.0
-Current public Doctrine release version: v1.0.2. Use the latest signed
-annotated tag and matching GitHub release as the public release record.
 
 ## The Version Lines
 
@@ -34,6 +32,8 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Release minor bumps cover backward-compatible public additions and soft
   deprecations.
 - Release patch bumps cover internal-only or other non-breaking public fixes.
+- Use `CHANGELOG.md`, the latest signed annotated tag, and the matching
+  GitHub release as the public release record.
 
 ### Narrow Support-Surface Versions
 
@@ -133,14 +133,15 @@ upgrade steps.
 4. Update the touched live docs and contributor instructions when the release
    changes their truth.
 5. Run `make release-prepare RELEASE=vX.Y.Z CLASS=internal|additive|soft-deprecated|breaking LANGUAGE_VERSION=unchanged|X.Y CHANNEL=stable|beta|rc`.
-6. Run the required proof for the touched surfaces.
+6. Run the required proof for the touched surfaces. Every public release must
+   also run `make verify-package`.
 7. Run `make release-tag RELEASE=vX.Y.Z CHANNEL=stable|beta|rc`.
 8. Run `make release-draft RELEASE=vX.Y.Z CHANNEL=stable|beta|rc PREVIOUS_TAG=auto`.
 9. Review the GitHub draft release body.
 10. Run `make release-publish RELEASE=vX.Y.Z`.
 11. The GitHub release publish workflow builds dist artifacts, smoke tests an
-    external install, uploads release assets, and can publish to package
-    indexes through Trusted Publishing when the repo settings are ready.
+    external wheel and sdist install, uploads release assets, and publishes
+    through GitHub environments plus Trusted Publishing.
 12. Before the first package-index publish for a new project name, register
     the GitHub Trusted Publishers on TestPyPI and PyPI for the package
     project, workflow `.github/workflows/publish.yml`, and matching

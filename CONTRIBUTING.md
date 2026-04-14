@@ -8,8 +8,7 @@ and verified examples aligned.
 ## Setup
 
 ```bash
-uv sync
-npm ci
+make setup
 make check
 ```
 
@@ -17,6 +16,13 @@ If you only need the fastest proof path while you are iterating:
 
 ```bash
 make tests
+```
+
+If you change package metadata, the public install path, or the release
+publish flow, also run:
+
+```bash
+make verify-package
 ```
 
 If you change diagnostics, also run:

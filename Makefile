@@ -8,7 +8,7 @@ UV_RUN := $(UV) run --locked $(PYTHON)
 VERIFY_FLOW_PREREQ := $(UV_RUN) -m doctrine.verify_prereqs --require-flow-renderer
 VSCODE_MAKE := $(MAKE) -C editors/vscode
 
-.PHONY: help setup test tests check verify verify-examples verify-diagnostics release-prepare release-tag release-draft release-publish vscode-tests vscode-package
+.PHONY: help setup test tests check verify verify-examples verify-diagnostics build-dist verify-package verify-package-wheel verify-package-sdist release-prepare release-tag release-draft release-publish vscode-tests vscode-package
 
 help:
 	@printf '%s\n' \
@@ -17,6 +17,8 @@ help:
 		'make test              Alias for make tests.' \
 		'make verify-examples   Run the shipped manifest-backed corpus.' \
 		'make verify-diagnostics Run the diagnostic smoke checks.' \
+		'make build-dist        Build the sdist and wheel artifacts.' \
+		'make verify-package    Smoke test wheel and sdist installs outside the repo root.' \
 		'make release-prepare  Validate release inputs and print the release worksheet.' \
 		'make release-tag      Create and push one signed annotated public release tag.' \
 		'make release-draft    Create one GitHub draft release from an existing pushed tag.' \
@@ -46,6 +48,18 @@ verify-diagnostics:
 verify: verify-examples verify-diagnostics
 
 check: tests verify
+
+build-dist:
+	rm -rf dist
+	$(UV) build
+
+verify-package-wheel:
+	$(UV_RUN) -m doctrine._package_release smoke --artifact-type wheel
+
+verify-package-sdist:
+	$(UV_RUN) -m doctrine._package_release smoke --artifact-type sdist
+
+verify-package: build-dist verify-package-wheel verify-package-sdist
 
 release-prepare:
 	@test -n "$(RELEASE)" || { printf '%s\n' 'RELEASE is required.'; exit 2; }
