@@ -1,37 +1,32 @@
 from __future__ import annotations
 
-from doctrine._compiler.shared import *  # noqa: F401,F403
-from doctrine._compiler.shared import (
-    _ADDRESSABLE_ROOT_REGISTRIES,
-    _BUILTIN_INPUT_SOURCES,
-    _BUILTIN_OUTPUT_TARGETS,
-    _BUILTIN_RENDER_PROFILE_NAMES,
-    _INTERPOLATION_EXPR_RE,
-    _INTERPOLATION_RE,
-    _READABLE_DECL_REGISTRIES,
-    _RESERVED_AGENT_FIELD_KEYS,
-    _REVIEW_CONTRACT_FACT_KEYS,
-    _REVIEW_GUARD_FIELD_NAMES,
-    _REVIEW_OPTIONAL_FIELD_NAMES,
-    _REVIEW_REQUIRED_FIELD_NAMES,
-    _REVIEW_VERDICT_TEXT,
-    _SCHEMA_FAMILY_TITLES,
-    _default_worker_count,
-    _display_addressable_ref,
-    _dotted_decl_name,
-    _dotted_ref_name,
-    _humanize_key,
-    _law_path_from_name_ref,
-    _lowercase_initial,
-    _name_ref_from_dotted_name,
-    _resolve_render_profile_mode,
-    _semantic_render_target_for_block,
+from typing import TYPE_CHECKING
+
+from doctrine._compiler.resolved_types import (
+    CompileError,
+    CompiledAgent,
+    CompiledSection,
+    IndexedUnit,
+    OutputDeclKey,
+    ResolvedAgentSlotState,
+    ResolvedAnalysisBody,
+    ResolvedDocumentBody,
+    ResolvedIoBody,
+    ResolvedReviewBody,
+    ResolvedSchemaBody,
+    ResolvedSkillsBody,
+    ResolvedWorkflowBody,
+    ReviewSemanticContext,
+    RouteSemanticContext,
 )
 from doctrine._compiler.display import DisplayMixin
 from doctrine._compiler.compile import CompileMixin
 from doctrine._compiler.resolve import ResolveMixin
 from doctrine._compiler.flow import FlowMixin
 from doctrine._compiler.validate import ValidateMixin
+
+if TYPE_CHECKING:
+    from doctrine._compiler.session import CompilationSession
 
 # Thin compile-context boundary: task-local state and public entrypoints live
 # here, while the subsystem helper families are owned by the internal mixins.

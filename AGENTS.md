@@ -47,6 +47,9 @@
 - Add one new idea per example.
 - Prefer explicit typed declarations over magic.
 - Prefer fail-loud compiler behavior over silent fallback.
+- Keep code files small and single-purpose.
+- Prefer shared helpers and modules over one huge file that mixes many jobs.
+- If a functional code file grows past about 500 lines, split it unless there is a clear reason to keep it whole.
 - Model reusable capability as a `skill`, not as ad hoc script prose.
 - Keep public docs and examples generic. Do not import product names, internal skill slugs, or company-specific workflow jargon from other repos.
 

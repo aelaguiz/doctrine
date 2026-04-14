@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import json
-import re
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-from doctrine import model
+import doctrine._model as model
+from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey
 from doctrine._compiler.types import (
     CompiledAgent,
     CompiledBodyItem,
@@ -28,11 +26,15 @@ from doctrine._compiler.types import (
     CompiledPropertiesBlock,
     CompiledRawTextBlock,
     CompiledReadableBlock,
+    CompiledReviewFinalResponseSpec,
+    CompiledReviewOutcomeSpec,
+    CompiledReviewOutputSpec,
+    CompiledReviewSpec,
     CompiledRuleBlock,
     CompiledSection,
     CompiledSequenceBlock,
-    CompiledSkillPackageFile,
     CompiledSkillPackage,
+    CompiledSkillPackageFile,
     CompiledTableBlock,
     CompiledTableCell,
     CompiledTableColumn,
@@ -45,15 +47,9 @@ from doctrine._compiler.types import (
     FlowOutputNode,
     ResolvedRenderProfile,
 )
-from doctrine._compiler.support import (
-    default_worker_count as _default_worker_count,
-    dotted_decl_name as _dotted_decl_name,
-    path_location as _path_location,
-)
 from doctrine.diagnostics import CompileError, DoctrineError
-from doctrine.parser import parse_file
 
-# Shared compiler support types and helpers; public entrypoints stay on doctrine.compiler.
+# Canonical resolved-contract owner for compiler internals and doctrine.compiler.
 
 
 @dataclass(slots=True, frozen=True)
@@ -213,7 +209,7 @@ class ResolvedAnalysisBody:
     title: str
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedAnalysisSection, ...]
-    render_profile: "ResolvedRenderProfile" | None = None
+    render_profile: ResolvedRenderProfile | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -625,171 +621,3 @@ class AddressableNode:
     unit: IndexedUnit
     root_decl: AddressableRootDecl
     target: AddressableTarget
-
-
-_CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
-_INTERPOLATION_EXPR_RE = re.compile(
-    r"\s*"
-    r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
-    r"(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*))?"
-    r"\s*"
-)
-_INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
-# Reserved typed fields get their own compiler paths. Every other key is an
-# authored workflow slot, with one legacy carve-out: the old `workflow` field
-# still preserves 01-06 body inheritance semantics instead of switching to a
-# second slot-patching dialect.
-_RESERVED_AGENT_FIELD_KEYS = {
-    "role",
-    "inputs",
-    "outputs",
-    "analysis",
-    "skills",
-    "review",
-    "final_output",
-}
-_LAW_BEARING_AUTHORED_SLOT_KEYS = frozenset({"workflow", "handoff_routing"})
-_ROUTE_BEARING_AUTHORED_SLOT_KEYS = frozenset({"handoff_routing"})
-
-_BUILTIN_INPUT_SOURCES = {
-    "Prompt": ConfigSpec(title="Prompt", required_keys={}, optional_keys={}),
-    "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
-    "EnvVar": ConfigSpec(title="EnvVar", required_keys={"env": "Env"}, optional_keys={}),
-}
-
-_BUILTIN_OUTPUT_TARGETS = {
-    "TurnResponse": ConfigSpec(title="Turn Response", required_keys={}, optional_keys={}),
-    "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
-}
-
-_BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")
-
-
-def _semantic_render_target_for_block(kind: str, key: str) -> str | None:
-    if kind == "section" and key == "contract_checks":
-        return "review.contract_checks"
-    if kind in {"sequence", "bullets", "checklist"} and key == "invalidations":
-        return "control.invalidations"
-    return None
-
-
-def _resolve_render_profile_mode(
-    profile: "ResolvedRenderProfile",
-    *targets: str,
-) -> str | None:
-    authored = {".".join(rule.target_parts): rule.mode for rule in profile.rules}
-    for target in targets:
-        mode = authored.get(target)
-        if mode is not None:
-            return mode
-    return None
-
-_READABLE_DECL_REGISTRIES = (
-    ("agent declaration", "agents_by_name"),
-    ("analysis declaration", "analyses_by_name"),
-    ("decision declaration", "decisions_by_name"),
-    ("schema declaration", "schemas_by_name"),
-    ("document declaration", "documents_by_name"),
-    ("input declaration", "inputs_by_name"),
-    ("input source declaration", "input_sources_by_name"),
-    ("output declaration", "outputs_by_name"),
-    ("output target declaration", "output_targets_by_name"),
-    ("output shape declaration", "output_shapes_by_name"),
-    ("json schema declaration", "json_schemas_by_name"),
-    ("skill declaration", "skills_by_name"),
-    ("enum declaration", "enums_by_name"),
-)
-
-_ADDRESSABLE_ROOT_REGISTRIES = (
-    *_READABLE_DECL_REGISTRIES,
-    ("workflow declaration", "workflows_by_name"),
-    ("skills block", "skills_blocks_by_name"),
-)
-_SCHEMA_FAMILY_TITLES = {
-    "sections": "Required Sections",
-    "gates": "Contract Gates",
-    "artifacts": "Artifact Inventory",
-    "groups": "Surface Groups",
-}
-
-_REVIEW_REQUIRED_FIELD_NAMES = frozenset(
-    {
-        "verdict",
-        "reviewed_artifact",
-        "analysis",
-        "readback",
-        "failing_gates",
-        "next_owner",
-    }
-)
-_REVIEW_OPTIONAL_FIELD_NAMES = frozenset({"blocked_gate", "active_mode", "trigger_reason"})
-_REVIEW_CONTEXT_FIELD_NAMES = frozenset({"current_artifact"})
-_REVIEW_FIELD_NAMES = (
-    _REVIEW_REQUIRED_FIELD_NAMES | _REVIEW_OPTIONAL_FIELD_NAMES | _REVIEW_CONTEXT_FIELD_NAMES
-)
-_REVIEW_GUARD_FIELD_NAMES = _REVIEW_FIELD_NAMES | frozenset({"current_artifact"})
-_REVIEW_VERDICT_TEXT = {
-    "accept": "accepted",
-    "changes_requested": "changes requested",
-}
-_REVIEW_CONTRACT_FACT_KEYS = ("passes", "failed_gates", "first_failed_gate")
-
-
-def _dotted_ref_name(ref: model.NameRef) -> str:
-    return ".".join((*ref.module_parts, ref.declaration_name))
-
-
-def _agent_typed_field_key(field: model.Field) -> str:
-    if isinstance(field, model.InputsField):
-        return "inputs"
-    if isinstance(field, model.OutputsField):
-        return "outputs"
-    if isinstance(field, model.AnalysisField):
-        return "analysis"
-    if isinstance(field, model.DecisionField):
-        return f"decision:{_dotted_ref_name(field.value)}"
-    if isinstance(field, model.SkillsField):
-        return "skills"
-    if isinstance(field, model.ReviewField):
-        return "review"
-    if isinstance(field, model.FinalOutputField):
-        return "final_output"
-    return type(field).__name__
-
-
-def _authored_slot_allows_law(key: str) -> bool:
-    return key in _LAW_BEARING_AUTHORED_SLOT_KEYS
-
-
-def _authored_slot_carries_route_semantics(key: str) -> bool:
-    return key in _ROUTE_BEARING_AUTHORED_SLOT_KEYS
-
-
-def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
-    parts = tuple(dotted_name.split("."))
-    return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
-
-
-def _law_path_from_name_ref(ref: model.NameRef) -> model.LawPath:
-    return model.LawPath(parts=(*ref.module_parts, ref.declaration_name))
-
-
-from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey
-def _humanize_key(value: str) -> str:
-    value = value.replace("_", " ")
-    value = _CAMEL_BOUNDARY_RE.sub(" ", value)
-    words = value.split()
-    return " ".join(word if word.isupper() else word.capitalize() for word in words)
-
-
-def _lowercase_initial(value: str) -> str:
-    if not value:
-        return value
-    return value[0].lower() + value[1:]
-
-
-def _display_addressable_ref(ref: model.AddressableRef) -> str:
-    root = _dotted_ref_name(ref.root)
-    if not ref.path:
-        return root
-    return f"{root}:{'.'.join(ref.path)}"

@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
-from doctrine import model
+import doctrine._model.declarations as model
+from doctrine._model.core import ImportPath
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
 
@@ -136,7 +137,7 @@ def _validate_render_profile_decl(decl: model.RenderProfileDecl, *, owner_label:
 
 
 def _resolve_import_path(
-    import_path: model.ImportPath, *, module_parts: tuple[str, ...]
+    import_path: ImportPath, *, module_parts: tuple[str, ...]
 ) -> tuple[str, ...]:
     if import_path.level == 0:
         return import_path.module_parts

@@ -233,10 +233,16 @@ class EmitDocsTests(unittest.TestCase):
             },
         )
         self.assertEqual(payload["review"]["final_response"]["mode"], "carrier")
-        self.assertEqual(payload["review"]["final_response"]["declaration_key"], "AcceptanceReviewResponse")
+        self.assertEqual(
+            payload["review"]["final_response"]["declaration_key"],
+            "AcceptanceReviewResponse",
+        )
         self.assertEqual(payload["review"]["final_response"]["review_fields"], {})
         self.assertTrue(payload["review"]["final_response"]["control_ready"])
-        self.assertEqual(payload["review"]["carrier_fields"]["blocked_gate"], "failure_detail.blocked_gate")
+        self.assertEqual(
+            payload["review"]["carrier_fields"]["blocked_gate"],
+            "failure_detail.blocked_gate",
+        )
         self.assertEqual(
             payload["review"]["outcomes"],
             {
@@ -279,7 +285,10 @@ class EmitDocsTests(unittest.TestCase):
             },
         )
         self.assertTrue(payload["review"]["final_response"]["control_ready"])
-        self.assertEqual(payload["review"]["outcomes"]["blocked"]["route_behavior"], "never")
+        self.assertEqual(
+            payload["review"]["outcomes"]["blocked"]["route_behavior"],
+            "never",
+        )
 
     def test_emit_target_marks_split_partial_review_final_output(self) -> None:
         prompt_text = (
@@ -304,8 +313,14 @@ class EmitDocsTests(unittest.TestCase):
             },
         )
         self.assertFalse(payload["review"]["final_response"]["control_ready"])
-        self.assertEqual(payload["review"]["outcomes"]["accept"]["route_behavior"], "always")
-        self.assertEqual(payload["review"]["outcomes"]["changes_requested"]["route_behavior"], "never")
+        self.assertEqual(
+            payload["review"]["outcomes"]["accept"]["route_behavior"],
+            "always",
+        )
+        self.assertEqual(
+            payload["review"]["outcomes"]["changes_requested"]["route_behavior"],
+            "never",
+        )
 
     def test_emit_target_rejects_support_files_outside_project_root(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
