@@ -68,4 +68,4 @@ jobs:
           cache-dependency-path: editors/vscode/package-lock.json
 
       - name: Build VS Code extension
-        run: cd editors/vscode && make
+        run: xvfb-run -a make -C editors/vscode
