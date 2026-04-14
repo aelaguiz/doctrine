@@ -101,10 +101,10 @@ def emit_target_flow(
         except FlowRenderDependencyError as exc:
             raise emit_error(
                 "E515",
-                "Pinned D2 dependency is unavailable",
+                "Flow renderer prerequisite is unavailable",
                 str(exc),
                 location=path_location(d2_path),
-                hints=("Run `npm ci` at the repo root.",),
+                hints=exc.hints,
             ) from exc
         except FlowRenderFailure as exc:
             raise emit_error(

@@ -59,8 +59,8 @@ Review support here uses the same vocabulary as
 sections, carried `active_mode` / `trigger_reason`, bound review carrier roots,
 and semantic refs on the review comment surface.
 
-Second-wave support here also follows the shipped language guides: top-level
-`render_profile`, `analysis`, `decision`, `schema`, and `document`
+Current integration and document support here also follows the shipped language
+guides: top-level `render_profile`, `analysis`, `decision`, `schema`, and `document`
 declarations, agent `analysis:` / `decision:` / `final_output:` slots, typed
 `schema:` / `structure:` / `render_profile:`
 attachments, addressable analysis or document paths such as `Decl:section.title`,
@@ -99,7 +99,9 @@ That writes `doctrine-language-<generated-version>.vsix` into `editors/vscode/`.
 `make` installs the extension's npm dependencies if needed, runs the grammar
 tests, runs the extension-host navigation tests, runs the Lark-alignment
 validator, and packages the final VSIX.
-Each packaging run stamps a fresh semver version without editing `package.json`, so reinstalling the newest VSIX always upgrades the local editor copy cleanly.
+Each packaging run stamps a fresh semver version without editing
+`package.json`.
+Reinstalling the newest VSIX upgrades the local editor copy cleanly.
 
 Install it with either:
 
@@ -175,7 +177,7 @@ local editor is actually running the newest VSIX before changing the grammar.
    carrier paths, plus
    `examples/53_review_bound_carrier_roots/prompts/AGENTS.prompt` for
    lower-case review carrier roots and carried-field path clicks.
-12. For the second-wave ladder, smoke-check:
+12. For the integration and document ladder, smoke-check:
    `examples/54_analysis_attachment/prompts/AGENTS.prompt` for `analysis:`
    slot clicks and `ReleaseAnalysis:stages.title`,
    `examples/74_decision_attachment/prompts/AGENTS.prompt` for `decision:`

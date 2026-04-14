@@ -881,7 +881,12 @@ class ValidateRoutesMixin:
                             self._collect_law_leaf_branches(
                                 case.items,
                                 unit=unit,
-                                branch=current_branch,
+                                branch=self._branch_with_match_case(
+                                    current_branch,
+                                    item,
+                                    case,
+                                    unit=unit,
+                                ),
                             )
                         )
                 branches = tuple(next_branches)
@@ -893,6 +898,7 @@ class ValidateRoutesMixin:
                     for case in self._select_route_from_cases(
                         item,
                         unit=unit,
+                        branch=current_branch,
                     ):
                         next_branches.append(
                             self._branch_with_stmt(
@@ -938,8 +944,11 @@ class ValidateRoutesMixin:
         stmt: model.RouteFromStmt,
         *,
         unit: IndexedUnit,
+        branch: LawBranch,
     ) -> tuple[model.RouteFromArm, ...]:
-        fixed_value = self._resolve_constant_enum_member(stmt.expr, unit=unit)
+        fixed_value = self._resolve_fixed_match_value(stmt.expr, unit=unit, branch=branch)
+        if fixed_value is None:
+            fixed_value = self._resolve_constant_enum_member(stmt.expr, unit=unit)
         if fixed_value is None:
             return stmt.cases
 
@@ -996,6 +1005,24 @@ class ValidateRoutesMixin:
         if isinstance(stmt, model.LawRouteStmt):
             return replace(branch, routes=(*branch.routes, stmt))
         return branch
+
+    def _branch_with_match_case(
+        self,
+        branch: LawBranch,
+        stmt: model.MatchStmt,
+        case: model.MatchArm,
+        *,
+        unit: IndexedUnit,
+    ) -> LawBranch:
+        if not isinstance(stmt.expr, model.ExprRef):
+            return branch
+        fixed_value = self._resolve_match_case_fixed_value(stmt, case, unit=unit)
+        if fixed_value is None:
+            return branch
+        return replace(
+            branch,
+            match_bindings=(*branch.match_bindings, (tuple(stmt.expr.parts), fixed_value)),
+        )
 
     def _validate_current_artifact_stmt(
         self,

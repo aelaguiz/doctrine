@@ -13,8 +13,8 @@ ROUTE_EDGE_KINDS = {"authored_route", "law_route"}
 @dataclass(slots=True, frozen=True)
 class FlowLanePlan:
     primary_lane: tuple[AgentKey, ...]
-    secondary_route_agents: tuple[AgentKey, ...]
-    standalone_agents: tuple[AgentKey, ...]
+    route_starts: tuple[AgentKey, ...]
+    secondary_lanes: tuple[AgentKey, ...]
 
 
 def node_palette(
@@ -93,7 +93,7 @@ def agent_node_paths(
         node_key = (node.module_parts, node.name)
         if node_key in lane_plan.primary_lane:
             container = "primary_lane"
-        elif node_key in lane_plan.secondary_route_agents:
+        elif node_key in lane_plan.route_starts:
             container = "route_starts"
         else:
             container = "secondary_lanes"
@@ -115,8 +115,8 @@ def plan_agent_lanes(graph: FlowGraph) -> FlowLanePlan:
     if not route_edges:
         return FlowLanePlan(
             primary_lane=ordered_agents,
-            secondary_route_agents=(),
-            standalone_agents=(),
+            route_starts=(),
+            secondary_lanes=(),
         )
 
     route_outgoing: dict[AgentKey, list[FlowEdge]] = defaultdict(list)
@@ -167,24 +167,23 @@ def plan_agent_lanes(graph: FlowGraph) -> FlowLanePlan:
 
     if len(route_starts) > 1 and len(primary_lane_full) > 1:
         primary_lane = tuple(primary_lane_full[1:])
+        route_start_agents = tuple(route_starts)
     else:
         primary_lane = tuple(primary_lane_full)
+        route_start_agents = tuple(
+            agent_key for agent_key in route_starts if agent_key not in primary_lane
+        )
 
-    secondary_route_agents = tuple(
-        agent_key
-        for agent_key in ordered_routed_agents
-        if agent_key not in primary_lane
-    )
-    standalone_agents = tuple(
+    secondary_lane_agents = tuple(
         agent_key
         for agent_key in ordered_agents
-        if agent_key not in route_participants
+        if agent_key not in primary_lane and agent_key not in route_start_agents
     )
 
     return FlowLanePlan(
         primary_lane=primary_lane,
-        secondary_route_agents=secondary_route_agents,
-        standalone_agents=standalone_agents,
+        route_starts=route_start_agents,
+        secondary_lanes=secondary_lane_agents,
     )
 
 

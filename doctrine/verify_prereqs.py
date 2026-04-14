@@ -25,7 +25,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--require-flow-renderer",
         action="store_true",
-        help="Require the pinned D2 package used by flow rendering.",
+        help="Require the pinned D2 package and helper used by flow rendering.",
     )
     return parser
 

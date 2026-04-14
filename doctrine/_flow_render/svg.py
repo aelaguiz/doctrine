@@ -6,11 +6,18 @@ from pathlib import Path
 def ensure_pinned_d2_dependency(
     package_path: Path,
     *,
+    helper_path: Path | None = None,
     dependency_error_type,
 ) -> None:
     if not package_path.is_file():
         raise dependency_error_type(
-            "Pinned D2 dependency is missing under `node_modules/@terrastruct/d2`. Run `npm ci`."
+            "Pinned D2 dependency is missing under `node_modules/@terrastruct/d2`. Run `npm ci` at the repo root.",
+            hints=("Run `npm ci` at the repo root.",),
+        )
+    if helper_path is not None and not helper_path.is_file():
+        raise dependency_error_type(
+            f"Doctrine flow renderer helper is missing: `{helper_path}`. Restore the `flow_svg.mjs` helper file.",
+            hints=("Restore the `flow_svg.mjs` helper file.",),
         )
 
 
@@ -27,12 +34,9 @@ def render_flow_svg(
 ) -> None:
     ensure_pinned_d2_dependency(
         package_path,
+        helper_path=helper_path,
         dependency_error_type=dependency_error_type,
     )
-    if not helper_path.is_file():
-        raise dependency_error_type(
-            f"Doctrine D2 helper is missing: `{helper_path}`."
-        )
 
     try:
         result = run(

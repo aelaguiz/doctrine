@@ -28,7 +28,15 @@ Why teams reach for Doctrine:
 - flow diagrams, verification, and editor support ship today
 - output stays portable across current agent tools and harnesses
 
-## Doctrine and Rally
+## Runtime boundary
+
+Doctrine is the authoring and compile layer.
+It turns typed `.prompt` source into deterministic runtime Markdown such as
+`AGENTS.md`.
+That output is meant for the agent runtime that fits your stack.
+Doctrine does not try to be the runtime, scheduler, or state store.
+
+If you want the split in one glance:
 
 - Use Doctrine when you want to author and validate the flow.
 - Use Rally when you want to run a strong, stable workflow with repo-local state, resumability, and strict turn routing.
