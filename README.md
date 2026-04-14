@@ -83,6 +83,12 @@ Leave one honest handoff and stop.
 
 ## Quickstart
 
+Source checkout is still the full setup path for contributor proof, the
+example corpus, and `emit_flow`.
+
+When Doctrine is installed from a package index, the distribution name is
+`doctrine-agents`. The Python module name stays `doctrine`.
+
 ```bash
 git clone https://github.com/aelaguiz/doctrine.git
 cd doctrine
