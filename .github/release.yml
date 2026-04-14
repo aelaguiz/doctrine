@@ -1,0 +1,18 @@
+changelog:
+  exclude:
+    labels:
+      - internal-only
+      - skip-changelog
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking-change
+    - title: Additions
+      labels:
+        - kind:additive
+    - title: Soft deprecations
+      labels:
+        - kind:soft-deprecated
+    - title: Internal changes
+      labels:
+        - kind:internal

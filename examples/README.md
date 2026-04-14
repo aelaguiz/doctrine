@@ -29,7 +29,7 @@ Each numbered example may contain:
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
 - Keep new examples narrow. One new idea per example is the design rule.
-- Package examples `91` through `99` use `SKILL.prompt` and teach the
+- Package examples `95` through `103` use `SKILL.prompt` and teach the
   source-root bundle model. They do not make `build_ref/` part of the public
   authoring story.
 - Batch verification and emit commands are expected to stay scalable on this
@@ -92,6 +92,7 @@ For the shipped skill-package authoring guide, use
 [../docs/SKILL_PACKAGE_AUTHORING.md](../docs/SKILL_PACKAGE_AUTHORING.md).
 For versioning and breaking-change guidance, use
 [../docs/VERSIONING.md](../docs/VERSIONING.md).
+For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 
 ## Corpus Index
 
@@ -231,6 +232,6 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
 example. Its `build_ref/` tree includes compiled Markdown, companion contract
 JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.
-Examples `91` through `99` are the canonical checked-in skill-package gallery.
+Examples `95` through `103` are the canonical checked-in skill-package gallery.
 Their `build_ref/` trees are expected emitted package proof, not public
 authoring input.

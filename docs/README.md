@@ -9,8 +9,9 @@ parallelism.
 
 ## Start Here
 
-- [VERSIONING.md](VERSIONING.md): what Doctrine versions today, and how to
-  handle breaking changes
+- [VERSIONING.md](VERSIONING.md): the canonical versioning guide, release
+  rules, and breaking-change policy
+- [../CHANGELOG.md](../CHANGELOG.md): the portable public release history
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
   runtime stays Markdown
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
@@ -40,6 +41,8 @@ parallelism.
   error codes
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
+- [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
+  record
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
   support for `.prompt` files
 

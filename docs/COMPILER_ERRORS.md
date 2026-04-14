@@ -2,6 +2,8 @@
 
 This document is the canonical error reference for the shipped Doctrine parser,
 compiler, and emit pipeline.
+For public compatibility rules, release duties, and upgrade policy, use
+[VERSIONING.md](VERSIONING.md).
 
 The error surface is now structured first and formatted second.
 
@@ -216,6 +218,14 @@ Stability rules:
 | `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
 | `E520` | Emit target output_dir must stay within project root | A configured or direct emit output directory resolved outside the owning project's root. |
 | `E521` | Emit target entrypoint must stay within project root | A configured emit target resolved its entrypoint outside the owning project's root. |
+| `E522` | Invalid release version | A Doctrine release tag or channel input does not match the shipped release-tag rules. |
+| `E523` | Missing current language version | `docs/VERSIONING.md` does not expose one parseable current Doctrine language version. |
+| `E524` | Invalid language version move | The requested Doctrine language version move does not match the chosen release class. |
+| `E525` | Invalid release version move | The requested Doctrine release version bump does not match the chosen release class. |
+| `E526` | Release changelog entry is missing or incomplete | `CHANGELOG.md` is missing the required release section or fixed release header fields. |
+| `E527` | Release tag preflight failed | Release tagging could not continue because git state or tag operations failed. |
+| `E528` | Release tag signing is not configured | Doctrine could not find the git signing key needed for signed public tags. |
+| `E529` | GitHub release command failed | GitHub draft or publish release commands failed. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

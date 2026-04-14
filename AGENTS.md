@@ -6,6 +6,7 @@
 - Install the pinned flow-render dependency with `npm ci`.
 - Run the full shipped corpus with `make verify-examples`.
 - Run `make verify-diagnostics` when you change diagnostics.
+- For release-flow work, run `uv run --locked python -m unittest tests.test_release_flow`.
 - For one manifest-backed example, use `uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml`.
 - If you change anything under `editors/vscode/`, run `cd editors/vscode && make`.
 - If a dependency is missing or a check cannot run, say that plainly.
@@ -15,8 +16,10 @@
 - Run the relevant verify command for the surface you changed.
 - Keep implementation, examples, docs, and instructions aligned.
 - If behavior changed, update the manifest-backed proof or say plainly why it did not need to change.
-- If a change affects public compatibility or a versioned surface, update
-  `docs/VERSIONING.md`.
+- If a change affects public compatibility, a versioned surface, or the repo
+  release flow, update `docs/VERSIONING.md` and `CHANGELOG.md`.
+- Keep release classification, changelog entry shape, upgrade guidance, and
+  release helper output aligned when the release policy changes.
 
 ## Doc Deletion Safety
 
