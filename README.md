@@ -139,5 +139,6 @@ The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`.
 - Use [Discussions](https://github.com/aelaguiz/doctrine/discussions) for questions and design talk.
 - Use [Issues](https://github.com/aelaguiz/doctrine/issues) for clear bugs or scoped proposals.
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and proof commands.
+- See [SUPPORT.md](SUPPORT.md) for help paths, [SECURITY.md](SECURITY.md) for private vulnerability reports, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for collaboration rules.
 
 If this direction is useful, star the repo and watch releases.
