@@ -57,17 +57,23 @@ def load_package_release_metadata(repo_root: Path) -> PackageReleaseMetadata:
     tool = raw.get("tool")
     doctrine_tool = tool.get("doctrine") if isinstance(tool, dict) else None
     package = doctrine_tool.get("package") if isinstance(doctrine_tool, dict) else None
-    if package is None:
-        package = {}
     if not isinstance(package, dict):
-        raise RuntimeError("`[tool.doctrine.package]` must be a table when present.")
+        raise RuntimeError("`pyproject.toml` must contain a `[tool.doctrine.package]` table.")
 
-    import_name = _optional_string(package, key="import_name", default="doctrine")
-    pypi_environment = _optional_string(package, key="pypi_environment", default="pypi")
-    testpypi_environment = _optional_string(
+    import_name = _require_string(
+        package,
+        key="import_name",
+        table_name="[tool.doctrine.package]",
+    )
+    pypi_environment = _require_string(
+        package,
+        key="pypi_environment",
+        table_name="[tool.doctrine.package]",
+    )
+    testpypi_environment = _require_string(
         package,
         key="testpypi_environment",
-        default="testpypi",
+        table_name="[tool.doctrine.package]",
     )
     return PackageReleaseMetadata(
         distribution_name=distribution_name,
@@ -215,16 +221,6 @@ def _require_string(raw: dict[object, object], *, key: str, table_name: str) -> 
     if not isinstance(value, str) or not value.strip():
         raise RuntimeError(f"`{table_name}.{key}` must be a non-empty string.")
     return value.strip()
-
-
-def _optional_string(raw: dict[object, object], *, key: str, default: str) -> str:
-    value = raw.get(key)
-    if value is None:
-        return default
-    if not isinstance(value, str) or not value.strip():
-        raise RuntimeError(f"`[tool.doctrine.package].{key}` must be a non-empty string.")
-    return value.strip()
-
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

@@ -31,6 +31,14 @@ payload text and breaking releases with no real upgrade steps.
   prep, CI, and publish flows use the same repo-owned path.
 - Moved source-checkout setup docs onto `make setup` and package smoke docs
   onto `make verify-package` to reduce repeated shell instructions.
+- Made the package publish path require explicit `[tool.doctrine.package]`
+  fields instead of falling back to code defaults.
+- Added `tests.test_package_release` to the release worksheet proof path and
+  added `make verify-package` to the PR checklist for package and publish
+  work.
+- Tightened the README, docs index, and contributing guide so they point back
+  to `docs/VERSIONING.md` and `CHANGELOG.md` instead of becoming second
+  release-policy owners.
 
 ### Release Entry Template
 

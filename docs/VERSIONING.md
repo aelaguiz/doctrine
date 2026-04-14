@@ -48,6 +48,9 @@ Doctrine also ships narrower version lines.
   It is not the Doctrine language version.
 - The package metadata version in `pyproject.toml` versions the published
   Python package. It is not the Doctrine language version.
+- `import_name`, `pypi_environment`, and `testpypi_environment` under
+  `[tool.doctrine.package]` are part of the package publish path. Keep them
+  explicit in `pyproject.toml`.
 - The published distribution name may differ from the Python import package
   name. Package-index installs use the published distribution name, while the
   module path stays `doctrine`.
@@ -137,15 +140,18 @@ upgrade steps.
    changes their truth.
 5. Run `make release-prepare RELEASE=vX.Y.Z CLASS=internal|additive|soft-deprecated|breaking LANGUAGE_VERSION=unchanged|X.Y CHANNEL=stable|beta|rc`.
 6. Run the required proof for the touched surfaces. Every public release must
-   also run `make verify-package`.
-7. Run `make release-tag RELEASE=vX.Y.Z CHANNEL=stable|beta|rc`.
-8. Run `make release-draft RELEASE=vX.Y.Z CHANNEL=stable|beta|rc PREVIOUS_TAG=auto`.
-9. Review the GitHub draft release body.
-10. Run `make release-publish RELEASE=vX.Y.Z`.
-11. The GitHub release publish workflow builds dist artifacts, smoke tests an
+   also run `uv run --locked python -m unittest tests.test_package_release`
+   and `make verify-package`.
+7. If you changed the release flow or release policy, also run
+   `uv run --locked python -m unittest tests.test_release_flow`.
+8. Run `make release-tag RELEASE=vX.Y.Z CHANNEL=stable|beta|rc`.
+9. Run `make release-draft RELEASE=vX.Y.Z CHANNEL=stable|beta|rc PREVIOUS_TAG=auto`.
+10. Review the GitHub draft release body.
+11. Run `make release-publish RELEASE=vX.Y.Z`.
+12. The GitHub release publish workflow builds dist artifacts, smoke tests an
     external wheel and sdist install, uploads release assets, and publishes
     through GitHub environments plus Trusted Publishing.
-12. Before the first package-index publish for a new project name, register
+13. Before the first package-index publish for a new project name, register
     the GitHub Trusted Publishers on TestPyPI and PyPI for the package
     project, workflow `.github/workflows/publish.yml`, and matching
     environments such as `testpypi` and `pypi`.

@@ -1,17 +1,18 @@
 # Documentation
 
-Doctrine's live documentation is anchored in the shipped implementation under
-`doctrine/` and the manifest-backed example corpus through
-`examples/106_review_split_final_output_json_schema_partial`.
-The shipped compiler stays fail-loud and deterministic while scaling to larger
-prompt graphs through shared compile sessions and safe default batch
-parallelism.
+This page is Doctrine's live docs index.
+Use `doctrine/` plus the manifest-backed example corpus as the shipped truth.
+Use [VERSIONING.md](VERSIONING.md) for release rules, [../CHANGELOG.md](../CHANGELOG.md)
+for the public release record, and [../CONTRIBUTING.md](../CONTRIBUTING.md)
+for repo setup and proof commands.
 
 ## Start Here
 
 - [VERSIONING.md](VERSIONING.md): the canonical versioning guide, release
   rules, and breaking-change policy
 - [../CHANGELOG.md](../CHANGELOG.md): the portable public release history
+- [../CONTRIBUTING.md](../CONTRIBUTING.md): repo setup, proof commands, and
+  contributor workflow
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
   runtime stays Markdown
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
