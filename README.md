@@ -1,7 +1,7 @@
 # Doctrine
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python 3.11%2B](https://img.shields.io/badge/python-3.11%2B-3776AB.svg)](pyproject.toml)
+[![Python 3.14%2B](https://img.shields.io/badge/python-3.14%2B-3776AB.svg)](pyproject.toml)
 [![CI](https://img.shields.io/github/actions/workflow/status/aelaguiz/doctrine/ci.yml?branch=main&label=ci)](https://github.com/aelaguiz/doctrine/actions/workflows/ci.yml)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
