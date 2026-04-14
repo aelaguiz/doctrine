@@ -1,6 +1,8 @@
 name: Feature request
 description: Propose a concrete language, compiler, or docs improvement.
 title: "feature: "
+labels:
+  - kind:additive
 body:
   - type: textarea
     id: problem

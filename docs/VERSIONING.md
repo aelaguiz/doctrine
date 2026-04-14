@@ -135,6 +135,9 @@ upgrade steps.
 8. Run `make release-draft RELEASE=vX.Y.Z CHANNEL=stable|beta|rc PREVIOUS_TAG=auto`.
 9. Review the GitHub draft release body.
 10. Run `make release-publish RELEASE=vX.Y.Z`.
+11. The GitHub release publish workflow builds dist artifacts, smoke tests an
+    external install, uploads release assets, and can publish to package
+    indexes through Trusted Publishing when the repo settings are ready.
 
 The helper prints the fixed worksheet, the exact release-note header, the exact
 changelog header, and the next commands to run.

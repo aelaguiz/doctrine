@@ -1,6 +1,8 @@
 name: Bug report
 description: Report a concrete Doctrine bug.
 title: "bug: "
+labels:
+  - kind:bug
 body:
   - type: textarea
     id: summary

@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.14%2B](https://img.shields.io/badge/python-3.14%2B-3776AB.svg)](pyproject.toml)
 [![CI](https://img.shields.io/github/actions/workflow/status/aelaguiz/doctrine/ci.yml?branch=main&label=ci)](https://github.com/aelaguiz/doctrine/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aelaguiz/doctrine/badge)](https://scorecard.dev/viewer/?uri=github.com/aelaguiz/doctrine)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
 [Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)

@@ -33,5 +33,5 @@ Include:
 
 ## Version Note
 
-Doctrine is pre-1.0 and moves quickly. If you are not testing the latest
-default branch, say which branch, commit, or local change you used.
+Doctrine is on the 1.x line. If you are not testing the latest supported tag or
+the latest default branch, say which tag, commit, or local change you used.

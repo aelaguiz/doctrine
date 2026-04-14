@@ -7,7 +7,7 @@ name = "doctrine"
 version = "1.0.1"
 description = "Typed DSL and compiler for reusable AI agent instructions and workflows that compile to AGENTS.md."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.14"
 dependencies = [
     "interegular>=0.3,<1",
@@ -19,6 +19,9 @@ Homepage = "https://github.com/aelaguiz/doctrine"
 Documentation = "https://github.com/aelaguiz/doctrine/tree/main/docs"
 Repository = "https://github.com/aelaguiz/doctrine"
 Issues = "https://github.com/aelaguiz/doctrine/issues"
+Changelog = "https://github.com/aelaguiz/doctrine/blob/main/CHANGELOG.md"
+Discussions = "https://github.com/aelaguiz/doctrine/discussions"
+Security = "https://github.com/aelaguiz/doctrine/security/policy"
 
 [tool.setuptools.packages.find]
 include = ["doctrine*"]
