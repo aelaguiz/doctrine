@@ -7,6 +7,8 @@ shipped compiler reuses loaded prompt graphs so larger prompt families remain
 practical, not just toy-sized examples.
 
 For the motivation behind the project, start with [WHY_DOCTRINE.md](WHY_DOCTRINE.md).
+For task-first guidance on which surface to choose, use
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 For versioning, releases, and upgrade rules, use
 [VERSIONING.md](VERSIONING.md).
 For the numbered teaching corpus, use [../examples/README.md](../examples/README.md).
@@ -590,6 +592,25 @@ Important rules:
   `control_ready`.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
+
+### Output Inheritance
+
+Inherited outputs use the same explicit patching style Doctrine already uses
+elsewhere:
+
+- `output Child[Parent]: "Title"` inherits from another `output`
+- `inherit key` keeps one inherited top-level output entry
+- `override key:` replaces one inherited top-level output entry
+- top-level attachment keys such as `target`, `shape`, `requirement`,
+  `schema`, `structure`, `render_profile`, `trust_surface`, and
+  `standalone_read` follow that same explicit `inherit` or `override` model
+- children must account for every inherited top-level key exactly once
+- inherited parent outputs must use stable keyed top-level items only
+- `outputs[...]` block inheritance is separate from `output[...]` declaration
+  inheritance
+- v1 output inheritance is top-level only; if you need to change
+  `current_truth.invalidations`, override `current_truth` and rewrite that
+  whole top-level section
 
 Output bodies may also contain:
 

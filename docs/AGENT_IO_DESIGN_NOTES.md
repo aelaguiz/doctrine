@@ -10,6 +10,9 @@ For the full declaration overview, use
 semantics, use [WORKFLOW_LAW.md](WORKFLOW_LAW.md) and
 [REVIEW_SPEC.md](REVIEW_SPEC.md). For the shipped emit and flow-diagram CLI,
 use [EMIT_GUIDE.md](EMIT_GUIDE.md).
+If you first need help choosing between `output`, `trust_surface`, `schema`,
+`structure`, and `final_output:`, use
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
 ## Mental Model
 
@@ -107,6 +110,8 @@ Important rules:
   `code`, raw `markdown`, raw `html`, `footnotes`, and `image`.
 - `json schema` still attaches beneath `output shape`; it does not replace
   `output`.
+- `output Child[Parent]: "Title"` inherits one ordinary output contract and
+  patches it with explicit top-level `inherit` or `override` entries.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
 - Any emitted output may read shared compiler-owned route semantics through
@@ -131,6 +136,9 @@ Important rules:
   the review carrier, and a separate `final_output:` still inherits review
   semantic refs, guards, and any shared `route.*` reads that are live on that
   output.
+- The compiler resolves inherited outputs before workflow law, review,
+  `final_output:`, or shared `route.*` semantics attach. Downstream consumers
+  still see one ordinary output contract, not a second model.
 - On split review finals, the block form may also bind review semantics into
   the final response:
 
@@ -353,3 +361,10 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `93`: emitted-output route selection on `handoff_routing` plus
   `final_output:`
 - `94`: `route.choice` guards narrowing branch-specific route detail
+- `107`: the smallest direct `output[...]` inheritance proof
+- `108`: inherited top-level output attachments such as `render_profile:`,
+  `trust_surface`, and `standalone_read`
+- `109`: imported reusable handoff outputs inherited and extended locally
+- `110`: inherited outputs used through `final_output:`
+- `111`: inherited outputs keeping shared `route.*` readback
+- `112`: fail-loud output inheritance errors

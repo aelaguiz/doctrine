@@ -15,9 +15,12 @@ for repo setup and proof commands.
   contributor workflow
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
   runtime stays Markdown
-- [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
-  the shipped declaration model, composition rules, refs, interpolation, and
-  Markdown emission, including `skill package`
+- [AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md): the task-first guide for
+  choosing the right Doctrine surface when you are porting or authoring real
+  agent systems
+- [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the shipped syntax and
+  declaration reference for composition rules, refs, interpolation, markdown
+  emission, and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
   example gallery

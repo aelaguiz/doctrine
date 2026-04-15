@@ -8,6 +8,8 @@ Doctrine ships two related skill surfaces:
   package tree
 
 This guide covers the second surface.
+If you first need to decide between inline `skill` / `skills` and a real
+`skill package`, use [AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
 ## When To Use Which
 

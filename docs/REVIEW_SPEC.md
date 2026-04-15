@@ -7,6 +7,8 @@ conventions.
 
 For the language overview, use [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md).
 For the numbered proof ladder, use [../examples/README.md](../examples/README.md).
+If you first need to decide whether the turn should be a `review` at all, use
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
 ## Mental Model
 

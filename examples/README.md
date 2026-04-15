@@ -85,10 +85,16 @@ Some call out landmark examples inside those ranges.
   agent companions, larger compendium trees, exact path and case
   preservation, binary assets, and review-native final-response metadata for
   carrier, split control-ready, and split partial review finals
+- `107` through `112`: direct `output[...]` declaration inheritance, inherited
+  output attachments, imported reusable handoff outputs, inherited
+  `final_output:`, inherited shared `route.*` readback, and fail-loud output
+  inheritance errors
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
 reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
+For the task-first guide to choosing the right Doctrine surface, use
+[../docs/AUTHORING_PATTERNS.md](../docs/AUTHORING_PATTERNS.md).
 For the shipped skill-package authoring guide, use
 [../docs/SKILL_PACKAGE_AUTHORING.md](../docs/SKILL_PACKAGE_AUTHORING.md).
 For versioning and breaking-change guidance, use
@@ -205,6 +211,12 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `104_review_final_output_json_schema_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
 | `105_review_split_final_output_json_schema_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
 | `106_review_split_final_output_json_schema_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
+| `107_output_inheritance_basic` | Smallest direct `output[...]` inheritance proof with one inherited section and one local extension. |
+| `108_output_inheritance_attachments` | Inherited outputs may keep top-level attachments such as `render_profile:`, `trust_surface`, and `standalone_read`, and override them explicitly. |
+| `109_imported_review_handoff_output_inheritance` | Imported reusable handoff outputs may be inherited and extended locally before they are bound through an `outputs` block. |
+| `110_final_output_inherited_output` | `final_output:` may point at an inherited `TurnResponse` output and still render as the dedicated final answer. |
+| `111_inherited_output_route_semantics` | Inherited outputs may keep shared `route.*` semantics after the compiler resolves the parent output. |
+| `112_output_inheritance_fail_loud` | Output inheritance fails loud on missing inherited keys, patch-without-parent, unkeyed parents, and wrong-kind overrides. |
 
 ## Useful Commands
 

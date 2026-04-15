@@ -129,7 +129,7 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 - typed `skills`, `inputs`, `outputs`, and JSON-schema-backed contracts
 - imports, readable refs, interpolation, enums, and workflow law
 - `emit_docs`, `emit_flow`, and `emit_skill`
-- manifest-backed verification through `examples/106_review_split_final_output_json_schema_partial`
+- manifest-backed verification through `examples/112_output_inheritance_fail_loud`
 - a repo-local VS Code extension for `.prompt` files
 
 ## Workflow visualizer
@@ -147,6 +147,7 @@ The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`.
 - [CHANGELOG.md](CHANGELOG.md)
 - [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
+- [docs/AUTHORING_PATTERNS.md](docs/AUTHORING_PATTERNS.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
 - [examples/README.md](examples/README.md)
 - [editors/vscode/README.md](editors/vscode/README.md)

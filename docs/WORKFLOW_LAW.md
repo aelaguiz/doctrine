@@ -17,6 +17,9 @@ For the full declaration overview, use
 use [../examples/README.md](../examples/README.md). For the shipped
 flow-visualization CLI that renders these semantics, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md).
+If you first need to decide whether the turn should use plain `workflow`,
+workflow `law`, `handoff_routing`, `route_only`, or `grounding`, start with
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
 ## Core Split
 
