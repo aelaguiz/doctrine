@@ -13,9 +13,9 @@ from doctrine._compiler.types import FlowAgentNode, FlowEdge, FlowGraph
 from doctrine.compiler import CompilationSession
 from doctrine.emit_common import (
     DOCS_ENTRYPOINTS,
+    collect_runtime_emit_roots,
     load_emit_targets,
     resolve_direct_emit_target,
-    root_concrete_agents,
 )
 from doctrine.emit_flow import emit_target_flow, main as emit_flow_main
 from doctrine.flow_renderer import render_flow_d2
@@ -39,8 +39,10 @@ class EmitFlowCliTests(unittest.TestCase):
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 target_path.write_text(textwrap.dedent(contents), encoding="utf-8")
             prompt = parse_file(prompt_path)
-            return CompilationSession(prompt).extract_target_flow_graph(
-                root_concrete_agents(prompt)
+            session = CompilationSession(prompt)
+            runtime_roots = collect_runtime_emit_roots(session)
+            return session.extract_target_flow_graph_from_units(
+                tuple((root.unit, root.agent_name) for root in runtime_roots)
             )
 
     def test_missing_node_reports_dependency_error(self) -> None:
@@ -209,7 +211,7 @@ version = "0.0.0"
                 "DraftReviewDecision",
             ),
             (
-                "examples/85_review_split_final_output_json_object/prompts/AGENTS.prompt",
+                "examples/85_review_split_final_output_output_schema/prompts/AGENTS.prompt",
                 "AcceptanceControlFinalResponse",
             ),
         ):
@@ -219,8 +221,10 @@ version = "0.0.0"
                 # Split review final outputs inherit current-artifact truth from
                 # the attached review. Flow extraction must keep that label live,
                 # or shipped flow emit targets can fail before they render.
-                graph = CompilationSession(prompt).extract_target_flow_graph(
-                    root_concrete_agents(prompt)
+                session = CompilationSession(prompt)
+                runtime_roots = collect_runtime_emit_roots(session)
+                graph = session.extract_target_flow_graph_from_units(
+                    tuple((root.unit, root.agent_name) for root in runtime_roots)
                 )
                 outputs = {node.name: node for node in graph.outputs}
 

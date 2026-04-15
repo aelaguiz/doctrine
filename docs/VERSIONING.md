@@ -19,6 +19,9 @@ behavior.
 - A new backward-compatible language surface such as direct `output`
   inheritance or workflow-root readable blocks needs the next minor language
   version when it ships publicly.
+- A new backward-compatible import or emit language surface such as
+  directory-backed runtime package imports and emitted runtime-package trees
+  also needs the next minor language version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
 
 ### Doctrine Release Version
@@ -51,7 +54,10 @@ Doctrine also ships narrower version lines.
   surface.
 - For structured final outputs, emitted
   `schemas/<output-slug>.schema.json` files are also part of the public
-  surface. Doctrine does not ship a sidecar `.contract.json` anymore.
+  surface for payload wire shape.
+- Emitted `final_output.contract.json` files are also part of the public
+  surface for final-output and review-control metadata.
+- Doctrine does not ship `AGENTS.contract.json` anymore.
 - The package metadata version in `pyproject.toml` versions the published
   Python package. It is not the Doctrine language version.
 - `import_name`, `pypi_environment`, and `testpypi_environment` under
@@ -78,6 +84,10 @@ Every public release uses one release class.
   `Non-breaking`.
 - `additive`: backward-compatible public additions. Release kind:
   `Non-breaking`.
+- Adding directory-backed runtime package imports, package-root `AGENTS.md`
+  or `SOUL.md` emit, bundled runtime peer files, or matching shared flow-root
+  behavior is an `additive` release when older local-root entrypoints still
+  work.
 - `soft-deprecated`: behavior still works, but Doctrine now tells users what
   to move away from and how to move early. Release kind: `Non-breaking`.
 - `breaking`: any shipped public surface now needs user action. This includes

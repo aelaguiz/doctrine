@@ -23,3 +23,7 @@ workflow RootReadableGuide: "Guide"
 agent WorkflowRootReadableBlocksDemo:
     role: "Use {{RootReadableGuide:evidence_note.title}} and {{RootReadableGuide:done_when.summary.title}}."
     workflow: RootReadableGuide
+
+agent CustomSlotWorkflowRootReadableBlocksDemo:
+    role: "Follow the guide from a custom authored slot."
+    read_first: RootReadableGuide

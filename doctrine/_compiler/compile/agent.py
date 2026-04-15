@@ -285,7 +285,13 @@ class CompileAgentMixin:
                 raise CompileError(
                     f"law may appear only on workflow or handoff_routing in agent {agent_name}: {field.key}"
                 )
-            return self._compile_resolved_workflow(spec.slot_body, slot_key=field.key)
+            return self._compile_resolved_workflow(
+                spec.slot_body,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=f"agent {agent_name} slot {field.key}",
+                slot_key=field.key,
+            )
 
         if isinstance(field, model.InputsField):
             return self._compile_inputs_field(

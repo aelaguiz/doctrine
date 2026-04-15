@@ -1036,6 +1036,25 @@ class ResolveOutputSchemasMixin:
         return value
 
     def _wrap_nullable_output_schema(self, schema: dict[str, object]) -> dict[str, object]:
+        if "const" in schema:
+            outer: dict[str, object] = {}
+            branch: dict[str, object] = {}
+            for key, value in schema.items():
+                if key in {"title", "description", "$defs"}:
+                    outer[key] = value
+                    continue
+                branch[key] = value
+            return {
+                **outer,
+                "anyOf": [branch, {"type": "null"}],
+            }
+
+        if isinstance(schema.get("enum"), list):
+            enum_values = list(schema["enum"])
+            if None not in enum_values:
+                enum_values.append(None)
+            schema = {**schema, "enum": enum_values}
+
         if "anyOf" in schema:
             any_of = schema.get("anyOf")
             if not isinstance(any_of, list):

@@ -281,10 +281,10 @@ Do not do this:
 Best anchors:
 - [78_final_output_and_side_artifacts](../examples/78_final_output_and_side_artifacts/prompts/AGENTS.prompt)
 - [76_final_output_prose_basic](../examples/76_final_output_prose_basic/prompts/AGENTS.prompt)
-- [79_final_output_json_object](../examples/79_final_output_json_object/prompts/AGENTS.prompt)
-- [104_review_final_output_json_object_blocked_control_ready](../examples/104_review_final_output_json_object_blocked_control_ready/prompts/AGENTS.prompt)
-- [105_review_split_final_output_json_object_control_ready](../examples/105_review_split_final_output_json_object_control_ready/prompts/AGENTS.prompt)
-- [106_review_split_final_output_json_object_partial](../examples/106_review_split_final_output_json_object_partial/prompts/AGENTS.prompt)
+- [79_final_output_output_schema](../examples/79_final_output_output_schema/prompts/AGENTS.prompt)
+- [104_review_final_output_output_schema_blocked_control_ready](../examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt)
+- [105_review_split_final_output_output_schema_control_ready](../examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt)
+- [106_review_split_final_output_output_schema_partial](../examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt)
 
 ### Choose `schema` and `document` by artifact job
 
@@ -477,8 +477,8 @@ Better shape:
 Use:
 - [82_review_final_output_prose_basic](../examples/82_review_final_output_prose_basic/prompts/AGENTS.prompt)
 - [84_review_split_final_output_prose](../examples/84_review_split_final_output_prose/prompts/AGENTS.prompt)
-- [85_review_split_final_output_json_object](../examples/85_review_split_final_output_json_object/prompts/AGENTS.prompt)
-- [106_review_split_final_output_json_object_partial](../examples/106_review_split_final_output_json_object_partial/prompts/AGENTS.prompt)
+- [85_review_split_final_output_output_schema](../examples/85_review_split_final_output_output_schema/prompts/AGENTS.prompt)
+- [106_review_split_final_output_output_schema_partial](../examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt)
 
 ### Upgrade repeated local blocks to shared blocks
 
@@ -545,9 +545,9 @@ Doctrine move:
 - add `final_output:` only when the host truly needs a second ending surface
 
 Use:
-- [104_review_final_output_json_object_blocked_control_ready](../examples/104_review_final_output_json_object_blocked_control_ready/prompts/AGENTS.prompt)
-- [105_review_split_final_output_json_object_control_ready](../examples/105_review_split_final_output_json_object_control_ready/prompts/AGENTS.prompt)
-- [106_review_split_final_output_json_object_partial](../examples/106_review_split_final_output_json_object_partial/prompts/AGENTS.prompt)
+- [104_review_final_output_output_schema_blocked_control_ready](../examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt)
+- [105_review_split_final_output_output_schema_control_ready](../examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt)
+- [106_review_split_final_output_output_schema_partial](../examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt)
 
 ## Best Example Sets
 
@@ -584,10 +584,10 @@ If you want the fastest path through the corpus, start here.
   [57](../examples/57_schema_review_contracts/prompts/AGENTS.prompt),
   [63](../examples/63_schema_artifacts_and_groups/prompts/AGENTS.prompt),
   [64](../examples/64_render_profiles_and_properties/prompts/AGENTS.prompt),
-  [79](../examples/79_final_output_json_object/prompts/AGENTS.prompt),
-  [104](../examples/104_review_final_output_json_object_blocked_control_ready/prompts/AGENTS.prompt),
-  [105](../examples/105_review_split_final_output_json_object_control_ready/prompts/AGENTS.prompt),
-  [106](../examples/106_review_split_final_output_json_object_partial/prompts/AGENTS.prompt)
+  [79](../examples/79_final_output_output_schema/prompts/AGENTS.prompt),
+  [104](../examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt),
+  [105](../examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt),
+  [106](../examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt)
 - Skill packages:
   [95](../examples/95_skill_package_minimal/prompts/SKILL.prompt)
   through
@@ -611,9 +611,9 @@ If you want one short path through the guide, read these first:
   route truth on ordinary outputs
 - [55_owner_aware_schema_attachments](../examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt):
   schema ownership boundary
-- [79_final_output_json_object](../examples/79_final_output_json_object/prompts/AGENTS.prompt):
+- [79_final_output_output_schema](../examples/79_final_output_output_schema/prompts/AGENTS.prompt):
   structured final answer
-- [105_review_split_final_output_json_object_control_ready](../examples/105_review_split_final_output_json_object_control_ready/prompts/AGENTS.prompt):
+- [105_review_split_final_output_output_schema_control_ready](../examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt):
   durable review plus control-ready final JSON
 - [99_skill_package_plugin_metadata](../examples/99_skill_package_plugin_metadata/prompts/SKILL.prompt):
   when Doctrine is emitting a real package tree

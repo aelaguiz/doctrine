@@ -55,10 +55,10 @@
       "include": "#outputShape"
     },
     {
-      "include": "#output"
+      "include": "#outputSchema"
     },
     {
-      "include": "#jsonSchema"
+      "include": "#output"
     },
     {
       "include": "#skillEntry"
@@ -566,7 +566,7 @@
       }
     },
     "outputShape": {
-      "match": "^(\\s*)(output)(\\s+)(shape)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "match": "^(\\s*)(output)(\\s+)(shape)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -577,7 +577,16 @@
         "6": {
           "name": "entity.name.type.doctrine"
         },
+        "7": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
         "8": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "9": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "11": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
@@ -605,8 +614,8 @@
         }
       }
     },
-    "jsonSchema": {
-      "match": "^(\\s*)(json)(\\s+)(schema)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+    "outputSchema": {
+      "match": "^(\\s*)(output)(\\s+)(schema)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -617,7 +626,16 @@
         "6": {
           "name": "entity.name.type.doctrine"
         },
+        "7": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
         "8": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "9": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "11": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
@@ -1047,7 +1065,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
+      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items)\\b"
     },
     "routeSemanticRef": {
       "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",

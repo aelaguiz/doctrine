@@ -132,10 +132,29 @@ class ValidateMixin(
         *,
         schema_data: dict[str, object],
     ) -> tuple[tuple[str, ...], ...]:
-        properties = schema_data.get("properties")
+        return self._build_output_schema_payload_rows_for_object(
+            schema_data,
+            root_schema=schema_data,
+            field_prefix=(),
+            visited_refs=(),
+        )
+
+    def _build_output_schema_payload_rows_for_object(
+        self,
+        object_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+        field_prefix: tuple[str, ...],
+        visited_refs: tuple[str, ...],
+    ) -> tuple[tuple[str, ...], ...]:
+        resolved_object_schema = self._resolve_local_json_schema_refs(
+            object_schema,
+            root_schema=root_schema,
+        )
+        properties = resolved_object_schema.get("properties")
         if not isinstance(properties, dict):
             return ()
-        required_names = schema_data.get("required")
+        required_names = resolved_object_schema.get("required")
         required_set = set(required_names) if isinstance(required_names, list) else set()
         rows: list[tuple[str, ...]] = []
         for field_name, field_schema in properties.items():
@@ -143,23 +162,43 @@ class ValidateMixin(
                 continue
             stripped_schema, null_allowed = self._strip_nullable_json_schema(
                 field_schema,
-                root_schema=schema_data,
+                root_schema=root_schema,
             )
+            field_path = (*field_prefix, field_name)
             rows.append(
                 (
-                    f"`{field_name}`",
+                    f"`{'.'.join(field_path)}`",
                     self._json_schema_type_label(
                         stripped_schema,
-                        root_schema=schema_data,
+                        root_schema=root_schema,
                     ),
                     "Yes" if field_name in required_set else "No",
                     "Yes" if null_allowed else "No",
                     self._json_schema_meaning(
                         field_schema,
-                        root_schema=schema_data,
+                        root_schema=root_schema,
                     ),
                 )
             )
+            nested_refs = visited_refs
+            schema_ref = stripped_schema.get("$ref")
+            if isinstance(schema_ref, str):
+                if schema_ref in visited_refs:
+                    continue
+                nested_refs = (*visited_refs, schema_ref)
+            nested_schema = self._resolve_local_json_schema_refs(
+                stripped_schema,
+                root_schema=root_schema,
+            )
+            if self._json_schema_allows_type(nested_schema, "object"):
+                rows.extend(
+                    self._build_output_schema_payload_rows_for_object(
+                        nested_schema,
+                        root_schema=root_schema,
+                        field_prefix=field_path,
+                        visited_refs=nested_refs,
+                    )
+                )
         return tuple(rows)
 
     def _json_schema_type_label(
@@ -243,7 +282,10 @@ class ValidateMixin(
             return description.strip()
         enum_values = resolved_schema.get("enum")
         if isinstance(enum_values, list) and enum_values:
-            rendered = ", ".join(f"`{value}`" for value in enum_values)
+            rendered_values = [value for value in enum_values if value is not None]
+            if not rendered_values:
+                return ""
+            rendered = ", ".join(f"`{value}`" for value in rendered_values)
             return f"One of {rendered}."
         return ""
 
@@ -303,6 +345,18 @@ class ValidateMixin(
             return True
         if isinstance(schema_type, list):
             return all(item == "null" for item in schema_type)
+        return False
+
+    def _json_schema_allows_type(
+        self,
+        field_schema: dict[str, object],
+        target_type: str,
+    ) -> bool:
+        schema_type = field_schema.get("type")
+        if schema_type == target_type:
+            return True
+        if isinstance(schema_type, list):
+            return target_type in schema_type
         return False
 
     def _validate_final_output_lowered_schema(

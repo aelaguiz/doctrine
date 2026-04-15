@@ -3,9 +3,13 @@
 Doctrine ships three emit commands that share one prompts-root-aware emit
 pipeline:
 
-- `doctrine.emit_docs` writes the runtime Markdown tree and, for structured
-  final outputs, the exact lowered schema JSON file that machine consumers
-  should load.
+- `doctrine.emit_docs` writes the runtime Markdown tree. That may be one
+  `AGENTS.md` or `SOUL.md` per direct runtime root, or one emitted runtime
+  package tree per imported package root. When an agent declares
+  `final_output:` or a review contract, it also writes
+  `final_output.contract.json`. For structured final outputs, it also writes
+  the exact lowered schema JSON file that machine consumers should load for
+  payload shape.
 - `doctrine.emit_skill` writes compiled `SKILL.md` package trees plus bundled
   source-root companion files.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
@@ -115,6 +119,31 @@ Important rules:
 - In direct `emit_flow` mode without `--pyproject`, Doctrine resolves compile
   config from the entrypoint's nearest `pyproject.toml`.
 
+## Runtime Packages
+
+Doctrine now ships two runtime module shapes under a `prompts/` root:
+
+- file modules such as `shared.prompt` for compile-time reuse
+- directory-backed runtime packages such as `writer_home/AGENTS.prompt` for
+  real emitted runtime homes
+
+Runtime package rules:
+
+- A thin `AGENTS.prompt` build handle may only import runtime packages and let
+  them own the emitted runtime tree.
+- `emit_docs` and `emit_flow` walk the same first-seen runtime frontier:
+  direct concrete agents in the selected entrypoint, then imported
+  runtime-package roots.
+- `emit_docs` writes `AGENTS.md` at the runtime package root.
+- A sibling `SOUL.prompt` is optional. Doctrine only emits `SOUL.md` when
+  that file defines exactly one concrete agent with the same name as the
+  sibling `AGENTS.prompt`.
+- Ordinary peer files under the runtime package root bundle byte for byte.
+- Extra `.prompt` files under a runtime package root fail loud instead of
+  being copied through as ordinary files.
+- File modules stay compile-only helpers. They do not emit their own runtime
+  tree.
+
 ## Run The Commands
 
 Emit compiled Markdown for one or more configured targets:
@@ -185,8 +214,8 @@ and `emit_skill` do not currently provide a direct quick-start mode.
 
 All emitters preserve the entrypoint's path beneath `prompts/`.
 
-For runtime prompt output, Doctrine always writes one Markdown file per
-concrete root agent:
+For direct runtime roots declared in the selected entrypoint, Doctrine writes
+one Markdown file per concrete root agent:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.md
@@ -195,10 +224,34 @@ concrete root agent:
 If the entrypoint-relative directory already ends with the agent slug, Doctrine
 does not repeat that directory level.
 
+For imported runtime packages, Doctrine writes one package tree per package
+root:
+
+```text
+<output_dir>/<package-relative-dir>/AGENTS.md
+<output_dir>/<package-relative-dir>/SOUL.md
+<output_dir>/<package-relative-dir>/<bundled-relative-path>
+```
+
+Important package-backed runtime rules:
+
+- `AGENTS.md` is the compiler-owned package root.
+- `SOUL.md` only emits from a same-name sibling `SOUL.prompt`.
+- Ordinary peer files keep their relative paths beneath the package root.
+- Ordinary file modules imported through `<module>.prompt` do not emit
+  package-root runtime files.
+
 For structured final outputs, Doctrine also writes the exact lowered schema at:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/schemas/<output-slug>.schema.json
+```
+
+When an agent declares `final_output:` or a review contract, Doctrine also
+writes:
+
+```text
+<output_dir>/<entrypoint-relative-dir>/<agent-slug>/final_output.contract.json
 ```
 
 For workflow flow artifacts, Doctrine writes one file pair per emitted
@@ -235,7 +288,11 @@ Concrete shipped examples:
 examples/07_handoffs/build/project_lead/AGENTS.md
 examples/07_handoffs/build/research_specialist/AGENTS.md
 examples/07_handoffs/build/writing_specialist/AGENTS.md
-examples/79_final_output_json_object/build/repo_status_agent/schemas/repo_status_final_response.schema.json
+examples/115_runtime_agent_packages/build/writer_home/AGENTS.md
+examples/115_runtime_agent_packages/build/editor_home/SOUL.md
+examples/115_runtime_agent_packages/build/editor_home/references/style.txt
+examples/79_final_output_output_schema/build/repo_status_agent/final_output.contract.json
+examples/79_final_output_output_schema/build/repo_status_agent/schemas/repo_status_final_response.schema.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
@@ -362,6 +419,8 @@ Concrete shipped proof:
 - `examples/113_titleless_readable_lists`
 
 `emit_docs` does not emit `AGENTS.contract.json`.
+It may emit `final_output.contract.json` beside `AGENTS.md` when an agent
+declares `final_output:` or a review contract.
 
 For structured final outputs:
 
@@ -373,8 +432,11 @@ For structured final outputs:
   it renders Markdown.
 - The emitted `AGENTS.md` final-output section is the shipped human-facing
   contract.
-- The emitted machine-facing contract lives at
+- The emitted payload contract lives at
   `schemas/<output-slug>.schema.json` beside `AGENTS.md`.
+- The emitted `final_output.contract.json` companion carries final-output and
+  review-control metadata such as declaration identity, carrier fields, split
+  final-response fields, and `control_ready`.
 - `python -m doctrine.validate_output_schema --schema ...` validates that
   emitted file with Draft 2020-12 plus Doctrine's OpenAI subset checks.
 - `uv run --with openai python -m doctrine.prove_output_schema_openai --schema ... --model ...`
@@ -388,7 +450,8 @@ I/O model and workflow-law semantics; it does not scrape emitted Markdown.
 The generated graph includes:
 
 - input nodes for declared `input` and `inputs` surfaces
-- agent nodes for concrete root agents in the resolved entrypoint
+- agent nodes for the shared runtime frontier in the resolved entrypoint:
+  direct concrete agents plus imported runtime-package roots
 - output nodes for declared `output` and `outputs` surfaces
 - consume edges from inputs to agents
 - produce edges from agents to outputs
@@ -437,7 +500,9 @@ verifier-owned checked-in proof, not part of Doctrine's public authoring
 model.
 Representative checked-in proofs live in:
 
-- `examples/79_final_output_json_object/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
+- `examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
+- `examples/115_runtime_agent_packages/build_ref/writer_home/AGENTS.md`
+- `examples/115_runtime_agent_packages/build_ref/editor_home/SOUL.md`
 - `examples/95_skill_package_minimal/build_ref/SKILL.md`
 - `examples/100_skill_package_bundled_agents/build_ref/agents/cold_reviewer.md`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`

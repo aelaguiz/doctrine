@@ -497,6 +497,38 @@ class OutputRenderingTests(unittest.TestCase):
         self.assertIn("### Done When", rendered)
         self.assertIn("- **Summary** \u2014 State the release result.", rendered)
 
+    def test_custom_authored_slot_workflow_root_readable_blocks_render(self) -> None:
+        # Custom authored slots use the same legal workflow body shape as the built-in
+        # `workflow` slot. Root readable blocks must render, not trip an internal
+        # compiler guard because the slot compile path lost its owner context.
+        agent = self._compile_agent(
+            """
+            workflow ReleaseGuide: "Release Guide"
+                sequence read_first:
+                    "Read `home:issue.md` first."
+                    "Then read the role rules."
+
+                callout evidence_note: "Evidence Note"
+                    kind: note
+                    "Ground the claim before you summarize."
+
+            agent Demo:
+                role: "Follow the guide."
+                read_first: ReleaseGuide
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "## Release Guide\n\n"
+            "1. Read `home:issue.md` first.\n"
+            "2. Then read the role rules.",
+            rendered,
+        )
+        self.assertNotIn("### Read First", rendered)
+        self.assertIn("> **NOTE \u2014 Evidence Note**", rendered)
+
     def test_workflow_root_readable_overrides_keep_non_list_titles_and_drop_list_titles(self) -> None:
         agent = self._compile_agent(
             """

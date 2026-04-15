@@ -58,9 +58,9 @@ entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
 output_dir = "examples/73_flow_visualizer_showcase/build"
 
 [[tool.doctrine.emit.targets]]
-name = "example_79_final_output_json_object"
-entrypoint = "examples/79_final_output_json_object/prompts/AGENTS.prompt"
-output_dir = "examples/79_final_output_json_object/build"
+name = "example_79_final_output_output_schema"
+entrypoint = "examples/79_final_output_output_schema/prompts/AGENTS.prompt"
+output_dir = "examples/79_final_output_output_schema/build"
 
 [[tool.doctrine.emit.targets]]
 name = "example_84_review_split_final_output_prose"

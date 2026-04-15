@@ -126,10 +126,13 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 - concrete and abstract `agent` declarations
 - reusable and inherited `workflow` declarations
 - first-class `review` and `abstract review` declarations
-- typed `skills`, `inputs`, `outputs`, and JSON-schema-backed contracts
-- imports, readable refs, interpolation, enums, and workflow law
-- `emit_docs`, `emit_flow`, and `emit_skill`
-- manifest-backed verification through `examples/112_output_inheritance_fail_loud`
+- typed `skills`, `inputs`, `outputs`, direct `output[...]` inheritance,
+  `output schema`, and generated schema contracts
+- imports, directory-backed runtime packages, readable refs, interpolation,
+  enums, and workflow law
+- `emit_docs`, `emit_flow`, `emit_skill`, and structured-output schema
+  validation helpers
+- manifest-backed verification through `examples/115_runtime_agent_packages`
 - a repo-local VS Code extension for `.prompt` files
 
 ## Workflow visualizer
@@ -146,6 +149,7 @@ The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`.
 - [docs/VERSIONING.md](docs/VERSIONING.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md)
+- [PRINCIPLES.md](PRINCIPLES.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
 - [docs/AUTHORING_PATTERNS.md](docs/AUTHORING_PATTERNS.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)

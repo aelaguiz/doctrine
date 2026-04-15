@@ -190,6 +190,11 @@ def smoke_test_distribution(
         schema_path = output_root / "hello_world" / "schemas" / "hello_world_reply.schema.json"
         if not schema_path.is_file():
             raise RuntimeError(f"Smoke output is missing the emitted schema file: `{schema_path}`.")
+        contract_path = output_root / "hello_world" / "final_output.contract.json"
+        if not contract_path.is_file():
+            raise RuntimeError(
+                f"Smoke output is missing the emitted final-output contract: `{contract_path}`."
+            )
 
 
 def write_github_outputs(*, metadata: PackageReleaseMetadata, output_path: Path) -> None:

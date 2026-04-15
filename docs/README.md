@@ -15,25 +15,30 @@ for repo setup and proof commands.
   contributor workflow
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
   runtime stays Markdown
+- [../PRINCIPLES.md](../PRINCIPLES.md): authoring principles for thin
+  context, loadable modules, and clean harness boundaries
 - [AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md): the task-first guide for
   choosing the right Doctrine surface when you are porting or authoring real
   agent systems
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the shipped syntax and
-  declaration reference for composition rules, refs, interpolation, markdown
-  emission, and `skill package`
+  declaration reference for composition rules, refs, `output schema`,
+  runtime packages, top-level `output[...]` inheritance, markdown emission,
+  and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
   example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
-  Markdown, emit structured-output schema contracts, generate skill-package
-  trees, generate workflow flow diagrams, and troubleshoot emit failures
+  Markdown, emit structured-output schema files and `final_output` metadata,
+  generate runtime-package and skill-package trees, generate workflow flow
+  diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
 ## Feature Guides
 
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
-  bindings, `trust_surface`, guarded output items, and portable truth
+  bindings, `final_output:`, generated schema files, `trust_surface`, guarded
+  output items, and portable truth
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): workflow law, currentness, scope,
   preservation, invalidation, and route-only turns
 - [REVIEW_SPEC.md](REVIEW_SPEC.md): first-class `review`, contracts, verdict

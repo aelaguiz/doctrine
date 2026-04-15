@@ -19,7 +19,6 @@ from doctrine.emit_common import (
     path_location,
     resolve_direct_emit_target,
     resolve_pyproject_path,
-    root_concrete_agents,
 )
 from doctrine.flow_renderer import (
     FlowRenderDependencyError,
@@ -234,7 +233,8 @@ def _runtime_flow_roots_for_target(
     if target.entrypoint.name == "SOUL.prompt":
         return tuple(
             RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
-            for agent_name in root_concrete_agents(session.root_unit.prompt_file)
+            for agent_name in session.root_unit.agents_by_name
+            if not session.root_unit.agents_by_name[agent_name].abstract
         )
     return collect_runtime_emit_roots(session)
 

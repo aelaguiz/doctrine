@@ -41,13 +41,15 @@ A prompt file may contain imports and any mix of shipped declarations:
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
 skill-package entrypoint is `SKILL.prompt`. `emit_docs` compiles concrete
 agents from the agent entrypoints into runtime Markdown artifacts whose
-basename matches the entrypoint stem. Structured final outputs also emit the
-exact lowered schema at `schemas/<output-slug>.schema.json` beside that
-Markdown file. `emit_skill` compiles one top-level `skill package` from
-`SKILL.prompt` into `SKILL.md` plus bundled source-root files. Doctrine does
-that work through shared compilation and indexing so module loading happens
-once per entrypoint and batch emit or verification surfaces can fan out
-safely while preserving deterministic output order.
+basename matches the entrypoint stem. It also emits imported
+directory-backed runtime packages when a selected `AGENTS.prompt` uses them as
+runtime homes. Structured final outputs also emit the exact lowered schema at
+`schemas/<output-slug>.schema.json` beside that Markdown file. `emit_skill`
+compiles one top-level `skill package` from `SKILL.prompt` into `SKILL.md`
+plus bundled source-root files. Doctrine does that work through shared
+compilation and indexing so module loading happens once per entrypoint and
+batch emit or verification surfaces can fan out safely while preserving
+deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
 [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
@@ -424,8 +426,8 @@ Important rules:
 - `document` inheritance uses the same explicit accounting model as workflows:
   `inherit key` keeps a parent block, `override <kind> key` replaces it in
   place, and changing block kind fails loudly.
-- `structure:` on `input` or `output` points at a named `document`.
-- `structure:` requires a markdown-bearing shape such as `MarkdownDocument` or
+- `structure:` on `input` or `output` points at a named `document` and
+  requires a markdown-bearing shape such as `MarkdownDocument` or
   `AgentOutputDocument`.
 - `document` may attach `render_profile:` so downstream markdown-bearing
   surfaces can render the same structure with a different presentation policy.
@@ -688,12 +690,22 @@ import ..common.roles
 Important rules:
 
 - Each prompt file still owns its nearest local `prompts/` tree.
+- Inside one `prompts/` root, an import may resolve to either
+  `<module>.prompt` or `<module>/AGENTS.prompt`.
+- If both shapes exist for the same dotted path, Doctrine fails loudly
+  instead of guessing which one owns the module.
 - Absolute imports may also search explicitly configured shared authored roots
   from `[tool.doctrine.compile].additional_prompt_roots` in the nearest
   `pyproject.toml`.
 - Each `additional_prompt_roots` entry resolves relative to that
   `pyproject.toml` and must point at an existing directory literally named
   `prompts`.
+- A file-backed `<module>.prompt` import is a compile-time module only.
+- A directory-backed `<module>/AGENTS.prompt` import is a runtime package
+  root for `emit_docs` and the shared runtime frontier that `emit_flow`
+  uses.
+- A sibling `SOUL.prompt` beside a runtime package `AGENTS.prompt` is optional
+  runtime emit input. It is not a second import target.
 - Absolute and relative imports both keep typed declaration identity.
 - Relative imports stay rooted in the importing module's own `prompts/` tree.
   They do not hop across configured roots.

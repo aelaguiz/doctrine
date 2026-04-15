@@ -273,6 +273,127 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Example", rendered)
         self.assertIn("```json", rendered)
 
+    def test_json_final_output_accepts_nullable_enum_and_const_examples(self) -> None:
+        # Nullable enum and const fields are valid structured-output shapes.
+        # Their declared example must validate and the rendered row must stay readable.
+        agent = self._compile_agent(
+            """
+            output schema StatusSchema: "Status Schema"
+                field status: "Status"
+                    type: string
+                    enum:
+                        ok
+                        blocked
+                    optional
+
+                field kind: "Kind"
+                    type: string
+                    const: status_result
+                    optional
+
+                example:
+                    status: null
+                    kind: null
+
+            output shape StatusJson: "Status JSON"
+                kind: JsonObject
+                schema: StatusSchema
+
+            output StatusFinalResponse: "Status Final Response"
+                target: TurnResponse
+                shape: StatusJson
+                requirement: Required
+
+            agent StatusAgent:
+                role: "Report status in structured form."
+                outputs: "Outputs"
+                    StatusFinalResponse
+                final_output: StatusFinalResponse
+            """,
+            agent_name="StatusAgent",
+        )
+
+        self.assertIsNotNone(agent.final_output)
+        self.assertIsNotNone(agent.final_output.lowered_schema)
+        properties = agent.final_output.lowered_schema["properties"]
+        self.assertEqual(properties["status"]["enum"], ["ok", "blocked", None])
+
+        rendered = render_markdown(agent)
+        self.assertIn("| `status` | string | Yes | Yes | One of `ok`, `blocked`. |", rendered)
+        self.assertIn("| `kind` | string | Yes | Yes |  |", rendered)
+
+    def test_json_final_output_renders_nested_object_payload_rows(self) -> None:
+        # Nested payload objects are part of the public final-output contract.
+        # The rendered table should expose child fields instead of hiding them.
+        agent = self._compile_agent(
+            """
+            output schema RoutedSchema: "Routed Schema"
+                field summary: "Summary"
+                    type: string
+                    required
+                    note: "Short user-facing summary."
+
+                field route: "Route"
+                    type: object
+                    required
+                    note: "Routing facts for the next step."
+
+                    field action: "Action"
+                        type: string
+                        enum:
+                            reply
+                            handoff
+                            end_turn
+                        required
+                        note: "Chosen route action."
+
+                    field owner: "Owner"
+                        type: string
+                        optional
+                        note: "Next owner when a handoff is needed."
+
+                    field reason: "Reason"
+                        type: string
+                        required
+                        note: "Why this route was chosen."
+
+                example:
+                    summary: "Route this to the reviewer."
+                    route:
+                        action: "handoff"
+                        owner: "Reviewer"
+                        reason: "A review is required."
+
+            output shape RoutedJson: "Routed JSON"
+                kind: JsonObject
+                schema: RoutedSchema
+
+            output RoutedFinalResponse: "Routed Final Response"
+                target: TurnResponse
+                shape: RoutedJson
+                requirement: Required
+
+            agent RoutedAgent:
+                role: "Route work in structured form."
+                outputs: "Outputs"
+                    RoutedFinalResponse
+                final_output: RoutedFinalResponse
+            """,
+            agent_name="RoutedAgent",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "| `route` | object | Yes | No | Routing facts for the next step. |",
+            rendered,
+        )
+        self.assertIn("| `route.action` | string | Yes | No | Chosen route action. |", rendered)
+        self.assertIn(
+            "| `route.owner` | string | Yes | Yes | Next owner when a handoff is needed. |",
+            rendered,
+        )
+        self.assertIn("| `route.reason` | string | Yes | No | Why this route was chosen. |", rendered)
+
     def test_json_final_output_requires_example_that_matches_lowered_schema(self) -> None:
         # The final-output example is compiler-owned proof, so it must satisfy
         # the lowered schema instead of living in an external JSON file.

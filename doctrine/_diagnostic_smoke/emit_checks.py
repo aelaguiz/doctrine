@@ -173,11 +173,19 @@ output_dir = "build"
             / "schemas"
             / "repo_status_final_response.schema.json"
         )
+        contract_path = root / "build" / "repo_status_agent" / "final_output.contract.json"
         _expect(agents_path.is_file(), f"missing emitted AGENTS.md: {agents_path}")
         _expect(schema_path.is_file(), f"missing emitted schema file: {schema_path}")
+        _expect(contract_path.is_file(), f"missing emitted final-output contract: {contract_path}")
         schema_data = json.loads(schema_path.read_text(encoding="utf-8"))
         _expect(schema_data.get("type") == "object", str(schema_data))
         _expect(schema_data.get("required") == ["summary"], str(schema_data))
+        contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+        _expect(
+            contract_data.get("final_output", {}).get("emitted_schema_relpath")
+            == "schemas/repo_status_final_response.schema.json",
+            str(contract_data),
+        )
 
 
 def _check_emit_docs_emits_runtime_package_trees() -> None:

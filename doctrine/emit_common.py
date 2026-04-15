@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from doctrine import model
 from doctrine._compiler.support import path_location
 from doctrine.diagnostics import CompileError, EmitError
 from doctrine.project_config import (
@@ -259,17 +258,6 @@ def _load_compile_project_config_for_entrypoint(entrypoint_path: Path) -> Projec
         if config_path is None:
             raise
         raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
-
-
-def root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:
-    names = [
-        declaration.name
-        for declaration in prompt_file.declarations
-        if isinstance(declaration, model.Agent) and not declaration.abstract
-    ]
-    return tuple(names)
-
-
 def collect_runtime_emit_roots(
     session: "CompilationSession",
 ) -> tuple[RuntimeEmitRoot, ...]:

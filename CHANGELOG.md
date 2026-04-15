@@ -22,6 +22,11 @@ or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
 ### Added
+- Added directory-backed runtime package imports that resolve
+  `<module>/AGENTS.prompt` and let thin `AGENTS.prompt` build handles emit
+  real runtime package trees.
+- Added runtime-package emit support for package-root `AGENTS.md`, optional
+  same-name sibling `SOUL.md`, and bundled peer files.
 - Added direct `output[...]` declaration inheritance with explicit top-level
   `inherit` and `override` patching, plus fail-loud errors for missing,
   wrong-kind, cyclic, and parentless output patches.
@@ -34,8 +39,13 @@ payload text and breaking releases with no real upgrade steps.
   unordered readable lists.
 - Added workflow-root readable blocks so workflows may own non-section
   readable blocks directly instead of wrapping them in a local section first.
+- Added `115_runtime_agent_packages` as the generic checked-in runtime-package
+  proof example.
 
 ### Changed
+- Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and
+  diagnostic smoke checks to share one runtime frontier instead of assuming
+  root-only runtime emit.
 - Clarified the release policy to prefer the next patch version for routine
   public work and keep minor bumps for real backward-compatible public
   additions or soft deprecations.
@@ -44,10 +54,11 @@ payload text and breaking releases with no real upgrade steps.
   OpenAI-compatible schema, and stop reading checked-in `.example.json`
   support files.
 - Changed `emit_docs` to write `AGENTS.md` plus the real lowered
-  `schemas/<output-slug>.schema.json` artifact for structured final outputs.
-  Doctrine no longer emits `AGENTS.contract.json`.
+  `schemas/<output-slug>.schema.json` artifact for structured final outputs,
+  plus `final_output.contract.json` for final-output and review-control
+  metadata. Doctrine no longer emits `AGENTS.contract.json`.
 - Renamed the shipped structured final-output examples from `_json_schema` to
-  `_json_object` so the public corpus matches the actual feature story.
+  `_output_schema` so the public corpus matches the approved feature story.
 - Added `python -m doctrine.validate_output_schema --schema ...` as the
   built-in file validator for emitted structured-output schema files.
 - Changed emitted ordinary `## Outputs` Markdown to one grouped contract block
@@ -72,6 +83,10 @@ payload text and breaking releases with no real upgrade steps.
 - Tightened the README, docs index, and contributing guide so they point back
   to `docs/VERSIONING.md` and `CHANGELOG.md` instead of becoming second
   release-policy owners.
+
+### Fixed
+- Fixed custom authored workflow slots such as `read_first` so workflows with
+  root readable blocks no longer fail with `E901` during emit.
 
 ### Release Entry Template
 

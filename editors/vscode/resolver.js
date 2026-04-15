@@ -221,7 +221,7 @@ const READABLE_DECLARATION_KINDS = Object.freeze([
   "output",
   "output_target",
   "output_shape",
-  "json_schema",
+  "output_schema",
   "skill",
   "enum",
 ]);
@@ -242,7 +242,7 @@ const DECLARATION_KIND = Object.freeze({
   OUTPUT: "output",
   OUTPUT_TARGET: "output_target",
   OUTPUT_SHAPE: "output_shape",
-  JSON_SCHEMA: "json_schema",
+  OUTPUT_SCHEMA: "output_schema",
   SKILL_PACKAGE: "skill_package",
   SKILL: "skill",
   ENUM: "enum",
@@ -262,7 +262,7 @@ const ADDRESSABLE_DECLARATION_KINDS = Object.freeze([
   DECLARATION_KIND.OUTPUT,
   DECLARATION_KIND.OUTPUT_TARGET,
   DECLARATION_KIND.OUTPUT_SHAPE,
-  DECLARATION_KIND.JSON_SCHEMA,
+  DECLARATION_KIND.OUTPUT_SCHEMA,
   DECLARATION_KIND.SKILL,
   DECLARATION_KIND.ENUM,
 ]);
@@ -391,9 +391,10 @@ const DECLARATION_DEFINITIONS = Object.freeze([
   {
     kind: DECLARATION_KIND.OUTPUT_SHAPE,
     regex: new RegExp(
-      `^\\s*output\\s+shape\\s+(${IDENTIFIER_PATTERN})\\s*:`,
+      `^\\s*output\\s+shape\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
     ),
     nameGroup: 1,
+    parentGroup: 2,
   },
   {
     kind: DECLARATION_KIND.RENDER_PROFILE,
@@ -411,11 +412,12 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     parentGroup: 2,
   },
   {
-    kind: DECLARATION_KIND.JSON_SCHEMA,
+    kind: DECLARATION_KIND.OUTPUT_SCHEMA,
     regex: new RegExp(
-      `^\\s*json\\s+schema\\s+(${IDENTIFIER_PATTERN})\\s*:`,
+      `^\\s*output\\s+schema\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
     ),
     nameGroup: 1,
+    parentGroup: 2,
   },
   {
     kind: DECLARATION_KIND.SKILL_PACKAGE,
@@ -3353,7 +3355,7 @@ function getDeclarationBodySpec(declaration) {
     case DECLARATION_KIND.OUTPUT:
     case DECLARATION_KIND.OUTPUT_TARGET:
     case DECLARATION_KIND.OUTPUT_SHAPE:
-    case DECLARATION_KIND.JSON_SCHEMA:
+    case DECLARATION_KIND.OUTPUT_SCHEMA:
     case DECLARATION_KIND.SKILL:
       return {
         type: "record_body",
@@ -6088,7 +6090,7 @@ function keyedFieldToDeclarationKind(fieldName) {
     case "shape":
       return DECLARATION_KIND.OUTPUT_SHAPE;
     case "schema":
-      return DECLARATION_KIND.JSON_SCHEMA;
+      return DECLARATION_KIND.OUTPUT_SCHEMA;
     case "render_profile":
       return DECLARATION_KIND.RENDER_PROFILE;
     default:
@@ -6110,9 +6112,9 @@ function keyedRecordFieldToDeclarationKind(fieldName, context = {}) {
         return DECLARATION_KIND.SCHEMA_DECL;
       }
       if (declarationKind === DECLARATION_KIND.OUTPUT_SHAPE) {
-        return DECLARATION_KIND.JSON_SCHEMA;
+        return DECLARATION_KIND.OUTPUT_SCHEMA;
       }
-      return DECLARATION_KIND.JSON_SCHEMA;
+      return DECLARATION_KIND.OUTPUT_SCHEMA;
     case "structure":
       if (
         declarationKind === DECLARATION_KIND.INPUT

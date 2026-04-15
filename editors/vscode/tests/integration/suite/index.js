@@ -946,7 +946,7 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: "json schema LessonManifestSchema",
+    declarationSnippet: "output schema LessonManifestSchema",
     expectedRelativeTargetPath: "examples/09_outputs/prompts/AGENTS.prompt",
     relativePath: "examples/09_outputs/prompts/AGENTS.prompt",
     sourceLineFragment: "schema: LessonManifestSchema",
@@ -972,12 +972,12 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: "json schema DeliveryJsonSchema",
+    declarationSnippet: "output schema DeliveryOutputSchema",
     expectedRelativeTargetPath:
       "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
     relativePath: "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
-    sourceLineFragment: "schema: DeliveryJsonSchema",
-    sourceText: "DeliveryJsonSchema",
+    sourceLineFragment: "schema: DeliveryOutputSchema",
+    sourceText: "DeliveryOutputSchema",
   });
 
   await assertDefinitionTarget({

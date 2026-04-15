@@ -27,10 +27,12 @@ from doctrine.emit_common import (
     load_emit_targets,
     path_location,
     resolve_pyproject_path,
-    root_concrete_agents,
 )
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
+
+FINAL_OUTPUT_CONTRACT_FILENAME = "final_output.contract.json"
+FINAL_OUTPUT_CONTRACT_VERSION = 1
 
 
 @dataclass(slots=True, frozen=True)
@@ -192,6 +194,20 @@ def emit_target(
                 encoding="utf-8",
             )
             emitted_paths.append(schema_path)
+        final_output_contract_payload = _final_output_contract_payload(
+            plan=plan,
+            compiled=compiled,
+            target=target,
+        )
+        if final_output_contract_payload is not None:
+            final_output_contract_path = (
+                plan.markdown_path.parent / FINAL_OUTPUT_CONTRACT_FILENAME
+            )
+            final_output_contract_path.write_text(
+                json.dumps(final_output_contract_payload, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            emitted_paths.append(final_output_contract_path)
         if plan.soul_prompt_path is not None and plan.soul_output_path is not None:
             soul_compiled = _compile_runtime_package_soul(
                 plan,
@@ -212,6 +228,109 @@ def emit_target(
     return tuple(emitted_paths)
 
 
+def _final_output_contract_payload(
+    *,
+    plan: RuntimeEmitPlan,
+    compiled,
+    target: EmitTarget,
+) -> dict[str, object] | None:
+    if compiled.final_output is None and compiled.review is None:
+        return None
+    return {
+        "contract_version": FINAL_OUTPUT_CONTRACT_VERSION,
+        "agent": {
+            "name": compiled.name,
+            "slug": agent_slug(compiled.name),
+            "entrypoint": _agent_entrypoint_relpath(plan=plan, target=target),
+        },
+        "final_output": _serialize_final_output_contract(compiled.final_output),
+        **(
+            {"review": _serialize_review_contract(compiled.review)}
+            if compiled.review is not None
+            else {}
+        ),
+    }
+
+
+def _agent_entrypoint_relpath(*, plan: RuntimeEmitPlan, target: EmitTarget) -> str:
+    source_path = plan.root.unit.prompt_file.source_path
+    if source_path is None:
+        return target.entrypoint.as_posix()
+    project_root = target.project_config.config_dir.resolve()
+    resolved = source_path.resolve()
+    try:
+        return resolved.relative_to(project_root).as_posix()
+    except ValueError:
+        return resolved.as_posix()
+
+
+def _serialize_final_output_contract(final_output) -> dict[str, object]:
+    if final_output is None:
+        return {
+            "exists": False,
+            "declaration_key": None,
+            "declaration_name": None,
+            "format_mode": None,
+            "schema_profile": None,
+            "emitted_schema_relpath": None,
+        }
+    return {
+        "exists": True,
+        "declaration_key": _output_decl_key_text(final_output.output_key),
+        "declaration_name": final_output.output_name,
+        "format_mode": final_output.format_mode,
+        "schema_profile": final_output.schema_profile,
+        "emitted_schema_relpath": final_output.generated_schema_relpath,
+    }
+
+
+def _serialize_review_contract(review) -> dict[str, object]:
+    return {
+        "exists": True,
+        "comment_output": {
+            "declaration_key": _output_decl_key_text(review.comment_output.output_key),
+            "declaration_name": review.comment_output.output_name,
+        },
+        "carrier_fields": {
+            field_name: _field_path_text(field_path)
+            for field_name, field_path in review.carrier_fields
+        },
+        "final_response": {
+            "mode": review.final_response.mode,
+            "declaration_key": (
+                _output_decl_key_text(review.final_response.output_key)
+                if review.final_response.output_key is not None
+                else None
+            ),
+            "declaration_name": review.final_response.output_name,
+            "review_fields": {
+                field_name: _field_path_text(field_path)
+                for field_name, field_path in review.final_response.review_fields
+            },
+            "control_ready": review.final_response.control_ready,
+        },
+        "outcomes": {
+            outcome_name: {
+                "exists": outcome.exists,
+                "verdict": outcome.verdict,
+                "route_behavior": outcome.route_behavior,
+            }
+            for outcome_name, outcome in review.outcomes
+        },
+    }
+
+
+def _output_decl_key_text(output_key: tuple[tuple[str, ...], str]) -> str:
+    module_parts, declaration_name = output_key
+    if not module_parts:
+        return declaration_name
+    return ".".join((*module_parts, declaration_name))
+
+
+def _field_path_text(field_path: tuple[str, ...]) -> str:
+    return ".".join(field_path)
+
+
 def _emit_path_for_agent(emitted_dir: Path, agent_name: str, *, output_name: str) -> Path:
     slug = agent_slug(agent_name)
     if emitted_dir.parts and emitted_dir.parts[-1] == slug:
@@ -227,7 +346,8 @@ def _runtime_emit_roots_for_target(
     if target.entrypoint.name == "SOUL.prompt":
         return tuple(
             RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
-            for agent_name in root_concrete_agents(session.root_unit.prompt_file)
+            for agent_name in session.root_unit.agents_by_name
+            if not session.root_unit.agents_by_name[agent_name].abstract
         )
     return collect_runtime_emit_roots(session)
 
@@ -261,7 +381,7 @@ def _build_runtime_emit_plan(
     has_soul = soul_prompt_path.is_file()
     registry = new_package_output_registry(
         owner_label=f"runtime package {'.'.join(runtime_root.unit.module_parts) or runtime_root.agent_name}",
-        compiler_owned_paths=("AGENTS.md",) + (("SOUL.md",) if has_soul else ()),
+        compiler_owned_paths=("AGENTS.md", "SOUL.md"),
     )
     ordinary_files: list[Path] = []
     for bundled_path in sorted(path for path in package_root.rglob("*") if path.is_file()):
@@ -297,7 +417,11 @@ def _compile_runtime_package_soul(
         raise CompileError("Internal compiler error: missing SOUL prompt plan.")
     prompt_file = parse_file(plan.soul_prompt_path)
     session = CompilationSession(prompt_file, project_config=target.project_config)
-    concrete_agents = root_concrete_agents(prompt_file)
+    concrete_agents = tuple(
+        agent_name
+        for agent_name, agent in session.root_unit.agents_by_name.items()
+        if not agent.abstract
+    )
     # Keep the package companion explicit: one concrete agent, same identity.
     if len(concrete_agents) != 1:
         raise CompileError(

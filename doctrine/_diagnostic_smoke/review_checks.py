@@ -98,7 +98,7 @@ def _repo_example_prompt_path(*parts: str) -> Path:
 
 def _check_review_split_control_ready_final_output_renders() -> None:
     prompt_path = _repo_example_prompt_path(
-        "105_review_split_final_output_json_object_control_ready",
+        "105_review_split_final_output_output_schema_control_ready",
         "prompts",
         "AGENTS.prompt",
     )
@@ -116,7 +116,7 @@ def _check_review_split_control_ready_final_output_renders() -> None:
 
 def _check_review_split_partial_final_output_renders() -> None:
     prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_json_object_partial",
+        "106_review_split_final_output_output_schema_partial",
         "prompts",
         "AGENTS.prompt",
     )
@@ -251,7 +251,7 @@ def _check_review_failure_detail_guard_has_specific_code() -> None:
 
 def _check_final_output_review_fields_require_review_agent() -> None:
     prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_json_object_partial",
+        "106_review_split_final_output_output_schema_partial",
         "prompts",
         "AGENTS.prompt",
     )
@@ -271,7 +271,7 @@ def _check_final_output_review_fields_require_review_agent() -> None:
 
 def _check_final_output_review_fields_reject_review_carrier() -> None:
     prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_json_object_partial",
+        "106_review_split_final_output_output_schema_partial",
         "prompts",
         "AGENTS.prompt",
     )

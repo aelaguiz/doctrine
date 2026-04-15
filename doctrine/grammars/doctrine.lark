@@ -640,9 +640,9 @@ output_inherit: "inherit" CNAME _NL?
                      | output_override_readable_block
                      | output_override_keyed_item
 
-// `schema:` is owner-sensitive. In `output shape`, it stays the legacy json
-// schema config key. In `output`, it is a Doctrine schema attachment with its
-// own typed compiler path.
+// `schema:` is owner-sensitive. In `output shape`, it points at an
+// `output schema` for JsonObject shapes. In `output`, it is a Doctrine schema
+// attachment with its own typed compiler path.
 output_schema_stmt: "schema" ":" name_ref _NL?
 output_structure_stmt: "structure" ":" name_ref _NL?
 output_render_profile_stmt: "render_profile" ":" name_ref _NL?

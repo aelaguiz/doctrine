@@ -23,7 +23,7 @@ class EmitDocsTests(unittest.TestCase):
         example_dir_name: str,
         agent_slug_name: str,
         prompt_text_override: str | None = None,
-    ) -> tuple[str, str | None, bool]:
+    ) -> tuple[str, str | None, dict[str, object] | None]:
         example_dir = REPO_ROOT / "examples" / example_dir_name
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -57,7 +57,10 @@ class EmitDocsTests(unittest.TestCase):
             emit_target(target)
 
             markdown_path = root / "build" / agent_slug_name / "AGENTS.md"
-            contract_path = root / "build" / agent_slug_name / "AGENTS.contract.json"
+            old_contract_path = root / "build" / agent_slug_name / "AGENTS.contract.json"
+            final_output_contract_path = (
+                root / "build" / agent_slug_name / "final_output.contract.json"
+            )
             schema_dir = root / "build" / agent_slug_name / "schemas"
             schema_paths = sorted(schema_dir.glob("*.json")) if schema_dir.is_dir() else []
             schema_text = (
@@ -65,10 +68,15 @@ class EmitDocsTests(unittest.TestCase):
                 if len(schema_paths) == 1
                 else None
             )
+            self.assertFalse(old_contract_path.exists())
             return (
                 markdown_path.read_text(encoding="utf-8"),
                 schema_text,
-                contract_path.exists(),
+                (
+                    json.loads(final_output_contract_path.read_text(encoding="utf-8"))
+                    if final_output_contract_path.is_file()
+                    else None
+                ),
             )
 
     def test_emit_target_writes_markdown_and_schema_for_structured_final_output(self) -> None:
@@ -126,7 +134,10 @@ class EmitDocsTests(unittest.TestCase):
             emitted = emit_target(target)
 
             markdown_path = root / "build" / "repo_status_agent" / "AGENTS.md"
-            contract_path = root / "build" / "repo_status_agent" / "AGENTS.contract.json"
+            old_contract_path = root / "build" / "repo_status_agent" / "AGENTS.contract.json"
+            final_output_contract_path = (
+                root / "build" / "repo_status_agent" / "final_output.contract.json"
+            )
             schema_path = (
                 root
                 / "build"
@@ -134,10 +145,11 @@ class EmitDocsTests(unittest.TestCase):
                 / "schemas"
                 / "repo_status_final_response.schema.json"
             )
-            self.assertEqual(emitted, (markdown_path, schema_path))
+            self.assertEqual(emitted, (markdown_path, schema_path, final_output_contract_path))
             self.assertTrue(markdown_path.is_file())
             self.assertTrue(schema_path.is_file())
-            self.assertFalse(contract_path.exists())
+            self.assertFalse(old_contract_path.exists())
+            self.assertTrue(final_output_contract_path.is_file())
 
             rendered = markdown_path.read_text(encoding="utf-8")
             self.assertIn("| Format | Structured JSON |", rendered)
@@ -152,6 +164,23 @@ class EmitDocsTests(unittest.TestCase):
             schema_data = json.loads(schema_path.read_text(encoding="utf-8"))
             self.assertEqual(schema_data["type"], "object")
             self.assertEqual(schema_data["required"], ["summary"])
+            contract_data = json.loads(final_output_contract_path.read_text(encoding="utf-8"))
+            self.assertEqual(contract_data["contract_version"], 1)
+            self.assertEqual(contract_data["agent"]["name"], "RepoStatusAgent")
+            self.assertEqual(contract_data["agent"]["slug"], "repo_status_agent")
+            self.assertEqual(contract_data["agent"]["entrypoint"], "prompts/AGENTS.prompt")
+            self.assertEqual(
+                contract_data["final_output"],
+                {
+                    "exists": True,
+                    "declaration_key": "RepoStatusFinalResponse",
+                    "declaration_name": "RepoStatusFinalResponse",
+                    "format_mode": "json_object",
+                    "schema_profile": "OpenAIStructuredOutput",
+                    "emitted_schema_relpath": "schemas/repo_status_final_response.schema.json",
+                },
+            )
+            self.assertNotIn("review", contract_data)
 
     def test_emit_target_marks_agents_without_final_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -195,11 +224,13 @@ class EmitDocsTests(unittest.TestCase):
             emitted = emit_target(target)
 
             markdown_path = root / "build" / "hello_agent" / "AGENTS.md"
-            contract_path = root / "build" / "hello_agent" / "AGENTS.contract.json"
+            old_contract_path = root / "build" / "hello_agent" / "AGENTS.contract.json"
+            final_output_contract_path = root / "build" / "hello_agent" / "final_output.contract.json"
             schema_dir = root / "build" / "hello_agent" / "schemas"
             self.assertEqual(emitted, (markdown_path,))
             self.assertTrue(markdown_path.is_file())
-            self.assertFalse(contract_path.exists())
+            self.assertFalse(old_contract_path.exists())
+            self.assertFalse(final_output_contract_path.exists())
             self.assertFalse(schema_dir.exists())
 
     def test_emit_target_renders_titleless_readable_lists_without_helper_metadata(self) -> None:
@@ -264,49 +295,79 @@ class EmitDocsTests(unittest.TestCase):
             self.assertNotIn("unordered list", rendered)
 
     def test_emit_target_emits_review_carrier_markdown_without_sidecar(self) -> None:
-        rendered, schema_text, contract_exists = self._emit_example_markdown(
-            example_dir_name="104_review_final_output_json_object_blocked_control_ready",
+        rendered, schema_text, contract_data = self._emit_example_markdown(
+            example_dir_name="104_review_final_output_output_schema_blocked_control_ready",
             agent_slug_name="acceptance_review_blocked_json_demo",
         )
-        self.assertFalse(contract_exists)
         self.assertIsNotNone(schema_text)
+        self.assertIsNotNone(contract_data)
         self.assertIn("| Schema | Acceptance Review Schema |", rendered)
         self.assertIn('"blocked_gate": "The review basis is missing."', rendered)
+        assert contract_data is not None
+        self.assertEqual(contract_data["final_output"]["format_mode"], "json_object")
+        self.assertEqual(
+            contract_data["final_output"]["emitted_schema_relpath"],
+            "schemas/acceptance_review_response.schema.json",
+        )
+        self.assertEqual(contract_data["review"]["final_response"]["mode"], "carrier")
+        self.assertTrue(contract_data["review"]["final_response"]["control_ready"])
+        self.assertEqual(
+            contract_data["review"]["carrier_fields"]["blocked_gate"],
+            "failure_detail.blocked_gate",
+        )
 
     def test_emit_target_emits_split_control_ready_review_markdown_without_sidecar(self) -> None:
-        rendered, schema_text, contract_exists = self._emit_example_markdown(
-            example_dir_name="105_review_split_final_output_json_object_control_ready",
+        rendered, schema_text, contract_data = self._emit_example_markdown(
+            example_dir_name="105_review_split_final_output_output_schema_control_ready",
             agent_slug_name="acceptance_review_split_control_ready_demo",
         )
-        self.assertFalse(contract_exists)
         self.assertIsNotNone(schema_text)
+        self.assertIsNotNone(contract_data)
         self.assertIn("#### Review Response Semantics", rendered)
         self.assertIn("| Blocked Gate | `blocked_gate` |", rendered)
         self.assertIn(
             "This final response is control-ready. A host may read it as the review outcome.",
             rendered,
         )
+        assert contract_data is not None
+        self.assertEqual(contract_data["review"]["final_response"]["mode"], "split")
+        self.assertTrue(contract_data["review"]["final_response"]["control_ready"])
+        self.assertEqual(
+            contract_data["review"]["final_response"]["review_fields"]["blocked_gate"],
+            "blocked_gate",
+        )
+        self.assertEqual(
+            contract_data["final_output"]["emitted_schema_relpath"],
+            "schemas/acceptance_control_final_response.schema.json",
+        )
 
     def test_emit_target_emits_split_partial_review_markdown_without_sidecar(self) -> None:
         prompt_text = (
             REPO_ROOT
             / "examples"
-            / "106_review_split_final_output_json_object_partial"
+            / "106_review_split_final_output_output_schema_partial"
             / "prompts"
             / "AGENTS.prompt"
         ).read_text(encoding="utf-8")
-        rendered, schema_text, contract_exists = self._emit_example_markdown(
-            example_dir_name="106_review_split_final_output_json_object_partial",
+        rendered, schema_text, contract_data = self._emit_example_markdown(
+            example_dir_name="106_review_split_final_output_output_schema_partial",
             agent_slug_name="acceptance_review_split_partial_demo",
             prompt_text_override=prompt_text.split("\n\noutput SummaryReply:", 1)[0],
         )
-        self.assertFalse(contract_exists)
         self.assertIsNotNone(schema_text)
+        self.assertIsNotNone(contract_data)
         self.assertIn("#### Review Response Semantics", rendered)
         self.assertIn("| Current Artifact | `current_artifact` |", rendered)
         self.assertIn(
             "This final response is not control-ready. Read the review carrier for the full review outcome.",
             rendered,
+        )
+        assert contract_data is not None
+        self.assertEqual(contract_data["review"]["final_response"]["mode"], "split")
+        self.assertFalse(contract_data["review"]["final_response"]["control_ready"])
+        self.assertEqual(
+            contract_data["review"]["final_response"]["review_fields"]["current_artifact"],
+            "current_artifact",
         )
 
     def test_emit_target_renders_workflow_root_readable_blocks(self) -> None:
@@ -678,6 +739,56 @@ class EmitDocsTests(unittest.TestCase):
                 emit_target(target)
 
         self.assertIn("extra prompt files", str(exc_info.exception))
+
+    def test_emit_target_rejects_runtime_package_peer_soul_markdown_paths(self) -> None:
+        # Runtime packages own generated SOUL.md output. A peer file with that
+        # name must fail loud so bundled files cannot shadow compiler output.
+        for peer_name in ("SOUL.md", "soul.md"):
+            with self.subTest(peer_name=peer_name):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    root = Path(temp_dir).resolve()
+                    prompts = root / "prompts"
+                    (prompts / "runtime_home").mkdir(parents=True)
+                    (prompts / "runtime_home" / "AGENTS.prompt").write_text(
+                        textwrap.dedent(
+                            """\
+                            agent RuntimeHome:
+                                role: "Own the runtime package."
+                            """
+                        ),
+                        encoding="utf-8",
+                    )
+                    (prompts / "runtime_home" / peer_name).write_text(
+                        "This path must stay compiler-owned.\n",
+                        encoding="utf-8",
+                    )
+                    (prompts / "AGENTS.prompt").write_text(
+                        "import runtime_home\n",
+                        encoding="utf-8",
+                    )
+                    pyproject = root / "pyproject.toml"
+                    pyproject.write_text(
+                        textwrap.dedent(
+                            """\
+                            [tool.doctrine.emit]
+
+                            [[tool.doctrine.emit.targets]]
+                            name = "demo"
+                            entrypoint = "prompts/AGENTS.prompt"
+                            output_dir = "build"
+                            """
+                        ),
+                        encoding="utf-8",
+                    )
+
+                    target = load_emit_targets(pyproject)["demo"]
+                    with self.assertRaises(CompileError) as exc_info:
+                        emit_target(target)
+
+                self.assertTrue(
+                    "SOUL.md" in str(exc_info.exception)
+                    or "case-collides" in str(exc_info.exception)
+                )
 
 
 if __name__ == "__main__":

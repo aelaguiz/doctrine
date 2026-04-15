@@ -88,6 +88,12 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                     optional
                     note: "Current status."
 
+                field fixed_kind: "Fixed Kind"
+                    type: string
+                    const: child_payload
+                    optional
+                    note: "Optional stable kind."
+
                 field window: "Window"
                     ref: SharedWindow
                     required
@@ -109,18 +115,31 @@ class OutputSchemaLoweringTests(unittest.TestCase):
         )
 
         self.assertIsNone(decl.parent_ref)
-        self.assertEqual([item.key for item in decl.items], ["kind", "summary", "SharedWindow", "Node", "status", "window", "tags", "choice"])
+        self.assertEqual(
+            [item.key for item in decl.items],
+            [
+                "kind",
+                "summary",
+                "SharedWindow",
+                "Node",
+                "status",
+                "fixed_kind",
+                "window",
+                "tags",
+                "choice",
+            ],
+        )
 
         self.assertEqual(lowered["title"], "Child Payload")
         self.assertEqual(lowered["type"], "object")
         self.assertEqual(lowered["additionalProperties"], False)
         self.assertEqual(
             list(lowered["properties"].keys()),
-            ["kind", "summary", "status", "window", "tags", "choice"],
+            ["kind", "summary", "status", "fixed_kind", "window", "tags", "choice"],
         )
         self.assertEqual(
             lowered["required"],
-            ["kind", "summary", "status", "window", "tags", "choice"],
+            ["kind", "summary", "status", "fixed_kind", "window", "tags", "choice"],
         )
 
         kind_schema = lowered["properties"]["kind"]
@@ -130,8 +149,18 @@ class OutputSchemaLoweringTests(unittest.TestCase):
 
         status_schema = lowered["properties"]["status"]
         self.assertEqual(status_schema["type"], ["string", "null"])
-        self.assertEqual(status_schema["enum"], ["ok", "blocked"])
+        self.assertEqual(status_schema["enum"], ["ok", "blocked", None])
         self.assertEqual(status_schema["description"], "Current status.")
+
+        fixed_kind_schema = lowered["properties"]["fixed_kind"]
+        self.assertEqual(
+            fixed_kind_schema["anyOf"],
+            [
+                {"type": "string", "const": "child_payload"},
+                {"type": "null"},
+            ],
+        )
+        self.assertEqual(fixed_kind_schema["description"], "Optional stable kind.")
 
         self.assertEqual(
             lowered["properties"]["window"],

@@ -88,11 +88,11 @@ Some call out landmark examples inside those ranges.
   agent companions, larger compendium trees, exact path and case
   preservation, binary assets, and review-native final-response metadata for
   carrier, split control-ready, and split partial review finals
-- `107` through `114`: direct `output[...]` declaration inheritance, inherited
+- `107` through `115`: direct `output[...]` declaration inheritance, inherited
   output attachments, imported reusable handoff outputs, inherited
   `final_output:`, inherited shared `route.*` readback, fail-loud output
-  inheritance errors, titled or titleless readable lists, and workflow-root
-  readable blocks
+  inheritance errors, titled or titleless readable lists, workflow-root
+  readable blocks, and directory-backed runtime package emit
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -187,13 +187,13 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
 | `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |
 | `78_final_output_and_side_artifacts` | Final assistant messages stay separate from ordinary emitted artifacts. |
-| `79_final_output_json_object` | `output schema` JSON `final_output:` with payload preview and example shape. |
+| `79_final_output_output_schema` | `output schema` JSON `final_output:` with payload preview and example shape. |
 | `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
 | `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
 | `82_review_final_output_prose_basic` | Review-driven prose `final_output:` may reuse `comment_output` as the dedicated final answer. |
-| `83_review_final_output_json_object` | Review-driven `output schema` JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
+| `83_review_final_output_output_schema` | Review-driven `output schema` JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
 | `84_review_split_final_output_prose` | Review-driven prose `final_output:` may split from `comment_output` while the separate final message still inherits review semantics. |
-| `85_review_split_final_output_json_object` | Review-driven `output schema` JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
+| `85_review_split_final_output_output_schema` | Review-driven `output schema` JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
 | `86_imported_review_comment_local_routes` | Imported reusable `comment_output` declarations may still structurally bind local routed owners on the concrete review. |
 | `87_workflow_route_output_binding` | Ordinary workflow-law outputs may read shared compiler-owned `route.*` semantics, and unguarded reads fail loudly when some branches do not route. |
 | `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
@@ -212,9 +212,9 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `101_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
 | `102_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
 | `103_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
-| `104_review_final_output_json_object_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
-| `105_review_split_final_output_json_object_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
-| `106_review_split_final_output_json_object_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
+| `104_review_final_output_output_schema_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
+| `105_review_split_final_output_output_schema_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
+| `106_review_split_final_output_output_schema_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
 | `107_output_inheritance_basic` | Smallest direct `output[...]` inheritance proof with one inherited section and one local extension. |
 | `108_output_inheritance_attachments` | Inherited outputs may keep top-level attachments such as `render_profile:`, `trust_surface`, and `standalone_read`, and override them explicitly. |
 | `109_imported_review_handoff_output_inheritance` | Imported reusable handoff outputs may be inherited and extended locally before they are bound through an `outputs` block. |
@@ -223,6 +223,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `112_output_inheritance_fail_loud` | Output inheritance fails loud on missing inherited keys, patch-without-parent, unkeyed parents, and wrong-kind overrides. |
 | `113_titleless_readable_lists` | Titled and titleless readable lists render cleanly, and detailed list blocks drop helper kind metadata lines. |
 | `114_workflow_root_readable_blocks` | Workflow roots may own readable blocks directly without wrapping them in a local section first. |
+| `115_runtime_agent_packages` | Thin build handles may emit imported runtime packages with package-root `AGENTS.md`, optional sibling `SOUL.md`, and bundled peer files. |
 
 ## Useful Commands
 
@@ -243,14 +244,20 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_docs --target example_115_runtime_agent_packages
 uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
 uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```
 
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
-example. Its `build_ref/` tree includes compiled Markdown, companion contract
-JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.
+example. Its `build_ref/` tree includes compiled Markdown and
+`AGENTS.flow.{d2,svg}` proof artifacts.
 Examples `95` through `103` are the canonical checked-in skill-package gallery.
 Their `build_ref/` trees are expected emitted package proof, not public
 authoring input.
+Example `115_runtime_agent_packages` is the canonical checked-in runtime-package
+build proof. Its `build_ref/` tree shows the thin build-handle pattern, one
+package-root `AGENTS.md`, one optional sibling `SOUL.md`, and bundled peer
+files.

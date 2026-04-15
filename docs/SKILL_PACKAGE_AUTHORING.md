@@ -11,10 +11,19 @@ This guide covers the second surface.
 If you first need to decide between inline `skill` / `skills` and a real
 `skill package`, use [AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
+Doctrine also ships runtime packages under `AGENTS.prompt`. They are a
+different public surface. Runtime packages emit `AGENTS.md`, optional
+same-name `SOUL.md`, and peer files for real runtime homes. Skill packages
+emit `SKILL.md` plus bundled package files for reusable capabilities. Do not
+use `SKILL.prompt` to model a runtime home, and do not use runtime packages as
+a substitute for `SKILL.md`.
+
 ## When To Use Which
 
 - Use inline `skill` and `skills` when the capability only needs to exist
   inside `AGENTS.prompt` or `SOUL.prompt` as reusable runtime doctrine.
+- Use a runtime package under `AGENTS.prompt` when you need an emitted runtime
+  home, not a `SKILL.md` bundle.
 - Use `skill package` when Doctrine should emit `SKILL.md` plus bundled
   references, scripts, runtime metadata, plugin metadata, or bundled agent
   companions.
