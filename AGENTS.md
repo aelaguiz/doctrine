@@ -26,6 +26,15 @@
   unless the release adds a real backward-compatible public feature, a soft
   deprecation, or a breaking change.
 
+## Core Identity
+
+- Doctrine exists to help people author agent systems that stay small, shared, typed, and reviewable.
+- Help authors give the runtime the smallest useful context for the current job, not one giant prompt dump.
+- Push repeated doctrine into reusable declarations and packages with clear boundaries so deeper material can load only when needed.
+- Prefer typed contracts, routes, reviews, schemas, and docs indexes over long prose that repeats facts the compiler or harness can already own.
+- Write names, titles, and descriptions that make it clear what a module is for and when a runtime should load it.
+- Keep Doctrine on the authoring side of the line. Runtime state, memory, scheduling, tool orchestration, and adapter behavior belong in the harness.
+
 ## Doc Deletion Safety
 
 - Never delete docs without first making a restore-point commit that contains the pre-deletion state.
@@ -55,6 +64,11 @@
 - Add one new idea per example.
 - Prefer explicit typed declarations over magic.
 - Prefer fail-loud compiler behavior over silent fallback.
+- Treat always-on prompt budget as a hard constraint. Every emitted line must earn its keep.
+- Keep agent homes thin. Put the summary in always-on context and keep deep procedure or reference material behind a reusable boundary.
+- Prefer compact docs indexes and reusable modules over giant root files or copied reference prose.
+- Do not restate harness-owned or deterministic truth in long prose when a typed surface or runtime boundary can own it.
+- Write titles and descriptions that help a thin runtime load the right material at the right time.
 - Keep code files small and single-purpose.
 - Prefer shared helpers and modules over one huge file that mixes many jobs.
 - If a functional code file grows past about 500 lines, split it unless there is a clear reason to keep it whole.
@@ -81,6 +95,7 @@
 
 ## Docs Map
 
+- `PRINCIPLES.md`: authoring principles for thin context, loadable modules, and clean harness boundaries
 - `docs/README.md`: live docs index
 - `docs/VERSIONING.md`: canonical versioning and breaking-change guide
 - `docs/WHY_DOCTRINE.md`: product story and motivating use case
