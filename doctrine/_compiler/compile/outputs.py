@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import re
+from dataclasses import replace
+
 from doctrine import model
+from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledBodyItem,
@@ -10,6 +14,9 @@ from doctrine._compiler.resolved_types import (
     ReviewSemanticContext,
     RouteSemanticContext,
 )
+
+
+_SUPPORT_SURFACE_PATTERN = re.compile(r"`([^`]+)`")
 
 
 class CompileOutputsMixin:
@@ -127,8 +134,27 @@ class CompileOutputsMixin:
         )
 
         body: list[CompiledBodyItem] = []
+        schema_section: CompiledSection | None = None
+        structure_section: CompiledSection | None = None
         if files_section is not None:
-            body.extend(
+            contract_rows = [
+                ("Target", "File Set"),
+            ]
+            if requirement_item is not None:
+                contract_rows.append(
+                    (
+                        "Requirement",
+                        self._display_symbol_value(
+                            requirement_item.value,
+                            unit=unit,
+                            owner_label=f"output {decl.name}",
+                            surface_label="output fields",
+                        ),
+                    )
+                )
+            body.extend(self._compile_ordinary_output_contract_table(tuple(contract_rows)))
+            body.append("")
+            body.append(
                 self._compile_output_files(
                     files_section,
                     unit=unit,
@@ -141,24 +167,14 @@ class CompileOutputsMixin:
         else:
             if not isinstance(target_item.value, model.NameRef):
                 raise CompileError(f"Output target must stay typed: {decl.name}")
-            target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
-            body.append(f"- Target: {target_spec.title}")
-            body.extend(
-                self._compile_config_lines(
-                    target_item.body or (),
-                    spec=target_spec,
-                    unit=unit,
-                    owner_label=f"output {decl.name} target",
-                )
+            contract_rows = self._compile_ordinary_output_contract_rows(
+                decl,
+                unit=unit,
+                target_item=target_item,
+                shape_item=shape_item,
+                requirement_item=requirement_item,
             )
-            body.append(
-                f"- Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=decl.name, surface_label='output fields')}"
-            )
-
-        if requirement_item is not None:
-            body.append(
-                f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'output {decl.name}', surface_label='output fields')}"
-            )
+            body.extend(self._compile_ordinary_output_contract_table(contract_rows))
         if decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
             resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
@@ -166,9 +182,7 @@ class CompileOutputsMixin:
                 raise CompileError(
                     f"Output-attached schema must export at least one section in output {decl.name}: {schema_decl.name}"
                 )
-            body.append(f"- Schema: {schema_decl.title}")
-            body.append("")
-            body.append(self._compile_schema_sections_block(resolved_schema))
+            schema_section = self._compile_schema_sections_block(resolved_schema)
         if decl.structure_ref is not None:
             if files_section is not None:
                 raise CompileError(
@@ -180,17 +194,11 @@ class CompileOutputsMixin:
                 )
             document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             resolved_document = self._resolve_document_decl(document_decl, unit=document_unit)
-            body.append(f"- Structure: {document_decl.title}")
-            body.append("")
-            body.append(
-                CompiledSection(
-                    title=f"Structure: {document_decl.title}",
-                    body=self._compile_document_body(
-                        resolved_document,
-                        unit=document_unit,
-                    ),
-                    render_profile=explicit_render_profile or resolved_document.render_profile,
-                )
+            structure_section = self._compile_output_structure_section(
+                resolved_document,
+                document_title=document_decl.title,
+                unit=document_unit,
+                render_profile=explicit_render_profile or resolved_document.render_profile,
             )
 
         trust_surface_section = (
@@ -200,13 +208,20 @@ class CompileOutputsMixin:
                 review_semantics=review_semantics,
                 route_semantics=route_semantics,
                 render_profile=render_profile,
+                inline_code_labels=True,
             )
             if decl.trust_surface
             else None
         )
 
+        for detail_section in (schema_section, structure_section):
+            if detail_section is None:
+                continue
+            body.append("")
+            body.append(detail_section)
+
         if extras:
-            support_items = self._compile_output_support_items(
+            support_items = self._compile_ordinary_output_support_items(
                 extras,
                 unit=unit,
                 owner_label=f"output {decl.name}",
@@ -236,6 +251,7 @@ class CompileOutputsMixin:
         review_semantics: ReviewSemanticContext | None = None,
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
+        inline_code_labels: bool = False,
     ) -> CompiledSection:
         lines: list[CompiledBodyItem] = []
         for item in decl.trust_surface:
@@ -260,6 +276,8 @@ class CompileOutputsMixin:
                     item.when_expr,
                     unit=unit,
                 )
+            elif inline_code_labels:
+                label = f"`{label}`"
             lines.append(f"- {label}")
         return CompiledSection(title="Trust Surface", body=tuple(lines))
 
@@ -272,8 +290,9 @@ class CompileOutputsMixin:
         review_semantics: ReviewSemanticContext | None = None,
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
-    ) -> tuple[CompiledBodyItem, ...]:
-        body: list[CompiledBodyItem] = []
+    ) -> CompiledSection:
+        rows: list[tuple[str, str, str]] = []
+        detail_sections: list[CompiledBodyItem] = []
         for item in section.items:
             if not isinstance(item, model.RecordSection):
                 raise CompileError(
@@ -294,13 +313,20 @@ class CompileOutputsMixin:
                 raise CompileError(
                     f"Output file entry is missing shape in {output_name}: {item.key}"
                 )
-            body.append(f"- {item.title}: `{path_item.value}`")
-            body.append(
-                f"- {item.title} Shape: {self._display_output_shape(shape_item.value, unit=unit, owner_label=f'output {output_name} file {item.key}', surface_label='output file fields')}"
+            rows.append(
+                (
+                    item.title,
+                    f"`{path_item.value}`",
+                    self._display_output_shape(
+                        shape_item.value,
+                        unit=unit,
+                        owner_label=f"output {output_name} file {item.key}",
+                        surface_label="output file fields",
+                    ),
+                )
             )
             if extras:
-                body.append("")
-                body.append(
+                detail_sections.append(
                     CompiledSection(
                         title=item.title,
                         body=self._compile_record_support_items(
@@ -314,4 +340,674 @@ class CompileOutputsMixin:
                         ),
                     )
                 )
-        return tuple(body)
+        body: list[CompiledBodyItem] = list(
+            self._pipe_table_lines(("Artifact", "Path", "Shape"), tuple(rows))
+        )
+        for detail_section in detail_sections:
+            body.extend(["", detail_section])
+        return CompiledSection(title="Artifacts", body=tuple(body))
+
+    def _compile_ordinary_output_contract_rows(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        target_item: model.RecordScalar,
+        shape_item: model.RecordScalar,
+        requirement_item: model.RecordScalar | None,
+    ) -> tuple[tuple[str, str], ...]:
+        if not isinstance(target_item.value, model.NameRef):
+            raise CompileError(f"Output target must stay typed: {decl.name}")
+        target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
+        rows: list[tuple[str, str]] = [("Target", target_spec.title)]
+        rows.extend(
+            self._compile_output_config_rows(
+                target_item.body or (),
+                spec=target_spec,
+                unit=unit,
+                owner_label=f"output {decl.name} target",
+            )
+        )
+        rows.append(
+            (
+                "Shape",
+                self._display_output_shape(
+                    shape_item.value,
+                    unit=unit,
+                    owner_label=decl.name,
+                    surface_label="output fields",
+                ),
+            )
+        )
+        if requirement_item is not None:
+            rows.append(
+                (
+                    "Requirement",
+                    self._display_symbol_value(
+                        requirement_item.value,
+                        unit=unit,
+                        owner_label=f"output {decl.name}",
+                        surface_label="output fields",
+                    ),
+                )
+            )
+        if decl.schema_ref is not None:
+            _schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
+            rows.append(("Schema", schema_decl.title))
+        if decl.structure_ref is not None:
+            _document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+            rows.append(("Structure", document_decl.title))
+        return tuple(rows)
+
+    def _compile_output_config_rows(
+        self,
+        config_items: tuple[model.RecordItem, ...],
+        *,
+        spec,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[tuple[str, str], ...]:
+        rows: list[tuple[str, str]] = []
+        seen_keys: set[str] = set()
+        allowed_keys = {**spec.required_keys, **spec.optional_keys}
+
+        for item in config_items:
+            if not isinstance(item, model.RecordScalar) or item.body is not None:
+                raise CompileError(f"Config entries must be scalar key/value lines in {owner_label}")
+            if item.key in seen_keys:
+                raise CompileError(f"Duplicate config key in {owner_label}: {item.key}")
+            seen_keys.add(item.key)
+            if item.key not in allowed_keys:
+                raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
+            rows.append(
+                (
+                    allowed_keys[item.key],
+                    self._format_scalar_value(
+                        item.value,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        surface_label="config values",
+                    ),
+                )
+            )
+
+        missing_required = [key for key in spec.required_keys if key not in seen_keys]
+        if missing_required:
+            missing = ", ".join(missing_required)
+            raise CompileError(f"Missing required config key in {owner_label}: {missing}")
+
+        return tuple(rows)
+
+    def _compile_ordinary_output_contract_table(
+        self,
+        rows: tuple[tuple[str, str], ...],
+    ) -> tuple[CompiledBodyItem, ...]:
+        return tuple(self._pipe_table_lines(("Contract", "Value"), rows))
+
+    def _compile_ordinary_output_support_items(
+        self,
+        items: tuple[model.AnyRecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+        trust_surface_section: CompiledSection | None = None,
+    ) -> list[CompiledBodyItem]:
+        compiled: list[CompiledBodyItem] = []
+        rendered_trust_surface = False
+        for item in items:
+            if (
+                trust_surface_section is not None
+                and not rendered_trust_surface
+                and isinstance(item, model.RecordSection)
+                and item.key == "standalone_read"
+            ):
+                compiled.append(trust_surface_section)
+                rendered_trust_surface = True
+            compiled.extend(
+                self._compile_ordinary_output_support_item(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            )
+        if trust_surface_section is not None and not rendered_trust_surface:
+            compiled.append(trust_surface_section)
+        return compiled
+
+    def _compile_ordinary_output_support_item(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> tuple[CompiledBodyItem, ...]:
+        if isinstance(item, model.RecordSection):
+            if item.key == "must_include":
+                return self._compile_output_record_table(
+                    item,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            if item.key == "current_truth":
+                return self._compile_output_record_table(
+                    item,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            if item.key == "support_files":
+                return self._compile_output_support_files_table(
+                    item,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            if item.key == "notes":
+                notes_table = self._compile_output_notes_table(
+                    item,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+                if notes_table is not None:
+                    return notes_table
+        if (
+            isinstance(item, model.ReadableBlock)
+            and item.kind == "properties"
+            and not item.anonymous
+            and item.title is not None
+        ):
+            return self._compile_output_properties_table(
+                item,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
+            )
+        return self._compile_record_item(
+            item,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            review_semantics=review_semantics,
+            route_semantics=route_semantics,
+            render_profile=render_profile,
+        )
+
+    def _compile_output_record_table(
+        self,
+        section: model.RecordSection,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> tuple[CompiledBodyItem, ...]:
+        rows: list[tuple[str, str]] = []
+        detail_sections: list[CompiledBodyItem] = []
+        for item in section.items:
+            if isinstance(item, model.RecordSection):
+                summary = self._flatten_output_record_items(
+                    item.items,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+                if summary is None:
+                    summary = "See the detail below."
+                    detail_sections.append(
+                        CompiledSection(
+                            title=item.title,
+                            body=self._compile_record_support_items(
+                                item.items,
+                                unit=unit,
+                                owner_label=f"{owner_label}.{item.key}",
+                                surface_label=surface_label,
+                                review_semantics=review_semantics,
+                                route_semantics=route_semantics,
+                                render_profile=render_profile,
+                            ),
+                        )
+                    )
+                rows.append((f"**{item.title}**", summary))
+                continue
+            if isinstance(item, model.RecordScalar):
+                summary = self._format_scalar_value(
+                    item.value,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+                rows.append((f"**{_humanize_key(item.key)}**", summary))
+                if item.body is not None:
+                    detail_sections.append(
+                        CompiledSection(
+                            title=_humanize_key(item.key),
+                            body=self._compile_record_support_items(
+                                item.body,
+                                unit=unit,
+                                owner_label=f"{owner_label}.{item.key}",
+                                surface_label=surface_label,
+                                review_semantics=review_semantics,
+                                route_semantics=route_semantics,
+                                render_profile=render_profile,
+                            ),
+                        )
+                    )
+                continue
+            raise CompileError(
+                f"{section.title} must stay record-shaped in {owner_label}"
+            )
+        body: list[CompiledBodyItem] = list(
+            self._pipe_table_lines(("Field", "What to write"), tuple(rows))
+        )
+        for detail_section in detail_sections:
+            body.extend(["", detail_section])
+        return (CompiledSection(title=section.title, body=tuple(body)),)
+
+    def _compile_output_properties_table(
+        self,
+        block: model.ReadableBlock,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> tuple[CompiledBodyItem, ...]:
+        if block.when_expr is not None:
+            self._validate_readable_guard_expr(
+                block.when_expr,
+                unit=unit,
+                owner_label=owner_label,
+                allow_review_semantics=review_semantics is not None,
+                allow_route_semantics=route_semantics is not None,
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+            )
+        block_route_semantics = self._narrow_route_semantics(
+            route_semantics,
+            block.when_expr,
+            unit=unit,
+        )
+        properties = self._resolve_readable_properties_payload(
+            block.payload,
+            unit=unit,
+            owner_label=owner_label,
+            review_semantics=review_semantics,
+            route_semantics=block_route_semantics,
+            render_profile=render_profile,
+        )
+        rows = []
+        for entry in properties.entries:
+            rows.append(
+                (
+                    f"**{entry.title}**",
+                    self._flatten_output_prose_lines(
+                        entry.body,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{entry.key}",
+                        surface_label="properties prose",
+                        review_semantics=review_semantics,
+                        route_semantics=block_route_semantics,
+                        render_profile=render_profile,
+                    )
+                    or "See the detail below.",
+                )
+            )
+        return (
+            CompiledSection(
+                title=block.title or _humanize_key(block.key),
+                body=self._pipe_table_lines(("Field", "What to write"), tuple(rows)),
+                requirement=block.requirement,
+                when_text=self._readable_guard_text(block.when_expr, unit=unit),
+            ),
+        )
+
+    def _compile_output_support_files_table(
+        self,
+        section: model.RecordSection,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> tuple[CompiledBodyItem, ...]:
+        rows: list[tuple[str, str, str]] = []
+        detail_sections: list[CompiledBodyItem] = []
+        for item in section.items:
+            if not isinstance(item, model.RecordSection):
+                raise CompileError(
+                    f"support_files entries must be titled sections in {owner_label}"
+                )
+            scalar_items, _section_items, extras = self._split_record_items(
+                item.items,
+                scalar_keys={"path", "when"},
+                owner_label=f"{owner_label}.{item.key}",
+            )
+            path_item = scalar_items.get("path")
+            if path_item is None or not isinstance(path_item.value, str):
+                raise CompileError(
+                    f"support_files entry is missing string path in {owner_label}: {item.key}"
+                )
+            when_item = scalar_items.get("when")
+            use_when = (
+                self._display_symbol_value(
+                    when_item.value,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}.when",
+                    surface_label="support_files",
+                    render_profile=render_profile,
+                )
+                if when_item is not None
+                else ""
+            )
+            rows.append((f"`{item.title}`", f"`{path_item.value}`", use_when))
+            if extras:
+                detail_sections.append(
+                    CompiledSection(
+                        title=item.title,
+                        body=self._compile_record_support_items(
+                            extras,
+                            unit=unit,
+                            owner_label=f"{owner_label}.{item.key}",
+                            surface_label="support_files prose",
+                            review_semantics=review_semantics,
+                            route_semantics=route_semantics,
+                            render_profile=render_profile,
+                        ),
+                    )
+                )
+        body: list[CompiledBodyItem] = list(
+            self._pipe_table_lines(("Support Surface", "Path", "Use When"), tuple(rows))
+        )
+        for detail_section in detail_sections:
+            body.extend(["", detail_section])
+        return (CompiledSection(title=section.title, body=tuple(body)),)
+
+    def _compile_output_notes_table(
+        self,
+        section: model.RecordSection,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> tuple[CompiledBodyItem, ...] | None:
+        rows: list[tuple[str, str]] = []
+        for index, item in enumerate(section.items):
+            if not isinstance(item, (str, model.EmphasizedLine)):
+                return None
+            rendered_line = self._interpolate_authored_prose_line(
+                item,
+                unit=unit,
+                owner_label=f"{owner_label}.{index}",
+                surface_label="notes prose",
+                ambiguous_label="notes prose interpolation ref",
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
+            )
+            parsed = self._parse_output_support_note_row(rendered_line)
+            if parsed is None:
+                return None
+            rows.append(parsed)
+        if not rows:
+            return None
+        return (
+            CompiledSection(
+                title=section.title,
+                body=self._pipe_table_lines(("Support Surface", "Rule"), tuple(rows)),
+            ),
+        )
+
+    def _parse_output_support_note_row(
+        self,
+        rendered_line: str,
+    ) -> tuple[str, str] | None:
+        matches = _SUPPORT_SURFACE_PATTERN.findall(rendered_line)
+        if len(matches) != 1:
+            return None
+        support_surface = f"`{matches[0]}`"
+        rule = _SUPPORT_SURFACE_PATTERN.sub("", rendered_line, count=1)
+        rule = " ".join(rule.split())
+        if not rule:
+            return None
+        return support_surface, rule
+
+    def _flatten_output_record_items(
+        self,
+        items: tuple[model.AnyRecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> str | None:
+        lines: list[model.ProseLine] = []
+        for item in items:
+            if not isinstance(item, (str, model.EmphasizedLine)):
+                return None
+            lines.append(item)
+        return self._flatten_output_prose_lines(
+            tuple(lines),
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+            review_semantics=review_semantics,
+            route_semantics=route_semantics,
+            render_profile=render_profile,
+        )
+
+    def _flatten_output_prose_lines(
+        self,
+        lines: tuple[model.ProseLine, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> str | None:
+        rendered = [
+            self._interpolate_authored_prose_line(
+                line,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
+                ambiguous_label=f"{surface_label} interpolation ref",
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
+            )
+            for line in lines
+        ]
+        text = " ".join(line.strip() for line in rendered if line.strip()).strip()
+        return text or None
+
+    def _compile_output_structure_section(
+        self,
+        document_body,
+        *,
+        document_title: str,
+        unit: IndexedUnit,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> CompiledSection:
+        summary_rows, detail_blocks = self._compile_output_structure_summary_rows(
+            document_body,
+            unit=unit,
+        )
+        body: list[CompiledBodyItem] = []
+        if document_body.preamble:
+            body.extend(document_body.preamble)
+            body.append("")
+        body.append(f"This artifact must follow the `{document_title}` structure below.")
+        body.append("")
+        body.extend(
+            self._pipe_table_lines(
+                ("Required Section", "Kind", "What it must do"),
+                tuple(summary_rows),
+            )
+        )
+        for detail_block in detail_blocks:
+            body.extend(["", detail_block])
+        return CompiledSection(
+            title="Artifact Structure",
+            body=tuple(body),
+            render_profile=render_profile,
+        )
+
+    def _compile_output_structure_summary_rows(
+        self,
+        document_body,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[list[tuple[str, str, str]], list[CompiledBodyItem]]:
+        rows: list[tuple[str, str, str]] = []
+        detail_blocks: list[CompiledBodyItem] = []
+        for block in document_body.items:
+            summary_row, detail_block = self._compile_output_structure_summary_row(
+                block,
+                unit=unit,
+            )
+            rows.append(summary_row)
+            if detail_block is not None:
+                detail_blocks.append(detail_block)
+        return rows, detail_blocks
+
+    def _compile_output_structure_summary_row(
+        self,
+        block: model.DocumentBlock,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[tuple[str, str, str], CompiledBodyItem | None]:
+        compiled_block = self._compile_document_block(block, unit=unit)
+        title = block.title or _humanize_key(block.key)
+        kind_label = self._output_structure_kind_label(block.kind)
+        summary = self._output_structure_summary_text(block, unit=unit)
+        detail_block: CompiledBodyItem | None = None
+
+        if block.kind == "section" and summary is not None:
+            return (f"**{title}**", kind_label, summary), None
+
+        if block.kind == "definitions":
+            detail_block = replace(compiled_block, title=f"{compiled_block.title} Definitions")
+        elif block.kind == "table":
+            detail_block = replace(compiled_block, title=f"{compiled_block.title} Contract")
+        elif block.kind in {"checklist", "sequence", "bullets", "callout", "code", "markdown", "html", "footnotes", "image", "guard"}:
+            detail_block = compiled_block
+        elif block.kind == "rule":
+            detail_block = compiled_block
+        elif block.kind == "section":
+            detail_block = compiled_block
+        elif block.kind == "properties":
+            detail_block = compiled_block
+
+        return (
+            (f"**{title}**", kind_label, summary or "See the detail below."),
+            detail_block,
+        )
+
+    def _output_structure_kind_label(self, kind: str) -> str:
+        return {
+            "section": "Section",
+            "definitions": "Definitions",
+            "table": "Table",
+            "sequence": "Ordered List",
+            "bullets": "Bulleted List",
+            "checklist": "Checklist",
+            "callout": "Callout",
+            "code": "Code Block",
+            "markdown": "Markdown Block",
+            "html": "HTML Block",
+            "footnotes": "Footnotes",
+            "image": "Image",
+            "guard": "Guard",
+            "properties": "Properties",
+            "rule": "Rule",
+        }.get(kind, _humanize_key(kind))
+
+    def _output_structure_summary_text(
+        self,
+        block: model.DocumentBlock,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        if block.kind == "section":
+            payload = block.payload if isinstance(block.payload, tuple) else ()
+            return self._flatten_output_prose_lines(
+                payload,
+                unit=unit,
+                owner_label=f"document.{block.key}",
+                surface_label="structure section prose",
+            )
+        if block.kind == "definitions" and isinstance(block.payload, tuple):
+            titles = [f"`{item.title}`" for item in block.payload]
+            return f"Define {self._natural_language_join(titles)}."
+        if block.kind == "table" and isinstance(block.payload, model.ReadableTableData):
+            note_summary = self._flatten_output_prose_lines(
+                block.payload.notes,
+                unit=unit,
+                owner_label=f"document.{block.key}",
+                surface_label="structure table notes",
+            )
+            if note_summary is not None:
+                return note_summary
+            column_titles = [f"`{column.title}`" for column in block.payload.columns]
+            return f"Use the columns {self._natural_language_join(column_titles)}."
+        if block.kind in {"sequence", "bullets", "checklist"} and isinstance(block.payload, tuple):
+            item_lines = tuple(item.text for item in block.payload if isinstance(item, model.ReadableListItem))
+            summary = self._flatten_output_prose_lines(
+                item_lines,
+                unit=unit,
+                owner_label=f"document.{block.key}",
+                surface_label="structure list prose",
+            )
+            return summary
+        if block.kind == "callout" and isinstance(block.payload, model.ReadableCalloutData):
+            return self._flatten_output_prose_lines(
+                block.payload.body,
+                unit=unit,
+                owner_label=f"document.{block.key}",
+                surface_label="structure callout prose",
+            )
+        if block.kind == "rule":
+            return "Keep the divider rule."
+        return None

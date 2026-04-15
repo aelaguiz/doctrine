@@ -60,9 +60,11 @@ Use the host facts that say whether the draft still needs changes.
 
 #### Bound Review Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 ##### Verdict
 
@@ -110,7 +112,7 @@ Name the failing review gates in authored order.
 
 ##### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 - Active Mode when present(active_mode)
 - Trigger Reason when present(trigger_reason)
 

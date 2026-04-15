@@ -44,10 +44,12 @@ Write this to disk before you summarize the turn.
 
 #### Dossier File
 
-- Target: File
-- Path: `section_root/_authoring/dossier_engineer.md`
-- Shape: Dossier Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `section_root/_authoring/dossier_engineer.md` |
+| Shape | Dossier Document |
+| Requirement | Required |
 
 ##### Standalone Read
 
@@ -59,9 +61,11 @@ Use the turn response to say what changed and where the durable file lives.
 
 #### Dossier Summary
 
-- Target: Turn Response
-- Shape: Turn Summary Text
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Turn Summary Text |
+| Requirement | Required |
 
 ##### Purpose
 

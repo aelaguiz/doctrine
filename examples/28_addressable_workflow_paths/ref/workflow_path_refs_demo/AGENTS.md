@@ -13,9 +13,11 @@ Run Check Build Honesty before you route the work.
 
 ### Review Comment
 
-- Target: Turn Response
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 - Gate Family: Gates
 - Honest Gate: Check Build Honesty

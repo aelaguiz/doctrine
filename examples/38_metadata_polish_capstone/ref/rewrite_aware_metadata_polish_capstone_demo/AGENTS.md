@@ -76,18 +76,22 @@ Use the host handoff facts. They say whether metadata polish is owed, which mode
 
 #### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Coordination Handoff Binding
 
 #### Rewrite-Aware Coordination Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 ##### Current Artifact
 
@@ -115,9 +119,9 @@ Name any artifacts that are no longer current.
 
 ##### Trust Surface
 
-- Current Artifact
-- Active Mode
-- Preserve Basis
+- `Current Artifact`
+- `Active Mode`
+- `Preserve Basis`
 - Comparison Basis when peer comparison is used
 - Rewrite Evidence Exclusions on rewrite passes
 - Invalidations when structure changed

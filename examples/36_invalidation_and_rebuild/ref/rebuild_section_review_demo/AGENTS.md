@@ -20,16 +20,20 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 ### Section Review
 
-- Target: File
-- Path: `unit_root/_authoring/SECTION_REVIEW.md`
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/SECTION_REVIEW.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 ### Rebuild Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Artifact
 
@@ -37,7 +41,7 @@ Name the one artifact that is current now.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
 #### Standalone Read
 

@@ -34,9 +34,11 @@ Rejected plan goes to PlanAuthor.
 
 ### Acceptance Review Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Verdict
 
@@ -72,7 +74,7 @@ List exact failing gates, including Outline Complete when it fails.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
 #### Standalone Read
 

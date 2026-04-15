@@ -43,9 +43,11 @@ When missing(blocked_gate), current artifact: Draft Plan.
 
 ### Acceptance Review Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Verdict
 
@@ -91,7 +93,7 @@ List exact failing gates in authored order.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
 #### Standalone Read
 

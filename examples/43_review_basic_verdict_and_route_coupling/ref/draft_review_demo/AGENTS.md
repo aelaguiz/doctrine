@@ -40,9 +40,11 @@ Use the current draft spec as the reviewed artifact.
 
 ### Draft Review Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Verdict
 

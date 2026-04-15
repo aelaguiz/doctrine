@@ -34,9 +34,11 @@ Rejected draft goes to DraftAuthor.
 
 ### Draft Review Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Verdict
 
@@ -84,4 +86,4 @@ Draft Author
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`

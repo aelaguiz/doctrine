@@ -42,8 +42,10 @@ Use this only when the section already has live concepts to preserve.
 
 ### Final Handoff Comment
 
-- Target: Turn Response
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 Use this output contract when you leave the next owner one clear update.

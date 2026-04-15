@@ -298,9 +298,10 @@ def _check_output_schema_attachment_renders() -> None:
         prompt_path = _write_prompt(tmp_dir, source)
         prompt = parse_file(prompt_path)
         rendered = render_markdown(compile_prompt(prompt, "OutputDemo"))
-        _expect("- Schema: Lesson Inventory" in rendered, rendered)
-        _expect("### Required Sections" in rendered, rendered)
-        _expect("#### Summary" in rendered, rendered)
+        _expect("| Contract | Value |" in rendered, rendered)
+        _expect("| Schema | Lesson Inventory |" in rendered, rendered)
+        _expect("#### Required Sections" in rendered, rendered)
+        _expect("##### Summary" in rendered, rendered)
 
 
 def _check_input_structure_attachment_renders() -> None:

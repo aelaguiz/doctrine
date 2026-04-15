@@ -8,9 +8,11 @@ Reply and stop.
 
 ### Final Reply
 
-- Target: Turn Response
-- Shape: Comment Text
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment Text |
+| Requirement | Required |
 
 #### Expected Structure
 

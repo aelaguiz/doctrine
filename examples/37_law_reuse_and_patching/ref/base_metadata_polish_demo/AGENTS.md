@@ -31,16 +31,20 @@ Use the host-provided handoff facts that say whether the preserve basis remains 
 
 ### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Base Coordination Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Artifact
 
@@ -52,8 +56,8 @@ Name any comparison-only artifacts used in this pass.
 
 #### Trust Surface
 
-- Current Artifact
-- Comparison Basis
+- `Current Artifact`
+- `Comparison Basis`
 
 #### Standalone Read
 

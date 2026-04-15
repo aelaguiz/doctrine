@@ -30,9 +30,11 @@ Use the host route facts. They say whether route repair is active, whether the c
 
 ### Route Repair Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Route Handoff
 

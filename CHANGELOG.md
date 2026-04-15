@@ -33,6 +33,11 @@ payload text and breaking releases with no real upgrade steps.
 - Clarified the release policy to prefer the next patch version for routine
   public work and keep minor bumps for real backward-compatible public
   additions or soft deprecations.
+- Changed emitted ordinary `## Outputs` Markdown to one grouped contract block
+  per output. Single artifacts now start with a `Contract | Value` table,
+  `files:` outputs add an `Artifacts` table, and `structure:` now renders as
+  one `Artifact Structure` section. Downstream emitted-Markdown snapshots or
+  parsers will need to update.
 - Moved the public release record fully onto `CHANGELOG.md`, signed tags, and
   matching GitHub releases. `docs/VERSIONING.md` now stays policy-only.
 - Centralized package release metadata and package smoke proof so release

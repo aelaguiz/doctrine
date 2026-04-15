@@ -16,9 +16,11 @@ Hand off to ReviewLead.
 
 ### Workflow Route Binding Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 - Next Owner: Review Lead
 - Next Owner Key: ReviewLead

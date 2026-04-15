@@ -38,16 +38,20 @@ Use the host-provided handoff facts that say whether this pass is a rewrite.
 
 ### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Coordination Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Artifact
 
@@ -63,8 +67,8 @@ Name any fields whose old values do not count as rewrite evidence.
 
 #### Trust Surface
 
-- Current Artifact
-- Comparison Basis
+- `Current Artifact`
+- `Comparison Basis`
 - Rewrite Evidence Exclusions on rewrite passes
 
 #### Standalone Read

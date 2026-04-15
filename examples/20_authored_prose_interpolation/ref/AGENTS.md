@@ -45,9 +45,11 @@ Ask ProjectLead for an owner decision only when the plan truly needs one.
 
 ### Turn Response
 
-- Target: Turn Response
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 Use this output when you leave the next owner one clear update.
 

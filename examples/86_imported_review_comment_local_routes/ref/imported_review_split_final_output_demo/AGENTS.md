@@ -34,9 +34,11 @@ Rejected draft goes to DraftAuthor.
 
 ### Draft Review Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Verdict
 
@@ -72,7 +74,7 @@ Name the failing review gates in authored order.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
 #### Standalone Read
 

@@ -244,6 +244,49 @@ examples/100_skill_package_bundled_agents/build/agents/openai.yaml
 examples/103_skill_package_binary_assets/build/assets/icon.png
 ```
 
+Runtime Markdown shape for ordinary outputs:
+
+- This is emitted Markdown layout only. It does not add or change input-side
+  syntax.
+- A single-artifact ordinary output renders one grouped `Contract | Value`
+  table.
+- A `files:` output renders the same contract table, then an `Artifacts`
+  table.
+- Table-friendly sections such as `current_truth`, titled `properties`,
+  parseable `notes`, and `support_files` now render as tables.
+- `structure:` now renders as one `Artifact Structure` section instead of a
+  loose `Structure:` bullet plus a separate peer block.
+
+Single-artifact example:
+
+```md
+### Review Comment
+
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
+```
+
+File-set example:
+
+```md
+### Lesson Manifest Output
+
+| Contract | Value |
+| --- | --- |
+| Target | File Set |
+| Requirement | Required |
+
+#### Artifacts
+
+| Artifact | Path | Shape |
+| --- | --- | --- |
+| Built Lesson | `lesson_root/_authoring/lesson_manifest.json` | Lesson Manifest JSON |
+| Validation File | `lesson_root/_authoring/MANIFEST_VALIDATION.md` | Markdown Document |
+```
+
 The companion contract is compiler-owned emitted truth. In v1 it carries:
 
 - `contract_version = 1` for the emitted JSON contract shape only. It is not

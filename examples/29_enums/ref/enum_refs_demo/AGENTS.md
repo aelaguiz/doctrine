@@ -11,9 +11,11 @@ Keep guided_walkthrough distinct from scripted_hand.
 
 ### Review Decision
 
-- Target: Turn Response
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 - Verdict Family: Critic Verdict
 - Accepted Value: accept

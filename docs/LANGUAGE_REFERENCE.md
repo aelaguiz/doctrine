@@ -593,6 +593,32 @@ Important rules:
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 
+Shipped Markdown render shape:
+
+- This is emitted output shape only. It does not change the input language.
+- A single-artifact ordinary output renders one grouped `Contract | Value`
+  table first.
+- A `files:` output renders that same contract table, then an `Artifacts`
+  table for the named files.
+- `current_truth`, titled `properties`, parseable `notes`, and
+  `support_files` render as tables when their authored shape is tabular.
+- `trust_surface` keeps its own section, and ordinary output labels render as
+  inline code.
+- `structure:` renders as one `Artifact Structure` section with a summary
+  table and any needed detail blocks.
+
+Example emitted shape:
+
+```md
+### Review Comment
+
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
+```
+
 ### Output Inheritance
 
 Inherited outputs use the same explicit patching style Doctrine already uses

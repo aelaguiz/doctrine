@@ -42,21 +42,24 @@ Do not treat it as proof of the current turn.
 
 ### Section Dossier Output
 
-- Current Dossier: `section_root/_authoring/SECTION_DOSSIER.md`
-- Current Dossier Shape: Markdown Document
-- Validation Record: `section_root/_authoring/DOSSIER_VALIDATION.md`
-- Validation Record Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File Set |
+| Requirement | Required |
+
+#### Artifacts
+
+| Artifact | Path | Shape |
+| --- | --- | --- |
+| Current Dossier | `section_root/_authoring/SECTION_DOSSIER.md` | Markdown Document |
+| Validation Record | `section_root/_authoring/DOSSIER_VALIDATION.md` | Markdown Document |
 
 #### Must Include
 
-##### Current Dossier
-
-SECTION_DOSSIER.md must reflect the current section proposal for this turn.
-
-##### Validation Record
-
-DOSSIER_VALIDATION.md must say what checks ran, what passed or failed, or what did not run yet.
+| Field | What to write |
+| --- | --- |
+| **Current Dossier** | SECTION_DOSSIER.md must reflect the current section proposal for this turn. |
+| **Validation Record** | DOSSIER_VALIDATION.md must say what checks ran, what passed or failed, or what did not run yet. |
 
 #### Standalone Read
 
@@ -64,28 +67,21 @@ A downstream reader should be able to read SECTION_DOSSIER.md and DOSSIER_VALIDA
 
 ### Section Author Handoff
 
-- Target: Issue Comment
-- Issue: `CURRENT_ISSUE`
-- Shape: Handoff Comment Text
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Issue Comment |
+| Issue | `CURRENT_ISSUE` |
+| Shape | Handoff Comment Text |
+| Requirement | Required |
 
 #### Must Include
 
-##### What Changed
-
-Say what changed in this turn.
-
-##### Use Now
-
-Name the exact current files the next owner should read now.
-
-##### Review Files
-
-Either name the current review files explicitly or say plainly that no current review files apply yet.
-
-##### Next Owner
-
-Name the honest next owner.
+| Field | What to write |
+| --- | --- |
+| **What Changed** | Say what changed in this turn. |
+| **Use Now** | Name the exact current files the next owner should read now. |
+| **Review Files** | Either name the current review files explicitly or say plainly that no current review files apply yet. |
+| **Next Owner** | Name the honest next owner. |
 
 #### Standalone Read
 

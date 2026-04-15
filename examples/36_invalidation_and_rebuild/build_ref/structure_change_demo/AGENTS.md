@@ -26,16 +26,20 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 ### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Invalidation Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Artifact
 
@@ -47,8 +51,8 @@ Name any artifacts that are no longer current.
 
 #### Trust Surface
 
-- Current Artifact
-- Invalidations
+- `Current Artifact`
+- `Invalidations`
 
 #### Standalone Read
 

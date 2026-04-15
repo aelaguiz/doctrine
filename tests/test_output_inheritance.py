@@ -81,8 +81,12 @@ class OutputInheritanceTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn("### Lessons Lead Output", rendered)
+        self.assertIn("| Contract | Value |", rendered)
+        self.assertIn("| Target | Turn Response |", rendered)
+        self.assertIn("| Shape | Comment |", rendered)
+        self.assertIn("| Requirement | Required |", rendered)
         self.assertIn("#### Must Include", rendered)
-        self.assertIn("##### What Changed", rendered)
+        self.assertIn("| **What Changed** | Say what changed. |", rendered)
         self.assertIn("#### Test", rendered)
         self.assertIn("blah blah blah", rendered)
 
@@ -132,8 +136,9 @@ class OutputInheritanceTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn("### Lessons Lead Output", rendered)
-        self.assertIn("- Target: Issue Note", rendered)
-        self.assertIn("- Shape: Lessons Issue Note Text", rendered)
+        self.assertIn("| Target | Issue Note |", rendered)
+        self.assertIn("| Shape | Lessons Issue Note Text |", rendered)
+        self.assertIn("| Requirement | Required |", rendered)
         self.assertIn("#### Test", rendered)
 
     def test_imported_output_inheritance_keeps_parent_owned_item_and_attachment_refs(self) -> None:
@@ -214,12 +219,13 @@ class OutputInheritanceTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("- Target: Issue Note", rendered)
-        self.assertIn("- Shape: Lessons Document Shape", rendered)
-        self.assertIn("- Schema: Handoff Schema", rendered)
-        self.assertIn("- Structure: Handoff Structure", rendered)
+        self.assertIn("| Target | Issue Note |", rendered)
+        self.assertIn("| Shape | Lessons Document Shape |", rendered)
+        self.assertIn("| Schema | Handoff Schema |", rendered)
+        self.assertIn("| Structure | Handoff Structure |", rendered)
         self.assertIn("### Lessons Lead Schema Output", rendered)
         self.assertIn("### Lessons Lead Structure Output", rendered)
+        self.assertIn("#### Artifact Structure", rendered)
         self.assertIn("#### Test", rendered)
 
     def test_missing_inherited_output_entry_fails_loud(self) -> None:

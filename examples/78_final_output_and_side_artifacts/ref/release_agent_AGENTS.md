@@ -8,10 +8,12 @@ Do the work, emit the file artifact, and end with the declared final output.
 
 ### Release Notes File
 
-- Target: File
-- Path: `artifacts/RELEASE_NOTES.md`
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `artifacts/RELEASE_NOTES.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 #### Standalone Read
 

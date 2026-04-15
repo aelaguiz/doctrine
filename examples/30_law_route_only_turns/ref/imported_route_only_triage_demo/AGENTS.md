@@ -26,9 +26,11 @@ Use the host-provided handoff facts that say whether the current handoff is miss
 
 ### Coordination Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Standalone Read
 

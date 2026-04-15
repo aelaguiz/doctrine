@@ -28,16 +28,20 @@ Start research with ResearchSpecialist. -> Research Specialist
 
 ### Execution Plan
 
-- Target: File
-- Path: `project_root/_authoring/EXECUTION_PLAN.md`
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `project_root/_authoring/EXECUTION_PLAN.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 ### Shared Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Artifact
 
@@ -53,9 +57,9 @@ Name the honest next owner.
 
 #### Trust Surface
 
-- Current Artifact
-- Use Now
-- Next Owner
+- `Current Artifact`
+- `Use Now`
+- `Next Owner`
 
 #### Standalone Read
 

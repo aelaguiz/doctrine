@@ -182,6 +182,31 @@ Output bodies can include:
 - `standalone_read`
 - `trust_surface`
 
+Shipped ordinary output render shape:
+
+- This is an emitted Markdown rule, not a new input syntax rule.
+- A single-artifact ordinary output starts with one `Contract | Value` table.
+- A `files:` output starts with the same contract table, then an `Artifacts`
+  table.
+- `current_truth`, titled `properties`, parseable `notes`, and
+  `support_files` lower to tables when the authored shape is naturally tabular.
+- `trust_surface` still renders as its own section, but ordinary output labels
+  render as inline code.
+- `structure:` lowers to one `Artifact Structure` section with a summary table
+  and any needed detail blocks.
+
+Example emitted shape:
+
+```md
+### Review Comment
+
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
+```
+
 Typed attachment examples:
 
 ```prompt

@@ -26,9 +26,11 @@ Use the host route facts. They say whether the current specialist output is miss
 
 ### Reroute Handoff Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Route
 

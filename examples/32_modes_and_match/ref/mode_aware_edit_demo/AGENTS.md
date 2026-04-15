@@ -46,9 +46,11 @@ Use the host-provided handoff facts that say whether edit work is owed, which mo
 
 ### Coordination Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Current Artifact
 
@@ -60,8 +62,8 @@ Name the active mode for this pass.
 
 #### Trust Surface
 
-- Current Artifact
-- Active Mode
+- `Current Artifact`
+- `Active Mode`
 
 #### Standalone Read
 

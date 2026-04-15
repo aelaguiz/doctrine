@@ -24,9 +24,11 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 ### Blocked Review Handoff
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Invalidations
 
@@ -34,7 +36,7 @@ Name any artifacts that are still no longer current.
 
 #### Trust Surface
 
-- Invalidations
+- `Invalidations`
 
 #### Standalone Read
 

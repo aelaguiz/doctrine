@@ -25,9 +25,11 @@ Use the host route facts. They say whether the current section is new or a full 
 
 ### Nested Guarded Readback Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Detail Panel
 

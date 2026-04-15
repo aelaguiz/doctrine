@@ -26,23 +26,19 @@ Use host route facts. They say which live job is active, whether the current spe
 
 ### Routing Handoff Comment
 
-- Target: Turn Response
-- Shape: Comment
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | Turn Response |
+| Shape | Comment |
+| Requirement | Required |
 
 #### Must Include
 
-##### Current Route
-
-Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair.
-
-##### Next Owner
-
-Name the next owner when ownership changes. If ownership stays local, say so. If no clear next owner is known yet, say that RoutingOwner keeps the issue.
-
-##### Next Step
-
-Say the next concrete step now.
+| Field | What to write |
+| --- | --- |
+| **Current Route** | Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair. |
+| **Next Owner** | Name the next owner when ownership changes. If ownership stays local, say so. If no clear next owner is known yet, say that RoutingOwner keeps the issue. |
+| **Next Step** | Say the next concrete step now. |
 
 #### Rewrite Mode
 

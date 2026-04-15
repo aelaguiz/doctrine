@@ -79,6 +79,10 @@ Every public release uses one release class.
 - `breaking`: any shipped public surface now needs user action. This includes
   language breaks, emitted contract breaks, manifest-schema breaks, and other
   stable public surface breaks. Release kind: `Breaking`.
+- Emitted runtime Markdown is part of that public surface. If ordinary
+  `## Outputs` changes from one layout to another, downstream snapshot,
+  parser, or scraper users may need to act even when the language version
+  stays the same.
 
 Breaking releases outside the language surface may keep the Doctrine language
 version unchanged. Breaking language releases must bump the Doctrine language
@@ -196,6 +200,10 @@ If a public release is wrong:
 - If a change breaks authored `.prompt` files, emitted `.contract.json` files,
   `cases.toml` manifests, or another stable public surface, update this file in
   the same change.
+- Treat emitted runtime Markdown layout as one of those stable public
+  surfaces. For example, regrouping ordinary `## Outputs` from bullet lists
+  into contract tables is a breaking emitted-Markdown change even though the
+  input language does not change.
 - Say who is affected.
 - Say what changed.
 - Give exact upgrade steps.
