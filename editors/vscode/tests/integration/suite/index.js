@@ -13,6 +13,7 @@ async function run() {
   await testSkillPackageImportLinks();
   await testCrossRootImportLinks();
   await testDefinitionProvider();
+  await testOutputInheritanceDefinitionProvider();
   await testCrossRootDefinitionProvider();
   await testAddressableDefinitionProvider();
   await testWorkflowLawDefinitionProvider();
@@ -153,6 +154,38 @@ async function testDefinitionProvider() {
     relativePath: "examples/76_final_output_prose_basic/prompts/AGENTS.prompt",
     sourceLineFragment: "final_output: FinalReply",
     sourceText: "FinalReply",
+  });
+}
+
+async function testOutputInheritanceDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: 'output HandoffOutput: "Handoff Output"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/shared/review.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/AGENTS.prompt",
+    sourceLineFragment: 'output ChildOutput[shared.review.HandoffOutput]: "Child Output"',
+    sourceText: "shared.review.HandoffOutput",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'what_changed: "What Changed"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/shared/review.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/AGENTS.prompt",
+    sourceLineFragment: "inherit what_changed",
+    sourceText: "what_changed",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'use_now: "Use Now"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/shared/review.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/AGENTS.prompt",
+    sourceLineFragment: 'override use_now: "Use Now"',
+    sourceText: "use_now",
   });
 }
 

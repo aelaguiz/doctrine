@@ -1,0 +1,17 @@
+output BaseHandoff: "Base Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+
+output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+    inherit target
+    inherit shape
+    inherit requirement
+    inherit current_truth
+
+
+agent InvalidUndefinedInheritOutputDemo:
+    role: "Fail loud when the child inherits a missing output key."
+    outputs: "Outputs"
+        LessonsLeadOutput

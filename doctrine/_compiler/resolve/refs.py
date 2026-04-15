@@ -242,6 +242,21 @@ class ResolveRefsMixin:
             resolve_parent_ref=self._resolve_outputs_block_ref,
         )
 
+    def _resolve_parent_output_decl(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputDecl]:
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=output_decl.name,
+            child_label="output",
+            parent_ref=output_decl.parent_ref,
+            registry_name="outputs_by_name",
+            resolve_parent_ref=self._resolve_output_decl,
+        )
+
     def _resolve_input_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.InputDecl]:
@@ -435,7 +450,10 @@ class ResolveRefsMixin:
     ) -> tuple[tuple[str, ReadableDecl], ...]:
         matches: list[tuple[str, ReadableDecl]] = []
         for label, registry_name in _READABLE_DECL_REGISTRIES:
-            decl = getattr(unit, registry_name).get(declaration_name)
+            if registry_name == "outputs_by_name":
+                decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+            else:
+                decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
         return tuple(matches)
@@ -448,7 +466,10 @@ class ResolveRefsMixin:
     ) -> tuple[tuple[str, AddressableRootDecl], ...]:
         matches: list[tuple[str, AddressableRootDecl]] = []
         for label, registry_name in _ADDRESSABLE_ROOT_REGISTRIES:
-            decl = getattr(unit, registry_name).get(declaration_name)
+            if registry_name == "outputs_by_name":
+                decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+            else:
+                decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
         return tuple(matches)

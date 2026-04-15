@@ -108,6 +108,94 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Read on Its Own", rendered)
         self.assertNotIn("## Outputs", rendered)
 
+    def test_inherited_prose_final_output_renders_dedicated_section_and_metadata(self) -> None:
+        agent = self._compile_agent(
+            """
+            output BaseReply: "Base Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+                standalone_read: "Standalone Read"
+                    "The user should understand what changed and what happens next."
+
+            output FinalReply[BaseReply]: "Final Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+                inherit standalone_read
+
+                format_notes: "Expected Structure"
+                    "Lead with the shipped outcome."
+
+            agent HelloAgent:
+                role: "Answer plainly and end the turn."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="HelloAgent",
+        )
+
+        self.assertIsNotNone(agent.final_output)
+        self.assertEqual(agent.final_output.output_name, "FinalReply")
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertIn("### Final Reply", rendered)
+        self.assertIn("| Format | Natural-language markdown |", rendered)
+        self.assertIn("#### Expected Structure", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
+
+    def test_inherited_final_output_keeps_inherited_trust_surface_and_standalone_read(self) -> None:
+        agent = self._compile_agent(
+            """
+            output BaseReply: "Base Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                current_artifact: "Current Artifact"
+                    "Name the artifact that stays current."
+
+                trust_surface:
+                    current_artifact
+
+                standalone_read: "Standalone Read"
+                    "This final reply should stand on its own."
+
+            output FinalReply[BaseReply]: "Final Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+                inherit current_artifact
+                inherit trust_surface
+                inherit standalone_read
+
+                format_notes: "Expected Structure"
+                    "Lead with the shipped outcome."
+
+            agent HelloAgent:
+                role: "Answer plainly and end the turn."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="HelloAgent",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertNotIn("## Outputs", rendered)
+        self.assertIn("### Final Reply", rendered)
+        self.assertIn("#### Trust Surface", rendered)
+        self.assertIn("- Current Artifact", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
+
     def test_json_final_output_exposes_schema_metadata_and_payload_preview(self) -> None:
         agent = self._compile_agent(
             """

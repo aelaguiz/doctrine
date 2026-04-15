@@ -67,6 +67,32 @@ class ParseDiagnosticsTests(unittest.TestCase):
             summary_snippet="Outputs may not define both `schema:` and `must_include:`.",
         )
 
+    def test_output_schema_owner_conflict_points_at_override_must_include(self) -> None:
+        source = textwrap.dedent(
+            """\
+            schema LessonInventory: "Lesson Inventory"
+                sections:
+                    summary: "Summary"
+                        "State the required summary."
+
+            output SchemaOutput: "Schema Output"
+                target: TurnResponse
+                shape: JsonObject
+                requirement: Required
+                schema: LessonInventory
+
+                override must_include: "Must Include"
+                    summary: "Summary"
+                        "Repeat the summary locally."
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/schema-owner-override-conflict.prompt",
+            anchor_line='    override must_include: "Must Include"',
+            summary_snippet="Outputs may not define both `schema:` and `must_include:`.",
+        )
+
     def test_output_schema_structure_conflict_points_at_structure(self) -> None:
         source = textwrap.dedent(
             """\
@@ -359,6 +385,28 @@ class ParseDiagnosticsTests(unittest.TestCase):
             anchor_line="    trust_surface:",
             summary_snippet="Output declarations may define `trust_surface` only once.",
             occurrence=2,
+        )
+
+    def test_output_duplicate_trust_surface_points_at_override_trust_surface_block(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output ReviewComment: "Review Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+                verdict: "Verdict"
+                    "Say whether the review passed."
+                trust_surface:
+                    verdict
+                override trust_surface:
+                    verdict
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/output-override-trust-surface.prompt",
+            anchor_line="    override trust_surface:",
+            summary_snippet="Output declarations may define `trust_surface` only once.",
         )
 
     def test_workflow_duplicate_law_points_at_the_later_block(self) -> None:

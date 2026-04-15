@@ -1,0 +1,25 @@
+# This example shows the smallest inherited `output` declaration.
+
+output BaseReply: "Base Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    summary: "Summary"
+        "Summarize the shipped result."
+
+
+output LessonsLeadOutput[BaseReply]: "Lessons Lead Output"
+    inherit target
+    inherit shape
+    inherit requirement
+    inherit summary
+
+    hit: "Test"
+        "blah blah blah"
+
+
+agent OutputInheritanceDemo:
+    role: "Reuse one output contract and add one local field."
+    outputs: "Outputs"
+        LessonsLeadOutput

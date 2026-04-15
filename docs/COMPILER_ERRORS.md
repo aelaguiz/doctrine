@@ -47,7 +47,7 @@ Stability rules:
 | --- | --- | --- |
 | `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited authored slot, workflow, `skills`, or named IO entry that does not exist. |
 | `E002` | Missing rendered section title | Reserved meaning: a rendered section needs an explicit visible title and the source does not provide one. |
-| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited authored-slot, workflow, `skills`, or named IO entries. |
+| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited authored-slot, workflow, `skills`, `output`, or named IO entries. |
 
 ### Parse codes
 
@@ -90,6 +90,11 @@ Stability rules:
 | `E240`-`E243` | Workflow inheritance and patching errors | These codes cover cyclic workflow inheritance, inheriting undefined keys, kind mismatches, and `inherit` or `override` without an inherited workflow. |
 | `E244`-`E249` | IO block inheritance and typed-field ref errors | These codes cover cyclic `inputs` / `outputs` block inheritance, undefined inherited keys, patching without an inherited IO block, inherited IO blocks without stable keyed sections, and wrong-kind IO refs or patch bases. |
 | `E250` | Cyclic skills inheritance | Top-level `skills` block inheritance forms a cycle. |
+| `E251` | Cyclic output inheritance | Top-level `output` declaration inheritance forms a cycle. |
+| `E252` | Output patch requires an inherited output | `inherit` or `override` was used in an `output` body that does not inherit a parent output. |
+| `E253` | Cannot inherit undefined output entry | An inherited `output` asked for a top-level key the parent output does not define. |
+| `E254` | Inherited output needs keyed top-level entries | A parent `output` used for inheritance contains bare top-level prose or another unkeyed top-level item. |
+| `E255` | Invalid output inheritance patch | An inherited `output` repeats a key, overrides it with the wrong kind, or patches an inherited entry without `override`. |
 | `E260` | Conflicting concrete-turn binding roots | One concrete-turn bound root path resolves to different artifacts inside the same concrete turn. |
 | `E261` | Duplicate workflow item key | One workflow body repeats the same keyed entry. |
 | `E270` | Ambiguous declaration reference | A readable or addressable ref matches more than one visible declaration kind. |

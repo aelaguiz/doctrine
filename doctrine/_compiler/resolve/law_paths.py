@@ -173,7 +173,7 @@ class ResolveLawPathsMixin:
                         )
                     )
             if "output" in allowed_kinds:
-                output_decl = lookup_unit.outputs_by_name.get(ref.declaration_name)
+                output_decl = self._resolve_local_output_decl(ref.declaration_name, unit=lookup_unit)
                 if output_decl is not None:
                     matches.append(
                         ResolvedLawPath(

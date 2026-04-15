@@ -1,0 +1,38 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "final_output may point at an inherited output"
+status = "active"
+kind = "render_contract"
+agent = "FinalOutputInheritanceDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "End the turn with an inherited final output.",
+  "",
+  "## Reply",
+  "",
+  "Reply and stop.",
+  "",
+  "## Final Output",
+  "",
+  "### Final Reply",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this contract.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Natural-language markdown |",
+  "| Shape | Comment Text |",
+  "| Requirement | Required |",
+  "",
+  "#### Read on Its Own",
+  "",
+  "The user should understand what changed and what happens next.",
+  "",
+  "#### Expected Structure",
+  "",
+  "Lead with the shipped outcome.",
+]

@@ -1,0 +1,6 @@
+# SYNTAX TEST "source.doctrine" "singular output inheritance"
+
+output Child[shared.review.Parent]: "Child"
+# <----- keyword.declaration.doctrine
+#       ^ entity.name.type.doctrine
+#             ^ entity.other.inherited-class.doctrine

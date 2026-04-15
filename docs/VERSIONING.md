@@ -16,6 +16,8 @@ behavior.
 - Bump the major version when the language itself breaks.
 - Bump the minor version when the language adds backward-compatible syntax or
   semantics.
+- A new backward-compatible language surface such as direct `output`
+  inheritance needs the next minor language version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
 
 ### Doctrine Release Version

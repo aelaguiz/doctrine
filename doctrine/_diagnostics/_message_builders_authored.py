@@ -133,6 +133,76 @@ _AUTHORED_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
         (),
     ),
     (
+        re.compile(r"^Cyclic output inheritance: (?P<detail>.+)$"),
+        "E251",
+        "Cyclic output inheritance",
+        lambda match: f"Output inheritance cycle: {match.group('detail')}.",
+        (),
+    ),
+    (
+        re.compile(
+            r"^(?P<action>inherit|override) requires an inherited output in (?P<owner>[^:]+): (?P<key>.+)$"
+        ),
+        "E252",
+        "Output patch requires an inherited output",
+        lambda match: (
+            f"`{match.group('action')}` for key `{match.group('key')}` requires an inherited output in "
+            f"`{match.group('owner')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Cannot inherit undefined output entry in (?P<owner>[^:]+): (?P<key>.+)$"
+        ),
+        "E253",
+        "Cannot inherit undefined output entry",
+        lambda match: (
+            f"Output `{match.group('owner')}` cannot inherit undefined key `{match.group('key')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Cannot inherit output with unkeyed top-level items in (?P<owner>[^:]+): (?P<detail>.+)$"
+        ),
+        "E254",
+        "Inherited output needs keyed top-level entries",
+        lambda match: (
+            f"Output `{match.group('owner')}` contains unkeyed top-level items: {match.group('detail')}."
+        ),
+        (
+            "Give inherited outputs stable keyed top-level items before patching them.",
+        ),
+    ),
+    (
+        re.compile(r"^Inherited output requires `override (?P<key>.+)` in (?P<owner>[^:]+)$"),
+        "E255",
+        "Invalid output inheritance patch",
+        lambda match: (
+            f"Output `{match.group('owner')}` must use `override {match.group('key')}` when it patches an inherited output item."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Override kind mismatch for output entry in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E255",
+        "Invalid output inheritance patch",
+        lambda match: (
+            f"Output `{match.group('owner')}` overrides entry `{match.group('key')}` with the wrong kind."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate output item key in (?P<owner>[^:]+): (?P<key>.+)$"),
+        "E255",
+        "Invalid output inheritance patch",
+        lambda match: (
+            f"Output `{match.group('owner')}` repeats output item key `{match.group('key')}`."
+        ),
+        (),
+    ),
+    (
         re.compile(
             r"^Conflicting concrete-turn binding roots resolve different artifacts: (?P<path>.+)$"
         ),

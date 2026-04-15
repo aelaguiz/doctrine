@@ -343,7 +343,7 @@ class ResolveAgentSlotsMixin:
     ) -> tuple[IndexedUnit, model.InputDecl | model.OutputDecl]:
         target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
         input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
-        output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+        output_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
         if input_decl is not None and output_decl is not None:
             raise CompileError(
                 f"Ambiguous route_only facts in {owner_label}: {_dotted_ref_name(ref)}"

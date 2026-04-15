@@ -37,7 +37,10 @@ class ResolveReviewsMixin:
             output_unit = self._load_module(review_semantics.output_module_parts)
         else:
             output_unit = self.root_unit
-        output_decl = output_unit.outputs_by_name.get(review_semantics.output_name)
+        output_decl = self._resolve_local_output_decl(
+            review_semantics.output_name,
+            unit=output_unit,
+        )
         if output_decl is None:
             raise CompileError(
                 "Internal compiler error: missing review comment output while resolving "
@@ -98,7 +101,7 @@ class ResolveReviewsMixin:
         for ref in subject.subjects:
             target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
             input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
-            output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+            output_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
             if input_decl is not None and output_decl is not None:
                 raise CompileError(
                     f"Ambiguous review subject in {owner_label}: {_dotted_ref_name(ref)}"

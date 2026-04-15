@@ -1,0 +1,17 @@
+import shared.review
+
+
+output ChildOutput[shared.review.HandoffOutput]: "Child Output"
+    inherit target
+    inherit shape
+
+    override must_include: "Must Include"
+        inherit what_changed
+        override use_now: "Use Now"
+            "Keep the pickup summary short."
+
+
+agent OutputInheritanceFixture:
+    role: "Test inherited output definitions in the editor."
+    outputs: "Outputs"
+        ChildOutput

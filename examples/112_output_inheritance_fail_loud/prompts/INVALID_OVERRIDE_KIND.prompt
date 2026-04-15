@@ -1,0 +1,21 @@
+output BaseHandoff: "Base Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    must_include: "Must Include"
+        what_changed: "What Changed"
+            "Say what changed."
+
+
+output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+    inherit target
+    inherit shape
+    inherit requirement
+    override must_include: TurnResponse
+
+
+agent InvalidOverrideKindOutputDemo:
+    role: "Fail loud when output override kind does not match the parent."
+    outputs: "Outputs"
+        LessonsLeadOutput

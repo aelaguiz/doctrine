@@ -21,6 +21,14 @@ Public release entries must replace every placeholder before `make release-tag`
 or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
+### Added
+- Added direct `output[...]` declaration inheritance with explicit top-level
+  `inherit` and `override` patching, plus fail-loud errors for missing,
+  wrong-kind, cyclic, and parentless output patches.
+- Added shipped corpus coverage for inherited outputs on ordinary output
+  contracts, imported handoff reuse, `final_output:`, shared `route.*`
+  semantics, and fail-loud output-inheritance cases.
+
 ### Changed
 - Clarified the release policy to prefer the next patch version for routine
   public work and keep minor bumps for real backward-compatible public

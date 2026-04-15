@@ -1,0 +1,52 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "imported handoff outputs may be inherited and extended locally"
+status = "active"
+kind = "render_contract"
+agent = "LessonsLeadOutputDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Reuse an imported handoff output and extend it locally.",
+  "",
+  "## Your Outputs",
+  "",
+  "Always produce the outputs this role declares.",
+  "",
+  "### Coordination Handoff",
+  "",
+  "#### Lessons Lead Output",
+  "",
+  "- Target: Issue Note",
+  "- Shape: Lessons Issue Note Text",
+  "- Requirement: Required",
+  "",
+  "##### Must Include",
+  "",
+  "###### What Changed",
+  "",
+  "Say what changed.",
+  "",
+  "###### Use Now",
+  "",
+  "Give the pickup summary.",
+  "",
+  "##### Current Truth",
+  "",
+  "###### Current Artifact",
+  "",
+  "Name the current artifact that still stands.",
+  "",
+  "##### Trust Surface",
+  "",
+  "- Current Artifact",
+  "",
+  "##### Standalone Read",
+  "",
+  "This handoff should stand on its own.",
+  "",
+  "##### Test",
+  "",
+  "blah blah blah",
+]

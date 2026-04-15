@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from doctrine import model
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledAgent,
@@ -41,6 +42,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._analysis_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._schema_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._document_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._output_decl_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._review_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
@@ -59,6 +61,9 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._resolved_analysis_cache: dict[tuple[tuple[str, ...], str], ResolvedAnalysisBody] = {}
         self._resolved_schema_cache: dict[tuple[tuple[str, ...], str], ResolvedSchemaBody] = {}
         self._resolved_document_cache: dict[tuple[tuple[str, ...], str], ResolvedDocumentBody] = {}
+        self._resolved_output_decl_cache: dict[
+            tuple[tuple[str, ...], str], model.OutputDecl
+        ] = {}
         self._resolved_review_cache: dict[tuple[tuple[str, ...], str], ResolvedReviewBody] = {}
         self._addressable_workflow_cache: dict[
             tuple[tuple[str, ...], str], ResolvedWorkflowBody

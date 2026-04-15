@@ -1,0 +1,28 @@
+# This example shows imported handoff-output inheritance.
+
+import shared.review
+
+
+output LessonsLeadOutput[shared.review.HandoffOutput]: "Lessons Lead Output"
+    inherit target
+    inherit shape
+    inherit requirement
+    inherit must_include
+    inherit current_truth
+    inherit trust_surface
+    inherit standalone_read
+
+    hit: "Test"
+        "blah blah blah"
+
+
+outputs LessonsLeadOutputs: "Your Outputs"
+    "Always produce the outputs this role declares."
+
+    coordination_handoff: "Coordination Handoff"
+        LessonsLeadOutput
+
+
+agent LessonsLeadOutputDemo:
+    role: "Reuse an imported handoff output and extend it locally."
+    outputs: LessonsLeadOutputs

@@ -1,0 +1,38 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "inherited outputs may keep shared route semantics after resolution"
+status = "active"
+kind = "render_contract"
+agent = "InheritedRouteOutputDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep shared route readback on an inherited output.",
+  "",
+  "## Routed Workflow",
+  "",
+  "Always route the turn.",
+  "",
+  "This pass runs only when true.",
+  "",
+  "No artifact is current for this turn.",
+  "",
+  "Stop: Reply and stop.",
+  "",
+  "Hand off to ReviewLead.",
+  "",
+  "## Outputs",
+  "",
+  "### Routed Reply",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Next Owner: Review Lead",
+  "",
+  "#### Route Summary",
+  "",
+  "Hand off to ReviewLead. Next owner: Review Lead.",
+]

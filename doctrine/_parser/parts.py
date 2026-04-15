@@ -39,16 +39,21 @@ class InputStructurePart:
 
 @dataclass(slots=True, frozen=True)
 class OutputBodyParts:
-    items: tuple[model.OutputRecordItem, ...]
+    items: tuple[model.OutputAuthoredItem, ...]
     schema: model.OutputSchemaConfig | None
     structure: model.OutputStructureConfig | None
     render_profile_ref: model.NameRef | None
     trust_surface: tuple[model.TrustSurfaceItem, ...]
+    schema_mode: str | None = None
+    structure_mode: str | None = None
+    render_profile_mode: str | None = None
+    trust_surface_mode: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class OutputSchemaPart:
     config: model.OutputSchemaConfig
+    override: bool = False
     line: int | None = None
     column: int | None = None
 
@@ -56,13 +61,14 @@ class OutputSchemaPart:
 @dataclass(slots=True, frozen=True)
 class OutputStructurePart:
     config: model.OutputStructureConfig
+    override: bool = False
     line: int | None = None
     column: int | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class OutputRecordSectionPart:
-    section: model.RecordSection
+    section: model.RecordSection | model.OutputOverrideRecordSection
     line: int | None = None
     column: int | None = None
 
@@ -77,6 +83,7 @@ class BodyProsePart:
 @dataclass(slots=True, frozen=True)
 class RenderProfilePart:
     ref: model.NameRef
+    override: bool = False
     line: int | None = None
     column: int | None = None
 
@@ -91,6 +98,7 @@ class SchemaItemPart:
 @dataclass(slots=True, frozen=True)
 class TrustSurfacePart:
     items: tuple[model.TrustSurfaceItem, ...]
+    override: bool = False
     line: int | None = None
     column: int | None = None
 
@@ -245,9 +253,14 @@ def _positioned_input_structure(meta: object, ref: model.NameRef) -> InputStruct
     )
 
 
-def _positioned_render_profile(meta: object, ref: model.NameRef) -> RenderProfilePart:
+def _positioned_render_profile(
+    meta: object,
+    ref: model.NameRef,
+    *,
+    override: bool = False,
+) -> RenderProfilePart:
     line, column = _meta_line_column(meta)
-    return RenderProfilePart(ref=ref, line=line, column=column)
+    return RenderProfilePart(ref=ref, override=override, line=line, column=column)
 
 
 def _positioned_schema_item(meta: object, item: model.SchemaItem) -> SchemaItemPart:
@@ -258,9 +271,11 @@ def _positioned_schema_item(meta: object, item: model.SchemaItem) -> SchemaItemP
 def _positioned_trust_surface(
     meta: object,
     items: tuple[model.TrustSurfaceItem, ...],
+    *,
+    override: bool = False,
 ) -> TrustSurfacePart:
     line, column = _meta_line_column(meta)
-    return TrustSurfacePart(items=items, line=line, column=column)
+    return TrustSurfacePart(items=items, override=override, line=line, column=column)
 
 
 def _positioned_decision_item(meta: object, item: model.DecisionItem) -> DecisionItemPart:

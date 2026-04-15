@@ -61,7 +61,7 @@ input_decl: "input" CNAME ":" string _NL _INDENT input_body _DEDENT
 outputs_decl: "outputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _DEDENT
 output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
-output_decl: "output" CNAME ":" string _NL _INDENT output_body _DEDENT
+output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DEDENT
 json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
@@ -620,10 +620,22 @@ input_structure_stmt: "structure" ":" name_ref _NL?
 
 output_body: output_body_line+
 output_body_line: output_record_item
+                | output_inherit
+                | output_override_item
                 | trust_surface_block
+                | output_override_trust_surface_block
                 | output_render_profile_stmt
+                | output_override_render_profile_stmt
                 | output_schema_stmt
+                | output_override_schema_stmt
                 | output_structure_stmt
+                | output_override_structure_stmt
+
+output_inherit: "inherit" CNAME _NL?
+?output_override_item: output_override_guarded_section
+                     | output_override_guarded_scalar_item
+                     | output_override_readable_block
+                     | output_override_keyed_item
 
 // `schema:` is owner-sensitive. In `output shape`, it stays the legacy json
 // schema config key. In `output`, it is a Doctrine schema attachment with its
@@ -631,6 +643,9 @@ output_body_line: output_record_item
 output_schema_stmt: "schema" ":" name_ref _NL?
 output_structure_stmt: "structure" ":" name_ref _NL?
 output_render_profile_stmt: "render_profile" ":" name_ref _NL?
+output_override_schema_stmt: "override" "schema" ":" name_ref _NL?
+output_override_structure_stmt: "override" "structure" ":" name_ref _NL?
+output_override_render_profile_stmt: "override" "render_profile" ":" name_ref _NL?
 
 ?output_record_item: record_text
                    | guarded_output_section
@@ -639,11 +654,19 @@ output_render_profile_stmt: "render_profile" ":" name_ref _NL?
                    | output_record_keyed_item
                    | output_record_ref_item
 
+output_override_guarded_section: "override" CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
+output_override_guarded_scalar_item: "override" CNAME ":" string "when" expr _NL output_record_item_body?
+                                  | "override" CNAME ":" path_ref "when" expr _NL output_record_item_body?
+                                  | "override" CNAME ":" name_ref "when" expr _NL output_record_item_body?
+
 guarded_output_section: CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
 guarded_output_scalar_item: CNAME ":" string "when" expr _NL output_record_item_body?
                          | CNAME ":" path_ref "when" expr _NL output_record_item_body?
                          | CNAME ":" name_ref "when" expr _NL output_record_item_body?
 output_record_body: output_record_item+
+output_override_keyed_item: "override" CNAME ":" string _NL output_record_item_body?
+                         | "override" CNAME ":" path_ref _NL output_record_item_body?
+                         | "override" CNAME ":" name_ref _NL output_record_item_body?
 output_record_keyed_item: CNAME ":" string _NL output_record_item_body?
                       | CNAME ":" path_ref _NL output_record_item_body?
                       | CNAME ":" name_ref _NL output_record_item_body?
@@ -651,6 +674,7 @@ output_record_ref_item: name_ref _NL output_record_item_body?
 output_record_item_body: _INDENT output_record_body _DEDENT
 
 trust_surface_block: "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
+output_override_trust_surface_block: "override" "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
 trust_surface_item: field_path trust_surface_when? _NL?
 trust_surface_when: "when" expr
 
@@ -673,6 +697,9 @@ record_section_block: "section" CNAME ":" string readable_requirement? readable_
 output_readable_block: output_section_block
                      | readable_nonsection_block
 output_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
+output_override_readable_block: output_override_section_block
+                              | override_readable_nonsection_block
+output_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
 
 record_text: prose_line _NL?
 record_keyed_item: CNAME ":" record_head _NL record_item_body?

@@ -1,0 +1,28 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "basic output inheritance keeps shared output shape and adds a local field"
+status = "active"
+kind = "render_contract"
+agent = "OutputInheritanceDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Reuse one output contract and add one local field.",
+  "",
+  "## Outputs",
+  "",
+  "### Lessons Lead Output",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Summary",
+  "",
+  "Summarize the shipped result.",
+  "",
+  "#### Test",
+  "",
+  "blah blah blah",
+]

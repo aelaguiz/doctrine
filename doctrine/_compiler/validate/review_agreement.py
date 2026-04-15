@@ -195,7 +195,7 @@ class ValidateReviewAgreementMixin:
         except CompileError:
             return None
         input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
-        output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
+        output_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
         if input_decl is None and output_decl is None:
             return None
         if input_decl is not None and output_decl is not None:

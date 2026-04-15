@@ -88,6 +88,53 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertIn("- Next Owner Key: ReviewLead", rendered)
         self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
 
+    def test_inherited_workflow_output_can_bind_route_fields_on_routed_branch(self) -> None:
+        agent = self._compile_agent(
+            """
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output BaseReply: "Base Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output RoutedReply[BaseReply]: "Routed Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+
+                next_owner: route.next_owner
+                next_owner_key: route.next_owner.key
+
+                route_summary: "Route Summary"
+                    "{{route.summary}}"
+
+            workflow RoutedWorkflow: "Routed Workflow"
+                "Always route the turn."
+
+                law:
+                    active when true
+                    current none
+                    stop "Reply and stop."
+                    route "Hand off to ReviewLead." -> ReviewLead
+
+            agent RouteBindingDemo:
+                role: "Bind inherited ordinary outputs from compiler-owned route semantics."
+                workflow: RoutedWorkflow
+                outputs: "Outputs"
+                    RoutedReply
+            """,
+            agent_name="RouteBindingDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("- Next Owner: Review Lead", rendered)
+        self.assertIn("- Next Owner Key: ReviewLead", rendered)
+        self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
+
     def test_route_semantics_require_guard_when_some_branches_do_not_route(self) -> None:
         error = self._compile_error(
             """
@@ -130,6 +177,57 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         self.assertIn("route semantics are not live on every branch", str(error))
+        self.assertIn("guard the read with `route.exists`", str(error))
+
+    def test_inherited_route_reads_still_need_route_exists_guard_on_maybe_routed_branches(self) -> None:
+        error = self._compile_error(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+                should_route: "Should Route"
+
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output BaseMaybeRoutedReply: "Base Maybe Routed Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner
+
+            output MaybeRoutedReply[BaseMaybeRoutedReply]: "Maybe Routed Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+                inherit next_owner
+
+            workflow MaybeRoutedWorkflow: "Maybe Routed Workflow"
+                "Route only when the host facts require it."
+
+                law:
+                    active when true
+                    current none
+                    stop "Reply and stop."
+                    route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+            agent MaybeRouteBindingDemo:
+                role: "Fail loud when inherited route reads span unrouted branches."
+                workflow: MaybeRoutedWorkflow
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    MaybeRoutedReply
+            """,
+            agent_name="MaybeRouteBindingDemo",
+        )
+
+        self.assertIn("route semantics are not live on every branch", str(error))
+        self.assertIn("next_owner", str(error))
         self.assertIn("guard the read with `route.exists`", str(error))
 
     def test_guarded_output_section_can_read_route_semantics(self) -> None:

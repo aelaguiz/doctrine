@@ -1,0 +1,17 @@
+output BaseHandoff: "Base Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    "Late prose"
+
+
+output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+    inherit target
+    inherit shape
+    inherit requirement
+
+
+agent InvalidUnkeyedParentOutputDemo:
+    role: "Fail loud when the parent output has unkeyed prose."
+    outputs: "Outputs"
+        LessonsLeadOutput

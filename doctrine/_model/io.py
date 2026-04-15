@@ -4,7 +4,7 @@ from dataclasses import dataclass as _dataclass
 from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine
-from doctrine._model.readable import ReadableBlock
+from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
 
 
 @_dataclass(slots=True, frozen=True)
@@ -55,6 +55,46 @@ class RecordRef:
 RecordItem: _TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
 AnyRecordItem: _TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
 OutputRecordItem: _TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputOverrideRecordScalar:
+    key: str
+    value: RecordScalarValue
+    body: tuple["AnyRecordItem", ...] | None = None
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputOverrideRecordSection:
+    key: str
+    title: str | None
+    items: tuple["AnyRecordItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputOverrideGuardedOutputSection:
+    key: str
+    title: str | None
+    when_expr: Expr
+    items: tuple["AnyRecordItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputOverrideGuardedOutputScalar:
+    key: str
+    value: RecordScalarValue
+    when_expr: Expr
+    body: tuple["AnyRecordItem", ...] | None = None
+
+
+OutputOverrideItem: _TypeAlias = (
+    OutputOverrideRecordScalar
+    | OutputOverrideRecordSection
+    | OutputOverrideGuardedOutputSection
+    | OutputOverrideGuardedOutputScalar
+    | ReadableOverrideBlock
+)
+OutputAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem
 
 
 @_dataclass(slots=True, frozen=True)
@@ -122,11 +162,16 @@ class OutputStructureConfig:
 class OutputDecl:
     name: str
     title: str
-    items: tuple[OutputRecordItem, ...]
+    items: tuple[OutputAuthoredItem, ...]
     schema: OutputSchemaConfig | None = None
     structure: OutputStructureConfig | None = None
     render_profile_ref: NameRef | None = None
     trust_surface: tuple[TrustSurfaceItem, ...] = ()
+    parent_ref: NameRef | None = None
+    schema_mode: str | None = None
+    structure_mode: str | None = None
+    render_profile_mode: str | None = None
+    trust_surface_mode: str | None = None
 
     @property
     def schema_ref(self) -> NameRef | None:

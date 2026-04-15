@@ -29,7 +29,7 @@ const ENUM_MEMBER_WIRE_RE = new RegExp(
   `^\\s*wire\\s*:\\s*(${STRING_PATTERN})\\s*$`,
 );
 const INHERITED_BLOCK_RE = new RegExp(
-  `^\\s*(review|analysis|schema|document|workflow|skills|inputs|outputs)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
+  `^\\s*(review|analysis|schema|document|workflow|skills|inputs|outputs|output)\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:`,
 );
 const PATCH_FIELD_RE = new RegExp(
   `^\\s*(inputs|outputs)\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*${STRING_PATTERN}\\s*$`,
@@ -404,8 +404,11 @@ const DECLARATION_DEFINITIONS = Object.freeze([
   },
   {
     kind: DECLARATION_KIND.OUTPUT,
-    regex: new RegExp(`^\\s*output\\s+(${IDENTIFIER_PATTERN})\\s*:`),
+    regex: new RegExp(
+      `^\\s*output\\s+(${IDENTIFIER_PATTERN})(?:\\s*\\[(${DOTTED_NAME_PATTERN})\\])?\\s*:`,
+    ),
     nameGroup: 1,
+    parentGroup: 2,
   },
   {
     kind: DECLARATION_KIND.JSON_SCHEMA,
@@ -1241,6 +1244,38 @@ function collectRecordBodySites(lineText, lineNumber, container) {
         startCharacter: lineText.lastIndexOf(keyedPathRef[2]),
       }),
     );
+    return sites;
+  }
+
+  const inheritItem = lineText.match(INHERIT_RE);
+  if (inheritItem) {
+    sites.push(createStructuralSite(lineText, lineNumber, inheritItem[1]));
+    return sites;
+  }
+
+  const overrideRef = lineText.match(OVERRIDE_REF_RE);
+  if (overrideRef) {
+    const key = overrideRef[1];
+    const targetKind = keyedRecordFieldToDeclarationKind(key, {
+      declarationKind,
+      fieldKind,
+    });
+    sites.push(createStructuralSite(lineText, lineNumber, key));
+    if (targetKind) {
+      sites.push({
+        type: "directDeclRef",
+        declarationKind: targetKind,
+        range: createLastMatchRange(lineText, lineNumber, overrideRef[2]),
+        ref: parseNameRef(overrideRef[2]),
+        requireConcrete: false,
+      });
+    }
+    return sites;
+  }
+
+  const overrideBody = lineText.match(OVERRIDE_BODY_RE);
+  if (overrideBody) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideBody[1]));
     return sites;
   }
 
@@ -2331,7 +2366,12 @@ function createBindingChildBodySpec(document, bodySpec, lineNumber, lineText, fi
   const rawBody =
     bodySpec.type === "io_body"
       ? getIoChildBodySpec(lineText, lineNumber, fieldKind)
-      : getRecordChildBodySpec(lineText, lineNumber, fieldKind);
+      : getRecordChildBodySpec(
+          lineText,
+          lineNumber,
+          fieldKind,
+          bodySpec.declarationKind,
+        );
   if (!rawBody) {
     return undefined;
   }
@@ -2458,6 +2498,45 @@ async function resolveSchemaParentBody(site, source) {
 
 async function resolveDocumentParentBody(site, source) {
   return resolveSameKindParentBody(site, source, DECLARATION_KIND.DOCUMENT);
+}
+
+async function resolveOutputRecordParentBody(site, source) {
+  const { declaration, container } = site.lineContext;
+  if (declaration.kind !== DECLARATION_KIND.OUTPUT || !declaration.parentRef) {
+    return undefined;
+  }
+
+  const parent = await resolveReferenceTarget(
+    declaration.parentRef,
+    source,
+    DECLARATION_KIND.OUTPUT,
+    false,
+  );
+  if (!parent) {
+    return undefined;
+  }
+
+  let parentBody = {
+    document: parent.document,
+    bodySpec: getDeclarationBodySpec(parent.declaration),
+  };
+  if (!parentBody.bodySpec) {
+    return undefined;
+  }
+
+  for (const segment of container.segmentPath || []) {
+    const target = findStructuralKeyTarget(parentBody, segment);
+    if (!target || !target.bodySpec) {
+      return undefined;
+    }
+
+    parentBody = {
+      document: parentBody.document,
+      bodySpec: target.bodySpec,
+    };
+  }
+
+  return parentBody;
 }
 
 function findWorkflowLawBodySpec(document, workflowBodySpec) {
@@ -2662,6 +2741,10 @@ async function resolveImmediateParentBody(site, source) {
         bodySpec: getDeclarationBodySpec(parent.declaration),
       };
     }
+  }
+
+  if (container.type === "record_body") {
+    return resolveOutputRecordParentBody(site, source);
   }
 
   return undefined;
@@ -3107,6 +3190,7 @@ function getLineContext(source, lineNumber) {
   const stack = [];
   const rootBody = getDeclarationBodySpec(declaration);
   if (rootBody) {
+    rootBody.segmentPath = [];
     stack.push(rootBody);
   }
 
@@ -3132,6 +3216,11 @@ function getLineContext(source, lineNumber) {
       currentLine,
     );
     if (childBody) {
+      const parentPath = stack.at(-1)?.segmentPath || [];
+      const segmentKey = getChildBodySegmentKey(lineText, childBody);
+      childBody.segmentPath = segmentKey
+        ? [...parentPath, segmentKey]
+        : [...parentPath];
       stack.push(childBody);
     }
   }
@@ -3148,6 +3237,22 @@ function getLineContext(source, lineNumber) {
     container: stack.at(-1) || { type: "none" },
     declaration,
   };
+}
+
+function getChildBodySegmentKey(lineText, childBody) {
+  if (childBody.type !== "record_body") {
+    return undefined;
+  }
+
+  const overrideBody = lineText.match(OVERRIDE_BODY_RE);
+  if (overrideBody && !OVERRIDE_REF_RE.test(lineText)) {
+    return overrideBody[1];
+  }
+
+  const keyedItem = lineText.match(
+    new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*:`),
+  );
+  return keyedItem ? keyedItem[1] : undefined;
 }
 
 function getDeclarationBodySpec(declaration) {
@@ -3337,7 +3442,12 @@ function getChildBodySpecForLine(document, declaration, container, lineNumber) {
       childBody = getIoChildBodySpec(lineText, lineNumber, container.fieldKind);
       break;
     case "record_body":
-      childBody = getRecordChildBodySpec(lineText, lineNumber, container.fieldKind);
+      childBody = getRecordChildBodySpec(
+        lineText,
+        lineNumber,
+        container.fieldKind,
+        container.declarationKind,
+      );
       break;
     default:
       childBody = undefined;
@@ -3769,7 +3879,20 @@ function getIoChildBodySpec(lineText, lineNumber, fieldKind) {
   return undefined;
 }
 
-function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
+function getRecordChildBodySpec(lineText, lineNumber, fieldKind, declarationKind) {
+  if (
+    OVERRIDE_BODY_RE.test(lineText) &&
+    !OVERRIDE_REF_RE.test(lineText)
+  ) {
+    return {
+      type: "record_body",
+      declarationKind,
+      fieldKind,
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
   if (TRUST_SURFACE_FIELD_RE.test(lineText)) {
     return {
       type: "trust_surface_body",
@@ -3782,6 +3905,7 @@ function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
   if (GUARDED_OUTPUT_HEADER_RE.test(lineText)) {
     return {
       type: "record_body",
+      declarationKind,
       fieldKind,
       indent: leadingSpaces(lineText),
       lineNumber,
@@ -3791,6 +3915,7 @@ function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
   if (GUARDED_RECORD_ITEM_RE.test(lineText)) {
     return {
       type: "record_body",
+      declarationKind,
       fieldKind,
       indent: leadingSpaces(lineText),
       lineNumber,
@@ -3804,6 +3929,7 @@ function getRecordChildBodySpec(lineText, lineNumber, fieldKind) {
   ) {
     return {
       type: "record_body",
+      declarationKind,
       fieldKind,
       indent: leadingSpaces(lineText),
       lineNumber,
@@ -4455,6 +4581,53 @@ function getRecordBodyItems(document, bodySpec) {
       continue;
     }
 
+    const inheritItem = lineText.match(INHERIT_RE);
+    if (inheritItem) {
+      items.set(inheritItem[1], {
+        inherited: true,
+        keyRange: createFirstMatchRange(lineText, lineNumber, inheritItem[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const overrideRef = lineText.match(OVERRIDE_REF_RE);
+    if (overrideRef) {
+      const targetKind = keyedRecordFieldToDeclarationKind(overrideRef[1], {
+        declarationKind: bodySpec.declarationKind,
+        fieldKind: bodySpec.fieldKind,
+      });
+      items.set(overrideRef[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideRef[1]),
+        lineNumber,
+        titleDeclarationKind: targetKind,
+        titleRef: targetKind ? parseNameRef(overrideRef[2]) : undefined,
+        valueRef: targetKind ? parseNameRef(overrideRef[2]) : undefined,
+      });
+      continue;
+    }
+
+    const overrideBody = lineText.match(OVERRIDE_BODY_RE);
+    if (overrideBody && !OVERRIDE_REF_RE.test(lineText)) {
+      const childBody = getRecordChildBodySpec(
+        lineText,
+        lineNumber,
+        bodySpec.fieldKind,
+        bodySpec.declarationKind,
+      );
+      items.set(overrideBody[1], {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideBody[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
     const readableBlock = lineText.match(DOCUMENT_BLOCK_RE);
     if (readableBlock) {
       items.set(readableBlock[2], {
@@ -4488,6 +4661,7 @@ function getRecordBodyItems(document, bodySpec) {
         leadingSpaces(lineText)
           ? {
               type: "record_body",
+              declarationKind: bodySpec.declarationKind,
               fieldKind: bodySpec.fieldKind,
               endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
               indent: leadingSpaces(lineText),
@@ -5886,6 +6060,8 @@ function inheritanceKindToDeclarationKind(kind) {
       return DECLARATION_KIND.INPUTS_BLOCK;
     case "outputs":
       return DECLARATION_KIND.OUTPUTS_BLOCK;
+    case "output":
+      return DECLARATION_KIND.OUTPUT;
     default:
       return undefined;
   }

@@ -351,7 +351,7 @@ class ResolveSchemasMixin:
         target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
         if (decl := target_unit.inputs_by_name.get(ref.declaration_name)) is not None:
             return ContractArtifact(kind="input", unit=target_unit, decl=decl)
-        if (decl := target_unit.outputs_by_name.get(ref.declaration_name)) is not None:
+        if (decl := self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)) is not None:
             return ContractArtifact(kind="output", unit=target_unit, decl=decl)
 
         dotted_name = _dotted_ref_name(ref)

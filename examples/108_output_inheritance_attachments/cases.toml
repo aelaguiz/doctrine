@@ -1,0 +1,38 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "inherited outputs may keep top-level attachments and override them explicitly"
+status = "active"
+kind = "render_contract"
+agent = "OutputInheritanceAttachmentsDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep inherited output attachments aligned.",
+  "",
+  "## Outputs",
+  "",
+  "### Routed Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "#### Current Artifact",
+  "",
+  "Name the artifact that stays current.",
+  "",
+  "#### Next Owner",
+  "",
+  "Name the next owner when follow-up is needed.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- Current Artifact",
+  "- Next Owner",
+  "",
+  "#### Standalone Read",
+  "",
+  "This comment should stand on its own.",
+  "It should also name the next owner when one exists.",
+]
