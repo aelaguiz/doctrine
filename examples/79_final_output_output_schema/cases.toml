@@ -1,0 +1,125 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "output-schema final output renders structured metadata and payload preview"
+status = "active"
+kind = "render_contract"
+agent = "RepoStatusAgent"
+approx_ref = "ref/repo_status_agent_AGENTS.md"
+assertion = "exact_lines"
+expected_lines = [
+  "Report repo status in structured form.",
+  "",
+  "## Summarize",
+  "",
+  "Summarize the repo state and end with the declared final output.",
+  "",
+  "## Final Output",
+  "",
+  "### Repo Status Final Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this schema.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Structured JSON |",
+  "| Shape | Repo Status JSON |",
+  "| Schema | Repo Status Schema |",
+  "| Profile | OpenAIStructuredOutput |",
+  "| Generated Schema | `schemas/repo_status_final_response.schema.json` |",
+  "| Requirement | Required |",
+  "",
+  "#### Payload Fields",
+  "",
+  "| Field | Type | Required On Wire | Null Allowed | Meaning |",
+  "| --- | --- | --- | --- | --- |",
+  "| `summary` | string | Yes | No | Short natural-language status. |",
+  "| `status` | string | Yes | No | Current repo outcome. |",
+  "| `next_step` | string | Yes | Yes | Null only when no follow-up is needed. |",
+  "",
+  "#### Example",
+  "",
+  "```json",
+  "{",
+  "  \"summary\": \"Branch is clean and checks passed.\",",
+  "  \"status\": \"ok\",",
+  "  \"next_step\": null",
+  "}",
+  "```",
+  "",
+  "- Kind: Json Object",
+  "",
+  "#### Field Notes",
+  "",
+  "Use the schema fields exactly once.",
+  "Keep `summary` short and user-facing.",
+  "",
+  "#### Read on Its Own",
+  "",
+  "The final answer should stand on its own as one structured repo-status result.",
+]
+
+[[cases]]
+name = "output-schema final output builds the canonical emitted contract tree"
+status = "active"
+kind = "build_contract"
+build_target = "example_79_final_output_output_schema"
+
+[[cases]]
+name = "output-schema final output fails loud when the lowered schema fails Draft 2020-12"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_INVALID_OUTPUT_SCHEMA.prompt"
+agent = "InvalidInvalidOutputSchemaAgent"
+exception_type = "CompileError"
+error_code = "E217"
+message_contains = [
+  "Final output lowered schema is not valid Draft 2020-12 JSON Schema",
+  "output schema RepoStatusSchema",
+  "definitely_not_a_real_json_schema_type",
+]
+
+[[cases]]
+name = "output-schema final output fails loud when the lowered schema exceeds OpenAI nesting limits"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_EXCESSIVE_NESTING_OUTPUT_SCHEMA.prompt"
+agent = "InvalidExcessiveNestingOutputSchemaAgent"
+exception_type = "CompileError"
+error_code = "E218"
+message_contains = [
+  "Final output lowered schema is outside the OpenAI structured outputs subset",
+  "output schema RepoStatusSchema",
+  "nesting exceeds 5 levels",
+]
+
+[[cases]]
+name = "output-schema final output fails loud when the declared example does not match the lowered schema"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_INVALID_EXAMPLE.prompt"
+agent = "InvalidInvalidExampleJsonAgent"
+exception_type = "CompileError"
+error_code = "E216"
+message_contains = [
+  "Final output example does not match the lowered schema",
+  "output schema RepoStatusSchema",
+  "7 is not of type 'string'",
+]
+
+[[cases]]
+name = "output-schema final output fails loud when the declared example is missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_EXAMPLE.prompt"
+agent = "InvalidMissingExampleAgent"
+exception_type = "CompileError"
+error_code = "E215"
+message_contains = [
+  "Final output example must be declared on output schema",
+  "output schema RepoStatusSchema",
+  "add `example:`",
+]

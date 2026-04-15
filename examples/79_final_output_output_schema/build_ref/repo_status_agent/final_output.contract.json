@@ -1,0 +1,16 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "RepoStatusAgent",
+    "slug": "repo_status_agent",
+    "entrypoint": "examples/79_final_output_output_schema/prompts/AGENTS.prompt"
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "RepoStatusFinalResponse",
+    "declaration_name": "RepoStatusFinalResponse",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/repo_status_final_response.schema.json"
+  }
+}
