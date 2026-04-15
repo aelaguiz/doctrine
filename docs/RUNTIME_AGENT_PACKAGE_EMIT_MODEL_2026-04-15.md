@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Runtime Agent Package Emit Model - Architecture Plan"
 date: 2026-04-15
-status: active
+status: complete
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []
@@ -85,95 +85,43 @@ the whole redesign package into scope now.
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-15
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- The implementation stops after Phase 4. The approved ordered frontier still
-  includes Phase 5, Phase 6, and Phase 7, and `DOC_PATH` does not authorize
-  cutting that work.
-- I did not find an execution-side rewrite in `DOC_PATH` that weakens the
-  approved requirements or acceptance bar. The failure is unfinished frontier
-  work, not a narrowed plan.
+- None.
 
 ## Reopened phases (false-complete fixes)
-- Phase 5 (Move corpus proof, smoke proof, and one generic example onto the
-  new path) — reopened because:
-  - the proof runner and smoke checks still follow the old runtime story
-  - no generic runtime-package example target or checked-in build proof exists
-- Phase 6 (Rewrite live public docs and release truth) — reopened because:
-  - the touched live docs and release surfaces still teach the old
-    entrypoint-only runtime story
-- Phase 7 (Run the full repo proof set and clean final drift) — reopened
-  because:
-  - the required repo-wide proof sweep is not evidenced
-  - the touched live truth still drifts from the approved runtime-package
-    story
+- None.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Phase 5 proof frontier is still missing.
+- None. Current implementation evidence:
   - Evidence anchors:
-    - `doctrine/_verify_corpus/runners.py:323`
-    - `doctrine/_diagnostic_smoke/emit_checks.py:17`
-    - `doctrine/_diagnostic_smoke/flow_emit_checks.py:13`
-    - `tests/test_verify_corpus.py:65`
-    - `pyproject.toml:40`
-    - `docs/RUNTIME_AGENT_PACKAGE_EMIT_MODEL_2026-04-15_WORKLOG.md:24`
+    - `doctrine/_compiler/indexing.py:187`
+    - `doctrine/emit_common.py:261`
+    - `doctrine/_compiler/session.py:99`
+    - `doctrine/_compiler/package_layout.py:90`
+    - `doctrine/emit_docs.py:235`
+    - `doctrine/emit_docs.py:262`
+    - `doctrine/emit_flow.py:87`
+    - `doctrine/_verify_corpus/runners.py:360`
+    - `doctrine/_diagnostic_smoke/emit_checks.py:183`
+    - `doctrine/_diagnostic_smoke/flow_emit_checks.py:124`
+    - `tests/test_emit_docs.py:682`
+    - `examples/115_runtime_agent_packages/cases.toml:4`
   - Plan expects:
-    - build-contract proof, smoke proof, corpus tests, and one generic
-      manifest-backed runtime-package example on the canonical runtime path
+    - The full ordered Section 7 frontier is complete without narrowing the
+      approved runtime-package requirements, acceptance evidence, or phase
+      obligations.
   - Code reality:
-    - build-contract proof still branches only on `SKILL.prompt` versus other
-      entrypoints, smoke checks do not add any runtime-package cases, corpus
-      tests still anchor only the old flow example, the emit target list has
-      no runtime-package example target, and the worklog says Phase 5 and
-      later did not start
+    - Import loading, shared runtime frontier selection, unit-aware compile,
+      shared ordinary-file package layout, package-aware runtime docs emit,
+      shared-frontier flow emit, corpus proof, smoke proof, docs, examples,
+      versioning, and changelog truth all exist on the planned paths. Runtime
+      packages reserve both `AGENTS.md` and `SOUL.md`, and focused proof rejects
+      `SOUL.md` and case-folded peer collisions.
   - Fix:
-    - finish Phase 5 exactly as written: add the generic example plus checked-
-      in `build_ref/`, extend corpus and smoke proof to package-backed runtime
-      output, and add runtime-package corpus coverage
-- Phase 6 public truth is still missing.
-  - Evidence anchors:
-    - `docs/EMIT_GUIDE.md:6`
-    - `docs/EMIT_GUIDE.md:78`
-    - `docs/LANGUAGE_REFERENCE.md:41`
-    - `docs/SKILL_PACKAGE_AUTHORING.md:16`
-    - `examples/README.md:35`
-    - `examples/README.md:86`
-    - `examples/README.md:251`
-    - `docs/VERSIONING.md:50`
-    - `CHANGELOG.md:24`
-  - Plan expects:
-    - live docs, example guidance, and release truth must teach runtime
-      packages, the file-module versus directory-backed import rule, the thin
-      build-handle example, and the additive release classification
-  - Code reality:
-    - `EMIT_GUIDE` still teaches entrypoint-root runtime emit, `LANGUAGE_REFERENCE`
-      still names only `AGENTS.prompt` and `SOUL.prompt` as the runtime
-      entrypoints, `SKILL_PACKAGE_AUTHORING` still only frames `SKILL.prompt`
-      package trees, `examples/README.md` still treats `95` through `106` as
-      the package story and still mentions companion contract JSON, and
-      `VERSIONING` plus `CHANGELOG` do not describe the new runtime-package
-      surface at all
-  - Fix:
-    - land Phase 6 as written and remove the stale pre-package runtime story
-      from the touched live docs
-- Phase 7 final proof and drift cleanup are still missing.
-  - Evidence anchors:
-    - `docs/RUNTIME_AGENT_PACKAGE_EMIT_MODEL_2026-04-15_WORKLOG.md:19`
-    - `docs/RUNTIME_AGENT_PACKAGE_EMIT_MODEL_2026-04-15_WORKLOG.md:24`
-    - `docs/RUNTIME_AGENT_PACKAGE_EMIT_MODEL_2026-04-15.md:1271`
-  - Plan expects:
-    - run `uv sync`, `npm ci`, `make verify-examples`, `make verify-diagnostics`,
-      and `make verify-package`, then fix the last drift they expose
-  - Code reality:
-    - the worklog only records the Phase 1-4 targeted unit tests, Phase 5 and
-      later are explicitly unstarted, and the touched live docs and examples
-      still contradict the approved runtime-package story, so the final repo
-      sweep cannot be treated as complete
-  - Fix:
-    - after Phase 5 and Phase 6 land, run the full required repo proof set and
-      record the real results
+    - None.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 - None.
@@ -1109,8 +1057,16 @@ Completed work:
   rejects sibling `SOUL.prompt` files with the wrong concrete shape.
 - `emit_flow` now roots graphs on the same shared runtime frontier as
   `emit_docs`.
+- Retired `root_concrete_agents()` and moved the last direct `SOUL.prompt`
+  and flow-test call sites onto the shared runtime-root object path or
+  root-unit concrete agent selection.
 - Focused emit proof now covers package-backed runtime output, sibling soul
   success/failure, extra prompt rejection, and flow-root parity.
+- Runtime package emit planning now reserves `SOUL.md` for every runtime
+  package, even when no sibling `SOUL.prompt` exists, so peer files cannot
+  emit or case-collide with the compiler-owned runtime output.
+- Added focused emit proof that a peer `SOUL.md` or case-folded variant fails
+  loud without a sibling `SOUL.prompt`.
 
 * Goal:
   Emit real runtime package trees and keep docs emit and flow emit on the same
@@ -1160,16 +1116,18 @@ Completed work:
 
 ## Phase 5 - Move corpus proof, smoke proof, and one generic example onto the new path
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETE
 
-Missing (code):
-- `doctrine/_verify_corpus/runners.py`,
-  `doctrine/_diagnostic_smoke/emit_checks.py`, and
-  `doctrine/_diagnostic_smoke/flow_emit_checks.py` still do not prove
-  package-backed runtime emit or flow roots on the canonical path.
-- No generic runtime-package example target or checked-in `build_ref/` tree
-  has landed yet, and `tests/test_verify_corpus.py` still only anchors the
-  old flow build-contract case.
+Completed work:
+- Updated the corpus and smoke proof helpers so the canonical build-contract,
+  docs emit, and flow emit paths now prove package-backed runtime roots.
+- Added the generic `115_runtime_agent_packages` example with one thin build
+  handle, two imported runtime packages, one bundled peer file, one sibling
+  `SOUL.prompt`, and one route to a real imported agent identity.
+- Checked in the emitted `build_ref/` tree for that example and added corpus
+  test coverage for runtime-package build-contract verification.
+- Restored the shipped skill-package collision wording after the shared
+  package-layout helper briefly widened one existing error message.
 
 * Goal:
   Prove the shipped feature through the same canonical emit path the runtime
@@ -1210,14 +1168,17 @@ Missing (code):
 
 ## Phase 6 - Rewrite live public docs and release truth
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETE
 
-Missing (code):
-- `docs/EMIT_GUIDE.md`, `docs/LANGUAGE_REFERENCE.md`,
-  `docs/SKILL_PACKAGE_AUTHORING.md`, and `examples/README.md` still teach the
-  old runtime story instead of the new runtime-package surface.
-- `docs/VERSIONING.md` and `CHANGELOG.md` do not yet classify or describe the
-  additive runtime-agent package release.
+Completed work:
+- Rewrote the live emit, language, skill-package, and example docs so they
+  now teach one package-backed runtime story with the thin build-handle
+  pattern and the new generic runtime-package example.
+- Made the public docs explicit about file-backed imports versus
+  directory-backed runtime package imports and kept `SKILL.prompt` separate
+  from runtime-package guidance.
+- Updated `docs/VERSIONING.md` and `CHANGELOG.md` so the runtime-package
+  surface is classified and described as an additive public change.
 
 * Goal:
   Leave one clear public story for runtime packages, imports, and emitted
@@ -1253,14 +1214,22 @@ Missing (code):
 
 ## Phase 7 - Run the full repo proof set and clean final drift
 
-Status: REOPENED (audit found missing code work)
+Status: COMPLETE
 
-Missing (code):
-- The required `uv sync`, `npm ci`, `make verify-examples`,
-  `make verify-diagnostics`, and `make verify-package` sweep is not yet
-  recorded for this feature.
-- Final truth is still drifted, so Phase 7 cannot close until the Phase 5-6
-  surfaces land and the full proof sweep runs clean.
+Completed work:
+- Ran the full required repo sweep after the Phase 5 and Phase 6 surfaces
+  landed: `uv sync`, `npm ci`, `make verify-examples`,
+  `make verify-diagnostics`, and `make verify-package`.
+- Confirmed the runtime-package code, examples, diagnostics, docs,
+  versioning, and changelog now agree on one shipped story.
+- After the Phase 4 helper retirement, reran `uv sync`, `npm ci`,
+  `make verify-examples`, `make verify-diagnostics`, and
+  `make verify-package`.
+- After the reopened Phase 4 `SOUL.md` collision fix, reran `uv sync`,
+  `npm ci`, `make verify-examples`, `make verify-diagnostics`, and
+  `make verify-package`.
+- No extra last-mile drift was exposed after the final post-cleanup proof
+  sweep.
 
 * Goal:
   End with one verified, aligned, and shippable runtime package story.
