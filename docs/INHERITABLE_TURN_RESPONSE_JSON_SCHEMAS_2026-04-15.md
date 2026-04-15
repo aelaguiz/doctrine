@@ -10,7 +10,7 @@ related:
   - docs/AGENT_IO_DESIGN_NOTES.md
   - docs/LANGUAGE_REFERENCE.md
   - docs/AUTHORING_PATTERNS.md
-  - examples/79_final_output_json_object/prompts/AGENTS.prompt
+  - examples/79_final_output_output_schema/prompts/AGENTS.prompt
   - examples/107_output_inheritance_basic/prompts/AGENTS.prompt
   - examples/110_final_output_inherited_output/prompts/AGENTS.prompt
   - ../psflows/stdlib/rally/prompts/rally/turn_results.prompt
@@ -29,18 +29,17 @@ Doctrine should ship one clean structured-output story: `output schema` owns the
 
 ## Problem
 
-The inheritance and lowering feature landed, and the repo already moved examples into `output schema`, deleted `AGENTS.contract.json`, deleted the old `json schema` declaration family, and aligned the local OpenAI subset validator. The remaining miss is at the machine-consumer boundary: `emit_docs` now writes only `AGENTS.md`, so the actual lowered OpenAI-compatible schema is validated in memory but never emitted as a canonical JSON artifact that downstream tools can consume or that the live OpenAI proof can read from disk.
+The full approved implementation frontier now passes. Earlier audits reopened Phase 5 for public-truth leftovers and proof drift, but the fresh audit found those gaps fixed across the root instructions, shipped examples, diagnostics, package proof, editor proof, emitted schema artifact, file validator, and recorded live OpenAI proof.
 
 ## Approach
 
-Finish the cutover as a hard break. Keep authoring truth in Doctrine, emit one canonically named generated schema file per structured final output, validate that emitted file with a built-in Python validator stack, and then prove the same emitted file is accepted by the official OpenAI structured-output API. Delete fake summary artifacts, but do not delete the real emitted schema contract that consumers actually need.
+Keep the hard cutover. Treat the implementation as code-complete across the approved ordered frontier, with no weakened requirements, no hidden scope cuts, no legacy structured-output fallback, and no reopened code phases.
 
 ## Plan
 
-1. Emit the actual lowered structured-output schema as a canonically named JSON artifact beside `AGENTS.md`.
-2. Add a Python validator surface that validates emitted schema files with `jsonschema` plus Doctrine's OpenAI strict-subset rules.
-3. Make the live OpenAI proof consume the emitted schema artifact through the official API.
-4. Update emitted Markdown, docs, and shipped proof so machine consumers and humans see one truthful contract story.
+1. Record the clean authoritative implementation audit in this plan.
+2. Keep the implementation proof attached to the worklog.
+3. Hand broader docs cleanup, plan/worklog retirement, and any evergreen-doc consolidation to `arch-docs`.
 
 ## Non-negotiables
 
@@ -66,28 +65,73 @@ Finish the cutover as a hard break. Keep authoring truth in Doctrine, emit one c
 # Implementation Audit (authoritative)
 Date: 2026-04-15
 Verdict (code): COMPLETE
-Manual QA: complete (non-blocking)
+Manual QA: complete (non-blocking; worklog records live OpenAI proof on the repaired emitted schema with repo-local `.env`)
 
 ## Code blockers (why code is not done)
-- None. The approved Phase 10 through Phase 12 frontier is landed without scope cuts, and the recorded live OpenAI acceptance run closes the last code-side proof gap.
+- None. Fresh audit found the full approved frontier code-complete across the structured-schema compiler path, emitted schema artifact, file validator, live-proof runner, public docs, examples, diagnostics, package smoke, and editor proof.
+- No execution-side rewrite weakened requirements, scope, acceptance criteria, or phase obligations to hide unfinished work. The earlier Phase 5 residual gaps are fixed rather than narrowed away.
 
 ## Reopened phases (false-complete fixes)
 - None.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
 - None. Evidence anchors:
-  - `doctrine/emit_docs.py:182-194`
-  - `doctrine/validate_output_schema.py:15-35`
-  - `doctrine/prove_output_schema_openai.py:15-44`
-  - `tests/test_emit_docs.py:152-155`
-  - `tests/test_validate_output_schema.py:77-89`
-  - `tests/test_prove_output_schema_openai.py:96-143`
-  - `docs/EMIT_GUIDE.md:376-380`
-  - `CHANGELOG.md:46-52`
-  - `docs/INHERITABLE_TURN_RESPONSE_JSON_SCHEMAS_2026-04-15_WORKLOG.md:209-222`
+  - Generated schema emission:
+    - `doctrine/_compiler/compile/final_output.py:121`
+    - `doctrine/_compiler/compile/final_output.py:152`
+    - `doctrine/emit_docs.py:182`
+    - `doctrine/emit_docs.py:190`
+  - File validator and live OpenAI proof path:
+    - `doctrine/validate_output_schema.py:18`
+    - `doctrine/validate_output_schema.py:21`
+    - `doctrine/prove_output_schema_openai.py:18`
+    - `doctrine/prove_output_schema_openai.py:25`
+  - Phase 5 public-truth fixes:
+    - `AGENTS.md:59`
+    - `examples/79_final_output_output_schema/prompts/INVALID_MISSING_EXAMPLE.prompt:32`
+    - `examples/79_final_output_output_schema/cases.toml:118`
+  - Shipped generated artifact:
+    - `examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
+  - Worklog proof:
+    - `docs/INHERITABLE_TURN_RESPONSE_JSON_SCHEMAS_2026-04-15_WORKLOG.md`
+- Fresh audit commands:
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml`
+  - `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_review_imported_outputs tests.test_route_output_semantics tests.test_emit_flow`
+  - `make verify-examples`
+  - `make verify-diagnostics`
+  - `make verify-package`
+  - `cd editors/vscode && make`
+- Full-frontier audit result:
+  - Evidence anchors:
+    - `doctrine/grammars/doctrine.lark`
+    - `doctrine/_parser/io.py`
+    - `doctrine/_model/io.py`
+    - `doctrine/_compiler/resolve/output_schemas.py`
+    - `doctrine/_compiler/resolve/outputs.py`
+    - `doctrine/_compiler/output_schema_validation.py`
+    - `doctrine/_compiler/compile/final_output.py`
+    - `doctrine/emit_docs.py`
+    - `doctrine/validate_output_schema.py`
+    - `doctrine/prove_output_schema_openai.py`
+    - `examples/79_final_output_output_schema`
+    - `editors/vscode`
+  - Plan expects:
+    - One Doctrine-authored `output schema` source of truth.
+    - Parsed schema-owned examples validated against the lowered schema.
+    - No live raw `json schema` declaration path, `.example.json` support-file path, fake `AGENTS.contract.json` artifact, stale public `_json_schema` naming, or unsupported OpenAI shape.
+    - Emitted `schemas/<output-slug>.schema.json` files are the exact lowered schema object that compile validated.
+    - Repo-owned file validation, package proof, diagnostics proof, editor proof, and recorded live OpenAI acceptance all stay aligned.
+  - Code reality:
+    - The compiler parses, resolves, lowers, validates, renders, and emits from `output schema` truth.
+    - Structured examples use schema-owned `example:` blocks, and legacy `example_file` now fails loud instead of acting as a fallback.
+    - The old fake sidecar artifact source is gone; no checked-in `AGENTS.contract.json` or `.example.json` support files remain.
+    - Public example directories, root instructions, docs, release notes, diagnostics, and VS Code surfaces use the approved `*_output_schema` / `output schema` story.
+    - The emitted schema file exists in the checked-in proof tree, the validator reads that file, and the live-proof runner submits that same file shape to the official OpenAI Responses API.
+  - Fix:
+    - None.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- None.
+- Broader docs cleanup, evergreen consolidation, and plan/worklog retirement belong to `arch-docs` after this clean code verdict. They are not code-completeness blockers.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -812,10 +856,10 @@ What still exists beside that clean path is old structured-output baggage:
   - [doctrine/_compiler/resolve/outputs.py](/Users/aelaguiz/workspace/doctrine/doctrine/_compiler/resolve/outputs.py) — inherited attachment accounting and missing-parent-item failures that already fit Doctrine's style.
   - [doctrine/_compiler/validate/__init__.py](/Users/aelaguiz/workspace/doctrine/doctrine/_compiler/validate/__init__.py) — validator reuse point for a file-based emitted-schema validator surface.
 - Prompt surfaces / agent contract to reuse:
-  - [examples/79_final_output_json_object/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/79_final_output_json_object/prompts/AGENTS.prompt) — minimal schema-backed `final_output:` proof.
-  - [examples/104_review_final_output_json_object_blocked_control_ready/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/104_review_final_output_json_object_blocked_control_ready/prompts/AGENTS.prompt) — review-driven JSON final-output proof.
-  - [examples/105_review_split_final_output_json_object_control_ready/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/105_review_split_final_output_json_object_control_ready/prompts/AGENTS.prompt) — split review/final-output JSON proof.
-  - [examples/106_review_split_final_output_json_object_partial/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/106_review_split_final_output_json_object_partial/prompts/AGENTS.prompt) — route-aware partial JSON final-output proof.
+  - [examples/79_final_output_output_schema/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/79_final_output_output_schema/prompts/AGENTS.prompt) — minimal schema-backed `final_output:` proof.
+  - [examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt) — review-driven JSON final-output proof.
+  - [examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt) — split review/final-output JSON proof.
+  - [examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt) — route-aware partial JSON final-output proof.
   - [examples/110_final_output_inherited_output/prompts/AGENTS.prompt](/Users/aelaguiz/workspace/doctrine/examples/110_final_output_inherited_output/prompts/AGENTS.prompt) — inherited final-output proof on the ordinary output side.
   - [/Users/aelaguiz/workspace/psflows/stdlib/rally/prompts/rally/turn_results.prompt](/Users/aelaguiz/workspace/psflows/stdlib/rally/prompts/rally/turn_results.prompt) — real downstream consumer anchor for the exact Rally inheritance goal.
 - Native model or agent capabilities to lean on:
@@ -1120,14 +1164,14 @@ Definitions and references:
   - `doctrine/_diagnostic_smoke/review_checks.py`
   - `examples/09_outputs`
   - `examples/55_owner_aware_schema_attachments`
-  - `examples/79_final_output_json_object`
-  - `examples/83_review_final_output_json_object`
-  - `examples/85_review_split_final_output_json_object`
+  - `examples/79_final_output_output_schema`
+  - `examples/83_review_final_output_output_schema`
+  - `examples/85_review_split_final_output_output_schema`
   - `examples/90_split_handoff_and_final_output_shared_route_semantics`
   - `examples/91_handoff_routing_route_output_binding`
-  - `examples/104_review_final_output_json_object_blocked_control_ready`
-  - `examples/105_review_split_final_output_json_object_control_ready`
-  - `examples/106_review_split_final_output_json_object_partial`
+  - `examples/104_review_final_output_output_schema_blocked_control_ready`
+  - `examples/105_review_split_final_output_output_schema_control_ready`
+  - `examples/106_review_split_final_output_output_schema_partial`
 - Rally keeps the real downstream pressure case in `../psflows/stdlib/rally/prompts/rally/turn_results.prompt`.
 
 ## 4.2 Control paths (runtime)
@@ -1393,7 +1437,7 @@ The shipped docs, examples, and emitted refs must all tell the same story: Doctr
 
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude/blocker question) |
 | --- | --- | --- | --- | --- |
-| Shipped `JsonObject` examples | `examples/09_outputs`, `examples/79_final_output_json_object`, `examples/83_review_final_output_json_object`, `examples/85_review_split_final_output_json_object`, `examples/90_split_handoff_and_final_output_shared_route_semantics`, `examples/91_handoff_routing_route_output_binding`, `examples/104_review_final_output_json_object_blocked_control_ready`, `examples/105_review_split_final_output_json_object_control_ready`, `examples/106_review_split_final_output_json_object_partial` | Move every shipped structured payload example to the new structured-schema source | Prevents a mixed public language where old and new schema stories both look live | include |
+| Shipped `JsonObject` examples | `examples/09_outputs`, `examples/79_final_output_output_schema`, `examples/83_review_final_output_output_schema`, `examples/85_review_split_final_output_output_schema`, `examples/90_split_handoff_and_final_output_shared_route_semantics`, `examples/91_handoff_routing_route_output_binding`, `examples/104_review_final_output_output_schema_blocked_control_ready`, `examples/105_review_split_final_output_output_schema_control_ready`, `examples/106_review_split_final_output_output_schema_partial` | Move every shipped structured payload example to the new structured-schema source | Prevents a mixed public language where old and new schema stories both look live | include |
 | Owner-aware wording | `examples/55_owner_aware_schema_attachments`, `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md` | Keep the owner-sensitive `schema` split explicit after the change: `output shape.schema` points at `output schema`, `output.schema` points at Doctrine `schema` | Prevents docs drift around `output shape.schema` versus `output.schema` | include |
 | Diagnostic fixtures | `doctrine/_diagnostic_smoke/fixtures_final_output.py`, `doctrine/_diagnostic_smoke/compile_checks.py`, `doctrine/_diagnostic_smoke/review_checks.py`, `doctrine/_diagnostic_smoke/emit_checks.py` | Use the new structured-schema authoring surface in smoke sources | Prevents local smoke proof from teaching the legacy raw-schema path | include |
 | Inherited output shapes | `output shape` declarations that back child structured outputs | Let child shapes inherit `kind` and helper sections from parents, and handle example ownership according to Section 3.3 | Prevents every child structured output from re-spelling the same shape shell | include |
@@ -1412,11 +1456,12 @@ The shipped docs, examples, and emitted refs must all tell the same story: Doctr
 Current state:
 
 - Phases 1 through 9 landed the core structured-output feature, the parsed-example migration, the `AGENTS.contract.json` delete, the legacy cleanup, and the local Python validator alignment.
-- The reopened Phase 10 through Phase 12 frontier is now complete:
+- Phase 10 and Phase 11 remain complete:
   - Phase 10: emit the canonical lowered schema artifact
   - Phase 11: expose the Python validator for emitted schema files
-  - Phase 12: add live OpenAI acceptance proof on the emitted artifact and finish doc truth
-- Section 3.3 stayed locked through implementation, and the current audit found no reopened code phases.
+- Phase 2, Phase 4, Phase 5, and Phase 12 are complete after the fresh 2026-04-15 audit.
+- No reopened code phases remain.
+- The next frontier is `arch-docs` for broader docs cleanup, evergreen consolidation, and plan/worklog retirement.
 
 ## Phase 1 — Add the new language surface and declaration plumbing
 
@@ -1448,6 +1493,20 @@ Current state:
   - Revert the new declaration and inherited-shape plumbing if the compiler cannot preserve existing non-`JsonObject` parse and display behavior.
 
 ## Phase 2 — Implement output-schema inheritance and lowering
+
+Status: COMPLETE (fresh audit verified)
+
+Reopened reason fixed:
+- Optional fields with `enum` or `const` did not really accept `null`.
+
+Completed work:
+- Optional enum fields now add `null` to the enum values as well as the nullable type.
+- Optional const fields now lower through `anyOf` so the const branch and the null branch are both valid.
+- Focused tests cover optional enum and optional const null examples.
+
+Proof:
+- `uv run --locked python -m unittest tests.test_output_schema_lowering tests.test_final_output`
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_review_imported_outputs tests.test_route_output_semantics tests.test_emit_flow`
 
 * Goal:
   Turn `output schema` declarations into one typed, inherited, compiler-owned payload model that lowers to Draft 2020-12 JSON Schema.
@@ -1524,6 +1583,22 @@ Current state:
 
 ## Phase 4 — Switch final-output render, emitted contract truth, and diagnostics
 
+Status: COMPLETE (fresh audit verified)
+
+Reopened reason fixed:
+- Rendered payload rows only covered root fields.
+
+Completed work:
+- Payload rows now recurse into nested object properties and render dotted field paths such as `route.action`, `route.owner`, and `route.reason`.
+- Nested rows use the same lowered schema truth as the emitted schema artifact.
+- `$ref` expansion is guarded so recursive schemas do not make the human contract loop forever.
+- Enum meanings now omit the synthetic nullable `null` enum value because null allowance is already shown in its own column.
+- Focused render tests cover nested object payload rows.
+
+Proof:
+- `uv run --locked python -m unittest tests.test_final_output`
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_review_imported_outputs tests.test_route_output_semantics tests.test_emit_flow`
+
 * Goal:
   Move every compiler-owned consumer of structured final-output schema truth onto the new lowered path without widening public machine artifacts at that stage.
 * Work:
@@ -1554,6 +1629,32 @@ Current state:
   - Revert the consumer switch if render truth and emitted contract truth diverge or if review and route semantics start to move with it.
 
 ## Phase 5 — Hard-cut shipped examples, docs, diagnostics, and release guidance
+
+Status: COMPLETE (fresh audit verified)
+
+Reopened reason fixed:
+- The shipped manifest-backed examples did not yet prove a child structured final output whose child `output schema` extends a parent and emits the generated schema artifact.
+- Stale raw `.schema.json` support files remained in shipped example directories and could still look like authored schema truth.
+- `AGENTS.md` still named the old `examples/106_review_split_final_output_json_schema_partial` corpus endpoint even though the approved cutover and actual examples use `_output_schema`.
+- `examples/79_final_output_output_schema/prompts/INVALID_MISSING_EXAMPLE.prompt` and its manifest still used `InvalidMissingExampleFileAgent`; the case now proves a missing schema-owned `example:`, not a missing external example file.
+
+Completed work:
+- `examples/79_final_output_output_schema` now uses a base `output schema`, a child `output schema` with added fields, a base `output shape`, and a child `output shape`.
+- The child example uses explicit keyed replacement syntax with `override example:` and `override schema:`.
+- Stale raw schema support files were deleted from shipped example `schemas/` directories. The only remaining `.schema.json` files under examples are generated build or build_ref artifacts.
+- Public example directories and references were restored to the approved `*_output_schema` naming.
+- `editors/vscode` syntax, resolver, unit fixtures, integration fixtures, and snapshots now use `output schema` and schema-owned `example:` for this surface.
+- VS Code grammar alignment covers the new output-schema keywords instead of a legacy `json schema` grammar branch.
+- Root `AGENTS.md` now names the current `examples/106_review_split_final_output_output_schema_partial` corpus endpoint.
+- The missing schema-owned example case now uses `InvalidMissingExampleAgent` in the prompt and manifest.
+
+Proof:
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml`
+- `cd editors/vscode && make`
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_review_imported_outputs tests.test_route_output_semantics tests.test_emit_flow`
+- `make verify-examples`
+- `make verify-diagnostics`
+- `make verify-package`
 
 * Goal:
   Make the new surface the only shipped public truth for structured `JsonObject` outputs.
@@ -1638,6 +1739,20 @@ Current state:
   - Revert the public validator entry point if it forks away from compiler truth instead of reusing it.
 
 ## Phase 12 — Add live OpenAI acceptance on the emitted artifact and finish public truth
+
+Status: COMPLETE (fresh audit verified)
+
+Reopened reason fixed:
+- The live OpenAI proof had to be rerun after the nullable lowering and nested contract fixes landed.
+
+Completed work:
+- Reran the official OpenAI proof command from the repo-local `.env`.
+- Used the emitted schema artifact at `examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`.
+- Recorded the accepted schema path, model, and response id in the worklog.
+
+Proof:
+- `set -a; source .env >/dev/null 2>&1; set +a; uv run --with openai python -m doctrine.prove_output_schema_openai --schema examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json --model gpt-4.1`
+- OpenAI response id: `resp_0723b655002b8d630069dfb4e894bc81938c36a8893c43b934`
 
 * Goal:
   Close the last external-proof gap on the actual emitted schema file.

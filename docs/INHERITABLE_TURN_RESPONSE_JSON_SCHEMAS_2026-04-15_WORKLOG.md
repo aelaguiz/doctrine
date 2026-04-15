@@ -93,7 +93,7 @@ Next frontier:
 Checks run:
 - `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation`
 - `uv run --locked python -m unittest tests.test_final_output tests.test_emit_docs tests.test_review_imported_outputs tests.test_route_output_semantics`
-- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_json_object/cases.toml --manifest examples/83_review_final_output_json_object/cases.toml --manifest examples/85_review_split_final_output_json_object/cases.toml --manifest examples/90_split_handoff_and_final_output_shared_route_semantics/cases.toml --manifest examples/91_handoff_routing_route_output_binding/cases.toml --manifest examples/104_review_final_output_json_object_blocked_control_ready/cases.toml --manifest examples/105_review_split_final_output_json_object_control_ready/cases.toml --manifest examples/106_review_split_final_output_json_object_partial/cases.toml --manifest examples/55_owner_aware_schema_attachments/cases.toml --manifest examples/09_outputs/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml --manifest examples/83_review_final_output_output_schema/cases.toml --manifest examples/85_review_split_final_output_output_schema/cases.toml --manifest examples/90_split_handoff_and_final_output_shared_route_semantics/cases.toml --manifest examples/91_handoff_routing_route_output_binding/cases.toml --manifest examples/104_review_final_output_output_schema_blocked_control_ready/cases.toml --manifest examples/105_review_split_final_output_output_schema_control_ready/cases.toml --manifest examples/106_review_split_final_output_output_schema_partial/cases.toml --manifest examples/55_owner_aware_schema_attachments/cases.toml --manifest examples/09_outputs/cases.toml`
 
 Result:
 - All focused Phase 4 checks passed.
@@ -128,7 +128,7 @@ Next frontier:
 
 ## 2026-04-15 - Phase 5 reopened cleanup complete
 - Fixed the stale shipped emit target in `pyproject.toml` so the package and
-  example surface now points at `examples/79_final_output_json_object`.
+  example surface now points at `examples/79_final_output_output_schema`.
 
 Checks run:
 - `uv run --locked python -m unittest tests.test_emit_docs tests.test_final_output tests.test_emit_flow tests.test_output_schema_validation`
@@ -152,7 +152,7 @@ Next frontier:
 
 Checks run:
 - `uv run --locked python -m unittest tests.test_emit_docs tests.test_final_output tests.test_emit_flow`
-- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_json_object/cases.toml --manifest examples/83_review_final_output_json_object/cases.toml --manifest examples/85_review_split_final_output_json_object/cases.toml --manifest examples/90_split_handoff_and_final_output_shared_route_semantics/cases.toml --manifest examples/91_handoff_routing_route_output_binding/cases.toml --manifest examples/104_review_final_output_json_object_blocked_control_ready/cases.toml --manifest examples/105_review_split_final_output_json_object_control_ready/cases.toml --manifest examples/106_review_split_final_output_json_object_partial/cases.toml --manifest examples/55_owner_aware_schema_attachments/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml --manifest examples/83_review_final_output_output_schema/cases.toml --manifest examples/85_review_split_final_output_output_schema/cases.toml --manifest examples/90_split_handoff_and_final_output_shared_route_semantics/cases.toml --manifest examples/91_handoff_routing_route_output_binding/cases.toml --manifest examples/104_review_final_output_output_schema_blocked_control_ready/cases.toml --manifest examples/105_review_split_final_output_output_schema_control_ready/cases.toml --manifest examples/106_review_split_final_output_output_schema_partial/cases.toml --manifest examples/55_owner_aware_schema_attachments/cases.toml`
 
 Result:
 - Phase 10 proof passed.
@@ -172,7 +172,7 @@ Next frontier:
 
 Checks run:
 - `uv run --locked python -m unittest tests.test_output_schema_validation tests.test_validate_output_schema`
-- `uv run --locked python -m doctrine.validate_output_schema --schema examples/79_final_output_json_object/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
+- `uv run --locked python -m doctrine.validate_output_schema --schema examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
 
 Result:
 - Phase 11 proof passed.
@@ -195,7 +195,7 @@ Checks run:
 - `make verify-examples`
 - `make verify-diagnostics`
 - `make verify-package`
-- `uv run --with openai python -m doctrine.prove_output_schema_openai --schema examples/79_final_output_json_object/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json --model gpt-4.1`
+- `uv run --with openai python -m doctrine.prove_output_schema_openai --schema examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json --model gpt-4.1`
 
 Result:
 - All reachable code and repo proof passed.
@@ -213,13 +213,110 @@ Next frontier:
   `text.format` `json_schema` path.
 
 Checks run:
-- `set -a; source /Users/aelaguiz/workspace/psmobile/.env >/dev/null 2>&1; set +a; uv run --with openai python -m doctrine.prove_output_schema_openai --schema examples/79_final_output_json_object/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json --model gpt-4.1`
+- `set -a; source /Users/aelaguiz/workspace/psmobile/.env >/dev/null 2>&1; set +a; uv run --with openai python -m doctrine.prove_output_schema_openai --schema examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json --model gpt-4.1`
 
 Result:
-- OpenAI accepted `examples/79_final_output_json_object/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`.
+- OpenAI accepted `examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`.
 - Response id: `resp_0afa39716a6a6e150069dfad3a6e98819487bafaf188ca455e`
 - Returned JSON:
   - `{"summary":"","status":"ok","next_step":null}`
 
 Next frontier:
 - Fresh implementation audit against the plan doc.
+
+## 2026-04-15 - Reopened phases 2, 4, 5, and 12 parent pass complete
+- Fixed nullable `enum` lowering so `null` is part of the enum value set when
+  authored `optional` makes the wire key nullable.
+- Fixed nullable `const` lowering by using an `anyOf` const branch plus a null
+  branch, so Draft 2020-12 instance validation accepts both values.
+- Added nested payload-row rendering from lowered schema truth. Nested object
+  fields now render as dotted rows such as `route.action`, `route.owner`, and
+  `route.reason`.
+- Converted example 79 into manifest-backed child-schema proof with a base
+  `output schema`, child `output schema`, base `output shape`, child
+  `output shape`, `override example:`, and `override schema:`.
+- Deleted stale raw `.schema.json` support files from shipped example
+  `schemas/` directories. The only remaining example `.schema.json` files are
+  generated build or build_ref artifacts.
+- Left `.codex/implement-loop-state.019d91ca-b818-7793-ab8a-046f1a7d5586.json`
+  armed for the fresh Stop-hook audit.
+
+Checks run:
+- `uv run --locked python -m unittest tests.test_output_schema_lowering tests.test_final_output`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml`
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_review_imported_outputs tests.test_route_output_semantics tests.test_emit_flow`
+- `make verify-examples`
+- `make verify-package`
+- `set -a; source .env >/dev/null 2>&1; set +a; uv run --with openai python -m doctrine.prove_output_schema_openai --schema examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json --model gpt-4.1`
+
+Result:
+- Focused and broad unit proof passed.
+- Example 79 passed as manifest-backed child-schema proof with no ref diffs.
+- The full shipped corpus passed with no ref diffs.
+- Package verification passed.
+- OpenAI accepted `examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`.
+- Response id: `resp_0723b655002b8d630069dfb4e894bc81938c36a8893c43b934`
+- Returned JSON:
+  - `{"summary":"OK","status":"ok","next_step":null}`
+
+Next frontier:
+- Fresh Stop-hook audit against the plan doc. The implementation parent pass
+  must not author the authoritative audit block.
+
+## 2026-04-15 - Reopened Phase 5 residual public truth cleanup complete
+- Updated root `AGENTS.md` so the shipped corpus endpoint now names
+  `examples/106_review_split_final_output_output_schema_partial`.
+- Renamed the missing schema-owned example case from
+  `InvalidMissingExampleFileAgent` to `InvalidMissingExampleAgent` in the
+  prompt and manifest.
+- Left `.codex/implement-loop-state.019d91ca-b818-7793-ab8a-046f1a7d5586.json`
+  armed for the fresh Stop-hook audit.
+
+Checks run:
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml`
+- `make verify-examples`
+
+Result:
+- Example 79 passed with no ref diffs.
+- The full shipped corpus passed with no ref diffs.
+- `make verify-diagnostics` and `make verify-package` were not rerun in this
+  parent pass because diagnostics, smoke fixtures, package metadata, and
+  package release surfaces did not move.
+
+Next frontier:
+- Fresh Stop-hook audit against the plan doc. The implementation parent pass
+  must not author the authoritative audit block.
+
+## 2026-04-15 - Reopened Phase 5 public/editor cutover complete
+- Restored the approved public example naming from the temporary
+  `_json_object` names to `*_output_schema` across shipped examples, refs,
+  docs, tests, and package targets.
+- Updated `editors/vscode` syntax, resolver, unit fixtures, integration
+  fixtures, and snapshots so the editor teaches `output schema` and
+  schema-owned `example:`.
+- Kept the parent pass out of the authoritative implementation-audit block.
+- Left `.codex/implement-loop-state.019d91ca-b818-7793-ab8a-046f1a7d5586.json`
+  armed for the fresh Stop-hook audit.
+
+Checks run:
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml`
+- `cd editors/vscode && make`
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_review_imported_outputs tests.test_route_output_semantics tests.test_emit_flow`
+- `make verify-examples`
+- `make verify-diagnostics`
+- `make verify-package`
+
+Result:
+- Example 79 passed as manifest-backed child-schema proof with no ref diffs.
+- VS Code unit, snapshot, integration, Lark alignment, and VSIX packaging proof
+  passed.
+- The broad structured-output unit suite passed.
+- The full shipped corpus passed with no ref diffs.
+- Diagnostics and package verification passed.
+- The live OpenAI proof was not rerun in this pass because Phase 12 was not
+  reopened; the last live accepted response remains
+  `resp_0723b655002b8d630069dfb4e894bc81938c36a8893c43b934`.
+
+Next frontier:
+- Fresh Stop-hook audit against the plan doc. The implementation parent pass
+  must not author the authoritative audit block.
