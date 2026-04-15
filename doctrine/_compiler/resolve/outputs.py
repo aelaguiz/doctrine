@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 from doctrine import model
@@ -50,6 +51,76 @@ class ResolveOutputsMixin:
             return None
         return self._resolve_output_decl_body(decl, unit=unit)
 
+    def _resolve_output_shape_decl(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.OutputShapeDecl]:
+        target_unit, decl = self._resolve_decl_ref(
+            ref,
+            unit=unit,
+            registry_name="output_shapes_by_name",
+            missing_label="output shape declaration",
+        )
+        return target_unit, self._resolve_output_shape_decl_body(decl, unit=target_unit)
+
+    def _resolve_local_output_shape_decl(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+    ) -> model.OutputShapeDecl | None:
+        decl = unit.output_shapes_by_name.get(declaration_name)
+        if decl is None:
+            return None
+        return self._resolve_output_shape_decl_body(decl, unit=unit)
+
+    def _resolve_output_shape_decl_body(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> model.OutputShapeDecl:
+        output_shape_key = (unit.module_parts, output_shape_decl.name)
+        cached = self._resolved_output_shape_cache.get(output_shape_key)
+        if cached is not None:
+            return cached
+
+        if output_shape_key in self._output_shape_resolution_stack:
+            cycle = " -> ".join(
+                ".".join(parts + (name,)) or name
+                for parts, name in [*self._output_shape_resolution_stack, output_shape_key]
+            )
+            raise CompileError(f"Cyclic output shape inheritance: {cycle}")
+
+        self._output_shape_resolution_stack.append(output_shape_key)
+        try:
+            owner_label = _dotted_decl_name(unit.module_parts, output_shape_decl.name)
+            parent_output_shape: model.OutputShapeDecl | None = None
+            parent_label: str | None = None
+            if output_shape_decl.parent_ref is not None:
+                parent_unit, parent_decl = self._resolve_parent_output_shape_decl(
+                    output_shape_decl,
+                    unit=unit,
+                )
+                parent_output_shape = self._resolve_output_shape_decl_body(
+                    parent_decl,
+                    unit=parent_unit,
+                )
+                parent_label = (
+                    f"output shape {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
+                )
+
+            resolved = self._resolve_inherited_output_shape_decl(
+                output_shape_decl,
+                owner_label=owner_label,
+                parent_unit=parent_unit if output_shape_decl.parent_ref is not None else None,
+                parent_output_shape=parent_output_shape,
+                parent_label=parent_label,
+            )
+            self._resolved_output_shape_cache[output_shape_key] = resolved
+            return resolved
+        finally:
+            self._output_shape_resolution_stack.pop()
+
     def _resolve_output_decl_body(
         self,
         output_decl: model.OutputDecl,
@@ -93,6 +164,115 @@ class ResolveOutputsMixin:
             return resolved
         finally:
             self._output_decl_resolution_stack.pop()
+
+    def _resolve_inherited_output_shape_decl(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+        *,
+        owner_label: str,
+        parent_unit: IndexedUnit | None = None,
+        parent_output_shape: model.OutputShapeDecl | None = None,
+        parent_label: str | None = None,
+    ) -> model.OutputShapeDecl:
+        if parent_output_shape is None:
+            patch_key = self._first_output_shape_patch_key(output_shape_decl)
+            if patch_key is not None:
+                raise CompileError(
+                    f"inherit requires an inherited output shape in {owner_label}: {patch_key}"
+                )
+            override_key = self._first_output_shape_override_key(output_shape_decl)
+            if override_key is not None:
+                raise CompileError(
+                    f"override requires an inherited output shape in {owner_label}: {override_key}"
+                )
+            return replace(output_shape_decl, parent_ref=None)
+
+        inherited_parent_output_shape = (
+            parent_output_shape
+            if parent_unit is None
+            else self._rebind_inherited_output_shape_decl(
+                parent_output_shape,
+                parent_unit=parent_unit,
+            )
+        )
+
+        unkeyed_parent_items = self._output_shape_unkeyed_parent_labels(inherited_parent_output_shape)
+        if unkeyed_parent_items:
+            details = ", ".join(unkeyed_parent_items)
+            raise CompileError(
+                "Cannot inherit output shape with unkeyed top-level items in "
+                f"{parent_label}: {details}"
+            )
+
+        parent_items_by_key = {
+            item.key
+            : item
+            for item in inherited_parent_output_shape.items
+            if self._output_item_key(item) is not None
+        }
+        resolved_items: list[model.OutputRecordItem] = []
+        emitted_keys: set[str] = set()
+        accounted_keys: set[str] = set()
+
+        for item in output_shape_decl.items:
+            key = self._output_item_key(item)
+            if key is None:
+                resolved_items.append(item)
+                continue
+
+            if key in emitted_keys:
+                raise CompileError(f"Duplicate output shape item key in {owner_label}: {key}")
+            emitted_keys.add(key)
+
+            parent_item = parent_items_by_key.get(key)
+            if isinstance(item, model.InheritItem):
+                if parent_item is None:
+                    raise CompileError(
+                        f"Cannot inherit undefined output shape entry in {parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(parent_item)
+                continue
+
+            if self._is_output_override_item(item):
+                if parent_item is None:
+                    raise CompileError(
+                        "E001 Cannot override undefined output shape entry in "
+                        f"{parent_label}: {key}"
+                    )
+                accounted_keys.add(key)
+                resolved_items.append(
+                    self._resolve_output_override_item(
+                        item,
+                        parent_item=parent_item,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
+            if parent_item is not None:
+                raise CompileError(
+                    f"Inherited output shape requires `override {key}` in {owner_label}"
+                )
+
+            resolved_items.append(item)
+
+        missing_keys = [
+            item.key
+            for item in inherited_parent_output_shape.items
+            if self._output_item_key(item) is not None and item.key not in accounted_keys
+        ]
+        if missing_keys:
+            raise CompileError(
+                f"E003 Missing inherited output shape entry in {owner_label}: {', '.join(missing_keys)}"
+            )
+
+        return model.OutputShapeDecl(
+            name=output_shape_decl.name,
+            title=output_shape_decl.title,
+            items=tuple(resolved_items),
+            parent_ref=None,
+        )
 
     def _resolve_inherited_output_decl(
         self,
@@ -260,6 +440,24 @@ class ResolveOutputsMixin:
                 return key
         return None
 
+    def _first_output_shape_patch_key(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+    ) -> str | None:
+        for item in output_shape_decl.items:
+            if isinstance(item, model.InheritItem):
+                return item.key
+        return None
+
+    def _first_output_shape_override_key(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+    ) -> str | None:
+        for item in output_shape_decl.items:
+            if self._is_output_override_item(item):
+                return item.key
+        return None
+
     def _output_item_key(self, item: object) -> str | None:
         if isinstance(
             item,
@@ -295,6 +493,18 @@ class ResolveOutputsMixin:
     def _output_unkeyed_parent_labels(self, output_decl: model.OutputDecl) -> tuple[str, ...]:
         labels: list[str] = []
         for item in output_decl.items:
+            if isinstance(item, (str, model.EmphasizedLine)):
+                labels.append("prose")
+            elif isinstance(item, model.RecordRef):
+                labels.append(_dotted_ref_name(item.ref))
+        return tuple(labels)
+
+    def _output_shape_unkeyed_parent_labels(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+    ) -> tuple[str, ...]:
+        labels: list[str] = []
+        for item in output_shape_decl.items:
             if isinstance(item, (str, model.EmphasizedLine)):
                 labels.append("prose")
             elif isinstance(item, model.RecordRef):
@@ -362,7 +572,13 @@ class ResolveOutputsMixin:
         return model.ReadableBlock(
             kind=item.kind,
             key=item.key,
-            title=item.title if item.title is not None else parent_item.title,
+            title=(
+                item.title
+                if item.title is not None
+                else None
+                if item.kind in {"sequence", "bullets", "checklist"}
+                else parent_item.title
+            ),
             payload=item.payload,
             requirement=item.requirement if item.requirement is not None else parent_item.requirement,
             when_expr=item.when_expr if item.when_expr is not None else parent_item.when_expr,
@@ -416,6 +632,21 @@ class ResolveOutputsMixin:
                 self._rebind_inherited_trust_surface_item(item, parent_unit=parent_unit)
                 for item in output_decl.trust_surface
             ),
+        )
+
+    def _rebind_inherited_output_shape_decl(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+        *,
+        parent_unit: IndexedUnit,
+    ) -> model.OutputShapeDecl:
+        return replace(
+            output_shape_decl,
+            items=tuple(
+                self._rebind_inherited_output_item(item, parent_unit=parent_unit)
+                for item in output_shape_decl.items
+            ),
+            parent_ref=None,
         )
 
     def _rebind_inherited_output_item(
@@ -701,7 +932,7 @@ class ResolveOutputsMixin:
             "outputs_by_name",
             "output_targets_by_name",
             "output_shapes_by_name",
-            "json_schemas_by_name",
+            "output_schemas_by_name",
             "skills_by_name",
             "agents_by_name",
             "enums_by_name",
@@ -789,83 +1020,56 @@ class ResolveOutputsMixin:
         shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
         shape_scalars, _shape_sections, shape_extras = self._split_record_items(
             shape_decl.items,
-            scalar_keys={"kind", "schema", "example_file"},
+            scalar_keys={"schema", "example_file"},
             owner_label=f"output shape {shape_decl.name}",
         )
         schema_item = shape_scalars.get("schema")
         if schema_item is None or not isinstance(schema_item.value, model.NameRef):
             return None
 
-        schema_unit, schema_decl = self._resolve_json_schema_ref(schema_item.value, unit=shape_unit)
-        schema_scalars, _schema_sections, _schema_extras = self._split_record_items(
-            schema_decl.items,
-            scalar_keys={"profile", "file"},
-            owner_label=f"json schema {schema_decl.name}",
+        schema_unit, schema_decl = self._resolve_output_schema_decl(
+            schema_item.value,
+            unit=shape_unit,
         )
-        profile_item = schema_scalars.get("profile")
-        schema_file_item = schema_scalars.get("file")
+        lowered_schema = self._lower_output_schema_decl(schema_decl, unit=schema_unit)
+        self._validate_final_output_lowered_schema(
+            lowered_schema,
+            owner_label=f"output schema {schema_decl.name}",
+        )
         example_file_item = shape_scalars.get("example_file")
-        if profile_item is None:
-            schema_profile = None
-        elif isinstance(profile_item.value, model.NameRef) and not profile_item.value.module_parts:
-            schema_profile = profile_item.value.declaration_name
-        else:
-            schema_profile = self._display_symbol_value(
-                profile_item.value,
-                unit=schema_unit,
-                owner_label=f"json schema {schema_decl.name}",
-                surface_label="json schema fields",
+        if example_file_item is not None:
+            raise CompileError(
+                "E215 final_output example must be declared on output schema in "
+                f"output shape {shape_decl.name}: retire `example_file` and add `example:` "
+                f"to output schema {schema_decl.name}"
             )
-        if schema_file_item is None:
-            schema_file = None
-        elif isinstance(schema_file_item.value, str):
-            schema_file = schema_file_item.value
-        else:
-            schema_file = self._display_symbol_value(
-                schema_file_item.value,
-                unit=schema_unit,
-                owner_label=f"json schema {schema_decl.name}",
-                surface_label="json schema fields",
+        example_value = self._output_schema_example_value(
+            schema_decl,
+            owner_label=f"output schema {schema_decl.name}",
+        )
+        if example_value is None:
+            raise CompileError(
+                "E215 final_output example must be declared on output schema in "
+                f"output schema {schema_decl.name}: add `example:`"
             )
-        example_file = (
-            example_file_item.value
-            if example_file_item is not None and isinstance(example_file_item.value, str)
-            else None
+        example_instance = self._materialize_output_schema_example_value(
+            example_value,
+            owner_label=f"output schema {schema_decl.name}.example",
         )
-        payload_rows = self._load_json_schema_payload_rows(
-            schema_unit=schema_unit,
-            schema_decl=schema_decl,
-            schema_file=schema_file,
+        self._validate_final_output_example_instance(
+            example_instance,
+            lowered_schema,
+            owner_label=f"output schema {schema_decl.name}",
         )
-        resolved_schema_file = (
-            self._resolve_declared_support_path(schema_unit, schema_file)
-            if schema_file is not None
-            else None
-        )
-        resolved_example_file = (
-            self._resolve_declared_support_path(shape_unit, example_file)
-            if example_file is not None
-            else None
-        )
-        example_text = (
-            self._read_required_final_output_support_text(
-                shape_unit,
-                example_file,
-                owner_label=f"output shape {shape_decl.name}",
-            )
-            if example_file is not None
-            else None
-        )
+        payload_rows = self._build_output_schema_payload_rows(schema_data=lowered_schema)
+        example_text = json.dumps(example_instance, indent=2) + "\n"
         return FinalOutputJsonShapeSummary(
             shape_unit=shape_unit,
             shape_decl=shape_decl,
             schema_unit=schema_unit,
             schema_decl=schema_decl,
-            schema_profile=schema_profile,
-            schema_file=schema_file,
-            example_file=example_file,
-            resolved_schema_file=resolved_schema_file,
-            resolved_example_file=resolved_example_file,
+            schema_profile="OpenAIStructuredOutput",
+            lowered_schema=lowered_schema,
             payload_rows=payload_rows,
             example_text=example_text,
             extra_items=shape_extras,

@@ -43,6 +43,9 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._schema_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._document_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._output_decl_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._output_shape_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._output_schema_resolution_stack: list[tuple[tuple[str, ...], str]] = []
+        self._output_schema_lowering_stack: list[tuple[tuple[str, ...], str]] = []
         self._review_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._skills_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
@@ -63,6 +66,15 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._resolved_document_cache: dict[tuple[tuple[str, ...], str], ResolvedDocumentBody] = {}
         self._resolved_output_decl_cache: dict[
             tuple[tuple[str, ...], str], model.OutputDecl
+        ] = {}
+        self._resolved_output_shape_cache: dict[
+            tuple[tuple[str, ...], str], model.OutputShapeDecl
+        ] = {}
+        self._resolved_output_schema_cache: dict[
+            tuple[tuple[str, ...], str], model.OutputSchemaDecl
+        ] = {}
+        self._lowered_output_schema_cache: dict[
+            tuple[tuple[str, ...], str], dict[str, object]
         ] = {}
         self._resolved_review_cache: dict[tuple[tuple[str, ...], str], ResolvedReviewBody] = {}
         self._addressable_workflow_cache: dict[
@@ -91,12 +103,19 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self.root_unit = session.root_unit
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
-        agent = self.root_unit.agents_by_name.get(agent_name)
+        return self.compile_agent_from_unit(self.root_unit, agent_name)
+
+    def compile_agent_from_unit(
+        self,
+        unit: IndexedUnit,
+        agent_name: str,
+    ) -> CompiledAgent:
+        agent = unit.agents_by_name.get(agent_name)
         if agent is None:
             raise CompileError(f"Missing target agent: {agent_name}")
         if agent.abstract:
             raise CompileError(f"Abstract agent does not render: {agent_name}")
-        return self._compile_agent_decl(agent, unit=self.root_unit)
+        return self._compile_agent_decl(agent, unit=unit)
 
     def compile_skill_package(
         self,

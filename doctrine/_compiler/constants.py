@@ -71,7 +71,7 @@ _READABLE_DECL_REGISTRIES = (
     ("output declaration", "outputs_by_name"),
     ("output target declaration", "output_targets_by_name"),
     ("output shape declaration", "output_shapes_by_name"),
-    ("json schema declaration", "json_schemas_by_name"),
+    ("output schema declaration", "output_schemas_by_name"),
     ("skill declaration", "skills_by_name"),
     ("enum declaration", "enums_by_name"),
 )

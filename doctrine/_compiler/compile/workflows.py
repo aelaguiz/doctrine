@@ -104,6 +104,20 @@ class CompileWorkflowsMixin:
                 )
                 continue
 
+            if isinstance(item, model.ReadableBlock):
+                if unit is None or owner_label is None:
+                    raise CompileError(
+                        "Internal compiler error: workflow readable block compilation requires unit and owner label"
+                    )
+                body.append(
+                    self._compile_workflow_root_readable_block(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
             if isinstance(item, ResolvedWorkflowSkillsItem):
                 body.append(self._compile_resolved_skills(item.body))
                 continue
@@ -118,6 +132,29 @@ class CompileWorkflowsMixin:
             )
 
         return CompiledSection(title=workflow_body.title, body=tuple(body))
+
+    def _compile_workflow_root_readable_block(
+        self,
+        block: model.ReadableBlock,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ):
+        return self._compile_authored_readable_block(
+            block,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="workflow bodies",
+            section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
+                self._resolve_section_body_items(
+                    payload,
+                    unit=unit,
+                    owner_label=nested_owner_label,
+                ),
+                unit=unit,
+                owner_label=nested_owner_label,
+            ),
+        )
 
     def _compile_workflow_law(
         self,

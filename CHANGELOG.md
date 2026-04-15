@@ -28,16 +28,36 @@ payload text and breaking releases with no real upgrade steps.
 - Added shipped corpus coverage for inherited outputs on ordinary output
   contracts, imported handoff reuse, `final_output:`, shared `route.*`
   semantics, and fail-loud output-inheritance cases.
+- Added optional titles for `sequence`, `bullets`, and `checklist` readable
+  blocks while keeping the authored key required for inheritance and refs.
+- Added a shipped corpus example for titled and titleless ordered and
+  unordered readable lists.
+- Added workflow-root readable blocks so workflows may own non-section
+  readable blocks directly instead of wrapping them in a local section first.
 
 ### Changed
 - Clarified the release policy to prefer the next patch version for routine
   public work and keep minor bumps for real backward-compatible public
   additions or soft deprecations.
+- Changed structured `JsonObject` final outputs to keep their example object
+  inside `output schema`, validate that example against the lowered
+  OpenAI-compatible schema, and stop reading checked-in `.example.json`
+  support files.
+- Changed `emit_docs` to write `AGENTS.md` plus the real lowered
+  `schemas/<output-slug>.schema.json` artifact for structured final outputs.
+  Doctrine no longer emits `AGENTS.contract.json`.
+- Renamed the shipped structured final-output examples from `_json_schema` to
+  `_json_object` so the public corpus matches the actual feature story.
+- Added `python -m doctrine.validate_output_schema --schema ...` as the
+  built-in file validator for emitted structured-output schema files.
 - Changed emitted ordinary `## Outputs` Markdown to one grouped contract block
   per output. Single artifacts now start with a `Contract | Value` table,
   `files:` outputs add an `Artifacts` table, and `structure:` now renders as
   one `Artifact Structure` section. Downstream emitted-Markdown snapshots or
   parsers will need to update.
+- Changed detailed readable list rendering to drop helper kind lines such as
+  `_ordered list_` and `_unordered list_`. Titled lists keep their heading,
+  and titleless lists render directly in the parent section.
 - Moved the public release record fully onto `CHANGELOG.md`, signed tags, and
   matching GitHub releases. `docs/VERSIONING.md` now stays policy-only.
 - Centralized package release metadata and package smoke proof so release

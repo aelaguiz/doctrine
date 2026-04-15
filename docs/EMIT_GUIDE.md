@@ -3,18 +3,19 @@
 Doctrine ships three emit commands that share one prompts-root-aware emit
 pipeline:
 
-- `doctrine.emit_docs` writes the runtime Markdown tree plus a versioned
-  machine-readable companion contract for each concrete emitted agent.
+- `doctrine.emit_docs` writes the runtime Markdown tree and, for structured
+  final outputs, the exact lowered schema JSON file that machine consumers
+  should load.
 - `doctrine.emit_skill` writes compiled `SKILL.md` package trees plus bundled
   source-root companion files.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
 
-Use `emit_docs` when you need the compiled runtime prompt surface and its
-machine-readable final-output metadata companion. Use `emit_skill` when you
-need Doctrine to emit a real skill-package tree from `SKILL.prompt`. Use
-`emit_flow` when you need a reviewable graph of how declared inputs, concrete
-agents, outputs, and route edges fit together for one entrypoint.
+Use `emit_docs` when you need the compiled runtime prompt surface and the real
+structured final-output schema file. Use `emit_skill` when you need Doctrine
+to emit a real skill-package tree from `SKILL.prompt`. Use `emit_flow` when
+you need a reviewable graph of how declared inputs, concrete agents, outputs,
+and route edges fit together for one entrypoint.
 
 Important mode split:
 
@@ -184,15 +185,21 @@ and `emit_skill` do not currently provide a direct quick-start mode.
 
 All emitters preserve the entrypoint's path beneath `prompts/`.
 
-For runtime prompt output, Doctrine writes two files per concrete root agent:
+For runtime prompt output, Doctrine always writes one Markdown file per
+concrete root agent:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.md
-<output_dir>/<entrypoint-relative-dir>/<agent-slug>/<ENTRYPOINT_STEM>.contract.json
 ```
 
 If the entrypoint-relative directory already ends with the agent slug, Doctrine
 does not repeat that directory level.
+
+For structured final outputs, Doctrine also writes the exact lowered schema at:
+
+```text
+<output_dir>/<entrypoint-relative-dir>/<agent-slug>/schemas/<output-slug>.schema.json
+```
 
 For workflow flow artifacts, Doctrine writes one file pair per emitted
 entrypoint:
@@ -226,11 +233,9 @@ Concrete shipped examples:
 
 ```text
 examples/07_handoffs/build/project_lead/AGENTS.md
-examples/07_handoffs/build/project_lead/AGENTS.contract.json
 examples/07_handoffs/build/research_specialist/AGENTS.md
-examples/07_handoffs/build/research_specialist/AGENTS.contract.json
 examples/07_handoffs/build/writing_specialist/AGENTS.md
-examples/07_handoffs/build/writing_specialist/AGENTS.contract.json
+examples/79_final_output_json_object/build/repo_status_agent/schemas/repo_status_final_response.schema.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
@@ -287,33 +292,93 @@ File-set example:
 | Validation File | `lesson_root/_authoring/MANIFEST_VALIDATION.md` | Markdown Document |
 ```
 
-The companion contract is compiler-owned emitted truth. In v1 it carries:
+Readable list block details:
 
-- `contract_version = 1` for the emitted JSON contract shape only. It is not
-  the Doctrine language version. For the repo-wide versioning guide, use
-  [VERSIONING.md](VERSIONING.md).
+- Detailed `sequence`, `bullets`, and `checklist` renders no longer add helper
+  kind lines such as `_ordered list_` or `_unordered list_`.
+- If the list has a title, Doctrine keeps the nested heading and then renders
+  the list.
+- If the list has no title, Doctrine renders the list directly in the parent
+  section with no extra heading.
+- The authored key still exists for inheritance, refs, and overrides even when
+  the title is missing.
 
-- concrete agent identity
-- whether `final_output` exists
-- final-output declaration key and name
-- `format_mode`
-- `schema_profile`
+Authoring example:
 
-Keep `contract_version` narrow. Public release tags and Doctrine language
-versions live in the versioning guide and release history instead:
+```prompt
+workflow SharedGuide: "Guide"
+    read_first: "Read First"
+        sequence steps:
+            "Read `home:issue.md` first."
+            "Then read this role's local rules, files, and outputs."
 
-- [VERSIONING.md](VERSIONING.md)
-- [../CHANGELOG.md](../CHANGELOG.md)
-- stable project-relative `schema_file` and `example_file` paths when the final
-  output is schema-backed
-- for review-driven agents, a root `review` object that says:
-  - which output is the review carrier
-  - which output is the final response
-  - whether the final response is the carrier, a split response, or absent
-  - which carrier and final-response fields map to review semantics
-  - whether a split final response is `control_ready`
-  - normalized outcome summaries for `accept`, `changes_requested`, and
-    `blocked`, including route behavior
+    shared_rules: "Shared Rules"
+        bullets rules:
+            "Use `home:issue.md` as the shared ledger for this run."
+            "Leave one short saved note only when later readers need it."
+
+    titled_examples: "Titled Examples"
+        sequence read_order: "Read Order" advisory
+            "Read the issue."
+            "Read the repo status."
+
+        bullets evidence: "Evidence"
+            "Read the current status."
+            "Read the latest validation notes."
+```
+
+Rendered Markdown:
+
+```md
+## Guide
+
+### Read First
+
+1. Read `home:issue.md` first.
+2. Then read this role's local rules, files, and outputs.
+
+### Shared Rules
+
+- Use `home:issue.md` as the shared ledger for this run.
+- Leave one short saved note only when later readers need it.
+
+### Titled Examples
+
+#### Read Order
+
+_Advisory_
+
+1. Read the issue.
+2. Read the repo status.
+
+#### Evidence
+
+- Read the current status.
+- Read the latest validation notes.
+```
+
+Concrete shipped proof:
+
+- `examples/113_titleless_readable_lists`
+
+`emit_docs` does not emit `AGENTS.contract.json`.
+
+For structured final outputs:
+
+- `output schema` is the only source of truth for payload fields and the
+  example object.
+- Doctrine lowers that schema to the OpenAI-compatible wire shape during
+  compile.
+- Doctrine validates both the lowered schema and the authored example before
+  it renders Markdown.
+- The emitted `AGENTS.md` final-output section is the shipped human-facing
+  contract.
+- The emitted machine-facing contract lives at
+  `schemas/<output-slug>.schema.json` beside `AGENTS.md`.
+- `python -m doctrine.validate_output_schema --schema ...` validates that
+  emitted file with Draft 2020-12 plus Doctrine's OpenAI subset checks.
+- `uv run --with openai python -m doctrine.prove_output_schema_openai --schema ... --model ...`
+  runs the live OpenAI acceptance proof against that same emitted file.
 
 ## How To Read `emit_flow` Output
 
@@ -366,11 +431,13 @@ make verify-diagnostics
 ```
 
 The canonical checked-in build proofs live in `build_ref/` trees and may
-include compiled Markdown, `SKILL.md` package trees, companion
-`.contract.json` files, and target-scoped flow artifacts. `build_ref/` is
-verifier-owned checked-in proof, not part of Doctrine's public authoring model.
+include compiled Markdown, emitted structured-output schema files,
+`SKILL.md` package trees, and target-scoped flow artifacts. `build_ref/` is
+verifier-owned checked-in proof, not part of Doctrine's public authoring
+model.
 Representative checked-in proofs live in:
 
+- `examples/79_final_output_json_object/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
 - `examples/95_skill_package_minimal/build_ref/SKILL.md`
 - `examples/100_skill_package_bundled_agents/build_ref/agents/cold_reviewer.md`
 - `examples/73_flow_visualizer_showcase/build_ref/AGENTS.flow.d2`

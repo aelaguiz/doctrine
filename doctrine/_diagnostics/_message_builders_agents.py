@@ -160,27 +160,53 @@ _AGENT_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
     ),
     (
         re.compile(
-            r"^E215 final_output support file is missing or unreadable in (?P<owner>[^:]+): (?P<path>.+)$"
+            r"^E215 final_output example must be declared on output schema in (?P<owner>[^:]+): (?P<detail>.+)$"
         ),
         "E215",
-        "Final output support file is missing or unreadable",
+        "Final output example must be declared on output schema",
         lambda match: (
-            f"`final_output` needs support file `{match.group('path')}` in "
-            f"{match.group('owner')}, but the compiler could not read it."
+            f"`final_output` in {match.group('owner')} must declare its example on the "
+            f"`output schema`. {match.group('detail')}"
         ),
-        ("Fix the relative path or add the declared support file.",),
+        ("Move the example into `output schema` with `example:`.",),
     ),
     (
         re.compile(
-            r"^E216 final_output schema file must contain valid JSON object in (?P<owner>[^:]+): (?P<path>.+)$"
+            r"^E216 final_output example does not match lowered schema in (?P<owner>[^:]+): (?P<detail>.+)$"
         ),
         "E216",
-        "Final output schema file must contain a JSON object",
+        "Final output example does not match the lowered schema",
         lambda match: (
-            f"`final_output` schema file `{match.group('path')}` in "
-            f"{match.group('owner')} must decode to one JSON object."
+            f"`final_output` example in {match.group('owner')} does not match the "
+            f"lowered schema. {match.group('detail')}"
         ),
-        ("Fix the declared schema file so it contains valid JSON object text.",),
+        ("Fix the authored `example:` so it matches the lowered schema.",),
+    ),
+    (
+        re.compile(
+            r"^E217 final_output lowered schema failed Draft 2020-12 validation in "
+            r"(?P<owner>[^:]+): (?P<detail>.+)$"
+        ),
+        "E217",
+        "Final output lowered schema is not valid Draft 2020-12 JSON Schema",
+        lambda match: (
+            f"`final_output` lowered schema in {match.group('owner')} is not valid Draft 2020-12 "
+            f"JSON Schema. {match.group('detail')}"
+        ),
+        ("Fix the authored `output schema` so the lowered schema is valid Draft 2020-12.",),
+    ),
+    (
+        re.compile(
+            r"^E218 final_output lowered schema is outside OpenAI structured outputs subset in "
+            r"(?P<owner>[^:]+): (?P<detail>.+)$"
+        ),
+        "E218",
+        "Final output lowered schema is outside the OpenAI structured outputs subset",
+        lambda match: (
+            f"`final_output` lowered schema in {match.group('owner')} is outside the supported "
+            f"OpenAI structured outputs subset. {match.group('detail')}"
+        ),
+        ("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
     ),
     (
         re.compile(r"^Cyclic agent inheritance: (?P<detail>.+)$"),

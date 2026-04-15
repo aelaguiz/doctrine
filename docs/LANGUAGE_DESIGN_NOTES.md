@@ -32,12 +32,10 @@ For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 
 ## Shipped Boundaries
 
-Doctrine's current shipped surface runs through the numbered corpus up to
-`examples/106_review_split_final_output_json_schema_partial`.
-
-Use [../examples/README.md](../examples/README.md) for the full proof ladder.
-This section keeps the boundary broad so the design notes do not stale again
-every time the corpus grows.
+Doctrine's current shipped surface is proven across the numbered corpus listed
+in [../examples/README.md](../examples/README.md).
+Keep the exact example boundary there so these design notes stay durable as
+the corpus grows.
 
 That shipped surface includes:
 
@@ -47,6 +45,8 @@ That shipped surface includes:
 - readable refs, addressable paths, and interpolation
 - workflow law, `handoff_routing`, `route_only`, and `grounding`
 - first-class `review`, `review_family`, and review-driven `final_output`
+- structured `final_output:` contracts through `output schema`, plus generated
+  schema artifacts for `JsonObject` final answers
 - concrete-turn bindings and bound roots for law and review carriers
 - `analysis`, `decision`, owner-aware `schema:` / `structure:`, readable
   `document` blocks, first-class schema artifacts/groups, multiline code

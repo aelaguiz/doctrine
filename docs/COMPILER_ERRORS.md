@@ -82,8 +82,10 @@ Stability rules:
 | `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
 | `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
 | `E214` | Retired | Reserved error code. Review-driven `final_output:` may now differ from `comment_output:`. |
-| `E215` | Final output support file is missing or unreadable | A schema-backed `final_output:` declares a schema or example support file that the compiler cannot read. |
-| `E216` | Final output schema file must contain a JSON object | A schema-backed `final_output:` points at a schema file that is not valid JSON object text. |
+| `E215` | Final output example must be declared on output schema | A structured `final_output:` uses `JsonObject`, but its `output schema` does not declare an `example:` block. |
+| `E216` | Final output example does not match the lowered schema | A structured `final_output:` declares an `example:`, but that JSON object does not validate against the lowered schema. |
+| `E217` | Final output lowered schema failed Draft 2020-12 validation | Doctrine lowered an `output schema`, but the resulting JSON Schema is not valid Draft 2020-12. |
+| `E218` | Final output lowered schema is outside the OpenAI structured-outputs subset | Doctrine lowered an `output schema`, but the result uses a shape or rule the OpenAI structured-outputs subset does not allow. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
@@ -220,7 +222,6 @@ Stability rules:
 | `E516` | Pinned D2 renderer failed | `emit_flow` produced `.flow.d2`, but the pinned D2 renderer failed while producing `.flow.svg`. |
 | `E517` | Emit flow CLI requires exactly one resolution mode | `emit_flow` was invoked with both configured-target mode and direct mode, or with neither mode. |
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
-| `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
 | `E520` | Emit target output_dir must stay within project root | A configured or direct emit output directory resolved outside the owning project's root. |
 | `E521` | Emit target entrypoint must stay within project root | A configured emit target resolved its entrypoint outside the owning project's root. |
 | `E522` | Invalid release version | A Doctrine release tag or channel input does not match the shipped release-tag rules. |

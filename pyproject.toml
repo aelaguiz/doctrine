@@ -11,6 +11,7 @@ license = "MIT"
 requires-python = ">=3.14"
 dependencies = [
     "interegular>=0.3,<1",
+    "jsonschema>=4.25,<5",
     "lark>=1.2,<2",
 ]
 
@@ -57,9 +58,9 @@ entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
 output_dir = "examples/73_flow_visualizer_showcase/build"
 
 [[tool.doctrine.emit.targets]]
-name = "example_79_final_output_json_schema"
-entrypoint = "examples/79_final_output_json_schema/prompts/AGENTS.prompt"
-output_dir = "examples/79_final_output_json_schema/build"
+name = "example_79_final_output_json_object"
+entrypoint = "examples/79_final_output_json_object/prompts/AGENTS.prompt"
+output_dir = "examples/79_final_output_json_object/build"
 
 [[tool.doctrine.emit.targets]]
 name = "example_84_review_split_final_output_prose"
@@ -110,3 +111,8 @@ output_dir = "examples/102_skill_package_path_case_preservation/build"
 name = "example_103_skill_package_binary_assets"
 entrypoint = "examples/103_skill_package_binary_assets/prompts/SKILL.prompt"
 output_dir = "examples/103_skill_package_binary_assets/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_115_runtime_agent_packages"
+entrypoint = "examples/115_runtime_agent_packages/prompts/AGENTS.prompt"
+output_dir = "examples/115_runtime_agent_packages/build"

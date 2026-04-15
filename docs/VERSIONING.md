@@ -17,7 +17,8 @@ behavior.
 - Bump the minor version when the language adds backward-compatible syntax or
   semantics.
 - A new backward-compatible language surface such as direct `output`
-  inheritance needs the next minor language version when it ships publicly.
+  inheritance or workflow-root readable blocks needs the next minor language
+  version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
 
 ### Doctrine Release Version
@@ -44,10 +45,13 @@ The Doctrine release version tracks one public shipped release or prerelease.
 
 Doctrine also ships narrower version lines.
 
-- `contract_version` in emitted `.contract.json` files only versions that JSON
-  contract shape. It is not the Doctrine language version.
 - `schema_version` in `cases.toml` only versions the corpus-manifest format.
   It is not the Doctrine language version.
+- Emitted Markdown from `emit_docs` and `emit_flow` is part of the public
+  surface.
+- For structured final outputs, emitted
+  `schemas/<output-slug>.schema.json` files are also part of the public
+  surface. Doctrine does not ship a sidecar `.contract.json` anymore.
 - The package metadata version in `pyproject.toml` versions the published
   Python package. It is not the Doctrine language version.
 - `import_name`, `pypi_environment`, and `testpypi_environment` under
@@ -83,6 +87,8 @@ Every public release uses one release class.
   `## Outputs` changes from one layout to another, downstream snapshot,
   parser, or scraper users may need to act even when the language version
   stays the same.
+- Removing emitted sidecar artifacts such as `AGENTS.contract.json` is also a
+  breaking public-surface change.
 
 Breaking releases outside the language surface may keep the Doctrine language
 version unchanged. Breaking language releases must bump the Doctrine language
@@ -197,13 +203,17 @@ If a public release is wrong:
 ## Breaking-Change Duties
 
 - Do not ship silent breakage.
-- If a change breaks authored `.prompt` files, emitted `.contract.json` files,
-  `cases.toml` manifests, or another stable public surface, update this file in
-  the same change.
+- If a change breaks authored `.prompt` files, emitted
+  `schemas/<output-slug>.schema.json` files, `cases.toml` manifests, or
+  another stable public surface, update this file in the same change.
 - Treat emitted runtime Markdown layout as one of those stable public
   surfaces. For example, regrouping ordinary `## Outputs` from bullet lists
   into contract tables is a breaking emitted-Markdown change even though the
   input language does not change.
+- Treat emitted helper-line removal the same way. For example, removing
+  `_ordered list_` or `_unordered list_` from detailed readable list renders
+  is a breaking emitted-Markdown change even when the language change itself
+  is additive, such as making list titles optional.
 - Say who is affected.
 - Say what changed.
 - Give exact upgrade steps.
@@ -216,7 +226,6 @@ If a public release is wrong:
 ## What Not To Infer
 
 - Do not infer Doctrine language compatibility from the release version number.
-- Do not infer Doctrine language compatibility from `contract_version`.
 - Do not infer Doctrine language compatibility from `schema_version`.
 - Do not treat the package metadata version in `pyproject.toml` as the Doctrine
   language version. It only versions the published Python package.

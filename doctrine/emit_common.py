@@ -4,10 +4,11 @@ import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from doctrine import model
 from doctrine._compiler.support import path_location
-from doctrine.diagnostics import EmitError
+from doctrine.diagnostics import CompileError, EmitError
 from doctrine.project_config import (
     PYPROJECT_FILE_NAME,
     ProjectConfig,
@@ -15,6 +16,10 @@ from doctrine.project_config import (
     load_project_config,
     load_project_config_for_source,
 )
+
+if TYPE_CHECKING:
+    from doctrine._compiler.indexing import IndexedUnit
+    from doctrine._compiler.session import CompilationSession
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
@@ -29,6 +34,12 @@ class EmitTarget:
     entrypoint: Path
     output_dir: Path
     project_config: ProjectConfig
+
+
+@dataclass(slots=True, frozen=True)
+class RuntimeEmitRoot:
+    unit: "IndexedUnit"
+    agent_name: str
 
 
 def _entrypoint_options_text(entrypoints: tuple[str, ...]) -> str:
@@ -259,6 +270,57 @@ def root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:
     return tuple(names)
 
 
+def collect_runtime_emit_roots(
+    session: "CompilationSession",
+) -> tuple[RuntimeEmitRoot, ...]:
+    roots = [
+        RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
+        for agent_name in _unit_concrete_agent_names(session.root_unit)
+    ]
+    seen_units: set[tuple[Path, tuple[str, ...]]] = set()
+    seen_runtime_packages: set[tuple[Path, tuple[str, ...]]] = set()
+
+    def walk(unit: "IndexedUnit") -> None:
+        unit_key = (unit.prompt_root, unit.module_parts)
+        if unit_key in seen_units:
+            return
+        seen_units.add(unit_key)
+        for imported_unit in unit.imported_units.values():
+            imported_key = (imported_unit.prompt_root, imported_unit.module_parts)
+            if (
+                imported_unit.module_source_kind == "runtime_package"
+                and imported_key not in seen_runtime_packages
+            ):
+                # Pre-order import traversal keeps runtime roots in first-seen
+                # graph order without asking the build handle to repeat imports.
+                concrete_agents = _unit_concrete_agent_names(imported_unit)
+                if len(concrete_agents) != 1:
+                    dotted_name = ".".join(imported_unit.module_parts)
+                    raise CompileError(
+                        "Runtime package import must define exactly one concrete agent: "
+                        f"{dotted_name or '<entrypoint>'}"
+                    )
+                roots.append(
+                    RuntimeEmitRoot(
+                        unit=imported_unit,
+                        agent_name=concrete_agents[0],
+                    )
+                )
+                seen_runtime_packages.add(imported_key)
+            walk(imported_unit)
+
+    walk(session.root_unit)
+    return tuple(roots)
+
+
+def _unit_concrete_agent_names(unit: "IndexedUnit") -> tuple[str, ...]:
+    return tuple(
+        agent.name
+        for agent in unit.agents_by_name.values()
+        if not agent.abstract
+    )
+
+
 def entrypoint_relative_dir(entrypoint: Path) -> Path:
     resolved = entrypoint.resolve()
     for candidate in [resolved.parent, *resolved.parents]:
@@ -275,10 +337,6 @@ def entrypoint_relative_dir(entrypoint: Path) -> Path:
 
 def entrypoint_output_name(entrypoint: Path) -> str:
     return f"{entrypoint.stem}.md"
-
-
-def entrypoint_contract_name(entrypoint: Path) -> str:
-    return f"{entrypoint.stem}.contract.json"
 
 
 def _validate_output_dir_within_project_root(
@@ -337,8 +395,12 @@ def _validate_path_within_project_root(
         ) from exc
 
 
-def agent_slug(name: str) -> str:
+def name_slug(name: str) -> str:
     return CAMEL_BOUNDARY_RE.sub("_", name).lower()
+
+
+def agent_slug(name: str) -> str:
+    return name_slug(name)
 
 
 def resolve_config_file(config_dir: Path, value: str, *, label: str) -> Path:

@@ -1,0 +1,2 @@
+agent BriefEditor:
+    role: "Carry the editor background for the package."

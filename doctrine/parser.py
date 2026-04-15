@@ -57,7 +57,10 @@ class ToAst(
         return ast.literal_eval(str(token))
 
     def SIGNED_NUMBER(self, token):
-        return int(str(token))
+        text = str(token)
+        if "." in text or "e" in text.lower():
+            return float(text)
+        return int(text)
 
     @v_args(inline=True)
     def start(self, prompt_file):

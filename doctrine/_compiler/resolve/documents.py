@@ -142,7 +142,13 @@ class ResolveDocumentsMixin:
                     model.DocumentBlock(
                         kind=item.kind,
                         key=item.key,
-                        title=item.title if item.title is not None else parent_item.title,
+                        title=(
+                            item.title
+                            if item.title is not None
+                            else None
+                            if item.kind in {"sequence", "bullets", "checklist"}
+                            else parent_item.title
+                        ),
                         payload=item.payload,
                         requirement=(
                             item.requirement

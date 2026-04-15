@@ -196,18 +196,139 @@ class OutputTargetDecl:
     items: tuple[RecordItem, ...]
 
 
+OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem
+
+
 @_dataclass(slots=True, frozen=True)
 class OutputShapeDecl:
     name: str
     title: str
-    items: tuple[RecordItem, ...]
+    items: tuple[OutputShapeAuthoredItem, ...]
+    parent_ref: NameRef | None = None
 
 
 @_dataclass(slots=True, frozen=True)
-class JsonSchemaDecl:
+class OutputSchemaField:
+    key: str
+    title: str
+    items: tuple["OutputSchemaBodyItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaDef:
+    key: str
+    title: str
+    items: tuple["OutputSchemaBodyItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaOverrideField:
+    key: str
+    title: str | None
+    items: tuple["OutputSchemaBodyItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaOverrideDef:
+    key: str
+    title: str | None
+    items: tuple["OutputSchemaBodyItem", ...]
+
+
+OutputSchemaLiteralValue: _TypeAlias = str | int | float | bool | None
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaFlag:
+    key: str
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaSetting:
+    key: str
+    value: str | int | float | bool | None | NameRef
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaEnum:
+    values: tuple[OutputSchemaLiteralValue, ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaItems:
+    value: NameRef | tuple["OutputSchemaBodyItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaVariant:
+    key: str | None
+    items: tuple["OutputSchemaBodyItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaAnyOf:
+    variants: tuple[OutputSchemaVariant, ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaExampleEntry:
+    key: str
+    value: "OutputSchemaExampleValue"
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaExampleObject:
+    entries: tuple[OutputSchemaExampleEntry, ...]
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaExampleArray:
+    items: tuple["OutputSchemaExampleValue", ...]
+
+
+OutputSchemaExampleValue: _TypeAlias = (
+    OutputSchemaExampleObject | OutputSchemaExampleArray | OutputSchemaLiteralValue
+)
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaExample:
+    key: str
+    value: OutputSchemaExampleObject
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaOverrideExample:
+    key: str
+    value: OutputSchemaExampleObject
+
+
+OutputSchemaBodyItem: _TypeAlias = (
+    OutputSchemaFlag
+    | OutputSchemaSetting
+    | OutputSchemaEnum
+    | OutputSchemaItems
+    | OutputSchemaAnyOf
+    | OutputSchemaField
+    | OutputSchemaDef
+)
+OutputSchemaAuthoredItem: _TypeAlias = (
+    OutputSchemaField
+    | OutputSchemaDef
+    | OutputSchemaExample
+    | InheritItem
+    | OutputSchemaOverrideField
+    | OutputSchemaOverrideDef
+    | OutputSchemaOverrideExample
+)
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaDecl:
     name: str
     title: str
-    items: tuple[RecordItem, ...]
+    items: tuple[OutputSchemaAuthoredItem, ...]
+    parent_ref: NameRef | None = None
 
 
 @_dataclass(slots=True, frozen=True)

@@ -321,7 +321,7 @@ class DisplayMixin:
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
                 ResolvedSectionItem,
                 ResolvedUseItem,

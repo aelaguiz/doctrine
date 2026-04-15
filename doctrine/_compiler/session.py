@@ -76,6 +76,8 @@ class CompilationSession:
             prompt_file,
             prompt_root=self.prompt_root,
             module_parts=(),
+            module_source_kind="entrypoint",
+            package_root=None,
             ancestry=(),
             allow_parallel_imports=True,
         )
@@ -94,6 +96,23 @@ class CompilationSession:
                 location=path_location(self.root_unit.prompt_file.source_path),
             ).ensure_location(path=self.root_unit.prompt_file.source_path)
 
+    def compile_agent_from_unit(
+        self,
+        unit: IndexedUnit,
+        agent_name: str,
+    ) -> CompiledAgent:
+        from doctrine._compiler.context import CompilationContext
+
+        try:
+            return CompilationContext(self).compile_agent_from_unit(unit, agent_name)
+        except DoctrineError as exc:
+            source_path = unit.prompt_file.source_path
+            dotted_name = ".".join((*unit.module_parts, agent_name)) or agent_name
+            raise exc.prepend_trace(
+                f"compile agent `{dotted_name}`",
+                location=path_location(source_path),
+            ).ensure_location(path=source_path)
+
     def compile_agents(self, agent_names: tuple[str, ...]) -> tuple[CompiledAgent, ...]:
         if len(agent_names) <= 1:
             return tuple(self.compile_agent(agent_name) for agent_name in agent_names)
@@ -104,6 +123,30 @@ class CompilationSession:
                 for agent_name in agent_names
             }
             return tuple(futures[agent_name].result() for agent_name in agent_names)
+
+    def compile_agents_from_units(
+        self,
+        agent_roots: tuple[tuple[IndexedUnit, str], ...],
+    ) -> tuple[CompiledAgent, ...]:
+        if len(agent_roots) <= 1:
+            return tuple(
+                self.compile_agent_from_unit(unit, agent_name)
+                for unit, agent_name in agent_roots
+            )
+
+        with ThreadPoolExecutor(max_workers=default_worker_count(len(agent_roots))) as executor:
+            futures = {
+                (unit.prompt_root, unit.module_parts, agent_name): executor.submit(
+                    self.compile_agent_from_unit,
+                    unit,
+                    agent_name,
+                )
+                for unit, agent_name in agent_roots
+            }
+            return tuple(
+                futures[(unit.prompt_root, unit.module_parts, agent_name)].result()
+                for unit, agent_name in agent_roots
+            )
 
     def compile_skill_package(
         self,
@@ -167,6 +210,22 @@ class CompilationSession:
 
         try:
             return CompilationContext(self).extract_target_flow_graph(agent_names)
+        except DoctrineError as exc:
+            raise exc.prepend_trace(
+                "extract flow graph",
+                location=path_location(self.root_unit.prompt_file.source_path),
+            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+
+    def extract_target_flow_graph_from_units(
+        self,
+        agent_roots: tuple[tuple[IndexedUnit, str], ...],
+    ) -> FlowGraph:
+        from doctrine._compiler.context import CompilationContext
+
+        try:
+            return CompilationContext(self).extract_target_flow_graph_from_units(
+                agent_roots
+            )
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 "extract flow graph",

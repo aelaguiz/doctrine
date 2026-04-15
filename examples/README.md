@@ -14,8 +14,8 @@ Each numbered example may contain:
   Doctrine language version
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
-  including compiled Markdown trees, `SKILL.md` package trees, companion
-  `.contract.json` files, and target-scoped `.flow.{d2,svg}` artifacts.
+  including compiled Markdown trees, emitted structured-output schema files,
+  `SKILL.md` package trees, and target-scoped `.flow.{d2,svg}` artifacts.
   `build_ref/` is verifier-owned proof, not a compiler or authoring
   convention.
 
@@ -73,7 +73,7 @@ Some call out landmark examples inside those ranges.
 - `75`: repo-level compile config plus cross-root standard-library imports
   proven across multiple entrypoints and fail-loud ambiguity/config cases
 - `76` through `86`: optional `final_output:` designation, dedicated
-  final-answer rendering, schema-backed JSON final answers, fail-loud
+  final-answer rendering, `output schema` JSON final answers, fail-loud
   invalid-target / wrong-kind cases, and review-driven final answers that may
   either reuse `comment_output` or split the review comment from a separate
   control-only final output, plus imported reusable review comment outputs
@@ -88,10 +88,11 @@ Some call out landmark examples inside those ranges.
   agent companions, larger compendium trees, exact path and case
   preservation, binary assets, and review-native final-response metadata for
   carrier, split control-ready, and split partial review finals
-- `107` through `112`: direct `output[...]` declaration inheritance, inherited
+- `107` through `114`: direct `output[...]` declaration inheritance, inherited
   output attachments, imported reusable handoff outputs, inherited
-  `final_output:`, inherited shared `route.*` readback, and fail-loud output
-  inheritance errors
+  `final_output:`, inherited shared `route.*` readback, fail-loud output
+  inheritance errors, titled or titleless readable lists, and workflow-root
+  readable blocks
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -186,13 +187,13 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
 | `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |
 | `78_final_output_and_side_artifacts` | Final assistant messages stay separate from ordinary emitted artifacts. |
-| `79_final_output_json_schema` | Schema-backed JSON `final_output:` with payload preview and example shape. |
+| `79_final_output_json_object` | `output schema` JSON `final_output:` with payload preview and example shape. |
 | `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
 | `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
 | `82_review_final_output_prose_basic` | Review-driven prose `final_output:` may reuse `comment_output` as the dedicated final answer. |
-| `83_review_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
+| `83_review_final_output_json_object` | Review-driven `output schema` JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
 | `84_review_split_final_output_prose` | Review-driven prose `final_output:` may split from `comment_output` while the separate final message still inherits review semantics. |
-| `85_review_split_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
+| `85_review_split_final_output_json_object` | Review-driven `output schema` JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
 | `86_imported_review_comment_local_routes` | Imported reusable `comment_output` declarations may still structurally bind local routed owners on the concrete review. |
 | `87_workflow_route_output_binding` | Ordinary workflow-law outputs may read shared compiler-owned `route.*` semantics, and unguarded reads fail loudly when some branches do not route. |
 | `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
@@ -211,15 +212,17 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `101_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
 | `102_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
 | `103_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
-| `104_review_final_output_json_schema_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
-| `105_review_split_final_output_json_schema_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
-| `106_review_split_final_output_json_schema_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
+| `104_review_final_output_json_object_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
+| `105_review_split_final_output_json_object_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
+| `106_review_split_final_output_json_object_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
 | `107_output_inheritance_basic` | Smallest direct `output[...]` inheritance proof with one inherited section and one local extension. |
 | `108_output_inheritance_attachments` | Inherited outputs may keep top-level attachments such as `render_profile:`, `trust_surface`, and `standalone_read`, and override them explicitly. |
 | `109_imported_review_handoff_output_inheritance` | Imported reusable handoff outputs may be inherited and extended locally before they are bound through an `outputs` block. |
 | `110_final_output_inherited_output` | `final_output:` may point at an inherited `TurnResponse` output and still render as the dedicated final answer. |
 | `111_inherited_output_route_semantics` | Inherited outputs may keep shared `route.*` semantics after the compiler resolves the parent output. |
 | `112_output_inheritance_fail_loud` | Output inheritance fails loud on missing inherited keys, patch-without-parent, unkeyed parents, and wrong-kind overrides. |
+| `113_titleless_readable_lists` | Titled and titleless readable lists render cleanly, and detailed list blocks drop helper kind metadata lines. |
+| `114_workflow_root_readable_blocks` | Workflow roots may own readable blocks directly without wrapping them in a local section first. |
 
 ## Useful Commands
 

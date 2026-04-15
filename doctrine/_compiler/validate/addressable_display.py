@@ -92,7 +92,7 @@ class ValidateAddressableDisplayMixin:
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
                 model.EnumDecl,
             ),
@@ -245,11 +245,24 @@ class ValidateAddressableDisplayMixin:
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
             ),
         ):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(
+            target,
+            (
+                model.OutputSchemaField,
+                model.OutputSchemaDef,
+                model.OutputSchemaOverrideField,
+                model.OutputSchemaOverrideDef,
+            ),
+        ):
+            return DisplayValue(
+                text=target.title if target.title is not None else _humanize_key(target.key),
+                kind="title",
+            )
         if isinstance(target, (model.RecordSection, model.GuardedOutputSection)):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.GuardedOutputScalar):

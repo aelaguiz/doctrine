@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TypeAlias
 
 import doctrine._model as model
@@ -70,7 +69,7 @@ ReadableDecl: TypeAlias = (
     | model.OutputDecl
     | model.OutputTargetDecl
     | model.OutputShapeDecl
-    | model.JsonSchemaDecl
+    | model.OutputSchemaDecl
     | model.SkillDecl
     | model.EnumDecl
 )
@@ -90,6 +89,10 @@ AddressableTarget: TypeAlias = (
     | model.RecordSection
     | model.GuardedOutputSection
     | model.GuardedOutputScalar
+    | model.OutputSchemaField
+    | model.OutputSchemaDef
+    | model.OutputSchemaOverrideField
+    | model.OutputSchemaOverrideDef
     | model.SchemaSection
     | model.SchemaGate
     | "ResolvedSchemaArtifact"
@@ -290,7 +293,9 @@ class ResolvedWorkflowSkillsItem:
     body: ResolvedSkillsBody
 
 
-ResolvedWorkflowItem = ResolvedSectionItem | ResolvedUseItem | ResolvedWorkflowSkillsItem
+ResolvedWorkflowItem = (
+    ResolvedSectionItem | model.ReadableBlock | ResolvedUseItem | ResolvedWorkflowSkillsItem
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -351,13 +356,10 @@ class FinalOutputJsonShapeSummary:
     shape_unit: IndexedUnit
     shape_decl: model.OutputShapeDecl
     schema_unit: IndexedUnit
-    schema_decl: model.JsonSchemaDecl
+    schema_decl: model.OutputSchemaDecl
     schema_profile: str | None
-    schema_file: str | None
-    example_file: str | None
-    resolved_schema_file: Path | None
-    resolved_example_file: Path | None
-    payload_rows: tuple[tuple[str, str, str], ...]
+    lowered_schema: dict[str, object]
+    payload_rows: tuple[tuple[str, ...], ...]
     example_text: str | None
     extra_items: tuple[model.AnyRecordItem, ...]
 

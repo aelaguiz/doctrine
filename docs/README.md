@@ -25,8 +25,8 @@ for repo setup and proof commands.
   `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
   example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
-  Markdown, generate skill-package trees, generate workflow flow diagrams, and
-  troubleshoot emit failures
+  Markdown, emit structured-output schema contracts, generate skill-package
+  trees, generate workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
@@ -53,9 +53,10 @@ for repo setup and proof commands.
 ## Historical Context
 
 The shipped docs above are the live reference path.
-Old plans, worklogs, audits, and draft proposals are not part of that path.
-After a restore-point commit, delete them and use git history if you need the
-old context.
+Dated plans, worklogs, audits, and draft proposals are not part of that path.
+Some may stay in the repo while active work is still in flight. Once one is no
+longer active, delete it after a restore-point commit and use git history if
+you need the old context.
 
 ## Repo Truth
 

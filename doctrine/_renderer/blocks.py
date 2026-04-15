@@ -194,20 +194,19 @@ def _render_list_block(
     ):
         rendered_items = [_render_prose_line(item, profile=profile) for item in block.items]
         if not rendered_items:
-            return block.title
+            return block.title or ""
+        if block.title is None:
+            return "; ".join(rendered_items)
         return f"{block.title}: {'; '.join(rendered_items)}"
 
-    kind_label = {
-        CompiledSequenceBlock: "ordered list",
-        CompiledBulletsBlock: "unordered list",
-        CompiledChecklistBlock: "checklist",
-    }[type(block)]
     metadata = _render_metadata_line(
         requirement=block.requirement,
-        kind_label=kind_label,
+        kind_label=None,
         when_text=block.when_text,
     )
-    lines = [f"{'#' * depth} {block.title}", ""]
+    lines: list[str] = []
+    if block.title is not None:
+        lines.extend([f"{'#' * depth} {block.title}", ""])
     if metadata is not None:
         lines.extend([metadata, ""])
 

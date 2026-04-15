@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import doctrine._model.declarations as model
 from doctrine._model.core import ImportPath
@@ -56,12 +56,23 @@ _RENDER_PROFILE_TARGET_MODE_CONSTRAINTS = {
 }
 
 ModuleLoadKey: TypeAlias = tuple[Path, tuple[str, ...]]
+ModuleSourceKind: TypeAlias = Literal["entrypoint", "file_module", "runtime_package"]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedModuleSource:
+    prompt_root: Path
+    prompt_path: Path
+    module_source_kind: ModuleSourceKind
+    package_root: Path | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class IndexedUnit:
     prompt_root: Path
     module_parts: tuple[str, ...]
+    module_source_kind: ModuleSourceKind
+    package_root: Path | None
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
     render_profiles_by_name: dict[str, model.RenderProfileDecl]
@@ -80,7 +91,7 @@ class IndexedUnit:
     outputs_by_name: dict[str, model.OutputDecl]
     output_targets_by_name: dict[str, model.OutputTargetDecl]
     output_shapes_by_name: dict[str, model.OutputShapeDecl]
-    json_schemas_by_name: dict[str, model.JsonSchemaDecl]
+    output_schemas_by_name: dict[str, model.OutputSchemaDecl]
     skills_by_name: dict[str, model.SkillDecl]
     skill_packages_by_name: dict[str, model.SkillPackageDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
@@ -162,6 +173,52 @@ def _module_path_for_root(prompt_root: Path, module_parts: tuple[str, ...]) -> P
     return prompt_root.joinpath(*module_parts).with_suffix(".prompt")
 
 
+def _runtime_package_path_for_root(prompt_root: Path, module_parts: tuple[str, ...]) -> Path:
+    return prompt_root.joinpath(*module_parts, "AGENTS.prompt")
+
+
+def _module_relpath_text(path: Path, *, prompt_root: Path) -> str:
+    try:
+        return path.relative_to(prompt_root).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def _resolve_module_source_in_root(
+    prompt_root: Path,
+    module_parts: tuple[str, ...],
+) -> ResolvedModuleSource | None:
+    file_module_path = _module_path_for_root(prompt_root, module_parts)
+    runtime_package_path = _runtime_package_path_for_root(prompt_root, module_parts)
+    has_file_module = file_module_path.is_file()
+    has_runtime_package = runtime_package_path.is_file()
+
+    if has_file_module and has_runtime_package:
+        dotted_name = ".".join(module_parts)
+        # Fail loud instead of guessing which module shape owns the dotted path.
+        raise CompileError(
+            "Ambiguous import module: "
+            f"{dotted_name} (both `{_module_relpath_text(file_module_path, prompt_root=prompt_root)}` "
+            f"and `{_module_relpath_text(runtime_package_path, prompt_root=prompt_root)}` exist "
+            f"under prompts root `{prompt_root}`)"
+        )
+    if has_runtime_package:
+        return ResolvedModuleSource(
+            prompt_root=prompt_root,
+            prompt_path=runtime_package_path,
+            module_source_kind="runtime_package",
+            package_root=runtime_package_path.parent,
+        )
+    if has_file_module:
+        return ResolvedModuleSource(
+            prompt_root=prompt_root,
+            prompt_path=file_module_path,
+            module_source_kind="file_module",
+            package_root=None,
+        )
+    return None
+
+
 def _waiting_module_key(ancestry: tuple[ModuleLoadKey, ...]) -> ModuleLoadKey | None:
     if not ancestry:
         return None
@@ -192,6 +249,8 @@ def index_unit(
     *,
     prompt_root: Path,
     module_parts: tuple[str, ...],
+    module_source_kind: ModuleSourceKind,
+    package_root: Path | None,
     ancestry: tuple[ModuleLoadKey, ...],
     allow_parallel_imports: bool,
 ) -> IndexedUnit:
@@ -213,7 +272,7 @@ def index_unit(
     outputs_by_name: dict[str, model.OutputDecl] = {}
     output_targets_by_name: dict[str, model.OutputTargetDecl] = {}
     output_shapes_by_name: dict[str, model.OutputShapeDecl] = {}
-    json_schemas_by_name: dict[str, model.JsonSchemaDecl] = {}
+    output_schemas_by_name: dict[str, model.OutputSchemaDecl] = {}
     skills_by_name: dict[str, model.SkillDecl] = {}
     skill_packages_by_name: dict[str, model.SkillPackageDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
@@ -295,9 +354,9 @@ def index_unit(
             _register_decl(output_shapes_by_name, declaration.name, module_parts)
             output_shapes_by_name[declaration.name] = declaration
             continue
-        if isinstance(declaration, model.JsonSchemaDecl):
-            _register_decl(json_schemas_by_name, declaration.name, module_parts)
-            json_schemas_by_name[declaration.name] = declaration
+        if isinstance(declaration, model.OutputSchemaDecl):
+            _register_decl(output_schemas_by_name, declaration.name, module_parts)
+            output_schemas_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.SkillDecl):
             _register_decl(skills_by_name, declaration.name, module_parts)
@@ -334,6 +393,8 @@ def index_unit(
     return IndexedUnit(
         prompt_root=prompt_root,
         module_parts=module_parts,
+        module_source_kind=module_source_kind,
+        package_root=package_root,
         prompt_file=prompt_file,
         imports=tuple(imports),
         render_profiles_by_name=render_profiles_by_name,
@@ -352,7 +413,7 @@ def index_unit(
         outputs_by_name=outputs_by_name,
         output_targets_by_name=output_targets_by_name,
         output_shapes_by_name=output_shapes_by_name,
-        json_schemas_by_name=json_schemas_by_name,
+        output_schemas_by_name=output_schemas_by_name,
         skills_by_name=skills_by_name,
         skill_packages_by_name=skill_packages_by_name,
         skills_blocks_by_name=skills_blocks_by_name,
@@ -408,12 +469,12 @@ def load_module(
     prompt_root: Path | None,
     ancestry: tuple[ModuleLoadKey, ...],
 ) -> IndexedUnit:
-    resolved_prompt_root = resolve_module_root(
+    resolved_source = resolve_module_source(
         session,
         module_parts,
         prompt_root=prompt_root,
     )
-    module_key = _module_load_key(resolved_prompt_root, module_parts)
+    module_key = _module_load_key(resolved_source.prompt_root, module_parts)
     cached = session._module_cache.get(module_key)
     if cached is not None:
         return cached
@@ -469,17 +530,17 @@ def load_module(
             raise _clone_doctrine_error(cached_error)
         raise cached_error
 
-    module_path = _module_path_for_root(resolved_prompt_root, module_parts)
+    module_path = resolved_source.prompt_path
     try:
-        if not module_path.is_file():
-            raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
         try:
             prompt_file = parse_file(module_path)
             indexed = index_unit(
                 session,
                 prompt_file,
-                prompt_root=resolved_prompt_root,
+                prompt_root=resolved_source.prompt_root,
                 module_parts=module_parts,
+                module_source_kind=resolved_source.module_source_kind,
+                package_root=resolved_source.package_root,
                 ancestry=(*ancestry, module_key),
                 allow_parallel_imports=False,
             )
@@ -506,25 +567,42 @@ def load_module(
             ready.set()
 
 
+def resolve_module_source(
+    session: "CompilationSession",
+    module_parts: tuple[str, ...],
+    *,
+    prompt_root: Path | None,
+) -> ResolvedModuleSource:
+    if prompt_root is not None:
+        resolved = _resolve_module_source_in_root(prompt_root, module_parts)
+        if resolved is not None:
+            return resolved
+        raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
+
+    matching_sources = tuple(
+        resolved
+        for candidate_root in session.import_roots
+        for resolved in (_resolve_module_source_in_root(candidate_root, module_parts),)
+        if resolved is not None
+    )
+    if not matching_sources:
+        raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
+    if len(matching_sources) > 1:
+        root_list = ", ".join(str(source.prompt_root) for source in matching_sources)
+        raise CompileError(
+            f"Ambiguous import module: {'.'.join(module_parts)} (matching prompts roots: {root_list})"
+        )
+    return matching_sources[0]
+
+
 def resolve_module_root(
     session: "CompilationSession",
     module_parts: tuple[str, ...],
     *,
     prompt_root: Path | None,
 ) -> Path:
-    if prompt_root is not None:
-        return prompt_root
-
-    matching_roots = tuple(
-        candidate_root
-        for candidate_root in session.import_roots
-        if _module_path_for_root(candidate_root, module_parts).is_file()
-    )
-    if not matching_roots:
-        raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
-    if len(matching_roots) > 1:
-        root_list = ", ".join(str(root) for root in matching_roots)
-        raise CompileError(
-            f"Ambiguous import module: {'.'.join(module_parts)} (matching prompts roots: {root_list})"
-        )
-    return matching_roots[0]
+    return resolve_module_source(
+        session,
+        module_parts,
+        prompt_root=prompt_root,
+    ).prompt_root

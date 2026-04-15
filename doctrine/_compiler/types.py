@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TypeAlias
 
 from doctrine._model.core import ProseLine, RenderProfileRule, RoleScalar
@@ -29,7 +28,7 @@ class CompiledSection:
 
 @dataclass(slots=True, frozen=True)
 class CompiledSequenceBlock:
-    title: str
+    title: str | None
     items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
@@ -39,7 +38,7 @@ class CompiledSequenceBlock:
 
 @dataclass(slots=True, frozen=True)
 class CompiledBulletsBlock:
-    title: str
+    title: str | None
     items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
@@ -49,7 +48,7 @@ class CompiledBulletsBlock:
 
 @dataclass(slots=True, frozen=True)
 class CompiledChecklistBlock:
-    title: str
+    title: str | None
     items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
@@ -181,10 +180,8 @@ class CompiledFinalOutputSpec:
     schema_name: str | None = None
     schema_title: str | None = None
     schema_profile: str | None = None
-    schema_file: str | None = None
-    example_file: str | None = None
-    resolved_schema_file: Path | None = None
-    resolved_example_file: Path | None = None
+    generated_schema_relpath: str | None = None
+    lowered_schema: dict[str, object] | None = None
     section: CompiledSection | None = None
 
 

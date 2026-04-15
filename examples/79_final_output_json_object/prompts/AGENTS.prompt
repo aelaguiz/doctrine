@@ -1,0 +1,50 @@
+output schema RepoStatusSchema: "Repo Status Schema"
+    field summary: "Summary"
+        type: string
+        required
+        note: "Short natural-language status."
+
+    field status: "Status"
+        type: string
+        enum:
+            ok
+            action_required
+        required
+        note: "Current repo outcome."
+
+    field next_step: "Next Step"
+        type: string
+        optional
+        note: "Null only when no follow-up is needed."
+
+    example:
+        summary: "Branch is clean and checks passed."
+        status: "ok"
+        next_step: null
+
+
+output shape RepoStatusJson: "Repo Status JSON"
+    kind: JsonObject
+    schema: RepoStatusSchema
+
+    explanation: "Field Notes"
+        "Use the schema fields exactly once."
+        "Keep `summary` short and user-facing."
+
+
+output RepoStatusFinalResponse: "Repo Status Final Response"
+    target: TurnResponse
+    shape: RepoStatusJson
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "The final answer should stand on its own as one structured repo-status result."
+
+
+agent RepoStatusAgent:
+    role: "Report repo status in structured form."
+    workflow: "Summarize"
+        "Summarize the repo state and end with the declared final output."
+    outputs: "Outputs"
+        RepoStatusFinalResponse
+    final_output: RepoStatusFinalResponse

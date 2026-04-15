@@ -1,12 +1,31 @@
-json schema AcceptanceControlSchema: "Acceptance Control Schema"
-    profile: OpenAIStructuredOutput
-    file: "schemas/acceptance_control.schema.json"
+output schema AcceptanceControlSchema: "Acceptance Control Schema"
+    field route: "Route"
+        type: string
+        enum:
+            follow_up
+            revise
+        required
+        note: "Control route for the next owner."
+
+    field current_artifact: "Current Artifact"
+        type: string
+        required
+        note: "Current artifact after review."
+
+    field next_owner: "Next Owner"
+        type: string
+        required
+        note: "Next owner after review."
+
+    example:
+        route: "follow_up"
+        current_artifact: "Draft Plan"
+        next_owner: "ReviewLead"
 
 
 output shape AcceptanceControlJson: "Acceptance Control JSON"
     kind: JsonObject
     schema: AcceptanceControlSchema
-    example_file: "examples/acceptance_control.example.json"
 
 
 input DraftPlan: "Draft Plan"

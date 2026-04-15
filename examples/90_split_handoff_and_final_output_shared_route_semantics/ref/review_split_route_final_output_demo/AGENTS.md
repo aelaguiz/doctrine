@@ -94,17 +94,16 @@ From this output alone, a downstream owner should know the acceptance verdict, c
 | Shape | Acceptance Control JSON |
 | Schema | Acceptance Control Schema |
 | Profile | OpenAIStructuredOutput |
-| Schema file | `schemas/acceptance_control.schema.json` |
-| Example file | `examples/acceptance_control.example.json` |
+| Generated Schema | `schemas/acceptance_control_final_response.schema.json` |
 | Requirement | Required |
 
 #### Payload Fields
 
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `route` | string | Control route for the next owner. |
-| `current_artifact` | string | Current artifact after review. |
-| `next_owner` | string | Next owner after review. |
+| Field | Type | Required On Wire | Null Allowed | Meaning |
+| --- | --- | --- | --- | --- |
+| `route` | string | Yes | No | Control route for the next owner. |
+| `current_artifact` | string | Yes | No | Current artifact after review. |
+| `next_owner` | string | Yes | No | Next owner after review. |
 
 #### Example
 
@@ -123,6 +122,8 @@ This final response is separate from the review carrier: AcceptanceReviewComment
 This final response does not carry review fields on its own.
 
 This final response is not control-ready. Read the review carrier for the full review outcome.
+
+- Kind: Json Object
 
 #### Accepted Route
 

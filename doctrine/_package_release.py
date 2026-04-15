@@ -122,11 +122,33 @@ def smoke_test_distribution(
 
         prompts_root.mkdir(parents=True)
         (prompts_root / "AGENTS.prompt").write_text(
-            'agent HelloWorld:\n'
+            'output schema HelloPayload: "Hello Payload"\n'
+            '    field summary: "Summary"\n'
+            '        type: string\n'
+            '        required\n'
+            "\n"
+            "    example:\n"
+            '        summary: "Hello world."\n'
+            "\n"
+            'output shape HelloJson: "Hello JSON"\n'
+            "    kind: JsonObject\n"
+            "    schema: HelloPayload\n"
+            "\n"
+            'output HelloWorldReply: "Hello World Reply"\n'
+            "    target: TurnResponse\n"
+            "    shape: HelloJson\n"
+            "    requirement: Required\n"
+            "\n"
+            "agent HelloWorld:\n"
             '    role: "You are the hello world agent."\n'
             "\n"
             '    workflow: "Instruction"\n'
-            '        "Say hello world."\n',
+            '        "Say hello world."\n'
+            "\n"
+            '    outputs: "Outputs"\n'
+            "        HelloWorldReply\n"
+            "\n"
+            "    final_output: HelloWorldReply\n",
             encoding="utf-8",
         )
         (project_root / "pyproject.toml").write_text(
@@ -161,10 +183,13 @@ def smoke_test_distribution(
             cwd=project_root,
         )
 
-        if not _build_contains_expected_text(output_root, expected_text="Say hello world."):
+        if not _build_contains_expected_text(output_root, expected_text="Hello world."):
             raise RuntimeError(
                 f"Smoke output under `{output_root}` did not contain the expected compiled text."
             )
+        schema_path = output_root / "hello_world" / "schemas" / "hello_world_reply.schema.json"
+        if not schema_path.is_file():
+            raise RuntimeError(f"Smoke output is missing the emitted schema file: `{schema_path}`.")
 
 
 def write_github_outputs(*, metadata: PackageReleaseMetadata, output_path: Path) -> None:

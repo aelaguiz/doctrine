@@ -94,8 +94,11 @@ Important rules:
 - Custom targets may be declared with `output target`.
 - Output shapes may be named with `output shape`.
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
-- `schema:` on `output shape` still attaches a `json schema`; the field name is
-  owner-aware rather than globally retyped.
+- `schema:` on `output shape` points at an `output schema` when the shape kind
+  is `JsonObject`.
+- The field name stays owner-aware rather than globally retyped.
+- `output schema` owns the machine-readable payload fields for structured
+  `JsonObject` outputs.
 - Doctrine `schema` declarations may now own reusable `sections:`, optional
   `gates:`, first-class `artifacts:`, and reusable `groups:`.
 - Output-attached schemas must still expose at least one section even when the
@@ -108,7 +111,7 @@ Important rules:
 - Ordinary output record bodies may reuse readable block kinds such as
   `definitions`, `properties`, `table`, explicit `guard` shells, `callout`,
   `code`, raw `markdown`, raw `html`, `footnotes`, and `image`.
-- `json schema` still attaches beneath `output shape`; it does not replace
+- `output schema` still attaches beneath `output shape`; it does not replace
   `output`.
 - `output Child[Parent]: "Title"` inherits one ordinary output contract and
   patches it with explicit top-level `inherit` or `override` entries.
@@ -153,7 +156,7 @@ final_output:
 
 - The compiler emits whether that split final response is `control_ready`.
   Authors do not declare that mode by hand.
-- When that designated output's `output shape` carries a `json schema`, the
+- When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
 
@@ -248,9 +251,10 @@ Carrier rules:
   expand to concrete member artifacts in authored group order
 - `standalone_read` explains the contract to humans, but it does not create a
   second trust channel
-- compiled `AGENTS.md` plus companion `.contract.json` emission and
-  target-scoped workflow-flow emission are separate build layers configured
-  outside the prompt language; they are not `output target` declarations
+- compiled `AGENTS.md`, emitted structured final-output schema files under
+  `schemas/<output-slug>.schema.json`, and target-scoped workflow-flow
+  emission are separate build layers configured outside the prompt language;
+  they are not `output target` declarations
 
 ## Guarded Output Items
 

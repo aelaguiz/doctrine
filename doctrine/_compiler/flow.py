@@ -57,14 +57,22 @@ class FlowMixin:
     """Flow extraction helper owner for CompilationContext."""
 
     def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
+        return self.extract_target_flow_graph_from_units(
+            tuple((self.root_unit, agent_name) for agent_name in agent_names)
+        )
+
+    def extract_target_flow_graph_from_units(
+        self,
+        agent_roots: tuple[tuple[IndexedUnit, str], ...],
+    ) -> FlowGraph:
         root_agents: list[tuple[IndexedUnit, model.Agent]] = []
-        for agent_name in agent_names:
-            agent = self.root_unit.agents_by_name.get(agent_name)
+        for unit, agent_name in agent_roots:
+            agent = unit.agents_by_name.get(agent_name)
             if agent is None:
                 raise CompileError(f"Missing target agent: {agent_name}")
             if agent.abstract:
                 raise CompileError(f"Abstract agent does not render: {agent_name}")
-            root_agents.append((self.root_unit, agent))
+            root_agents.append((unit, agent))
 
         agent_nodes: dict[FlowAgentKey, FlowAgentNode] = {}
         input_nodes: dict[FlowArtifactKey, FlowInputNode] = {}

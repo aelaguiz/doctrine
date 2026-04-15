@@ -11,7 +11,12 @@ from unittest.mock import patch
 
 from doctrine._compiler.types import FlowAgentNode, FlowEdge, FlowGraph
 from doctrine.compiler import CompilationSession
-from doctrine.emit_common import DOCS_ENTRYPOINTS, resolve_direct_emit_target, root_concrete_agents
+from doctrine.emit_common import (
+    DOCS_ENTRYPOINTS,
+    load_emit_targets,
+    resolve_direct_emit_target,
+    root_concrete_agents,
+)
 from doctrine.emit_flow import emit_target_flow, main as emit_flow_main
 from doctrine.flow_renderer import render_flow_d2
 from doctrine.parser import parse_file
@@ -204,7 +209,7 @@ version = "0.0.0"
                 "DraftReviewDecision",
             ),
             (
-                "examples/85_review_split_final_output_json_schema/prompts/AGENTS.prompt",
+                "examples/85_review_split_final_output_json_object/prompts/AGENTS.prompt",
                 "AcceptanceControlFinalResponse",
             ),
         ):
@@ -501,6 +506,93 @@ version = "0.0.0"
             "agent_handoffs.route_starts.agent_x -> agent_handoffs.primary_lane.agent_hub",
             d2_text,
         )
+
+    def test_extract_target_flow_graph_from_imported_runtime_package_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "runtime_home").mkdir(parents=True)
+            (prompts / "runtime_home" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input SharedInput: "Shared Input"
+                        source: File
+                            path: "unit_root/INPUT.md"
+                        shape: MarkdownDocument
+                        requirement: Required
+
+                    agent RuntimeHome:
+                        role: "Own the runtime package."
+                        workflow: "Reply"
+                            "Reply from the imported package."
+                        inputs: "Inputs"
+                            SharedInput
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import runtime_home
+
+                    agent BuildHandle:
+                        role: "Own the build handle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session = CompilationSession(parse_file(prompts / "AGENTS.prompt"))
+            runtime_unit = session.load_module(("runtime_home",))
+            graph = session.extract_target_flow_graph_from_units(
+                ((runtime_unit, "RuntimeHome"),)
+            )
+
+        self.assertEqual(
+            tuple((node.module_parts, node.name) for node in graph.agents),
+            ((("runtime_home",), "RuntimeHome"),),
+        )
+
+    def test_emit_target_flow_roots_on_imported_runtime_packages(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "runtime_home").mkdir(parents=True)
+            (prompts / "runtime_home" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent RuntimeHome:
+                        role: "Own the runtime package."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                "import runtime_home\n",
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emitted = emit_target_flow(target, include_svg=False)
+
+            d2_path = root / "build" / "AGENTS.flow.d2"
+            self.assertEqual(emitted, (d2_path,))
+            self.assertIn("RuntimeHome", d2_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

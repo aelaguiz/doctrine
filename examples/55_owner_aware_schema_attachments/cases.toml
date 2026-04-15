@@ -2,14 +2,14 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
-name = "owner-aware schema attachments keep json schema and doctrine schema separate"
+name = "owner-aware schema attachments keep output schema and doctrine schema separate"
 status = "active"
 kind = "render_contract"
 agent = "OwnerAwareSchemaDemo"
 assertion = "exact_lines"
 approx_ref = "ref/owner_aware_schema_demo/AGENTS.md"
 expected_lines = [
-  "Check Delivery JSON Schema before you publish Delivery Plan.",
+  "Check Delivery Output Schema before you publish Delivery Plan.",
   "",
   "## Publish",
   "",

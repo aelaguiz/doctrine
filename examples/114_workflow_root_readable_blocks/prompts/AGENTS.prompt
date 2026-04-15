@@ -1,0 +1,25 @@
+# This example shows readable blocks directly at workflow root.
+
+workflow RootReadableGuide: "Guide"
+    sequence read_first:
+        "Read `home:issue.md` first."
+        "Then read this role's local rules."
+
+    bullets shared_rules:
+        "Use `home:issue.md` as the shared ledger."
+        "End with the final JSON."
+
+    callout evidence_note: "Evidence Note"
+        kind: note
+        "Ground the current claim before you summarize."
+
+    definitions done_when: "Done When"
+        summary: "Summary"
+            "State the release result."
+
+        next_owner: "Next Owner"
+            "Name the next owner."
+
+agent WorkflowRootReadableBlocksDemo:
+    role: "Use {{RootReadableGuide:evidence_note.title}} and {{RootReadableGuide:done_when.summary.title}}."
+    workflow: RootReadableGuide

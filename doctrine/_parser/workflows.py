@@ -130,6 +130,10 @@ class WorkflowTransformerMixin:
         return value
 
     @v_args(inline=True)
+    def workflow_root_readable_block(self, value):
+        return value
+
+    @v_args(inline=True)
     def workflow_section_block(self, key, title, *parts):
         requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
         return model.ReadableBlock(

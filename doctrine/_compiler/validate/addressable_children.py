@@ -102,7 +102,7 @@ class ValidateAddressableChildrenMixin:
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
             ),
         ):
@@ -128,7 +128,27 @@ class ValidateAddressableChildrenMixin:
                     unit=node.unit,
                     root_decl=node.root_decl,
                 )
+            if isinstance(target, model.OutputSchemaDecl):
+                return self._output_schema_items_to_addressable_children(
+                    target.items,
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                )
             return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(
+            target,
+            (
+                model.OutputSchemaField,
+                model.OutputSchemaDef,
+                model.OutputSchemaOverrideField,
+                model.OutputSchemaOverrideDef,
+            ),
+        ):
+            return self._output_schema_items_to_addressable_children(
                 target.items,
                 unit=node.unit,
                 root_decl=node.root_decl,
@@ -294,6 +314,34 @@ class ValidateAddressableChildrenMixin:
                     model.RecordSection,
                     model.GuardedOutputSection,
                     model.GuardedOutputScalar,
+                    model.ReadableBlock,
+                ),
+            ):
+                children[item.key] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=item,
+                )
+        return children
+
+    def _output_schema_items_to_addressable_children(
+        self,
+        items: tuple[object, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            if isinstance(
+                item,
+                (
+                    model.RecordScalar,
+                    model.RecordSection,
+                    model.OutputSchemaField,
+                    model.OutputSchemaDef,
+                    model.OutputSchemaOverrideField,
+                    model.OutputSchemaOverrideDef,
                     model.ReadableBlock,
                 ),
             ):

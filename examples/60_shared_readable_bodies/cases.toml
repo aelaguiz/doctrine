@@ -16,8 +16,6 @@ expected_lines = [
   "",
   "#### Evidence",
   "",
-  "_unordered list_",
-  "",
   "- Read the current status.",
   "- Read the latest validation notes.",
   "",

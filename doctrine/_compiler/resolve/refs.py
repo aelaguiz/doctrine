@@ -257,6 +257,36 @@ class ResolveRefsMixin:
             resolve_parent_ref=self._resolve_output_decl,
         )
 
+    def _resolve_parent_output_shape_decl(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputShapeDecl]:
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=output_shape_decl.name,
+            child_label="output shape",
+            parent_ref=output_shape_decl.parent_ref,
+            registry_name="output_shapes_by_name",
+            resolve_parent_ref=self._resolve_output_shape_decl,
+        )
+
+    def _resolve_parent_output_schema_decl(
+        self,
+        output_schema_decl: model.OutputSchemaDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputSchemaDecl]:
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=output_schema_decl.name,
+            child_label="output schema",
+            parent_ref=output_schema_decl.parent_ref,
+            registry_name="output_schemas_by_name",
+            resolve_parent_ref=self._resolve_output_schema_decl,
+        )
+
     def _resolve_input_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.InputDecl]:
@@ -307,14 +337,14 @@ class ResolveRefsMixin:
             missing_label="output shape declaration",
         )
 
-    def _resolve_json_schema_ref(
+    def _resolve_output_schema_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
-    ) -> tuple[IndexedUnit, model.JsonSchemaDecl]:
+    ) -> tuple[IndexedUnit, model.OutputSchemaDecl]:
         return self._resolve_decl_ref(
             ref,
             unit=unit,
-            registry_name="json_schemas_by_name",
-            missing_label="json schema declaration",
+            registry_name="output_schemas_by_name",
+            missing_label="output schema declaration",
         )
 
     def _resolve_skill_decl(
@@ -452,6 +482,8 @@ class ResolveRefsMixin:
         for label, registry_name in _READABLE_DECL_REGISTRIES:
             if registry_name == "outputs_by_name":
                 decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+            elif registry_name == "output_shapes_by_name":
+                decl = self._resolve_local_output_shape_decl(declaration_name, unit=unit)
             else:
                 decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
@@ -468,6 +500,8 @@ class ResolveRefsMixin:
         for label, registry_name in _ADDRESSABLE_ROOT_REGISTRIES:
             if registry_name == "outputs_by_name":
                 decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+            elif registry_name == "output_shapes_by_name":
+                decl = self._resolve_local_output_shape_decl(declaration_name, unit=unit)
             else:
                 decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:

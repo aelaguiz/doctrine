@@ -35,17 +35,19 @@ A prompt file may contain imports and any mix of shipped declarations:
 - `skill package`
 - `skill`, `skills`
 - `input`, `inputs`, `input source`
-- `output`, `outputs`, `output target`, `output shape`, `json schema`
+- `output`, `outputs`, `output target`, `output shape`, `output schema`
 - `enum`
 
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
 skill-package entrypoint is `SKILL.prompt`. `emit_docs` compiles concrete
 agents from the agent entrypoints into runtime Markdown artifacts whose
-basename matches the entrypoint stem. `emit_skill` compiles one top-level
-`skill package` from `SKILL.prompt` into `SKILL.md` plus bundled source-root
-files. Doctrine does that work through shared compilation and indexing so
-module loading happens once per entrypoint and batch emit or verification
-surfaces can fan out safely while preserving deterministic output order.
+basename matches the entrypoint stem. Structured final outputs also emit the
+exact lowered schema at `schemas/<output-slug>.schema.json` beside that
+Markdown file. `emit_skill` compiles one top-level `skill package` from
+`SKILL.prompt` into `SKILL.md` plus bundled source-root files. Doctrine does
+that work through shared compilation and indexing so module loading happens
+once per entrypoint and batch emit or verification surfaces can fan out
+safely while preserving deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
 [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
@@ -154,7 +156,9 @@ final_output:
 
 ```prompt
 workflow SharedTurn: "How To Take A Turn"
-    "Read the current brief before you act."
+    sequence read_first:
+        "Read `home:issue.md` first."
+        "Then read this role's local rules."
 
     next_step: "Next Step"
         route "Return to ReviewLead when ready." -> ReviewLead
@@ -164,6 +168,8 @@ A workflow body may contain:
 
 - prose lines
 - local keyed sections
+- non-section readable blocks such as `sequence`, `bullets`, `checklist`,
+  `definitions`, `table`, `callout`, `code`, and `rule`
 - `use <local_key>: WorkflowRef` composition
 - readable declaration refs inside titled section bodies
 - inline or referenced `skills:` blocks
@@ -175,10 +181,20 @@ Important rules:
 - Keys are the patch identities used by inheritance and addressable refs.
 - Bare workflow roots are composed with `use`; they do not render as readable
   refs inside ordinary workflow section bodies.
+- Workflow roots may own non-section readable blocks directly.
+- Root workflow sections still use the existing `key: "Title"` form. Doctrine
+  does not add a second root `section ...` syntax.
 - Titled workflow section bodies may contain prose, route lines, local nested
   sections, readable declaration refs, and readable block kinds such as
   `section`, `sequence`, `bullets`, `checklist`, `definitions`, `table`,
   `callout`, `code`, and `rule`.
+- `sequence`, `bullets`, and `checklist` keep the authored key, but their
+  title string is optional. If the title is missing, Doctrine renders the
+  list directly inside the current section instead of adding a nested heading.
+- The same title-optional rule applies to `override sequence`, `override
+  bullets`, and `override checklist`.
+- Inherited workflow-root readable blocks use the same explicit patch model as
+  other keyed workflow items. Use `inherit key` or `override <kind> key`.
 - Workflow law may use `route_from` to pick one route from a typed input or
   emitted output fact.
 
@@ -362,7 +378,7 @@ Important rules:
 - A schema must declare at least one `sections:` or `artifacts:` block.
 - On `output`, `schema:` points at a Doctrine `schema` declaration.
 - On `output shape`, `schema:` remains the owner-aware attachment point for
-  `json schema`.
+  `output schema` when the shape kind is `JsonObject`.
 - Output-attached schemas must still expose at least one section.
 - A markdown-bearing `output` may not attach both `schema:` and `structure:`.
   Pick exactly one artifact owner on that surface.
@@ -379,11 +395,14 @@ and outputs.
 
 ```prompt
 document LessonPlan: "Lesson Plan"
-    section overview: "Overview"
-        "Start with the plan overview."
+    section read_first: "Read First"
+        sequence steps:
+            "Read the learner goal."
+            "Read the current lesson plan."
 
-    sequence steps: "Sequence"
-        "List the lesson steps in order."
+    bullets evidence: "Evidence"
+        "Name the latest status source."
+        "Name the latest review note."
 ```
 
 Important rules:
@@ -395,6 +414,9 @@ Important rules:
   descriptive `when <expr>` metadata.
 - `sequence`, `bullets`, and `checklist` may declare `item_schema:` for typed
   keyed descendants on the list item surface.
+- `sequence`, `bullets`, and `checklist` titles are optional. Keep the key.
+  With a title, the list renders as a nested headed block. Without a title,
+  the list renders directly inside the parent section.
 - `table` may declare `row_schema:` alongside `columns:` / `rows:` and may use
   structured cell bodies when a row needs nested readable content.
 - Raw `markdown`, raw `html`, `footnotes`, and `image` are explicit block
@@ -566,7 +588,9 @@ Important rules:
 - Output shapes can be named with `output shape`.
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` remains the owner-aware attachment point for
-  `json schema`.
+  `output schema` when the shape kind is `JsonObject`.
+- `output schema` owns the machine-readable payload fields for structured
+  `JsonObject` outputs.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
 - `render_profile:` may attach to a markdown-bearing `output` when exactly one
@@ -575,12 +599,12 @@ Important rules:
   uses, including `definitions`, `properties`, `table`, explicit `guard`
   shells, `callout`, `code`, raw `markdown`, raw `html`, `footnotes`, and
   `image`.
-- `json schema` is subordinate to `output shape`, not a competing output
+- `output schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
 - `final_output:` on an agent designates one emitted `TurnResponse` output as
   the final assistant message.
-- When that designated output's `output shape` carries a `json schema`, the
+- When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
 - On review-driven agents, the designated final output may be either the

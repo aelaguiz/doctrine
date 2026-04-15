@@ -324,3 +324,210 @@ class OutputRenderingTests(unittest.TestCase):
         self.assertEqual(getattr(caught.exception, "code", None), "E295")
         self.assertIn("Duplicate properties entry key", str(caught.exception))
         self.assertIn("verdict", str(caught.exception))
+
+    def test_titled_lists_drop_kind_metadata_and_keep_meaningful_metadata(self) -> None:
+        agent = self._compile_agent(
+            """
+            agent Demo:
+                role: "Review the release."
+                workflow: "Guide"
+                    titled_lists: "Titled Lists"
+                        sequence read_order: "Read Order" advisory
+                            "Read the issue."
+                            "Read the repo status."
+
+                        bullets evidence: "Evidence"
+                            current_status: "Read the current status."
+                            latest_notes: "Read the latest validation notes."
+
+                        checklist checks: "Checks" required
+                            lint: "Run lint."
+                            tests: "Run tests."
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("#### Read Order", rendered)
+        self.assertIn("_Advisory_", rendered)
+        self.assertNotIn("ordered list", rendered)
+        self.assertIn("1. Read the issue.", rendered)
+        self.assertIn("2. Read the repo status.", rendered)
+        self.assertIn("#### Evidence", rendered)
+        self.assertNotIn("unordered list", rendered)
+        self.assertIn("- Read the current status.", rendered)
+        self.assertIn("- Read the latest validation notes.", rendered)
+        self.assertIn("#### Checks", rendered)
+        self.assertIn("_Required_", rendered)
+        self.assertNotIn("· checklist", rendered)
+        self.assertIn("- [ ] Run lint.", rendered)
+        self.assertIn("- [ ] Run tests.", rendered)
+
+    def test_titleless_lists_render_directly_inside_parent_sections(self) -> None:
+        agent = self._compile_agent(
+            """
+            agent Demo:
+                role: "Follow the guide."
+                workflow: "Guide"
+                    read_first: "Read First"
+                        sequence steps:
+                            "Read `home:issue.md` first."
+                            "Then read this role's local rules, files, and outputs."
+                            "Check `rally-memory` only when past work like this could help."
+
+                    shared_rules: "Shared Rules"
+                        bullets rules:
+                            "Use `home:issue.md` as the shared ledger for this run."
+                            "Leave one short saved note only when later readers need it."
+                            "Keep notes run-local. Use `rally-memory` for cross-run lessons."
+
+                    done_before_handoff: "Done Before Handoff"
+                        checklist checks:
+                            "Confirm the current artifact."
+                            "Confirm the next owner."
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "### Read First\n\n"
+            "1. Read `home:issue.md` first.\n"
+            "2. Then read this role's local rules, files, and outputs.\n"
+            "3. Check `rally-memory` only when past work like this could help.",
+            rendered,
+        )
+        self.assertIn(
+            "### Shared Rules\n\n"
+            "- Use `home:issue.md` as the shared ledger for this run.\n"
+            "- Leave one short saved note only when later readers need it.\n"
+            "- Keep notes run-local. Use `rally-memory` for cross-run lessons.",
+            rendered,
+        )
+        self.assertIn(
+            "### Done Before Handoff\n\n"
+            "- [ ] Confirm the current artifact.\n"
+            "- [ ] Confirm the next owner.",
+            rendered,
+        )
+        self.assertNotIn("#### Steps", rendered)
+        self.assertNotIn("#### Rules", rendered)
+        self.assertNotIn("#### Checks", rendered)
+        self.assertNotIn("ordered list", rendered)
+        self.assertNotIn("unordered list", rendered)
+        self.assertNotIn("checklist", rendered)
+
+    def test_titleless_list_overrides_compile_through_document_inheritance(self) -> None:
+        agent = self._compile_agent(
+            """
+            document BaseGuide: "Base Guide"
+                sequence read_order: "Read Order"
+                    "Read the brief."
+
+            document ChildGuide[BaseGuide]: "Child Guide"
+                override sequence read_order:
+                    "Read the learner goal."
+                    "Read the current lesson plan."
+
+            output ChildGuideFile: "Child Guide File"
+                target: File
+                    path: "guide_root/CHILD_GUIDE.md"
+                shape: MarkdownDocument
+                structure: ChildGuide
+                requirement: Required
+
+            agent Demo:
+                role: "Write the guide."
+                outputs: "Outputs"
+                    ChildGuideFile
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("| **Read Order** | Ordered List | Read the learner goal. Read the current lesson plan. |", rendered)
+        self.assertIn("1. Read the learner goal.", rendered)
+        self.assertIn("2. Read the current lesson plan.", rendered)
+        self.assertNotIn("##### Read Order", rendered)
+        self.assertNotIn("ordered list", rendered)
+
+    def test_workflow_root_readable_blocks_render_and_stay_addressable(self) -> None:
+        agent = self._compile_agent(
+            """
+            workflow ReleaseGuide: "Release Guide"
+                sequence read_first:
+                    "Read `home:issue.md` first."
+                    "Then read the role rules."
+
+                bullets shared_rules:
+                    "Use `home:issue.md` as the shared ledger."
+                    "End with the final JSON."
+
+                callout evidence_note: "Evidence Note"
+                    kind: note
+                    "Ground the current claim before you summarize."
+
+                definitions done_when: "Done When"
+                    summary: "Summary"
+                        "State the release result."
+
+            agent Demo:
+                role: "Use {{ReleaseGuide:evidence_note.title}} and {{ReleaseGuide:done_when.summary.title}}."
+                workflow: ReleaseGuide
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("Use Evidence Note and Summary.", rendered)
+        self.assertIn(
+            "## Release Guide\n\n"
+            "1. Read `home:issue.md` first.\n"
+            "2. Then read the role rules.",
+            rendered,
+        )
+        self.assertIn(
+            "- Use `home:issue.md` as the shared ledger.\n"
+            "- End with the final JSON.",
+            rendered,
+        )
+        self.assertNotIn("### Read First", rendered)
+        self.assertNotIn("### Shared Rules", rendered)
+        self.assertIn("> **NOTE \u2014 Evidence Note**", rendered)
+        self.assertIn("### Done When", rendered)
+        self.assertIn("- **Summary** \u2014 State the release result.", rendered)
+
+    def test_workflow_root_readable_overrides_keep_non_list_titles_and_drop_list_titles(self) -> None:
+        agent = self._compile_agent(
+            """
+            workflow BaseGuide: "Guide"
+                sequence read_first: "Read First"
+                    "Read the brief."
+
+                definitions done_when: "Done When"
+                    summary: "Summary"
+                        "State the base result."
+
+            workflow ChildGuide[BaseGuide]: "Guide"
+                override sequence read_first:
+                    "Read the learner goal."
+                    "Read the current lesson plan."
+
+                override definitions done_when:
+                    summary: "Summary"
+                        "State the child result."
+
+            agent Demo:
+                role: "Use {{ChildGuide:done_when.title}}."
+                workflow: ChildGuide
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("Use Done When.", rendered)
+        self.assertIn("1. Read the learner goal.", rendered)
+        self.assertIn("2. Read the current lesson plan.", rendered)
+        self.assertNotIn("### Read First", rendered)
+        self.assertIn("### Done When", rendered)
+        self.assertIn("- **Summary** \u2014 State the child result.", rendered)

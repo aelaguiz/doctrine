@@ -1,0 +1,8 @@
+import editor_home
+
+agent BriefWriter:
+    role: "Draft the first brief and hand it to the editor."
+    workflow: "Draft"
+        "Write the first brief for the editor."
+        routing: "Routing"
+            route "Hand the brief to BriefEditor." -> editor_home.BriefEditor

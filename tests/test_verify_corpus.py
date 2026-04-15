@@ -76,6 +76,19 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
             approx_ref_path=None,
         )
 
+    def _runtime_package_build_contract_case(self) -> CaseSpec:
+        return CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/115_runtime_agent_packages/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/115_runtime_agent_packages").resolve(),
+            name="runtime package build-contract proof stays checked in",
+            kind="build_contract",
+            prompt_path=(
+                REPO_ROOT / "examples/115_runtime_agent_packages/prompts/AGENTS.prompt"
+            ).resolve(),
+            build_target="example_115_runtime_agent_packages",
+            approx_ref_path=None,
+        )
+
     def test_emit_target_loading_failure_becomes_a_verification_error(self) -> None:
         case = CaseSpec(
             manifest_path=(REPO_ROOT / "examples/01_hello_world/cases.toml").resolve(),
@@ -228,6 +241,12 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
             "Could not render `AGENTS.flow.svg` from `AGENTS.flow.d2`: render crashed",
             rendered,
         )
+
+    def test_runtime_package_build_contract_stays_checked_in(self) -> None:
+        result = _run_build_contract(self._runtime_package_build_contract_case())
+
+        self.assertEqual(result.result, "PASS")
+        self.assertEqual(result.detail, "build matched checked-in tree")
 
 
 if __name__ == "__main__":

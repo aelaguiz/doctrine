@@ -9,6 +9,8 @@ from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import (
     DOCS_ENTRYPOINTS,
     EmitTarget,
+    RuntimeEmitRoot,
+    collect_runtime_emit_roots,
     display_path,
     ensure_supported_entrypoint,
     emit_error,
@@ -66,8 +68,9 @@ def emit_target_flow(
             location=path_location(target.entrypoint),
         )
 
-    agent_names = root_concrete_agents(prompt_file)
-    if not agent_names:
+    session = CompilationSession(prompt_file, project_config=target.project_config)
+    runtime_roots = _runtime_flow_roots_for_target(session, target=target)
+    if not runtime_roots:
         raise emit_error(
             "E502",
             "Emit target has no concrete agents",
@@ -81,9 +84,10 @@ def emit_target_flow(
     d2_path = emitted_dir / f"{output_name}.d2"
     svg_path = emitted_dir / f"{output_name}.svg"
 
-    session = CompilationSession(prompt_file, project_config=target.project_config)
     try:
-        graph = session.extract_target_flow_graph(agent_names)
+        graph = session.extract_target_flow_graph_from_units(
+            tuple((root.unit, root.agent_name) for root in runtime_roots)
+        )
     except DoctrineError as exc:
         raise exc.prepend_trace(
             f"emit target `{target.name}`",
@@ -220,6 +224,19 @@ def _resolve_requested_targets(
             "Use `--entrypoint path/to/AGENTS.prompt --output-dir build` for direct mode.",
         ),
     )
+
+
+def _runtime_flow_roots_for_target(
+    session: CompilationSession,
+    *,
+    target: EmitTarget,
+) -> tuple[RuntimeEmitRoot, ...]:
+    if target.entrypoint.name == "SOUL.prompt":
+        return tuple(
+            RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
+            for agent_name in root_concrete_agents(session.root_unit.prompt_file)
+        )
+    return collect_runtime_emit_roots(session)
 
 
 if __name__ == "__main__":

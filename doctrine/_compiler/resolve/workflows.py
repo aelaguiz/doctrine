@@ -212,6 +212,14 @@ class ResolveWorkflowsMixin:
                 )
                 continue
 
+            if isinstance(item, model.ReadableBlock):
+                if key in parent_items_by_key:
+                    raise CompileError(
+                        f"Inherited workflow requires `override {key}` in {owner_label}"
+                    )
+                resolved_items.append(item)
+                continue
+
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
@@ -242,6 +250,16 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.ReadableOverrideBlock):
+                resolved_items.append(
+                    self._merge_workflow_root_readable_override(
+                        item,
+                        parent_item=parent_item,
+                        owner_label=owner_label,
                     )
                 )
                 continue
@@ -440,6 +458,14 @@ class ResolveWorkflowsMixin:
                 )
                 continue
 
+            if isinstance(item, model.ReadableBlock):
+                if key in parent_items_by_key:
+                    raise CompileError(
+                        f"Inherited workflow requires `override {key}` in {owner_label}"
+                    )
+                resolved_items.append(item)
+                continue
+
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
@@ -469,6 +495,16 @@ class ResolveWorkflowsMixin:
                             item.items,
                             unit=unit,
                         ),
+                    )
+                )
+                continue
+
+            if isinstance(item, model.ReadableOverrideBlock):
+                resolved_items.append(
+                    self._merge_workflow_root_readable_override(
+                        item,
+                        parent_item=parent_item,
+                        owner_label=owner_label,
                     )
                 )
                 continue
@@ -580,6 +616,10 @@ class ResolveWorkflowsMixin:
                 )
                 continue
 
+            if isinstance(item, model.ReadableBlock):
+                resolved_items.append(item)
+                continue
+
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
             raise CompileError(
                 f"{item_label} requires an inherited workflow in {owner_label}: {key}"
@@ -640,9 +680,58 @@ class ResolveWorkflowsMixin:
                 )
                 continue
 
+            if isinstance(item, model.ReadableBlock):
+                resolved_items.append(item)
+                continue
+
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
             raise CompileError(
                 f"{item_label} requires an inherited workflow in {owner_label}: {key}"
             )
 
         return tuple(resolved_items)
+
+    def _merge_workflow_root_readable_override(
+        self,
+        item: model.ReadableOverrideBlock,
+        *,
+        parent_item: ResolvedWorkflowItem | None,
+        owner_label: str,
+    ) -> model.ReadableBlock:
+        key = item.key
+        if not isinstance(parent_item, model.ReadableBlock):
+            raise CompileError(
+                f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+            )
+        if item.kind != parent_item.kind:
+            raise CompileError(
+                f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+            )
+        return model.ReadableBlock(
+            kind=item.kind,
+            key=item.key,
+            title=self._workflow_root_readable_override_title(item, parent_item=parent_item),
+            payload=item.payload,
+            requirement=(
+                item.requirement
+                if item.requirement is not None
+                else parent_item.requirement
+            ),
+            when_expr=item.when_expr if item.when_expr is not None else parent_item.when_expr,
+            item_schema=item.item_schema if item.item_schema is not None else parent_item.item_schema,
+            row_schema=item.row_schema if item.row_schema is not None else parent_item.row_schema,
+            anonymous=parent_item.anonymous,
+            legacy_section=parent_item.legacy_section,
+        )
+
+    def _workflow_root_readable_override_title(
+        self,
+        item: model.ReadableOverrideBlock,
+        *,
+        parent_item: model.ReadableBlock,
+    ) -> str | None:
+        if item.title is not None:
+            return item.title
+        if item.kind in {"sequence", "bullets", "checklist"}:
+            return None
+        return parent_item.title

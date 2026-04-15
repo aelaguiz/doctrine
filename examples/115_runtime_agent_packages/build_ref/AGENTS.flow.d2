@@ -1,0 +1,42 @@
+direction: down
+
+agent_handoffs: {
+  label: "Agent Handoffs"
+  direction: down
+  style: {
+    fill: "#FFF8EB"
+    stroke: "#B54708"
+  }
+  primary_lane: {
+    label: ""
+    direction: down
+    style: {
+      fill: "transparent"
+      stroke: "transparent"
+    }
+    agent_writer_home_briefwriter: {
+      label: "BriefWriter\nAgent\nDraft the first brief and hand\nit to the editor."
+      shape: rectangle
+      style: {
+        fill: "#FFF7E6"
+        stroke: "#B54708"
+      }
+    }
+
+    agent_editor_home_briefeditor: {
+      label: "BriefEditor\nAgent\nPolish the brief and stop."
+      shape: rectangle
+      style: {
+        fill: "#FFF7E6"
+        stroke: "#B54708"
+      }
+    }
+  }
+}
+
+agent_handoffs.primary_lane.agent_writer_home_briefwriter -> agent_handoffs.primary_lane.agent_editor_home_briefeditor: {
+  label: "Hand the brief to\nBriefEditor."
+  style: {
+    stroke: "#B54708"
+  }
+}

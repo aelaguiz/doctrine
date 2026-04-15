@@ -63,7 +63,7 @@ expected_lines = [
   "",
   "##### Checks",
   "",
-  "_Advisory \u00b7 checklist_",
+  "_Advisory_",
   "",
   "- [ ] Run lint.",
   "- [ ] Run tests.",

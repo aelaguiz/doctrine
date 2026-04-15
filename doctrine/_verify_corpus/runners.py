@@ -320,16 +320,14 @@ def _run_build_contract(
     with tempfile.TemporaryDirectory() as temp_dir:
         actual_root = Path(temp_dir)
         try:
-            if target.entrypoint.name == "SKILL.prompt":
-                emit_target_skill_fn(target, output_dir_override=actual_root)
-            else:
-                emit_target_fn(target, output_dir_override=actual_root)
-            if target.entrypoint.name != "SKILL.prompt" and _build_ref_has_flow_artifacts(expected_root):
-                emit_target_flow_fn(
-                    target,
-                    output_dir_override=actual_root,
-                    include_svg=_build_ref_has_svg_artifacts(expected_root),
-                )
+            _emit_build_contract_target(
+                target,
+                expected_root=expected_root,
+                actual_root=actual_root,
+                emit_target_fn=emit_target_fn,
+                emit_target_flow_fn=emit_target_flow_fn,
+                emit_target_skill_fn=emit_target_skill_fn,
+            )
         except DoctrineError as exc:
             raise VerificationError(str(exc)) from exc
 
@@ -344,6 +342,30 @@ def _run_build_contract(
         result="PASS",
         detail="build matched checked-in tree",
     )
+
+
+def _emit_build_contract_target(
+    target,
+    *,
+    expected_root: Path,
+    actual_root: Path,
+    emit_target_fn,
+    emit_target_flow_fn,
+    emit_target_skill_fn,
+) -> None:
+    if target.entrypoint.name == "SKILL.prompt":
+        emit_target_skill_fn(target, output_dir_override=actual_root)
+        return
+
+    # Runtime build-contract proof always rides the canonical emit_docs +
+    # emit_flow path, including imported runtime-package trees.
+    emit_target_fn(target, output_dir_override=actual_root)
+    if _build_ref_has_flow_artifacts(expected_root):
+        emit_target_flow_fn(
+            target,
+            output_dir_override=actual_root,
+            include_svg=_build_ref_has_svg_artifacts(expected_root),
+        )
 
 
 def _run_compile_fail(

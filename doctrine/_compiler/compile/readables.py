@@ -263,7 +263,9 @@ class CompileReadablesMixin:
     ) -> CompiledReadableBlock:
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         title = None if block.kind == "properties" and block.anonymous else (
-            block.title or _humanize_key(block.key)
+            block.title if block.kind in {"sequence", "bullets", "checklist"} else (
+                block.title or _humanize_key(block.key)
+            )
         )
         if block.kind == "section":
             return CompiledSection(
@@ -281,7 +283,7 @@ class CompileReadablesMixin:
                 "checklist": CompiledChecklistBlock,
             }[block.kind]
             return compiled_cls(
-                title=title or _humanize_key(block.key),
+                title=title,
                 items=self._compile_readable_list_payload(block.payload),
                 requirement=block.requirement,
                 when_text=when_text,

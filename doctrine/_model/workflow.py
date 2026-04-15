@@ -14,6 +14,7 @@ from doctrine._model.core import (
 from doctrine._model.io import RecordItem
 from doctrine._model.law import LawBody
 from doctrine._model.readable import ReadableBlock
+from doctrine._model.readable import ReadableOverrideBlock
 
 
 SectionBodyItem: _TypeAlias = ProseLine | RouteLine | SectionBodyRef | "LocalSection" | ReadableBlock
@@ -105,8 +106,10 @@ class OverrideWorkflowSkillsItem:
 
 WorkflowItem: _TypeAlias = (
     LocalSection
+    | ReadableBlock
     | WorkflowUse
     | InheritItem
+    | ReadableOverrideBlock
     | OverrideSection
     | OverrideUse
     | WorkflowSkillsItem

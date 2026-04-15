@@ -22,8 +22,13 @@ class ReadableNodeTransformerMixin:
         return items[0]
 
     @v_args(inline=True)
-    def readable_sequence_block(self, key, title, *parts):
-        return self._readable_block("sequence", key, title, parts)
+    def readable_sequence_block(self, key, *parts):
+        title: str | None = None
+        readable_parts = parts
+        if readable_parts and isinstance(readable_parts[0], str):
+            title = readable_parts[0]
+            readable_parts = readable_parts[1:]
+        return self._readable_block("sequence", key, title, readable_parts)
 
     @v_args(inline=True)
     def readable_properties_block(self, key, title, *parts):
@@ -49,12 +54,22 @@ class ReadableNodeTransformerMixin:
         )
 
     @v_args(inline=True)
-    def readable_bullets_block(self, key, title, *parts):
-        return self._readable_block("bullets", key, title, parts)
+    def readable_bullets_block(self, key, *parts):
+        title: str | None = None
+        readable_parts = parts
+        if readable_parts and isinstance(readable_parts[0], str):
+            title = readable_parts[0]
+            readable_parts = readable_parts[1:]
+        return self._readable_block("bullets", key, title, readable_parts)
 
     @v_args(inline=True)
-    def readable_checklist_block(self, key, title, *parts):
-        return self._readable_block("checklist", key, title, parts)
+    def readable_checklist_block(self, key, *parts):
+        title: str | None = None
+        readable_parts = parts
+        if readable_parts and isinstance(readable_parts[0], str):
+            title = readable_parts[0]
+            readable_parts = readable_parts[1:]
+        return self._readable_block("checklist", key, title, readable_parts)
 
     @v_args(inline=True)
     def readable_definitions_block(self, key, title, *parts):

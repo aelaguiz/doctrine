@@ -19,6 +19,7 @@ from doctrine._compiler.resolved_types import (
     RouteSemanticContext,
 )
 from doctrine._compiler.support_files import _dotted_decl_name
+from doctrine.emit_common import name_slug
 
 
 class CompileFinalOutputMixin:
@@ -117,12 +118,18 @@ class CompileFinalOutputMixin:
             shape_item.value,
             unit=output_unit,
         )
+        generated_schema_relpath = (
+            self._generated_final_output_schema_relpath(output_decl.name)
+            if json_summary is not None
+            else None
+        )
         section = self._compile_final_output_section(
             output_decl,
             unit=output_unit,
             requirement=requirement,
             shape_title=shape_title,
             json_summary=json_summary,
+            generated_schema_relpath=generated_schema_relpath,
             extras=extras,
             review_contract=review_contract,
             review_semantics=review_semantics,
@@ -138,14 +145,12 @@ class CompileFinalOutputMixin:
             shape_name=shape_name,
             shape_title=shape_title,
             requirement=requirement,
-            format_mode="json_schema" if json_summary is not None else "prose",
+            format_mode="json_object" if json_summary is not None else "prose",
             schema_name=json_summary.schema_decl.name if json_summary is not None else None,
             schema_title=json_summary.schema_decl.title if json_summary is not None else None,
             schema_profile=json_summary.schema_profile if json_summary is not None else None,
-            schema_file=json_summary.schema_file if json_summary is not None else None,
-            example_file=json_summary.example_file if json_summary is not None else None,
-            resolved_schema_file=json_summary.resolved_schema_file if json_summary is not None else None,
-            resolved_example_file=json_summary.resolved_example_file if json_summary is not None else None,
+            generated_schema_relpath=generated_schema_relpath,
+            lowered_schema=json_summary.lowered_schema if json_summary is not None else None,
             section=section,
         )
 
@@ -157,6 +162,7 @@ class CompileFinalOutputMixin:
         requirement: str | None,
         shape_title: str,
         json_summary: FinalOutputJsonShapeSummary | None,
+        generated_schema_relpath: str | None,
         extras: tuple[model.AnyRecordItem, ...],
         review_contract: CompiledReviewSpec | None,
         review_semantics: ReviewSemanticContext | None,
@@ -178,10 +184,8 @@ class CompileFinalOutputMixin:
             metadata_rows.append(("Schema", json_summary.schema_decl.title))
             if json_summary.schema_profile is not None:
                 metadata_rows.append(("Profile", json_summary.schema_profile))
-            if json_summary.schema_file is not None:
-                metadata_rows.append(("Schema file", f"`{json_summary.schema_file}`"))
-            if json_summary.example_file is not None:
-                metadata_rows.append(("Example file", f"`{json_summary.example_file}`"))
+            if generated_schema_relpath is not None:
+                metadata_rows.append(("Generated Schema", f"`{generated_schema_relpath}`"))
         if requirement is not None:
             metadata_rows.append(("Requirement", requirement))
 
@@ -205,7 +209,7 @@ class CompileFinalOutputMixin:
                         title="Payload Fields",
                         body=tuple(
                             self._pipe_table_lines(
-                                ("Field", "Type", "Meaning"),
+                                ("Field", "Type", "Required On Wire", "Null Allowed", "Meaning"),
                                 json_summary.payload_rows,
                             )
                         ),
@@ -324,6 +328,9 @@ class CompileFinalOutputMixin:
                 ),
             ),
         )
+
+    def _generated_final_output_schema_relpath(self, output_name: str) -> str:
+        return f"schemas/{name_slug(output_name)}.schema.json"
 
     def _compile_final_output_review_response_semantics(
         self,

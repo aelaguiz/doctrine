@@ -77,45 +77,10 @@ def _check_review_driven_split_json_final_output_renders() -> None:
     source = _final_output_review_split_json_source()
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
-        root = prompt_path.parent.parent
-        (root / "schemas").mkdir(exist_ok=True)
-        (root / "examples").mkdir(exist_ok=True)
-        (root / "schemas" / "acceptance_control.schema.json").write_text(
-            """{
-  "type": "object",
-  "additionalProperties": false,
-  "properties": {
-    "route": {
-      "type": "string",
-      "enum": ["follow_up", "revise"],
-      "description": "Control route for the next owner."
-    },
-    "current_artifact": {
-      "type": "string",
-      "description": "Current artifact after review."
-    },
-    "next_owner": {
-      "type": "string",
-      "description": "Next owner after review."
-    }
-  }
-}
-""",
-            encoding="utf-8",
-        )
-        (root / "examples" / "acceptance_control.example.json").write_text(
-            """{
-  "route": "follow_up",
-  "current_artifact": "Draft Plan",
-  "next_owner": "ReviewLead"
-}
-""",
-            encoding="utf-8",
-        )
         prompt = parse_file(prompt_path)
         compiled = compile_prompt(prompt, "ReviewSplitJsonFinalOutputAgent")
         _expect(compiled.final_output is not None, "expected compiled final_output metadata")
-        _expect(compiled.final_output.format_mode == "json_schema", str(compiled.final_output))
+        _expect(compiled.final_output.format_mode == "json_object", str(compiled.final_output))
         rendered = render_markdown(compiled)
         outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
         final_output_block = rendered.split("## Final Output", 1)[1]
@@ -133,7 +98,7 @@ def _repo_example_prompt_path(*parts: str) -> Path:
 
 def _check_review_split_control_ready_final_output_renders() -> None:
     prompt_path = _repo_example_prompt_path(
-        "105_review_split_final_output_json_schema_control_ready",
+        "105_review_split_final_output_json_object_control_ready",
         "prompts",
         "AGENTS.prompt",
     )
@@ -151,7 +116,7 @@ def _check_review_split_control_ready_final_output_renders() -> None:
 
 def _check_review_split_partial_final_output_renders() -> None:
     prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_json_schema_partial",
+        "106_review_split_final_output_json_object_partial",
         "prompts",
         "AGENTS.prompt",
     )
@@ -286,7 +251,7 @@ def _check_review_failure_detail_guard_has_specific_code() -> None:
 
 def _check_final_output_review_fields_require_review_agent() -> None:
     prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_json_schema_partial",
+        "106_review_split_final_output_json_object_partial",
         "prompts",
         "AGENTS.prompt",
     )
@@ -306,7 +271,7 @@ def _check_final_output_review_fields_require_review_agent() -> None:
 
 def _check_final_output_review_fields_reject_review_carrier() -> None:
     prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_json_schema_partial",
+        "106_review_split_final_output_json_object_partial",
         "prompts",
         "AGENTS.prompt",
     )

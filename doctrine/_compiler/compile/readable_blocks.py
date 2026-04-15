@@ -65,7 +65,9 @@ class CompileReadableBlocksMixin:
         )
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         title = None if block.kind == "properties" and block.anonymous else (
-            block.title or _humanize_key(block.key)
+            block.title if block.kind in {"sequence", "bullets", "checklist"} else (
+                block.title or _humanize_key(block.key)
+            )
         )
         block_owner_label = f"{owner_label}.{block.key}"
         if block.kind == "section":

@@ -38,7 +38,7 @@ expected_lines = [
   "",
   "##### Read Order",
   "",
-  "_Advisory \u00b7 ordered list_",
+  "_Advisory_",
   "",
   "1. Read the learner goal.",
   "2. Read the current lesson plan.",

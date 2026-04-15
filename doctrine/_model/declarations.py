@@ -12,8 +12,8 @@ from doctrine._model.io import (
     InputDecl,
     InputSourceDecl,
     InputsDecl,
-    JsonSchemaDecl,
     OutputDecl,
+    OutputSchemaDecl,
     OutputShapeDecl,
     OutputTargetDecl,
     OutputsDecl,
@@ -51,7 +51,7 @@ Declaration: _TypeAlias = (
     | OutputDecl
     | OutputTargetDecl
     | OutputShapeDecl
-    | JsonSchemaDecl
+    | OutputSchemaDecl
     | SkillDecl
     | SkillPackageDecl
     | EnumDecl
