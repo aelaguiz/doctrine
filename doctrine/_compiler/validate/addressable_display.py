@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.readable_diagnostics import readable_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     AddressableProjectionTarget,
@@ -394,12 +395,24 @@ class ValidateAddressableDisplayMixin:
         root_decl = node.root_decl
         if isinstance(root_decl, model.InputDecl) and item.key == "source":
             if not isinstance(item.value, model.NameRef):
-                raise CompileError(f"Input source must stay typed: {root_decl.name}")
+                raise readable_compile_error(
+                    code="E275",
+                    summary="Input source must stay typed",
+                    detail=f"Input source must stay typed: {root_decl.name}",
+                    unit=node.unit,
+                    source_span=item.source_span,
+                )
             return self._resolve_input_source_spec(item.value, unit=node.unit).title
 
         if isinstance(root_decl, model.OutputDecl) and item.key == "target":
             if not isinstance(item.value, model.NameRef):
-                raise CompileError(f"Output target must stay typed: {root_decl.name}")
+                raise readable_compile_error(
+                    code="E275",
+                    summary="Output target must stay typed",
+                    detail=f"Output target must stay typed: {root_decl.name}",
+                    unit=node.unit,
+                    source_span=item.source_span,
+                )
             return self._resolve_output_target_spec(item.value, unit=node.unit).title
 
         if isinstance(root_decl, model.OutputDecl) and item.key == "shape":

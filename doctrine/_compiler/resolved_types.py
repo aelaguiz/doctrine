@@ -15,6 +15,10 @@ from doctrine._compiler.types import (
     CompiledDefinitionsBlock,
     CompiledField,
     CompiledFinalOutputSpec,
+    CompiledIoContractSpec,
+    CompiledPreviousTurnInputSpec,
+    CompiledPreviousTurnOutputBindingSpec,
+    CompiledPreviousTurnOutputSpec,
     CompiledReviewFinalResponseSpec,
     CompiledReviewOutcomeSpec,
     CompiledReviewOutputSpec,
@@ -354,6 +358,37 @@ class AgentContract:
     input_bindings_by_path: dict[tuple[str, ...], ContractBinding]
     outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]]
     output_bindings_by_path: dict[tuple[str, ...], ContractBinding]
+
+
+@dataclass(slots=True, frozen=True)
+class PreviousTurnAgentContext:
+    predecessor_agent_keys: tuple[FlowAgentKey, ...] = ()
+    predecessor_final_output_keys: tuple["OutputDeclKey", ...] = ()
+    exact_final_output_key: "OutputDeclKey" | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedPreviousTurnInputSpec:
+    input_key: tuple[tuple[str, ...], str]
+    input_unit: IndexedUnit
+    input_decl: model.InputDecl
+    requirement: str
+    selector_kind: str
+    selector_text: str
+    output_key: "OutputDeclKey"
+    output_unit: IndexedUnit
+    output_decl: model.OutputDecl
+    derived_contract_mode: str
+    target_key: str
+    target_title: str
+    target_config: tuple[tuple[str, str], ...] = ()
+    shape_name: str | None = None
+    shape_title: str | None = None
+    schema_name: str | None = None
+    schema_title: str | None = None
+    schema_profile: str | None = None
+    lowered_schema: dict[str, object] | None = None
+    binding_path: tuple[str, ...] | None = None
 
 
 @dataclass(slots=True, frozen=True)

@@ -6,8 +6,9 @@ pipeline:
 - `doctrine.emit_docs` writes the runtime Markdown tree. That may be one
   `AGENTS.md` or `SOUL.md` per direct runtime root, or one emitted runtime
   package tree per imported package root. When an agent declares
-  `final_output:` or a review contract, it also writes
-  `final_output.contract.json` with final-output, review, and route metadata.
+  `final_output:`, a review contract, or a resolved previous-turn input
+  contract, it also writes `final_output.contract.json` with final-output,
+  review, route, and `io` metadata.
   For structured final outputs, it also writes the exact lowered schema JSON
   file that machine consumers should load for payload shape.
 - `doctrine.emit_skill` writes compiled `SKILL.md` package trees plus bundled
@@ -283,15 +284,16 @@ For structured final outputs, Doctrine also writes the exact lowered schema at:
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/schemas/<output-slug>.schema.json
 ```
 
-When an agent declares `final_output:` or a review contract, Doctrine also
-writes:
+When an agent declares `final_output:`, a review contract, or a resolved
+previous-turn input contract, Doctrine also writes:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/final_output.contract.json
 ```
 
-That companion file is the runtime contract for the turn-ending response.
-It always includes a top-level `route` block when the file exists.
+That companion file is the runtime contract for the turn-ending response and
+resolved IO metadata. It always includes top-level `route` and `io` blocks
+when the file exists.
 
 The `route` block has these fields:
 
@@ -331,6 +333,17 @@ Important route-contract rules:
 - For nullable routed final outputs, `route.exists` stays `true`,
   `behavior` is `conditional`, `has_unrouted_branch` is `true`, and
   `route.selector.null_behavior` is `no_route`.
+
+The `io` block has these fields:
+
+- `previous_turn_inputs`: resolved previous-turn input contracts, including
+  selector kind, selector text, resolved declaration identity, derived
+  contract mode, target, optional shape and schema, and optional binding path
+- `outputs`: emitted output contracts, including declaration identity, target,
+  derived contract mode, readback mode, whether the output must remain the
+  final output, and optional shape and schema
+- `output_bindings`: readback binding paths mapped to the owning output
+  declaration
 
 For workflow flow artifacts, Doctrine writes one file pair per emitted
 entrypoint:
@@ -563,7 +576,8 @@ Concrete shipped proof:
 
 `emit_docs` does not emit `AGENTS.contract.json`.
 It may emit `final_output.contract.json` beside `AGENTS.md` when an agent
-declares `final_output:` or a review contract.
+declares `final_output:`, a review contract, or a resolved previous-turn
+input contract.
 
 For structured final outputs:
 
@@ -582,8 +596,8 @@ For structured final outputs:
 - The emitted payload contract lives at
   `schemas/<output-slug>.schema.json` beside `AGENTS.md`.
 - The emitted `final_output.contract.json` companion carries the top-level
-  `route` block plus final-output and review-control metadata such as
-  declaration identity, carrier fields, split final-response fields, and
+  `route` and `io` blocks plus final-output and review-control metadata such
+  as declaration identity, carrier fields, split final-response fields, and
   `control_ready`.
 - `python -m doctrine.validate_output_schema --schema ...` validates that
   emitted file with Draft 2020-12 plus Doctrine's OpenAI subset checks.

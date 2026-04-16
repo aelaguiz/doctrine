@@ -31,5 +31,33 @@
     "format_mode": "json_object",
     "schema_profile": "OpenAIStructuredOutput",
     "emitted_schema_relpath": "schemas/handoff_route_final_response.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "HandoffRouteFinalResponse",
+        "declaration_name": "HandoffRouteFinalResponse",
+        "title": "Handoff Route Final Response",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "TurnResultJson",
+          "title": "Turn Result JSON"
+        },
+        "schema": {
+          "name": "TurnResultSchema",
+          "title": "Turn Result Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
   }
 }

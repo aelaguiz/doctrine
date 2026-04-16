@@ -253,6 +253,7 @@ class ValidateOutputsMixin:
     ) -> bool:
         return (
             self._expr_ref_matches_input_decl(ref, unit=unit)
+            or self._expr_ref_matches_input_binding(ref)
             or self._expr_ref_matches_enum_member(ref, unit=unit)
             or self._resolve_output_schema_route_choice_identity(ref, unit=unit) is not None
             or (
@@ -472,9 +473,117 @@ class ValidateOutputsMixin:
             root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
             if not self._ref_exists_in_registry(root, unit=unit, registry_name="inputs_by_name"):
                 continue
-            _target_unit, _decl = self._resolve_input_decl(root, unit=unit)
-            return True
+            target_unit, decl = self._resolve_input_decl(root, unit=unit)
+            field_path = ref.parts[split_at:]
+            if not field_path:
+                return True
+            return self._input_decl_supports_expr_field_path(
+                decl,
+                field_path=field_path,
+                unit=target_unit,
+            )
         return False
+
+    def _expr_ref_matches_input_binding(self, ref: model.ExprRef) -> bool:
+        if self._active_agent_key is None:
+            return False
+        agent_unit = (
+            self._load_module(self._active_agent_key[0])
+            if self._active_agent_key[0]
+            else self.root_unit
+        )
+        agent = agent_unit.agents_by_name.get(self._active_agent_key[1])
+        if agent is None:
+            return False
+        agent_contract = self._resolve_agent_contract(agent, unit=agent_unit)
+        for split_at in range(len(ref.parts), 0, -1):
+            binding = agent_contract.input_bindings_by_path.get(ref.parts[:split_at])
+            if binding is None:
+                continue
+            field_path = ref.parts[split_at:]
+            if not field_path:
+                return True
+            if not isinstance(binding.artifact.decl, model.InputDecl):
+                return False
+            return self._input_decl_supports_expr_field_path(
+                binding.artifact.decl,
+                field_path=field_path,
+                unit=binding.artifact.unit,
+            )
+        return False
+
+    def _input_decl_supports_expr_field_path(
+        self,
+        decl: model.InputDecl,
+        *,
+        field_path: tuple[str, ...],
+        unit: IndexedUnit,
+    ) -> bool:
+        scalar_items, _section_items, _extras = self._split_record_items(
+            decl.items,
+            scalar_keys={"source", "shape", "requirement"},
+            owner_label=f"input {decl.name}",
+        )
+        source_item = scalar_items.get("source")
+        if (
+            source_item is not None
+            and isinstance(source_item.value, model.NameRef)
+            and self._is_rally_previous_turn_input_source_ref(
+                source_item.value,
+                unit=unit,
+            )
+            and (unit.module_parts, decl.name) not in self._active_previous_turn_input_specs
+        ):
+            return True
+        if self._addressable_path_exists(
+            AddressableNode(unit=unit, root_decl=decl, target=decl),
+            field_path,
+        ):
+            return True
+        shape_item = scalar_items.get("shape")
+        if shape_item is None:
+            return False
+        if self._input_shape_is_builtin_json_object(shape_item.value):
+            return True
+        json_summary = self._resolve_final_output_json_shape_summary(
+            shape_item.value,
+            unit=unit,
+        )
+        if json_summary is None:
+            return False
+        return self._addressable_path_exists(
+            AddressableNode(
+                unit=json_summary.schema_unit,
+                root_decl=decl,
+                target=json_summary.schema_decl,
+            ),
+            field_path,
+        )
+
+    def _addressable_path_exists(
+        self,
+        start: AddressableNode,
+        path: tuple[str, ...],
+    ) -> bool:
+        current = start
+        for segment in path:
+            children = self._get_addressable_children(current)
+            if children is None:
+                return False
+            current = children.get(segment)
+            if current is None:
+                return False
+        return True
+
+    def _input_shape_is_builtin_json_object(
+        self,
+        value: model.RecordScalarValue,
+    ) -> bool:
+        return (
+            isinstance(value, model.NameRef)
+            and not value.module_parts
+            and value.declaration_name == "JsonObject"
+        )
 
     def _expr_ref_matches_output_decl(
         self,
@@ -486,7 +595,18 @@ class ValidateOutputsMixin:
             root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
             if not self._ref_exists_in_registry(root, unit=unit, registry_name="outputs_by_name"):
                 continue
-            _target_unit, _decl = self._resolve_output_decl(root, unit=unit)
+            target_unit, decl = self._resolve_output_decl(root, unit=unit)
+            field_path = ref.parts[split_at:]
+            if not field_path:
+                return True
+            current = AddressableNode(unit=target_unit, root_decl=decl, target=decl)
+            for segment in field_path:
+                children = self._get_addressable_children(current)
+                if children is None:
+                    return False
+                current = children.get(segment)
+                if current is None:
+                    return False
             return True
         return False
 

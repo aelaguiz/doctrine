@@ -17,6 +17,10 @@ from doctrine._compiler.resolved_types import (
     CompiledBodyItem,
     CompiledField,
     CompiledFinalOutputSpec,
+    CompiledIoContractSpec,
+    CompiledPreviousTurnInputSpec,
+    CompiledPreviousTurnOutputBindingSpec,
+    CompiledPreviousTurnOutputSpec,
     CompiledRouteBranchSpec,
     CompiledRouteChoiceMemberSpec,
     CompiledRouteContractSpec,
@@ -28,6 +32,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedAbstractAgentSlot,
     ResolvedAgentSlot,
     ResolvedIoBody,
+    ResolvedPreviousTurnInputSpec,
     ResolvedSkillEntry,
     ResolvedSkillsBody,
     ResolvedSkillsSection,
@@ -45,216 +50,367 @@ class CompileAgentMixin:
         self._enforce_legacy_role_workflow_order(agent)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
-        unresolved_abstract_slots = [
-            slot.key
-            for slot in resolved_slot_states
-            if isinstance(slot, ResolvedAbstractAgentSlot)
-        ]
-        if unresolved_abstract_slots:
-            missing = ", ".join(unresolved_abstract_slots)
-            missing_slot = next(
-                (
-                    field
-                    for field in agent.fields
-                    if isinstance(field, model.AuthoredSlotAbstract)
-                    and field.key in unresolved_abstract_slots
-                ),
-                None,
+        agent_key = (unit.module_parts, agent.name)
+        previous_turn_input_specs = tuple(
+            spec
+            for spec in (
+                self._resolve_previous_turn_input_spec(
+                    input_decl,
+                    unit=input_unit,
+                    agent_key=agent_key,
+                )
+                for (_input_key, (input_unit, input_decl)) in sorted(agent_contract.inputs.items())
             )
-            raise compile_error(
-                code="E209",
-                summary="Concrete agent is missing abstract authored slots",
-                detail=(
-                    f"Concrete agent `{agent.name}` must define abstract authored slots: "
-                    f"{', '.join(f'`{slot}`' for slot in unresolved_abstract_slots)}."
-                ),
-                path=unit.prompt_file.source_path,
-                source_span=None if missing_slot is None else missing_slot.source_span,
-                hints=("Define each missing slot directly with `slot_key: ...`.",),
-            )
-        resolved_slots = {
-            slot.key: slot.body
-            for slot in resolved_slot_states
-            if isinstance(slot, ResolvedAgentSlot)
+            if spec is not None
+        )
+        self._active_agent_key = agent_key
+        self._active_previous_turn_input_specs = {
+            spec.input_key: spec for spec in previous_turn_input_specs
         }
-        has_workflow_slot = "workflow" in resolved_slots
-        review_fields = [
-            field for field in agent.fields if isinstance(field, model.ReviewField)
-        ]
-        final_output_fields = [
-            field for field in agent.fields if isinstance(field, model.FinalOutputField)
-        ]
-        final_output_field = final_output_fields[0] if final_output_fields else None
-        if has_workflow_slot and review_fields:
-            raise CompileError(
-                f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
-            )
-        self._validate_agent_slot_laws(
-            agent,
-            unit=unit,
-            resolved_slots=resolved_slots,
-            agent_contract=agent_contract,
-        )
-        _ = self._route_semantic_context_for_agent(
-            agent,
-            unit=unit,
-            resolved_slots=resolved_slots,
-            agent_contract=agent_contract,
-        )
-        review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
-        route_output_contexts = self._route_output_contexts_for_agent(
-            agent,
-            unit=unit,
-            resolved_slots=resolved_slots,
-            agent_contract=agent_contract,
-        )
-        primary_review_output_context = self._primary_review_output_context(
-            review_output_contexts
-        )
-        review_contract = self._compile_agent_review_contract(
-            agent=agent,
-            unit=unit,
-            agent_contract=agent_contract,
-            final_output_field=final_output_field,
-        )
-        field_specs: list[AgentFieldCompileSpec] = []
-        seen_role = False
-        first_role_field: model.RoleScalar | model.RoleBlock | None = None
-        seen_typed_fields: dict[str, model.Field] = {}
-
-        for field in agent.fields:
-            if isinstance(field, model.RoleScalar):
-                if seen_role:
-                    raise compile_error(
-                        code="E203",
-                        summary="Duplicate role field",
-                        detail=f"Agent `{agent.name}` defines `role` more than once.",
-                        path=unit.prompt_file.source_path,
-                        source_span=field.source_span,
-                        related=(
-                            related_prompt_site(
-                                label="first `role` field",
-                                path=unit.prompt_file.source_path,
-                                source_span=None if first_role_field is None else first_role_field.source_span,
-                            ),
-                        ),
-                        hints=("Keep exactly one `role:` field per concrete agent.",),
-                    )
-                seen_role = True
-                first_role_field = field
-                field_specs.append(AgentFieldCompileSpec(field=field))
-                continue
-
-            if isinstance(field, model.RoleBlock):
-                if seen_role:
-                    raise compile_error(
-                        code="E203",
-                        summary="Duplicate role field",
-                        detail=f"Agent `{agent.name}` defines `role` more than once.",
-                        path=unit.prompt_file.source_path,
-                        source_span=field.source_span,
-                        related=(
-                            related_prompt_site(
-                                label="first `role` field",
-                                path=unit.prompt_file.source_path,
-                                source_span=None if first_role_field is None else first_role_field.source_span,
-                            ),
-                        ),
-                        hints=("Keep exactly one `role:` field per concrete agent.",),
-                    )
-                seen_role = True
-                first_role_field = field
-                field_specs.append(AgentFieldCompileSpec(field=field))
-                continue
-
-            if isinstance(
-                field,
-                (
-                    model.AuthoredSlotField,
-                    model.AuthoredSlotAbstract,
-                    model.AuthoredSlotInherit,
-                    model.AuthoredSlotOverride,
-                ),
-            ):
-                slot_body = resolved_slots.get(field.key)
-                if slot_body is None:
-                    raise CompileError(
-                        f"Internal compiler error: missing resolved authored slot in agent {agent.name}: {field.key}"
-                    )
-                field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
-                continue
-
-            field_key = _agent_typed_field_key(field)
-            first_typed_field = seen_typed_fields.get(field_key)
-            if first_typed_field is not None:
+        try:
+            unresolved_abstract_slots = [
+                slot.key
+                for slot in resolved_slot_states
+                if isinstance(slot, ResolvedAbstractAgentSlot)
+            ]
+            if unresolved_abstract_slots:
+                missing_slot = next(
+                    (
+                        field
+                        for field in agent.fields
+                        if isinstance(field, model.AuthoredSlotAbstract)
+                        and field.key in unresolved_abstract_slots
+                    ),
+                    None,
+                )
                 raise compile_error(
-                    code="E204",
-                    summary="Duplicate typed field",
+                    code="E209",
+                    summary="Concrete agent is missing abstract authored slots",
                     detail=(
-                        f"Agent `{agent.name}` defines typed field `{field_key}` more than once."
+                        f"Concrete agent `{agent.name}` must define abstract authored slots: "
+                        f"{', '.join(f'`{slot}`' for slot in unresolved_abstract_slots)}."
                     ),
                     path=unit.prompt_file.source_path,
-                    source_span=getattr(field, "source_span", None),
-                    related=(
-                        related_prompt_site(
-                            label=f"first `{field_key}` field",
-                            path=unit.prompt_file.source_path,
-                            source_span=getattr(first_typed_field, "source_span", None),
-                        ),
-                    ),
-                    hints=(f"Keep exactly one `{field_key}:` field on the agent.",),
+                    source_span=None if missing_slot is None else missing_slot.source_span,
+                    hints=("Define each missing slot directly with `slot_key: ...`.",),
                 )
-            seen_typed_fields[field_key] = field
-            field_specs.append(AgentFieldCompileSpec(field=field))
-
-        if not seen_role:
-            raise compile_error(
-                code="E205",
-                summary="Concrete agent is missing role field",
-                detail=f"Concrete agent `{agent.name}` is missing its required `role` field.",
-                path=unit.prompt_file.source_path,
-                source_span=agent.source_span,
-                hints=("Add a `role:` field before the rest of the authored workflow surface.",),
+            resolved_slots = {
+                slot.key: slot.body
+                for slot in resolved_slot_states
+                if isinstance(slot, ResolvedAgentSlot)
+            }
+            has_workflow_slot = "workflow" in resolved_slots
+            review_fields = [
+                field for field in agent.fields if isinstance(field, model.ReviewField)
+            ]
+            final_output_fields = [
+                field for field in agent.fields if isinstance(field, model.FinalOutputField)
+            ]
+            final_output_field = final_output_fields[0] if final_output_fields else None
+            if has_workflow_slot and review_fields:
+                raise CompileError(
+                    f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
+                )
+            self._validate_agent_slot_laws(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
             )
+            _ = self._route_semantic_context_for_agent(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
+            route_output_contexts = self._route_output_contexts_for_agent(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            primary_review_output_context = self._primary_review_output_context(
+                review_output_contexts
+            )
+            review_contract = self._compile_agent_review_contract(
+                agent=agent,
+                unit=unit,
+                agent_contract=agent_contract,
+                final_output_field=final_output_field,
+            )
+            field_specs: list[AgentFieldCompileSpec] = []
+            seen_role = False
+            first_role_field: model.RoleScalar | model.RoleBlock | None = None
+            seen_typed_fields: dict[str, model.Field] = {}
 
-        final_output = (
-            self._compile_final_output_spec(
+            for field in agent.fields:
+                if isinstance(field, model.RoleScalar):
+                    if seen_role:
+                        raise compile_error(
+                            code="E203",
+                            summary="Duplicate role field",
+                            detail=f"Agent `{agent.name}` defines `role` more than once.",
+                            path=unit.prompt_file.source_path,
+                            source_span=field.source_span,
+                            related=(
+                                related_prompt_site(
+                                    label="first `role` field",
+                                    path=unit.prompt_file.source_path,
+                                    source_span=None if first_role_field is None else first_role_field.source_span,
+                                ),
+                            ),
+                            hints=("Keep exactly one `role:` field per concrete agent.",),
+                        )
+                    seen_role = True
+                    first_role_field = field
+                    field_specs.append(AgentFieldCompileSpec(field=field))
+                    continue
+
+                if isinstance(field, model.RoleBlock):
+                    if seen_role:
+                        raise compile_error(
+                            code="E203",
+                            summary="Duplicate role field",
+                            detail=f"Agent `{agent.name}` defines `role` more than once.",
+                            path=unit.prompt_file.source_path,
+                            source_span=field.source_span,
+                            related=(
+                                related_prompt_site(
+                                    label="first `role` field",
+                                    path=unit.prompt_file.source_path,
+                                    source_span=None if first_role_field is None else first_role_field.source_span,
+                                ),
+                            ),
+                            hints=("Keep exactly one `role:` field per concrete agent.",),
+                        )
+                    seen_role = True
+                    first_role_field = field
+                    field_specs.append(AgentFieldCompileSpec(field=field))
+                    continue
+
+                if isinstance(
+                    field,
+                    (
+                        model.AuthoredSlotField,
+                        model.AuthoredSlotAbstract,
+                        model.AuthoredSlotInherit,
+                        model.AuthoredSlotOverride,
+                    ),
+                ):
+                    slot_body = resolved_slots.get(field.key)
+                    if slot_body is None:
+                        raise CompileError(
+                            f"Internal compiler error: missing resolved authored slot in agent {agent.name}: {field.key}"
+                        )
+                    field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
+                    continue
+
+                field_key = _agent_typed_field_key(field)
+                first_typed_field = seen_typed_fields.get(field_key)
+                if first_typed_field is not None:
+                    raise compile_error(
+                        code="E204",
+                        summary="Duplicate typed field",
+                        detail=(
+                            f"Agent `{agent.name}` defines typed field `{field_key}` more than once."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=getattr(field, "source_span", None),
+                        related=(
+                            related_prompt_site(
+                                label=f"first `{field_key}` field",
+                                path=unit.prompt_file.source_path,
+                                source_span=getattr(first_typed_field, "source_span", None),
+                            ),
+                        ),
+                        hints=(f"Keep exactly one `{field_key}:` field on the agent.",),
+                    )
+                seen_typed_fields[field_key] = field
+                field_specs.append(AgentFieldCompileSpec(field=field))
+
+            if not seen_role:
+                raise compile_error(
+                    code="E205",
+                    summary="Concrete agent is missing role field",
+                    detail=f"Concrete agent `{agent.name}` is missing its required `role` field.",
+                    path=unit.prompt_file.source_path,
+                    source_span=agent.source_span,
+                    hints=("Add a `role:` field before the rest of the authored workflow surface.",),
+                )
+
+            final_output = (
+                self._compile_final_output_spec(
+                    agent_name=agent.name,
+                    field=final_output_field,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
+                    review_contract=review_contract,
+                    fallback_review_semantics=(
+                        primary_review_output_context[1]
+                        if primary_review_output_context is not None
+                        else None
+                    ),
+                )
+                if final_output_field is not None
+                else None
+            )
+            compiled_fields = self._compile_agent_fields(
+                field_specs,
                 agent_name=agent.name,
-                field=final_output_field,
                 unit=unit,
                 agent_contract=agent_contract,
                 review_output_contexts=review_output_contexts,
                 route_output_contexts=route_output_contexts,
-                review_contract=review_contract,
-                fallback_review_semantics=(
-                    primary_review_output_context[1]
-                    if primary_review_output_context is not None
-                    else None
-                ),
+                final_output=final_output,
             )
-            if final_output_field is not None
-            else None
+            route_contract = self._compile_final_response_route_contract(
+                final_output=final_output,
+                review_contract=review_contract,
+                route_output_contexts=route_output_contexts,
+            )
+            io_contract = self._compile_agent_io_contract(
+                agent_contract=agent_contract,
+                previous_turn_inputs=previous_turn_input_specs,
+                final_output=final_output,
+            )
+            return CompiledAgent(
+                name=agent.name,
+                fields=compiled_fields,
+                final_output=final_output,
+                review=review_contract,
+                route=route_contract,
+                io=io_contract,
+            )
+        finally:
+            self._active_agent_key = None
+            self._active_previous_turn_input_specs = {}
+
+    def _compile_agent_io_contract(
+        self,
+        *,
+        agent_contract: AgentContract,
+        previous_turn_inputs: tuple[ResolvedPreviousTurnInputSpec, ...],
+        final_output: CompiledFinalOutputSpec | None,
+    ) -> CompiledIoContractSpec:
+        final_output_key = None if final_output is None else final_output.output_key
+        outputs = tuple(
+            self._compile_previous_turn_output_spec(
+                output_key=output_key,
+                output_unit=output_unit,
+                output_decl=output_decl,
+                final_output_key=final_output_key,
+            )
+            for output_key, (output_unit, output_decl) in sorted(agent_contract.outputs.items())
         )
-        compiled_fields = self._compile_agent_fields(
-            field_specs,
-            agent_name=agent.name,
-            unit=unit,
-            agent_contract=agent_contract,
-            review_output_contexts=review_output_contexts,
-            route_output_contexts=route_output_contexts,
-            final_output=final_output,
+        output_bindings = tuple(
+            CompiledPreviousTurnOutputBindingSpec(
+                binding_path=binding_path,
+                output_key=(binding.artifact.unit.module_parts, binding.artifact.decl.name),
+            )
+            for binding_path, binding in sorted(agent_contract.output_bindings_by_path.items())
+            if isinstance(binding.artifact.decl, model.OutputDecl)
         )
-        route_contract = self._compile_final_response_route_contract(
-            final_output=final_output,
-            review_contract=review_contract,
-            route_output_contexts=route_output_contexts,
+        return CompiledIoContractSpec(
+            previous_turn_inputs=tuple(
+                CompiledPreviousTurnInputSpec(
+                    input_key=spec.input_key,
+                    input_name=spec.input_decl.name,
+                    input_title=spec.input_decl.title,
+                    requirement=spec.requirement,
+                    selector_kind=spec.selector_kind,
+                    selector_text=spec.selector_text,
+                    output_key=spec.output_key,
+                    output_name=spec.output_decl.name,
+                    output_title=spec.output_decl.title,
+                    derived_contract_mode=spec.derived_contract_mode,
+                    target_key=spec.target_key,
+                    target_title=spec.target_title,
+                    target_config=spec.target_config,
+                    shape_name=spec.shape_name,
+                    shape_title=spec.shape_title,
+                    schema_name=spec.schema_name,
+                    schema_title=spec.schema_title,
+                    schema_profile=spec.schema_profile,
+                    lowered_schema=spec.lowered_schema,
+                    binding_path=spec.binding_path,
+                )
+                for spec in previous_turn_inputs
+            ),
+            outputs=outputs,
+            output_bindings=output_bindings,
         )
-        return CompiledAgent(
-            name=agent.name,
-            fields=compiled_fields,
-            final_output=final_output,
-            review=review_contract,
-            route=route_contract,
+
+    def _compile_previous_turn_output_spec(
+        self,
+        *,
+        output_key: OutputDeclKey,
+        output_unit: IndexedUnit,
+        output_decl: model.OutputDecl,
+        final_output_key: OutputDeclKey | None,
+    ) -> CompiledPreviousTurnOutputSpec:
+        scalar_items, section_items, _extras = self._split_record_items(
+            output_decl.items,
+            scalar_keys={"target", "shape", "requirement"},
+            section_keys={"files"},
+            owner_label=f"output {output_decl.name}",
+        )
+        files_section = section_items.get("files")
+        if files_section is not None:
+            return CompiledPreviousTurnOutputSpec(
+                output_key=output_key,
+                output_name=output_decl.name,
+                output_title=output_decl.title,
+                target_key="FileSet",
+                target_title="File Set",
+            )
+        target_item = scalar_items.get("target")
+        shape_item = scalar_items.get("shape")
+        if target_item is None or shape_item is None or not isinstance(target_item.value, model.NameRef):
+            return CompiledPreviousTurnOutputSpec(
+                output_key=output_key,
+                output_name=output_decl.name,
+                output_title=output_decl.title,
+                target_key="Unsupported",
+                target_title="Unsupported",
+            )
+        (
+            target_key,
+            target_title,
+            target_config,
+            shape_name,
+            shape_title,
+            schema_name,
+            schema_title,
+            schema_profile,
+            _lowered_schema,
+            derived_contract_mode,
+        ) = self._resolve_previous_turn_output_contract(output_decl, unit=output_unit)
+        readback_mode = "unsupported"
+        requires_final_output = False
+        if self._is_builtin_turn_response_target_ref(target_item.value):
+            requires_final_output = True
+            if final_output_key == output_key:
+                readback_mode = derived_contract_mode
+        elif not target_item.value.module_parts and target_item.value.declaration_name == "File":
+            readback_mode = derived_contract_mode
+        return CompiledPreviousTurnOutputSpec(
+            output_key=output_key,
+            output_name=output_decl.name,
+            output_title=output_decl.title,
+            target_key=target_key,
+            target_title=target_title,
+            target_config=target_config,
+            shape_name=shape_name,
+            shape_title=shape_title,
+            derived_contract_mode=derived_contract_mode,
+            readback_mode=readback_mode,
+            requires_final_output=requires_final_output,
+            schema_name=schema_name,
+            schema_title=schema_title,
+            schema_profile=schema_profile,
         )
 
     def _compile_final_response_route_contract(
@@ -395,6 +551,9 @@ class CompileAgentMixin:
                     review_output_contexts=review_output_contexts,
                     route_output_contexts=route_output_contexts,
                     final_output=final_output,
+                    previous_turn_contexts=self._previous_turn_contexts,
+                    active_agent_key=self._active_agent_key,
+                    active_previous_turn_input_specs=self._active_previous_turn_input_specs,
                 )
                 for spec in specs
             ]

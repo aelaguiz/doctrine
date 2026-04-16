@@ -66,7 +66,7 @@ Doctrine also ships narrower version lines.
   `schemas/<output-slug>.schema.json` files are also part of the public
   surface for payload wire shape.
 - Emitted `final_output.contract.json` files are also part of the public
-  surface for final-output, review-control, and route metadata.
+  surface for final-output, review-control, route, and `io` metadata.
 - Doctrine does not ship `AGENTS.contract.json` anymore.
 - The package metadata version in `pyproject.toml` versions the published
   Python package. It is not the Doctrine language version.
@@ -116,6 +116,9 @@ Every public release uses one release class.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.
+- Adding an additive top-level `io` block to `final_output.contract.json` is
+  an `additive` release when existing `final_output`, `review`, and `route`
+  keys keep their shape and `contract_version` stays compatible.
 - `soft-deprecated`: behavior still works, but Doctrine now tells users what
   to move away from and how to move early. Release kind: `Non-breaking`.
 - `breaking`: any shipped public surface now needs user action. This includes

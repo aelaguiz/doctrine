@@ -56,5 +56,45 @@
     "format_mode": "prose",
     "schema_profile": null,
     "emitted_schema_relpath": null
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "ProofResult",
+        "declaration_name": "ProofResult",
+        "title": "Proof Result",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "readable_text",
+        "readback_mode": "unsupported",
+        "requires_final_output": true,
+        "shape": {
+          "name": "Comment",
+          "title": "Comment"
+        }
+      },
+      {
+        "declaration_key": "RouteFromFinalReply",
+        "declaration_name": "RouteFromFinalReply",
+        "title": "Route From Final Reply",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "readable_text",
+        "readback_mode": "readable_text",
+        "requires_final_output": true,
+        "shape": {
+          "name": "Comment",
+          "title": "Comment"
+        }
+      }
+    ],
+    "output_bindings": []
   }
 }

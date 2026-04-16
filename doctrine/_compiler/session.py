@@ -16,6 +16,7 @@ from doctrine._compiler.types import (
     CompiledSkillPackage,
     FlowGraph,
 )
+from doctrine._compiler.resolved_types import PreviousTurnAgentContext
 from doctrine.diagnostics import CompileError, DiagnosticLocation, DoctrineError
 from doctrine.project_config import (
     ProvidedPromptRoot,
@@ -118,11 +119,20 @@ class CompilationSession:
     def _new_module_ready_event(self) -> threading.Event:
         return threading.Event()
 
-    def compile_agent(self, agent_name: str) -> CompiledAgent:
+    def compile_agent(
+        self,
+        agent_name: str,
+        *,
+        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
+        | None = None,
+    ) -> CompiledAgent:
         from doctrine._compiler.context import CompilationContext
 
         try:
-            return CompilationContext(self).compile_agent(agent_name)
+            return CompilationContext(
+                self,
+                previous_turn_contexts=previous_turn_contexts,
+            ).compile_agent(agent_name)
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"compile agent `{agent_name}`",
@@ -133,11 +143,17 @@ class CompilationSession:
         self,
         unit: IndexedUnit,
         agent_name: str,
+        *,
+        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
+        | None = None,
     ) -> CompiledAgent:
         from doctrine._compiler.context import CompilationContext
 
         try:
-            return CompilationContext(self).compile_agent_from_unit(unit, agent_name)
+            return CompilationContext(
+                self,
+                previous_turn_contexts=previous_turn_contexts,
+            ).compile_agent_from_unit(unit, agent_name)
         except DoctrineError as exc:
             source_path = unit.prompt_file.source_path
             dotted_name = ".".join((*unit.module_parts, agent_name)) or agent_name
@@ -146,13 +162,29 @@ class CompilationSession:
                 location=path_location(source_path),
             ).ensure_location(path=source_path)
 
-    def compile_agents(self, agent_names: tuple[str, ...]) -> tuple[CompiledAgent, ...]:
+    def compile_agents(
+        self,
+        agent_names: tuple[str, ...],
+        *,
+        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
+        | None = None,
+    ) -> tuple[CompiledAgent, ...]:
         if len(agent_names) <= 1:
-            return tuple(self.compile_agent(agent_name) for agent_name in agent_names)
+            return tuple(
+                self.compile_agent(
+                    agent_name,
+                    previous_turn_contexts=previous_turn_contexts,
+                )
+                for agent_name in agent_names
+            )
 
         with ThreadPoolExecutor(max_workers=default_worker_count(len(agent_names))) as executor:
             futures = {
-                agent_name: executor.submit(self.compile_agent, agent_name)
+                agent_name: executor.submit(
+                    self.compile_agent,
+                    agent_name,
+                    previous_turn_contexts=previous_turn_contexts,
+                )
                 for agent_name in agent_names
             }
             return tuple(futures[agent_name].result() for agent_name in agent_names)
@@ -160,10 +192,17 @@ class CompilationSession:
     def compile_agents_from_units(
         self,
         agent_roots: tuple[tuple[IndexedUnit, str], ...],
+        *,
+        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
+        | None = None,
     ) -> tuple[CompiledAgent, ...]:
         if len(agent_roots) <= 1:
             return tuple(
-                self.compile_agent_from_unit(unit, agent_name)
+                self.compile_agent_from_unit(
+                    unit,
+                    agent_name,
+                    previous_turn_contexts=previous_turn_contexts,
+                )
                 for unit, agent_name in agent_roots
             )
 
@@ -173,6 +212,7 @@ class CompilationSession:
                     self.compile_agent_from_unit,
                     unit,
                     agent_name,
+                    previous_turn_contexts=previous_turn_contexts,
                 )
                 for unit, agent_name in agent_roots
             }
@@ -225,10 +265,21 @@ class CompilationSession:
         review_output_contexts: frozenset[tuple["OutputDeclKey", "ReviewSemanticContext"]],
         route_output_contexts: frozenset[tuple["OutputDeclKey", "RouteSemanticContext"]],
         final_output: CompiledFinalOutputSpec | None,
+        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
+        | None = None,
+        active_agent_key: tuple[tuple[str, ...], str] | None = None,
+        active_previous_turn_input_specs: dict[tuple[tuple[str, ...], str], object]
+        | None = None,
     ) -> CompiledField | None:
         from doctrine._compiler.context import CompilationContext
 
-        return CompilationContext(self)._compile_agent_field(
+        context = CompilationContext(
+            self,
+            previous_turn_contexts=previous_turn_contexts,
+        )
+        context._active_agent_key = active_agent_key
+        context._active_previous_turn_input_specs = active_previous_turn_input_specs or {}
+        return context._compile_agent_field(
             spec,
             agent_name=agent_name,
             unit=unit,

@@ -69,6 +69,9 @@ payload text and breaking releases with no real upgrade steps.
   choice keys, labels, named targets, and emitted runtime route metadata.
 - Added additive `route.selector` metadata to `final_output.contract.json`
   so harnesses can find the selected route field without local reconstruction.
+- Added an additive top-level `io` block to `final_output.contract.json`.
+  It carries resolved `previous_turn_inputs`, emitted `outputs`, and
+  `output_bindings` in the same public runtime contract file.
 - Added `type: enum` plus `values:` as the preferred local inline enum form
   for `output schema` fields. Legacy `type: string` plus `enum:` still works
   in this first cut, and both forms lower to the same emitted string-enum
@@ -136,6 +139,9 @@ payload text and breaking releases with no real upgrade steps.
 ### Fixed
 - Fixed custom authored workflow slots such as `read_first` so workflows with
   root readable blocks no longer fail with `E901` during emit.
+- Fixed output-guard validation so ordinary `shape: JsonObject` input fields
+  such as `RouteFacts.live_job` still work in workflow-law and route-only
+  guards after previous-turn input validation tightened.
 
 ### Release Entry Template
 

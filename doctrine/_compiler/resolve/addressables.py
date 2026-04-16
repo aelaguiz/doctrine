@@ -3,11 +3,11 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.constants import _INTERPOLATION_EXPR_RE
 from doctrine._compiler.naming import _display_addressable_ref, _dotted_ref_name, _name_ref_from_dotted_name
+from doctrine._compiler.reference_diagnostics import reference_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     AddressableProjectionTarget,
     AddressableRootDecl,
-    CompileError,
     DisplayValue,
     IndexedUnit,
     ReadableDecl,
@@ -34,8 +34,12 @@ class ResolveAddressablesMixin:
     ) -> str:
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
         if match is None:
-            raise CompileError(
-                f"Invalid interpolation in {owner_label}: {{{{{expression}}}}}"
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"Invalid interpolation in {owner_label}: {{{{{expression}}}}}",
+                unit=unit,
+                source_span=None,
             )
 
         ref = model.AddressableRef(
@@ -75,23 +79,42 @@ class ResolveAddressablesMixin:
         if len(matches) == 1:
             decl = matches[0][1]
             if isinstance(decl, model.Agent) and decl.abstract:
-                raise CompileError(
-                    f"Abstract agent refs are not allowed in {surface_label}; "
-                    f"mention a concrete agent instead: {dotted_name}"
+                raise reference_compile_error(
+                    code="E272",
+                    summary="Abstract agent ref is not allowed here",
+                    detail=(
+                        f"Abstract agent refs are not allowed in {surface_label}; "
+                        f"mention a concrete agent instead: {dotted_name}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
+                    hints=("Mention a concrete agent instead of an abstract base agent.",),
                 )
             return target_unit, decl
 
         if len(matches) > 1:
             labels = ", ".join(label for label, _decl in matches)
-            raise CompileError(
-                f"Ambiguous {ambiguous_label} in {owner_label}: "
-                f"{dotted_name} matches {labels}"
+            raise reference_compile_error(
+                code="E270",
+                summary="Ambiguous declaration reference",
+                detail=(
+                    f"Ambiguous {ambiguous_label} in {owner_label}: "
+                    f"{dotted_name} matches {labels}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
             )
 
         if target_unit.workflows_by_name.get(ref.declaration_name) is not None:
-            raise CompileError(
-                f"Workflow refs are not allowed in {surface_label}; "
-                f"use `use` for workflow composition: {dotted_name}"
+            raise reference_compile_error(
+                code="E271",
+                summary="Workflow ref is not allowed here",
+                detail=(
+                    f"Workflow refs are not allowed in {surface_label}; "
+                    f"use `use` for workflow composition: {dotted_name}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
             )
 
         fallback_unit = self._review_semantic_fallback_lookup_unit(
@@ -107,29 +130,62 @@ class ResolveAddressablesMixin:
             if len(fallback_matches) == 1:
                 decl = fallback_matches[0][1]
                 if isinstance(decl, model.Agent) and decl.abstract:
-                    raise CompileError(
-                        f"Abstract agent refs are not allowed in {surface_label}; "
-                        f"mention a concrete agent instead: {dotted_name}"
+                    raise reference_compile_error(
+                        code="E272",
+                        summary="Abstract agent ref is not allowed here",
+                        detail=(
+                            f"Abstract agent refs are not allowed in {surface_label}; "
+                            f"mention a concrete agent instead: {dotted_name}"
+                        ),
+                        unit=unit,
+                        source_span=ref.source_span,
+                        hints=(
+                            "Mention a concrete agent instead of an abstract base agent.",
+                        ),
                     )
                 return fallback_unit, decl
             if len(fallback_matches) > 1:
                 labels = ", ".join(label for label, _decl in fallback_matches)
-                raise CompileError(
-                    f"Ambiguous {ambiguous_label} in {owner_label}: "
-                    f"{dotted_name} matches {labels}"
+                raise reference_compile_error(
+                    code="E270",
+                    summary="Ambiguous declaration reference",
+                    detail=(
+                        f"Ambiguous {ambiguous_label} in {owner_label}: "
+                        f"{dotted_name} matches {labels}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
                 )
             if fallback_unit.workflows_by_name.get(ref.declaration_name) is not None:
-                raise CompileError(
-                    f"Workflow refs are not allowed in {surface_label}; "
-                    f"use `use` for workflow composition: {dotted_name}"
+                raise reference_compile_error(
+                    code="E271",
+                    summary="Workflow ref is not allowed here",
+                    detail=(
+                        f"Workflow refs are not allowed in {surface_label}; "
+                        f"use `use` for workflow composition: {dotted_name}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
                 )
 
         if ref.module_parts:
-            raise CompileError(f"Missing imported declaration: {dotted_name}")
+            raise reference_compile_error(
+                code="E281",
+                summary="Missing imported declaration",
+                detail=f"Missing imported declaration: {dotted_name}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
 
-        raise CompileError(
-            f"Missing local declaration ref in {missing_local_label} {owner_label}: "
-            f"{ref.declaration_name}"
+        raise reference_compile_error(
+            code="E276",
+            summary="Missing local declaration reference",
+            detail=(
+                f"Missing local declaration ref in {missing_local_label} {owner_label}: "
+                f"{ref.declaration_name}"
+            ),
+            unit=unit,
+            source_span=ref.source_span,
         )
 
     def _resolve_addressable_ref_value(
@@ -148,6 +204,7 @@ class ResolveAddressablesMixin:
         ref_label = _display_addressable_ref(ref)
         route_value = self._resolve_route_semantic_ref_value(
             ref,
+            unit=unit,
             owner_label=owner_label,
             surface_label=surface_label,
             route_semantics=route_semantics,
@@ -199,6 +256,7 @@ class ResolveAddressablesMixin:
             owner_label=owner_label,
             surface_label=surface_label,
             ref_label=ref_label,
+            source_span=ref.source_span,
             render_profile=render_profile,
         )
 
@@ -229,17 +287,30 @@ class ResolveAddressablesMixin:
         if len(matches) == 1:
             decl = matches[0][1]
             if isinstance(decl, model.Agent) and decl.abstract:
-                raise CompileError(
-                    "Abstract agent refs are not allowed in addressable paths; "
-                    f"mention a concrete agent instead: {dotted_name}"
+                raise reference_compile_error(
+                    code="E272",
+                    summary="Abstract agent ref is not allowed here",
+                    detail=(
+                        "Abstract agent refs are not allowed in addressable paths; "
+                        f"mention a concrete agent instead: {dotted_name}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
+                    hints=("Mention a concrete agent instead of an abstract base agent.",),
                 )
             return target_unit, decl
 
         if len(matches) > 1:
             labels = ", ".join(label for label, _decl in matches)
-            raise CompileError(
-                f"Ambiguous {ambiguous_label} in {owner_label}: "
-                f"{dotted_name} matches {labels}"
+            raise reference_compile_error(
+                code="E270",
+                summary="Ambiguous declaration reference",
+                detail=(
+                    f"Ambiguous {ambiguous_label} in {owner_label}: "
+                    f"{dotted_name} matches {labels}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
             )
 
         fallback_unit = self._review_semantic_fallback_lookup_unit(
@@ -255,24 +326,51 @@ class ResolveAddressablesMixin:
             if len(fallback_matches) == 1:
                 decl = fallback_matches[0][1]
                 if isinstance(decl, model.Agent) and decl.abstract:
-                    raise CompileError(
-                        "Abstract agent refs are not allowed in addressable paths; "
-                        f"mention a concrete agent instead: {dotted_name}"
+                    raise reference_compile_error(
+                        code="E272",
+                        summary="Abstract agent ref is not allowed here",
+                        detail=(
+                            "Abstract agent refs are not allowed in addressable paths; "
+                            f"mention a concrete agent instead: {dotted_name}"
+                        ),
+                        unit=unit,
+                        source_span=ref.source_span,
+                        hints=(
+                            "Mention a concrete agent instead of an abstract base agent.",
+                        ),
                     )
                 return fallback_unit, decl
             if len(fallback_matches) > 1:
                 labels = ", ".join(label for label, _decl in fallback_matches)
-                raise CompileError(
-                    f"Ambiguous {ambiguous_label} in {owner_label}: "
-                    f"{dotted_name} matches {labels}"
+                raise reference_compile_error(
+                    code="E270",
+                    summary="Ambiguous declaration reference",
+                    detail=(
+                        f"Ambiguous {ambiguous_label} in {owner_label}: "
+                        f"{dotted_name} matches {labels}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
                 )
 
         if ref.module_parts:
-            raise CompileError(f"Missing imported declaration: {dotted_name}")
+            raise reference_compile_error(
+                code="E281",
+                summary="Missing imported declaration",
+                detail=f"Missing imported declaration: {dotted_name}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
 
-        raise CompileError(
-            f"Missing local declaration ref in {missing_local_label} {owner_label}: "
-            f"{ref.declaration_name}"
+        raise reference_compile_error(
+            code="E276",
+            summary="Missing local declaration reference",
+            detail=(
+                f"Missing local declaration ref in {missing_local_label} {owner_label}: "
+                f"{ref.declaration_name}"
+            ),
+            unit=unit,
+            source_span=ref.source_span,
         )
 
     def _resolve_addressable_path_value(
@@ -283,6 +381,7 @@ class ResolveAddressablesMixin:
         owner_label: str,
         surface_label: str,
         ref_label: str,
+        source_span: model.SourceSpan | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> DisplayValue:
         current = self._resolve_addressable_path_node(
@@ -291,6 +390,7 @@ class ResolveAddressablesMixin:
             owner_label=owner_label,
             surface_label=surface_label,
             ref_label=ref_label,
+            source_span=source_span,
         )
 
         return self._display_addressable_target_value(
@@ -308,6 +408,7 @@ class ResolveAddressablesMixin:
         owner_label: str,
         surface_label: str,
         ref_label: str,
+        source_span: model.SourceSpan | None = None,
     ) -> AddressableNode:
         current = start
 
@@ -327,22 +428,40 @@ class ResolveAddressablesMixin:
                         target=projection,
                     )
             if is_last and segment in {"name", "title", "key", "wire"}:
-                raise CompileError(
-                    f"Unknown addressable path on {surface_label} in {owner_label}: "
-                    f"{ref_label}"
+                raise reference_compile_error(
+                    code="E273",
+                    summary="Unknown addressable path",
+                    detail=(
+                        f"Unknown addressable path on {surface_label} in {owner_label}: "
+                        f"{ref_label}"
+                    ),
+                    unit=current.unit,
+                    source_span=source_span,
                 )
 
             children = self._get_addressable_children(current)
             if children is None:
-                raise CompileError(
-                    "Addressable path must stay addressable on "
-                    f"{surface_label} in {owner_label}: {ref_label}"
+                raise reference_compile_error(
+                    code="E274",
+                    summary="Addressable path must stay addressable",
+                    detail=(
+                        "Addressable path must stay addressable on "
+                        f"{surface_label} in {owner_label}: {ref_label}"
+                    ),
+                    unit=current.unit,
+                    source_span=source_span,
                 )
             next_node = children.get(segment)
             if next_node is None:
-                raise CompileError(
-                    f"Unknown addressable path on {surface_label} in {owner_label}: "
-                    f"{ref_label}"
+                raise reference_compile_error(
+                    code="E273",
+                    summary="Unknown addressable path",
+                    detail=(
+                        f"Unknown addressable path on {surface_label} in {owner_label}: "
+                        f"{ref_label}"
+                    ),
+                    unit=current.unit,
+                    source_span=source_span,
                 )
             current = next_node
 
@@ -386,5 +505,11 @@ class ResolveAddressablesMixin:
 
         target_unit = unit.imported_units.get(ref.module_parts)
         if target_unit is None:
-            raise CompileError(f"Missing import module: {'.'.join(ref.module_parts)}")
+            raise reference_compile_error(
+                code="E280",
+                summary="Missing import module",
+                detail=f"Missing import module: {'.'.join(ref.module_parts)}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
         return target_unit

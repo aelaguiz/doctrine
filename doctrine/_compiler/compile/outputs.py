@@ -36,6 +36,9 @@ class CompileOutputsMixin:
         source_item = scalar_items.get("source")
         shape_item = scalar_items.get("shape")
         requirement_item = scalar_items.get("requirement")
+        previous_turn_spec = self._active_previous_turn_input_specs.get(
+            (unit.module_parts, decl.name)
+        )
         if source_item is None:
             raise output_compile_error(
                 code="E221",
@@ -52,7 +55,7 @@ class CompileOutputsMixin:
                 unit=unit,
                 source_span=source_item.source_span or decl.source_span,
             )
-        if shape_item is None:
+        if shape_item is None and previous_turn_spec is None:
             raise output_compile_error(
                 code="E222",
                 summary="Input is missing shape",
@@ -71,22 +74,36 @@ class CompileOutputsMixin:
 
         source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
         body: list[CompiledBodyItem] = [f"- Source: {source_spec.title}"]
-        body.extend(
-            self._compile_config_lines(
-                source_item.body or (),
-                spec=source_spec,
-                unit=unit,
-                owner_label=f"input {decl.name} source",
-                owner_source_span=source_item.source_span or decl.source_span,
+        if previous_turn_spec is None:
+            body.extend(
+                self._compile_config_lines(
+                    source_item.body or (),
+                    spec=source_spec,
+                    unit=unit,
+                    owner_label=f"input {decl.name} source",
+                    owner_source_span=source_item.source_span or decl.source_span,
+                )
             )
-        )
-        body.append(
-            f"- Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
-        )
-        body.append(
-            f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
-        )
-        if decl.structure_ref is not None:
+            body.append(
+                f"- Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+            )
+            body.append(
+                f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
+            )
+        else:
+            contract_label = (
+                "Structured JSON"
+                if previous_turn_spec.derived_contract_mode == "structured_json"
+                else "Readable Text"
+            )
+            body.append(f"- Previous Output: {previous_turn_spec.selector_text}")
+            body.append(f"- Derived Contract: {contract_label}")
+            if previous_turn_spec.shape_title is not None:
+                body.append(f"- Derived Shape: {previous_turn_spec.shape_title}")
+            if previous_turn_spec.schema_title is not None:
+                body.append(f"- Derived Schema: {previous_turn_spec.schema_title}")
+            body.append(f"- Requirement: {previous_turn_spec.requirement}")
+        if decl.structure_ref is not None and previous_turn_spec is None:
             document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             if not self._is_markdown_shape_value(shape_item.value, unit=unit):
                 raise output_compile_error(

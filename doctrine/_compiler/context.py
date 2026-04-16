@@ -9,6 +9,7 @@ from doctrine._compiler.resolved_types import (
     CompiledSection,
     IndexedUnit,
     OutputDeclKey,
+    PreviousTurnAgentContext,
     ResolvedAgentSlotState,
     ResolvedAnalysisBody,
     ResolvedDocumentBody,
@@ -33,9 +34,21 @@ if TYPE_CHECKING:
 # here, while the subsystem helper families are owned by the internal mixins.
 
 class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, ResolveMixin):
-    def __init__(self, session: CompilationSession):
+    def __init__(
+        self,
+        session: CompilationSession,
+        *,
+        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
+        | None = None,
+    ):
         self.session = session
         self.prompt_root = session.prompt_root
+        self._previous_turn_contexts = previous_turn_contexts or {}
+        self._active_agent_key: tuple[tuple[str, ...], str] | None = None
+        self._active_previous_turn_input_specs: dict[
+            tuple[tuple[str, ...], str],
+            "ResolvedPreviousTurnInputSpec",
+        ] = {}
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []

@@ -59,6 +59,9 @@ Important rules:
 - Built-in sources used in the shipped corpus include `Prompt`, `File`, and
   `EnvVar`.
 - Custom sources may be declared with `input source`.
+- When a previous-turn input source resolves one concrete upstream output,
+  `emit_docs` records that derived contract under
+  `final_output.contract.json.io.previous_turn_inputs`.
 - Input bodies hold source-specific configuration plus authored explanatory
   prose.
 - `structure:` may attach a named `document` to a markdown-bearing input shape.
@@ -158,6 +161,10 @@ Important rules:
   `final_output.route:`, that block also carries `route.selector` with the
   bound field path and null behavior. Output fields that show a next owner are
   content, not the route contract.
+- The same companion file also carries a top-level `io` block.
+  `io.previous_turn_inputs` records resolved previous-turn input contracts.
+  `io.outputs` and `io.output_bindings` record emitted output contracts and
+  readback binding paths.
 - In authored output guards, `route.exists` means a routed owner exists on
   that live branch. In emitted `final_output.contract.json`, `route.exists`
   means the final response carries route semantics at all, even when an

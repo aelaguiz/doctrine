@@ -35,6 +35,34 @@
     "schema_profile": "OpenAIStructuredOutput",
     "emitted_schema_relpath": "schemas/acceptance_review_response.schema.json"
   },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "AcceptanceReviewResponse",
+        "declaration_name": "AcceptanceReviewResponse",
+        "title": "Acceptance Review Response",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "AcceptanceReviewJson",
+          "title": "Acceptance Review JSON"
+        },
+        "schema": {
+          "name": "AcceptanceReviewSchema",
+          "title": "Acceptance Review Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
+  },
   "review": {
     "exists": true,
     "comment_output": {

@@ -135,6 +135,153 @@ class OutputRenderingTests(unittest.TestCase):
             str(caught.exception),
         )
 
+    def test_zero_config_previous_turn_input_fails_without_emit_time_flow_facts(self) -> None:
+        with self.assertRaises(CompileError) as caught:
+            self._compile_agent(
+                """
+                import rally.base_agent
+
+                output schema SharedTurnSchema: "Shared Turn Schema"
+                    field kind: "Kind"
+                        type: string
+
+                    example:
+                        kind: "handoff"
+
+                output shape SharedTurnJson: "Shared Turn JSON"
+                    kind: JsonObject
+                    schema: SharedTurnSchema
+
+                output SharedTurnResult: "Shared Turn Result"
+                    target: TurnResponse
+                    shape: SharedTurnJson
+                    requirement: Required
+
+                input PreviousTurnResult: "Previous Turn Result"
+                    source: rally.base_agent.RallyPreviousTurnOutput
+                    requirement: Advisory
+
+                agent Demo:
+                    role: "Read the previous turn."
+                    workflow: "Act"
+                        "Read the previous turn."
+                    inputs: "Inputs"
+                        PreviousTurnResult
+                    outputs: "Outputs"
+                        SharedTurnResult
+                    final_output: SharedTurnResult
+                """,
+                agent_name="Demo",
+                extra_files={
+                    "prompts/rally/base_agent.prompt": """
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """,
+                },
+            )
+
+        self.assertIn(
+            "needs flow-owned predecessor facts",
+            str(caught.exception),
+        )
+
+    def test_explicit_structured_previous_turn_input_supports_field_paths(self) -> None:
+        agent = self._compile_agent(
+            """
+            import rally.base_agent
+
+            output schema SharedTurnSchema: "Shared Turn Schema"
+                field kind: "Kind"
+                    type: string
+
+                example:
+                    kind: "handoff"
+
+            output shape SharedTurnJson: "Shared Turn JSON"
+                kind: JsonObject
+                schema: SharedTurnSchema
+
+            output SharedTurnResult: "Shared Turn Result"
+                target: TurnResponse
+                shape: SharedTurnJson
+                requirement: Required
+
+            input PreviousTurnResult: "Previous Turn Result"
+                source: rally.base_agent.RallyPreviousTurnOutput
+                    output: SharedTurnResult
+                requirement: Advisory
+
+            agent Demo:
+                role: "Read the previous turn."
+                workflow: "Act"
+                    law:
+                        current none
+                        active when PreviousTurnResult.kind == "handoff"
+                inputs: "Inputs"
+                    PreviousTurnResult
+                outputs: "Outputs"
+                    SharedTurnResult
+                final_output: SharedTurnResult
+            """,
+            agent_name="Demo",
+            extra_files={
+                "prompts/rally/base_agent.prompt": """
+                input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                    optional: "Optional Source Keys"
+                        output: "Output"
+                """,
+            },
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("- Previous Output: SharedTurnResult", rendered)
+        self.assertIn("- Derived Contract: Structured JSON", rendered)
+        self.assertIn("- Derived Schema: Shared Turn Schema", rendered)
+
+    def test_readable_previous_turn_input_rejects_field_paths(self) -> None:
+        with self.assertRaises(CompileError) as caught:
+            self._compile_agent(
+                """
+                import rally.base_agent
+
+                output ReadableReply: "Readable Reply"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                input PreviousReadableReply: "Previous Readable Reply"
+                    source: rally.base_agent.RallyPreviousTurnOutput
+                        output: ReadableReply
+                    requirement: Advisory
+
+                agent Demo:
+                    role: "Read the previous turn."
+                    workflow: "Act"
+                        law:
+                            current none
+                            active when PreviousReadableReply.kind == "handoff"
+                    inputs: "Inputs"
+                        PreviousReadableReply
+                    outputs: "Outputs"
+                        ReadableReply
+                    final_output: ReadableReply
+                """,
+                agent_name="Demo",
+                extra_files={
+                    "prompts/rally/base_agent.prompt": """
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """,
+                },
+            )
+
+        self.assertIn(
+            "active when reads invalid input source",
+            str(caught.exception),
+        )
+
     def test_current_truth_and_trust_surface_render_as_grouped_contract_sections(self) -> None:
         agent = self._compile_agent(
             """

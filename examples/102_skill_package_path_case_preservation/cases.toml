@@ -13,6 +13,7 @@ status = "active"
 kind = "compile_fail"
 prompt = "prompts/invalid/INVALID_CASE_COLLISION.prompt"
 exception_type = "CompileError"
+error_code = "E304"
 message_contains = [
   "case-collides",
   "skill.md",
@@ -24,6 +25,7 @@ status = "active"
 kind = "compile_fail"
 prompt = "prompts/invalid_agent_output_collision/SKILL.prompt"
 exception_type = "CompileError"
+error_code = "E304"
 message_contains = [
   "Duplicate skill package bundled path",
   "agents/reviewer.md",

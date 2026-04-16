@@ -259,12 +259,68 @@ class CompiledRouteContractSpec:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledPreviousTurnInputSpec:
+    input_key: tuple[tuple[str, ...], str]
+    input_name: str
+    input_title: str
+    requirement: str
+    selector_kind: str
+    selector_text: str
+    output_key: "OutputDeclKey"
+    output_name: str
+    output_title: str
+    derived_contract_mode: str
+    target_key: str
+    target_title: str
+    target_config: tuple[tuple[str, str], ...] = ()
+    shape_name: str | None = None
+    shape_title: str | None = None
+    schema_name: str | None = None
+    schema_title: str | None = None
+    schema_profile: str | None = None
+    lowered_schema: dict[str, object] | None = None
+    binding_path: tuple[str, ...] | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledPreviousTurnOutputSpec:
+    output_key: "OutputDeclKey"
+    output_name: str
+    output_title: str
+    target_key: str
+    target_title: str
+    target_config: tuple[tuple[str, str], ...] = ()
+    shape_name: str | None = None
+    shape_title: str | None = None
+    derived_contract_mode: str | None = None
+    readback_mode: str = "unsupported"
+    requires_final_output: bool = False
+    schema_name: str | None = None
+    schema_title: str | None = None
+    schema_profile: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledPreviousTurnOutputBindingSpec:
+    binding_path: tuple[str, ...]
+    output_key: "OutputDeclKey"
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledIoContractSpec:
+    previous_turn_inputs: tuple[CompiledPreviousTurnInputSpec, ...] = ()
+    outputs: tuple[CompiledPreviousTurnOutputSpec, ...] = ()
+    output_bindings: tuple[CompiledPreviousTurnOutputBindingSpec, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
     final_output: CompiledFinalOutputSpec | None = None
     review: CompiledReviewSpec | None = None
     route: CompiledRouteContractSpec | None = None
+    io: CompiledIoContractSpec | None = None
 
 
 @dataclass(slots=True, frozen=True)

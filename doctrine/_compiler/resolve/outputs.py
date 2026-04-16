@@ -18,6 +18,8 @@ from doctrine._compiler.resolved_types import (
     FinalOutputJsonShapeSummary,
     IndexedUnit,
     OutputDeclKey,
+    PreviousTurnAgentContext,
+    ResolvedPreviousTurnInputSpec,
     ResolvedIoBody,
     ResolvedIoItem,
     ResolvedIoRef,
@@ -1699,6 +1701,483 @@ class ResolveOutputsMixin:
             decl,
             unit=target_unit,
             owner_label=f"input source {decl.name}",
+        )
+
+    def _is_rally_previous_turn_input_source_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> bool:
+        try:
+            target_unit, decl = self._resolve_input_source_decl(ref, unit=unit)
+        except CompileError:
+            return False
+        return (
+            target_unit.module_parts == ("rally", "base_agent")
+            and decl.name == "RallyPreviousTurnOutput"
+        )
+
+    def _previous_turn_agent_context(
+        self,
+        *,
+        agent_key: tuple[tuple[str, ...], str] | None,
+    ) -> PreviousTurnAgentContext | None:
+        if agent_key is None:
+            return None
+        return self._previous_turn_contexts.get(agent_key)
+
+    def _resolve_previous_turn_input_spec(
+        self,
+        input_decl: model.InputDecl,
+        *,
+        unit: IndexedUnit,
+        agent_key: tuple[tuple[str, ...], str] | None,
+    ) -> ResolvedPreviousTurnInputSpec | None:
+        scalar_items, _section_items, _extras = self._split_record_items(
+            input_decl.items,
+            scalar_keys={"source", "shape", "requirement"},
+            owner_label=f"input {input_decl.name}",
+        )
+        source_item = scalar_items.get("source")
+        if source_item is None or not isinstance(source_item.value, model.NameRef):
+            return None
+        if not self._is_rally_previous_turn_input_source_ref(source_item.value, unit=unit):
+            return None
+
+        shape_item = scalar_items.get("shape")
+        if shape_item is not None:
+            raise CompileError(
+                f"Previous-turn input `{input_decl.name}` must not declare `shape:`; "
+                "the selected previous output owns that contract."
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=(shape_item.source_span or input_decl.source_span).line
+                if (shape_item.source_span or input_decl.source_span) is not None
+                else None,
+                column=(shape_item.source_span or input_decl.source_span).column
+                if (shape_item.source_span or input_decl.source_span) is not None
+                else None,
+            )
+        if input_decl.structure_ref is not None:
+            source_span = input_decl.source_span
+            raise CompileError(
+                f"Previous-turn input `{input_decl.name}` must not declare `structure:`; "
+                "the selected previous output owns that contract."
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=source_span.line if source_span is not None else None,
+                column=source_span.column if source_span is not None else None,
+            )
+
+        requirement_item = scalar_items.get("requirement")
+        if requirement_item is None:
+            raise CompileError(
+                f"Input `{input_decl.name}` is missing a `requirement` field."
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=input_decl.source_span.line if input_decl.source_span is not None else None,
+                column=input_decl.source_span.column if input_decl.source_span is not None else None,
+            )
+        requirement = self._display_symbol_value(
+            requirement_item.value,
+            unit=unit,
+            owner_label=f"input {input_decl.name}",
+            surface_label="input fields",
+        )
+
+        selector_items = tuple(source_item.body or ())
+        seen_selector_keys: dict[str, model.RecordScalar] = {}
+        for item in selector_items:
+            if not isinstance(item, model.RecordScalar) or item.body is not None:
+                raise CompileError(
+                    f"Previous-turn input source config must stay scalar in input {input_decl.name}."
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=(getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span).line
+                    if (getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                    column=(getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span).column
+                    if (getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                )
+            first_item = seen_selector_keys.get(item.key)
+            if first_item is not None:
+                raise CompileError(
+                    f"Previous-turn input source repeats config key `{item.key}` in input {input_decl.name}."
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=(item.source_span or source_item.source_span or input_decl.source_span).line
+                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                    column=(item.source_span or source_item.source_span or input_decl.source_span).column
+                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                )
+            seen_selector_keys[item.key] = item
+            if item.key != "output":
+                raise CompileError(
+                    f"Previous-turn input source uses unknown config key `{item.key}` in input {input_decl.name}."
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=(item.source_span or source_item.source_span or input_decl.source_span).line
+                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                    column=(item.source_span or source_item.source_span or input_decl.source_span).column
+                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                )
+
+        output_selector = seen_selector_keys.get("output")
+        if output_selector is None:
+            previous_turn_context = self._previous_turn_agent_context(agent_key=agent_key)
+            if previous_turn_context is None:
+                raise CompileError(
+                    f"Zero-config previous-turn input `{input_decl.name}` needs flow-owned predecessor facts; "
+                    "compile this surface through emit-time target roots."
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=(source_item.source_span or input_decl.source_span).line
+                    if (source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                    column=(source_item.source_span or input_decl.source_span).column
+                    if (source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                )
+            if previous_turn_context.exact_final_output_key is None:
+                if previous_turn_context.predecessor_final_output_keys:
+                    choices = ", ".join(
+                        _dotted_decl_name(parts, name)
+                        for parts, name in previous_turn_context.predecessor_final_output_keys
+                    )
+                    raise CompileError(
+                        f"Zero-config previous-turn input `{input_decl.name}` is ambiguous; "
+                        f"reachable predecessors disagree on previous final output: {choices}"
+                    ).ensure_location(
+                        path=unit.prompt_file.source_path,
+                        line=(source_item.source_span or input_decl.source_span).line
+                        if (source_item.source_span or input_decl.source_span) is not None
+                        else None,
+                        column=(source_item.source_span or input_decl.source_span).column
+                        if (source_item.source_span or input_decl.source_span) is not None
+                        else None,
+                    )
+                raise CompileError(
+                    f"Zero-config previous-turn input `{input_decl.name}` has no reachable predecessor final output."
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=(source_item.source_span or input_decl.source_span).line
+                    if (source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                    column=(source_item.source_span or input_decl.source_span).column
+                    if (source_item.source_span or input_decl.source_span) is not None
+                    else None,
+                )
+            output_key = previous_turn_context.exact_final_output_key
+            output_unit = self._load_module(output_key[0]) if output_key[0] else self.root_unit
+            output_decl = self._resolve_output_decl_body(
+                output_unit.outputs_by_name[output_key[1]],
+                unit=output_unit,
+            )
+            binding_path = None
+            selector_kind = "default_final_output"
+            selector_text = "Exact previous final output"
+        else:
+            output_key, output_unit, output_decl, selector_kind, selector_text, binding_path = (
+                self._resolve_previous_turn_selector_output(
+                    selector=output_selector.value,
+                    unit=unit,
+                    owner_label=f"input {input_decl.name}",
+                )
+            )
+            self._validate_previous_turn_explicit_selector_against_predecessors(
+                selected_output_key=output_key,
+                selected_binding_path=binding_path,
+                selected_output_decl=output_decl,
+                unit=unit,
+                owner_label=f"input {input_decl.name}",
+                source_span=output_selector.source_span or source_item.source_span or input_decl.source_span,
+                previous_turn_context=self._previous_turn_agent_context(agent_key=agent_key),
+            )
+
+        (
+            target_key,
+            target_title,
+            target_config,
+            shape_name,
+            shape_title,
+            schema_name,
+            schema_title,
+            schema_profile,
+            lowered_schema,
+            derived_contract_mode,
+        ) = self._resolve_previous_turn_output_contract(output_decl, unit=output_unit)
+
+        return ResolvedPreviousTurnInputSpec(
+            input_key=(unit.module_parts, input_decl.name),
+            input_unit=unit,
+            input_decl=input_decl,
+            requirement=requirement,
+            selector_kind=selector_kind,
+            selector_text=selector_text,
+            output_key=output_key,
+            output_unit=output_unit,
+            output_decl=output_decl,
+            derived_contract_mode=derived_contract_mode,
+            target_key=target_key,
+            target_title=target_title,
+            target_config=target_config,
+            shape_name=shape_name,
+            shape_title=shape_title,
+            schema_name=schema_name,
+            schema_title=schema_title,
+            schema_profile=schema_profile,
+            lowered_schema=lowered_schema,
+            binding_path=binding_path,
+        )
+
+    def _resolve_previous_turn_selector_output(
+        self,
+        *,
+        selector: model.RecordScalarValue,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[OutputDeclKey, IndexedUnit, model.OutputDecl, str, str, tuple[str, ...] | None]:
+        if isinstance(selector, str):
+            raise CompileError(
+                f"Previous-turn selector must stay typed in {owner_label}; string selector values are not allowed."
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=None,
+                column=None,
+            )
+        if isinstance(selector, model.NameRef):
+            output_unit, output_decl = self._resolve_output_decl(selector, unit=unit)
+            output_decl = self._resolve_output_decl_body(output_decl, unit=output_unit)
+            return (
+                (output_unit.module_parts, output_decl.name),
+                output_unit,
+                output_decl,
+                "output_decl",
+                _dotted_ref_name(selector),
+                None,
+            )
+        outputs_unit, outputs_decl = self._resolve_outputs_block_ref(selector.root, unit=unit)
+        resolved_outputs = self._resolve_outputs_decl(outputs_decl, unit=outputs_unit)
+        if not selector.path:
+            raise CompileError(
+                f"Previous-turn output binding selector must include a bound output path in {owner_label}: "
+                f"{_dotted_ref_name(selector.root)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=selector.root.source_span.line if selector.root.source_span is not None else None,
+                column=selector.root.source_span.column if selector.root.source_span is not None else None,
+            )
+        binding = next((item for item in resolved_outputs.bindings if item.binding_path == selector.path), None)
+        if binding is None:
+            raise CompileError(
+                f"Unknown previous-turn output binding in {owner_label}: "
+                f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=selector.root.source_span.line if selector.root.source_span is not None else None,
+                column=selector.root.source_span.column if selector.root.source_span is not None else None,
+            )
+        if not isinstance(binding.artifact.decl, model.OutputDecl):
+            raise CompileError(
+                f"Previous-turn output binding must resolve to an output declaration in {owner_label}: "
+                f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}"
+            )
+        output_decl = self._resolve_output_decl_body(binding.artifact.decl, unit=binding.artifact.unit)
+        return (
+            (binding.artifact.unit.module_parts, output_decl.name),
+            binding.artifact.unit,
+            output_decl,
+            "output_binding",
+            f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}",
+            selector.path,
+        )
+
+    def _validate_previous_turn_explicit_selector_against_predecessors(
+        self,
+        *,
+        selected_output_key: OutputDeclKey,
+        selected_binding_path: tuple[str, ...] | None,
+        selected_output_decl: model.OutputDecl,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
+        previous_turn_context: PreviousTurnAgentContext | None,
+    ) -> None:
+        if previous_turn_context is None:
+            return
+        if not previous_turn_context.predecessor_agent_keys:
+            raise CompileError(
+                f"Previous-turn selector in {owner_label} has no reachable predecessor agent."
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=source_span.line if source_span is not None else None,
+                column=source_span.column if source_span is not None else None,
+            )
+        for predecessor_key in previous_turn_context.predecessor_agent_keys:
+            predecessor_unit = self._load_module(predecessor_key[0]) if predecessor_key[0] else self.root_unit
+            predecessor_agent = predecessor_unit.agents_by_name.get(predecessor_key[1])
+            if predecessor_agent is None:
+                raise CompileError(
+                    f"Missing predecessor agent during previous-turn validation in {owner_label}: "
+                    f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}"
+                )
+            predecessor_contract = self._resolve_agent_contract(predecessor_agent, unit=predecessor_unit)
+            predecessor_final_output_key: OutputDeclKey | None = None
+            for field in predecessor_agent.fields:
+                if isinstance(field, model.FinalOutputField):
+                    final_output_unit, final_output_decl = self._resolve_final_output_decl(
+                        field.value,
+                        unit=predecessor_unit,
+                        owner_label=f"agent {predecessor_agent.name} final_output",
+                        source_span=field.source_span,
+                    )
+                    predecessor_final_output_key = (
+                        final_output_unit.module_parts,
+                        final_output_decl.name,
+                    )
+                    break
+            if selected_binding_path is not None:
+                binding = predecessor_contract.output_bindings_by_path.get(selected_binding_path)
+                if binding is None:
+                    raise CompileError(
+                        f"Previous-turn binding selector in {owner_label} is not emitted by predecessor "
+                        f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}: "
+                        f"{'.'.join(selected_binding_path)}"
+                    ).ensure_location(
+                        path=unit.prompt_file.source_path,
+                        line=source_span.line if source_span is not None else None,
+                        column=source_span.column if source_span is not None else None,
+                    )
+                if (binding.artifact.unit.module_parts, binding.artifact.decl.name) != selected_output_key:
+                    raise CompileError(
+                        f"Previous-turn binding selector in {owner_label} does not stay stable across predecessors."
+                    ).ensure_location(
+                        path=unit.prompt_file.source_path,
+                        line=source_span.line if source_span is not None else None,
+                        column=source_span.column if source_span is not None else None,
+                    )
+            elif selected_output_key not in predecessor_contract.outputs:
+                raise CompileError(
+                    f"Previous-turn output selector in {owner_label} is not emitted by predecessor "
+                    f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}: "
+                    f"{_dotted_decl_name(selected_output_key[0], selected_output_key[1])}"
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=source_span.line if source_span is not None else None,
+                    column=source_span.column if source_span is not None else None,
+                )
+
+            scalar_items, section_items, _extras = self._split_record_items(
+                selected_output_decl.items,
+                scalar_keys={"target", "shape", "requirement"},
+                section_keys={"files"},
+                owner_label=f"output {selected_output_decl.name}",
+            )
+            files_section = section_items.get("files")
+            target_item = scalar_items.get("target")
+            if files_section is None and target_item is not None and isinstance(target_item.value, model.NameRef):
+                if self._is_builtin_turn_response_target_ref(target_item.value):
+                    if predecessor_final_output_key != selected_output_key:
+                        raise CompileError(
+                            f"Previous-turn selector in {owner_label} points at a non-final `TurnResponse`; "
+                            "only the actual previous `final_output` can be reopened from a prior turn."
+                        ).ensure_location(
+                            path=unit.prompt_file.source_path,
+                            line=source_span.line if source_span is not None else None,
+                            column=source_span.column if source_span is not None else None,
+                        )
+
+    def _resolve_previous_turn_output_contract(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[
+        str,
+        str,
+        tuple[tuple[str, str], ...],
+        str | None,
+        str | None,
+        str | None,
+        str | None,
+        str | None,
+        dict[str, object] | None,
+        str,
+    ]:
+        scalar_items, section_items, _extras = self._split_record_items(
+            output_decl.items,
+            scalar_keys={"target", "shape", "requirement"},
+            section_keys={"files"},
+            owner_label=f"output {output_decl.name}",
+        )
+        files_section = section_items.get("files")
+        if files_section is not None:
+            raise CompileError(
+                f"Previous-turn selectors must resolve to one concrete output artifact, not a `files:` output bundle: "
+                f"{_dotted_decl_name(unit.module_parts, output_decl.name)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=files_section.source_span.line if files_section.source_span is not None else None,
+                column=files_section.source_span.column if files_section.source_span is not None else None,
+            )
+        target_item = scalar_items.get("target")
+        shape_item = scalar_items.get("shape")
+        if target_item is None or shape_item is None or not isinstance(target_item.value, model.NameRef):
+            raise CompileError(
+                f"Previous-turn selector must resolve to a typed one-artifact output: "
+                f"{_dotted_decl_name(unit.module_parts, output_decl.name)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=output_decl.source_span.line if output_decl.source_span is not None else None,
+                column=output_decl.source_span.column if output_decl.source_span is not None else None,
+            )
+        target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
+        target_key = (
+            _dotted_ref_name(target_item.value)
+            if target_item.value.module_parts
+            else target_item.value.declaration_name
+        )
+        target_config = tuple(
+            (
+                item.key,
+                self._display_symbol_value(
+                    item.value,
+                    unit=unit,
+                    owner_label=f"output {output_decl.name}",
+                    surface_label="output target config",
+                ),
+            )
+            for item in (target_item.body or ())
+            if isinstance(item, model.RecordScalar) and item.body is None
+        )
+        shape_name = self._final_output_shape_name(shape_item.value)
+        shape_title = self._display_output_shape(
+            shape_item.value,
+            unit=unit,
+            owner_label=f"output {output_decl.name}",
+            surface_label="output fields",
+        )
+        json_summary = self._resolve_final_output_json_shape_summary(
+            shape_item.value,
+            unit=unit,
+        )
+        return (
+            target_key,
+            target_spec.title,
+            target_config,
+            shape_name,
+            shape_title,
+            None if json_summary is None else json_summary.schema_decl.name,
+            None if json_summary is None else json_summary.schema_decl.title,
+            None if json_summary is None else json_summary.schema_profile,
+            None if json_summary is None else json_summary.lowered_schema,
+            "structured_json" if json_summary is not None else "readable_text",
         )
 
     def _resolve_output_target_spec(

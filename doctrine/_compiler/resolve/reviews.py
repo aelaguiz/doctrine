@@ -750,12 +750,21 @@ class ResolveReviewsMixin:
             parent_review: ResolvedReviewBody | None = None
             parent_label: str | None = None
             if review_decl.parent_ref is not None:
-                parent_unit, parent_decl = self._resolve_decl_ref(
-                    review_decl.parent_ref,
-                    unit=unit,
-                    registry_name="reviews_by_name",
-                    missing_label="review declaration",
-                )
+                try:
+                    parent_unit, parent_decl = self._resolve_decl_ref(
+                        review_decl.parent_ref,
+                        unit=unit,
+                        registry_name="reviews_by_name",
+                        missing_label="review declaration",
+                    )
+                except CompileError as exc:
+                    raise review_compile_error(
+                        code="E470",
+                        summary="Invalid review declaration shape",
+                        detail=exc.diagnostic.detail,
+                        unit=unit,
+                        source_span=review_decl.parent_ref.source_span,
+                    ) from exc
                 parent_review = self._resolve_review_decl(parent_decl, unit=parent_unit)
                 parent_label = f"review {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 

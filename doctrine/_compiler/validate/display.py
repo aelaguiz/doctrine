@@ -337,6 +337,7 @@ class ValidateDisplayMixin:
                     )
                 route_value = self._resolve_route_semantic_ref_value(
                     model.AddressableRef(root=value, path=()),
+                    unit=unit,
                     owner_label=owner_label,
                     surface_label=surface_label,
                     route_semantics=route_semantics,

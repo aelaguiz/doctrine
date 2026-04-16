@@ -44,7 +44,10 @@ agents from the agent entrypoints into runtime Markdown artifacts whose
 basename matches the entrypoint stem. It also emits imported
 directory-backed runtime packages when a selected `AGENTS.prompt` uses them as
 runtime homes. Structured final outputs also emit the exact lowered schema at
-`schemas/<output-slug>.schema.json` beside that Markdown file. `emit_skill`
+`schemas/<output-slug>.schema.json` beside that Markdown file. When a turn
+also needs final-response, review, route, or resolved previous-turn IO
+metadata, `emit_docs` writes `final_output.contract.json` beside that Markdown
+file. `emit_skill`
 compiles one top-level `skill package` from `SKILL.prompt` into `SKILL.md`
 plus bundled source-root files. Doctrine does that work through shared
 compilation and indexing so module loading happens once per entrypoint and
@@ -664,6 +667,9 @@ Important rules:
 - Built-in sources used in the shipped corpus include `Prompt`, `File`, and
   `EnvVar`.
 - Custom sources can be declared with `input source`.
+- When a previous-turn input source resolves one concrete upstream output,
+  `emit_docs` records that derived contract under
+  `final_output.contract.json.io.previous_turn_inputs`.
 - `structure:` may attach a named `document` to a markdown-bearing input.
 - Ordinary record bodies may also reuse readable block kinds such as
   `definitions`, `table`, `callout`, and `code`.
@@ -796,6 +802,10 @@ Important rules:
   route fields.
 - When a route comes from `final_output.route:`, the emitted route contract
   also carries `route.selector` with the bound field path and null behavior.
+- The same companion file also carries a top-level `io` block.
+  `io.previous_turn_inputs` records resolved previous-turn input contracts.
+  `io.outputs` and `io.output_bindings` record emitted output contracts and
+  readback binding paths.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 

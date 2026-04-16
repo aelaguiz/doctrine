@@ -7,6 +7,8 @@ import unittest
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.context import CompilationContext
+from doctrine._compiler.resolved_types import AddressableNode
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
@@ -277,6 +279,324 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
         self.assertEqual(error.diagnostic.location.line, 16)
         self.assertIn("route_from RouteFacts.route_choice == ProofRoute.accept as ProofRoute:", str(error))
+
+    def test_route_target_abstract_agent_points_at_route_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                abstract agent ReviewLead:
+                    role: "Accept routed work."
+
+                agent Demo:
+                    role: "Reject abstract route targets."
+                    workflow: "Route"
+                        law:
+                            current none
+                            route "Hand off to ReviewLead." -> ReviewLead
+                """,
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E282")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 9)
+        self.assertIn('route "Hand off to ReviewLead." -> ReviewLead', str(error))
+
+    def test_active_when_invalid_source_points_at_active_when_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                workflow InvalidActiveWhenWorkflow: "Invalid Active When Workflow"
+                    law:
+                        current none
+                        active when MissingInput.ready
+
+                agent Demo:
+                    role: "Reject invalid active when reads."
+                    workflow: InvalidActiveWhenWorkflow
+                """,
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 4)
+        self.assertIn("active when reads invalid input source", str(error))
+
+    def test_mode_value_outside_enum_points_at_mode_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                enum EditMode: "Edit Mode"
+                    manifest_title: "manifest-title"
+                    section_summary: "section-summary"
+
+                workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+                    law:
+                        mode edit_mode = "taxonomy" as EditMode
+                        current none
+
+                agent Demo:
+                    role: "Reject invalid mode values."
+                    workflow: InvalidModeAwareEdit
+                """,
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E341")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 7)
+        self.assertIn('mode edit_mode = "taxonomy" as EditMode', str(error))
+
+    def test_nonexhaustive_mode_match_points_at_match_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                enum EditMode: "Edit Mode"
+                    manifest_title: "manifest-title"
+                    section_summary: "section-summary"
+
+                input CurrentHandoff: "Current Handoff"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+                    law:
+                        mode edit_mode = CurrentHandoff.active_mode as EditMode
+                        match edit_mode:
+                            EditMode.manifest_title:
+                                current none
+
+                agent Demo:
+                    role: "Reject nonexhaustive mode matches."
+                    workflow: InvalidModeAwareEdit
+                    inputs: "Inputs"
+                        CurrentHandoff
+                """,
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E342")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 13)
+        self.assertIn("match edit_mode:", str(error))
+
+    def test_handoff_routing_nonrouting_statement_points_at_statement_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                output SimpleReply: "Simple Reply"
+                    target: TurnResponse
+                    shape: CommentText
+                    requirement: Required
+
+                agent Demo:
+                    role: "Keep handoff routing limited to route semantics."
+                    outputs: "Outputs"
+                        SimpleReply
+
+                    handoff_routing: "Handoff Routing"
+                        law:
+                            current none
+                            stop "Reply and stop."
+                """,
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E344")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 13)
+        self.assertIn("unsupported statement `current none`", str(error))
+
+    def test_multiple_current_subjects_report_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input CurrentHandoff: "Current Handoff"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                output CoordinationComment: "Coordination Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the current artifact."
+                    trust_surface:
+                        current_artifact
+
+                workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+                    law:
+                        when CurrentHandoff.missing:
+                            current none
+                            current artifact CoordinationComment via CoordinationComment.current_artifact
+
+                agent Demo:
+                    role: "Trigger conflicting currentness."
+                    workflow: InvalidRouteOnlyTurns
+                    inputs: "Inputs"
+                        CurrentHandoff
+                    outputs: "Outputs"
+                        CoordinationComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E332")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "            current artifact CoordinationComment via CoordinationComment.current_artifact"
+            )
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("            current none") + 1,
+        )
+        self.assertIn("first current-subject form", str(error))
+
+    def test_current_none_with_owned_scope_points_at_owned_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/_authoring/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                workflow InvalidOwnedRouteOnlyTurn: "Invalid Owned Route-Only Turn"
+                    law:
+                        current none
+                        own only ApprovedPlan
+
+                agent Demo:
+                    role: "Reject owned scope on route-only turns."
+                    workflow: InvalidOwnedRouteOnlyTurn
+                    inputs: "Inputs"
+                        ApprovedPlan
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        own only ApprovedPlan") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("        current none") + 1,
+        )
+        self.assertIn("`current none` statement", str(error))
+
+    def test_current_artifact_invalidation_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output SectionReview: "Section Review"
+                    target: File
+                        path: "unit_root/_authoring/SECTION_REVIEW.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the one artifact that is current now."
+                    invalidations: "Invalidations"
+                        "Name any artifacts that are no longer current."
+                    trust_surface:
+                        current_artifact
+                        invalidations
+
+                workflow InvalidStructureChange: "Structure Change"
+                    law:
+                        current artifact SectionReview via CoordinationHandoff.current_artifact
+                        invalidate SectionReview via CoordinationHandoff.invalidations
+
+                agent Demo:
+                    role: "Reject invalidating the current artifact."
+                    workflow: InvalidStructureChange
+                    outputs: "Outputs"
+                        SectionReview
+                        CoordinationHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E371")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "        invalidate SectionReview via CoordinationHandoff.invalidations"
+            )
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index(
+                "        current artifact SectionReview via CoordinationHandoff.current_artifact"
+            )
+            + 1,
+        )
+        self.assertIn("current artifact statement", str(error))
 
     def test_current_artifact_wrong_kind_points_at_current_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1311,6 +1631,147 @@ class CompileDiagnosticTests(unittest.TestCase):
             rendered.splitlines().index("    shape: MissingShape") + 1,
         )
         self.assertIn("does not exist in the current module", str(error))
+
+    def test_missing_local_table_declaration_points_at_named_table_use_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                document ReleaseGuide: "Release Guide"
+                    table release_gates: MissingTable required
+
+                output ReleaseGuideFile: "Release Guide File"
+                    target: File
+                        path: "release_root/RELEASE_GUIDE.md"
+                    shape: MarkdownDocument
+                    structure: ReleaseGuide
+                    requirement: Required
+
+                agent Demo:
+                    role: "Ship the file."
+                    outputs: "Outputs"
+                        ReleaseGuideFile
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E276")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    table release_gates: MissingTable required") + 1,
+        )
+        self.assertIn("Missing local table declaration: MissingTable", str(error))
+
+    def test_input_source_must_stay_typed_points_at_source_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input BrokenInput: "Broken Input"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                agent Demo:
+                    role: "Reject untyped input source titles."
+                    workflow: "Reply"
+                        "{{BrokenInput.source.title}}"
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            session = CompilationSession(parse_file(prompt_path))
+            context = CompilationContext(session)
+            input_decl = session.root_unit.inputs_by_name["BrokenInput"]
+            source_item = next(
+                item
+                for item in input_decl.items
+                if isinstance(item, model.RecordScalar) and item.key == "source"
+            )
+            broken_item = replace(source_item, value="Prompt")
+            broken_input_decl = replace(
+                input_decl,
+                items=tuple(
+                    broken_item if item is source_item else item for item in input_decl.items
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                context._display_record_scalar_title(
+                    broken_item,
+                    node=AddressableNode(
+                        unit=session.root_unit,
+                        root_decl=broken_input_decl,
+                        target=broken_item,
+                    ),
+                    owner_label="agent Demo workflow",
+                    surface_label="workflow prose",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E275")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    source: Prompt") + 1,
+        )
+        self.assertIn("Input source must stay typed", str(error))
+
+    def test_output_target_must_stay_typed_points_at_target_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BrokenOutput: "Broken Output"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                agent Demo:
+                    role: "Reject untyped output target titles."
+                    workflow: "Reply"
+                        "{{BrokenOutput.target.title}}"
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            session = CompilationSession(parse_file(prompt_path))
+            context = CompilationContext(session)
+            output_decl = session.root_unit.outputs_by_name["BrokenOutput"]
+            target_item = next(
+                item
+                for item in output_decl.items
+                if isinstance(item, model.RecordScalar) and item.key == "target"
+            )
+            broken_item = replace(target_item, value="TurnResponse")
+            broken_output_decl = replace(
+                output_decl,
+                items=tuple(
+                    broken_item if item is target_item else item for item in output_decl.items
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                context._display_record_scalar_title(
+                    broken_item,
+                    node=AddressableNode(
+                        unit=session.root_unit,
+                        root_decl=broken_output_decl,
+                        target=broken_item,
+                    ),
+                    owner_label="agent Demo workflow",
+                    surface_label="workflow prose",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E275")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    target: TurnResponse") + 1,
+        )
+        self.assertIn("Output target must stay typed", str(error))
 
     def test_output_structure_requires_markdown_shape_points_at_shape_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -2968,6 +3429,87 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Missing inherited document entry in ChildGuide: read_order", str(error))
         self.assertIn("inherited `read_order` entry", str(error))
+
+    def test_skill_package_case_collision_uses_file_scoped_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            prompt_path = prompts / "SKILL.prompt"
+            prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    skill package PathCasePreservation: "Path Case Preservation"
+                        metadata:
+                            name: "path-case-preservation"
+                        "Keep companion paths stable."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            collision_path = prompts / "skill.md"
+            collision_path.write_text(
+                "This file case-collides with the compiled `SKILL.md` output.\n",
+                encoding="utf-8",
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, collision_path.resolve())
+        self.assertIsNone(error.diagnostic.location.line)
+        self.assertIn("case-collides", str(error))
+
+    def test_skill_package_agent_output_collision_reports_related_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "agents").mkdir(parents=True)
+            prompt_path = prompts / "SKILL.prompt"
+            prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    skill package AgentOutputCollision: "Agent Output Collision"
+                        metadata:
+                            name: "agent-output-collision"
+                        "Fail loud when bundled files shadow compiled agent output."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            bundled_prompt_path = prompts / "agents" / "reviewer.prompt"
+            bundled_prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    agent Reviewer:
+                        role: "Review the bundle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            collision_path = prompts / "agents" / "reviewer.md"
+            collision_path.write_text(
+                "This file collides with the compiled bundled agent markdown.\n",
+                encoding="utf-8",
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, collision_path.resolve())
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.path,
+            bundled_prompt_path.resolve(),
+        )
+        self.assertIn("Duplicate skill package bundled path", str(error))
+        self.assertIn("Related:", str(error))
 
 
 if __name__ == "__main__":

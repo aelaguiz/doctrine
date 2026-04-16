@@ -45,6 +45,46 @@
     "schema_profile": null,
     "emitted_schema_relpath": null
   },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "DraftReviewComment",
+        "declaration_name": "DraftReviewComment",
+        "title": "Draft Review Comment",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "readable_text",
+        "readback_mode": "unsupported",
+        "requires_final_output": true,
+        "shape": {
+          "name": "Comment",
+          "title": "Comment"
+        }
+      },
+      {
+        "declaration_key": "DraftReviewDecision",
+        "declaration_name": "DraftReviewDecision",
+        "title": "Draft Review Decision",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "readable_text",
+        "readback_mode": "readable_text",
+        "requires_final_output": true,
+        "shape": {
+          "name": "CommentText",
+          "title": "Comment Text"
+        }
+      }
+    ],
+    "output_bindings": []
+  },
   "review": {
     "exists": true,
     "comment_output": {

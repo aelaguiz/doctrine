@@ -44,5 +44,33 @@
     "format_mode": "json_object",
     "schema_profile": "OpenAIStructuredOutput",
     "emitted_schema_relpath": "schemas/writer_turn_result.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "WriterTurnResult",
+        "declaration_name": "WriterTurnResult",
+        "title": "Writer Turn Result",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "WriterTurnResultJson",
+          "title": "Writer Turn Result JSON"
+        },
+        "schema": {
+          "name": "WriterTurnResultSchema",
+          "title": "Writer Turn Result Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
   }
 }

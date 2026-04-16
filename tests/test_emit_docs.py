@@ -266,6 +266,220 @@ class EmitDocsTests(unittest.TestCase):
                 },
             )
 
+    def test_emit_target_serializes_io_block_for_exact_previous_final_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import rally.base_agent
+
+                    output schema SharedTurnSchema: "Shared Turn Schema"
+                        field kind: "Kind"
+                            type: string
+
+                        example:
+                            kind: "handoff"
+
+                    output shape SharedTurnJson: "Shared Turn JSON"
+                        kind: JsonObject
+                        schema: SharedTurnSchema
+
+                    output SharedTurnResult: "Shared Turn Result"
+                        target: TurnResponse
+                        shape: SharedTurnJson
+                        requirement: Required
+
+                    input PreviousTurnResult: "Previous Turn Result"
+                        source: rally.base_agent.RallyPreviousTurnOutput
+                        requirement: Advisory
+
+                    agent WorkerB:
+                        role: "Read the previous turn."
+                        workflow: "Act"
+                            law:
+                                current none
+                                active when PreviousTurnResult.kind == "handoff"
+                        inputs: "Inputs"
+                            PreviousTurnResult
+                        outputs: "Outputs"
+                            SharedTurnResult
+                        final_output: SharedTurnResult
+
+                    agent WorkerA:
+                        role: "Hand work to Worker B."
+                        workflow: "Route"
+                            law:
+                                current none
+                                active when true
+                                route "Send to Worker B." -> WorkerB
+                        outputs: "Outputs"
+                            SharedTurnResult
+                        final_output: SharedTurnResult
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "worker_b" / "final_output.contract.json"
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertIn("io", contract_data)
+            self.assertEqual(
+                contract_data["io"]["previous_turn_inputs"],
+                [
+                    {
+                        "input_key": "PreviousTurnResult",
+                        "input_name": "PreviousTurnResult",
+                        "selector_kind": "default_final_output",
+                        "selector_text": "Exact previous final output",
+                        "resolved_declaration_key": "SharedTurnResult",
+                        "resolved_declaration_name": "SharedTurnResult",
+                        "derived_contract_mode": "structured_json",
+                        "requirement": "Advisory",
+                        "target": {
+                            "key": "TurnResponse",
+                            "title": "Turn Response",
+                            "config": {},
+                        },
+                        "shape": {
+                            "name": "SharedTurnJson",
+                            "title": "Shared Turn JSON",
+                        },
+                        "schema": {
+                            "name": "SharedTurnSchema",
+                            "title": "Shared Turn Schema",
+                            "profile": "OpenAIStructuredOutput",
+                        },
+                    }
+                ],
+            )
+            output_keys = {
+                item["declaration_key"] for item in contract_data["io"]["outputs"]
+            }
+            for binding in contract_data["io"]["output_bindings"]:
+                self.assertIn(binding["declaration_key"], output_keys)
+
+    def test_emit_target_rejects_non_final_turn_response_previous_selector(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import rally.base_agent
+
+                    output schema SharedTurnSchema: "Shared Turn Schema"
+                        field kind: "Kind"
+                            type: string
+
+                        example:
+                            kind: "handoff"
+
+                    output shape SharedTurnJson: "Shared Turn JSON"
+                        kind: JsonObject
+                        schema: SharedTurnSchema
+
+                    output SharedTurnResult: "Shared Turn Result"
+                        target: TurnResponse
+                        shape: SharedTurnJson
+                        requirement: Required
+
+                    output CoordinationHandoff: "Coordination Handoff"
+                        target: TurnResponse
+                        shape: Comment
+                        requirement: Required
+
+                    input PreviousReadableReply: "Previous Readable Reply"
+                        source: rally.base_agent.RallyPreviousTurnOutput
+                            output: CoordinationHandoff
+                        requirement: Advisory
+
+                    agent WorkerB:
+                        role: "Read the previous turn."
+                        workflow: "Act"
+                            "Read the previous turn."
+                        inputs: "Inputs"
+                            PreviousReadableReply
+                        outputs: "Outputs"
+                            SharedTurnResult
+                        final_output: SharedTurnResult
+
+                    agent WorkerA:
+                        role: "Hand work to Worker B."
+                        workflow: "Route"
+                            law:
+                                current none
+                                active when true
+                                route "Send to Worker B." -> WorkerB
+                        outputs: "Outputs"
+                            CoordinationHandoff
+                            SharedTurnResult
+                        final_output: SharedTurnResult
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            with self.assertRaises(CompileError) as caught:
+                emit_target(target)
+
+            self.assertIn("non-final `TurnResponse`", str(caught.exception))
+
     def test_emit_target_writes_selector_metadata_for_route_field_final_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

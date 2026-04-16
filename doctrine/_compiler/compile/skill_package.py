@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from pathlib import Path
 
+from doctrine._compiler.package_diagnostics import package_compile_error
 from doctrine._compiler.package_layout import (
     PackageOutputRegistry,
     bundle_ordinary_package_files,
@@ -10,7 +11,6 @@ from doctrine._compiler.package_layout import (
     register_package_output_path,
 )
 from doctrine._compiler.resolved_types import (
-    CompileError,
     CompiledSection,
     CompiledSkillPackage,
     CompiledSkillPackageFile,
@@ -31,8 +31,13 @@ class CompileSkillPackageMixin:
     ) -> Path:
         source_path = unit.prompt_file.source_path
         if source_path is None:
-            raise CompileError(
-                f"Skill package {decl.name} is missing a source path; package emission requires a real `SKILL.prompt` file."
+            raise package_compile_error(
+                code="E291",
+                summary="Prompt source path is required for compilation",
+                detail=(
+                    f"Skill package `{decl.name}` is missing a source path; package "
+                    "emission requires a real `SKILL.prompt` file."
+                ),
             )
         return source_path.parent
 
@@ -45,7 +50,11 @@ class CompileSkillPackageMixin:
         source_root = self._skill_package_source_root(unit=unit, decl=decl)
         source_path = unit.prompt_file.source_path
         if source_path is None:
-            raise CompileError(f"Skill package {decl.name} is missing a source path.")
+            raise package_compile_error(
+                code="E291",
+                summary="Prompt source path is required for compilation",
+                detail=f"Skill package `{decl.name}` is missing a source path.",
+            )
 
         registry = new_package_output_registry(
             owner_label=f"skill package {decl.name}",
@@ -136,14 +145,24 @@ class CompileSkillPackageMixin:
             if not agent.abstract
         )
         if len(concrete_agents) != 1:
-            raise CompileError(
-                "Nested prompt-bearing skill package files must define exactly one concrete agent "
-                f"in skill package {decl.name}: {prompt_path.relative_to(source_root).as_posix()}"
-            ).ensure_location(path=prompt_path)
+            raise package_compile_error(
+                code="E304",
+                summary="Invalid skill package bundle",
+                detail=(
+                    "Nested prompt-bearing skill package files must define exactly one "
+                    f"concrete agent in skill package {decl.name}: "
+                    f"{prompt_path.relative_to(source_root).as_posix()}"
+                ),
+                path=prompt_path,
+                hints=(
+                    "Keep exactly one concrete agent in each bundled agent prompt.",
+                ),
+            )
 
         output_path = register_package_output_path(
             prompt_path.relative_to(source_root).with_suffix(".md").as_posix(),
             registry=registry,
+            source_path=prompt_path,
         )
         compiled_agent = nested_session.compile_agent(concrete_agents[0].name)
         return CompiledSkillPackageFile(

@@ -61,5 +61,33 @@
     "format_mode": "json_object",
     "schema_profile": "OpenAIStructuredOutput",
     "emitted_schema_relpath": "schemas/writer_decision.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "WriterDecision",
+        "declaration_name": "WriterDecision",
+        "title": "Writer Decision",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "WriterDecisionJson",
+          "title": "Writer Decision JSON"
+        },
+        "schema": {
+          "name": "WriterDecisionSchema",
+          "title": "Writer Decision Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
   }
 }

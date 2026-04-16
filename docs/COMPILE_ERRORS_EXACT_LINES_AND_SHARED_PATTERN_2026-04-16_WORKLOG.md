@@ -489,3 +489,126 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
   branches in `compile/agent.py`, `resolve/addressables.py`, `flow.py`,
   `validate/addressable_display.py`, `validate/review_agreement.py`,
   `package_layout.py`, and `compile/skill_package.py`.
+
+## 2026-04-16 - Implement pass 14
+- Advanced Phase 4 through the addressable-ref, route-detail read, and
+  skill-package bundle slice in `doctrine/_compiler/resolve/addressables.py`,
+  `doctrine/_compiler/resolve/route_semantics.py`,
+  `doctrine/_compiler/validate/route_semantics_reads.py`,
+  `doctrine/_compiler/package_layout.py`, and
+  `doctrine/_compiler/compile/skill_package.py`.
+- Added `doctrine/_compiler/reference_diagnostics.py` and
+  `doctrine/_compiler/package_diagnostics.py` so ref-family and file-scoped
+  package failures can use the same structured compile-error path without
+  reusing unrelated helper names.
+- Landed exact-line structured diagnostics for stable ref codes `E270`,
+  `E271`, `E272`, `E273`, `E274`, `E276`, `E280`, and `E281`. Those now point
+  at the authored ref line in addressable and readable resolution instead of
+  falling back to raw string parsing.
+- Kept the shipped `E347` route-detail wording while moving
+  `route.label` / `route.summary` ambiguity onto the real authored read site,
+  and moved the remaining route-semantic read failures on this slice to direct
+  structured diagnostics instead of raw `CompileError(...)`.
+- Added the new file-scoped `E304` bundle family for invalid skill-package
+  companion paths, unreadable bundle files, nested bundled prompts with the
+  wrong concrete-agent shape, and output-path collisions. Exact duplicates and
+  case-collisions now show a labeled related source file when there is a real
+  second bundled file to compare.
+- Added focused proof in `tests/test_compile_diagnostics.py` for skill-package
+  case-collisions and bundled-agent output collisions, documented `E304` in
+  `docs/COMPILER_ERRORS.md`, and tightened shipped proof in
+  `examples/102_skill_package_path_case_preservation/cases.toml` with
+  `error_code = "E304"`.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/package_diagnostics.py doctrine/_compiler/package_layout.py doctrine/_compiler/compile/skill_package.py doctrine/_compiler/reference_diagnostics.py doctrine/_compiler/resolve/addressables.py doctrine/_compiler/validate/route_semantics_reads.py doctrine/_compiler/resolve/route_semantics.py doctrine/_compiler/validate/display.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_emit_skill`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/102_skill_package_path_case_preservation/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/94_route_choice_guard_narrowing/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic and skill-package emit suites passed.
+  - The shipped `102_skill_package_path_case_preservation` and
+    `94_route_choice_guard_narrowing` manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` did not pass because separate dirty previous-turn
+    I/O-contract work already in the tree now emits extra `io` sections and
+    extra `final_output.contract.json` files in several review and routing
+    examples such as `84`, `87`, `91`, `93`, and `104` through `106`. This
+    pass briefly regressed the `94` route-summary wording, but that was fixed
+    before the final targeted proof above.
+- Current next step: continue Phase 4 on the remaining unresolved compile,
+  flow, and review-agreement families, while a fresh audit decides whether the
+  pre-existing I/O-contract worktree drift must be resolved before broader
+  corpus proof can go green again.
+
+## 2026-04-16 - Implement pass 15
+- Advanced Phase 4 through the generic ref-lookup and late addressable-display
+  slice in `doctrine/_compiler/resolve/refs.py` and
+  `doctrine/_compiler/validate/addressable_display.py`.
+- Reused the shared structured helper path so missing local named-table refs,
+  missing imported refs, missing import roots, and the late typed-title checks
+  on `Input.source` and `Output.target` now land on exact authored lines
+  instead of raw message-only `CompileError(...)` branches.
+- Kept missing local named-table refs on `E276`, missing imported refs on
+  `E281`, missing import roots on `E280`, and the late typed scalar-title
+  checks on `E275`. Generic local decl lookups in this helper still use a
+  structured exact-line fallback when the repo does not yet ship a narrower
+  stable code for that declaration family.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  missing local named-table refs plus the late `Input.source` and
+  `Output.target` typed-title checks, and kept `tests.test_table_declarations`
+  in the proof set so the older named-table behavior still stays true.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/resolve/refs.py doctrine/_compiler/validate/addressable_display.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_table_declarations`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/116_first_class_named_tables/cases.toml`
+  - `make verify-diagnostics`
+- Result:
+  - The focused compile-diagnostic and named-table unit suites passed.
+  - The shipped `116_first_class_named_tables` manifest passed.
+  - `make verify-diagnostics` did not pass, but the failure is on separate
+    dirty flow and previous-turn contract work already in the tree, not on
+    this ref or display slice. The current smoke break is a compile failure in
+    `validate/routes.py` surfaced from `doctrine/_diagnostic_smoke/flow_graph_checks.py`
+    while extracting a flow graph for `SharedInput.ready`.
+- Current next step: continue Phase 4 on the remaining unresolved compile,
+  resolve, validate, and flow families, with special attention to the still
+  raw `flow.py`, `validate/routes.py`, `validate/agents.py`,
+  `validate/contracts.py`, and review-agreement fronts that the fresh audit
+  still keeps open.
+
+## 2026-04-16 - Implement pass 16
+- Revisited the previously called-out repo blockers on the live tree after
+  the user landed more work. The old route-family and build-contract drift is
+  gone: both repo-level proof surfaces now pass again.
+- Advanced Phase 4 through the next route and workflow-law validator slice in
+  `doctrine/_compiler/validate/routes.py`.
+- Moved abstract route targets, invalid `active when` reads, non-routing
+  `handoff_routing` statements, mode-outside-enum failures, non-exhaustive
+  `match`, multiple current-subject conflicts, `current none` with owned
+  scope, and the stable-code branch contradiction rules onto direct structured
+  diagnostics with real source lines.
+- Added labeled `Related:` sites for multi-line route and workflow-law
+  conflicts such as mixed current-subject forms, invalidating the current
+  artifact, comparison-basis contradictions, ignoring the current artifact
+  for truth, and overlaps between `own only` and `forbid` or
+  `preserve exact`.
+- Added focused proof in `tests/test_compile_diagnostics.py` for abstract
+  route targets, invalid `active when` reads, mode and match failures,
+  invalid `handoff_routing` statements, mixed current-subject forms,
+  `current none` with owned scope, and invalidating the current artifact in
+  the same branch.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/validate/routes.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_route_output_semantics`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic and route semantics suites passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: keep Phase 4 moving on the remaining raw route families
+  in `validate/routes.py`, then continue into the still-open `flow.py`,
+  `validate/agents.py`, `validate/contracts.py`, and review-agreement
+  families while the live proof surface stays clean.

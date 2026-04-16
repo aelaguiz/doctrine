@@ -134,6 +134,7 @@ Stability rules:
 | `E301` | Invalid IO bucket item | An `inputs:` or `outputs:` bucket contains an invalid item shape, inline declaration body, or wrong-kind declaration ref. |
 | `E302` | Invalid output attachment declaration | An output attaches an invalid `schema:` or `structure:` surface, such as a sectionless schema or a non-markdown structure target. |
 | `E303` | Invalid schema declaration | A schema artifact or schema group uses an invalid declaration shape, such as a wrong-kind artifact ref, an unknown group member, or an empty group. |
+| `E304` | Invalid skill package bundle | A `skill package` bundle uses an invalid companion path, collides with another emitted path, points at an unreadable bundled file, or lowers a nested agent prompt with the wrong concrete-agent shape. |
 | `E305` | Invalid document inheritance patch | A document inheritance patch uses the wrong override shape, such as a kind mismatch or a patch without an inherited document parent. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |

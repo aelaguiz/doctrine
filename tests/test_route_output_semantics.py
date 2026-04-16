@@ -135,6 +135,80 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertIn("- Next Owner Key: ReviewLead", rendered)
         self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
 
+    def test_active_when_allows_dynamic_json_object_input_fields(self) -> None:
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+
+            agent RoutingOwner:
+                role: "Own route-only follow-up."
+                workflow: "Route"
+                    "Take back the same issue."
+
+            output RouteOnlyReply: "Route Only Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            route_only RouteOnlyRepair: "Route Only Repair"
+                facts: RouteFacts
+                when:
+                    live_job == "route_repair"
+                current none
+                handoff_output: RouteOnlyReply
+                routes:
+                    routing_owner -> RoutingOwner
+
+            agent RouteOnlyRepairDemo:
+                role: "Keep route-only host facts readable."
+                workflow: RouteOnlyRepair
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    RouteOnlyReply
+            """,
+            agent_name="RouteOnlyRepairDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "This pass runs only when RouteFacts.live_job is route_repair.",
+            rendered,
+        )
+
+    def test_active_when_allows_bound_dynamic_json_object_input_fields(self) -> None:
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+
+            workflow RouteWorkflow: "Route Workflow"
+                law:
+                    active when current_handoff.live_job == "route_repair"
+                    current none
+                    stop "Reply and stop."
+
+            agent RouteBindingDemo:
+                role: "Keep bound route facts readable."
+                workflow: RouteWorkflow
+                inputs: "Inputs"
+                    current_handoff: "Current Handoff"
+                        RouteFacts
+            """,
+            agent_name="RouteBindingDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "This pass runs only when current_handoff.live_job is route_repair.",
+            rendered,
+        )
+
     def test_route_semantics_require_guard_when_some_branches_do_not_route(self) -> None:
         error = self._compile_error(
             """

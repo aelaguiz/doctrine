@@ -5,6 +5,10 @@ from dataclasses import replace
 
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import _dotted_ref_name, _name_ref_from_dotted_name
+from doctrine._compiler.workflow_diagnostics import (
+    workflow_compile_error,
+    workflow_related_site,
+)
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     AgentContract,
@@ -40,12 +44,12 @@ class ValidateRoutesMixin:
         _target_unit, agent = self._resolve_agent_ref(ref, unit=unit)
         if agent.abstract:
             dotted_name = _dotted_ref_name(ref)
-            raise CompileError(
-                f"Route target must be a concrete agent: {dotted_name}"
-            ).ensure_location(
+            raise compile_error(
+                code="E282",
+                summary="Route target must be a concrete agent",
+                detail=f"Route target `{dotted_name}` is not a concrete agent.",
                 path=unit.prompt_file.source_path,
-                line=ref.source_span.line if ref.source_span is not None else None,
-                column=ref.source_span.column if ref.source_span is not None else None,
+                source_span=ref.source_span,
             )
 
     def _flatten_law_items(
@@ -94,17 +98,44 @@ class ValidateRoutesMixin:
                     for subject in branch.current_subjects
                 )
                 if current_labels:
-                    raise CompileError(
-                        "Active leaf branch resolves more than one current-subject form "
-                        f"({current_labels}) in {owner_label}"
+                    first_current = branch.current_subjects[0]
+                    second_current = branch.current_subjects[1]
+                    raise workflow_compile_error(
+                        code="E332",
+                        summary="Multiple current-subject forms",
+                        detail=(
+                            "One active workflow-law leaf branch declares multiple "
+                            f"current-subject forms ({current_labels}) in {owner_label}."
+                        ),
+                        unit=unit,
+                        source_span=second_current.source_span,
+                        related=(
+                            workflow_related_site(
+                                label="first current-subject form",
+                                unit=unit,
+                                source_span=first_current.source_span,
+                            ),
+                        ),
                     )
                 raise CompileError(
                     f"Active leaf branch must resolve exactly one current-subject form in {owner_label}"
                 )
             current = branch.current_subjects[0]
             if isinstance(current, model.CurrentNoneStmt) and branch.owns:
-                raise CompileError(
-                    f"`current none` cannot appear with owned scope in {owner_label}"
+                first_own = branch.owns[0]
+                raise workflow_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"`current none` cannot appear with owned scope in {owner_label}",
+                    unit=unit,
+                    source_span=first_own.source_span,
+                    related=(
+                        workflow_related_site(
+                            label="`current none` statement",
+                            unit=unit,
+                            source_span=current.source_span,
+                        ),
+                    ),
                 )
             if isinstance(current, model.CurrentNoneStmt):
                 route_only_branch_seen = True
@@ -134,8 +165,22 @@ class ValidateRoutesMixin:
                         statement_label="workflow law",
                         allowed_kinds=("input", "output", "schema_group"),
                     ):
-                        raise CompileError(
-                            f"The current artifact cannot be invalidated in the same active branch in {owner_label}"
+                        raise workflow_compile_error(
+                            code="E371",
+                            summary="Current artifact invalidated in same branch",
+                            detail=(
+                                "The current artifact is invalidated in the same active "
+                                f"branch in {owner_label}."
+                            ),
+                            unit=unit,
+                            source_span=invalidate.source_span,
+                            related=(
+                                workflow_related_site(
+                                    label="current artifact statement",
+                                    unit=unit,
+                                    source_span=current.source_span,
+                                ),
+                            ),
                         )
             for invalidate in branch.invalidations:
                 self._validate_invalidation_stmt(
@@ -154,8 +199,22 @@ class ValidateRoutesMixin:
                         owner_label=owner_label,
                         statement_label="workflow law",
                     ):
-                        raise CompileError(
-                            f"support_only and ignore for comparison contradict in {owner_label}"
+                        raise workflow_compile_error(
+                            code="E362",
+                            summary="Comparison-only basis contradiction",
+                            detail=(
+                                "`support_only` and `ignore ... for comparison` contradict "
+                                f"in {owner_label}."
+                            ),
+                            unit=unit,
+                            source_span=ignore.source_span,
+                            related=(
+                                workflow_related_site(
+                                    label="overlapping `support_only` statement",
+                                    unit=unit,
+                                    source_span=support.source_span,
+                                ),
+                            ),
                         )
             if current_target_key is not None:
                 for ignore in branch.ignores:
@@ -169,8 +228,22 @@ class ValidateRoutesMixin:
                         owner_label=owner_label,
                         statement_label="workflow law",
                     ):
-                        raise CompileError(
-                            f"The current artifact cannot be ignored for truth in {owner_label}"
+                        raise workflow_compile_error(
+                            code="E361",
+                            summary="Current artifact ignored for truth",
+                            detail=(
+                                "The current artifact is being ignored for truth in "
+                                f"{owner_label}."
+                            ),
+                            unit=unit,
+                            source_span=ignore.source_span,
+                            related=(
+                                workflow_related_site(
+                                    label="current artifact statement",
+                                    unit=unit,
+                                    source_span=current.source_span,
+                                ),
+                            ),
                         )
             for own in branch.owns:
                 own_target = self._coerce_path_set(own.target)
@@ -184,8 +257,21 @@ class ValidateRoutesMixin:
                         statement_label="workflow law",
                         allowed_kinds=_LAW_TARGET_ALLOWED_KINDS["own_only"],
                     ):
-                        raise CompileError(
-                            f"Owned and forbidden scope overlap in {owner_label}"
+                        raise workflow_compile_error(
+                            code="E354",
+                            summary="Owned scope overlaps forbidden scope",
+                            detail=(
+                                f"Owned scope overlaps forbidden scope in {owner_label}."
+                            ),
+                            unit=unit,
+                            source_span=forbid.source_span,
+                            related=(
+                                workflow_related_site(
+                                    label="overlapping `own only` statement",
+                                    unit=unit,
+                                    source_span=own.source_span,
+                                ),
+                            ),
                         )
                 for preserve in branch.preserves:
                     if preserve.kind == "exact" and any(
@@ -200,8 +286,22 @@ class ValidateRoutesMixin:
                         )
                         for path in own_target.paths
                     ):
-                        raise CompileError(
-                            f"Owned scope overlaps exact-preserved scope in {owner_label}"
+                        raise workflow_compile_error(
+                            code="E353",
+                            summary="Owned scope overlaps exact preservation",
+                            detail=(
+                                "Owned scope overlaps exact-preserved scope in "
+                                f"{owner_label}."
+                            ),
+                            unit=unit,
+                            source_span=preserve.source_span,
+                            related=(
+                                workflow_related_site(
+                                    label="overlapping `own only` statement",
+                                    unit=unit,
+                                    source_span=own.source_span,
+                                ),
+                            ),
                         )
             if isinstance(current, model.CurrentNoneStmt) and branch.routes:
                 self._validate_route_only_next_owner_contract(
@@ -244,6 +344,13 @@ class ValidateRoutesMixin:
     ) -> None:
         local_mode_bindings = dict(mode_bindings or {})
         for item in items:
+            if isinstance(item, model.ActiveWhenStmt):
+                self._validate_active_when_expr(
+                    item.expr,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                continue
             if isinstance(item, model.ModeStmt):
                 self._validate_mode_stmt(item, unit=unit, owner_label=owner_label)
                 local_mode_bindings[item.name] = item
@@ -284,12 +391,80 @@ class ValidateRoutesMixin:
             if isinstance(item, model.LawRouteStmt):
                 self._validate_route_target(item.target, unit=unit)
                 continue
-            if isinstance(item, (model.ActiveWhenStmt, model.StopStmt)):
+            if isinstance(item, model.StopStmt):
                 continue
-            raise CompileError(
-                "handoff_routing law only supports active when, mode, when, match, route_from, stop, "
-                f"and route in {owner_label}: {self._law_stmt_name(item)}"
+            raise workflow_compile_error(
+                code="E344",
+                summary="handoff_routing law uses a non-routing statement",
+                detail=(
+                    f"`handoff_routing` law in {owner_label} uses unsupported statement "
+                    f"`{self._law_stmt_name(item)}`."
+                ),
+                unit=unit,
+                source_span=getattr(item, "source_span", None),
+                hints=(
+                    "Use only `active when`, `mode`, `when`, `match`, `route_from`, `stop`, and `route` in `handoff_routing` law.",
+                    "Keep currentness, preservation, invalidation, and other workflow-law truth controls on `workflow:`.",
+                ),
             )
+
+    def _validate_active_when_expr(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> None:
+        if isinstance(expr, model.ExprRef):
+            if (
+                self._expr_ref_matches_input_decl(expr, unit=unit)
+                or self._expr_ref_matches_input_binding(expr)
+                or self._expr_ref_matches_output_decl(expr, unit=unit)
+                or self._expr_ref_matches_enum_member(expr, unit=unit)
+                or self._expr_ref_matches_review_verdict(expr)
+            ):
+                return
+            raise workflow_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"active when reads invalid input source in {owner_label}: "
+                    f"{'.'.join(expr.parts)}"
+                ),
+                unit=unit,
+                source_span=expr.source_span,
+                hints=(
+                    "Read only declared inputs, input bindings, emitted outputs, enum members, or review verdicts in `active when`.",
+                ),
+            )
+        if isinstance(expr, model.ExprBinary):
+            self._validate_active_when_expr(
+                expr.left,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            self._validate_active_when_expr(
+                expr.right,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            return
+        if isinstance(expr, model.ExprCall):
+            for arg in expr.args:
+                self._validate_active_when_expr(
+                    arg,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            return
+        if isinstance(expr, model.ExprSet):
+            for item in expr.items:
+                self._validate_active_when_expr(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            return
 
     def _validate_route_only_next_owner_contract(
         self,
@@ -506,6 +681,13 @@ class ValidateRoutesMixin:
     ) -> None:
         local_mode_bindings = dict(mode_bindings or {})
         for item in items:
+            if isinstance(item, model.ActiveWhenStmt):
+                self._validate_active_when_expr(
+                    item.expr,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                continue
             if isinstance(item, model.ModeStmt):
                 self._validate_mode_stmt(item, unit=unit, owner_label=owner_label)
                 local_mode_bindings[item.name] = item
@@ -595,6 +777,7 @@ class ValidateRoutesMixin:
                 continue
             if isinstance(item, model.LawRouteStmt):
                 self._validate_route_target(item.target, unit=unit)
+                continue
 
     def _validate_mode_stmt(
         self,
@@ -613,8 +796,15 @@ class ValidateRoutesMixin:
         if fixed_mode is None:
             return
         if not any(member.value == fixed_mode for member in enum_decl.members):
-            raise CompileError(
-                f"Mode value is outside enum {enum_decl.name} in {owner_label}: {fixed_mode}"
+            raise workflow_compile_error(
+                code="E341",
+                summary="Mode value outside enum",
+                detail=(
+                    f"Mode value `{fixed_mode}` is outside enum `{enum_decl.name}` "
+                    f"in {owner_label}."
+                ),
+                unit=unit,
+                source_span=getattr(stmt.expr, "source_span", None) or stmt.source_span,
             )
 
     def _validate_match_stmt(
@@ -651,8 +841,15 @@ class ValidateRoutesMixin:
 
         expected_members = {member.value for member in enum_decl.members}
         if seen_members != expected_members:
-            raise CompileError(
-                f"match on {enum_decl.name} must be exhaustive or include else in {owner_label}"
+            raise workflow_compile_error(
+                code="E342",
+                summary="Non-exhaustive mode match",
+                detail=(
+                    f"`match` on `{enum_decl.name}` must cover every enum member or include "
+                    f"`else` in {owner_label}."
+                ),
+                unit=unit,
+                source_span=stmt.source_span,
             )
 
     def _validate_route_from_stmt(
@@ -798,13 +995,19 @@ class ValidateRoutesMixin:
     ) -> None:
         if not isinstance(expr, model.ExprRef):
             source_span = getattr(expr, "source_span", None) or fallback_source_span
-            raise CompileError(
-                "route_from selector reads invalid source in "
-                f"{owner_label}: {self._render_expr(expr, unit=unit)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=source_span.line if source_span is not None else None,
-                column=source_span.column if source_span is not None else None,
+            raise workflow_compile_error(
+                code="E346",
+                summary="route_from selector reads invalid source",
+                detail=(
+                    f"`route_from` selector in {owner_label} reads invalid source "
+                    f"`{self._render_expr(expr, unit=unit)}`."
+                ),
+                unit=unit,
+                source_span=source_span,
+                hints=(
+                    "Read only declared inputs, emitted outputs, or enum members in a `route_from` selector.",
+                    "Do not read workflow-local bindings or other compiler-local names there.",
+                ),
             )
         if self._expr_ref_matches_enum_member(expr, unit=unit):
             return
@@ -846,12 +1049,19 @@ class ValidateRoutesMixin:
                 ) is not None:
                     return
                 break
-        raise CompileError(
-            f"route_from selector reads invalid source in {owner_label}: {'.'.join(ref.parts)}"
-        ).ensure_location(
-            path=unit.prompt_file.source_path,
-            line=ref.source_span.line if ref.source_span is not None else None,
-            column=ref.source_span.column if ref.source_span is not None else None,
+        raise workflow_compile_error(
+            code="E346",
+            summary="route_from selector reads invalid source",
+            detail=(
+                f"`route_from` selector in {owner_label} reads invalid source "
+                f"`{'.'.join(ref.parts)}`."
+            ),
+            unit=unit,
+            source_span=ref.source_span,
+            hints=(
+                "Read only declared inputs, emitted outputs, or enum members in a `route_from` selector.",
+                "Do not read workflow-local bindings or other compiler-local names there.",
+            ),
         )
 
     def _resolve_route_from_selector_field_node(

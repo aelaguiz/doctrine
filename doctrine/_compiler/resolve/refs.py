@@ -8,6 +8,7 @@ from doctrine._compiler.constants import (
     _REVIEW_VERDICT_TEXT,
 )
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
+from doctrine._compiler.reference_diagnostics import reference_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableRootDecl,
     CompileError,
@@ -118,13 +119,31 @@ class ResolveRefsMixin:
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
         actual_kind = self._named_non_output_decl_kind(ref.declaration_name, unit=target_unit)
         if actual_kind is not None:
-            raise CompileError(
-                "Named table use expects a table declaration, "
-                f"but `{dotted_name}` is a {actual_kind}."
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "Named table use expects a table declaration, "
+                    f"but `{dotted_name}` is a {actual_kind}."
+                ),
+                unit=unit,
+                source_span=ref.source_span,
             )
         if ref.module_parts:
-            raise CompileError(f"Missing imported table declaration: {dotted_name}")
-        raise CompileError(f"Missing local table declaration: {ref.declaration_name}")
+            raise reference_compile_error(
+                code="E281",
+                summary="Missing imported declaration",
+                detail=f"Missing imported table declaration: {dotted_name}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
+        raise reference_compile_error(
+            code="E276",
+            summary="Missing local declaration reference",
+            detail=f"Missing local table declaration: {ref.declaration_name}",
+            unit=unit,
+            source_span=ref.source_span,
+        )
 
     def _resolve_enum_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -412,15 +431,27 @@ class ResolveRefsMixin:
         resolve_parent_ref,
     ):
         if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: {child_label} has no parent ref: {child_name}"
+            raise reference_compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=f"Internal compiler error: {child_label} has no parent ref: {child_name}",
+                unit=unit,
+                source_span=None,
+                hints=("This is a compiler bug, not a prompt authoring error.",),
             )
         if not parent_ref.module_parts:
             registry = getattr(unit, registry_name)
             parent_decl = registry.get(parent_ref.declaration_name)
             if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent {child_label} for {child_name}: {parent_ref.declaration_name}"
+                raise reference_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Missing parent {child_label} for {child_name}: "
+                        f"{parent_ref.declaration_name}"
+                    ),
+                    unit=unit,
+                    source_span=parent_ref.source_span,
                 )
             return unit, parent_decl
         return resolve_parent_ref(parent_ref, unit=unit)
@@ -437,7 +468,11 @@ class ResolveRefsMixin:
             registry = getattr(unit, registry_name)
             decl = registry.get(ref.declaration_name)
             if decl is None:
-                raise CompileError(f"Missing local {missing_label}: {ref.declaration_name}")
+                raise self._missing_local_decl_error(
+                    ref,
+                    unit=unit,
+                    missing_label=missing_label,
+                )
             return unit, decl
 
         if ref.module_parts == unit.module_parts:
@@ -445,19 +480,61 @@ class ResolveRefsMixin:
             decl = registry.get(ref.declaration_name)
             if decl is None:
                 dotted_name = _dotted_ref_name(ref)
-                raise CompileError(f"Missing imported declaration: {dotted_name}")
+                raise reference_compile_error(
+                    code="E281",
+                    summary="Missing imported declaration",
+                    detail=f"Missing imported declaration: {dotted_name}",
+                    unit=unit,
+                    source_span=ref.source_span,
+                )
             return unit, decl
 
         target_unit = unit.imported_units.get(ref.module_parts)
         if target_unit is None:
-            raise CompileError(f"Missing import module: {'.'.join(ref.module_parts)}")
+            raise reference_compile_error(
+                code="E280",
+                summary="Missing import module",
+                detail=f"Missing import module: {'.'.join(ref.module_parts)}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
 
         registry = getattr(target_unit, registry_name)
         decl = registry.get(ref.declaration_name)
         if decl is None:
             dotted_name = _dotted_ref_name(ref)
-            raise CompileError(f"Missing imported declaration: {dotted_name}")
+            raise reference_compile_error(
+                code="E281",
+                summary="Missing imported declaration",
+                detail=f"Missing imported declaration: {dotted_name}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
         return target_unit, decl
+
+    def _missing_local_decl_error(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        missing_label: str,
+    ) -> CompileError:
+        code = "E299"
+        summary = "Compile failure"
+        if missing_label in {
+            "analysis declaration",
+            "output shape declaration",
+            "table declaration",
+        }:
+            code = "E276"
+            summary = "Missing local declaration reference"
+        return reference_compile_error(
+            code=code,
+            summary=summary,
+            detail=f"Missing local {missing_label}: {ref.declaration_name}",
+            unit=unit,
+            source_span=ref.source_span,
+        )
 
     def _expr_ref_matches_review_verdict(self, ref: model.ExprRef) -> bool:
         return (

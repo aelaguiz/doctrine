@@ -6,7 +6,9 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from doctrine import model
 from doctrine.compiler import CompilationSession
+from doctrine._compiler.resolved_types import PreviousTurnAgentContext
 from doctrine._compiler.package_layout import (
     BundledPackageFile,
     bundle_ordinary_package_files,
@@ -167,8 +169,13 @@ def emit_target(
             seen_paths[bundled_path] = owner_label
 
     try:
+        previous_turn_contexts = _build_previous_turn_contexts(
+            session,
+            agent_roots=tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits),
+        )
         compiled_agents = session.compile_agents_from_units(
-            tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits)
+            tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits),
+            previous_turn_contexts=previous_turn_contexts,
         )
     except DoctrineError as exc:
         raise exc.prepend_trace(
@@ -239,7 +246,11 @@ def _final_output_contract_payload(
     compiled,
     target: EmitTarget,
 ) -> dict[str, object] | None:
-    if compiled.final_output is None and compiled.review is None:
+    if (
+        compiled.final_output is None
+        and compiled.review is None
+        and (compiled.io is None or not compiled.io.previous_turn_inputs)
+    ):
         return None
     return {
         "contract_version": FINAL_OUTPUT_CONTRACT_VERSION,
@@ -250,6 +261,7 @@ def _final_output_contract_payload(
         },
         "route": _serialize_route_contract(compiled.route),
         "final_output": _serialize_final_output_contract(compiled.final_output),
+        "io": _serialize_io_contract(compiled.io),
         **(
             {"review": _serialize_review_contract(compiled.review)}
             if compiled.review is not None
@@ -404,6 +416,201 @@ def _serialize_review_contract(review) -> dict[str, object]:
             for outcome_name, outcome in review.outcomes
         },
     }
+
+
+def _serialize_io_contract(io_contract) -> dict[str, object]:
+    if io_contract is None:
+        return {
+            "previous_turn_inputs": [],
+            "outputs": [],
+            "output_bindings": [],
+        }
+    return {
+        "previous_turn_inputs": [
+            {
+                "input_key": _output_decl_key_text(input_spec.input_key),
+                "input_name": input_spec.input_name,
+                "selector_kind": input_spec.selector_kind,
+                "selector_text": input_spec.selector_text,
+                "resolved_declaration_key": _output_decl_key_text(input_spec.output_key),
+                "resolved_declaration_name": input_spec.output_name,
+                "derived_contract_mode": input_spec.derived_contract_mode,
+                "requirement": input_spec.requirement,
+                "target": {
+                    "key": input_spec.target_key,
+                    "title": input_spec.target_title,
+                    "config": {key: value for key, value in input_spec.target_config},
+                },
+                **(
+                    {
+                        "shape": {
+                            "name": input_spec.shape_name,
+                            "title": input_spec.shape_title,
+                        }
+                    }
+                    if input_spec.shape_name is not None or input_spec.shape_title is not None
+                    else {}
+                ),
+                **(
+                    {
+                        "schema": {
+                            "name": input_spec.schema_name,
+                            "title": input_spec.schema_title,
+                            "profile": input_spec.schema_profile,
+                        }
+                    }
+                    if input_spec.schema_name is not None or input_spec.schema_title is not None
+                    else {}
+                ),
+                **(
+                    {"binding_path": list(input_spec.binding_path)}
+                    if input_spec.binding_path is not None
+                    else {}
+                ),
+            }
+            for input_spec in io_contract.previous_turn_inputs
+        ],
+        "outputs": [
+            {
+                "declaration_key": _output_decl_key_text(output_spec.output_key),
+                "declaration_name": output_spec.output_name,
+                "title": output_spec.output_title,
+                "target": {
+                    "key": output_spec.target_key,
+                    "title": output_spec.target_title,
+                    "config": {key: value for key, value in output_spec.target_config},
+                },
+                "derived_contract_mode": output_spec.derived_contract_mode,
+                "readback_mode": output_spec.readback_mode,
+                "requires_final_output": output_spec.requires_final_output,
+                **(
+                    {
+                        "shape": {
+                            "name": output_spec.shape_name,
+                            "title": output_spec.shape_title,
+                        }
+                    }
+                    if output_spec.shape_name is not None or output_spec.shape_title is not None
+                    else {}
+                ),
+                **(
+                    {
+                        "schema": {
+                            "name": output_spec.schema_name,
+                            "title": output_spec.schema_title,
+                            "profile": output_spec.schema_profile,
+                        }
+                    }
+                    if output_spec.schema_name is not None or output_spec.schema_title is not None
+                    else {}
+                ),
+            }
+            for output_spec in io_contract.outputs
+        ],
+        "output_bindings": [
+            {
+                "binding_path": list(binding.binding_path),
+                "declaration_key": _output_decl_key_text(binding.output_key),
+            }
+            for binding in io_contract.output_bindings
+        ],
+    }
+
+
+def _build_previous_turn_contexts(
+    session: CompilationSession,
+    *,
+    agent_roots: tuple[tuple["IndexedUnit", str], ...],
+) -> dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]:
+    from doctrine._compiler.context import CompilationContext
+
+    context = CompilationContext(session)
+    needs_previous_turn_contexts = any(
+        _agent_uses_previous_turn_input(context, unit, agent_name)
+        for unit, agent_name in agent_roots
+    )
+    if not needs_previous_turn_contexts:
+        return {}
+
+    graph = session.extract_target_flow_graph_from_units(agent_roots)
+    predecessor_map: dict[tuple[tuple[str, ...], str], set[tuple[tuple[str, ...], str]]] = {}
+    for unit, agent_name in agent_roots:
+        predecessor_map.setdefault((unit.module_parts, agent_name), set())
+    for edge in graph.edges:
+        if edge.source_kind != "agent" or edge.target_kind != "agent":
+            continue
+        predecessor_map.setdefault(
+            (edge.target_module_parts, edge.target_name),
+            set(),
+        ).add((edge.source_module_parts, edge.source_name))
+
+    previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext] = {}
+    for unit, agent_name in agent_roots:
+        agent_key = (unit.module_parts, agent_name)
+        predecessor_keys = tuple(sorted(predecessor_map.get(agent_key, set())))
+        predecessor_final_output_keys = tuple(
+            sorted(
+                {
+                    final_output_key
+                    for final_output_key in (
+                        _resolve_agent_final_output_key(context, predecessor_key)
+                        for predecessor_key in predecessor_keys
+                    )
+                    if final_output_key is not None
+                }
+            )
+        )
+        previous_turn_contexts[agent_key] = PreviousTurnAgentContext(
+            predecessor_agent_keys=predecessor_keys,
+            predecessor_final_output_keys=predecessor_final_output_keys,
+            exact_final_output_key=(
+                predecessor_final_output_keys[0]
+                if len(predecessor_final_output_keys) == 1
+                else None
+            ),
+        )
+    return previous_turn_contexts
+
+
+def _agent_uses_previous_turn_input(context, unit, agent_name: str) -> bool:
+    agent = unit.agents_by_name.get(agent_name)
+    if agent is None:
+        return False
+    agent_contract = context._resolve_agent_contract(agent, unit=unit)
+    for _input_key, (input_unit, input_decl) in agent_contract.inputs.items():
+        scalar_items, _section_items, _extras = context._split_record_items(
+            input_decl.items,
+            scalar_keys={"source", "shape", "requirement"},
+            owner_label=f"input {input_decl.name}",
+        )
+        source_item = scalar_items.get("source")
+        if source_item is None or not isinstance(source_item.value, model.NameRef):
+            continue
+        if context._is_rally_previous_turn_input_source_ref(source_item.value, unit=input_unit):
+            return True
+    return False
+
+
+def _resolve_agent_final_output_key(
+    context,
+    agent_key: tuple[tuple[str, ...], str],
+):
+    module_parts, agent_name = agent_key
+    unit = context._load_module(module_parts) if module_parts else context.root_unit
+    agent = unit.agents_by_name.get(agent_name)
+    if agent is None:
+        return None
+    for field in agent.fields:
+        if not isinstance(field, model.FinalOutputField):
+            continue
+        output_unit, output_decl = context._resolve_final_output_decl(
+            field.value,
+            unit=unit,
+            owner_label=f"agent {agent_name} final_output",
+            source_span=field.source_span,
+        )
+        return (output_unit.module_parts, output_decl.name)
+    return None
 
 
 def _output_decl_key_text(output_key: tuple[tuple[str, ...], str]) -> str:

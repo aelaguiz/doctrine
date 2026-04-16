@@ -40,6 +40,44 @@ class ValidateAddressableChildrenMixin:
         node: AddressableNode,
     ) -> dict[str, AddressableNode] | None:
         target = node.target
+        if isinstance(target, model.InputDecl):
+            previous_turn_spec = self._active_previous_turn_input_specs.get(
+                (node.unit.module_parts, target.name)
+            )
+            if previous_turn_spec is not None:
+                if previous_turn_spec.derived_contract_mode != "structured_json":
+                    return None
+                scalar_items, _section_items, _extras = self._split_record_items(
+                    previous_turn_spec.output_decl.items,
+                    scalar_keys={"target", "shape", "requirement"},
+                    owner_label=f"output {previous_turn_spec.output_decl.name}",
+                )
+                shape_item = scalar_items.get("shape")
+                if shape_item is None:
+                    return None
+                json_summary = self._resolve_final_output_json_shape_summary(
+                    shape_item.value,
+                    unit=previous_turn_spec.output_unit,
+                )
+                if json_summary is None:
+                    return None
+                output_children = self._get_addressable_children(
+                    AddressableNode(
+                        unit=json_summary.schema_unit,
+                        root_decl=node.root_decl,
+                        target=json_summary.schema_decl,
+                    )
+                )
+                if output_children is None:
+                    return None
+                return {
+                    key: AddressableNode(
+                        unit=child.unit,
+                        root_decl=node.root_decl,
+                        target=child.target,
+                    )
+                    for key, child in output_children.items()
+                }
         if isinstance(target, ReviewSemanticFieldsRoot):
             children: dict[str, AddressableNode] = {}
             output_unit, _output_decl = self._resolve_review_semantic_output_decl(target.context)

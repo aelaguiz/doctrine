@@ -677,22 +677,51 @@ class FlowMixin:
         requirement_item = scalar_items.get("requirement")
         if source_item is None or not isinstance(source_item.value, model.NameRef):
             raise CompileError(f"Input source must stay typed: {decl.name}")
-        if shape_item is None or requirement_item is None:
+        if requirement_item is None:
             raise CompileError(f"Input is missing required fields: {decl.name}")
 
         source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
-        config_lines, _config_values = self._flow_config_summary(
-            source_item.body or (),
-            spec=source_spec,
+        if shape_item is None and self._is_rally_previous_turn_input_source_ref(
+            source_item.value,
             unit=unit,
-            owner_label=f"input {decl.name} source",
-        )
-        shape_title = self._display_symbol_value(
-            shape_item.value,
-            unit=unit,
-            owner_label=f"input {decl.name}",
-            surface_label="input fields",
-        )
+        ):
+            config_lines: tuple[str, ...]
+            output_item = next(
+                (
+                    item
+                    for item in (source_item.body or ())
+                    if isinstance(item, model.RecordScalar) and item.key == "output"
+                ),
+                None,
+            )
+            if output_item is None:
+                config_lines = ("Previous Output: Exact previous final output",)
+            else:
+                config_lines = (
+                    "Previous Output: "
+                    + self._display_symbol_value(
+                        output_item.value,
+                        unit=unit,
+                        owner_label=f"input {decl.name} source.output",
+                        surface_label="input source fields",
+                    ),
+                )
+            shape_title = "Derived Previous Output"
+        else:
+            if shape_item is None:
+                raise CompileError(f"Input is missing required fields: {decl.name}")
+            config_lines, _config_values = self._flow_config_summary(
+                source_item.body or (),
+                spec=source_spec,
+                unit=unit,
+                owner_label=f"input {decl.name} source",
+            )
+            shape_title = self._display_symbol_value(
+                shape_item.value,
+                unit=unit,
+                owner_label=f"input {decl.name}",
+                surface_label="input fields",
+            )
         requirement_title = self._display_symbol_value(
             requirement_item.value,
             unit=unit,
