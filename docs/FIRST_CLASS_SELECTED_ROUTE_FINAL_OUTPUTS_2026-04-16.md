@@ -58,7 +58,7 @@ one place. The chosen public shape is:
 - a dedicated `route field` inside `output schema`
 - an explicit `final_output.route:` binding that points at that field
 - a generic emitted `route.selector` block in `final_output.contract.json`
-- `optional` route fields meaning "no route selected"
+- `nullable` route fields meaning "no route selected"
 - field-scoped typed route-choice refs for `route.choice` guards
 
 Doctrine should lower that authored owner to the same internal route truth it
@@ -100,6 +100,25 @@ note: This block tracks stage order only. It never overrides readiness blockers 
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-16
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
 # 0) Holistic North Star
 
 ## 0.1 The claim (falsifiable)
@@ -128,7 +147,7 @@ metadata and no-route behavior, for runtime consumers.
           route: next_route
   ```
 
-- Keep `optional` route fields as the authoring surface for "handoff or
+- Keep `nullable` route fields as the authoring surface for "handoff or
   finish" turns:
 
   ```prompt
@@ -136,7 +155,7 @@ metadata and no-route behavior, for runtime consumers.
       route field next_route: "Next Route"
           seek_muse: "Send to Muse for fresh inspiration." -> Muse
           ready_for_critic: "Send to PoemCritic for judgment." -> PoemCritic
-          optional
+          nullable
   ```
 
 - Emit generic selector metadata in the top-level `route` block so the runtime
@@ -145,7 +164,7 @@ metadata and no-route behavior, for runtime consumers.
 - Keep `route.exists` semantics explicit:
   - it means the final response carries route semantics
   - it does not mean a branch was selected on this payload
-- Define `optional` route fields as `null => no route selected` with no fake
+- Define `nullable` route fields as `null => no route selected` with no fake
   terminal target.
 - Add typed field-scoped route-choice refs for guards, such as:
 
@@ -485,7 +504,7 @@ of leaving `null` route values undefined.
   The chosen architecture is:
   - public syntax: `route field` plus `final_output.route:`
   - emitted runtime bridge: generic top-level `route.selector`
-  - optional route meaning: `null => no route selected`
+  - nullable route meaning: `null => no route selected`
   - typed compare surface: field-scoped route-choice refs
   No plan-shaping decision remains open before implementation.
 <!-- arch_skill:block:research_grounding:end -->
@@ -675,7 +694,7 @@ Wire rules are:
 - the choice key is the wire value the model emits
 - the quoted text is the route label, not the wire value
 - a required `route field` lowers to a string enum of those choice keys
-- an `optional` `route field` lowers to the same string enum wrapped in the
+- a `nullable` `route field` lowers to the same string enum wrapped in the
   existing nullable path
 - `null` is not a fake route choice. It means no route was selected for that
   turn.
@@ -794,7 +813,7 @@ The target rules are:
 - `route.exists` means this final response carries route semantics. It does
   not mean this payload selected a routed branch.
 - For route-field finals, `route.exists` stays `true` whenever route semantics
-  are present, including optional no-route turns where the selector field is
+  are present, including nullable no-route turns where the selector field is
   `null`.
 - In v1, route-field final outputs emit:
   - `surface: "final_output"`
@@ -942,7 +961,7 @@ two owners.
   Make the new route-field authoring surface parse, store, and stay
   backward compatible.
 * Status:
-  IN PROGRESS
+  COMPLETE
 * Work:
   This phase is the public surface cut-in only. It adds the grammar, parser,
   and authored model shapes for `final_output.route` and `route field`
@@ -989,7 +1008,7 @@ two owners.
 * Checklist (must all be done):
   - Teach output-schema lowering to map `route field` onto the existing
     string-enum lowering path using choice keys as wire values.
-  - Preserve existing `optional` null-wrapping behavior for route fields.
+  - Preserve existing `nullable` null-wrapping behavior for route fields.
   - Reject invalid authored mixes such as route fields with `type:`,
     `values:`, legacy `enum:`, `ref:`, `items:`, `any_of:`, duplicate choice
     keys, duplicate lowered wire values, or empty route-choice lists.
@@ -1053,12 +1072,12 @@ two owners.
   - Model `route.selector` as one generic contract surface whose v1 fields
     describe final-output route fields and whose shape can grow
     source-specific fields later without creating a second route contract.
-  - Define required route fields as `null_behavior: invalid` and optional route
+  - Define required route fields as `null_behavior: invalid` and nullable route
     fields as `null_behavior: no_route`.
   - Emit `has_unrouted_branch: true` for nullable route fields and keep `null`
     out of `choice_members`.
   - Keep `route.exists` tied to route semantics, not selected-branch presence,
-    including optional no-route turns.
+    including nullable no-route turns.
   - Add focused code comments at the output-key route-context seam only where
     the new ownership split would otherwise be hard to follow.
 * Verification (required proof):
@@ -1134,7 +1153,7 @@ two owners.
 * Exit criteria (all required):
   - The new always-route example proves end-to-end route-field final-output
     behavior, including emitted route contract truth.
-  - The new optional no-route example proves end-to-end no-route behavior for
+  - The new nullable no-route example proves end-to-end no-route behavior for
     nullable route fields.
   - Example proof makes `route.exists` meaning explicit enough that a harness
     cannot mistake it for "selected branch present."
@@ -1155,7 +1174,7 @@ two owners.
   are already stable.
 * Checklist (must all be done):
   - Update `docs/LANGUAGE_REFERENCE.md` to teach `route field`,
-    `final_output.route`, field-scoped route-choice refs, and optional
+    `final_output.route`, field-scoped route-choice refs, and nullable
     no-route behavior.
   - Update `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`,
     `docs/WORKFLOW_LAW.md`, and `docs/EMIT_GUIDE.md` so they show the new
