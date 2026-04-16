@@ -1,7 +1,6 @@
 output schema RepoStatusSchema: "Repo Status Schema"
     field status: "Status"
         type: definitely_not_a_real_json_schema_type
-        required
 
     example:
         status: "ok"

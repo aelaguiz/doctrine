@@ -104,18 +104,16 @@ class OutputSchemaValidationTests(unittest.TestCase):
             output schema RecursivePayload: "Recursive Payload"
                 field root: "Root"
                     ref: Node
-                    required
 
                 def Node: "Node"
                     type: object
 
                     field label: "Label"
                         type: string
-                        required
 
                     field next: "Next"
                         ref: Node
-                        optional
+                        nullable
 
             agent Demo:
                 role: "Answer plainly."

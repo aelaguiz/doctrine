@@ -830,7 +830,7 @@ shows the common pattern:
 ```doctrine
 field current_artifact: "Current Artifact"
     type: string
-    optional
+    nullable
     note: "Current artifact after review."
 ```
 
@@ -839,10 +839,10 @@ field current_artifact: "Current Artifact"
 For simple scalar fields:
 
 ```doctrine
-field current_artifact?: string "Current Artifact"
+field current_artifact: string? "Current Artifact"
     note: "Current artifact after review."
 
-field next_owner?: string "Next Owner"
+field next_owner: string? "Next Owner"
     note: "Next owner after review when one exists."
 ```
 
@@ -866,12 +866,11 @@ Field-head sugar should lower to the exact same `OutputSchemaField` model:
 - `name`
 - `title`
 - `type`
-- `required` or `optional`
+- nullability
 - inline enum values where present
 
 ### Inspiration
 
-- TypeScript `name?: string`
 - Kotlin and Swift compact typed field heads
 
 ### Recommendation
@@ -893,11 +892,12 @@ cases Doctrine expects authors to write often.
 
 If inline enum heads ship, they should follow the same propagation rule.
 
-One important warning: the current Doctrine `optional` meaning is already
-misleading on the wire. A `?` shorthand would make that confusion worse,
-because most authors will read `field name?: string` as omittable, not
-nullable. If Doctrine keeps the current wire behavior, it should not reuse
-TypeScript-style `?` without first fixing or renaming that concept.
+The nullability cleanup direction is now clear enough to simplify this
+proposal. `nullable` is the authored concept on this surface, while legacy
+`required` and `optional` are retired with targeted upgrade errors. If
+Doctrine adds symbolic compact heads, they should track nullability, not
+property presence. `string?` is the cleaner shape here. `field_name?: string`
+would still read like an omittable property in too many other languages.
 
 One acceptable asymmetry remains: `def` and `override def` may stay on the
 long form if Doctrine decides the compact head is specifically about

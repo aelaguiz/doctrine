@@ -1,7 +1,6 @@
 output schema BaseRepoStatusSchema: "Base Repo Status Schema"
     field summary: "Summary"
         type: string
-        required
         note: "Short natural-language status."
 
     field status: "Status"
@@ -9,7 +8,6 @@ output schema BaseRepoStatusSchema: "Base Repo Status Schema"
         values:
             ok
             action_required
-        required
         note: "Current repo outcome."
 
     example:
@@ -23,7 +21,7 @@ output schema RepoStatusSchema[BaseRepoStatusSchema]: "Repo Status Schema"
 
     field next_step: "Next Step"
         type: string
-        optional
+        nullable
         note: "Null only when no follow-up is needed."
 
     override example:

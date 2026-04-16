@@ -97,6 +97,32 @@ message_contains = [
 ]
 
 [[cases]]
+name = "output-schema final output fails loud when `required` is used in output schema"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_RETIRED_REQUIRED.prompt"
+agent = "InvalidRetiredRequiredAgent"
+exception_type = "CompileError"
+error_code = "E236"
+message_contains = [
+  "Output schema `required` is retired",
+  "Delete `required`",
+]
+
+[[cases]]
+name = "output-schema final output fails loud when `optional` is used in output schema"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_RETIRED_OPTIONAL.prompt"
+agent = "InvalidRetiredOptionalAgent"
+exception_type = "CompileError"
+error_code = "E237"
+message_contains = [
+  "Output schema `optional` is retired",
+  "Use `nullable`",
+]
+
+[[cases]]
 name = "output-schema final output fails loud when the declared example does not match the lowered schema"
 status = "active"
 kind = "compile_fail"

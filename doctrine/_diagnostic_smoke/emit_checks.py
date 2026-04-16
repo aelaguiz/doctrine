@@ -75,7 +75,6 @@ def _check_emit_docs_rejects_legacy_example_file_on_output_shape() -> None:
             """output schema RepoStatusSchema: "Repo Status Schema"
     field summary: "Summary"
         type: string
-        required
 
     example:
         summary: "Branch is clean."
@@ -129,7 +128,6 @@ def _check_emit_docs_emits_generated_schema_for_structured_final_output() -> Non
             """output schema RepoStatusSchema: "Repo Status Schema"
     field summary: "Summary"
         type: string
-        required
 
 output shape RepoStatusJson: "Repo Status JSON"
     kind: JsonObject

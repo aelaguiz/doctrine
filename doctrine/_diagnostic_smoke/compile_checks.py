@@ -116,7 +116,6 @@ def _check_final_output_invalid_lowered_schema_has_specific_code() -> None:
         schema_body="""output schema RepoStatusSchema: "Repo Status Schema"
     field status: "Status"
         type: definitely_not_a_real_json_schema_type
-        required
 """,
         example_body="""example:
         status: "ok"
@@ -141,31 +140,24 @@ def _check_final_output_excessive_nesting_has_specific_code() -> None:
         schema_body="""output schema RepoStatusSchema: "Repo Status Schema"
     field level_0: "Level 0"
         type: object
-        required
 
         field level_1: "Level 1"
             type: object
-            required
 
             field level_2: "Level 2"
                 type: object
-                required
 
                 field level_3: "Level 3"
                     type: object
-                    required
 
                     field level_4: "Level 4"
                         type: object
-                        required
 
                         field level_5: "Level 5"
                             type: object
-                            required
 
                             field summary: "Summary"
                                 type: string
-                                required
 """,
     )
     with TemporaryDirectory() as tmp_dir:

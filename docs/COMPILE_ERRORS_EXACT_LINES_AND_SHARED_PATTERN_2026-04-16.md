@@ -161,54 +161,63 @@ Verdict (code): NOT COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- Phase 4 is still broad. The approved frontier still contains raw-string compile sites in the resolver and compiler families, including output schemas, workflows, reviews, document blocks, route validation, agent/output/review/readable families, flow, and the file-scoped package helpers.
-- Phase 5 is still incomplete. Proof still uses `message_contains`, the smoke checks still only assert codes and snippets, the public docs still describe the old formatter shape, and the compile regex bridge is still active.
+- The remaining frontier is still broad. Raw compile errors remain in resolver, compiler, and validator families across output schemas, workflows, document blocks, addressables, reviews, analysis, skills, route checks, contract checks, output and flow helpers, and file-scoped support and package helpers. This is not just the output/review/readable slice.
+- The proof and cleanup frontier is still open. `compile_fail` still uses `message_contains`, the smoke checks still do not assert the final location contract, the public docs still show the old formatter shape, and the compile regex bridge is still active.
 
 ## Reopened phases (false-complete fixes)
 - None.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Phase 4 - compiler-family migration frontier
+- Phase 4 - unresolved compile-family migration frontier
   - Evidence anchors:
-    - `doctrine/_compiler/resolve/output_schemas.py:96-1140`
-    - `doctrine/_compiler/resolve/outputs.py:94-1700`
-    - `doctrine/_compiler/resolve/workflows.py:33-707`
-    - `doctrine/_compiler/resolve/reviews.py:45-948`
-    - `doctrine/_compiler/resolve/document_blocks.py:67-591`
-    - `doctrine/_compiler/validate/routes.py:43-1332`
-    - `doctrine/_compiler/compile/agent.py:88-772`
-    - `doctrine/_compiler/compile/outputs.py:35-725`
-    - `doctrine/_compiler/compile/review_contract.py:48-110`
-    - `doctrine/_compiler/compile/readables.py:107-529`
-    - `doctrine/_compiler/compile/readable_blocks.py:96-467`
-    - `doctrine/_compiler/compile/flow.py:73-873`
-    - `doctrine/_compiler/package_layout.py:51-107`
-    - `doctrine/_compiler/compile/skill_package.py:34-142`
+    - `doctrine/_compiler/resolve/outputs.py:94`
+    - `doctrine/_compiler/resolve/output_schemas.py:96`
+    - `doctrine/_compiler/resolve/workflows.py:33`
+    - `doctrine/_compiler/resolve/document_blocks.py:67`
+    - `doctrine/_compiler/resolve/addressables.py:37`
+    - `doctrine/_compiler/resolve/reviews.py:46`
+    - `doctrine/_compiler/resolve/analysis.py:33`
+    - `doctrine/_compiler/resolve/skills.py:34`
+    - `doctrine/_compiler/compile/agent.py:88`
+    - `doctrine/_compiler/compile/outputs.py:35`
+    - `doctrine/_compiler/compile/review_contract.py:48`
+    - `doctrine/_compiler/compile/readables.py:107`
+    - `doctrine/_compiler/compile/readable_blocks.py:96`
+    - `doctrine/_compiler/compile/flow.py:73`
+    - `doctrine/_compiler/compile/records.py:199`
+    - `doctrine/_compiler/compile/final_output.py:48`
+    - `doctrine/_compiler/compile/skill_package.py:34`
+    - `doctrine/_compiler/validate/routes.py:43`
+    - `doctrine/_compiler/validate/contracts.py:65`
+    - `doctrine/_compiler/validate/review_agreement.py:47`
+    - `doctrine/_compiler/validate/review_semantics.py:105`
+    - `doctrine/_compiler/validate/display.py:45`
+    - `doctrine/_compiler/validate/readables.py:36`
+    - `doctrine/_compiler/support.py:22`
+    - `doctrine/_compiler/package_layout.py:51`
   - Plan expects:
-    - every remaining compile family to use the shared structured helper path, with exact primary spans, labeled related sites for true conflicts, and explicit file-scoped exceptions only where no authored line exists.
+    - every remaining compile family to route through the shared structured helper path, with exact primary spans, labeled related sites for real conflicts, and explicit file-scoped exceptions only where no authored line exists.
   - Code reality:
-    - the structured helper path exists and some slices already use it, but the larger resolver and compiler frontier still raises raw strings or relies on late `ensure_location()` / regex recovery instead of the shared path.
+    - these families still raise raw strings or depend on late `ensure_location()` wrappers, so the exact-line policy is not yet universal and some file-scoped paths still only stamp a path after the fact.
   - Fix:
-    - finish the family-by-family migration, then remove the remaining raw-string compile paths and any temporary bridge logic.
+    - finish the remaining resolver, compiler, validator, and file-scoped migrations, then delete the raw message-path bridge.
 
 - Phase 5 - proof, docs, corpus contract, and cleanup
   - Evidence anchors:
-    - `doctrine/_diagnostic_smoke/compile_checks.py:29-48`
-    - `doctrine/_diagnostic_smoke/compile_checks.py:51-260`
-    - `doctrine/_verify_corpus/manifest.py:15-31`
-    - `doctrine/_verify_corpus/manifest.py:205-227`
-    - `doctrine/_verify_corpus/runners.py:417-434`
-    - `docs/COMPILER_ERRORS.md:1-23`
-    - `examples/README.md:1-40`
+    - `doctrine/_diagnostic_smoke/compile_checks.py:29`
+    - `doctrine/_verify_corpus/manifest.py:31`
+    - `doctrine/_verify_corpus/runners.py:429`
+    - `docs/COMPILER_ERRORS.md:1`
+    - `examples/README.md:1`
     - `doctrine/diagnostics.py:31`
     - `doctrine/diagnostics.py:345`
-    - `doctrine/_diagnostics/message_builders.py:80-96`
+    - `doctrine/_diagnostics/message_builders.py:80`
   - Plan expects:
-    - smoke checks and corpus proof to fail on exact-location and related-site regressions, public docs to describe `Related:` and truthful file-scoped exceptions, and the compile regex bridge to be deleted.
+    - exact-location and related-site assertions in smoke and corpus proof, public docs that name `Related:` and the explicit file-scoped exception policy, and no intentional compile family still routing through regex recovery.
   - Code reality:
-    - `compile_fail` still stores `message_contains`, the runners still check snippets, the smoke checks still only assert codes/messages, `docs/COMPILER_ERRORS.md` still describes the older formatter shape, and the compile regex bridge still feeds fallback compile diagnostics.
+    - `compile_fail` still stores `message_contains`, the runners still check snippets, the smoke checks still only cover code/message shape, the public docs still describe the old formatter contract, and the compile regex bridge remains in the runtime fallback path.
   - Fix:
-    - move the corpus to location-aware assertions, update the docs, and delete the compile-only regex recovery path after the migrated families are fully proven.
+    - move the corpus proof and smoke checks to the final contract, update the docs, then remove `_compile_diagnostic_from_message()` and its compile-only builders.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 - None.
@@ -947,6 +956,13 @@ Status
   subject wrong-kind failures, and cyclic review inheritance now carry prompt
   lines, with labeled related inherited sites on duplicate and parent-child
   conflicts.
+- Landed in this pass: output inheritance conflicts in
+  `resolve/outputs.py` now use structured, span-aware diagnostics for
+  missing inherited entries, patch-without-parent failures, duplicate child
+  keys, and wrong-kind overrides. Those cases now point at the child output
+  line to change, show inherited parent sites when the conflict has two real
+  authored locations, and preserve `source_span` through output rebinding so
+  imported-parent conflicts keep truthful related lines.
 
 Goal
 

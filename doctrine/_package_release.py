@@ -125,7 +125,6 @@ def smoke_test_distribution(
             'output schema HelloPayload: "Hello Payload"\n'
             '    field summary: "Summary"\n'
             '        type: string\n'
-            '        required\n'
             "\n"
             'output shape HelloJson: "Hello JSON"\n'
             "    kind: JsonObject\n"

@@ -49,8 +49,7 @@ class _OutputSchemaNodeParts:
     constraints: tuple[tuple[str, int | float], ...] = ()
     const_value: model.OutputSchemaLiteralValue | None = None
     has_const: bool = False
-    required_explicit: bool = False
-    optional: bool = False
+    nullable: bool = False
 
 
 class ResolveOutputSchemasMixin:
@@ -661,7 +660,7 @@ class ResolveOutputSchemasMixin:
                 title=output_schema_decl.title,
                 local_def_scopes=(),
                 pointer=pointer,
-                allow_presence_flags=False,
+                allow_nullable_flag=False,
             )
             if not pointer:
                 self._lowered_output_schema_cache[output_schema_key] = lowered
@@ -682,7 +681,7 @@ class ResolveOutputSchemasMixin:
         title: str | None,
         local_def_scopes: tuple[dict[str, tuple[str, ...]], ...],
         pointer: tuple[str, ...],
-        allow_presence_flags: bool,
+        allow_nullable_flag: bool,
     ) -> dict[str, object]:
         parts = self._collect_output_schema_node_parts(
             items,
@@ -693,13 +692,9 @@ class ResolveOutputSchemasMixin:
             parts,
             owner_label=owner_label,
         )
-        if parts.required_explicit and parts.optional:
+        if not allow_nullable_flag and parts.nullable:
             raise CompileError(
-                f"Output schema entry cannot be both required and optional in {owner_label}"
-            )
-        if not allow_presence_flags and (parts.required_explicit or parts.optional):
-            raise CompileError(
-                f"Output schema presence flags are only valid on fields in {owner_label}"
+                f"Output schema `nullable` is only valid on fields in {owner_label}"
             )
 
         schema: dict[str, object] = {}
@@ -729,7 +724,7 @@ class ResolveOutputSchemasMixin:
                 )
             schema["type"] = "string"
             schema["enum"] = [choice.key for choice in parts.route_choices]
-            if parts.optional:
+            if parts.nullable:
                 return self._wrap_nullable_output_schema(schema)
             return schema
 
@@ -759,7 +754,7 @@ class ResolveOutputSchemasMixin:
                     title=variant.key,
                     local_def_scopes=local_def_scopes,
                     pointer=(*pointer, "anyOf", str(index)),
-                    allow_presence_flags=False,
+                    allow_nullable_flag=False,
                 )
                 for index, variant in enumerate(parts.any_of)
             ]
@@ -771,7 +766,7 @@ class ResolveOutputSchemasMixin:
                     local_def_scopes=local_def_scopes,
                     pointer=pointer,
                 )
-            if parts.optional:
+            if parts.nullable:
                 return self._wrap_nullable_output_schema(schema)
             return schema
 
@@ -806,7 +801,7 @@ class ResolveOutputSchemasMixin:
                     local_def_scopes=local_def_scopes,
                     pointer=pointer,
                 )
-            if parts.optional:
+            if parts.nullable:
                 return self._wrap_nullable_output_schema(schema)
             return schema
 
@@ -882,7 +877,7 @@ class ResolveOutputSchemasMixin:
         for key, value in parts.constraints:
             schema[_OUTPUT_SCHEMA_JSON_KEY_MAP[key]] = value
 
-        if parts.optional:
+        if parts.nullable:
             return self._wrap_nullable_output_schema(schema)
         return schema
 
@@ -909,7 +904,7 @@ class ResolveOutputSchemasMixin:
                 title=item.title,
                 local_def_scopes=nested_scopes,
                 pointer=current_scope[item.key],
-                allow_presence_flags=False,
+                allow_nullable_flag=False,
             )
         return lowered
 
@@ -929,7 +924,7 @@ class ResolveOutputSchemasMixin:
             title=field.title,
             local_def_scopes=local_def_scopes,
             pointer=pointer,
-            allow_presence_flags=True,
+            allow_nullable_flag=True,
         )
 
     def _lower_output_schema_ref_value(
@@ -982,7 +977,7 @@ class ResolveOutputSchemasMixin:
             title=None,
             local_def_scopes=local_def_scopes,
             pointer=pointer,
-            allow_presence_flags=False,
+            allow_nullable_flag=False,
         )
 
     def _collect_output_schema_node_parts(
@@ -1062,19 +1057,37 @@ class ResolveOutputSchemasMixin:
                     f"Unsupported output schema setting in {owner_label}: {item.key}"
                 )
             if isinstance(item, model.OutputSchemaFlag):
-                if item.key == "required":
-                    if parts.required_explicit:
+                if item.key == "nullable":
+                    if parts.nullable:
                         raise CompileError(
-                            f"Duplicate output schema flag in {owner_label}: required"
+                            f"Duplicate output schema flag in {owner_label}: nullable"
                         )
-                    parts.required_explicit = True
+                    parts.nullable = True
                     continue
+                if item.key == "required":
+                    raise CompileError.from_parts(
+                        code="E236",
+                        summary="Output schema `required` is retired",
+                        detail=(
+                            f"{owner_label} still uses `required`. Delete `required`; "
+                            "output schema fields are always present on the wire today."
+                        ),
+                        hints=(
+                            "Delete `required` from this output schema entry.",
+                        ),
+                    )
                 if item.key == "optional":
-                    if parts.optional:
-                        raise CompileError(
-                            f"Duplicate output schema flag in {owner_label}: optional"
-                        )
-                    parts.optional = True
+                    raise CompileError.from_parts(
+                        code="E237",
+                        summary="Output schema `optional` is retired",
+                        detail=(
+                            f"{owner_label} still uses `optional`. Replace `optional` "
+                            "with `nullable` when the value may be `null`."
+                        ),
+                        hints=(
+                            "Use `nullable` when the value may be `null`.",
+                        ),
+                    )
                     continue
                 raise CompileError(
                     f"Unsupported output schema flag in {owner_label}: {item.key}"

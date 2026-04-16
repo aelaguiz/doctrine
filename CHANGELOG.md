@@ -64,12 +64,22 @@ payload text and breaking releases with no real upgrade steps.
   finals, `route_only`, `route_from`, and routed review finals. Harnesses
   should read this block instead of asking the model to copy the next owner
   into a private control field.
+- Added first-class routed structured final outputs with `route field` plus
+  `final_output.route:`. This lets one final-output field own the route
+  choice keys, labels, named targets, and emitted runtime route metadata.
+- Added additive `route.selector` metadata to `final_output.contract.json`
+  so harnesses can find the selected route field without local reconstruction.
 - Added `type: enum` plus `values:` as the preferred local inline enum form
   for `output schema` fields. Legacy `type: string` plus `enum:` still works
   in this first cut, and both forms lower to the same emitted string-enum
   schema shape.
 
 ### Changed
+- Changed `output schema` authoring for the next language-major line. Use
+  `nullable` when a field or route field may be `null`. Object properties
+  still stay present on the wire on the current structured-output profile, so
+  this change keeps the emitted wire shape the same while fixing the authored
+  language.
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and
   diagnostic smoke checks to share one runtime frontier instead of assuming
   root-only runtime emit.
@@ -86,7 +96,10 @@ payload text and breaking releases with no real upgrade steps.
   metadata. Doctrine no longer emits `AGENTS.contract.json`.
 - Changed emitted final-output companion contracts to include
   `route.exists: false` for unrouted final responses, so harnesses can consume
-  one route contract shape for routed and unrouted turns.
+  one route contract shape for routed and unrouted turns. When a final output
+  carries route semantics through an optional `route field`, `route.exists`
+  now stays `true` and `route.selector.null_behavior` says whether `null`
+  means no handoff.
 - Renamed the shipped structured final-output examples from `_json_schema` to
   `_output_schema` so the public corpus matches the approved feature story.
 - Added `python -m doctrine.validate_output_schema --schema ...` as the
@@ -114,6 +127,12 @@ payload text and breaking releases with no real upgrade steps.
   to `docs/VERSIONING.md` and `CHANGELOG.md` instead of becoming second
   release-policy owners.
 
+### Removed
+- Retired authored `required` and `optional` inside `output schema`,
+  including output-schema route fields and route-field overrides. Doctrine
+  still parses those spellings there only so it can raise targeted `E236` and
+  `E237` upgrade errors.
+
 ### Fixed
 - Fixed custom authored workflow slots such as `read_first` so workflows with
   root readable blocks no longer fail with `E901` during emit.
@@ -126,7 +145,7 @@ payload text and breaking releases with no real upgrade steps.
 Release kind: Non-breaking
 Release channel: stable
 Release version: vX.Y.Z
-Language version: unchanged (still 1.2)
+Language version: unchanged (still 2.0)
 Affected surfaces: ...
 Who must act: ...
 Who does not need to act: ...

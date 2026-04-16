@@ -41,7 +41,6 @@ class ProveOutputSchemaOpenAITests(unittest.TestCase):
                 output schema RepoStatusSchema: "Repo Status Schema"
                     field summary: "Summary"
                         type: string
-                        required
                 {example_block}
 
                 output shape RepoStatusJson: "Repo Status JSON"

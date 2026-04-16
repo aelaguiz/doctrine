@@ -54,7 +54,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
             output schema BasePayload: "Base Payload"
                 field kind: "Kind"
                     type: string
-                    required
 
                 def SharedNote: "Shared Note"
                     type: object
@@ -78,7 +77,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
 
                 field status: "Status"
                     type: string
-                    optional
+                    nullable
 
                 override example:
                     kind: "child_payload"
@@ -131,7 +130,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                         full_rewrite
                         new_section
                         existing_section_edit
-                    required
 
                 field metadata: "Metadata"
                     type: object
@@ -141,14 +139,13 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                         values:
                             auto
                             manual
-                        optional
+                        nullable
 
                 field legacy_status: "Legacy Status"
                     type: string
                     enum:
                         ok
                         blocked
-                    required
                 """
             )
         )
@@ -169,7 +166,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 values=("full_rewrite", "new_section", "existing_section_edit")
             ),
         )
-        self.assertEqual(section_edit.items[2], model.OutputSchemaFlag(key="required"))
 
         metadata = decl.items[1]
         self.assertIsInstance(metadata, model.OutputSchemaField)
@@ -181,7 +177,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
             nested_mode.items[1],
             model.OutputSchemaValues(values=("auto", "manual")),
         )
-        self.assertEqual(nested_mode.items[2], model.OutputSchemaFlag(key="optional"))
+        self.assertEqual(nested_mode.items[2], model.OutputSchemaFlag(key="nullable"))
 
         legacy_status = decl.items[2]
         self.assertIsInstance(legacy_status, model.OutputSchemaField)
@@ -190,7 +186,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
             legacy_status.items[1],
             model.OutputSchemaEnum(values=("ok", "blocked")),
         )
-        self.assertEqual(legacy_status.items[2], model.OutputSchemaFlag(key="required"))
 
     def test_parser_builds_route_field_nodes_and_route_choices(self) -> None:
         prompt = parse_text(
@@ -201,7 +196,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                     note: "Selected next step."
                     seek_muse: "Send to Muse." -> Muse
                     ready_for_critic: "Send to Critic." -> Critic
-                    optional
+                    nullable
 
             output schema ChildWriterDecisionSchema[WriterDecisionSchema]: "Child Writer Decision Schema"
                 inherit next_route
@@ -210,7 +205,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                     note: "Override the labels."
                     seek_muse: "Send to Fresh Muse." -> FreshMuse
                     ready_for_critic: "Send to Strict Critic." -> StrictCritic
-                    required
+                    nullable
                 """
             )
         )
@@ -239,7 +234,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 target_ref=model.NameRef(module_parts=(), declaration_name="Critic"),
             ),
         )
-        self.assertEqual(route_field.items[3], model.OutputSchemaFlag(key="optional"))
+        self.assertEqual(route_field.items[3], model.OutputSchemaFlag(key="nullable"))
 
         child_decl = prompt.declarations[1]
         self.assertIsInstance(child_decl, model.OutputSchemaDecl)
@@ -255,7 +250,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 target_ref=model.NameRef(module_parts=(), declaration_name="FreshMuse"),
             ),
         )
-        self.assertEqual(override_field.items[3], model.OutputSchemaFlag(key="required"))
+        self.assertEqual(override_field.items[3], model.OutputSchemaFlag(key="nullable"))
 
     def test_local_inherited_output_shape_keeps_inherited_items_and_points_schema_at_output_schema(self) -> None:
         agent = self._compile_agent(
@@ -263,7 +258,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
             output schema BasePayload: "Base Payload"
                 field kind: "Kind"
                     type: string
-                    required
 
                 example:
                     kind: "base_payload"
@@ -273,7 +267,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
 
                 field status: "Status"
                     type: string
-                    required
 
                 override example:
                     kind: "base_payload"
@@ -344,7 +337,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 output schema BasePayload: "Shared Base Payload Title"
                     field kind: "Kind"
                         type: string
-                        required
 
                     example:
                         kind: "shared_base"
@@ -369,7 +361,6 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
             output schema BasePayload: "Base Payload"
                 field kind: "Kind"
                     type: string
-                    required
 
             output schema ChildPayload[BasePayload]: "Child Payload"
                 inherit kind
@@ -396,6 +387,71 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
         # Child schemas must not silently invent sample data when a parent
         # never declared an example to inherit.
         self.assertIn("Cannot inherit undefined output schema entry", str(error))
+
+    def test_retired_output_schema_flags_fail_loud(self) -> None:
+        cases = (
+            (
+                "required",
+                """
+                output schema DemoSchema: "Demo Schema"
+                    field summary: "Summary"
+                        type: string
+                        required
+
+                output shape DemoJson: "Demo JSON"
+                    kind: JsonObject
+                    schema: DemoSchema
+
+                output DemoResponse: "Demo Response"
+                    target: TurnResponse
+                    shape: DemoJson
+                    requirement: Required
+
+                agent Demo:
+                    role: "Report status."
+                    workflow: "Summarize"
+                        "Summarize the repo state."
+                    outputs: "Outputs"
+                        DemoResponse
+                    final_output: DemoResponse
+                """,
+                "E236",
+                "Delete `required`",
+            ),
+            (
+                "optional_field",
+                """
+                output schema DemoSchema: "Demo Schema"
+                    field next_route: "Next Route"
+                        type: string
+                        optional
+
+                output shape DemoJson: "Demo JSON"
+                    kind: JsonObject
+                    schema: DemoSchema
+
+                output DemoResponse: "Demo Response"
+                    target: TurnResponse
+                    shape: DemoJson
+                    requirement: Required
+                agent Demo:
+                    role: "Report status."
+                    workflow: "Summarize"
+                        "Summarize the repo state."
+                    outputs: "Outputs"
+                        DemoResponse
+                    final_output: DemoResponse
+                """,
+                "E237",
+                "Use `nullable`",
+            ),
+        )
+
+        for case_name, source, expected_code, expected_text in cases:
+            with self.subTest(case=case_name):
+                error = self._compile_error(source, agent_name="Demo")
+                self.assertEqual(error.code, expected_code)
+                self.assertIn(expected_text, str(error))
 
 
 if __name__ == "__main__":

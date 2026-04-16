@@ -61,34 +61,29 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 field kind: "Kind"
                     type: string
                     const: base_payload
-                    required
                     note: "Stable kind."
 
                 field summary: "Summary"
                     type: string
-                    required
 
                 def SharedWindow: "Shared Window"
                     type: object
 
                     field start: "Start"
                         type: string
-                        required
 
                     field end: "End"
                         type: string
-                        required
 
                 def Node: "Node"
                     type: object
 
                     field label: "Label"
                         type: string
-                        required
 
                     field next: "Next"
                         ref: Node
-                        optional
+                        nullable
 
             output schema ChildPayload[BasePayload]: "Child Payload"
                 inherit kind
@@ -101,23 +96,22 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                     values:
                         ok
                         blocked
-                    optional
+                    nullable
                     note: "Current status."
 
                 field fixed_kind: "Fixed Kind"
                     type: string
                     const: child_payload
-                    optional
+                    nullable
                     note: "Optional stable kind."
 
                 field window: "Window"
                     ref: SharedWindow
-                    required
 
                 field tags: "Tags"
                     type: array
                     items: string
-                    optional
+                    nullable
 
                 field choice: "Choice"
                     any_of:
@@ -125,7 +119,7 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                             type: string
                         variant count:
                             type: integer
-                    optional
+                    nullable
             """,
             schema_name="ChildPayload",
         )
@@ -236,7 +230,7 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                     values:
                         ok
                         blocked
-                    optional
+                    nullable
             """,
             schema_name="StatusPayload",
         )
@@ -248,7 +242,7 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                     enum:
                         ok
                         blocked
-                    optional
+                    nullable
             """,
             schema_name="StatusPayload",
         )
@@ -271,7 +265,6 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 output schema BrokenPayload: "Broken Payload"
                     field status: "Status"
                         type: enum
-                        required
                 """,
                 "E227",
                 "missing `values:`",
@@ -284,7 +277,6 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                         values:
                             ok
                             blocked
-                        required
                 """,
                 "E228",
                 "`values:` requires `type: enum`",
@@ -298,7 +290,6 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                         values:
                             ok
                             blocked
-                        required
                 """,
                 "E228",
                 "`values:` requires `type: enum`",
@@ -312,7 +303,6 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                         enum:
                             ok
                             blocked
-                        required
                 """,
                 "E229",
                 "cannot be mixed",
@@ -335,12 +325,11 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 route field next_route: "Next Route"
                     seek_muse: "Send to Muse." -> Muse
                     ready_for_critic: "Send to Critic." -> Critic
-                    optional
+                    nullable
                     note: "Selected next step."
 
                 field summary: "Summary"
                     type: string
-                    required
             """,
             schema_name="WriterDecisionSchema",
         )
@@ -363,7 +352,6 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                     type: string
                     seek_muse: "Send to Muse." -> Muse
                     ready_for_critic: "Send to Critic." -> Critic
-                    required
             """,
             schema_name="WriterDecisionSchema",
         )
@@ -381,7 +369,6 @@ class OutputSchemaLoweringTests(unittest.TestCase):
 
                 field status: "Status"
                     type: string
-                    required
             """,
             schema_name="ChildPayload",
             extra_files={
@@ -392,11 +379,9 @@ class OutputSchemaLoweringTests(unittest.TestCase):
 
                         field text: "Text"
                             type: string
-                            required
 
                     field note: "Note"
                         ref: SharedNote
-                        required
                 """,
             },
         )
@@ -422,6 +407,41 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 "required": ["text"],
             },
         )
+
+    def test_retired_presence_flags_fail_loud(self) -> None:
+        cases = (
+            (
+                "required_field",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field summary: "Summary"
+                        type: string
+                        required
+                """,
+                "E236",
+                "Delete `required`",
+            ),
+            (
+                "optional_field",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field next_route: "Next Route"
+                        type: string
+                        optional
+                """,
+                "E237",
+                "Use `nullable`",
+            ),
+        )
+
+        for case_name, source, expected_code, expected_text in cases:
+            with self.subTest(case=case_name):
+                error = self._lower_output_schema_error(
+                    source,
+                    schema_name="BrokenPayload",
+                )
+                self.assertEqual(error.code, expected_code)
+                self.assertIn(expected_text, str(error))
 
 
 if __name__ == "__main__":

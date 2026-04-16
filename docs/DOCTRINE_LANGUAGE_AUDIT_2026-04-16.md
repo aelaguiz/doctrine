@@ -78,7 +78,7 @@ Parallel audit passes ran targeted proof, not the full repo verify path:
   literal guard acceptance,
   parser singleton overwrite behavior,
   emitted artifact overwrite behavior,
-  `optional` wire behavior,
+  output-schema nullability wording,
   mixed review-verdict vocab,
   and diagnostics quality
 
@@ -243,27 +243,28 @@ was a read-only audit plus one new dated doc.
   Tighten the checker or narrow the public claim.
   Do not leave the current mismatch in place.
 
-## 1.7 Medium - `output schema optional` reads like omittable, but the wire contract still requires the field
+## 1.7 Medium - `output schema` nullability cleanup direction is now clear; finish the cut cleanly
 
-- User inference:
-  `optional` means the property may be omitted.
-  `required` means the property must be present.
-- Shipped behavior:
-  The lowerer still makes all fields required on the wire and uses `optional`
-  only to allow `null`.
-  `{}` fails validation even when the only field is authored as `optional`.
-- Why this matters:
-  This is a naming trap on a schema surface.
-  Most users will bring JSON Schema intuition here, and Doctrine’s own
-  `required` flag reinforces that intuition.
+- Current direction:
+  `nullable` is the authored nullability flag on this surface.
+  Legacy `required` and `optional` are now targeted hard errors with upgrade
+  guidance.
+  The wire contract stays the same for the current structured-output profile:
+  object properties are still present on the wire, and `nullable` only means
+  the value may be `null`.
+- Why this still matters:
+  The language question is no longer open, but the cleanup is not fully done
+  until docs, examples, and emitted-surface wording stop teaching the old
+  terms.
 - Evidence:
   `doctrine/_compiler/resolve/output_schemas.py`,
+  `tests/test_output_schema_surface.py`,
   `tests/test_output_schema_lowering.py`,
   `tests/test_final_output.py`
 - Fix direction:
-  Either rename the concept in the language, or truly make `optional` mean
-  omittable.
-  The current wording is misleading.
+  Finish the migration and keep the story consistent:
+  `nullable` for nullability, no authored `required` on `output schema`,
+  and no return to `optional` as a synonym on this surface.
 
 ## 1.8 Medium - The emitted contract uses two review-verdict vocabularies in one file
 
@@ -507,8 +508,8 @@ language does not need more magic. It needs a more uniform contract.
 
 ## Phase 2 - Fix the biggest inference traps
 
-1. Decide whether `optional` means omittable or nullable, then align the
-   language, docs, and tests.
+1. Finish the `output schema` `nullable` cleanup across language docs,
+   examples, and proof.
 2. Normalize review-verdict vocabulary inside emitted contracts.
 3. Move route semantics, final output, and output-schema failures onto the
    exact-location diagnostics path.

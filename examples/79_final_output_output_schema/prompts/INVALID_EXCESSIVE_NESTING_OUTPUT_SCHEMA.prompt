@@ -1,31 +1,24 @@
 output schema RepoStatusSchema: "Repo Status Schema"
     field level_0: "Level 0"
         type: object
-        required
 
         field level_1: "Level 1"
             type: object
-            required
 
             field level_2: "Level 2"
                 type: object
-                required
 
                 field level_3: "Level 3"
                     type: object
-                    required
 
                     field level_4: "Level 4"
                         type: object
-                        required
 
                         field level_5: "Level 5"
                             type: object
-                            required
 
                             field summary: "Summary"
                                 type: string
-                                required
 
 
 output shape RepoStatusJson: "Repo Status JSON"

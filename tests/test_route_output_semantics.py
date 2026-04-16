@@ -753,11 +753,10 @@ class RouteOutputSemanticsTests(unittest.TestCase):
                 route field next_route: "Next Route"
                     seek_muse: "Send to Muse." -> Muse
                     ready_for_critic: "Send to Critic." -> Critic
-                    optional
+                    nullable
 
                 field summary: "Summary"
                     type: string
-                    required
 
             output shape WriterDecisionJson: "Writer Decision JSON"
                 kind: JsonObject

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.workflow_diagnostics import (
+    workflow_compile_error,
+    workflow_related_site,
+)
 from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
@@ -17,6 +21,64 @@ from doctrine._compiler.support_files import _dotted_decl_name
 class ResolveWorkflowsMixin:
     """Workflow and law resolution helpers for ResolveMixin."""
 
+    def _workflow_item_by_key(
+        self,
+        items: tuple[model.WorkflowItem, ...],
+        key: str,
+    ) -> model.WorkflowItem | None:
+        return next((item for item in items if item.key == key), None)
+
+    def _law_item_by_key(
+        self,
+        items: tuple[model.LawTopLevelItem, ...],
+        key: str,
+    ) -> model.LawSection | model.LawInherit | model.LawOverrideSection | None:
+        return next(
+            (
+                item
+                for item in items
+                if isinstance(item, (model.LawSection, model.LawInherit, model.LawOverrideSection))
+                and item.key == key
+            ),
+            None,
+        )
+
+    def _first_non_named_law_item(
+        self,
+        items: tuple[model.LawTopLevelItem, ...],
+    ) -> model.LawTopLevelItem | None:
+        return next(
+            (
+                item
+                for item in items
+                if not isinstance(item, (model.LawSection, model.LawInherit, model.LawOverrideSection))
+            ),
+            None,
+        )
+
+    def _workflow_missing_related_sites(
+        self,
+        *,
+        parent_unit: IndexedUnit | None,
+        parent_body: model.WorkflowBody | None,
+        missing_keys: tuple[str, ...],
+    ) -> tuple:
+        if parent_unit is None or parent_body is None:
+            return ()
+        related = []
+        for key in missing_keys:
+            parent_item = self._workflow_item_by_key(parent_body.items, key)
+            if parent_item is None:
+                continue
+            related.append(
+                workflow_related_site(
+                    label=f"inherited `{key}` entry",
+                    unit=parent_unit,
+                    source_span=parent_item.source_span,
+                )
+            )
+        return tuple(related)
+
     def _resolve_workflow_decl(
         self, workflow_decl: model.WorkflowDecl, *, unit: IndexedUnit
     ) -> ResolvedWorkflowBody:
@@ -30,7 +92,13 @@ class ResolveWorkflowsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._workflow_resolution_stack, workflow_key]
             )
-            raise CompileError(f"Cyclic workflow inheritance: {cycle}")
+            raise workflow_compile_error(
+                code="E240",
+                summary="Cyclic workflow inheritance",
+                detail=f"Workflow inheritance cycle: {cycle}.",
+                unit=unit,
+                source_span=workflow_decl.source_span,
+            )
 
         self._workflow_resolution_stack.append(workflow_key)
         try:
@@ -48,7 +116,10 @@ class ResolveWorkflowsMixin:
                 workflow_decl.body,
                 unit=unit,
                 owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
+                owner_source_span=workflow_decl.source_span,
                 parent_workflow=parent_workflow,
+                parent_body=parent_decl.body if workflow_decl.parent_ref is not None else None,
+                parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
                 parent_label=parent_label,
             )
             self._resolved_workflow_cache[workflow_key] = resolved
@@ -100,7 +171,13 @@ class ResolveWorkflowsMixin:
                     workflow_key,
                 ]
             )
-            raise CompileError(f"Cyclic workflow inheritance: {cycle}")
+            raise workflow_compile_error(
+                code="E240",
+                summary="Cyclic workflow inheritance",
+                detail=f"Workflow inheritance cycle: {cycle}.",
+                unit=unit,
+                source_span=workflow_decl.source_span,
+            )
 
         self._workflow_addressable_resolution_stack.append(workflow_key)
         try:
@@ -121,7 +198,10 @@ class ResolveWorkflowsMixin:
                 workflow_decl.body,
                 unit=unit,
                 owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
+                owner_source_span=workflow_decl.source_span,
                 parent_workflow=parent_workflow,
+                parent_body=parent_decl.body if workflow_decl.parent_ref is not None else None,
+                parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
                 parent_label=parent_label,
             )
             self._addressable_workflow_cache[workflow_key] = resolved
@@ -135,7 +215,10 @@ class ResolveWorkflowsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None,
         parent_workflow: ResolvedWorkflowBody | None = None,
+        parent_body: model.WorkflowBody | None = None,
+        parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
         resolved_preamble = tuple(
@@ -156,23 +239,38 @@ class ResolveWorkflowsMixin:
                     workflow_body.items,
                     unit=unit,
                     owner_label=owner_label,
+                    owner_source_span=owner_source_span,
                 ),
                 law=self._resolve_law_body(
                     workflow_body.law,
+                    unit=unit,
                     owner_label=owner_label,
                 ),
             )
 
         parent_items_by_key = {item.key: item for item in parent_workflow.items}
         resolved_items: list[ResolvedWorkflowItem] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, model.WorkflowItem] = {}
         accounted_keys: set[str] = set()
 
         for item in workflow_body.items:
             key = item.key
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            if key in emitted_items:
+                raise workflow_compile_error(
+                    code="E261",
+                    summary="Duplicate workflow item key",
+                    detail=f"Workflow owner `{owner_label}` repeats key `{key}`.",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=emitted_items[key].source_span,
+                        ),
+                    ),
+                )
+            emitted_items[key] = item
 
             if isinstance(item, model.LocalSection):
                 resolved_items.append(
@@ -223,23 +321,54 @@ class ResolveWorkflowsMixin:
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined workflow entry in {parent_label}: {key}"
+                    raise workflow_compile_error(
+                        code="E241",
+                        summary="Cannot inherit undefined workflow entry",
+                        detail=(
+                            f"Workflow owner `{owner_label}` cannot inherit undefined key `{key}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
                 continue
 
             if parent_item is None:
-                raise CompileError(
-                    f"E001 Cannot override undefined workflow entry in {parent_label}: {key}"
+                raise workflow_compile_error(
+                    code="E001",
+                    summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined workflow entry in {parent_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
                 )
 
             accounted_keys.add(key)
             if isinstance(item, model.OverrideSection):
                 if not isinstance(parent_item, ResolvedSectionItem):
-                    raise CompileError(
-                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    raise workflow_compile_error(
+                        code="E242",
+                        summary="Override kind mismatch",
+                        detail=(
+                            f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=(
+                                    None
+                                    if parent_body is None
+                                    else getattr(
+                                        self._workflow_item_by_key(parent_body.items, key),
+                                        "source_span",
+                                        None,
+                                    )
+                                ),
+                            ),
+                        ),
                     )
                 resolved_items.append(
                     ResolvedSectionItem(
@@ -258,7 +387,10 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     self._merge_workflow_root_readable_override(
                         item,
+                        unit=unit,
                         parent_item=parent_item,
+                        parent_body=parent_body,
+                        parent_unit=parent_unit or unit,
                         owner_label=owner_label,
                     )
                 )
@@ -266,8 +398,29 @@ class ResolveWorkflowsMixin:
 
             if isinstance(item, model.OverrideWorkflowSkillsItem):
                 if not isinstance(parent_item, ResolvedWorkflowSkillsItem):
-                    raise CompileError(
-                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    raise workflow_compile_error(
+                        code="E242",
+                        summary="Override kind mismatch",
+                        detail=(
+                            f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=(
+                                    None
+                                    if parent_body is None
+                                    else getattr(
+                                        self._workflow_item_by_key(parent_body.items, key),
+                                        "source_span",
+                                        None,
+                                    )
+                                ),
+                            ),
+                        ),
                     )
                 resolved_items.append(
                     ResolvedWorkflowSkillsItem(
@@ -282,8 +435,29 @@ class ResolveWorkflowsMixin:
                 continue
 
             if not isinstance(parent_item, ResolvedUseItem):
-                raise CompileError(
-                    f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                raise workflow_compile_error(
+                    code="E242",
+                    summary="Override kind mismatch",
+                    detail=(
+                        f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit or unit,
+                            source_span=(
+                                None
+                                if parent_body is None
+                                else getattr(
+                                    self._workflow_item_by_key(parent_body.items, key),
+                                    "source_span",
+                                    None,
+                                )
+                            ),
+                        ),
+                    ),
                 )
             target_unit, workflow_decl = self._resolve_workflow_ref(item.target, unit=unit)
             resolved_items.append(
@@ -294,15 +468,26 @@ class ResolveWorkflowsMixin:
                 )
             )
 
-        missing_keys = [
+        missing_keys = tuple(
             parent_item.key
             for parent_item in parent_workflow.items
             if parent_item.key not in accounted_keys
-        ]
+        )
         if missing_keys:
-            missing = ", ".join(missing_keys)
-            raise CompileError(
-                f"E003 Missing inherited workflow entry in {owner_label}: {missing}"
+            raise workflow_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=(
+                    f"Missing inherited workflow entry in {owner_label}: "
+                    f"{', '.join(missing_keys)}"
+                ),
+                unit=unit,
+                source_span=owner_source_span,
+                related=self._workflow_missing_related_sites(
+                    parent_unit=parent_unit,
+                    parent_body=parent_body,
+                    missing_keys=missing_keys,
+                ),
             )
 
         return ResolvedWorkflowBody(
@@ -311,8 +496,10 @@ class ResolveWorkflowsMixin:
             items=tuple(resolved_items),
             law=self._resolve_law_body(
                 workflow_body.law,
+                unit=unit,
                 owner_label=owner_label,
                 parent_law=parent_workflow.law,
+                parent_unit=parent_unit,
                 parent_label=parent_label,
             ),
         )

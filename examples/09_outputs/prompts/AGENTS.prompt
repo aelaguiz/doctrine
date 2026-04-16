@@ -17,12 +17,10 @@
 output schema LessonManifestSchema: "Lesson Manifest Schema"
     field title: "Title"
         type: string
-        required
 
     field steps: "Steps"
         type: array
         items: string
-        required
 
     example:
         title: "Intro To Pot Odds"

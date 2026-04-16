@@ -120,21 +120,36 @@ final_output:
         current_artifact: current_artifact
         next_owner: next_owner
 ```
+- Structured final outputs may also bind one `route field` on that same output
+  as the route owner:
+
+```prompt
+final_output:
+    output: WriterDecision
+    route: next_route
+```
 - Any emitted output may also read shared compiler-owned route semantics
   through `route.exists`, `route.next_owner`, `route.next_owner.key`,
   `route.next_owner.title`, `route.label`, and `route.summary` when the active
   workflow-law, `handoff_routing` law, `route_only`, `grounding`, or review
   branch resolves a real route.
-- When every live routed branch on that turn comes from `route_from`, outputs
-  may also read
+- When every live routed branch on that turn comes from `route_from`, or when
+  `final_output.route:` binds a `route field` on a structured final output,
+  outputs may also read
   `route.choice`, `route.choice.key`, `route.choice.title`, and
   `route.choice.wire`.
 - `route.next_owner.*` may stay live across several `route_from` branches. It
   means the selected route owner. `route.label` and `route.summary` still need
   one selected branch.
 - If `emit_docs` writes `final_output.contract.json`, it emits this same route
-  truth as a top-level `route` block. Harnesses should use that block for
-  runtime routing instead of copied owner strings in the payload.
+  truth as a top-level `route` block. That emitted contract may also carry a
+  `route.selector` object when the route comes from a bound final-output route
+  field. Harnesses should use that block for runtime routing instead of copied
+  owner strings in the payload.
+- In authored guards, `route.exists` means a routed owner exists on that live
+  branch. In emitted `final_output.contract.json`, `route.exists` means the
+  final response carries route semantics at all, even when an optional route
+  field selected no handoff.
 - Name each `route_from` enum member once. Use `else` at most once.
 - Unguarded `route.*` reads fail loudly when some active branches may not
   route. Guard route-specific readback with `when route.exists:` when the
@@ -729,10 +744,24 @@ Important rules:
 - `output schema` may also declare an optional `example:` block. When present,
   Doctrine validates it and renders an `Example` section on structured final
   outputs.
+- On the current structured-output profile, object properties stay present on
+  the wire. That includes normal fields, route fields, and route-field
+  overrides.
+- Use `nullable` when an `output schema` field or route field may be `null`.
+- `required` and `optional` are retired on this surface. Doctrine still
+  parses them there only so it can raise targeted upgrade errors.
+- Doctrine does not ship `?` shorthand for `output schema` fields.
 - For a local closed string vocabulary inside `output schema`, prefer
   `type: enum` plus `values:`.
 - In the first cut, legacy `type: string` plus `enum:` still compiles.
   Both forms lower to the same emitted string-enum wire shape.
+- A structured final output may declare a first-class routed owner with
+  `route field`.
+- A `route field` owns the route choice keys, labels, and named target agents
+  in one place.
+- `route field` still lowers to an ordinary string enum on the wire.
+- Use `nullable` on a `route field` when `null` means "no handoff on this
+  turn." Use the same `nullable` flag on ordinary schema fields.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
 - `render_profile:` may attach to a markdown-bearing `output` when exactly one
@@ -746,6 +775,9 @@ Important rules:
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
 - `final_output:` on an agent designates one emitted `TurnResponse` output as
   the final assistant message.
+- `final_output.route:` may bind one `route field` on that structured final
+  output. That gives the turn one authored route owner without a second
+  `route_from` table.
 - When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
@@ -760,7 +792,10 @@ Important rules:
   `control_ready`.
 - The emitted `final_output.contract.json` companion also carries the
   top-level `route` block for ordinary finals, `route_only`,
-  `handoff_routing`, `route_from`, and routed reviews.
+  `handoff_routing`, `route_from`, routed reviews, and bound final-output
+  route fields.
+- When a route comes from `final_output.route:`, the emitted route contract
+  also carries `route.selector` with the bound field path and null behavior.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 
@@ -772,7 +807,32 @@ field status: "Status"
     values:
         ok
         action_required
-    required
+```
+
+Nullable field example:
+
+```prompt
+field next_step: "Next Step"
+    type: string
+    nullable
+```
+
+First-class routed final-output form:
+
+```prompt
+output schema WriterDecisionSchema: "Writer Decision Schema"
+    route field next_route: "Next Route"
+        seek_muse: "Send to Muse." -> Muse
+        ready_for_critic: "Send to Critic." -> Critic
+        optional
+
+    field summary: "Summary"
+        type: string
+
+agent Writer:
+    final_output:
+        output: WriterDecision
+        route: next_route
 ```
 
 Shipped Markdown render shape:

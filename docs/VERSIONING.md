@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 1.2
+Current Doctrine language version: 2.0
 
 ## The Version Lines
 
@@ -14,6 +14,9 @@ behavior.
 
 - Use `major.minor`.
 - Bump the major version when the language itself breaks.
+- Retiring authored language like `required` or `optional` inside
+  `output schema` is a language break even when the lowered wire shape stays
+  the same.
 - Bump the minor version when the language adds backward-compatible syntax or
   semantics.
 - A new backward-compatible language surface such as direct `output`
@@ -110,6 +113,9 @@ Every public release uses one release class.
 - Adding a top-level `route` block to `final_output.contract.json` is an
   `additive` release when existing `final_output` and `review` keys keep their
   shape and `contract_version` stays compatible.
+- Adding `route field`, `final_output.route:`, and additive `route.selector`
+  metadata is an `additive` release when existing `route_from`,
+  `handoff_routing`, review, and emitted contract shapes keep working.
 - `soft-deprecated`: behavior still works, but Doctrine now tells users what
   to move away from and how to move early. Release kind: `Non-breaking`.
 - `breaking`: any shipped public surface now needs user action. This includes
@@ -153,7 +159,7 @@ one matching release section:
 Release kind: Non-breaking
 Release channel: stable
 Release version: vX.Y.Z
-Language version: unchanged (still 1.2)
+Language version: unchanged (still 2.0)
 Affected surfaces: ...
 Who must act: ...
 Who does not need to act: ...

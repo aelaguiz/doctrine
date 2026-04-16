@@ -5,7 +5,6 @@
 output schema DeliveryOutputSchema: "Delivery Output Schema"
     field summary: "Summary"
         type: string
-        required
 
 
 output shape DeliveryPayload: "Delivery Payload"

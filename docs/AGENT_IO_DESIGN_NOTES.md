@@ -107,6 +107,13 @@ Important rules:
 - `output schema` may also declare an optional `example:` block. When present,
   Doctrine validates it and renders an `Example` section on structured final
   outputs.
+- On the current structured-output profile, object properties stay present on
+  the wire. That includes normal fields, route fields, and route-field
+  overrides.
+- Use `nullable` when an `output schema` field or route field may be `null`.
+- `required` and `optional` are retired on this surface. Doctrine still
+  parses them there only so it can raise targeted upgrade errors.
+- Doctrine does not ship `?` shorthand for `output schema` fields.
 - For a local closed string vocabulary inside `output schema`, prefer
   `type: enum` plus `values:`.
 - In the first cut, legacy `type: string` plus `enum:` still compiles, and
@@ -134,8 +141,9 @@ Important rules:
   `route.next_owner.title`, `route.label`, and `route.summary` when workflow
   law, `handoff_routing` law, `route_only`, `grounding`, or review resolves a
   real route.
-- When every live routed branch on that turn comes from `route_from`, outputs
-  may also read
+- When every live routed branch on that turn comes from `route_from`, or when
+  `final_output.route:` binds a `route field` on a structured final output,
+  outputs may also read
   `route.choice`, `route.choice.key`, `route.choice.title`, and
   `route.choice.wire`.
 - On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
@@ -146,8 +154,14 @@ Important rules:
   with `route.choice` when several route branches stay live.
 - When `emit_docs` writes `final_output.contract.json`, that file includes the
   same compiler-owned route truth as a top-level `route` block. Harnesses
-  should consume that block for routing. Output fields that show a next owner
-  are content, not the route contract.
+  should consume that block for routing. When a route comes from
+  `final_output.route:`, that block also carries `route.selector` with the
+  bound field path and null behavior. Output fields that show a next owner are
+  content, not the route contract.
+- In authored output guards, `route.exists` means a routed owner exists on
+  that live branch. In emitted `final_output.contract.json`, `route.exists`
+  means the final response carries route semantics at all, even when an
+  optional route field selected no handoff.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
@@ -170,6 +184,14 @@ final_output:
         next_owner: next_owner
 ```
 
+- Structured final outputs may also bind a routed owner from one route field:
+
+```prompt
+final_output:
+    output: WriterDecision
+    route: next_route
+```
+
 - The compiler emits whether that split final response is `control_ready`.
   Authors do not declare that mode by hand.
 - When that designated output's `output shape` carries an `output schema`, the
@@ -186,7 +208,14 @@ field route: "Route"
     values:
         follow_up
         revise
-    required
+```
+
+Nullable field example:
+
+```prompt
+field next_step: "Next Step"
+    type: string
+    nullable
 ```
 
 Shipped markdown render defaults:
@@ -456,6 +485,8 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `93`: emitted-output route selection on `handoff_routing` plus
   `final_output:`
 - `94`: `route.choice` guards narrowing branch-specific route detail
+- `120`: structured `final_output:` routing owned by one `route field`
+- `121`: optional `route field` routing where `null` means no handoff
 - `107`: the smallest direct `output[...]` inheritance proof
 - `108`: inherited top-level output attachments such as `render_profile:`,
   `trust_surface`, and `standalone_read`

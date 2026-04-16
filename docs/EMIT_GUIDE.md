@@ -295,12 +295,14 @@ It always includes a top-level `route` block when the file exists.
 
 The `route` block has these fields:
 
-- `exists`: whether any emitted branch routes
+- `exists`: whether the final response carries route semantics at all
 - `behavior`: `always`, `never`, or `conditional`
 - `has_unrouted_branch`: whether at least one live branch stops without a route
 - `unrouted_review_verdicts`: review verdicts that stop without a route
+- `selector`: where the selected route wire value comes from when Doctrine
+  binds one dynamic route owner, such as `final_output.route:`
 - `branches`: routed branches with resolved agent identity, label, summary,
-  optional review verdict, and optional `route_from` choice members
+  optional review verdict, and optional choice members
 
 Each branch target is compiler-resolved:
 
@@ -319,6 +321,16 @@ Harnesses should read this block instead of asking the model to copy the next
 owner into a custom payload field. User-authored fields such as `next_owner`
 may still be useful output content, but they are not the canonical route
 contract.
+
+Important route-contract rules:
+
+- In authored guards, `route.exists` still means a routed owner exists on that
+  live branch.
+- In emitted `final_output.contract.json`, `route.exists` means the final
+  response carries route semantics at all.
+- For optional routed final outputs, `route.exists` stays `true`,
+  `behavior` is `conditional`, `has_unrouted_branch` is `true`, and
+  `route.selector.null_behavior` is `no_route`.
 
 For workflow flow artifacts, Doctrine writes one file pair per emitted
 entrypoint:
@@ -360,6 +372,8 @@ examples/115_runtime_agent_packages/build/editor_home/references/style.txt
 examples/79_final_output_output_schema/build/repo_status_agent/final_output.contract.json
 examples/79_final_output_output_schema/build/repo_status_agent/schemas/repo_status_final_response.schema.json
 examples/119_route_only_final_output_contract/build/route_only_final_output_contract_demo/final_output.contract.json
+examples/120_route_field_final_output_contract/build/writer_route_field_final_output_demo/final_output.contract.json
+examples/121_optional_route_field_final_output_contract/build/writer_optional_route_field_final_output_demo/final_output.contract.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg

@@ -65,6 +65,8 @@ Important rules:
   `route.exists` when the active workflow-law branches expose route semantics.
 - When every live routed branch comes from `route_from`, guards may also read
   `route.choice`.
+- Structured final outputs bound by `final_output.route:` may also read
+  `route.choice` when that bound `route field` owns the live route choices.
 - They may not read workflow-local bindings, emitted output fields, or
   undeclared runtime names.
 
@@ -89,14 +91,19 @@ Important rules:
 - `when route.exists:` is the ordinary output-side guard for route-specific
   readback, whether the guarded item is one scalar field or one section
 - `route.choice.*` is live only when every live routed branch comes from
-  `route_from`
+  `route_from`, or when one structured final output binds a `route field`
 - `route.next_owner.*` may stay live across several `route_from` branches. It
   means the selected route owner.
 - `route.label` and `route.summary` still need one selected branch. Guard them
   with `route.choice` when more than one route branch stays live.
 - When `emit_docs` writes `final_output.contract.json`, the same route truth
   appears in the top-level `route` block. Harnesses should read that block for
-  routing instead of treating copied output fields as the route contract.
+  routing instead of treating copied output fields as the route contract. When
+  the route comes from `final_output.route:`, the contract also carries
+  `route.selector`.
+- In authored guards, `route.exists` means a routed owner exists on that live
+  branch. In emitted `final_output.contract.json`, `route.exists` means route
+  semantics are present on that final response at all.
 
 ## Handoff Routing Reuses The Same Route Surface
 
@@ -139,6 +146,9 @@ law:
 Important rules:
 
 - `route_from` is legal on `workflow` law and `handoff_routing` law.
+- `route_from` stays the lower-level primitive when some other typed selector
+  is the honest route owner. Use `route field` plus `final_output.route:` when
+  the final JSON itself should own the selected route.
 - The selector must stay one direct ref.
 - It may point at a declared input field, an emitted output field on the
   concrete turn, or an enum member.

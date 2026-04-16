@@ -621,6 +621,10 @@ class IoTransformerMixin:
         return _with_source_span(model.OutputSchemaItems(value=tuple(items)), meta)
 
     @v_args(meta=True)
+    def output_schema_nullable_stmt(self, meta, _items=None):
+        return _with_source_span(model.OutputSchemaFlag(key="nullable"), meta)
+
+    @v_args(meta=True)
     def output_schema_required_stmt(self, meta, _items=None):
         return _with_source_span(model.OutputSchemaFlag(key="required"), meta)
 

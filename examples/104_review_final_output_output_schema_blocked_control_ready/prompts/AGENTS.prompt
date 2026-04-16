@@ -1,27 +1,25 @@
 output schema AcceptanceReviewSchema: "Acceptance Review Schema"
     field verdict: "Verdict"
         type: string
-        required
         note: "Review verdict."
 
     field reviewed_artifact: "Reviewed Artifact"
         type: string
-        required
         note: "Reviewed artifact name."
 
     field current_artifact: "Current Artifact"
         type: string
-        optional
+        nullable
         note: "Current artifact after review."
 
     field next_owner: "Next Owner"
         type: string
-        optional
+        nullable
         note: "Next owner after review when one exists."
 
     field blocked_gate: "Blocked Gate"
         type: string
-        optional
+        nullable
         note: "Blocking gate when review stopped early."
 
     example:

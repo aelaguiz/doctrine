@@ -6,6 +6,7 @@ from dataclasses import replace
 from doctrine import model
 from doctrine._compiler.constants import _BUILTIN_INPUT_SOURCES, _BUILTIN_OUTPUT_TARGETS
 from doctrine._compiler.naming import _dotted_ref_name
+from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     CompileError,
@@ -31,6 +32,72 @@ from doctrine._compiler.support_files import _dotted_decl_name
 
 class ResolveOutputsMixin:
     """Output and IO-body resolution helpers for ResolveMixin."""
+
+    def _authored_source_span(self, value: object | None) -> model.SourceSpan | None:
+        return getattr(value, "source_span", None)
+
+    def _output_decl_item_by_key(
+        self,
+        output_decl: model.OutputDecl,
+        key: str,
+    ) -> object | None:
+        return next((item for item in output_decl.items if self._output_item_key(item) == key), None)
+
+    def _output_shape_item_by_key(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+        key: str,
+    ) -> object | None:
+        return next(
+            (item for item in output_shape_decl.items if self._output_item_key(item) == key),
+            None,
+        )
+
+    def _output_shape_missing_related_sites(
+        self,
+        *,
+        parent_output_shape: model.OutputShapeDecl,
+        parent_unit: IndexedUnit | None,
+        missing_keys: tuple[str, ...],
+    ) -> tuple:
+        if parent_unit is None:
+            return ()
+        related = []
+        for key in missing_keys:
+            parent_item = self._output_shape_item_by_key(parent_output_shape, key)
+            if parent_item is None:
+                continue
+            related.append(
+                output_related_site(
+                    label=f"inherited `{key}` entry",
+                    unit=parent_unit,
+                    source_span=self._authored_source_span(parent_item),
+                )
+            )
+        return tuple(related)
+
+    def _output_missing_related_sites(
+        self,
+        *,
+        parent_output: model.OutputDecl,
+        parent_unit: IndexedUnit | None,
+        missing_keys: tuple[str, ...],
+    ) -> tuple:
+        if parent_unit is None:
+            return ()
+        related = []
+        for key in missing_keys:
+            parent_item = self._output_decl_item_by_key(parent_output, key)
+            if parent_item is None:
+                continue
+            related.append(
+                output_related_site(
+                    label=f"inherited `{key}` entry",
+                    unit=parent_unit,
+                    source_span=self._authored_source_span(parent_item),
+                )
+            )
+        return tuple(related)
 
     def _resolve_output_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -114,6 +181,7 @@ class ResolveOutputsMixin:
 
             resolved = self._resolve_inherited_output_shape_decl(
                 output_shape_decl,
+                unit=unit,
                 owner_label=owner_label,
                 parent_unit=parent_unit if output_shape_decl.parent_ref is not None else None,
                 parent_output_shape=parent_output_shape,
@@ -172,6 +240,7 @@ class ResolveOutputsMixin:
         self,
         output_shape_decl: model.OutputShapeDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
         parent_unit: IndexedUnit | None = None,
         parent_output_shape: model.OutputShapeDecl | None = None,
@@ -180,13 +249,31 @@ class ResolveOutputsMixin:
         if parent_output_shape is None:
             patch_key = self._first_output_shape_patch_key(output_shape_decl)
             if patch_key is not None:
-                raise CompileError(
-                    f"inherit requires an inherited output shape in {owner_label}: {patch_key}"
+                patch_item = self._output_shape_item_by_key(output_shape_decl, patch_key)
+                raise output_compile_error(
+                    code="E252",
+                    summary="Output patch requires an inherited output",
+                    detail=(
+                        f"`inherit` for key `{patch_key}` requires an inherited output in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(patch_item)
+                    or output_shape_decl.source_span,
                 )
             override_key = self._first_output_shape_override_key(output_shape_decl)
             if override_key is not None:
-                raise CompileError(
-                    f"override requires an inherited output shape in {owner_label}: {override_key}"
+                override_item = self._output_shape_item_by_key(output_shape_decl, override_key)
+                raise output_compile_error(
+                    code="E252",
+                    summary="Output patch requires an inherited output",
+                    detail=(
+                        f"`override` for key `{override_key}` requires an inherited output in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(override_item)
+                    or output_shape_decl.source_span,
                 )
             return replace(output_shape_decl, parent_ref=None)
 
@@ -202,9 +289,17 @@ class ResolveOutputsMixin:
         unkeyed_parent_items = self._output_shape_unkeyed_parent_labels(inherited_parent_output_shape)
         if unkeyed_parent_items:
             details = ", ".join(unkeyed_parent_items)
-            raise CompileError(
-                "Cannot inherit output shape with unkeyed top-level items in "
-                f"{parent_label}: {details}"
+            raise output_compile_error(
+                code="E254",
+                summary="Inherited output needs keyed top-level entries",
+                detail=(
+                    f"Output `{parent_label}` contains unkeyed top-level items: {details}."
+                ),
+                unit=parent_unit or unit,
+                source_span=inherited_parent_output_shape.source_span,
+                hints=(
+                    "Give inherited outputs stable keyed top-level items before patching them.",
+                ),
             )
 
         parent_items_by_key = {
@@ -214,7 +309,7 @@ class ResolveOutputsMixin:
             if self._output_item_key(item) is not None
         }
         resolved_items: list[model.OutputRecordItem] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, object] = {}
         accounted_keys: set[str] = set()
 
         for item in output_shape_decl.items:
@@ -223,15 +318,34 @@ class ResolveOutputsMixin:
                 resolved_items.append(item)
                 continue
 
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate output shape item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            if key in emitted_items:
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=f"Output `{owner_label}` repeats output item key `{key}`.",
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
+                    related=(
+                        output_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=self._authored_source_span(emitted_items[key]),
+                        ),
+                    ),
+                )
+            emitted_items[key] = item
 
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined output shape entry in {parent_label}: {key}"
+                    raise output_compile_error(
+                        code="E253",
+                        summary="Cannot inherit undefined output entry",
+                        detail=(
+                            f"Output `{owner_label}` cannot inherit undefined key `{key}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span or output_shape_decl.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
@@ -239,35 +353,71 @@ class ResolveOutputsMixin:
 
             if self._is_output_override_item(item):
                 if parent_item is None:
-                    raise CompileError(
-                        "E001 Cannot override undefined output shape entry in "
-                        f"{parent_label}: {key}"
+                    raise output_compile_error(
+                        code="E001",
+                        summary="Cannot override undefined inherited entry",
+                        detail=(
+                            f"Cannot override undefined output shape entry in "
+                            f"{parent_label}: {key}"
+                        ),
+                        unit=unit,
+                        source_span=self._authored_source_span(item)
+                        or output_shape_decl.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(
                     self._resolve_output_override_item(
                         item,
+                        unit=unit,
                         parent_item=parent_item,
+                        parent_unit=parent_unit or unit,
                         owner_label=owner_label,
                     )
                 )
                 continue
 
             if parent_item is not None:
-                raise CompileError(
-                    f"Inherited output shape requires `override {key}` in {owner_label}"
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=(
+                        f"Output `{owner_label}` must use `override {key}` when it patches "
+                        "an inherited output item."
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(item)
+                    or output_shape_decl.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit or unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
 
             resolved_items.append(item)
 
-        missing_keys = [
+        missing_keys = tuple(
             item.key
             for item in inherited_parent_output_shape.items
             if self._output_item_key(item) is not None and item.key not in accounted_keys
-        ]
+        )
         if missing_keys:
-            raise CompileError(
-                f"E003 Missing inherited output shape entry in {owner_label}: {', '.join(missing_keys)}"
+            raise output_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=(
+                    f"Missing inherited output shape entry in {owner_label}: "
+                    f"{', '.join(missing_keys)}"
+                ),
+                unit=unit,
+                source_span=output_shape_decl.source_span,
+                related=self._output_shape_missing_related_sites(
+                    parent_output_shape=inherited_parent_output_shape,
+                    parent_unit=parent_unit,
+                    missing_keys=missing_keys,
+                ),
             )
 
         return model.OutputShapeDecl(
@@ -275,6 +425,7 @@ class ResolveOutputsMixin:
             title=output_shape_decl.title,
             items=tuple(resolved_items),
             parent_ref=None,
+            source_span=output_shape_decl.source_span,
         )
 
     def _resolve_inherited_output_decl(
@@ -290,13 +441,30 @@ class ResolveOutputsMixin:
         if parent_output is None:
             patch_key = self._first_output_patch_key(output_decl)
             if patch_key is not None:
-                raise CompileError(
-                    f"inherit requires an inherited output in {owner_label}: {patch_key}"
+                patch_item = self._output_decl_item_by_key(output_decl, patch_key)
+                raise output_compile_error(
+                    code="E252",
+                    summary="Output patch requires an inherited output",
+                    detail=(
+                        f"`inherit` for key `{patch_key}` requires an inherited output in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(patch_item) or output_decl.source_span,
                 )
             override_key = self._first_output_override_key(output_decl)
             if override_key is not None:
-                raise CompileError(
-                    f"override requires an inherited output in {owner_label}: {override_key}"
+                override_item = self._output_decl_item_by_key(output_decl, override_key)
+                raise output_compile_error(
+                    code="E252",
+                    summary="Output patch requires an inherited output",
+                    detail=(
+                        f"`override` for key `{override_key}` requires an inherited output in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(override_item)
+                    or output_decl.source_span,
                 )
             return replace(output_decl, parent_ref=None)
 
@@ -309,8 +477,17 @@ class ResolveOutputsMixin:
         unkeyed_parent_items = self._output_unkeyed_parent_labels(inherited_parent_output)
         if unkeyed_parent_items:
             details = ", ".join(unkeyed_parent_items)
-            raise CompileError(
-                f"Cannot inherit output with unkeyed top-level items in {parent_label}: {details}"
+            raise output_compile_error(
+                code="E254",
+                summary="Inherited output needs keyed top-level entries",
+                detail=(
+                    f"Output `{parent_label}` contains unkeyed top-level items: {details}."
+                ),
+                unit=parent_unit or unit,
+                source_span=inherited_parent_output.source_span,
+                hints=(
+                    "Give inherited outputs stable keyed top-level items before patching them.",
+                ),
             )
 
         parent_items_by_key = {
@@ -320,7 +497,7 @@ class ResolveOutputsMixin:
             if self._output_item_key(item) is not None
         }
         resolved_items: list[model.OutputRecordItem] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, object] = {}
         accounted_keys: set[str] = set()
 
         for item in output_decl.items:
@@ -329,15 +506,34 @@ class ResolveOutputsMixin:
                 resolved_items.append(item)
                 continue
 
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate output item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            if key in emitted_items:
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=f"Output `{owner_label}` repeats output item key `{key}`.",
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
+                    related=(
+                        output_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=self._authored_source_span(emitted_items[key]),
+                        ),
+                    ),
+                )
+            emitted_items[key] = item
 
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined output entry in {parent_label}: {key}"
+                    raise output_compile_error(
+                        code="E253",
+                        summary="Cannot inherit undefined output entry",
+                        detail=(
+                            f"Output `{owner_label}` cannot inherit undefined key `{key}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span or output_decl.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
@@ -345,21 +541,45 @@ class ResolveOutputsMixin:
 
             if self._is_output_override_item(item):
                 if parent_item is None:
-                    raise CompileError(
-                        f"E001 Cannot override undefined output entry in {parent_label}: {key}"
+                    raise output_compile_error(
+                        code="E001",
+                        summary="Cannot override undefined inherited entry",
+                        detail=(
+                            f"Cannot override undefined output entry in {parent_label}: {key}"
+                        ),
+                        unit=unit,
+                        source_span=self._authored_source_span(item) or output_decl.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(
                     self._resolve_output_override_item(
                         item,
+                        unit=unit,
                         parent_item=parent_item,
+                        parent_unit=parent_unit or unit,
                         owner_label=owner_label,
                     )
                 )
                 continue
 
             if parent_item is not None:
-                raise CompileError(f"Inherited output requires `override {key}` in {owner_label}")
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=(
+                        f"Output `{owner_label}` must use `override {key}` when it patches "
+                        "an inherited output item."
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(item) or output_decl.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit or unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
+                )
 
             resolved_items.append(item)
 
@@ -406,8 +626,17 @@ class ResolveOutputsMixin:
         if self._output_decl_has_attachment(inherited_parent_output, "trust_surface") and not trust_surface_accounted:
             missing_keys.append("trust_surface")
         if missing_keys:
-            raise CompileError(
-                f"E003 Missing inherited output entry in {owner_label}: {', '.join(missing_keys)}"
+            raise output_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=f"Missing inherited output entry in {owner_label}: {', '.join(missing_keys)}",
+                unit=unit,
+                source_span=output_decl.source_span,
+                related=self._output_missing_related_sites(
+                    parent_output=inherited_parent_output,
+                    parent_unit=parent_unit,
+                    missing_keys=tuple(missing_keys),
+                ),
             )
 
         return model.OutputDecl(
@@ -423,6 +652,7 @@ class ResolveOutputsMixin:
             structure_mode="set" if resolved_structure is not None else None,
             render_profile_mode="set" if resolved_render_profile is not None else None,
             trust_surface_mode="set" if resolved_trust_surface else None,
+            source_span=output_decl.source_span,
         )
 
     def _first_output_patch_key(self, output_decl: model.OutputDecl) -> str | None:
@@ -518,59 +748,143 @@ class ResolveOutputsMixin:
         self,
         item: model.OutputOverrideItem,
         *,
+        unit: IndexedUnit,
         parent_item: model.OutputRecordItem,
+        parent_unit: IndexedUnit,
         owner_label: str,
     ) -> model.OutputRecordItem:
         key = item.key
         if isinstance(item, model.OutputOverrideRecordScalar):
             if not isinstance(parent_item, model.RecordScalar):
-                raise CompileError(
-                    f"Override kind mismatch for output entry in {owner_label}: {key}"
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=(
+                        f"Output `{owner_label}` overrides entry `{key}` with the wrong kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
-            return model.RecordScalar(key=key, value=item.value, body=item.body)
+            return model.RecordScalar(
+                key=key,
+                value=item.value,
+                body=item.body,
+                source_span=item.source_span,
+            )
 
         if isinstance(item, model.OutputOverrideRecordSection):
             if not isinstance(parent_item, model.RecordSection):
-                raise CompileError(
-                    f"Override kind mismatch for output entry in {owner_label}: {key}"
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=(
+                        f"Output `{owner_label}` overrides entry `{key}` with the wrong kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             return model.RecordSection(
                 key=key,
                 title=item.title if item.title is not None else parent_item.title,
                 items=item.items,
+                source_span=item.source_span,
             )
 
         if isinstance(item, model.OutputOverrideGuardedOutputSection):
             if not isinstance(parent_item, model.GuardedOutputSection):
-                raise CompileError(
-                    f"Override kind mismatch for output entry in {owner_label}: {key}"
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=(
+                        f"Output `{owner_label}` overrides entry `{key}` with the wrong kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             return model.GuardedOutputSection(
                 key=key,
                 title=item.title if item.title is not None else parent_item.title,
                 when_expr=item.when_expr,
                 items=item.items,
+                source_span=item.source_span,
             )
 
         if isinstance(item, model.OutputOverrideGuardedOutputScalar):
             if not isinstance(parent_item, model.GuardedOutputScalar):
-                raise CompileError(
-                    f"Override kind mismatch for output entry in {owner_label}: {key}"
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=(
+                        f"Output `{owner_label}` overrides entry `{key}` with the wrong kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             return model.GuardedOutputScalar(
                 key=key,
                 value=item.value,
                 when_expr=item.when_expr,
                 body=item.body,
+                source_span=item.source_span,
             )
 
         if not isinstance(parent_item, model.ReadableBlock):
-            raise CompileError(
-                f"Override kind mismatch for output entry in {owner_label}: {key}"
+            raise output_compile_error(
+                code="E255",
+                summary="Invalid output inheritance patch",
+                detail=f"Output `{owner_label}` overrides entry `{key}` with the wrong kind.",
+                unit=unit,
+                source_span=item.source_span,
+                related=(
+                    output_related_site(
+                        label=f"inherited `{key}` entry",
+                        unit=parent_unit,
+                        source_span=self._authored_source_span(parent_item),
+                    ),
+                ),
             )
         if item.kind != parent_item.kind:
-            raise CompileError(
-                f"Override kind mismatch for output entry in {owner_label}: {key}"
+            raise output_compile_error(
+                code="E255",
+                summary="Invalid output inheritance patch",
+                detail=f"Output `{owner_label}` overrides entry `{key}` with the wrong kind.",
+                unit=unit,
+                source_span=item.source_span,
+                related=(
+                    output_related_site(
+                        label=f"inherited `{key}` entry",
+                        unit=parent_unit,
+                        source_span=self._authored_source_span(parent_item),
+                    ),
+                ),
             )
         return model.ReadableBlock(
             kind=item.kind,
@@ -589,6 +903,7 @@ class ResolveOutputsMixin:
             row_schema=item.row_schema if item.row_schema is not None else parent_item.row_schema,
             anonymous=parent_item.anonymous,
             legacy_section=parent_item.legacy_section,
+            source_span=item.source_span,
         )
 
     def _rebind_inherited_output_decl(
@@ -675,6 +990,7 @@ class ResolveOutputsMixin:
                         for child in item.body
                     )
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.RecordSection):
             return model.RecordSection(
@@ -684,6 +1000,7 @@ class ResolveOutputsMixin:
                     self._rebind_inherited_output_item(child, parent_unit=parent_unit)
                     for child in item.items
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.GuardedOutputSection):
             return model.GuardedOutputSection(
@@ -697,6 +1014,7 @@ class ResolveOutputsMixin:
                     self._rebind_inherited_output_item(child, parent_unit=parent_unit)
                     for child in item.items
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.GuardedOutputScalar):
             return model.GuardedOutputScalar(
@@ -717,6 +1035,7 @@ class ResolveOutputsMixin:
                         for child in item.body
                     )
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.RecordRef):
             return model.RecordRef(
@@ -732,6 +1051,7 @@ class ResolveOutputsMixin:
                         for child in item.body
                     )
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.ReadableBlock):
             return self._rebind_inherited_output_readable_block(item, parent_unit=parent_unit)
@@ -835,6 +1155,7 @@ class ResolveOutputsMixin:
             row_schema=block.row_schema,
             anonymous=block.anonymous,
             legacy_section=block.legacy_section,
+            source_span=block.source_span,
         )
 
     def _rebind_inherited_output_readable_payload(
@@ -884,9 +1205,11 @@ class ResolveOutputsMixin:
                                         for item in cell.body
                                     )
                                 ),
+                                source_span=cell.source_span,
                             )
                             for cell in row.cells
                         ),
+                        source_span=row.source_span,
                     )
                     for row in payload.rows
                 ),
@@ -909,6 +1232,7 @@ class ResolveOutputsMixin:
                 item.when_expr,
                 parent_unit=parent_unit,
             ),
+            source_span=item.source_span,
         )
 
     def _inherited_output_ref_has_parent_decl(
@@ -1156,11 +1480,6 @@ class ResolveOutputsMixin:
                 "route field must declare at least one route choice in "
                 f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
             )
-        if route_parts.required_explicit and route_parts.optional:
-            raise CompileError(
-                f"Output schema entry cannot be both required and optional in {owner_label}"
-            )
-
         return FinalOutputRouteBinding(
             output_key=output_key,
             output_unit=output_unit,
@@ -1169,7 +1488,7 @@ class ResolveOutputsMixin:
             schema_decl=json_summary.schema_decl,
             field_path=field.route_path,
             route_field=route_node.target,
-            null_behavior="no_route" if route_parts.optional else "invalid",
+            null_behavior="no_route" if route_parts.nullable else "invalid",
             choices=route_parts.route_choices,
         )
 

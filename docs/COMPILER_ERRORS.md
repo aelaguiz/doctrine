@@ -78,7 +78,7 @@ Stability rules:
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
 | `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
 | `E210` | Abstract authored slot must be defined directly | An inherited abstract authored slot was handled with `inherit` or `override` instead of a direct `slot_key: ...` definition. |
-| `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. |
+| `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. Related routed-final-output checks still fail loud with direct messages when `final_output.route:` points at a non-structured final output or a field that is not a `route field`. |
 | `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
 | `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
 | `E214` | Retired | Reserved error code. Review-driven `final_output:` may now differ from `comment_output:`. |
@@ -92,6 +92,8 @@ Stability rules:
 | `E228` | Output schema `values:` requires `type: enum` | An `output schema` entry uses `values:` without the new `type: enum` form. |
 | `E229` | Output schema inline enum form is mixed or invalid | An `output schema` entry mixes `type: enum` with legacy `enum:` or uses legacy `enum:` with the wrong type. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
+| `E236` | Output schema `required` is retired | `required` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to delete it. Output-schema object properties still stay present on the wire today. |
+| `E237` | Output schema `optional` is retired | `optional` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to use `nullable` when the value may be `null`. |
 | `E240`-`E243` | Workflow inheritance and patching errors | These codes cover cyclic workflow inheritance, inheriting undefined keys, kind mismatches, and `inherit` or `override` without an inherited workflow. |
 | `E244`-`E249` | IO block inheritance and typed-field ref errors | These codes cover cyclic `inputs` / `outputs` block inheritance, undefined inherited keys, patching without an inherited IO block, inherited IO blocks without stable keyed sections, and wrong-kind IO refs or patch bases. |
 | `E250` | Cyclic skills inheritance | Top-level `skills` block inheritance forms a cycle. |
@@ -140,12 +142,12 @@ Stability rules:
 | `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared or bound concrete-turn input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
 | `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
-| `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs, enum members, or live compiler-owned route semantics such as `route.exists` and `route.choice`. |
+| `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs, enum members, or live compiler-owned route semantics such as `route.exists` and `route.choice`, including `route.choice == OutputSchema.route_field.choice_key` on routed final outputs. |
 | `E339` | Routed next_owner field is not structurally bound | A route-only output includes a `next_owner` field, but that field does not structurally bind the routed target. |
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
 | `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
-| `E343` | Multiple route-bearing control surfaces are live | More than one live route-bearing surface, such as `workflow` law and `handoff_routing` law, would supply shared `route.*` truth for the same concrete turn. |
+| `E343` | Multiple route-bearing control surfaces are live | More than one live route-bearing surface, such as `workflow` law, `handoff_routing` law, or `final_output.route:`, would supply shared `route.*` truth for the same concrete turn. |
 | `E344` | `handoff_routing` law uses a non-routing statement | `handoff_routing` law used something outside its route-only subset, such as `current artifact`, `current none`, `own only`, `preserve`, or `invalidate`. |
 | `E345` | Law is not allowed on this authored slot | `law:` was attached to an authored slot other than `workflow:` or `handoff_routing:`. |
 | `E346` | `route_from` selector reads invalid source | A `route_from` selector was not one direct ref to a declared input field, an emitted output field on the concrete turn, or an enum member. |

@@ -90,7 +90,6 @@ class EmitDocsTests(unittest.TestCase):
                     output schema RepoStatusSchema: "Repo Status Schema"
                         field summary: "Summary"
                             type: string
-                            required
 
                         example:
                             summary: "Branch is clean."
@@ -279,11 +278,10 @@ class EmitDocsTests(unittest.TestCase):
                         route field next_route: "Next Route"
                             seek_muse: "Send to Muse." -> Muse
                             ready_for_critic: "Send to Critic." -> Critic
-                            optional
+                            nullable
 
                         field summary: "Summary"
                             type: string
-                            required
 
                         example:
                             next_route: "seek_muse"
@@ -403,7 +401,6 @@ class EmitDocsTests(unittest.TestCase):
                     output schema RepoStatusSchema: "Repo Status Schema"
                         field summary: "Summary"
                             type: string
-                            required
 
                     output shape RepoStatusJson: "Repo Status JSON"
                         kind: JsonObject
@@ -725,7 +722,6 @@ class EmitDocsTests(unittest.TestCase):
                     output schema RepoStatusSchema: "Repo Status Schema"
                         field summary: "Summary"
                             type: string
-                            required
 
                         example:
                             summary: "Branch is clean."

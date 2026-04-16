@@ -244,11 +244,12 @@ When route semantics are live, read:
 - `route.next_owner`
 - `route.label`
 - `route.summary`
-- `route.choice.*` when `route_from` makes that safe
+- `route.choice.*` when `route_from` or `final_output.route:` makes that safe
 
 When a harness needs to route the final response, read the top-level `route`
-block in `final_output.contract.json`. Do not ask the model to copy that same
-target into a private control field.
+block in `final_output.contract.json`. When the route comes from a structured
+final output, read `route.selector` too. Do not ask the model to copy that
+same target into a private control field.
 
 Do not do this:
 - Do not duplicate route owner and route summary as manual output fields.
@@ -262,6 +263,28 @@ Best anchors:
 - [93_handoff_routing_route_from_final_output](../examples/93_handoff_routing_route_from_final_output/prompts/AGENTS.prompt)
 - [94_route_choice_guard_narrowing](../examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt)
 - [119_route_only_final_output_contract](../examples/119_route_only_final_output_contract/prompts/AGENTS.prompt)
+- [120_route_field_final_output_contract](../examples/120_route_field_final_output_contract/prompts/AGENTS.prompt)
+- [121_optional_route_field_final_output_contract](../examples/121_optional_route_field_final_output_contract/prompts/AGENTS.prompt)
+
+### Use `route field` on structured final output when the payload chooses the next owner
+
+Use this when the final JSON itself should choose the next routed agent.
+
+The clean path is:
+- declare the choices on one `route field`
+- bind `final_output.route:` to that field
+- let Doctrine emit the runtime route contract
+
+Do not do this:
+- Do not duplicate the same route choice in a payload field and a second
+  `route_from` table.
+- Do not copy the next owner into a private payload control field for the
+  harness.
+
+Best anchors:
+- [120_route_field_final_output_contract](../examples/120_route_field_final_output_contract/prompts/AGENTS.prompt)
+- [121_optional_route_field_final_output_contract](../examples/121_optional_route_field_final_output_contract/prompts/AGENTS.prompt)
+- [92_route_from_basic](../examples/92_route_from_basic/prompts/AGENTS.prompt)
 
 ### Use `final_output:` only for the turn-ending answer
 

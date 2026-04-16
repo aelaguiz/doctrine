@@ -892,6 +892,178 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Review contract `GateLessContract`", str(error))
 
+    def test_missing_inherited_output_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BaseHandoff: "Base Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    must_include: "Must Include"
+                        what_changed: "What Changed"
+                            "Say what changed."
+
+                output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+                    inherit target
+                    inherit shape
+                    inherit requirement
+
+                agent Demo:
+                    role: "Fail loud when the child skips an inherited output entry."
+                    outputs: "Outputs"
+                        LessonsLeadOutput
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                'output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"'
+            )
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    must_include: "Must Include"') + 1,
+        )
+        self.assertIn("Missing inherited output entry in LessonsLeadOutput: must_include", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_output_patch_without_parent_points_at_inherit_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output LessonsLeadOutput: "Lessons Lead Output"
+                    inherit target
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                agent Demo:
+                    role: "Fail loud when output patch syntax appears without a parent."
+                    outputs: "Outputs"
+                        LessonsLeadOutput
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E252")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inherit target") + 1,
+        )
+        self.assertIn("requires an inherited output", str(error))
+
+    def test_duplicate_output_item_key_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BaseHandoff: "Base Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    standalone_read: "Standalone Read"
+                        "Keep the note standalone."
+
+                output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+                    inherit target
+                    inherit shape
+                    inherit requirement
+                    inherit standalone_read
+                    override standalone_read: "Standalone Read"
+                        "Re-state the note for the local child."
+
+                agent Demo:
+                    role: "Reject duplicate inherited output item accounting."
+                    outputs: "Outputs"
+                        LessonsLeadOutput
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E255")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    override standalone_read: "Standalone Read"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    inherit standalone_read") + 1,
+        )
+        self.assertIn("repeats output item key `standalone_read`", str(error))
+        self.assertIn("first `standalone_read` entry", str(error))
+
+    def test_output_override_kind_mismatch_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BaseHandoff: "Base Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    must_include: "Must Include"
+                        what_changed: "What Changed"
+                            "Say what changed."
+
+                output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+                    inherit target
+                    inherit shape
+                    inherit requirement
+                    override must_include: TurnResponse
+
+                agent Demo:
+                    role: "Fail loud when output override kind does not match the parent."
+                    outputs: "Outputs"
+                        LessonsLeadOutput
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E255")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    override must_include: TurnResponse") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    must_include: "Must Include"') + 1,
+        )
+        self.assertIn("overrides entry `must_include` with the wrong kind", str(error))
+        self.assertIn("Related:", str(error))
+
 
 if __name__ == "__main__":
     unittest.main()

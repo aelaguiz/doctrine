@@ -33,7 +33,6 @@ def _final_output_json_source(
     rendered_schema_body = schema_body or """output schema RepoStatusSchema: "Repo Status Schema"
     field summary: "Summary"
         type: string
-        required
         note: "Short natural-language status."
 
     field status: "Status"
@@ -41,12 +40,11 @@ def _final_output_json_source(
         values:
             ok
             action_required
-        required
         note: "Current repo outcome."
 
     field next_step: "Next Step"
         type: string
-        optional
+        nullable
         note: "Null only when no follow-up is needed."
 """
     if example_body is _DEFAULT_EXAMPLE_BODY:
@@ -281,17 +279,14 @@ def _final_output_review_split_json_source() -> str:
         values:
             follow_up
             revise
-        required
         note: "Control route for the next owner."
 
     field current_artifact: "Current Artifact"
         type: string
-        required
         note: "Current artifact after review."
 
     field next_owner: "Next Owner"
         type: string
-        required
         note: "Next owner after review."
 
     example:

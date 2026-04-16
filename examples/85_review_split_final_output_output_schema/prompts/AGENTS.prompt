@@ -4,17 +4,14 @@ output schema AcceptanceControlSchema: "Acceptance Control Schema"
         values:
             follow_up
             revise
-        required
         note: "Control route for the next owner."
 
     field current_artifact: "Current Artifact"
         type: string
-        required
         note: "Current artifact after review."
 
     field next_owner: "Next Owner"
         type: string
-        required
         note: "Next owner after review."
 
     example:

@@ -717,6 +717,7 @@ output_schema_route_field_body: _INDENT output_schema_route_field_line+ _DEDENT
                        | output_schema_ref_stmt
                        | output_schema_items_stmt
                        | output_schema_items_block
+                       | output_schema_nullable_stmt
                        | output_schema_required_stmt
                        | output_schema_optional_stmt
                        | output_schema_enum_block
@@ -744,6 +745,7 @@ output_schema_const_stmt: "const" ":" output_schema_literal _NL?
 output_schema_ref_stmt: "ref" ":" name_ref _NL?
 output_schema_items_stmt: "items" ":" name_ref _NL?
 output_schema_items_block: "items" ":" _NL _INDENT output_schema_item_line+ _DEDENT
+output_schema_nullable_stmt: "nullable" _NL?
 output_schema_required_stmt: "required" _NL?
 output_schema_optional_stmt: "optional" _NL?
 output_schema_enum_block: "enum" ":" _NL _INDENT output_schema_enum_value+ _DEDENT

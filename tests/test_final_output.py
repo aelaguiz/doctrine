@@ -176,11 +176,10 @@ class FinalOutputTests(unittest.TestCase):
                 route field next_route: "Next Route"
                     seek_muse: "Send to Muse." -> Muse
                     ready_for_critic: "Send to Critic." -> Critic
-                    optional
+                    nullable
 
                 field summary: "Summary"
                     type: string
-                    required
 
             output shape WriterDecisionJson: "Writer Decision JSON"
                 kind: JsonObject
@@ -283,7 +282,6 @@ class FinalOutputTests(unittest.TestCase):
             output schema WriterDecisionSchema: "Writer Decision Schema"
                 field next_route: "Next Route"
                     type: string
-                    required
 
             output shape WriterDecisionJson: "Writer Decision JSON"
                 kind: JsonObject
@@ -403,7 +401,6 @@ class FinalOutputTests(unittest.TestCase):
             output schema RepoStatusSchema: "Repo Status Schema"
                 field summary: "Summary"
                     type: string
-                    required
                     note: "Short natural-language status."
 
                 field status: "Status"
@@ -411,12 +408,11 @@ class FinalOutputTests(unittest.TestCase):
                     values:
                         ok
                         action_required
-                    required
                     note: "Current repo outcome."
 
                 field next_step: "Next Step"
                     type: string
-                    optional
+                    nullable
                     note: "Null only when no follow-up is needed."
 
                 example:
@@ -487,12 +483,12 @@ class FinalOutputTests(unittest.TestCase):
                     values:
                         ok
                         blocked
-                    optional
+                    nullable
 
                 field kind: "Kind"
                     type: string
                     const: status_result
-                    optional
+                    nullable
 
                 example:
                     status: null
@@ -533,12 +529,10 @@ class FinalOutputTests(unittest.TestCase):
             output schema RoutedSchema: "Routed Schema"
                 field summary: "Summary"
                     type: string
-                    required
                     note: "Short user-facing summary."
 
                 field route: "Route"
                     type: object
-                    required
                     note: "Routing facts for the next step."
 
                     field action: "Action"
@@ -547,17 +541,15 @@ class FinalOutputTests(unittest.TestCase):
                             reply
                             handoff
                             end_turn
-                        required
                         note: "Chosen route action."
 
                     field owner: "Owner"
                         type: string
-                        optional
+                        nullable
                         note: "Next owner when a handoff is needed."
 
                     field reason: "Reason"
                         type: string
-                        required
                         note: "Why this route was chosen."
 
                 example:
@@ -605,7 +597,6 @@ class FinalOutputTests(unittest.TestCase):
             output schema RepoStatusSchema: "Repo Status Schema"
                 field summary: "Summary"
                     type: string
-                    required
 
                 example:
                     summary: 7
@@ -642,7 +633,6 @@ class FinalOutputTests(unittest.TestCase):
                     enum:
                         ok
                         blocked
-                    required
 
             output shape LegacyStatusJson: "Legacy Status JSON"
                 kind: JsonObject
@@ -678,7 +668,6 @@ class FinalOutputTests(unittest.TestCase):
             output schema RepoStatusSchema: "Repo Status Schema"
                 field summary: "Summary"
                     type: string
-                    required
 
             output shape RepoStatusJson: "Repo Status JSON"
                 kind: JsonObject
@@ -943,17 +932,14 @@ class FinalOutputTests(unittest.TestCase):
                     values:
                         accepted
                         changes_requested
-                    required
                     note: "Review verdict."
 
                 field reviewed_artifact: "Reviewed Artifact"
                     type: string
-                    required
                     note: "Reviewed artifact name."
 
                 field next_owner: "Next Owner"
                     type: string
-                    required
                     note: "Next owner after review."
 
                 example:
@@ -1333,17 +1319,14 @@ class FinalOutputTests(unittest.TestCase):
                     values:
                         follow_up
                         revise
-                    required
                     note: "Control route for the next owner."
 
                 field current_artifact: "Current Artifact"
                     type: string
-                    required
                     note: "Current artifact after review."
 
                 field next_owner: "Next Owner"
                     type: string
-                    required
                     note: "Next owner after review."
 
                 example:
@@ -1496,17 +1479,14 @@ class FinalOutputTests(unittest.TestCase):
                     values:
                         follow_up
                         revise
-                    required
                     note: "Control route for the next owner."
 
                 field current_artifact: "Current Artifact"
                     type: string
-                    required
                     note: "Current artifact after review."
 
                 field next_owner: "Next Owner"
                     type: string
-                    required
                     note: "Next owner after review."
 
                 example:
@@ -1882,12 +1862,10 @@ class FinalOutputTests(unittest.TestCase):
             output schema TurnResultSchema: "Turn Result Schema"
                 field next_owner: "Next Owner"
                     type: string
-                    required
                     note: "The routed next owner key."
 
                 field summary: "Summary"
                     type: string
-                    required
                     note: "Short closeout summary."
 
                 example:

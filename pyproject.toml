@@ -151,3 +151,13 @@ output_dir = "examples/115_runtime_agent_packages/build"
 name = "example_119_route_only_final_output_contract"
 entrypoint = "examples/119_route_only_final_output_contract/prompts/AGENTS.prompt"
 output_dir = "examples/119_route_only_final_output_contract/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_120_route_field_final_output_contract"
+entrypoint = "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt"
+output_dir = "examples/120_route_field_final_output_contract/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_121_optional_route_field_final_output_contract"
+entrypoint = "examples/121_optional_route_field_final_output_contract/prompts/AGENTS.prompt"
+output_dir = "examples/121_optional_route_field_final_output_contract/build"

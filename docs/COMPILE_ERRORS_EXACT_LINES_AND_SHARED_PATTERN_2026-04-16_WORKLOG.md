@@ -119,3 +119,41 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
 - Current next step: either resolve the unrelated example-93 route-contract
   drift so full corpus proof can run cleanly again, or continue Phase 4 on the
   next compile family with that blocker called out explicitly.
+
+## 2026-04-16 - Implement pass 5
+- Advanced Phase 4 through the next output inheritance slice in
+  `doctrine/_compiler/resolve/outputs.py` by moving the inherited-output
+  conflict family onto shared structured diagnostics.
+- Added a shared output diagnostic helper in
+  `doctrine/_compiler/output_diagnostics.py`.
+- Landed exact-line output diagnostics for missing inherited output entries,
+  patch-without-parent failures, duplicate child output keys, and wrong-kind
+  output overrides. Conflict cases now emit labeled `Related:` sites that
+  point at the inherited parent entry or the first duplicate child entry.
+- Preserved `source_span` while rebinding inherited output items and readable
+  descendants so imported-parent output conflicts keep truthful related
+  locations instead of collapsing to path-only output.
+- Added focused proof in `tests/test_compile_diagnostics.py` for missing
+  inherited output entries, patch-without-parent failures, duplicate child
+  keys, and wrong-kind overrides.
+- Updated stale smoke fixtures in
+  `doctrine/_diagnostic_smoke/fixtures_final_output.py`,
+  `doctrine/_diagnostic_smoke/compile_checks.py`, and
+  `doctrine/_diagnostic_smoke/emit_checks.py` so the smoke prompts stop using
+  retired output-schema `required`.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/output_diagnostics.py doctrine/_compiler/resolve/outputs.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_output_inheritance`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/112_output_inheritance_fail_loud/cases.toml`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_output_inheritance tests.test_diagnostics_formatting tests.test_final_output tests.test_output_schema_surface tests.test_output_schema_lowering`
+  - `make verify-diagnostics`
+- Result:
+  - The focused output-inheritance proof passed.
+  - Broader repo proof is currently blocked by unrelated output-schema syntax
+    drift already present in this dirty worktree. `tests.test_final_output`,
+    `tests.test_output_schema_lowering`, `tests.test_output_schema_surface`,
+    and `make verify-diagnostics` still hit retired output-schema
+    `required` / `optional` authoring outside the output-inheritance slice.
+- Current next step: keep Phase 4 moving on the next compile family with
+  targeted proof, while calling out the separate output-schema proof drift
+  until that front is reconciled.

@@ -1,12 +1,10 @@
 output schema TurnResultSchema: "Turn Result Schema"
     field next_owner: "Next Owner"
         type: string
-        required
         note: "The routed next owner key."
 
     field summary: "Summary"
         type: string
-        required
         note: "Short closeout summary."
 
     example:

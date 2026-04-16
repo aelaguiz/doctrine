@@ -22,11 +22,10 @@
         "summary": "Send to AcceptanceCritic. Next owner: Acceptance Critic.",
         "choice_members": [
           {
-            "enum_module_parts": [],
-            "enum_name": "ProofRoute",
             "member_key": "accept",
             "member_title": "Accept",
-            "member_wire": "Accept"
+            "member_wire": "Accept",
+            "enum_name": "ProofRoute"
           }
         ]
       },
@@ -41,11 +40,10 @@
         "summary": "Send to ChangeEngineer. Next owner: Change Engineer.",
         "choice_members": [
           {
-            "enum_module_parts": [],
-            "enum_name": "ProofRoute",
             "member_key": "change",
             "member_title": "Change",
-            "member_wire": "Change"
+            "member_wire": "Change",
+            "enum_name": "ProofRoute"
           }
         ]
       }
