@@ -6,8 +6,10 @@ Repo-local VS Code language support for `.prompt` files.
 
 - registers `*.prompt` as the `doctrine` language
 - adds full TextMate colorization for the shipped Doctrine grammar, including
-  first-class `review` declarations, top-level `skill package`, and
-  review-local semantic refs
+  first-class `review`, `review_family`, `route_only`, `grounding`,
+  top-level `table`, top-level `render_profile`, top-level `skill package`,
+  review-local semantic refs, guarded `override ... when ...:` headers, and
+  backticked rooted runtime paths such as `home:issue.md`
 - supports Go to Definition and Ctrl/Cmd-click navigation on raw `import`
   paths
 - supports Go to Definition and Ctrl/Cmd-click across the full shipped
@@ -40,9 +42,13 @@ Repo-local VS Code language support for `.prompt` files.
 
 The extension resolves Doctrine imports from the same repo-level compile config
 the compiler ships: absolute imports may search the local `prompts/` root plus
-configured `[tool.doctrine.compile].additional_prompt_roots`, while relative
-imports stay rooted in the importing module's own `prompts/` tree and
-ambiguous absolute module identities fail closed in navigation.
+configured `[tool.doctrine.compile].additional_prompt_roots`. It also searches
+repo-visible editable sibling dependencies declared in `tool.uv.sources` when
+those sibling packages expose Doctrine prompt roots through their own
+`[tool.doctrine.compile].additional_prompt_roots`. Relative imports stay
+rooted in the importing module's own `prompts/` tree, non-editable installed
+packages are not scanned for prompt roots, and ambiguous absolute module
+identities fail closed in navigation.
 
 Workflow-law support here uses the same vocabulary as
 [../../docs/WORKFLOW_LAW.md](../../docs/WORKFLOW_LAW.md): `law`,
@@ -60,26 +66,30 @@ sections, carried `active_mode` / `trigger_reason`, bound review carrier roots,
 and semantic refs on the review comment surface.
 
 Current integration and document support here also follows the shipped language
-guides: top-level `render_profile`, `analysis`, `decision`, `schema`, and `document`
-declarations, agent `analysis:` / `decision:` / `final_output:` slots, typed
-`schema:` / `structure:` / `render_profile:`
+guides: top-level `render_profile`, `analysis`, `decision`, `schema`,
+`table`, and `document` declarations, agent `analysis:` / `decision:` /
+`final_output:` slots, typed `schema:` / `structure:` / `render_profile:`
 attachments, addressable analysis or document paths such as `Decl:section.title`,
 family-namespaced schema paths such as
 `BuildSurfaceSchema:artifacts.manifest_file.title`, keyed readable descendants
 such as `LessonPlan:read_order.first`,
 `LessonPlan:read_order.item_schema.step_label.title`,
 `LessonPlan:step_arc.columns.coaching_level.title`,
-`LessonPlan:step_arc.row_schema.topic.title`, shared readable block headers on
-workflow, record, and skill-entry bodies, explicit late block kinds such as
-`properties`, `guard`, `markdown`, `html`, `footnotes`, and `image`, and
-schema-backed `review contract:` references, plus structured-final-output
-route surfaces such as `route field`, inline route choices, and
+`LessonPlan:step_arc.row_schema.topic.title`, named table roots and named
+document table use-sites such as `ReleaseGates` and `ReleaseGuide:release_gates`,
+shared readable block headers on workflow, record, and skill-entry bodies,
+explicit late block kinds such as `properties`, `guard`, `markdown`, `html`,
+`footnotes`, and `image`, schema-backed `review contract:` references,
+`output target delivery_skill:` refs, and structured-final-output route
+surfaces such as `route field`, inline route choices, and block-form
 `final_output.route:`.
 
 ## What it does not do yet
 
 - synthetic destinations for built-in `source:` or `target:` names such as
   `File`, `Prompt`, `EnvVar`, or `TurnResponse`
+- navigation for harness-owned rooted runtime path tokens such as
+  `home:issue.md` or `home:artifacts/poem.md`; these are highlighted only
 - synthetic destinations for compiler-derived built-in `...:title` hops that
   do not resolve to a declaration or authored keyed line
 - synthetic destinations for undeclared dynamic prompt-object fields such as
@@ -100,7 +110,8 @@ That writes `doctrine-language-<generated-version>.vsix` into `editors/vscode/`.
 
 `make` installs the extension's npm dependencies if needed, runs the grammar
 tests, runs the extension-host navigation tests, runs the Lark-alignment
-validator, and packages the final VSIX.
+validator, runs one packaged VSIX smoke pass in an isolated host, and packages
+the final VSIX.
 Each packaging run stamps a fresh semver version without editing
 `package.json`.
 Reinstalling the newest VSIX upgrades the local editor copy cleanly.
@@ -213,6 +224,24 @@ local editor is actually running the newest VSIX before changing the grammar.
    for output-body readable code-block clicks, and
    `examples/62_identity_titles_keys_and_wire/prompts/AGENTS.prompt` for
    titled-agent `:key` clicks and enum-member `.wire` clicks.
+13. For the late parity ladder, smoke-check:
+   `examples/68_review_family_shared_scaffold/prompts/AGENTS.prompt` for
+   `review_family` roots,
+   `examples/69_case_selected_review_family/prompts/AGENTS.prompt` for direct
+   `review: SelectedReviewFamily` clicks,
+   `examples/70_route_only_declaration/prompts/AGENTS.prompt` for
+   `route_only` declaration clicks,
+   `examples/71_grounding_declaration/prompts/AGENTS.prompt` for `grounding`
+   declaration clicks,
+   `examples/116_first_class_named_tables/prompts/AGENTS.prompt` for
+   top-level named tables, named document table refs, and table descendants,
+   `examples/118_output_target_delivery_skill_binding/prompts/shared/delivery.prompt`
+   for `delivery_skill:` clicks,
+   `examples/119_route_only_final_output_contract/prompts/AGENTS.prompt` for
+   scalar `final_output:` clicks, and
+   `examples/120_route_field_final_output_contract/prompts/AGENTS.prompt` plus
+   `examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt`
+   for block-form `final_output.output` and `final_output.route` clicks.
 
 ## Development only: Extension Development Host
 

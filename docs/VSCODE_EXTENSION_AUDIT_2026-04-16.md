@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - VS Code Extension Parity - Architecture Plan"
 date: 2026-04-16
-status: draft
+status: active
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []
@@ -64,10 +64,10 @@ claimed editor feature is both implemented and tested.
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
-deep_dive_pass_1: not started
+deep_dive_pass_1: done 2026-04-16
 external_research_grounding: not started
-deep_dive_pass_2: not started
-recommended_flow: deep dive -> phase plan -> consistency pass -> implement
+deep_dive_pass_2: done 2026-04-16
+recommended_flow: deep dive -> deep dive again -> phase plan -> consistency pass -> implement
 note: This block tracks stage order only. It never overrides readiness blockers caused by unresolved decisions.
 -->
 <!-- arch_skill:block:planning_passes:end -->
@@ -241,70 +241,106 @@ not mean current parity.
 
 ## 3.1 External anchors (papers, systems, prior art)
 
-- none needed beyond Doctrine's own shipped language and extension contract
-- reject a language-server detour for this plan; the current product is a thin
-  TextMate-plus-resolver extension and the parity gap is inside that surface
+- none needed beyond Doctrine's own shipped language and current extension
+  contract
+- reject a language-server detour for this plan; the repo already ships one
+  TextMate grammar plus one resolver path, and the parity gap is inside that
+  surface
 
 ## 3.2 Internal ground truth (code as spec)
 
-- Authoritative language truth:
-  - `doctrine/grammars/doctrine.lark`
-  - `docs/LANGUAGE_REFERENCE.md`
-  - `examples/README.md`
-  - shipped examples through `examples/121_nullable_route_field_final_output_contract`
-- Authoritative extension behavior owners:
-  - `editors/vscode/syntaxes/doctrine.tmLanguage.json` for highlighting
-  - `editors/vscode/resolver.js` for document links and definition targets
-  - `editors/vscode/extension.js` only for provider registration
-  - `editors/vscode/tests/**` and
-    `editors/vscode/scripts/validate_lark_alignment.py` for proof
-  - `editors/vscode/package.json`, `editors/vscode/Makefile`, and
-    `editors/vscode/scripts/package_vsix.py` for shipped artifact behavior
-- Canonical owner path to reuse:
-  - shipped language truth remains in `doctrine/` and the manifest-backed
-    example corpus
-  - editor parity work belongs inside `editors/vscode/`
-  - no second grammar source of truth outside the TextMate grammar and no
-    second navigation source of truth outside the resolver
-- Adjacent surfaces tied to the same parity story:
-  - `editors/vscode/README.md`
-  - `editors/vscode/tests/unit/*.test.prompt`
-  - `editors/vscode/tests/snap/examples/**`
-  - `editors/vscode/tests/integration/suite/index.js`
-  - `editors/vscode/tests/integration/run.js`
-  - `editors/vscode/.vscodeignore`
-- Compatibility posture:
-  - preserve existing working extension behavior while making late shipped
-    language surfaces work
-  - keep ambiguous imports and unsupported built-ins fail-closed, matching
-    current documented behavior
-- Existing reusable patterns:
-  - declaration-kind tables and named-ref resolution in `resolver.js`
-  - focused syntax units plus integration assertions in `editors/vscode/tests`
-  - repo-local install and smoke guidance in `editors/vscode/README.md`
+- Authoritative behavior anchors (do not reinvent):
+  - `doctrine/grammars/doctrine.lark` - shipped language truth. It declares
+    top-level `render_profile`, `table`, `route_only`, `grounding`, and
+    `review_family`, plus block-form `final_output:` and
+    `output target delivery_skill:`.
+  - `docs/LANGUAGE_REFERENCE.md` - shipped contract for named tables,
+    `render_profile`, `final_output.route:`, and `delivery_skill:`.
+  - `editors/vscode/package.json` - one extension entrypoint, one grammar path,
+    and the truthful command surface: `npm test` plus `package:vsix`.
+  - `editors/vscode/extension.js` - the extension only registers document links
+    and definition providers. There is no second navigation engine.
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json` - sole highlighting
+    owner. It already groups `workflow|route_only|grounding`,
+    `review|review_family`, and nested `final_output` fields, but it has no
+    top-level declaration rule for `render_profile` or `table`, and
+    `delivery_skill` only appears in a generic keyword bucket.
+  - `editors/vscode/resolver.js` - sole navigation owner. It already has
+    explicit declaration regexes for `review_family`, `route_only`,
+    `grounding`, and `render_profile`, plus direct `render_profile` refs and
+    readable table descendant handling. It still has no first-class top-level
+    `TABLE` declaration kind, no `delivery_skill` field mapping, and no agent
+    child-body spec for block-form `final_output:`.
+  - `editors/vscode/scripts/validate_lark_alignment.py` - proof gate, but still
+    mostly checks keyword presence across regex text plus a small fixed sample
+    list. It does not yet assert first-class support for `table`,
+    `render_profile`, `review_family`, `route_only`, `grounding`, or
+    `delivery_skill`.
+  - `editors/vscode/tests/integration/run.js` - extension-host test runner. It
+    stages a source-tree copy and explicitly excludes `.vsix`, so current
+    integration proof does not exercise the packaged artifact.
+- Canonical path / owner to reuse:
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json` - highlight owner
+  - `editors/vscode/resolver.js` - navigation owner
+  - `editors/vscode/tests/**`, `editors/vscode/scripts/validate_lark_alignment.py`,
+    `editors/vscode/package.json`, and `editors/vscode/scripts/package_vsix.py`
+    - proof and packaging owner
+- Adjacent surfaces tied to the same contract family:
+  - `editors/vscode/tests/unit/declarations.test.prompt` - direct declaration
+    proof is still missing `table`, `render_profile`, `review_family`,
+    `route_only`, and `grounding`.
+  - `editors/vscode/tests/unit/io-blocks.test.prompt` - already proves nested
+    `final_output` syntax highlighting and should stay in sync with resolver
+    parity.
+  - `editors/vscode/tests/integration/suite/index.js` - direct integration
+    proof covers example `64` `render_profile` refs and scalar `final_output:`,
+    but it does not cover examples `68`, `69`, `70`, `71`, `116`, `118`,
+    `119`, `120`, or `121`.
+  - `editors/vscode/tests/snap/examples/**` - snapshot proof covers scalar
+    `final_output:` and inline table surfaces, but named-table and late-family
+    proof is still thin.
+  - `editors/vscode/README.md` - public contract claims a full shipped
+    clickable surface, including structured-final-output route surfaces.
+  - `editors/vscode/.vscodeignore` and `editors/vscode/scripts/package_vsix.py`
+    - the packaged VSIX strips tests and scripts, so packaged proof must use a
+    real VSIX smoke path.
+- Compatibility posture (separate from `fallback_policy`):
+  - preserve existing working import and navigation behavior while extending the
+    current contract to late shipped surfaces
+  - keep ambiguous imports and unsupported built-ins fail-closed, matching the
+    current extension behavior and README contract
+- Existing patterns to reuse:
+  - shared declaration grouping for `workflow|route_only|grounding` in both the
+    TextMate grammar and resolver
+  - shared declaration grouping for `review|review_family`
+  - existing direct `render_profile` ref handling in analysis, schema, and
+    document collectors
+  - existing `readable_table_body` and descendant-path handling for inline
+    document tables
+  - existing nested `final_output` highlighting in the TextMate grammar and
+    unit tests
 - Duplicate or drifting paths relevant to this change:
-  - generic keyword buckets that hide missing first-class declaration rules
-  - README claims that outrun tests
-  - source-tree integration proof that outruns packaged proof
+  - top-level declaration support is split between first-class declaration
+    regexes and generic keyword or readable-block buckets, which hides missing
+    `table` and `render_profile` parity
+  - README claims outrun direct proof
+  - source-tree integration proof outruns packaged-artifact proof
+- Capability-first opportunities before new tooling:
+  - none needed; this is not a model-capability problem
+  - parity work should extend the current TextMate and resolver owners instead
+    of adding a language server or helper daemon
 - Behavior-preservation signals already available:
   - `cd editors/vscode && npm test`
   - `cd editors/vscode && uv run --locked python scripts/validate_lark_alignment.py`
   - `cd editors/vscode && make`
-- Audit evidence already collected:
-  - the source audit found concrete gaps on top-level `table`, inline
-    `final_output:` blocks, top-level `render_profile`, and `delivery_skill:`
-  - the source audit also found proof gaps: 57 snapshot example roots vs 122
-    shipped roots, 45 integration-referenced example roots, README overclaim,
-    and no packaged VSIX smoke path
+  - current integration checks for imports, output inheritance,
+    `render_profile` refs, and scalar `final_output:`
 
 ## 3.3 Decision gaps that must be resolved before implementation
 
-- none yet, with this draft recommendation:
-  - implement full parity for all repo-discoverable shipped extension surfaces
-  - explicitly leave emit-time provider roots that have no editor-side config
-    contract out of scope for this plan
-  - if you want editor support for those host-provided roots too, the plan will
-    need one explicit discovery contract before implementation
+- none from repo truth today
+- Section `0.3` already leaves emit-time provider roots with no editor-side
+  discovery contract out of scope for this plan
 <!-- arch_skill:block:research_grounding:end -->
 
 <!-- arch_skill:block:current_architecture:start -->
@@ -312,65 +348,116 @@ not mean current parity.
 
 ## 4.1 On-disk structure
 
-- `editors/vscode/package.json` defines one `doctrine` language, one grammar,
-  and one extension entrypoint.
-- `editors/vscode/extension.js` only registers a document link provider and a
-  definition provider.
-- `editors/vscode/resolver.js` is the single custom navigation and indexing
-  path. It is about 6455 lines long.
-- `editors/vscode/syntaxes/doctrine.tmLanguage.json` is the sole highlighting
-  grammar.
-- `editors/vscode/scripts/validate_lark_alignment.py` is the only grammar-to-
-  shipped-truth validator.
-- `editors/vscode/tests/unit` holds focused syntax tests.
-- `editors/vscode/tests/snap/examples` mirrors a subset of shipped examples.
-- `editors/vscode/tests/integration` drives a staged extension-host smoke run.
-- `editors/vscode/.vscodeignore` strips test and script files from the packaged
-  extension.
+- `editors/vscode/package.json` declares one `doctrine` language, one grammar
+  path, one entrypoint, and three test layers plus `package:vsix`.
+- `editors/vscode/extension.js` is thin. It only registers
+  `provideImportLinks` and `provideDefinitionLinks`.
+- `editors/vscode/resolver.js` is the one real navigation engine. It owns
+  import resolution, declaration indexing, keyed field mapping, child-body
+  specs, addressable-path descent, and final definition lookup.
+- `editors/vscode/syntaxes/doctrine.tmLanguage.json` is the only highlighting
+  owner. Top-level patterns already cover `analysis`, `decision`, `schema`,
+  `document`, `workflow|route_only|grounding`, `review|review_family`, and the
+  `output` family, plus nested `final_output` fields.
+- `editors/vscode/scripts/validate_lark_alignment.py` checks package wiring,
+  keyword coverage, and a small fixed sample list.
+- `editors/vscode/tests/unit/*.test.prompt` pins local token scopes.
+- `editors/vscode/tests/snap/examples/**` mirrors a subset of shipped examples.
+- `editors/vscode/tests/integration/suite/index.js` drives example-backed
+  Ctrl/Cmd-click and Go to Definition assertions through
+  `tests/integration/run.js`.
+- `editors/vscode/scripts/package_vsix.py` and `editors/vscode/.vscodeignore`
+  own the packaged VSIX shape.
+- `editors/vscode/README.md` is the public contract for install, smoke, and
+  claimed feature coverage.
 
 ## 4.2 Control paths (runtime)
 
 Current highlight path:
 
 1. VS Code loads `source.doctrine` from `package.json`.
-2. TextMate highlighting uses `syntaxes/doctrine.tmLanguage.json`.
-3. `language-configuration.json` provides comment and folding behavior.
+2. TextMate highlighting walks the top-level `patterns` list in
+   `doctrine.tmLanguage.json`.
+3. Top-level declaration lines match first-class declaration regexes only when
+   the grammar has an explicit pattern for that family.
+4. Missing first-class declaration matchers fall back to generic keyword or
+   readable-block rules, which can hide parity drift while still coloring part
+   of the line.
 
 Current navigation path:
 
 1. `extension.js` registers providers for `language: doctrine`.
-2. `resolver.js` indexes imports, declarations, body specs, and candidate
-   sites.
-3. Document links use import resolution.
-4. Go-to-definition uses line-classification heuristics, declaration kinds, and
-   body-spec traversal.
+2. `provideImportLinks` in `resolver.js` resolves raw `import` and
+   `from ... import` paths.
+3. `provideDefinitionLinks` classifies the active line, collects candidate
+   sites, and resolves each site against declaration indexes and addressable
+   descendants.
+4. Declaration indexing starts from `DECLARATION_DEFINITIONS`,
+   `DECLARATION_KIND`, and `ADDRESSABLE_DECLARATION_KINDS`.
+5. Body-aware descent depends on `getAgentChildBodySpec`,
+   `getReviewChildBodySpec`, `getReadableChildBodySpec`,
+   `keyedFieldToDeclarationKind`, and `keyedRecordFieldToDeclarationKind`.
 
 Current package path:
 
 1. `npm test` runs unit, snapshot, and integration checks.
 2. `package:vsix` then runs the validator and packages the VSIX.
-3. The integration harness stages a source-tree copy, not the packaged VSIX.
+3. `tests/integration/run.js` stages a source-tree copy of the extension and
+   explicitly excludes `.vsix`.
+4. `.vscodeignore` strips tests, scripts, `Makefile`, and `node_modules` from
+   the packaged extension.
+5. The shipped package path is therefore not exercised by the extension-host
+   integration runner.
 
 ## 4.3 Object model + key abstractions
 
-- `resolver.js` uses declaration-kind enums, regex-based declaration parsing,
-  keyed field maps, and container body specs.
-- The resolver currently hard-codes `final_output` only as a scalar field ref.
-- The resolver currently has no first-class declaration kind for `table`.
-- `delivery_skill:` is not part of the keyed field maps.
-- The TextMate grammar relies on a mix of first-class declaration patterns and
-  generic keyword buckets.
-- The validator mostly proves keyword presence and a narrow sample of regex
-  matches.
+- `resolver.js` has one declaration model:
+  `DECLARATION_KIND`, `DECLARATION_DEFINITIONS`,
+  `ADDRESSABLE_DECLARATION_KINDS`, and `SELF_ADDRESSABLE_DECLARATION_KINDS`.
+- `DECLARATION_DEFINITIONS` already has explicit regexes for
+  `review_family`, `route_only`, `grounding`, and `render_profile`, but it has
+  no top-level `table` declaration row.
+- `TOP_LEVEL_FIELD_REF_RE` handles scalar agent refs like
+  `analysis:`, `decision:`, `skills:`, `inputs:`, `outputs:`, and
+  `final_output: Name`.
+- `KEYED_DECL_REF_RE` handles `source|target|shape|schema|structure|render_profile`,
+  but not `delivery_skill`.
+- `getAgentChildBodySpec` opens inline I/O blocks, patched I/O blocks, skills
+  blocks, and authored slot bodies. It does not open a nested
+  `final_output:` body.
+- `getReadableChildBodySpec` already gives `table` a readable-body model for
+  document-local table blocks, including columns, rows, and row bodies.
+- `collectAnalysisBodySites`, `collectSchemaBodySites`, and
+  `collectDocumentBodySites` already resolve direct `render_profile:` refs.
+- The TextMate grammar mixes first-class declaration patterns with broad
+  fallback keyword buckets. `delivery_skill` is only present in a generic
+  keyword matcher today.
+- The validator is mixed: it already pins some concrete surfaces such as
+  `skill grounding`, scalar and block `final_output`, route fields, and inline
+  readable `table` headers, but it still misses top-level `table`,
+  top-level `render_profile`, `review_family`, `route_only`, `grounding`, and
+  `delivery_skill`.
 
 ## 4.4 Observability + failure behavior today
 
-- `cd editors/vscode && npm test` passed during the audit on 2026-04-16.
-- `cd editors/vscode && uv run --locked python scripts/validate_lark_alignment.py`
-  also passed during the audit.
-- Those green checks did not catch real shipped-surface drift.
-- The README says the extension supports the full shipped clickable surface,
-  which is currently stronger than the proof.
+- Ambiguous absolute imports fail closed today. The integration suite already
+  asserts that no synthetic target is produced for an ambiguous import.
+- Unsupported built-in roots stay unsupported. The README already documents that
+  limit.
+- The repo has three programmatic signals now:
+  `cd editors/vscode && npm test`,
+  `cd editors/vscode && uv run --locked python scripts/validate_lark_alignment.py`,
+  and `cd editors/vscode && make`.
+- Those signals can still miss first-class declaration drift, because keyword
+  presence and source-tree integration are broader than real shipped parity.
+- Current direct parity proof for this story is narrow:
+  integration pins `render_profile` refs on example `64` and scalar
+  `final_output:` on example `76`, but not the late-family and late-output
+  examples this plan needs.
+- The package path has no real installed-artifact behavior proof beyond
+  successful packaging.
+- The README claims a fuller clickable surface than the current direct proof
+  can support.
 
 ## 4.5 UI surfaces (ASCII mockups, if UI work)
 
@@ -378,10 +465,11 @@ Not a product UI change. The user-facing surface is the editor experience:
 
 ```text
 .prompt file open in VS Code
-├── tokens highlighted by tmLanguage
-├── import paths Ctrl/Cmd-clickable
-├── declaration refs go to definition
-└── README smoke ladder tells users what should work
+├── top-level declarations get the right token scopes
+├── nested refs in bodies get the right token scopes
+├── import paths Ctrl/Cmd-click into real files
+├── Go to Definition lands on the real declaration or keyed descendant
+└── README smoke steps tell the truth about the installed VSIX
 ```
 <!-- arch_skill:block:current_architecture:end -->
 
@@ -390,70 +478,91 @@ Not a product UI change. The user-facing surface is the editor experience:
 
 ## 5.1 On-disk structure (future)
 
-- `doctrine/` and the shipped example corpus remain the source of truth.
-- `editors/vscode/syntaxes/doctrine.tmLanguage.json` will explicitly model all
-  shipped first-class declaration surfaces the extension claims to highlight.
-- `editors/vscode/resolver.js` will explicitly model all repo-discoverable
-  clickable surfaces the extension claims to navigate.
-- `editors/vscode/tests/**` and
-  `editors/vscode/scripts/validate_lark_alignment.py` will directly prove late
-  shipped feature families.
-- `editors/vscode/README.md` will only claim surfaces covered by those proofs.
+- `doctrine/` plus manifest-backed examples stay the only shipped language
+  truth.
+- `editors/vscode/syntaxes/doctrine.tmLanguage.json` stays the one highlight
+  owner. Missing shipped declaration families are added there, not in a second
+  grammar surface.
+- `editors/vscode/resolver.js` stays the one navigation owner. Missing table,
+  final-output-body, and `delivery_skill` parity is added there, not in a new
+  parser or language server.
+- `editors/vscode/tests/**`,
+  `editors/vscode/scripts/validate_lark_alignment.py`,
+  `editors/vscode/tests/integration/run.js`,
+  `editors/vscode/scripts/package_vsix.py`, and
+  `editors/vscode/.vscodeignore` together own proof for source-tree and package
+  truth.
+- `editors/vscode/README.md` stays the only public extension contract and is
+  narrowed or expanded to match direct proof.
 
 ## 5.2 Control paths (future)
 
 Future highlight path:
 
-1. Shipped declaration or field surface lands in `doctrine/`.
-2. Matching first-class highlight rule lands in the TextMate grammar.
-3. Validator and syntax tests assert the concrete declaration or field shape.
+1. A shipped declaration or field surface appears in `doctrine/` plus examples.
+2. The TextMate grammar gets a first-class declaration matcher or explicit
+   field matcher when that is the real authored surface.
+3. Unit syntax proof, snapshots where useful, and validator samples pin that
+   exact line shape.
 
 Future navigation path:
 
-1. Shipped clickable surface lands in `doctrine/` plus examples.
-2. Matching resolver kind or body-spec support lands in `resolver.js`.
-3. Integration tests pin one real example of that surface.
+1. A shipped clickable surface appears in `doctrine/` plus examples.
+2. `resolver.js` adds the missing declaration kind, keyed field mapping, or
+   child-body spec on the current owner path.
+3. Existing descendant logic is reused where possible instead of creating a
+   second path model.
+4. Integration tests pin one real example for the root and one real example for
+   the descendant or nested field when the surface is structured.
 
 Future package path:
 
 1. Source-tree tests stay green.
-2. Validator stays green with explicit surface assertions.
-3. Packaged VSIX smoke proves the shipped artifact still exposes the core
-   behavior the README documents.
+2. Validator stays green with feature-specific surface assertions.
+3. One packaged VSIX smoke path installs the generated VSIX into an isolated
+   extension host and runs a narrow late-surface smoke suite against that
+   packaged artifact.
+4. `cd editors/vscode && make` remains the one truthful final repo command.
 
 ## 5.3 Object model + abstractions (future)
 
-- Add a first-class resolver declaration kind for `table`.
-- Add explicit final-output child-body modeling instead of treating nested
-  `output:` and `route:` lines as generic slot content.
-- Add explicit keyed-field mapping for `delivery_skill:` to `skill`.
-- Add explicit highlight coverage for top-level `render_profile`.
-- Tighten shared declaration regexes so `route_only` and `grounding` match
-  shipped grammar, not looser invented syntax.
-- Add one small parity matrix or equivalent structured feature list inside the
-  extension proof surface so new shipped forms have one clear place to be wired
-  and tested.
+- Add `DECLARATION_KIND.TABLE` and wire it through the declaration index,
+  addressable-declaration list, and any self-addressable list needed for table
+  root and descendant navigation.
+- Keep the existing `RENDER_PROFILE` declaration kind, but pair it with a
+  first-class TextMate declaration matcher and validator samples.
+- Extend `keyedRecordFieldToDeclarationKind` with `delivery_skill -> skill`
+  inside output-target bodies.
+- Extend `getAgentChildBodySpec` with an explicit `final_output_body`, then
+  reuse existing keyed-field and path-resolution logic inside that body instead
+  of heuristic scans.
+- Reuse the current readable-table descendant model for named tables rather
+  than creating a second table-path engine.
+- Add one small structured parity matrix only if it reduces duplicate feature
+  wiring. Keep it inside the current owner files. Do not create a second source
+  of truth.
 
 ## 5.4 Invariants and boundaries
 
-- No shipped declaration family should be "supported" only by a generic keyword
-  bucket.
+- One grammar owner. One resolver owner. One proof surface. No language server,
+  no sidecar parser, and no second navigation engine.
+- Preserve current fail-closed behavior for ambiguous imports and unsupported
+  built-ins.
+- Preserve current working older surfaces while adding late shipped surfaces.
+- No first-class shipped declaration can rely on generic keyword fallback alone.
+- No package claim without package proof.
 - No README claim without direct proof.
-- No parity fix that changes Doctrine language behavior.
-- No speculative editor platform work beyond current extension scope.
-- No package artifact claim without at least one shipped artifact proof path.
-- No duplicated feature mapping tables if one canonical list can own the same
-  truth.
+- No parity fix may change Doctrine language behavior in `doctrine/`.
 
 ## 5.5 UI surfaces (ASCII mockups, if UI work)
 
 ```text
-Author opens late-corpus .prompt file
-├── declaration token is scoped correctly
-├── nested refs are styled correctly
-├── Ctrl/Cmd-click lands on the real definition
-├── Go to Definition works on the same surface
-└── README smoke step matches what the installed VSIX actually does
+Author opens a late-corpus .prompt file
+├── top-level declaration token is scoped correctly
+├── nested field token is scoped correctly
+├── Ctrl/Cmd-click lands on the real declaration or descendant
+├── Go to Definition works on that same surface
+└── installed VSIX matches the README smoke ladder
 ```
 <!-- arch_skill:block:target_architecture:end -->
 
@@ -463,66 +572,87 @@ Author opens late-corpus .prompt file
 ## 6.1 Change map (table)
 
 | Area | File | Symbol / Call site | Current behavior | Required change | Why | New API / contract | Tests impacted |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Declaration highlighting | `editors/vscode/syntaxes/doctrine.tmLanguage.json` | top-level declaration patterns | no top-level `table` or `render_profile` declaration rule | add first-class declaration patterns and tighten late declaration regexes | shipped language truth now includes these declaration forms | highlight contract matches shipped declarations | syntax unit tests, snapshot coverage, validator |
-| Table navigation | `editors/vscode/resolver.js` | declaration kinds, declaration regexes, document table headers | no table declaration kind; named table headers treated like inline readable blocks only | add table declaration kind, table declaration parsing, and named table use-site handling | named tables are shipped and addressable | table roots and named table descendants become real navigation targets | example `116` integration and syntax coverage |
-| Final output block navigation | `editors/vscode/resolver.js` | `final_output` body handling | only scalar `final_output: Name` is modeled | add block-form body spec and nested `output:` / `route:` handling | shipped final-output route surfaces are not actually modeled today | inline `final_output:` becomes first-class navigation surface | examples `120` and `121`, existing final-output tests |
-| Delivery skill navigation | `editors/vscode/resolver.js` | keyed record field maps | `delivery_skill:` is not mapped to `skill` | map `delivery_skill:` to `skill` in output-target record bodies | shipped target-owned delivery binding is invisible in navigation | `output target` can navigate to delivery skills | example `118`, integration and maybe unit coverage |
-| Late declaration proof | `editors/vscode/tests/unit/declarations.test.prompt` | declaration matrix | stops before `review_family`, `route_only`, `grounding`, `table`, `render_profile` | extend declaration matrix to late shipped forms | current proof misses first-class declaration growth | declaration support becomes directly pinned | unit syntax suite |
-| Late output schema proof | `editors/vscode/tests/unit/io-blocks.test.prompt` and integration suite | route fields, nullable, selected final-output routes | baseline route-field syntax only | add direct proof for late structured-output surfaces and no-route variants | late shipped output surfaces now outrun proof | structured final-output route contract gets direct proof | examples `104`, `119`, `120`, `121` |
-| Named table descendants | `editors/vscode/tests/integration/suite/index.js` | example-backed definition assertions | only older inline table descendants are pinned | add example `116` assertions for declaration root and named use-site descendants | named table support is currently unproved | integration path proves first-class named tables | integration suite |
-| Late family examples | `editors/vscode/tests/integration/suite/index.js` | example coverage list | no direct coverage for examples `68`, `69`, `70`, `71` | add direct assertions for `review_family`, `route_only`, and `grounding` | current proof misses late declaration families | late family support gets direct example proof | integration suite |
-| Validator depth | `editors/vscode/scripts/validate_lark_alignment.py` | keyword and sample assertions | mostly checks keyword presence and a narrow sample set | assert declaration patterns and feature-specific sample lines for late surfaces | current validator can pass while parity is wrong | validator proves structure, not just words | validator itself, maybe package path |
-| Snapshot breadth | `editors/vscode/tests/snap/examples/**` | example tree coverage | 57 of 122 shipped example roots mirrored | add late examples by feature family where snapshots buy real signal | current snapshot surface underrepresents late shipped language | snapshots cover current shipped syntax families proportionally | snapshot suite |
-| Packaged artifact proof | `editors/vscode/tests/integration/run.js`, `editors/vscode/scripts/package_vsix.py`, `.vscodeignore` | install path vs staged source tree | integration only stages the source tree copy | add one packaged smoke path or manifest audit | README tells users to install the VSIX | shipped artifact contract matches source-tree proof | package smoke, maybe `make` |
-| Public contract | `editors/vscode/README.md` | support list and smoke ladder | claims exceed current proof | narrow or expand claims to match shipped proof, and add late example smoke steps | docs are part of the shipped extension contract | README becomes evidence-backed | docs review plus `make` |
+| ---- | ---- | ------------------ | ---------------- | --------------- | --- | ------------------ | -------------- |
+| Provider wiring | `editors/vscode/extension.js` | `activate`, `provideImportLinks`, `provideDefinitionLinks` | one thin registration point | preserve this thin shell; keep all parity work in current owners | avoids a second navigation engine | no new provider layer | existing integration host |
+| Highlight declarations | `editors/vscode/syntaxes/doctrine.tmLanguage.json` | top-level declaration patterns and include order | first-class patterns cover many families, but not top-level `table` or `render_profile` | add first-class declaration matchers for those families and keep include order honest | shipped language truth now includes those declarations | first-class declaration surfaces highlight as declarations | unit syntax, snapshots, validator |
+| Highlight late families | `editors/vscode/syntaxes/doctrine.tmLanguage.json` | grouped `workflow|route_only|grounding` and `review|review_family` rules | grouped rules exist, but direct proof is thin | preserve grouped rules and add direct proof for each shipped family | avoids drift inside grouped matchers | grouped declaration contract becomes directly pinned | declarations unit test, snapshots, validator |
+| Highlight nested final output | `editors/vscode/syntaxes/doctrine.tmLanguage.json` | `finalOutputField`, `finalOutputOutputField`, `finalOutputRouteField` | nested `final_output` syntax already highlights | preserve this surface while aligning resolver behavior to it | prevents highlight and navigation from drifting apart | nested final output remains a first-class authored surface | unit I/O syntax tests |
+| Delivery-skill field | `editors/vscode/syntaxes/doctrine.tmLanguage.json` | generic keyword bucket | `delivery_skill` is only present in a generic keyword matcher | keep the current field highlight path and add direct proof so the scope stays honest | the real known gap is navigation, but proof should still cover the field surface | field highlighting stays truthful to actual feature scope | validator, targeted syntax proof |
+| Declaration index | `editors/vscode/resolver.js` | `DECLARATION_KIND`, `DECLARATION_DEFINITIONS`, `ADDRESSABLE_DECLARATION_KINDS`, `SELF_ADDRESSABLE_DECLARATION_KINDS` | explicit rows exist for `review_family`, `route_only`, `grounding`, `render_profile`, but not `table` | add `TABLE` and wire it through the current declaration index and addressable lists | named tables need a real root owner | top-level tables become real navigation roots | declarations unit proof, integration suite |
+| Scalar agent refs | `editors/vscode/resolver.js` | `TOP_LEVEL_FIELD_REF_RE`, `keyedFieldToDeclarationKind` | scalar `final_output: Name` already resolves to `output` | preserve existing scalar behavior while adding structured-body support | older surfaces must not regress | scalar and block `final_output` both work | existing final-output tests, integration |
+| Nested final-output body | `editors/vscode/resolver.js` | `getAgentChildBodySpec` and body-site collection | agent child-body logic does not open nested `final_output:` | add explicit `final_output_body` and route nested `output:` and `route:` through current keyed-field and path logic | block-form final output is shipped and currently under-modeled | nested final-output body becomes a real navigation container | unit I/O tests, examples `120` and `121` |
+| Output-target delivery skill | `editors/vscode/resolver.js` | `KEYED_DECL_REF_RE`, `keyedRecordFieldToDeclarationKind` | no `delivery_skill -> skill` mapping today | add explicit mapping in output-target context | shipped delivery binding is invisible in navigation | `output target delivery_skill:` navigates to `skill` | example `118`, integration suite |
+| Named-table descendants | `editors/vscode/resolver.js` | `getReadableChildBodySpec`, readable-table containers, declaration lookup | readable table descendants work for document-local tables, but top-level named-table declarations do not have a first-class root path | reuse current readable-table descendant engine once top-level `table` is indexed | avoids a second table-path model | named table declarations and named use sites share one path model | example `116`, snapshots, integration |
+| Render-profile refs | `editors/vscode/resolver.js` | `collectAnalysisBodySites`, `collectSchemaBodySites`, `collectDocumentBodySites` | direct `render_profile:` refs already resolve in these bodies | preserve this path and broaden proof | existing owner path is correct | no new render-profile resolver path needed | example `64`, declarations/unit proof |
+| Validator depth | `editors/vscode/scripts/validate_lark_alignment.py` | keyword scan plus fixed sample list | already samples `skill grounding`, nested `final_output`, route fields, and inline `table`, but can still pass while late declaration parity is wrong | add feature-specific declaration and field samples for `table`, `render_profile`, `review_family`, `route_only`, `grounding`, nested `final_output`, and `delivery_skill` | proof must fail for the right reason | validator proves structure, not just words | validator itself, `make` |
+| Declarations unit proof | `editors/vscode/tests/unit/declarations.test.prompt` | declaration matrix | stops before late declaration families and new top-level forms | extend with `table`, `render_profile`, `review_family`, `route_only`, and `grounding` | first-class declaration support needs direct proof | declaration matrix matches shipped families | unit syntax suite |
+| I/O unit proof | `editors/vscode/tests/unit/io-blocks.test.prompt` | nested `final_output`, route fields | baseline nested final-output syntax exists | add direct proof for the late structured-output cases that matter to navigation | current syntax proof is ahead of navigation proof | structured final-output route contract becomes direct proof | unit syntax suite |
+| Integration coverage | `editors/vscode/tests/integration/suite/index.js` | example-backed definition assertions | current suite covers imports, older addressable paths, workflow law, review, `render_profile` refs, and scalar `final_output:` | add direct assertions for examples `68`, `69`, `70`, `71`, `116`, `118`, `119`, `120`, and `121` | late shipped families are still outside direct example proof | shipped late surfaces become example-backed | integration suite |
+| Snapshot breadth | `editors/vscode/tests/snap/examples/**` | subset of shipped examples | snapshots cover older roots and some inline table/final-output cases | add late examples only where snapshot signal is real | keeps syntax proof broad without mirror spam | snapshot set stays proportional to shipped syntax | snapshot suite |
+| Packaged artifact proof | `editors/vscode/tests/integration/run.js`, `editors/vscode/scripts/package_vsix.py`, `editors/vscode/.vscodeignore`, `editors/vscode/package.json` | source-tree test host vs packaged VSIX | integration host stages source tree and strips `.vsix`; package step only checks that packaging succeeds | add one packaged VSIX smoke path inside the current package flow | users install the VSIX, not the staged source tree | package contract is proved against the real artifact | package smoke, `make` |
+| Public contract | `editors/vscode/README.md` | support list and smoke ladder | claims exceed direct proof and omit late parity smoke steps | narrow or expand claims to match proof and add late example smoke steps | docs are part of the shipped extension contract | README becomes evidence-backed | docs review, final `make` |
 
 ## 6.2 Migration notes
 
-- Canonical owner path:
-  - shipped language truth lives in `doctrine/` plus the manifest-backed
-    examples
-  - editor parity logic lives in `editors/vscode/`
-- Deprecated paths or behaviors:
-  - generic keyword-only coverage for first-class declarations should be retired
-    where a declaration rule is required
-  - README overclaim should be retired in the same change set
-- Delete list:
-  - no whole-file deletes planned yet
-  - delete or rewrite stale README claims and stale validator assumptions as
-    part of implementation
-- Adjacent surfaces that must move with the same parity story:
-  - TextMate grammar
-  - resolver
-  - validator
-  - unit tests
-  - snapshot tests
-  - integration tests
-  - package smoke
-  - README smoke ladder
-- Compatibility posture:
-  - preserve existing working behavior on already-covered surfaces
-  - add missing late-surface support without breaking fail-closed behavior on
-    ambiguous or unsupported imports
+- Canonical owner path / shared code path:
+  - shipped language truth remains in `doctrine/` plus manifest-backed examples
+  - highlight parity remains in `editors/vscode/syntaxes/doctrine.tmLanguage.json`
+  - navigation parity remains in `editors/vscode/resolver.js`
+  - proof remains in existing tests, validator, and package flow
+- Deprecated APIs (if any):
+  - none user-facing
+  - internally, generic keyword-only declaration coverage should stop standing
+    in for first-class declaration support where the language has a real
+    declaration form
+- Delete list (what must be removed; include superseded shims/parallel paths if any):
+  - stale README claims that outrun proof
+  - stale validator assumptions that keyword presence is enough
+  - any duplicate feature wiring table introduced during implementation if one
+    canonical list can own the same truth
+- Adjacent surfaces tied to the same contract family:
+  - `doctrine/grammars/doctrine.lark`
+  - `docs/LANGUAGE_REFERENCE.md`
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json`
+  - `editors/vscode/resolver.js`
+  - `editors/vscode/tests/unit/*.test.prompt`
+  - `editors/vscode/tests/snap/examples/**`
+  - `editors/vscode/tests/integration/suite/index.js`
+  - `editors/vscode/tests/integration/run.js`
+  - `editors/vscode/scripts/validate_lark_alignment.py`
+  - `editors/vscode/scripts/package_vsix.py`
+  - `editors/vscode/.vscodeignore`
+  - `editors/vscode/README.md`
+- Compatibility posture / cutover plan:
+  - preserve existing working covered surfaces
+  - add missing late shipped surfaces on the same owner paths
+  - keep ambiguous imports and unsupported built-ins fail-closed
+  - no runtime bridge or compatibility shim is needed
+- Capability-replacing harnesses to delete or justify:
+  - none exist today
+  - do not add a language server, sidecar parser, or helper daemon for this
+    parity story
 - Live docs/comments/instructions to update or delete:
   - `editors/vscode/README.md`
-  - maybe `docs/README.md` only if the extension entry needs wording changes
+  - high-leverage resolver or validator comments only if new owner tables would
+    otherwise be hard to follow
 - Behavior-preservation signals for refactors:
   - `cd editors/vscode && npm test`
   - `cd editors/vscode && uv run --locked python scripts/validate_lark_alignment.py`
   - `cd editors/vscode && make`
+  - late-example integration assertions once they land
 
 ## Pattern Consolidation Sweep (anti-blinders; scoped by plan)
 
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude/blocker question) |
-| --- | --- | --- | --- | --- |
-| Declaration support | `resolver.js` and `doctrine.tmLanguage.json` | one explicit first-class rule per shipped declaration family the extension claims to support | prevents drift from generic keyword fallback | include |
-| Navigation ownership | `resolver.js` | explicit body-spec support for nested final-output and named table surfaces | prevents heuristic line scans from swallowing real structure | include |
-| Proof ownership | validator plus tests | feature-specific samples tied to late shipped examples | prevents green suite false confidence | include |
-| Public contract | `README.md` | only claim tested surfaces | prevents user-facing overclaim | include |
-| Packaged proof | `run.js`, packaging path | at least one packaged VSIX smoke or manifest audit | prevents source-tree-only confidence | include |
-| Monolith cleanup | `resolver.js` | small internal consolidation if needed to reduce duplicated feature tables | reduces future drift without speculative rewrite | include only where needed |
-| Emit-time provider roots | extension import resolution | runtime-host root discovery | repo truth does not expose an editor-side discovery contract today | exclude for this plan unless user explicitly wants a new discovery contract |
+| ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
+| Declaration support | `editors/vscode/syntaxes/doctrine.tmLanguage.json`, `editors/vscode/resolver.js` | one explicit first-class owner per shipped declaration family the extension claims to support | prevents drift from generic keyword fallback | include |
+| Structured-body navigation | `editors/vscode/resolver.js` | explicit child-body support for nested `final_output:` | prevents line-level heuristics from swallowing real structure | include |
+| Table descent | `editors/vscode/resolver.js` | reuse one readable-table descendant engine for inline and named tables | avoids a second table-path model | include |
+| Proof ownership | validator plus tests | feature-specific proof tied to late shipped examples | prevents false green confidence | include |
+| Package truth | `editors/vscode/tests/integration/run.js`, packaging scripts, `.vscodeignore` | one packaged VSIX smoke path inside the current package flow | prevents source-tree-only confidence | include |
+| Public contract | `editors/vscode/README.md` | only claim what current proof covers | prevents user-facing overclaim | include |
+| Monolith cleanup | `editors/vscode/resolver.js` | small local consolidation if it removes duplicate feature wiring | lowers future drift without speculative rewrite | include only where needed |
+| Emit-time provider roots | extension import resolution | runtime-host discovery contract | repo truth does not expose an editor-side discovery contract today | exclude |
 <!-- arch_skill:block:call_site_audit:end -->
 
 # 7) Depth-First Phased Implementation Plan (authoritative)
@@ -645,6 +775,8 @@ generically today.
   declaration.
 - Resolve nested `route:` inside that body to the chosen route field.
 - Add direct keyed-field resolution for `delivery_skill:` to `skill`.
+- Add direct validator or syntax proof for nested `final_output:` field lines and
+  `delivery_skill:` field lines so the field-surface contract stays honest.
 - Add integration coverage for examples `118`, `120`, and `121`.
 - Preserve existing scalar `final_output: Name` behavior.
 - Preserve existing fail-closed behavior on unsupported built-in destinations
@@ -654,6 +786,7 @@ generically today.
 
 - `cd editors/vscode && npm run test:integration`
 - targeted unit coverage if new syntax classification needs it
+- `cd editors/vscode && uv run --locked python scripts/validate_lark_alignment.py`
 
 ### Docs/comments (propagation; only if needed)
 
@@ -664,6 +797,7 @@ generically today.
 
 - Block-form `final_output:` surfaces navigate correctly.
 - `delivery_skill:` navigates to the target skill.
+- Nested `final_output:` and `delivery_skill:` field surfaces have direct proof.
 - Examples `118`, `120`, and `121` have direct extension proof.
 
 ### Rollback
@@ -732,8 +866,9 @@ artifact users actually install.
 
 ### Checklist (must all be done)
 
-- Add one packaged VSIX smoke path or packaged manifest audit that can fail when
-  packaging strips or misstates the shipped runtime files.
+- Add one packaged VSIX smoke path that installs the generated VSIX into an
+  isolated extension host and can fail when packaging strips or misstates the
+  shipped runtime files.
 - Keep `.vscodeignore` aligned with the actual runtime contract.
 - Update `editors/vscode/README.md` support claims so they match direct proof.
 - Expand the README smoke ladder to include the late high-risk examples that are
@@ -753,6 +888,7 @@ artifact users actually install.
 ### Exit criteria (all required)
 
 - The packaged VSIX path has one real smoke signal.
+- That smoke signal runs against the generated VSIX, not the staged source tree.
 - README claims are fully evidence-backed.
 - The final extension verification command for this repo is truthful and green.
 
@@ -782,7 +918,8 @@ artifact users actually install.
 
 ## 8.3 E2E / device tests (realistic)
 
-- Add one packaged VSIX smoke path or equivalent packaged artifact audit.
+- Add one packaged VSIX smoke path that runs against the generated artifact in
+  an isolated extension host.
 - Keep manual editor token inspection and Ctrl/Cmd-click smoke as finalization,
   not as the only proof.
 - After code changes under `editors/vscode/`, run `cd editors/vscode && make`.
@@ -807,6 +944,40 @@ No telemetry changes are expected.
   then inspect editor scopes and definition targets using the existing README
   smoke steps.
 - Keep packaged smoke in the same runbook once Phase 5 lands.
+
+<!-- arch_skill:block:consistency_pass:start -->
+## Consistency Pass
+
+- Reviewers: explorer 1, explorer 2, self-integrator
+- Scope checked:
+  - frontmatter, TL;DR, Sections `0` through `10`
+  - owner-path consistency across Sections `3`, `5`, `6`, and `7`
+  - phase obligation coverage against migration notes, delete lists, and proof
+    claims
+  - verification and package-proof alignment across Sections `0`, `5`, `7`,
+    `8`, and `9`
+- Findings summary:
+  - Phase `3` had one orphaned obligation: Section `6` required direct
+    `delivery_skill` and nested `final_output` field proof, but Section `7`
+    did not own that work explicitly enough.
+  - Phase `5` and Section `8` left the package-proof shape too loose after the
+    deep-dive decision to use a real VSIX smoke path.
+- Integrated repairs:
+  - Phase `3` now explicitly owns direct validator or syntax proof for nested
+    `final_output:` and `delivery_skill:` field surfaces.
+  - Phase `5` now states that the packaged smoke path installs the generated
+    VSIX into an isolated extension host.
+  - Section `8.3` now matches that packaged-smoke contract.
+- Remaining inconsistencies:
+  - none
+- Unresolved decisions:
+  - none
+- Unauthorized scope cuts:
+  - none
+- Decision-complete:
+  - yes
+- Decision: proceed to implement? yes
+<!-- arch_skill:block:consistency_pass:end -->
 
 # 10) Decision Log (append-only)
 
@@ -870,6 +1041,70 @@ resolver behavior, proof, packaging, and README truth.
 - If this parity work reveals a genuine product limit that only a language
   server can solve, record that separately after the current parity story is
   clean.
+
+## 2026-04-16 - Reuse current extension owners and add package proof in place
+
+### Context
+
+Deep-dive pass 1 showed that the current extension already has one clear owner
+for each concern: the TextMate grammar for highlighting, the resolver for
+navigation, and the existing test and package flow for proof.
+
+### Options
+
+- Add a second parser, language server, or helper daemon for late shipped
+  surfaces.
+- Extend the current grammar, resolver, tests, validator, and package flow in
+  place.
+
+### Decision
+
+Extend the current owner paths in place. Do not add a second parser, language
+server, or new navigation engine. Add packaged proof inside the current package
+flow instead of inventing a second proof lane.
+
+### Consequences
+
+- Top-level declaration parity lands in `doctrine.tmLanguage.json`.
+- Table, nested `final_output`, and `delivery_skill` parity lands in
+  `resolver.js`.
+- Package truth must be proved through the current package flow, not assumed
+  from source-tree integration alone.
+
+### Follow-ups
+
+- Deep-dive pass 2 should keep this owner-path choice fixed and harden any
+  remaining completeness gaps before `phase-plan`.
+
+## 2026-04-16 - Use a real VSIX smoke path for package truth
+
+### Context
+
+The current extension-host runner stages a source-tree copy and explicitly
+excludes `.vsix`, while `.vscodeignore` strips tests and scripts from the
+packaged artifact. That leaves a real package-proof gap.
+
+### Options
+
+- Keep package proof as a manifest or file-shape audit only.
+- Add a narrow smoke path that runs against the generated VSIX itself.
+
+### Decision
+
+Use a real VSIX smoke path inside the current package flow. Do not treat a
+manifest-only audit as the main package-proof story for this plan.
+
+### Consequences
+
+- The package contract is proved against the artifact users install.
+- Source-tree integration and package proof stay distinct and honest.
+- Phase 5 should wire the smallest credible packaged smoke path, not a second
+  broad integration harness.
+
+### Follow-ups
+
+- `phase-plan` should keep the package-smoke scope narrow and tie it to the
+  late high-risk surfaces in this plan.
 
 # Appendix B) Conversion Notes
 

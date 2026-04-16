@@ -25,7 +25,22 @@
       "include": "#documentDeclaration"
     },
     {
+      "include": "#tableDeclaration"
+    },
+    {
+      "include": "#renderProfileDeclaration"
+    },
+    {
+      "include": "#renderProfileRule"
+    },
+    {
       "include": "#workflow"
+    },
+    {
+      "include": "#routeOnlyDeclaration"
+    },
+    {
+      "include": "#groundingDeclaration"
     },
     {
       "include": "#abstractReview"
@@ -151,6 +166,9 @@
       "include": "#inherit"
     },
     {
+      "include": "#guardedOverrideOutputHeader"
+    },
+    {
       "include": "#override"
     },
     {
@@ -251,6 +269,9 @@
       "patterns": [
         {
           "include": "#stringInterpolation"
+        },
+        {
+          "include": "#rootedRuntimePathInString"
         }
       ]
     },
@@ -271,6 +292,9 @@
       "patterns": [
         {
           "include": "#stringInterpolation"
+        },
+        {
+          "include": "#rootedRuntimePathInString"
         }
       ]
     },
@@ -291,6 +315,24 @@
         },
         "5": {
           "name": "punctuation.definition.interpolation.end.doctrine"
+        }
+      }
+    },
+    "rootedRuntimePathInString": {
+      "name": "markup.inline.raw.runtime-path.doctrine",
+      "match": "(`)([A-Za-z_][A-Za-z0-9_-]*:)([A-Za-z0-9_./-]+)(`)",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.raw.inline.begin.doctrine"
+        },
+        "2": {
+          "name": "support.type.runtime-path.root.doctrine"
+        },
+        "3": {
+          "name": "string.unquoted.inline.runtime-path.doctrine"
+        },
+        "4": {
+          "name": "punctuation.definition.raw.inline.end.doctrine"
         }
       }
     },
@@ -415,8 +457,50 @@
         }
       }
     },
+    "tableDeclaration": {
+      "match": "^(\\s*)(table)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(?=\\s*\")",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "renderProfileDeclaration": {
+      "match": "^(\\s*)(render_profile)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(:))?\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "5": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "renderProfileRule": {
+      "match": "^(\\s*)(review\\.contract_checks|analysis\\.stages|control\\.invalidations|guarded_sections|identity\\.(?:owner|debug|enum_wire)|properties|guard|sequence|bullets|checklist|definitions|table|callout|code|markdown|html|footnotes|image)(\\s+)(->)(\\s+)(sentence|titled_section|expanded_sequence|natural_ordered_prose|concise_explanatory_shell|title|title_and_key|wire_only)\\s*$",
+      "captures": {
+        "2": {
+          "name": "support.type.render-profile-target.doctrine support.type.reference.doctrine"
+        },
+        "4": {
+          "name": "keyword.operator.doctrine punctuation.separator.route.doctrine"
+        },
+        "6": {
+          "name": "support.type.render-profile-mode.doctrine entity.name.type.doctrine"
+        }
+      }
+    },
     "workflow": {
-      "match": "^(\\s*)(workflow|route_only|grounding)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -434,6 +518,34 @@
           "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "routeOnlyDeclaration": {
+      "match": "^(\\s*)(route_only)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "groundingDeclaration": {
+      "match": "^(\\s*)(grounding)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
@@ -1559,6 +1671,29 @@
         },
         "6": {
           "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "guardedOverrideOutputHeader": {
+      "match": "^(\\s*)(override)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")(\\s+)(when)\\b(.*)(:)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.control.doctrine"
+        },
+        "4": {
+          "name": "entity.name.section.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "8": {
+          "name": "string.quoted.double.doctrine"
+        },
+        "10": {
+          "name": "keyword.control.doctrine"
+        },
+        "12": {
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },

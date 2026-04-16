@@ -1,0 +1,47 @@
+output schema WriterDecisionSchema: "Writer Decision Schema"
+    route field next_route: "Next Route"
+        seek_muse: "Send to Muse for fresh inspiration." -> Muse
+        ready_for_critic: "Send to PoemCritic for judgment." -> PoemCritic
+        note: "Pick the one next owner for this turn."
+
+    field summary: "Summary"
+        type: string
+        note: "Say what changed in this pass."
+
+
+output shape WriterDecisionJson: "Writer Decision JSON"
+    kind: JsonObject
+    schema: WriterDecisionSchema
+
+
+output WriterDecision: "Writer Decision"
+    target: TurnResponse
+    shape: WriterDecisionJson
+    requirement: Required
+
+    muse_route: "Muse Route" when route.choice == WriterDecisionSchema.next_route.seek_muse:
+        "{{route.summary}}"
+
+    critic_route: "Critic Route" when route.choice == WriterDecisionSchema.next_route.ready_for_critic:
+        "{{route.summary}}"
+
+
+agent Muse:
+    role: "Give the writer fresh inspiration."
+    workflow: "Muse"
+        "Offer one fresh image or angle."
+
+
+agent PoemCritic:
+    role: "Judge whether the draft is ready."
+    workflow: "Critic"
+        "Judge the current draft."
+
+
+agent WriterRouteFieldFinalOutputDemo:
+    role: "Choose the next owner from the final output itself."
+    outputs: "Outputs"
+        WriterDecision
+    final_output:
+        output: WriterDecision
+        route: next_route

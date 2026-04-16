@@ -1,0 +1,2 @@
+[tool.uv.sources]
+rally-agents = { path = "../provider_root_dep", editable = true }

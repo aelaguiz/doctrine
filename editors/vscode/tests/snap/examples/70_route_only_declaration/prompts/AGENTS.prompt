@@ -1,0 +1,66 @@
+# This example introduces dedicated `route_only`. It keeps the shipped
+# workflow-law route-only rules and reuses the normal output contract surface.
+
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host route facts. They say whether route repair is active, whether the current specialist output is missing, which owner takes the next pass, whether rewrite mode is live, and what the next step is."
+
+
+output RouteRepairComment: "Route Repair Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    must_include: "Must Include"
+        current_route: "Current Route"
+            "Say the route-only state now in force."
+
+        next_owner: "Next Owner"
+            "Name the next owner. Use {{DraftAuthor}} when repair goes back to draft work and {{RoutingOwner}} when routing keeps the issue local."
+
+        next_step: "Next Step"
+            "Say the next concrete step now."
+
+    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status in {"new", "full_rewrite"}:
+        "Say plainly that later metadata must be rewritten instead of inherited."
+
+    standalone_read: "Standalone Read"
+        "This comment should stand on its own. The next owner should know that no specialist artifact is current, which route-only state is active, who owns next, and what step comes next."
+
+
+agent RoutingOwner:
+    role: "Handle reroutes when specialist work cannot continue safely."
+    workflow: "Route"
+        "Take back the same issue when the next specialist owner is still not justified."
+
+
+agent DraftAuthor:
+    role: "Own follow-up repair when the draft still needs changes."
+    workflow: "Repair"
+        "Repair the draft before the next specialist pass."
+
+
+route_only RouteRepair: "Route Repair"
+    facts: RouteFacts
+    when:
+        live_job == "route_repair"
+        current_specialist_output_missing
+    current none
+    handoff_output: RouteRepairComment
+    guarded:
+        rewrite_mode when section_status in {"new", "full_rewrite"}
+    routes:
+        draft_owner -> DraftAuthor
+        routing_owner -> RoutingOwner
+        else -> RoutingOwner
+
+
+agent RouteRepairDemo:
+    role: "Keep route-only repair explicit when no specialist artifact is current."
+    workflow: RouteRepair
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteRepairComment

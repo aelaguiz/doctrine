@@ -54,7 +54,7 @@ const TOP_LEVEL_FIELD_REF_RE = new RegExp(
   `^\\s*(analysis|decision|skills|inputs|outputs|final_output)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEYED_DECL_REF_RE = new RegExp(
-  `^\\s*(source|target|shape|schema|structure|render_profile)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(source|target|shape|schema|structure|render_profile|output|route|delivery_skill)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const AGENT_SLOT_REF_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -66,6 +66,7 @@ const SKILL_ENTRY_RE = new RegExp(
   `^\\s*skill\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const INHERIT_RE = new RegExp(`^\\s*inherit\\s+(${IDENTIFIER_PATTERN})\\s*$`);
+const INHERIT_SET_RE = /^\s*inherit\s*\{([^}]+)\}\s*$/;
 const ABSTRACT_FIELD_RE = new RegExp(
   `^\\s*abstract\\s+(${IDENTIFIER_PATTERN})\\s*$`,
 );
@@ -121,6 +122,9 @@ const SCHEMA_OVERRIDE_BLOCK_RE = /^\s*override\s+(sections|gates|artifacts|group
 const SCHEMA_ITEM_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${STRING_PATTERN})\\s*$`,
 );
+const OUTPUT_SCHEMA_ROUTE_FIELD_RE = new RegExp(
+  `^\\s*(?:override\\s+)?route\\s+field\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN})?\\s*$`,
+);
 const SCHEMA_ARTIFACT_REF_RE = new RegExp(
   `^\\s*ref\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
@@ -128,8 +132,14 @@ const SCHEMA_GROUP_MEMBER_RE = new RegExp(`^\\s*(${IDENTIFIER_PATTERN})\\s*$`);
 const DOCUMENT_BLOCK_RE = new RegExp(
   `^\\s*(section|sequence|bullets|checklist|definitions|properties|table|guard|callout|code|markdown|html|footnotes|image|rule)\\s+(${IDENTIFIER_PATTERN})\\s*(?::\\s*${STRING_PATTERN})?(?:\\s+.+)?\\s*$`,
 );
+const DOCUMENT_NAMED_TABLE_RE = new RegExp(
+  `^\\s*table\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})(?:\\s+.+)?\\s*$`,
+);
 const DOCUMENT_OVERRIDE_BLOCK_RE = new RegExp(
   `^\\s*override\\s+(section|sequence|bullets|checklist|definitions|properties|table|guard|callout|code|markdown|html|footnotes|image|rule)\\s+(${IDENTIFIER_PATTERN})\\s*(?::\\s*(?:${STRING_PATTERN})?)?(?:\\s+.+)?\\s*$`,
+);
+const DOCUMENT_OVERRIDE_NAMED_TABLE_RE = new RegExp(
+  `^\\s*override\\s+table\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})(?:\\s+.+)?\\s*$`,
 );
 const READABLE_KEYED_STRING_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
@@ -151,6 +161,9 @@ const TRUST_SURFACE_ITEM_RE = new RegExp(
 );
 const GUARDED_OUTPUT_HEADER_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
+);
+const OVERRIDE_GUARDED_OUTPUT_HEADER_RE = new RegExp(
+  `^\\s*override\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s+when\\b.*:\\s*$`,
 );
 const GUARDED_RECORD_ITEM_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(?:${STRING_PATTERN}|${DOTTED_NAME_PATTERN}|${PATH_REF_PATTERN})\\s+when\\b.*(?::\\s*)?$`,
@@ -226,6 +239,7 @@ const READABLE_DECLARATION_KINDS = Object.freeze([
   "decision",
   "schema_decl",
   "document",
+  "table",
   "input",
   "input_source",
   "output",
@@ -243,6 +257,7 @@ const DECLARATION_KIND = Object.freeze({
   DECISION: "decision",
   SCHEMA_DECL: "schema_decl",
   DOCUMENT: "document",
+  TABLE: "table",
   WORKFLOW: "workflow",
   SKILLS_BLOCK: "skills",
   INPUTS_BLOCK: "inputs",
@@ -265,6 +280,7 @@ const ADDRESSABLE_DECLARATION_KINDS = Object.freeze([
   DECLARATION_KIND.DECISION,
   DECLARATION_KIND.SCHEMA_DECL,
   DECLARATION_KIND.DOCUMENT,
+  DECLARATION_KIND.TABLE,
   DECLARATION_KIND.WORKFLOW,
   DECLARATION_KIND.SKILLS_BLOCK,
   DECLARATION_KIND.INPUT,
@@ -369,6 +385,13 @@ const DECLARATION_DEFINITIONS = Object.freeze([
     ),
     nameGroup: 1,
     parentGroup: 2,
+  },
+  {
+    kind: DECLARATION_KIND.TABLE,
+    regex: new RegExp(
+      `^\\s*table\\s+(${IDENTIFIER_PATTERN})\\s*:\\s*${STRING_PATTERN}\\s*$`,
+    ),
+    nameGroup: 1,
   },
   {
     kind: DECLARATION_KIND.SKILLS_BLOCK,
@@ -519,11 +542,17 @@ async function provideDefinitionLinks(document, position, token) {
   if (site.type === "directDeclRef") {
     return resolveDirectDefinition(site, source);
   }
+  if (site.type === "importedSymbolRef") {
+    return resolveImportedSymbolDefinition(site);
+  }
   if (site.type === "readableDeclRef") {
     return resolveReadableDefinition(site, source);
   }
   if (site.type === "addressableRef") {
     return resolveAddressableDefinition(site, source);
+  }
+  if (site.type === "finalOutputRouteFieldRef") {
+    return resolveFinalOutputRouteFieldDefinition(site, source);
   }
   if (site.type === "reviewSemanticRef") {
     return resolveReviewSemanticDefinition(site, source);
@@ -541,6 +570,8 @@ function classifyDefinitionSite(source, position) {
   const { document } = source;
   const lineText = document.lineAt(position.line).text;
   const sites = [];
+
+  sites.push(...collectImportSymbolSites(lineText, position.line, source.context));
 
   const inheritedAgent = lineText.match(INHERITED_AGENT_RE);
   if (inheritedAgent) {
@@ -579,6 +610,10 @@ function classifyDefinitionSite(source, position) {
   }
 
   const lineContext = getLineContext(source, position.line);
+  const declarationParentSite = createDeclarationParentSite(lineContext.declaration);
+  if (declarationParentSite) {
+    sites.push(declarationParentSite);
+  }
 
   if (allowsInterpolation(lineText)) {
     sites.push(...collectInterpolationSites(lineText, position.line));
@@ -649,7 +684,12 @@ function classifyDefinitionSite(source, position) {
       break;
     case "record_body":
       sites.push(
-        ...collectRecordBodySites(lineText, position.line, lineContext.container),
+        ...collectRecordBodySites(
+          document,
+          lineText,
+          position.line,
+          lineContext.container,
+        ),
       );
       break;
     case "trust_surface_body":
@@ -672,6 +712,20 @@ function classifyDefinitionSite(source, position) {
   }
 
   return sites.find((site) => site.range.contains(position));
+}
+
+function createDeclarationParentSite(declaration) {
+  if (!declaration?.parentRange || !declaration.parentRef) {
+    return undefined;
+  }
+
+  return {
+    type: "directDeclRef",
+    declarationKind: declaration.kind,
+    range: declaration.parentRange,
+    ref: declaration.parentRef,
+    requireConcrete: false,
+  };
 }
 
 function collectAgentBodySites(lineText, lineNumber) {
@@ -975,6 +1029,12 @@ function collectSchemaBodySites(lineText, lineNumber) {
     return sites;
   }
 
+  const routeField = lineText.match(OUTPUT_SCHEMA_ROUTE_FIELD_RE);
+  if (routeField) {
+    sites.push(createStructuralSite(lineText, lineNumber, routeField[1]));
+    return sites;
+  }
+
   const artifactRef = lineText.match(SCHEMA_ARTIFACT_REF_RE);
   if (artifactRef) {
     sites.push({
@@ -1019,9 +1079,36 @@ function collectDocumentBodySites(lineText, lineNumber) {
     return sites;
   }
 
+  const overrideNamedTable = lineText.match(DOCUMENT_OVERRIDE_NAMED_TABLE_RE);
+  if (overrideNamedTable) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideNamedTable[1]));
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.TABLE,
+      range: createLastMatchRange(lineText, lineNumber, overrideNamedTable[2]),
+      ref: parseNameRef(overrideNamedTable[2]),
+      requireConcrete: false,
+    });
+    return sites;
+  }
+
   const localBlock = lineText.match(DOCUMENT_BLOCK_RE);
   if (localBlock) {
     sites.push(createStructuralSite(lineText, lineNumber, localBlock[2]));
+    return sites;
+  }
+
+  const namedTable = lineText.match(DOCUMENT_NAMED_TABLE_RE);
+  if (namedTable) {
+    sites.push(createStructuralSite(lineText, lineNumber, namedTable[1]));
+    sites.push({
+      type: "directDeclRef",
+      declarationKind: DECLARATION_KIND.TABLE,
+      range: createLastMatchRange(lineText, lineNumber, namedTable[2]),
+      ref: parseNameRef(namedTable[2]),
+      requireConcrete: false,
+    });
+    return sites;
   }
 
   const keyedRef = lineText.match(KEYED_DECL_REF_RE);
@@ -1289,7 +1376,7 @@ function collectIoBodySites(lineText, lineNumber, fieldKind) {
   return sites;
 }
 
-function collectRecordBodySites(lineText, lineNumber, container) {
+function collectRecordBodySites(document, lineText, lineNumber, container) {
   const sites = [];
   const fieldKind = container?.fieldKind;
   const declarationKind = container?.declarationKind;
@@ -1312,9 +1399,33 @@ function collectRecordBodySites(lineText, lineNumber, container) {
     return sites;
   }
 
+  const inheritSet = lineText.match(INHERIT_SET_RE);
+  if (inheritSet) {
+    const setStart = lineText.indexOf("{") + 1;
+    for (const match of inheritSet[1].matchAll(new RegExp(IDENTIFIER_PATTERN, "g"))) {
+      sites.push(
+        createStructuralSiteAt(
+          lineNumber,
+          setStart + (match.index ?? 0),
+          match[0],
+        ),
+      );
+    }
+    return sites;
+  }
+
   const inheritItem = lineText.match(INHERIT_RE);
   if (inheritItem) {
     sites.push(createStructuralSite(lineText, lineNumber, inheritItem[1]));
+    return sites;
+  }
+
+  const overrideGuardedOutputHeader = lineText.match(OVERRIDE_GUARDED_OUTPUT_HEADER_RE);
+  if (overrideGuardedOutputHeader) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideGuardedOutputHeader[1]));
+    sites.push(...collectReviewSemanticSites(lineText, lineNumber));
+    sites.push(...collectShippedLawRefSites(lineText, lineNumber));
+    sites.push(...collectBoundLawPathSites(lineText, lineNumber));
     return sites;
   }
 
@@ -1346,6 +1457,19 @@ function collectRecordBodySites(lineText, lineNumber, container) {
 
   const keyedRef = lineText.match(KEYED_DECL_REF_RE);
   if (keyedRef) {
+    if (fieldKind === "final_output" && keyedRef[1] === "route") {
+      const outputRef = getFinalOutputOutputRef(document, container);
+      if (outputRef) {
+        sites.push({
+          type: "finalOutputRouteFieldRef",
+          outputRef,
+          range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
+          routeFieldName: keyedRef[2],
+        });
+      }
+      return sites;
+    }
+
     const targetKind = keyedRecordFieldToDeclarationKind(keyedRef[1], {
       declarationKind,
       fieldKind,
@@ -1552,6 +1676,29 @@ async function resolveDirectDefinition(site, source) {
   ];
 }
 
+async function resolveImportedSymbolDefinition(site) {
+  if (!(await uriExists(site.targetUri))) {
+    return undefined;
+  }
+
+  const document = await vscode.workspace.openTextDocument(site.targetUri);
+  const source = getIndexedDocumentState(document);
+  const declaration = findDeclarationByName(source.index, site.declarationName, {
+    requireConcrete: false,
+  });
+  if (!declaration) {
+    return undefined;
+  }
+
+  return [
+    createDeclarationLocationLink(
+      site.range,
+      document,
+      declaration.nameRange,
+    ),
+  ];
+}
+
 async function resolveReadableDefinition(site, source) {
   const resolvedRef = await resolveReferencedSource(site.ref, source);
   if (!resolvedRef) {
@@ -1633,6 +1780,112 @@ async function resolveAddressableDefinition(site, source) {
       ),
       targetSelectionRange: target.selectionRange,
     },
+  ];
+}
+
+function getFinalOutputOutputRef(document, bodySpec) {
+  if (!bodySpec) {
+    return undefined;
+  }
+
+  const baseIndent = findBodyBaseIndent(document, bodySpec);
+  if (baseIndent === undefined) {
+    return undefined;
+  }
+
+  const outputRefRe = new RegExp(`^\\s*output\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`);
+  for (
+    let lineNumber = bodySpec.lineNumber + 1;
+    lineNumber <= bodySpec.endLine;
+    lineNumber += 1
+  ) {
+    const lineText = document.lineAt(lineNumber).text;
+    if (isIgnorableLine(lineText) || leadingSpaces(lineText) !== baseIndent) {
+      continue;
+    }
+
+    const outputRef = lineText.match(outputRefRe);
+    if (outputRef) {
+      return parseNameRef(outputRef[1]);
+    }
+  }
+
+  return undefined;
+}
+
+async function resolveFinalOutputRouteFieldDefinition(site, source) {
+  const outputTarget = await resolveReferenceTarget(
+    site.outputRef,
+    source,
+    DECLARATION_KIND.OUTPUT,
+    false,
+  );
+  if (!outputTarget) {
+    return undefined;
+  }
+
+  const outputBody = getDeclarationBodySpec(outputTarget.declaration);
+  if (!outputBody) {
+    return undefined;
+  }
+  const outputShape = getRecordBodyItems(
+    outputTarget.document,
+    outputBody,
+  ).get("shape");
+  if (!outputShape?.titleRef) {
+    return undefined;
+  }
+
+  const outputShapeTarget = await resolveReferenceTarget(
+    outputShape.titleRef,
+    getIndexedDocumentState(outputTarget.document),
+    DECLARATION_KIND.OUTPUT_SHAPE,
+    false,
+  );
+  if (!outputShapeTarget) {
+    return undefined;
+  }
+
+  const outputShapeBody = getDeclarationBodySpec(outputShapeTarget.declaration);
+  if (!outputShapeBody) {
+    return undefined;
+  }
+  const outputSchema = getRecordBodyItems(
+    outputShapeTarget.document,
+    outputShapeBody,
+  ).get("schema");
+  if (!outputSchema?.titleRef) {
+    return undefined;
+  }
+
+  const outputSchemaTarget = await resolveReferenceTarget(
+    outputSchema.titleRef,
+    getIndexedDocumentState(outputShapeTarget.document),
+    DECLARATION_KIND.OUTPUT_SCHEMA,
+    false,
+  );
+  if (!outputSchemaTarget) {
+    return undefined;
+  }
+
+  const outputSchemaBody = getDeclarationBodySpec(outputSchemaTarget.declaration);
+  if (!outputSchemaBody) {
+    return undefined;
+  }
+  const routeField = getSchemaBodyItems(
+    outputSchemaTarget.document,
+    outputSchemaBody,
+  ).get(site.routeFieldName);
+  if (!routeField) {
+    return undefined;
+  }
+
+  return [
+    createDeclarationLocationLink(
+      site.range,
+      outputSchemaTarget.document,
+      routeField.keyRange,
+    ),
   ];
 }
 
@@ -3287,6 +3540,17 @@ function findDeclarationByKind(index, kind, name, options = {}) {
   return declaration;
 }
 
+function findDeclarationByName(index, name, options = {}) {
+  const { requireConcrete = true } = options;
+
+  return index.declarations.find((declaration) => {
+    if (declaration.name !== name) {
+      return false;
+    }
+    return !(requireConcrete && declaration.abstract);
+  });
+}
+
 function findReadableDeclaration(index, declarationName) {
   const matches = READABLE_DECLARATION_KINDS
     .map((kind) => findDeclarationByKind(index, kind, declarationName))
@@ -3430,6 +3694,15 @@ function getDeclarationBodySpec(declaration) {
         indent: 0,
         lineNumber: declaration.lineNumber,
         owner: "document_decl",
+      };
+    case DECLARATION_KIND.TABLE:
+      return {
+        type: "readable_table_body",
+        declarationKind: declaration.kind,
+        declarationLine: declaration.lineNumber,
+        endLine: declaration.endLine,
+        indent: 0,
+        lineNumber: declaration.lineNumber,
       };
     case DECLARATION_KIND.WORKFLOW:
       return {
@@ -3672,6 +3945,15 @@ function getAgentChildBodySpec(lineText, lineNumber) {
 
   if (new RegExp(`^\\s*review\\s*:\\s*${DOTTED_NAME_PATTERN}\\s*$`).test(lineText)) {
     return undefined;
+  }
+
+  if (/^\s*final_output\s*:\s*$/.test(lineText)) {
+    return {
+      type: "record_body",
+      fieldKind: "final_output",
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
   }
 
   const overrideTitleMatch = lineText.match(
@@ -4005,6 +4287,16 @@ function getIoChildBodySpec(lineText, lineNumber, fieldKind) {
 }
 
 function getRecordChildBodySpec(lineText, lineNumber, fieldKind, declarationKind) {
+  if (OVERRIDE_GUARDED_OUTPUT_HEADER_RE.test(lineText)) {
+    return {
+      type: "record_body",
+      declarationKind,
+      fieldKind,
+      indent: leadingSpaces(lineText),
+      lineNumber,
+    };
+  }
+
   if (
     OVERRIDE_BODY_RE.test(lineText) &&
     !OVERRIDE_REF_RE.test(lineText)
@@ -4750,6 +5042,31 @@ function getRecordBodyItems(document, bodySpec) {
       continue;
     }
 
+    const overrideGuardedOutputHeader = lineText.match(OVERRIDE_GUARDED_OUTPUT_HEADER_RE);
+    if (overrideGuardedOutputHeader) {
+      const childBody = getRecordChildBodySpec(
+        lineText,
+        lineNumber,
+        bodySpec.fieldKind,
+        bodySpec.declarationKind,
+      );
+      items.set(overrideGuardedOutputHeader[1], {
+        bodySpec: childBody
+          ? {
+              ...childBody,
+              endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+            }
+          : undefined,
+        keyRange: createFirstMatchRange(
+          lineText,
+          lineNumber,
+          overrideGuardedOutputHeader[1],
+        ),
+        lineNumber,
+      });
+      continue;
+    }
+
     const overrideBody = lineText.match(OVERRIDE_BODY_RE);
     if (overrideBody && !OVERRIDE_REF_RE.test(lineText)) {
       const childBody = getRecordChildBodySpec(
@@ -4965,6 +5282,27 @@ function getSchemaBodyItems(document, bodySpec) {
 
     const schemaItem = lineText.match(SCHEMA_ITEM_RE);
     if (!schemaItem) {
+      const routeField = lineText.match(OUTPUT_SCHEMA_ROUTE_FIELD_RE);
+      if (!routeField) {
+        continue;
+      }
+
+      items.set(routeField[1], {
+        bodySpec:
+          findNextSignificantLine(document, lineNumber + 1, bodySpec.endLine)?.indent >
+          leadingSpaces(lineText)
+            ? {
+                type: "record_body",
+                declarationKind: bodySpec.declarationKind,
+                endLine: findBodyEndLine(document, lineNumber, bodySpec.endLine),
+                fieldKind: undefined,
+                indent: leadingSpaces(lineText),
+                lineNumber,
+              }
+            : undefined,
+        keyRange: createFirstMatchRange(lineText, lineNumber, routeField[1]),
+        lineNumber,
+      });
       continue;
     }
 
@@ -5020,6 +5358,23 @@ function getDocumentBodyItems(document, bodySpec) {
       continue;
     }
 
+    const overrideNamedTable = lineText.match(DOCUMENT_OVERRIDE_NAMED_TABLE_RE);
+    if (overrideNamedTable) {
+      items.set(overrideNamedTable[1], {
+        bodySpec: {
+          ...getReadableChildBodySpec(document, "table", lineText, lineNumber, bodySpec.endLine),
+          tableRef: parseNameRef(overrideNamedTable[2]),
+        },
+        declarationKind: DECLARATION_KIND.TABLE,
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideNamedTable[1]),
+        lineNumber,
+        titleDeclarationKind: DECLARATION_KIND.TABLE,
+        titleRef: parseNameRef(overrideNamedTable[2]),
+        valueRef: parseNameRef(overrideNamedTable[2]),
+      });
+      continue;
+    }
+
     const localBlock = lineText.match(DOCUMENT_BLOCK_RE);
     if (localBlock) {
       items.set(localBlock[2], {
@@ -5032,6 +5387,23 @@ function getDocumentBodyItems(document, bodySpec) {
         ),
         keyRange: createFirstMatchRange(lineText, lineNumber, localBlock[2]),
         lineNumber,
+      });
+      continue;
+    }
+
+    const namedTable = lineText.match(DOCUMENT_NAMED_TABLE_RE);
+    if (namedTable) {
+      items.set(namedTable[1], {
+        bodySpec: {
+          ...getReadableChildBodySpec(document, "table", lineText, lineNumber, bodySpec.endLine),
+          tableRef: parseNameRef(namedTable[2]),
+        },
+        declarationKind: DECLARATION_KIND.TABLE,
+        keyRange: createFirstMatchRange(lineText, lineNumber, namedTable[1]),
+        lineNumber,
+        titleDeclarationKind: DECLARATION_KIND.TABLE,
+        titleRef: parseNameRef(namedTable[2]),
+        valueRef: parseNameRef(namedTable[2]),
       });
       continue;
     }
@@ -5484,6 +5856,37 @@ function getAddressableBodyItems(document, bodySpec) {
   }
 }
 
+async function resolveReadableTableReferenceBody(source, bodySpec) {
+  if (!bodySpec?.tableRef) {
+    return undefined;
+  }
+
+  const resolvedTable = await resolveReferencedSource(bodySpec.tableRef, source);
+  if (!resolvedTable) {
+    return undefined;
+  }
+
+  const tableDeclaration = findDeclarationByKind(
+    resolvedTable.source.index,
+    DECLARATION_KIND.TABLE,
+    resolvedTable.declarationName,
+    { requireConcrete: false },
+  );
+  if (!tableDeclaration) {
+    return undefined;
+  }
+
+  const tableBody = getDeclarationBodySpec(tableDeclaration);
+  if (!tableBody) {
+    return undefined;
+  }
+
+  return {
+    bodySpec: tableBody,
+    source: resolvedTable.source,
+  };
+}
+
 async function findAddressablePathTarget({ declaration, pathSegments, source }) {
   if (declaration.kind === DECLARATION_KIND.AGENT) {
     return findAgentPathTarget(declaration, pathSegments, source);
@@ -5514,7 +5917,18 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
     }
 
     const items = getAddressableBodyItems(currentSource.document, currentBody);
-    const target = items.get(segment);
+    let target = items.get(segment);
+    if (!target && currentBody.type === "readable_table_body" && currentBody.tableRef) {
+      const referencedTable = await resolveReadableTableReferenceBody(
+        currentSource,
+        currentBody,
+      );
+      if (referencedTable) {
+        currentSource = referencedTable.source;
+        currentBody = referencedTable.bodySpec;
+        target = getAddressableBodyItems(currentSource.document, currentBody).get(segment);
+      }
+    }
     if (!target || (currentBody.type === "schema_body" && target.nestedOnly)) {
       return undefined;
     }
@@ -5808,6 +6222,81 @@ function collectImportEntries(document, context) {
   }
 
   return entries;
+}
+
+function collectImportSymbolSites(lineText, lineNumber, context) {
+  const fromImport = lineText.match(FROM_IMPORT_LINE_RE);
+  if (!fromImport) {
+    return [];
+  }
+
+  const parsed = parseImportPath(fromImport[1]);
+  if (!parsed) {
+    return [];
+  }
+
+  const resolvedModuleParts = resolveImportModuleParts(
+    parsed,
+    context.currentModuleParts,
+  );
+  if (!resolvedModuleParts) {
+    return [];
+  }
+
+  const targetUri = parsed.level === 0
+    ? resolveAbsoluteImportTargetUri(context.importRootUris, resolvedModuleParts)
+    : modulePartsToPromptUri(context.promptRootUri, resolvedModuleParts);
+  if (!targetUri) {
+    return [];
+  }
+
+  const rawBindings = fromImport[2];
+  const rawBindingsStart = lineText.lastIndexOf(rawBindings);
+  if (rawBindingsStart < 0) {
+    return [];
+  }
+
+  const importedBindings = parseImportedSymbolBindings(rawBindings);
+  if (!importedBindings) {
+    return [];
+  }
+
+  const sites = [];
+  let searchFrom = 0;
+  for (const binding of importedBindings) {
+    const bindingText = binding.alias
+      ? `${binding.name} as ${binding.alias}`
+      : binding.name;
+    const bindingIndex = rawBindings.indexOf(bindingText, searchFrom);
+    if (bindingIndex < 0) {
+      continue;
+    }
+    searchFrom = bindingIndex + bindingText.length;
+
+    const bindingStartCharacter = rawBindingsStart + bindingIndex;
+    sites.push({
+      type: "importedSymbolRef",
+      declarationName: binding.name,
+      range: createRangeFromStart(lineNumber, bindingStartCharacter, binding.name.length),
+      targetUri,
+    });
+
+    if (binding.alias) {
+      const aliasOffset = bindingText.lastIndexOf(binding.alias);
+      if (aliasOffset < 0) {
+        continue;
+      }
+      const aliasStartCharacter = bindingStartCharacter + aliasOffset;
+      sites.push({
+        type: "importedSymbolRef",
+        declarationName: binding.name,
+        range: createRangeFromStart(lineNumber, aliasStartCharacter, binding.alias.length),
+        targetUri,
+      });
+    }
+  }
+
+  return sites;
 }
 
 function getDocumentContext(document) {
@@ -6193,6 +6682,15 @@ function createStructuralSite(lineText, lineNumber, key) {
   };
 }
 
+function createStructuralSiteAt(lineNumber, startCharacter, key) {
+  return {
+    type: "structuralKeyRef",
+    key,
+    lineContext: undefined,
+    range: createRangeFromStart(lineNumber, startCharacter, key.length),
+  };
+}
+
 function createNameRange(lineText, lineNumber, name) {
   return createFirstMatchRange(lineText, lineNumber, name);
 }
@@ -6329,12 +6827,17 @@ function keyedFieldToDeclarationKind(fieldName) {
 }
 
 function keyedRecordFieldToDeclarationKind(fieldName, context = {}) {
-  const { declarationKind } = context;
+  const { declarationKind, fieldKind } = context;
   switch (fieldName) {
     case "source":
       return DECLARATION_KIND.INPUT_SOURCE;
     case "target":
       return DECLARATION_KIND.OUTPUT_TARGET;
+    case "output":
+      if (fieldKind === "final_output") {
+        return DECLARATION_KIND.OUTPUT;
+      }
+      return undefined;
     case "shape":
       return DECLARATION_KIND.OUTPUT_SHAPE;
     case "schema":
@@ -6361,6 +6864,11 @@ function keyedRecordFieldToDeclarationKind(fieldName, context = {}) {
         || declarationKind === DECLARATION_KIND.OUTPUT
       ) {
         return DECLARATION_KIND.RENDER_PROFILE;
+      }
+      return undefined;
+    case "delivery_skill":
+      if (declarationKind === DECLARATION_KIND.OUTPUT_TARGET) {
+        return DECLARATION_KIND.SKILL;
       }
       return undefined;
     default:
@@ -6406,25 +6914,95 @@ function loadCompileProjectConfig(documentUri) {
     return cached;
   }
 
-  let config = { additionalPromptRootUris: [] };
-  try {
-    const parsed = TOML.parse(fs.readFileSync(pyprojectPath.fsPath, "utf8"));
-    const compile = parsed?.tool?.doctrine?.compile;
-    const rawRoots = compile?.additional_prompt_roots;
-    if (Array.isArray(rawRoots)) {
-      const additionalPromptRootUris = rawRoots
-        .filter((value) => typeof value === "string")
-        .map((value) => resolveConfigPath(pyprojectPath, value))
-        .filter((targetUri) => path.posix.basename(targetUri.path) === "prompts")
-        .filter((targetUri) => uriExistsSync(targetUri));
-      config = { additionalPromptRootUris };
-    }
-  } catch {
-    config = { additionalPromptRootUris: [] };
-  }
+  const config = loadCompileProjectConfigFromPyproject(pyprojectPath, {
+    includeEditableSiblingSources: true,
+  });
 
   PROJECT_CONFIG_CACHE.set(cacheKey, config);
   return config;
+}
+
+function loadCompileProjectConfigFromPyproject(pyprojectPath, options = {}) {
+  const { includeEditableSiblingSources = false } = options;
+
+  try {
+    const parsed = TOML.parse(fs.readFileSync(pyprojectPath.fsPath, "utf8"));
+    const additionalPromptRootUris = [
+      ...extractAdditionalPromptRootUris(parsed, pyprojectPath),
+    ];
+
+    if (includeEditableSiblingSources) {
+      additionalPromptRootUris.push(
+        ...extractEditableSiblingPromptRootUris(parsed, pyprojectPath),
+      );
+    }
+
+    return {
+      additionalPromptRootUris: uniqueUris(additionalPromptRootUris),
+    };
+  } catch {
+    return { additionalPromptRootUris: [] };
+  }
+}
+
+function extractAdditionalPromptRootUris(parsed, pyprojectPath) {
+  const compile = parsed?.tool?.doctrine?.compile;
+  const rawRoots = compile?.additional_prompt_roots;
+  if (!Array.isArray(rawRoots)) {
+    return [];
+  }
+
+  return rawRoots
+    .filter((value) => typeof value === "string")
+    .map((value) => resolveConfigPath(pyprojectPath, value))
+    .filter((targetUri) => path.posix.basename(targetUri.path) === "prompts")
+    .filter((targetUri) => uriExistsSync(targetUri));
+}
+
+function extractEditableSiblingPromptRootUris(parsed, pyprojectPath) {
+  const sources = parsed?.tool?.uv?.sources;
+  if (!sources || typeof sources !== "object") {
+    return [];
+  }
+
+  const roots = [];
+  for (const sourceConfig of Object.values(sources)) {
+    if (!sourceConfig || typeof sourceConfig !== "object") {
+      continue;
+    }
+    if (sourceConfig.editable !== true || typeof sourceConfig.path !== "string") {
+      continue;
+    }
+
+    const dependencyRootUri = resolveConfigPath(pyprojectPath, sourceConfig.path);
+    const dependencyPyprojectPath = vscode.Uri.file(
+      path.join(dependencyRootUri.fsPath, "pyproject.toml"),
+    );
+    if (!uriExistsSync(dependencyPyprojectPath)) {
+      continue;
+    }
+
+    const dependencyConfig = loadCompileProjectConfigFromPyproject(dependencyPyprojectPath);
+    roots.push(...dependencyConfig.additionalPromptRootUris);
+  }
+
+  return roots;
+}
+
+function uniqueUris(uris) {
+  const seen = new Set();
+  const unique = [];
+
+  for (const uri of uris) {
+    const key = uri.toString();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push(uri);
+  }
+
+  return unique;
 }
 
 function findNearestPyproject(documentUri) {

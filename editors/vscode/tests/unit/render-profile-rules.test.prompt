@@ -1,0 +1,15 @@
+# SYNTAX TEST "source.doctrine" "render profile rules stay first-class"
+
+render_profile LessonsNaturalOrderedAnalysis:
+# <------------ keyword.declaration.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.type.doctrine
+    analysis.stages -> natural_ordered_prose
+#   ^^^^^^^^^^^^^^^ support.type.render-profile-target.doctrine
+#                   ^^ keyword.operator.doctrine
+#                      ^^^^^^^^^^^^^^^^^^^^^^ support.type.render-profile-mode.doctrine
+
+render_profile TitledPropertiesArtifactMarkdown:
+    properties -> titled_section
+#   ^^^^^^^^^^ support.type.render-profile-target.doctrine
+#              ^^ keyword.operator.doctrine
+#                 ^^^^^^^^^^^^^^ support.type.render-profile-mode.doctrine

@@ -1,0 +1,257 @@
+>output schema WriterTurnResultSchema: "Writer Turn Result Schema"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                     ^ source.doctrine
+#                                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                ^ source.doctrine punctuation.definition.string.end.doctrine
+>    route field next_route: "Next Route"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.other.field.doctrine
+#         ^ source.doctrine
+#          ^^^^^ source.doctrine keyword.other.field.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        revise_more: "Send to RevisionPartner for one more pass." -> RevisionPartner
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                 ^ source.doctrine
+#                                                                  ^^ source.doctrine keyword.control.doctrine
+#                                                                    ^ source.doctrine
+#                                                                     ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        nullable
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Use null when the writer can finish without a handoff."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    field kind: "Kind"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^ source.doctrine
+#          ^^^^ source.doctrine keyword.control.doctrine
+#              ^^ source.doctrine
+#                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                 ^^^^ source.doctrine string.quoted.double.doctrine
+#                     ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: enum
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        values:
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+>            handoff
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>            done
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Say whether this turn hands off or finishes."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    field summary: "Summary"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^^^ source.doctrine
+#                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                    ^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: string
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Short handoff or closeout summary."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>output shape WriterTurnResultJson: "Writer Turn Result JSON"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^ source.doctrine keyword.declaration.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                  ^ source.doctrine
+#                                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                    ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    kind: JsonObject
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine entity.name.section.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    schema: WriterTurnResultSchema
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>output WriterTurnResult: "Writer Turn Result"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                       ^ source.doctrine punctuation.separator.key-value.doctrine
+#                        ^ source.doctrine
+#                         ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                          ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: WriterTurnResultJson
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    routed_owner: "Routed Owner" when route.exists
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                               ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                ^ source.doctrine
+#                                 ^^^^ source.doctrine keyword.control.doctrine
+#                                     ^ source.doctrine
+#                                      ^^^^^ source.doctrine support.type.reference.doctrine
+#                                           ^ source.doctrine punctuation.separator.interpolation.doctrine
+#                                            ^^^^^^ source.doctrine variable.other.member.doctrine
+>        "{{route.next_owner}}"
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                           ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    no_route: "No Route" when route.exists == false
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                       ^ source.doctrine punctuation.definition.string.end.doctrine
+#                        ^ source.doctrine
+#                         ^^^^ source.doctrine keyword.control.doctrine
+#                             ^ source.doctrine
+#                              ^^^^^ source.doctrine support.type.reference.doctrine
+#                                   ^ source.doctrine punctuation.separator.interpolation.doctrine
+#                                    ^^^^^^ source.doctrine variable.other.member.doctrine
+#                                          ^^^^ source.doctrine
+#                                              ^^^^^ source.doctrine keyword.control.doctrine
+>        "There is no handoff on this turn."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent RevisionPartner:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Take one more revision pass."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Revise"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Revise the draft one more time."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent WriterNullableRouteFieldFinalOutputDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                             ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Either hand off or finish from one routed final output."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        WriterTurnResult
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    final_output:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+>        output: WriterTurnResult
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine keyword.other.field.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        route: next_route
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine keyword.other.field.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^ source.doctrine variable.other.member.doctrine
+>

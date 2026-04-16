@@ -223,6 +223,27 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "workflow",
+        ['workflow SharedWorkflow[shared.workflow.BaseFlow]: "Workflow"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "routeOnlyDeclaration",
+        ['route_only SharedRouteOnly: "Route Only"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "groundingDeclaration",
+        ['grounding SharedGrounding: "Grounding"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "abstractReview",
         ['abstract review SharedReview[shared.review.BaseReview]: "Review"'],
         should_match=True,
@@ -232,6 +253,13 @@ def main() -> int:
         repository,
         "reviewDeclaration",
         ['review DraftReview[SharedReview]: "Review"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "reviewDeclaration",
+        ['review_family SharedReviewFamily[shared.review.BaseReview]: "Review"'],
         should_match=True,
         errors=errors,
     )
@@ -253,6 +281,33 @@ def main() -> int:
         repository,
         "documentDeclaration",
         ['document SharedDocument[shared.document.BaseDocument]: "Document"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "tableDeclaration",
+        ['table SharedTable: "Shared Table"'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "renderProfileDeclaration",
+        [
+            "render_profile CompactComment",
+            "render_profile CompactComment:",
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "renderProfileRule",
+        [
+            "    properties -> titled_section",
+            "    analysis.stages -> natural_ordered_prose",
+        ],
         should_match=True,
         errors=errors,
     )
@@ -458,8 +513,24 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "guardedOverrideOutputHeader",
+        [
+            '    override current_artifact: "Current Artifact" when present(current_artifact):',
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "keyValueRef",
         generic_key_ref_samples,
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "keyValueRef",
+        ["    delivery_skill: SharedDeliverySkill"],
         should_match=True,
         errors=errors,
     )
@@ -482,6 +553,16 @@ def main() -> int:
         "standaloneReference",
         ["    route"],
         should_match=False,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "rootedRuntimePathInString",
+        [
+            "`home:issue.md`",
+            "`home:artifacts/poem.md`",
+        ],
+        should_match=True,
         errors=errors,
     )
     _require_begin_end_pattern(

@@ -9,6 +9,20 @@ outputs SharedOutputs: "Your Outputs"
 # <----- keyword.declaration.doctrine
 #       ^ entity.name.type.doctrine
 
+skill LedgerNoteDelivery: "ledger-note-delivery"
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine
+
+output target LedgerNoteAppend: "Ledger Note Append"
+# <----- keyword.declaration.doctrine
+#       ^ keyword.declaration.doctrine
+#              ^ entity.name.type.doctrine
+
+    delivery_skill: LedgerNoteDelivery
+#   ^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                 ^ punctuation.separator.key-value.doctrine
+#                   ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
     coordination_handoff: CoordinationHandoff
 #   ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
 #                       ^ punctuation.separator.key-value.doctrine

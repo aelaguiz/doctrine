@@ -1,0 +1,10 @@
+import rally.base_agent
+
+
+inputs DemoInputs[rally.base_agent.RallyManagedInputs]: "Inputs"
+    inherit issue_ledger
+
+
+abstract agent DemoRole[rally.base_agent.RallyManagedBaseAgent]:
+    role: "Demo role."
+    inputs: DemoInputs
