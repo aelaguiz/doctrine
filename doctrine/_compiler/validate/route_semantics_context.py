@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
 from doctrine._compiler.resolved_types import (
     FinalOutputRouteBinding,
@@ -90,7 +91,7 @@ class ValidateRouteSemanticsContextMixin:
         owner_label: str,
     ) -> RouteSemanticContext | None:
         return self._route_semantic_context_from_law_items(
-            self._flatten_law_items(law_body, owner_label=owner_label),
+            self._flatten_law_items(law_body, owner_label=owner_label, unit=unit),
             unit=unit,
         )
 
@@ -195,8 +196,12 @@ class ValidateRouteSemanticsContextMixin:
             ),
         )
         if context is None:
-            raise CompileError(
-                f"Route field must declare at least one live route branch in {owner_label}"
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"Route field must declare at least one live route branch in {owner_label}",
+                path=binding.schema_unit.prompt_file.source_path,
+                source_span=binding.route_field.source_span,
             )
         return context
 
@@ -253,6 +258,7 @@ class ValidateRouteSemanticsContextMixin:
                     head,
                     enum_decl=enum_decl,
                     enum_unit=enum_unit,
+                    unit=unit,
                     owner_label=f"route_from {enum_decl.name}",
                 )
                 for head in route.choice_case_heads

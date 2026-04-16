@@ -612,3 +612,73 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
   in `validate/routes.py`, then continue into the still-open `flow.py`,
   `validate/agents.py`, `validate/contracts.py`, and review-agreement
   families while the live proof surface stays clean.
+
+## 2026-04-16 - Implement pass 17
+- Fixed the first real regression from the new shared carrier validator.
+  Review currentness in `doctrine/_compiler/resolve/reviews.py` now keeps the
+  review-family carrier codes on the shared path instead of falling back to
+  workflow-law carrier codes.
+- Kept review currentness carrier-output failures on `E487` and trust-surface
+  failures on `E488`, and preserved the original authored source spans when
+  review currentness rebuilds synthetic current-artifact paths. That restores
+  exact-line review diagnostics instead of location-less failures.
+- Advanced the next raw `route_from` slice in
+  `doctrine/_compiler/validate/routes.py` and
+  `doctrine/_compiler/validate/route_semantics_context.py`.
+  Invalid enum-member arms, selector values outside the selected enum,
+  unreachable `else`, and non-exhaustive `route_from` blocks now raise
+  structured exact-line `E299` diagnostics instead of raw
+  `CompileError(...).ensure_location(...)` branches.
+- Added focused proof in `tests/test_compile_diagnostics.py` for review
+  currentness carrier codes plus the late `route_from` arm and exhaustiveness
+  failures.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/validate/routes.py doctrine/_compiler/resolve/reviews.py doctrine/_compiler/validate/route_semantics_context.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_route_output_semantics`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/46_review_current_truth_and_trust_surface/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/92_route_from_basic/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/93_handoff_routing_route_from_final_output/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic and route semantics unit suites passed.
+  - The shipped `46`, `92`, and `93` manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: keep Phase 4 moving on the remaining raw route blocks in
+  `validate/routes.py` such as mixed named-section workflow-law bodies,
+  missing-current `E331`, route-owner binding, carrier validation, owned-scope
+  rooting, and later law-path remainder checks, then continue into the still
+  open `flow.py`, `validate/agents.py`, `validate/contracts.py`, and
+  review-agreement families while the repo proof surface stays green.
+
+## 2026-04-16 - Implement pass 18
+- Advanced the last raw route-helper anchors in
+  `doctrine/_compiler/validate/routes.py` and
+  `doctrine/_compiler/validate/route_semantics_context.py`.
+  The mixed named-section workflow-law fallback now always uses the structured
+  helper path, late `match` enum-arm failures now point at the arm line, late
+  enum/schema-family/schema-group/grounding descendant failures now point at
+  the authored statement line, and the final-output route-field fallback now
+  raises a structured file-scoped diagnostic on the `route field` line.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  late `match` arms outside the chosen enum and late workflow-law enum
+  descendant targets.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/validate/routes.py doctrine/_compiler/validate/route_semantics_context.py doctrine/_compiler/compile/workflows.py doctrine/_compiler/flow.py doctrine/_compiler/validate/agents.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_route_output_semantics`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/32_modes_and_match/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/120_route_field_final_output_contract/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/121_nullable_route_field_final_output_contract/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic and route semantics unit suites passed.
+  - The shipped `32`, `120`, and `121` manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: route-helper cleanup is no longer the earliest raw
+  frontier. Continue Phase 4 on the still-open `compile/workflows.py`,
+  `flow.py`, `validate/agents.py`, `validate/contracts.py`, and
+  `validate/review_agreement.py` families while the repo proof surface stays
+  green.

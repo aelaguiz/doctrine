@@ -7,6 +7,8 @@ from pathlib import Path
 
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
+from doctrine.emit_common import collect_runtime_emit_roots
+from doctrine.emit_docs import _build_previous_turn_contexts
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -30,6 +32,39 @@ class OutputRenderingTests(unittest.TestCase):
                 target_path.write_text(textwrap.dedent(contents), encoding="utf-8")
             prompt = parse_file(prompt_path)
             return CompilationSession(prompt).compile_agent(agent_name)
+
+    def _compile_runtime_agent(
+        self,
+        source: str,
+        *,
+        agent_name: str,
+        extra_files: dict[str, str] | None = None,
+    ):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = root / "prompts" / "AGENTS.prompt"
+            prompt_path.parent.mkdir(parents=True)
+            prompt_path.write_text(textwrap.dedent(source), encoding="utf-8")
+            for rel_path, contents in (extra_files or {}).items():
+                target_path = root / rel_path
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                target_path.write_text(textwrap.dedent(contents), encoding="utf-8")
+            prompt = parse_file(prompt_path)
+            session = CompilationSession(prompt)
+            runtime_roots = collect_runtime_emit_roots(session)
+            agent_roots = tuple((root.unit, root.agent_name) for root in runtime_roots)
+            previous_turn_contexts = _build_previous_turn_contexts(
+                session,
+                agent_roots=agent_roots,
+            )
+            target_root = next(
+                root for root in runtime_roots if root.agent_name == agent_name
+            )
+            return session.compile_agent_from_unit(
+                target_root.unit,
+                agent_name,
+                previous_turn_contexts=previous_turn_contexts,
+            )
 
     def test_single_artifact_output_renders_grouped_contract_and_support_tables(self) -> None:
         agent = self._compile_agent(
@@ -236,6 +271,77 @@ class OutputRenderingTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn("- Previous Output: SharedTurnResult", rendered)
+        self.assertIn("- Derived Contract: Structured JSON", rendered)
+        self.assertIn("- Derived Schema: Shared Turn Schema", rendered)
+
+    def test_imported_previous_turn_output_binding_selector_renders_derived_contract(self) -> None:
+        agent = self._compile_runtime_agent(
+            """
+            import rally.base_agent
+            import shared.outputs
+
+            input PreviousRoutingHandoff: "Previous Routing Handoff"
+                source: rally.base_agent.RallyPreviousTurnOutput
+                    output: shared.outputs.ProjectLeadOutputs:coordination_handoff
+                requirement: Advisory
+
+            agent WorkerB:
+                role: "Read the previous turn."
+                workflow: "Act"
+                    law:
+                        current none
+                        active when PreviousRoutingHandoff.kind == "handoff"
+                inputs: "Inputs"
+                    PreviousRoutingHandoff
+                outputs: shared.outputs.ProjectLeadOutputs
+                final_output: shared.outputs.SharedTurnResult
+
+            agent WorkerA:
+                role: "Hand work to Worker B."
+                workflow: "Route"
+                    law:
+                        current none
+                        active when true
+                        route "Send to Worker B." -> WorkerB
+                outputs: shared.outputs.ProjectLeadOutputs
+                final_output: shared.outputs.SharedTurnResult
+            """,
+            agent_name="WorkerB",
+            extra_files={
+                "prompts/rally/base_agent.prompt": """
+                input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                    optional: "Optional Source Keys"
+                        output: "Output"
+                """,
+                "prompts/shared/outputs.prompt": """
+                output schema SharedTurnSchema: "Shared Turn Schema"
+                    field kind: "Kind"
+                        type: string
+
+                    example:
+                        kind: "handoff"
+
+                output shape SharedTurnJson: "Shared Turn JSON"
+                    kind: JsonObject
+                    schema: SharedTurnSchema
+
+                output SharedTurnResult: "Shared Turn Result"
+                    target: TurnResponse
+                    shape: SharedTurnJson
+                    requirement: Required
+
+                outputs ProjectLeadOutputs: "Project Lead Outputs"
+                    coordination_handoff: "Coordination Handoff"
+                        SharedTurnResult
+                """,
+            },
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "- Previous Output: shared.outputs.ProjectLeadOutputs:coordination_handoff",
+            rendered,
+        )
         self.assertIn("- Derived Contract: Structured JSON", rendered)
         self.assertIn("- Derived Schema: Shared Turn Schema", rendered)
 

@@ -342,7 +342,11 @@ class FlowMixin:
             raise CompileError(
                 f"law may appear only on workflow or handoff_routing in {owner_label}: {slot_key}"
             )
-        flat_items = self._flatten_law_items(workflow_body.law, owner_label=owner_label)
+        flat_items = self._flatten_law_items(
+            workflow_body.law,
+            owner_label=owner_label,
+            unit=workflow_unit,
+        )
         if slot_key == "handoff_routing":
             self._validate_handoff_routing_law(
                 flat_items,
@@ -697,14 +701,18 @@ class FlowMixin:
             if output_item is None:
                 config_lines = ("Previous Output: Exact previous final output",)
             else:
-                config_lines = (
-                    "Previous Output: "
-                    + self._display_symbol_value(
+                selector_text = (
+                    _display_addressable_ref(output_item.value)
+                    if isinstance(output_item.value, model.AddressableRef)
+                    else self._display_symbol_value(
                         output_item.value,
                         unit=unit,
                         owner_label=f"input {decl.name} source.output",
                         surface_label="input source fields",
-                    ),
+                    )
+                )
+                config_lines = (
+                    "Previous Output: " + selector_text,
                 )
             shape_title = "Derived Previous Output"
         else:

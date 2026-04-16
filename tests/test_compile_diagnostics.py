@@ -280,6 +280,147 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(error.diagnostic.location.line, 16)
         self.assertIn("route_from RouteFacts.route_choice == ProofRoute.accept as ProofRoute:", str(error))
 
+    def test_route_from_arm_outside_enum_points_at_arm_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                enum ProofRoute: "Proof Route"
+                    accept: "Accept"
+                    change: "Change"
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+                    route_choice: "Route Choice"
+                agent AcceptanceCritic:
+                    role: "Accept routed work."
+                agent ChangeEngineer:
+                    role: "Handle requested changes."
+                workflow InvalidRouteFromWorkflow: "Invalid Route From Workflow"
+                    law:
+                        current none
+                        route_from RouteFacts.route_choice as ProofRoute:
+                            ProofRoute.accept:
+                                route "Send to AcceptanceCritic." -> AcceptanceCritic
+                            ReviewVerdict.accepted:
+                                route "Send to ChangeEngineer." -> ChangeEngineer
+                agent Demo:
+                    role: "Reject route_from arms outside the selected enum."
+                    inputs: "Inputs"
+                        RouteFacts
+                    workflow: InvalidRouteFromWorkflow
+                """,
+            )
+            rendered = prompt_path.read_text(encoding="utf-8")
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("            ReviewVerdict.accepted:") + 1,
+        )
+        self.assertIn("route_from arm must name a member of ProofRoute", str(error))
+
+    def test_route_from_unreachable_else_points_at_else_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                enum ProofRoute: "Proof Route"
+                    accept: "Accept"
+                    change: "Change"
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+                    route_choice: "Route Choice"
+                agent AcceptanceCritic:
+                    role: "Accept routed work."
+                agent ChangeEngineer:
+                    role: "Handle requested changes."
+                agent BackupCritic:
+                    role: "Handle fallback routed work."
+                workflow InvalidRouteFromWorkflow: "Invalid Route From Workflow"
+                    law:
+                        current none
+                        route_from RouteFacts.route_choice as ProofRoute:
+                            ProofRoute.accept:
+                                route "Send to AcceptanceCritic." -> AcceptanceCritic
+                            ProofRoute.change:
+                                route "Send to ChangeEngineer." -> ChangeEngineer
+                            else:
+                                route "Send to BackupCritic." -> BackupCritic
+                agent Demo:
+                    role: "Reject unreachable route_from else arms."
+                    inputs: "Inputs"
+                        RouteFacts
+                    workflow: InvalidRouteFromWorkflow
+                """,
+            )
+            rendered = prompt_path.read_text(encoding="utf-8")
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 23)
+        self.assertIn("route_from else is unreachable", str(error))
+
+    def test_route_from_non_exhaustive_points_at_route_from_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                enum ProofRoute: "Proof Route"
+                    accept: "Accept"
+                    change: "Change"
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+                    route_choice: "Route Choice"
+                agent AcceptanceCritic:
+                    role: "Accept routed work."
+                workflow InvalidRouteFromWorkflow: "Invalid Route From Workflow"
+                    law:
+                        current none
+                        route_from RouteFacts.route_choice as ProofRoute:
+                            ProofRoute.accept:
+                                route "Send to AcceptanceCritic." -> AcceptanceCritic
+                agent Demo:
+                    role: "Reject non-exhaustive route_from blocks without else."
+                    inputs: "Inputs"
+                        RouteFacts
+                    workflow: InvalidRouteFromWorkflow
+                """,
+            )
+            rendered = prompt_path.read_text(encoding="utf-8")
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        route_from RouteFacts.route_choice as ProofRoute:") + 1,
+        )
+        self.assertIn("route_from on ProofRoute must be exhaustive or include else", str(error))
+
     def test_route_target_abstract_agent_points_at_route_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -406,6 +547,52 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(error.diagnostic.location.line, 13)
         self.assertIn("match edit_mode:", str(error))
 
+    def test_match_arm_outside_enum_points_at_arm_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                enum EditMode: "Edit Mode"
+                    manifest_title: "manifest-title"
+                    section_summary: "section-summary"
+
+                enum ReviewVerdict: "Review Verdict"
+                    accepted: "accepted"
+                    changes_requested: "changes requested"
+
+                input CurrentHandoff: "Current Handoff"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow InvalidModeAwareEdit: "Mode-Aware Edit"
+                    law:
+                        mode edit_mode = CurrentHandoff.active_mode as EditMode
+                        match edit_mode:
+                            ReviewVerdict.accepted:
+                                current none
+
+                agent Demo:
+                    role: "Reject match arms outside the declared enum."
+                    workflow: InvalidModeAwareEdit
+                    inputs: "Inputs"
+                        CurrentHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("            ReviewVerdict.accepted:") + 1,
+        )
+        self.assertIn("Match arm is outside enum EditMode", str(error))
+
     def test_handoff_routing_nonrouting_statement_points_at_statement_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -438,6 +625,147 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
         self.assertEqual(error.diagnostic.location.line, 13)
         self.assertIn("unsupported statement `current none`", str(error))
+
+    def test_mixed_named_and_bare_law_items_report_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow MixedLawWorkflow: "Mixed Law Workflow"
+                    law:
+                        currentness:
+                            current none
+                        stop "Reply and stop."
+
+                agent Demo:
+                    role: "Reject mixed law block shapes."
+                    workflow: MixedLawWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        stop "Reply and stop."') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("        currentness:") + 1,
+        )
+        self.assertIn("first named law section", str(error))
+
+    def test_missing_current_subject_points_at_branch_anchor_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input CurrentHandoff: "Current Handoff"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                agent RoutingOwner:
+                    role: "Handle reroutes when specialist work cannot continue."
+                    workflow: "Instructions"
+                        "Take back the same issue when route-only work cannot continue safely."
+
+                workflow InvalidRouteOnlyTurns: "Route-Only Triage"
+                    law:
+                        active when CurrentHandoff.missing
+                        when CurrentHandoff.missing:
+                            stop "Current handoff is missing."
+                            route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+                agent Demo:
+                    role: "Trigger an active branch with no current subject."
+                    workflow: InvalidRouteOnlyTurns
+                    inputs: "Inputs"
+                        CurrentHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E331")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                '            route "Route the same issue back to RoutingOwner." -> RoutingOwner'
+            )
+            + 1,
+        )
+        self.assertIn("Add either `current artifact ... via ...` or `current none`", str(error))
+
+    def test_route_only_next_owner_binding_reports_related_route_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                output RerouteHandoffComment: "Reroute Handoff Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    next_owner: "Next Owner"
+                        "Say plainly that RoutingOwner now owns the rerouted turn."
+
+                agent RoutingOwner:
+                    role: "Own route-only follow-up when specialist output is missing."
+                    workflow: "Route Repairs"
+                        "Take back the same issue when route-only work cannot continue safely."
+
+                workflow RouteOnlyReroute: "Route-Only Reroute"
+                    law:
+                        active when RouteFacts.current_specialist_output_missing and RouteFacts.next_owner_unknown
+                        current none
+                        stop "No specialist artifact is current for this turn."
+                        route "Route the same issue back to RoutingOwner." -> RoutingOwner
+
+                agent Demo:
+                    role: "Keep explicit route-only reroutes aligned with the emitted handoff comment."
+                    workflow: RouteOnlyReroute
+                    inputs: "Inputs"
+                        RouteFacts
+                    outputs: "Outputs"
+                        RerouteHandoffComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E339")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    next_owner: "Next Owner"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index(
+                '        route "Route the same issue back to RoutingOwner." -> RoutingOwner'
+            )
+            + 1,
+        )
+        self.assertIn("routed branch", str(error))
 
     def test_multiple_current_subjects_report_related_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -495,6 +823,165 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("first current-subject form", str(error))
 
+    def test_current_carrier_output_not_emitted_points_at_current_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/_authoring/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                output SectionMetadata: "Section Metadata"
+                    target: File
+                        path: "unit_root/_authoring/section_metadata.json"
+                    shape: JsonObject
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the one artifact that is current now."
+                    trust_surface:
+                        current_artifact
+
+                workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+                    law:
+                        current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+
+                agent Demo:
+                    role: "Trigger a missing emitted carrier output."
+                    workflow: InvalidCarryCurrentTruth
+                    inputs: "Inputs"
+                        ApprovedPlan
+                    outputs: "Outputs"
+                        SectionMetadata
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E333")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "        current artifact ApprovedPlan via CoordinationHandoff.current_artifact"
+            )
+            + 1,
+        )
+        self.assertIn("Current carrier output not emitted", str(error))
+
+    def test_current_carrier_field_missing_trust_surface_points_at_current_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/_authoring/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the one artifact that is current now."
+                    handoff_summary: "Handoff Summary"
+                        "Summarize the current truth."
+                    trust_surface:
+                        handoff_summary
+
+                workflow InvalidCarryCurrentTruth: "Carry Current Truth"
+                    law:
+                        current artifact ApprovedPlan via CoordinationHandoff.current_artifact
+
+                agent Demo:
+                    role: "Trigger a carrier field that is not trusted downstream."
+                    workflow: InvalidCarryCurrentTruth
+                    inputs: "Inputs"
+                        ApprovedPlan
+                    outputs: "Outputs"
+                        CoordinationHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E336")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "        current artifact ApprovedPlan via CoordinationHandoff.current_artifact"
+            )
+            + 1,
+        )
+        self.assertIn("Current carrier field missing from trust surface", str(error))
+
+    def test_invalidation_carrier_field_missing_trust_surface_points_at_invalidate_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output SectionReview: "Section Review"
+                    target: File
+                        path: "unit_root/_authoring/SECTION_REVIEW.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the one artifact that is current now."
+                    invalidations: "Invalidations"
+                        "Name any artifacts that are no longer current."
+                    trust_surface:
+                        current_artifact
+
+                workflow InvalidStructureChange: "Structure Change"
+                    law:
+                        current none
+                        invalidate SectionReview via CoordinationHandoff.invalidations
+
+                agent Demo:
+                    role: "Trigger an invalidation carrier outside the trust surface."
+                    workflow: InvalidStructureChange
+                    outputs: "Outputs"
+                        CoordinationHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E372")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "        invalidate SectionReview via CoordinationHandoff.invalidations"
+            )
+            + 1,
+        )
+        self.assertIn("Invalidation carrier field missing from trust surface", str(error))
+
     def test_current_none_with_owned_scope_points_at_owned_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -536,6 +1023,110 @@ class CompileDiagnosticTests(unittest.TestCase):
             rendered.splitlines().index("        current none") + 1,
         )
         self.assertIn("`current none` statement", str(error))
+
+    def test_owned_scope_outside_current_artifact_points_at_own_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output PrimaryManifest: "Primary Manifest"
+                    target: File
+                        path: "unit_root/_authoring/primary_manifest.json"
+                    shape: JsonObject
+                    requirement: Required
+
+                output SectionMetadata: "Section Metadata"
+                    target: File
+                        path: "unit_root/_authoring/section_metadata.json"
+                    shape: JsonObject
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the one artifact that is current now."
+                    trust_surface:
+                        current_artifact
+
+                workflow InvalidNarrowMetadataEdit: "Narrow Metadata Edit"
+                    law:
+                        current artifact SectionMetadata via CoordinationHandoff.current_artifact
+                        own only PrimaryManifest.title
+
+                agent Demo:
+                    role: "Trigger an own path outside the current artifact."
+                    workflow: InvalidNarrowMetadataEdit
+                    outputs: "Outputs"
+                        SectionMetadata
+                        CoordinationHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E351")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        own only PrimaryManifest.title") + 1,
+        )
+        self.assertIn("Owned scope is outside the allowed modeled surface", str(error))
+
+    def test_preserve_vocabulary_enum_descendant_points_at_preserve_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                enum CriticVerdict: "Critic Verdict"
+                    accept: "accept"
+                    changes_requested: "changes requested"
+
+                input ReviewTemplate: "Review Template"
+                    source: Prompt
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    current_artifact: "Current Artifact"
+                        "Name the one artifact that is current now."
+                    trust_surface:
+                        current_artifact
+
+                workflow PreserveVocabulary: "Preserve Vocabulary"
+                    law:
+                        current artifact ReviewTemplate via CoordinationHandoff.current_artifact
+                        preserve vocabulary CriticVerdict.accept
+
+                agent Demo:
+                    role: "Reject enum descendants in preserve vocabulary."
+                    workflow: PreserveVocabulary
+                    inputs: "Inputs"
+                        ReviewTemplate
+                    outputs: "Outputs"
+                        CoordinationHandoff
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        preserve vocabulary CriticVerdict.accept") + 1,
+        )
+        self.assertIn("must not descend through fields", str(error))
 
     def test_current_artifact_invalidation_reports_related_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1213,6 +1804,194 @@ class CompileDiagnosticTests(unittest.TestCase):
             rendered.splitlines().index("    contract: GateLessContract") + 1,
         )
         self.assertIn("Review contract `GateLessContract`", str(error))
+
+    def test_review_current_carrier_output_not_emitted_uses_review_code(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftSpec: "Draft Spec"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow CurrentTruthReviewContract: "Current Truth Review Contract"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                agent ReviewLead:
+                    role: "Own accepted draft follow-up."
+
+                output CurrentTruthReviewComment: "Current Truth Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    verdict: "Verdict"
+                        "State the review verdict."
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "State what the next owner should read first."
+                    next_owner: "Next Owner"
+                        "Name the next owner."
+                    current_artifact: "Current Artifact"
+                        "Name the artifact that is current now."
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List exact failing gates when they fail."
+                    trust_surface:
+                        current_artifact
+
+                output SideChannelComment: "Side Channel Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Optional
+                    current_artifact: "Current Artifact"
+                        "Name the artifact that is current now."
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List exact failing gates when they fail."
+                    trust_surface:
+                        current_artifact
+
+                review CurrentTruthReview: "Current Truth Review"
+                    subject: DraftSpec
+                    contract: CurrentTruthReviewContract
+                    comment_output: CurrentTruthReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    current_truth_checks: "Current Truth Checks"
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current artifact DraftSpec via SideChannelComment.current_artifact
+                        route "Accepted draft goes to ReviewLead." -> ReviewLead
+
+                    on_reject: "If Rejected"
+                        current artifact DraftSpec via SideChannelComment.current_artifact
+                        route "Rejected draft goes to ReviewLead." -> ReviewLead
+
+                agent Demo:
+                    role: "Reject review currentness carriers on unbound outputs."
+                    review: CurrentTruthReview
+                    inputs: "Inputs"
+                        DraftSpec
+                    outputs: "Outputs"
+                        CurrentTruthReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E487")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "        current artifact DraftSpec via SideChannelComment.current_artifact"
+            )
+            + 1,
+        )
+        self.assertIn("Review currentness requires a valid carrier", str(error))
+
+    def test_review_current_carrier_trust_surface_uses_review_code(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftSpec: "Draft Spec"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow CurrentTruthReviewContract: "Current Truth Review Contract"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                agent ReviewLead:
+                    role: "Own accepted draft follow-up."
+
+                output CurrentTruthReviewComment: "Current Truth Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    verdict: "Verdict"
+                        "State the review verdict."
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "State what the next owner should read first."
+                    next_owner: "Next Owner"
+                        "Name the next owner."
+                    current_artifact: "Current Artifact"
+                        "Name the artifact that is current now."
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List exact failing gates when they fail."
+
+                review CurrentTruthReview: "Current Truth Review"
+                    subject: DraftSpec
+                    contract: CurrentTruthReviewContract
+                    comment_output: CurrentTruthReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    current_truth_checks: "Current Truth Checks"
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current artifact DraftSpec via CurrentTruthReviewComment.current_artifact
+                        route "Accepted draft goes to ReviewLead." -> ReviewLead
+
+                    on_reject: "If Rejected"
+                        current artifact DraftSpec via CurrentTruthReviewComment.current_artifact
+                        route "Rejected draft goes to ReviewLead." -> ReviewLead
+
+                agent Demo:
+                    role: "Reject review currentness carriers outside the trust surface."
+                    review: CurrentTruthReview
+                    inputs: "Inputs"
+                        DraftSpec
+                    outputs: "Outputs"
+                        CurrentTruthReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E488")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                "        current artifact DraftSpec via CurrentTruthReviewComment.current_artifact"
+            )
+            + 1,
+        )
+        self.assertIn("Review current carrier is missing from trust surface", str(error))
 
     def test_missing_input_source_points_at_input_header(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

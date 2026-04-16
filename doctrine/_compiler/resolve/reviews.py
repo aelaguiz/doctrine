@@ -5,7 +5,6 @@ from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _REVIEW_VER
 from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.naming import (
     _dotted_ref_name,
-    _law_path_from_name_ref,
     _name_ref_from_dotted_name,
 )
 from doctrine._compiler.resolved_types import (
@@ -496,14 +495,37 @@ class ResolveReviewsMixin:
         current_subject_key: tuple[tuple[str, ...], str] | None = None
         if isinstance(current, model.ReviewCurrentArtifactStmt):
             synthetic_current = model.CurrentArtifactStmt(
-                target=_law_path_from_name_ref(current.artifact_ref),
-                carrier=model.LawPath(parts=current.carrier.parts),
+                target=model.LawPath(
+                    parts=(*current.artifact_ref.module_parts, current.artifact_ref.declaration_name),
+                    source_span=current.artifact_ref.source_span,
+                ),
+                carrier=model.LawPath(
+                    parts=current.carrier.parts,
+                    source_span=current.carrier.source_span,
+                ),
+                source_span=current.source_span,
             )
+            review_carrier_kwargs = {
+                "carrier_output_not_emitted_code": "E487",
+                "carrier_output_not_emitted_summary": "Review currentness requires a valid carrier",
+                "carrier_output_not_emitted_detail": (
+                    "Review currentness carrier output `{output}` is not emitted by {owner}."
+                ),
+                "carrier_field_not_trusted_code": "E488",
+                "carrier_field_not_trusted_summary": (
+                    "Review current carrier is missing from trust surface"
+                ),
+                "carrier_field_not_trusted_detail": (
+                    "Review currentness carrier field `{field}` is not listed in "
+                    "`trust_surface` in {owner}."
+                ),
+            }
             current_subject_key = self._validate_current_artifact_stmt(
                 synthetic_current,
                 unit=unit,
                 agent_contract=agent_contract,
                 owner_label=owner_label,
+                **review_carrier_kwargs,
             )
             current_carrier_path = self._validate_carrier_path(
                 synthetic_current.carrier,
@@ -511,6 +533,17 @@ class ResolveReviewsMixin:
                 agent_contract=agent_contract,
                 owner_label=owner_label,
                 statement_label="current artifact",
+                output_not_emitted_code="E487",
+                output_not_emitted_summary="Review currentness requires a valid carrier",
+                output_not_emitted_detail=(
+                    "Review currentness carrier output `{output}` is not emitted by {owner}."
+                ),
+                field_not_trusted_code="E488",
+                field_not_trusted_summary="Review current carrier is missing from trust surface",
+                field_not_trusted_detail=(
+                    "Review currentness carrier field `{field}` is not listed in "
+                    "`trust_surface` in {owner}."
+                ),
             ).remainder
             if (
                 current_subject_key not in subject_keys

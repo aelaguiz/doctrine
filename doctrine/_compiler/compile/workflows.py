@@ -164,7 +164,7 @@ class CompileWorkflowsMixin:
         agent_contract: AgentContract,
         owner_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
-        flat_items = self._flatten_law_items(law_body, owner_label=owner_label)
+        flat_items = self._flatten_law_items(law_body, owner_label=owner_label, unit=unit)
         self._validate_workflow_law(
             flat_items,
             unit=unit,
@@ -245,7 +245,7 @@ class CompileWorkflowsMixin:
         agent_contract: AgentContract,
         owner_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
-        flat_items = self._flatten_law_items(law_body, owner_label=owner_label)
+        flat_items = self._flatten_law_items(law_body, owner_label=owner_label, unit=unit)
         self._validate_handoff_routing_law(
             flat_items,
             unit=unit,

@@ -388,6 +388,157 @@ class EmitDocsTests(unittest.TestCase):
             for binding in contract_data["io"]["output_bindings"]:
                 self.assertIn(binding["declaration_key"], output_keys)
 
+    def test_emit_target_serializes_io_block_for_imported_previous_output_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "shared").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "shared" / "outputs.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output schema SharedTurnSchema: "Shared Turn Schema"
+                        field kind: "Kind"
+                            type: string
+
+                        example:
+                            kind: "handoff"
+
+                    output shape SharedTurnJson: "Shared Turn JSON"
+                        kind: JsonObject
+                        schema: SharedTurnSchema
+
+                    output SharedTurnResult: "Shared Turn Result"
+                        target: TurnResponse
+                        shape: SharedTurnJson
+                        requirement: Required
+
+                    outputs ProjectLeadOutputs: "Project Lead Outputs"
+                        coordination_handoff: "Coordination Handoff"
+                            SharedTurnResult
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import rally.base_agent
+                    import shared.outputs
+
+                    input PreviousRoutingHandoff: "Previous Routing Handoff"
+                        source: rally.base_agent.RallyPreviousTurnOutput
+                            output: shared.outputs.ProjectLeadOutputs:coordination_handoff
+                        requirement: Advisory
+
+                    agent WorkerB:
+                        role: "Read the previous turn."
+                        workflow: "Act"
+                            law:
+                                current none
+                                active when PreviousRoutingHandoff.kind == "handoff"
+                        inputs: "Inputs"
+                            PreviousRoutingHandoff
+                        outputs: shared.outputs.ProjectLeadOutputs
+                        final_output: shared.outputs.SharedTurnResult
+
+                    agent WorkerA:
+                        role: "Hand work to Worker B."
+                        workflow: "Route"
+                            law:
+                                current none
+                                active when true
+                                route "Send to Worker B." -> WorkerB
+                        outputs: shared.outputs.ProjectLeadOutputs
+                        final_output: shared.outputs.SharedTurnResult
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "worker_b" / "final_output.contract.json"
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            previous_input = contract_data["io"]["previous_turn_inputs"][0]
+            self.assertEqual(previous_input["input_key"], "PreviousRoutingHandoff")
+            self.assertEqual(previous_input["input_name"], "PreviousRoutingHandoff")
+            self.assertEqual(previous_input["selector_kind"], "output_binding")
+            self.assertEqual(
+                previous_input["selector_text"],
+                "shared.outputs.ProjectLeadOutputs:coordination_handoff",
+            )
+            self.assertEqual(
+                previous_input["resolved_declaration_key"],
+                "shared.outputs.SharedTurnResult",
+            )
+            self.assertEqual(
+                previous_input["resolved_declaration_name"],
+                "SharedTurnResult",
+            )
+            self.assertEqual(previous_input["derived_contract_mode"], "structured_json")
+            self.assertEqual(previous_input["requirement"], "Advisory")
+            self.assertEqual(
+                previous_input["target"],
+                {
+                    "key": "TurnResponse",
+                    "title": "Turn Response",
+                    "config": {},
+                },
+            )
+            self.assertEqual(
+                previous_input["shape"],
+                {
+                    "name": "SharedTurnJson",
+                    "title": "Shared Turn JSON",
+                },
+            )
+            self.assertEqual(
+                previous_input["schema"],
+                {
+                    "name": "SharedTurnSchema",
+                    "title": "Shared Turn Schema",
+                    "profile": "OpenAIStructuredOutput",
+                },
+            )
+            self.assertEqual(previous_input["binding_path"], ["coordination_handoff"])
+            output_keys = {
+                item["declaration_key"] for item in contract_data["io"]["outputs"]
+            }
+            self.assertIn(previous_input["resolved_declaration_key"], output_keys)
+            self.assertIn(
+                {
+                    "binding_path": ["coordination_handoff"],
+                    "declaration_key": "shared.outputs.SharedTurnResult",
+                },
+                contract_data["io"]["output_bindings"],
+            )
+
     def test_emit_target_rejects_non_final_turn_response_previous_selector(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

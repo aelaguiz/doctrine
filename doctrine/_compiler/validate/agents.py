@@ -132,6 +132,7 @@ class ValidateAgentsMixin:
                     self._flatten_law_items(
                         slot_body.law,
                         owner_label=f"agent {agent.name} slot {slot_key}",
+                        unit=unit,
                     ),
                     unit=unit,
                     agent_contract=agent_contract,

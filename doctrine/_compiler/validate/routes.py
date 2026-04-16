@@ -57,12 +57,41 @@ class ValidateRoutesMixin:
         law_body: model.LawBody,
         *,
         owner_label: str,
+        unit: IndexedUnit,
     ) -> tuple[model.LawStmt, ...]:
         has_sections = any(isinstance(item, model.LawSection) for item in law_body.items)
         if has_sections:
             if not all(isinstance(item, model.LawSection) for item in law_body.items):
-                raise CompileError(
-                    f"Law blocks may not mix named sections with bare law statements in {owner_label}"
+                first_section = next(
+                    (item for item in law_body.items if isinstance(item, model.LawSection)),
+                    None,
+                )
+                first_bare_stmt = next(
+                    (item for item in law_body.items if not isinstance(item, model.LawSection)),
+                    None,
+                )
+                raise workflow_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "Law blocks may not mix named sections with bare law statements "
+                        f"in {owner_label}"
+                    ),
+                    unit=unit,
+                    source_span=(
+                        getattr(first_bare_stmt, "source_span", None) or law_body.source_span
+                    ),
+                    related=(
+                        workflow_related_site(
+                            label="first named law section",
+                            unit=unit,
+                            source_span=(
+                                first_section.source_span if first_section is not None else None
+                            ),
+                        ),
+                    )
+                    if first_section is not None
+                    else (),
                 )
             flattened: list[model.LawStmt] = []
             for item in law_body.items:
@@ -117,8 +146,18 @@ class ValidateRoutesMixin:
                             ),
                         ),
                     )
-                raise CompileError(
-                    f"Active leaf branch must resolve exactly one current-subject form in {owner_label}"
+                raise workflow_compile_error(
+                    code="E331",
+                    summary="Missing current-subject form",
+                    detail=(
+                        "Each active workflow-law leaf branch must declare exactly one "
+                        f"current subject in {owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=self._workflow_branch_anchor_source_span(branch),
+                    hints=(
+                        "Add either `current artifact ... via ...` or `current none` in each active branch.",
+                    ),
                 )
             current = branch.current_subjects[0]
             if isinstance(current, model.CurrentNoneStmt) and branch.owns:
@@ -500,6 +539,8 @@ class ValidateRoutesMixin:
                             f"in {owner_label}: {output_decl.name}.{'.'.join(path)} -> "
                             f"{route_branch.target_name}"
                         ),
+                        route_unit=unit,
+                        route_source_span=route.source_span,
                     )
             if next_owner_fields_found:
                 continue
@@ -513,6 +554,14 @@ class ValidateRoutesMixin:
         owner_label: str,
         error_message: str,
         fallback_unit: IndexedUnit | None = None,
+        route_unit: IndexedUnit | None = None,
+        route_source_span: model.SourceSpan | None = None,
+        error_code: str = "E339",
+        error_summary: str = "Routed next_owner field is not structurally bound",
+        error_hints: tuple[str, ...] = (
+            "Use an explicit interpolation such as `{{RoutingOwner}}` or `{{RoutingOwner:name}}` inside the `next_owner` field for routed branches.",
+            "If ownership stays local, keep the field generic and do not emit a semantic route.",
+        ),
     ) -> None:
         route_semantics = RouteSemanticContext(
             branches=(route_branch,),
@@ -528,7 +577,23 @@ class ValidateRoutesMixin:
             route_semantics=route_semantics,
         ):
             return
-        raise CompileError(error_message)
+        raise compile_error(
+            code=error_code,
+            summary=error_summary,
+            detail=error_message,
+            path=unit.prompt_file.source_path,
+            source_span=getattr(item, "source_span", None),
+            related=(
+                workflow_related_site(
+                    label="routed branch",
+                    unit=route_unit,
+                    source_span=route_source_span,
+                ),
+            )
+            if route_unit is not None and route_source_span is not None
+            else (),
+            hints=error_hints,
+        )
 
     def _record_item_mentions_agent(
         self,
@@ -834,8 +899,18 @@ class ValidateRoutesMixin:
             if member_value is None:
                 continue
             if not any(member.value == member_value for member in enum_decl.members):
-                raise CompileError(
-                    f"Match arm is outside enum {enum_decl.name} in {owner_label}: {member_value}"
+                raise workflow_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Match arm is outside enum {enum_decl.name} in {owner_label}: "
+                        f"{member_value}"
+                    ),
+                    unit=unit,
+                    source_span=case.head.source_span,
+                    hints=(
+                        f"Name one member of `{enum_decl.name}`, or add `else` for the remaining cases.",
+                    ),
                 )
             seen_members.add(member_value)
 
@@ -898,7 +973,9 @@ class ValidateRoutesMixin:
                 case.head,
                 enum_decl=enum_decl,
                 enum_unit=enum_unit,
+                unit=unit,
                 owner_label=owner_label,
+                fallback_source_span=case.source_span,
             )
             if member.value in seen_members:
                 raise compile_error(
@@ -933,12 +1010,18 @@ class ValidateRoutesMixin:
         if fixed_choice is not None and not any(
             member.value == fixed_choice for member in enum_decl.members
         ):
-            raise CompileError(
-                f"route_from selector is outside enum {enum_decl.name} in {owner_label}: {fixed_choice}"
-            ).ensure_location(
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"route_from selector is outside enum {enum_decl.name} in "
+                    f"{owner_label}: {fixed_choice}"
+                ),
                 path=unit.prompt_file.source_path,
-                line=stmt.expr.source_span.line if stmt.expr.source_span is not None else None,
-                column=stmt.expr.source_span.column if stmt.expr.source_span is not None else None,
+                source_span=stmt.expr.source_span,
+                hints=(
+                    f"Make the selector resolve to one member of `{enum_decl.name}`.",
+                ),
             )
 
         if any(case.head is None for case in stmt.cases):
@@ -950,16 +1033,21 @@ class ValidateRoutesMixin:
                     case.head,
                     enum_decl=enum_decl,
                     enum_unit=enum_unit,
+                    unit=unit,
                     owner_label=owner_label,
+                    fallback_source_span=case.source_span,
                 )
                 explicit_values.add(member.value)
             if explicit_values == {member.value for member in enum_decl.members}:
-                raise CompileError(
-                    f"route_from else is unreachable in {owner_label}: {enum_decl.name}"
-                ).ensure_location(
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"route_from else is unreachable in {owner_label}: {enum_decl.name}",
                     path=unit.prompt_file.source_path,
-                    line=stmt.source_span.line if stmt.source_span is not None else None,
-                    column=stmt.source_span.column if stmt.source_span is not None else None,
+                    source_span=else_case.source_span if else_case is not None else stmt.source_span,
+                    hints=(
+                        "Remove `else`, or stop naming every enum member explicitly.",
+                    ),
                 )
         else:
             seen_members = set()
@@ -968,17 +1056,25 @@ class ValidateRoutesMixin:
                     case.head,
                     enum_decl=enum_decl,
                     enum_unit=enum_unit,
+                    unit=unit,
                     owner_label=owner_label,
+                    fallback_source_span=case.source_span,
                 )
                 seen_members.add(member.value)
             expected_members = {member.value for member in enum_decl.members}
             if seen_members != expected_members:
-                raise CompileError(
-                    f"route_from on {enum_decl.name} must be exhaustive or include else in {owner_label}"
-                ).ensure_location(
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"route_from on {enum_decl.name} must be exhaustive or include "
+                        f"else in {owner_label}"
+                    ),
                     path=unit.prompt_file.source_path,
-                    line=stmt.source_span.line if stmt.source_span is not None else None,
-                    column=stmt.source_span.column if stmt.source_span is not None else None,
+                    source_span=stmt.source_span,
+                    hints=(
+                        f"Name every member of `{enum_decl.name}`, or add one `else` arm.",
+                    ),
                 )
 
         for case in stmt.cases:
@@ -1089,27 +1185,44 @@ class ValidateRoutesMixin:
         *,
         enum_decl: model.EnumDecl,
         enum_unit: IndexedUnit,
+        unit: IndexedUnit,
         owner_label: str,
+        fallback_source_span: model.SourceSpan | None = None,
     ) -> model.EnumMember:
         if expr is None:
-            raise CompileError(f"route_from arm must name an enum member in {owner_label}")
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"route_from arm must name an enum member in {owner_label}",
+                path=unit.prompt_file.source_path,
+                source_span=fallback_source_span,
+            )
         member_value = self._resolve_constant_enum_member(expr, unit=enum_unit)
         if member_value is None:
-            raise CompileError(
-                f"route_from arm must name a member of {enum_decl.name} in {owner_label}"
-            ).ensure_location(
-                path=enum_unit.prompt_file.source_path,
-                line=expr.source_span.line if getattr(expr, "source_span", None) is not None else None,
-                column=expr.source_span.column if getattr(expr, "source_span", None) is not None else None,
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"route_from arm must name a member of {enum_decl.name} in {owner_label}",
+                path=unit.prompt_file.source_path,
+                source_span=expr.source_span,
+                hints=(
+                    f"Name one member of `{enum_decl.name}`, or use `else` for the remaining members.",
+                ),
             )
         member = next((item for item in enum_decl.members if item.value == member_value), None)
         if member is None:
-            raise CompileError(
-                f"route_from arm is outside enum {enum_decl.name} in {owner_label}: {member_value}"
-            ).ensure_location(
-                path=enum_unit.prompt_file.source_path,
-                line=expr.source_span.line if getattr(expr, "source_span", None) is not None else None,
-                column=expr.source_span.column if getattr(expr, "source_span", None) is not None else None,
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"route_from arm is outside enum {enum_decl.name} in {owner_label}: "
+                    f"{member_value}"
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=expr.source_span,
+                hints=(
+                    f"Name one member of `{enum_decl.name}`, or use `else` for the remaining members.",
+                ),
             )
         return member
 
@@ -1315,6 +1428,12 @@ class ValidateRoutesMixin:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         owner_label: str,
+        carrier_output_not_emitted_code: str | None = None,
+        carrier_output_not_emitted_summary: str | None = None,
+        carrier_output_not_emitted_detail: str | None = None,
+        carrier_field_not_trusted_code: str | None = None,
+        carrier_field_not_trusted_summary: str | None = None,
+        carrier_field_not_trusted_detail: str | None = None,
     ) -> tuple[tuple[str, ...], str]:
         target = self._validate_law_path_root(
             stmt.target,
@@ -1325,13 +1444,15 @@ class ValidateRoutesMixin:
             allowed_kinds=("input", "output"),
         )
         if target.remainder or target.wildcard:
-            raise CompileError(
-                f"current artifact must stay rooted at one input or output artifact in {owner_label}: "
-                f"{'.'.join(stmt.target.parts)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=stmt.source_span.line if stmt.source_span is not None else None,
-                column=stmt.source_span.column if stmt.source_span is not None else None,
+            raise workflow_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "current artifact must stay rooted at one input or output artifact "
+                    f"in {owner_label}: {'.'.join(stmt.target.parts)}"
+                ),
+                unit=unit,
+                source_span=stmt.source_span,
             )
 
         carrier = self._validate_carrier_path(
@@ -1340,18 +1461,26 @@ class ValidateRoutesMixin:
             agent_contract=agent_contract,
             owner_label=owner_label,
             statement_label="current artifact",
+            output_not_emitted_code=carrier_output_not_emitted_code,
+            output_not_emitted_summary=carrier_output_not_emitted_summary,
+            output_not_emitted_detail=carrier_output_not_emitted_detail,
+            field_not_trusted_code=carrier_field_not_trusted_code,
+            field_not_trusted_summary=carrier_field_not_trusted_summary,
+            field_not_trusted_detail=carrier_field_not_trusted_detail,
         )
         _ = carrier
         if isinstance(target.decl, model.OutputDecl):
             target_key = (target.unit.module_parts, target.decl.name)
             if target_key not in agent_contract.outputs:
-                raise CompileError(
-                    f"current artifact output must be emitted by the concrete turn in {owner_label}: "
-                    f"{target.decl.name}"
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=stmt.source_span.line if stmt.source_span is not None else None,
-                    column=stmt.source_span.column if stmt.source_span is not None else None,
+                raise workflow_compile_error(
+                    code="E334",
+                    summary="Current output not emitted",
+                    detail=(
+                        f"Current-artifact output `{target.decl.name}` is not emitted by "
+                        f"{owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=stmt.source_span,
                 )
         return (target.unit.module_parts, target.decl.name)
 
@@ -1372,9 +1501,15 @@ class ValidateRoutesMixin:
             allowed_kinds=("input", "output", "schema_group"),
         )
         if target.remainder or target.wildcard:
-            raise CompileError(
-                f"invalidate must name one full input or output artifact or schema group in {owner_label}: "
-                f"{'.'.join(stmt.target.parts)}"
+            raise workflow_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "invalidate must name one full input or output artifact or schema "
+                    f"group in {owner_label}: {'.'.join(stmt.target.parts)}"
+                ),
+                unit=unit,
+                source_span=stmt.source_span or stmt.target.source_span,
             )
         self._validate_carrier_path(
             stmt.carrier,
@@ -1392,6 +1527,12 @@ class ValidateRoutesMixin:
         agent_contract: AgentContract,
         owner_label: str,
         statement_label: str,
+        output_not_emitted_code: str | None = None,
+        output_not_emitted_summary: str | None = None,
+        output_not_emitted_detail: str | None = None,
+        field_not_trusted_code: str | None = None,
+        field_not_trusted_summary: str | None = None,
+        field_not_trusted_detail: str | None = None,
     ) -> ResolvedLawPath:
         resolved = self._validate_law_path_root(
             carrier,
@@ -1402,31 +1543,57 @@ class ValidateRoutesMixin:
             allowed_kinds=("output",),
         )
         if not isinstance(resolved.decl, model.OutputDecl):
-            raise CompileError(
-                f"{statement_label} via carrier must stay rooted in an emitted output in {owner_label}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=carrier.source_span.line if carrier.source_span is not None else None,
-                column=carrier.source_span.column if carrier.source_span is not None else None,
+            raise workflow_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"{statement_label} via carrier must stay rooted in an emitted output "
+                    f"in {owner_label}"
+                ),
+                unit=unit,
+                source_span=carrier.source_span,
             )
         if not resolved.remainder or resolved.wildcard:
-            raise CompileError(
-                f"{statement_label} requires an explicit `via` field on an emitted output in {owner_label}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=carrier.source_span.line if carrier.source_span is not None else None,
-                column=carrier.source_span.column if carrier.source_span is not None else None,
+            raise workflow_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"{statement_label} requires an explicit `via` field on an emitted "
+                    f"output in {owner_label}"
+                ),
+                unit=unit,
+                source_span=carrier.source_span,
             )
 
         output_key = (resolved.unit.module_parts, resolved.decl.name)
         if output_key not in agent_contract.outputs:
-            raise CompileError(
-                f"{statement_label} carrier output must be emitted by the concrete turn in {owner_label}: "
-                f"{resolved.decl.name}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=carrier.source_span.line if carrier.source_span is not None else None,
-                column=carrier.source_span.column if carrier.source_span is not None else None,
+            default_output_summary = (
+                "Current carrier output not emitted"
+                if statement_label == "current artifact"
+                else "Compile failure"
+            )
+            default_output_detail = (
+                f"Current-artifact carrier output `{resolved.decl.name}` is not emitted "
+                f"by {owner_label}."
+                if statement_label == "current artifact"
+                else f"{statement_label} carrier output must be emitted by the concrete "
+                f"turn in {owner_label}: {resolved.decl.name}"
+            )
+            raise workflow_compile_error(
+                code=output_not_emitted_code or "E333" if statement_label == "current artifact" else output_not_emitted_code or "E299",
+                summary=output_not_emitted_summary or default_output_summary,
+                detail=(
+                    output_not_emitted_detail.format(
+                        output=resolved.decl.name,
+                        owner=owner_label,
+                        field=".".join(resolved.remainder),
+                        statement_label=statement_label,
+                    )
+                    if output_not_emitted_detail is not None
+                    else default_output_detail
+                ),
+                unit=unit,
+                source_span=carrier.source_span,
             )
 
         self._resolve_output_field_node(
@@ -1437,13 +1604,47 @@ class ValidateRoutesMixin:
             surface_label=f"{statement_label} via",
         )
         if not any(item.path == resolved.remainder for item in resolved.decl.trust_surface):
-            raise CompileError(
-                f"{statement_label} carrier field must be listed in trust_surface in {owner_label}: "
-                f"{'.'.join(resolved.remainder)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=carrier.source_span.line if carrier.source_span is not None else None,
-                column=carrier.source_span.column if carrier.source_span is not None else None,
+            default_field_summary = (
+                "Current carrier field missing from trust surface"
+                if statement_label == "current artifact"
+                else "Invalidation carrier field missing from trust surface"
+                if statement_label == "invalidate"
+                else "Compile failure"
+            )
+            default_field_detail = (
+                f"Current-artifact carrier field `{'.'.join(resolved.remainder)}` is "
+                f"not listed in `trust_surface` in {owner_label}."
+                if statement_label == "current artifact"
+                else f"Invalidation carrier field `{'.'.join(resolved.remainder)}` is "
+                f"not listed in `trust_surface` in {owner_label}."
+                if statement_label == "invalidate"
+                else f"{statement_label} carrier field must be listed in trust_surface "
+                f"in {owner_label}: {'.'.join(resolved.remainder)}"
+            )
+            raise workflow_compile_error(
+                code=(
+                    field_not_trusted_code
+                    or "E336"
+                    if statement_label == "current artifact"
+                    else field_not_trusted_code
+                    or "E372"
+                    if statement_label == "invalidate"
+                    else field_not_trusted_code
+                    or "E299"
+                ),
+                summary=field_not_trusted_summary or default_field_summary,
+                detail=(
+                    field_not_trusted_detail.format(
+                        output=resolved.decl.name,
+                        owner=owner_label,
+                        field=".".join(resolved.remainder),
+                        statement_label=statement_label,
+                    )
+                    if field_not_trusted_detail is not None
+                    else default_field_detail
+                ),
+                unit=unit,
+                source_span=carrier.source_span,
             )
         return resolved
 
@@ -1487,10 +1688,16 @@ class ValidateRoutesMixin:
                     continue
             if isinstance(resolved.decl, SchemaFamilyTarget):
                 continue
-            raise CompileError(
-                "own only must stay rooted in the current artifact, an emitted output "
-                f"surface, or a declared schema family in {owner_label}: "
-                f"{'.'.join(path.parts)}"
+            raise workflow_compile_error(
+                code="E351",
+                summary="Owned scope is outside the allowed modeled surface",
+                detail=(
+                    f"Owned scope `{'.'.join(path.parts)}` is not rooted in the current "
+                    f"artifact, an emitted output surface, or a declared schema family in "
+                    f"{owner_label}."
+                ),
+                unit=unit,
+                source_span=path.source_span or stmt.source_span,
             )
 
     def _validate_path_set_roots(
@@ -1536,12 +1743,40 @@ class ValidateRoutesMixin:
             resolved.decl,
             (model.EnumDecl, SchemaFamilyTarget, ResolvedSchemaGroup, model.GroundingDecl),
         ) and resolved.remainder:
-            raise CompileError(
-                f"{statement_label} enum, schema-family, schema-group, and grounding targets must not descend through fields in {owner_label}: "
-                f"{'.'.join(path.parts)}"
-            ).ensure_location(
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"{statement_label} enum, schema-family, schema-group, and grounding "
+                    f"targets must not descend through fields in {owner_label}: "
+                    f"{'.'.join(path.parts)}"
+                ),
                 path=unit.prompt_file.source_path,
-                line=path.source_span.line if path.source_span is not None else None,
-                column=path.source_span.column if path.source_span is not None else None,
+                source_span=path.source_span,
+                hints=(
+                    "Point the statement at the enum, schema family, schema group, or grounding root directly.",
+                ),
             )
         return resolved
+
+    def _workflow_branch_anchor_source_span(
+        self,
+        branch: LawBranch,
+    ) -> model.SourceSpan | None:
+        candidates = (
+            [expr.source_span for expr in branch.activation_exprs]
+            + [stmt.source_span for stmt in branch.mode_bindings]
+            + [stmt.source_span for stmt in branch.musts]
+            + [stmt.source_span for stmt in branch.owns]
+            + [stmt.source_span for stmt in branch.preserves]
+            + [stmt.source_span for stmt in branch.supports]
+            + [stmt.source_span for stmt in branch.ignores]
+            + [stmt.source_span for stmt in branch.forbids]
+            + [stmt.source_span for stmt in branch.invalidations]
+            + [stmt.source_span for stmt in branch.stops]
+            + [stmt.source_span for stmt in branch.routes]
+        )
+        anchored = [span for span in candidates if span is not None]
+        if not anchored:
+            return None
+        return max(anchored, key=lambda span: (span.line, span.column))

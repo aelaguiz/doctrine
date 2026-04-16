@@ -1,0 +1,86 @@
+{
+  "run_mode": "batch",
+  "fail_threshold": "medium",
+  "targets": [
+    {
+      "target_name": "InterviewSummaryWriter",
+      "authored_source": "agent InterviewSummaryWriter\n\ndescription: Helps with summary work.\n\nworkflow:\n- Read the transcript\n- Check each claim against a source quote.\n- Mark weak quotes.\n- Remove unsupported claims.\n- Always keep the answer under five lines.\n- Provide a full, exhaustive analysis of every interview theme.\n- Use any browser or shell tool that seems useful.\n\nleave behind:\n- Tell the next role what happened.\n",
+      "emitted_markdown": "# InterviewSummaryWriter\n\nYou write the first draft of the interview summary.\n\nCheck each claim against a source quote.\nMark weak quotes.\nRemove unsupported claims.\n\nAlways keep the answer under five lines.\nProvide a full, exhaustive analysis of every interview theme.\n\nUse any browser or shell tool that seems useful.\n",
+      "imported_skills": [],
+      "imported_modules": [],
+      "declared_constraints": {
+        "allowed_tools": [
+          "ReadFile",
+          "SearchDocs"
+        ],
+        "required_outputs": [
+          "summary",
+          "key_quotes"
+        ]
+      }
+    },
+    {
+      "target_name": "InterviewSummaryReviewer",
+      "authored_source": "agent InterviewSummaryReviewer\n\ndescription: Helps with summary work.\n\nworkflow:\n- Check each claim against a source quote.\n- Mark weak quotes.\n- Remove unsupported claims.\n- Downstream operators should independently operationalize the artifact-level implications of the present intervention.\n\nleave behind:\n- reviewer notes\n",
+      "emitted_markdown": "# InterviewSummaryReviewer\n\nCheck each claim against a source quote.\nMark weak quotes.\nRemove unsupported claims.\n\nDownstream operators should independently operationalize the artifact-level implications of the present intervention.\n",
+      "imported_skills": [],
+      "imported_modules": [],
+      "declared_constraints": {
+        "allowed_tools": [
+          "ReadFile",
+          "SearchDocs"
+        ]
+      }
+    },
+    {
+      "target_name": "InterviewPlanWriter",
+      "authored_source": "agent InterviewPlanWriter\n\ndescription: General helper.\n\nworkflow:\n- Check each claim against a source quote.\n- Mark weak quotes.\n- Remove unsupported claims.\n\nleave behind:\n- interview plan draft\n",
+      "emitted_markdown": "# InterviewPlanWriter\n\nCheck each claim against a source quote.\nMark weak quotes.\nRemove unsupported claims.\n",
+      "imported_skills": [],
+      "imported_modules": [],
+      "declared_constraints": {
+        "allowed_tools": [
+          "ReadFile",
+          "SearchDocs"
+        ]
+      }
+    }
+  ],
+  "duplicate_hints": [
+    {
+      "label": "dup-1",
+      "normalized_text": "Check each claim against a source quote. Mark weak quotes. Remove unsupported claims.",
+      "target_names": [
+        "InterviewSummaryWriter",
+        "InterviewSummaryReviewer",
+        "InterviewPlanWriter"
+      ],
+      "source_refs": [
+        "InterviewSummaryWriter.authored_source",
+        "InterviewSummaryReviewer.authored_source",
+        "InterviewPlanWriter.authored_source"
+      ]
+    }
+  ],
+  "size_stats": {
+    "InterviewSummaryWriter": {
+      "authored_line_count": 15,
+      "emitted_line_count": 11
+    },
+    "InterviewSummaryReviewer": {
+      "authored_line_count": 11,
+      "emitted_line_count": 7
+    },
+    "InterviewPlanWriter": {
+      "authored_line_count": 9,
+      "emitted_line_count": 5
+    }
+  },
+  "reading_metrics": {
+    "InterviewSummaryReviewer": {
+      "flagged_excerpt": "Downstream operators should independently operationalize the artifact-level implications of the present intervention.",
+      "reason": "dense abstract wording"
+    }
+  },
+  "notes": "This fixture is intentionally small and contains several known authoring issues so the linter can prove schema-backed output under codex exec."
+}

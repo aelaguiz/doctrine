@@ -111,29 +111,34 @@ Verdict (code): NOT COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- Rally still does not consume the richer previous-turn contract or reopen prior outputs in native form, so the runtime frontier in Phases 3 and 4 is still missing.
-- Lessons still routes through the old shared handoff target, so the real proof chain in Phase 5 is not migrated.
-- Rally docs still teach the old contract pair, not the new `io` contract story.
+- The real remaining frontier is the approved cross-repo Phase 3 to Phase 5 chain in Rally and psflows:
+  - Phase 3: Rally load path and exact zero-config previous final-output runtime
+  - Phase 4: explicit selectors and honest emitted-output readback modes
+  - Phase 5: Lessons proof, docs, and release truth
+- The Doctrine slice is already complete and verified; the locked unit proof passed here with `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`.
 
 ## Reopened phases (false-complete fixes)
-- Phase 3 (Rally load path and exact zero-config previous final-output runtime) — reopened because:
-  - Rally still loads only `AGENTS.md` plus `final_output.contract.json`.
-  - There is no typed `io` model on `CompiledAgentContract`, no richer contract parse, and no previous-turn readback renderer.
-- Phase 4 (Explicit selectors and honest emitted-output readback modes) — reopened because:
-  - Rally still has no runtime support for explicit prior-output selector resolution, `structured_json` / `readable_text` / `unsupported` readback modes, or note identity helpers.
-- Phase 5 (Lessons proof, docs, and release truth) — reopened because:
-  - The Lessons flow still uses the old `shared.review.HandoffOutput` target and the emitted build contract has no `io` block, so the real end-to-end proof path is not shipped.
-  - Rally docs still describe only `AGENTS.md`, `schemas`, and `final_output.contract.json`.
+- Phase 3 (Rally load path and exact zero-config previous final-output runtime) — reopened because this fresh audit still found:
+  - `../rally/src/rally/domain/flow.py:90-98` still has no typed `io` model on `CompiledAgentContract`.
+  - `../rally/src/rally/services/flow_loader.py:171-190` still validates only `AGENTS.md` plus `final_output.contract.json`.
+  - `../rally/src/rally/services/runner.py:1118-1131` still injects only `AGENTS.md`.
+  - `../rally/src/rally/services/final_response_loader.py:48-86` still reopens only `last_message.json`.
+- Phase 4 (Explicit selectors and honest emitted-output readback modes) — reopened because this fresh audit still found:
+  - `../rally/src/rally/services/issue_ledger.py:194-212` only manages issue notes and snapshots; it does not provide readback-by-output-identity helpers.
+  - `../rally/src/rally/services/flow_loader.py:171-190` and `../rally/src/rally/services/runner.py:1118-1131` still do not load or inject the richer prior-output packet.
+  - `../rally/docs/RALLY_PORTING_GUIDE.md:98-104` and `../rally/docs/RALLY_RUNTIME.md:53-68` still document the old `AGENTS.md` + `final_output.contract.json` + `last_message.json` story.
+- Phase 5 (Lessons proof, docs, and release truth) — reopened because this fresh audit still found:
+  - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt:1-45` still routes through the old `shared.review.HandoffOutput` / `coordination_handoff` path.
+  - `../psflows/flows/lessons/build/agents/project_lead/final_output.contract.json:1-23` still has no `io` block.
+  - `../rally/docs/RALLY_PORTING_GUIDE.md:98-104` and `../rally/docs/RALLY_RUNTIME.md:53-68` still document only the old `AGENTS.md` + `final_output.contract.json` + `last_message.json` story.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
 - Rally runtime contract load and prompt path
   - Evidence anchors:
-    - `../rally/src/rally/domain/flow.py:39-98`
-    - `../rally/src/rally/services/flow_loader.py:171-190`
-    - `../rally/src/rally/services/flow_loader.py:263-352`
-    - `../rally/src/rally/services/final_response_loader.py:48-176`
-    - `../rally/src/rally/services/runner.py:863-866`
-    - `../rally/src/rally/services/runner.py:1128-1130`
+    - `../rally/src/rally/domain/flow.py:90-98`
+    - `../rally/src/rally/services/flow_loader.py:171-205`
+    - `../rally/src/rally/services/final_response_loader.py:48-86`
+    - `../rally/src/rally/services/runner.py:1118-1131`
   - Plan expects:
     - `CompiledAgentContract` carries typed `io` data.
     - Rally parses the richer `final_output.contract.json`.
@@ -147,9 +152,10 @@ Manual QA: n/a (non-blocking)
 
 - Explicit prior-output selector and readback modes
   - Evidence anchors:
-    - `../rally/src/rally/domain/flow.py:39-98`
-    - `../rally/src/rally/services/flow_loader.py:263-352`
-    - `../rally/src/rally/services/final_response_loader.py:100-238`
+    - `../rally/src/rally/domain/flow.py:90-98`
+    - `../rally/src/rally/services/flow_loader.py:171-205`
+    - `../rally/src/rally/services/final_response_loader.py:48-86`
+    - `../rally/src/rally/services/issue_ledger.py:194-230`
   - Plan expects:
     - explicit declaration and binding selectors resolve through the richer single contract file
     - `structured_json`, `readable_text`, and `unsupported` are honored honestly
@@ -161,10 +167,10 @@ Manual QA: n/a (non-blocking)
 
 - Lessons proof and docs truth
   - Evidence anchors:
-    - `../psflows/flows/lessons/prompts/shared/review.prompt:10-26`
-    - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt:18-29`
+    - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt:1-45`
     - `../psflows/flows/lessons/build/agents/project_lead/final_output.contract.json:1-23`
     - `../rally/docs/RALLY_PORTING_GUIDE.md:98-104`
+    - `../rally/docs/RALLY_RUNTIME.md:53-68`
   - Plan expects:
     - migrate the proof path to a Rally-owned readback-capable target if the old handoff family stays unsupported
     - rebuild the real Lessons chain with `RallyPreviousTurnOutput`
@@ -210,9 +216,10 @@ This claim is false if any of these remain true after the change:
 
 - Execution scope note for this pass:
   - The user limited implementation to the Doctrine repo only.
-  - The approved cross-repo plan still names Rally and Lessons follow-through,
-    but Phases 3 through 5 are blocked for this pass because `../rally` and
-    `../psflows` are out of scope.
+  - The approved cross-repo frontier still includes Rally and Lessons
+    follow-through in Phases 3 through 5.
+  - Those phases remain approved work, but they are blocked for this pass
+    because `../rally` and `../psflows` are out of scope.
 
 - Add one Rally-owned `input source` declaration in Rally stdlib:
 
@@ -991,6 +998,15 @@ This keeps zero-config tiny and honest.
 
 Status: COMPLETE
 
+* Completed in this pass:
+  - Taught flow-graph extraction to display imported previous-turn binding
+    selectors as authored ref text instead of routing them through generic
+    addressable-root display.
+  - Added end-to-end render proof for the approved imported
+    `shared.outputs.ProjectLeadOutputs:coordination_handoff` selector form.
+  - Added emit-contract proof for the imported binding selector metadata in
+    `final_output.contract.json`.
+
 * Goal:
   - Make `RallyPreviousTurnOutput` a real source-specific derived-contract path
     in Doctrine.
@@ -1067,6 +1083,8 @@ Status: COMPLETE
 
 ## Phase 2 — Extend the existing public contract file
 
+Status: COMPLETE
+
 * Goal:
   - Serialize previous-turn input requests and previous emitted-output
     readback truth into the existing `final_output.contract.json`.
@@ -1109,13 +1127,20 @@ Status: COMPLETE
 
 ## Phase 3 — Rally load path and exact zero-config previous final-output runtime
 
-Status: BLOCKED (requires `../rally`, which is out of scope for this pass)
+Status: REOPENED (fresh audit still found missing cross-repo code work)
+
+* Execution blocker (this pass):
+  - This phase requires `../rally`, and the user limited this pass to the
+    Doctrine repo.
 
 * Goal:
   - Make the zero-config previous-final-output path work end to end through the
     richer single contract file.
 * Missing (code):
-  - Rally still loads only `AGENTS.md` plus `final_output.contract.json`, and it still reopens only `last_message.json`.
+  - `../rally/src/rally/domain/flow.py` still has no typed `io` model on `CompiledAgentContract`.
+  - `../rally/src/rally/services/flow_loader.py` still validates only `AGENTS.md` plus `final_output.contract.json`.
+  - `../rally/src/rally/services/runner.py` still injects only `AGENTS.md`.
+  - `../rally/src/rally/services/final_response_loader.py` still reopens only `last_message.json`.
 * Work:
   - This phase uses Rally's strongest existing durable path:
     `last_message.json`. It proves the single-file contract load, the new
@@ -1152,13 +1177,20 @@ Status: BLOCKED (requires `../rally`, which is out of scope for this pass)
 
 ## Phase 4 — Explicit selectors and honest emitted-output readback modes
 
-Status: BLOCKED (requires `../rally`, which is out of scope for this pass)
+Status: REOPENED (fresh audit still found missing cross-repo code work)
+
+* Execution blocker (this pass):
+  - This phase requires `../rally`, and the user limited this pass to the
+    Doctrine repo.
 
 * Goal:
   - Make explicit prior-output selection work for supported target kinds with
     the correct structured-vs-readable boundary.
 * Missing (code):
-  - Rally still has no runtime support for explicit prior-output selector resolution, `structured_json` / `readable_text` / `unsupported` readback modes, or note identity helpers.
+  - Rally still has no explicit prior-output selector resolution path.
+  - Rally still has no `structured_json` / `readable_text` / `unsupported` readback dispatcher.
+  - `../rally/src/rally/services/issue_ledger.py` still only manages issue notes and snapshots; it does not provide readback-by-output-identity helpers.
+  - Rally still has no file-backed prior-output reopen path or note-identity lookup path.
 * Work:
   - This phase extends the runtime from the common zero-config path to explicit
     output declarations and bound outputs. It keeps the contract honest by
@@ -1214,15 +1246,21 @@ Status: BLOCKED (requires `../rally`, which is out of scope for this pass)
 
 ## Phase 5 — Lessons proof, docs, and release truth
 
-Status: PARTIAL (Doctrine repo portion done; Rally and Lessons follow-through
-require out-of-scope repos for this pass)
+Status: REOPENED (fresh audit still found missing cross-repo code work)
+
+* Execution blocker (this pass):
+  - The remaining work in this phase requires `../rally` and `../psflows`,
+    and the user limited this pass to the Doctrine repo.
+  - The Doctrine docs and emitted-contract portion of this phase is already
+    shipped in this repo.
 
 * Goal:
   - Prove the real motivating chain and align the shipped docs and release
     story.
 * Missing (code):
-  - The Lessons flow still uses the old `shared.review.HandoffOutput` target and the emitted build contract has no `io` block, so the real end-to-end proof path is not shipped.
-  - Rally docs still describe only `AGENTS.md`, `schemas`, and `final_output.contract.json`.
+  - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt` still routes through the old `shared.review.HandoffOutput` / `coordination_handoff` path.
+  - `../psflows/flows/lessons/build/agents/project_lead/final_output.contract.json` still has no `io` block.
+  - `../rally/docs/RALLY_PORTING_GUIDE.md` and `../rally/docs/RALLY_RUNTIME.md` still document only the old `AGENTS.md` + `final_output.contract.json` + `last_message.json` story.
 * Work:
   - This phase closes the loop on the real `coordination_handoff` use case and
     updates Doctrine and Rally docs so they teach the actual contract: derived
@@ -1346,8 +1384,8 @@ prior output without the author restating that content in `home:issue.md`.
     contract
 - 2026-04-16: The user limited this implementation pass to the Doctrine repo.
   The approved plan still includes Rally and Lessons follow-through, but
-  Phases 3 through 5 are blocked for this pass because `../rally` and
-  `../psflows` are out of scope.
+  Phases 3 through 5 remain reopened approved work and are blocked for this
+  pass because `../rally` and `../psflows` are out of scope.
 - 2026-04-16: The canonical plan now preserves the strongest honest native
   readback form:
   - `structured_json`
@@ -1361,5 +1399,14 @@ prior output without the author restating that content in `home:issue.md`.
   only contract owner.
 - 2026-04-16: `implement-loop` was armed for this plan, `WORKLOG_PATH` was
   created, and Phase 1 started.
-- 2026-04-16: User limited this audit pass to the Doctrine repo. `../rally`
-  and `../psflows` are out of scope for this audit.
+- 2026-04-16: Fresh audit against the approved frontier reopened Phases 3-5;
+  Doctrine compile/emit is complete, but Rally runtime/readback and the
+  Lessons proof chain remain open.
+- 2026-04-16: Fresh audit reopened Phase 1 binding-path proof after the
+  plan-shaped `AddressableRef` selector still lacked end-to-end proof; the
+  remaining frontier still includes the Rally and Lessons work in Phases 3-5.
+- 2026-04-16: Fresh audit on the Doctrine slice confirmed Phases 1 and 2 are
+  complete and verified by `tests.test_emit_docs`, `tests.test_output_rendering`,
+  `tests.test_compile_diagnostics`, `make verify-examples`, `make verify-package`,
+  and `make verify-diagnostics`; the remaining approved frontier is Phases 3
+  through 5 in Rally and psflows.

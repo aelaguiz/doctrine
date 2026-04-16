@@ -63,15 +63,17 @@ surfaces.
 Today the language makes authors repeat the same meaning through long module
 prefixes, repeated `inherit` lines, repeated review-field identity maps,
 verbose first-class IO wrappers, and repeated addressable roots. The repo is
-also in the middle of an `output schema` nullability cleanup that must finish
-cleanly before later schema sugar can stay honest.
+already on the `output schema` `nullable` baseline in grammar, live docs, and
+the public example ladder. This plan should treat that baseline as current
+truth and only close any leftover proof or diagnostics drift before later
+authoring sugar lands.
 
 ## Approach
 
 Implement only the parser-level and fail-loud wins that clearly lower to
 existing Doctrine models:
 
-1. finish `output schema` `nullable` cleanup
+1. keep the current `output schema` `nullable` baseline honest
 2. add import aliases and symbol imports
 3. add grouped explicit `inherit { ... }`
 4. add identity-binding sugar for `review.fields` and
@@ -84,7 +86,7 @@ rules, or macro-like indirection stays out of this plan.
 
 ## Plan
 
-1. Finish the `nullable` cutover across docs, examples, diagnostics, and proof.
+1. Lock the `nullable` baseline across docs, examples, diagnostics, and proof.
 2. Add import aliasing across the full `name_ref` family.
 3. Add grouped explicit `inherit` across the inherited keyed-item families.
 4. Add review-binding shorthand on the two existing semantic-binding surfaces.
@@ -127,10 +129,12 @@ review bindings, IO wrappers, and route semantics.
 
 ## 0.2 In scope
 
-- Finish the `output schema` nullability cleanup already in flight:
+- Keep the shipped `output schema` nullability baseline honest:
   - `nullable` is the authored nullability flag
   - legacy `required` and `optional` stay targeted hard errors on this surface
   - fields and route fields follow the same story
+  - live docs, release truth, and the public example ladder keep teaching that
+    same baseline
   - emitted wire shape stays unchanged for the current structured-output
     profile
 - Add import aliases and symbol imports across the full `name_ref` family:
@@ -169,12 +173,14 @@ review bindings, IO wrappers, and route semantics.
   - `28_addressable_workflow_paths`
   - `79_final_output_output_schema`
   - `85_review_split_final_output_output_schema`
+  - `86_imported_review_comment_local_routes`
   - `90_split_handoff_and_final_output_shared_route_semantics`
   - `104_review_final_output_output_schema_blocked_control_ready`
   - `105_review_split_final_output_output_schema_control_ready`
   - `106_review_split_final_output_output_schema_partial`
   - `107_output_inheritance_basic`
   - `108_output_inheritance_attachments`
+  - `109_imported_review_handoff_output_inheritance`
   - `117_io_omitted_wrapper_titles`
   - `121_nullable_route_field_final_output_contract`
 - Update the live docs that teach these surfaces:
@@ -214,8 +220,8 @@ review bindings, IO wrappers, and route semantics.
 
 ## 0.4 Definition of done (acceptance evidence)
 
-- `output schema` tells one honest nullability story in code, docs, tests, and
-  examples.
+- The shipped `output schema` `nullable` baseline stays honest in code, docs,
+  tests, and examples.
 - Import aliasing works across the same `name_ref` family Doctrine already
   uses, not only on one favored surface.
 - Grouped explicit `inherit` lands across the inherited keyed-item families
@@ -259,8 +265,9 @@ review bindings, IO wrappers, and route semantics.
 
 ## 1.2 Constraints
 
-- `output schema` nullability is already moving through the repo and cannot be
-  planned like a greenfield feature.
+- `output schema` nullability is now largely landed in the repo and should be
+  treated as shipped baseline plus regression guard, not as greenfield feature
+  work.
 - The example corpus is part of shipped proof, not just illustration.
 - Some wins are additive while the `nullable` cleanup is a breaking authored
   language cut on that one surface.
@@ -309,8 +316,9 @@ to the same internal shapes.
 - Review bindings repeat identity maps like `verdict: verdict`.
 - First-class IO wrappers are more verbose than nearby record surfaces.
 - Deep addressable refs repeat the same declaration root over and over.
-- The `output schema` nullability cleanup is not fully reflected yet in every
-  docs and proof surface.
+- The `output schema` nullability baseline is now mostly reflected in shipped
+  docs and proof, but this plan still needs to keep that baseline honest while
+  later sugar lands.
 
 ## 2.3 Constraints implied by the problem
 
@@ -339,33 +347,46 @@ to the same internal shapes.
     carrier families this plan must move together: singular `inherit` rules,
     `semantic_field_binding`, multiline `io_section`, `PATH_REF`, and the
     `nullable` plus retired `required` / `optional` output-schema flags.
+  - `doctrine/_compiler/session.py` and `doctrine/_compiler/context.py` -
+    `CompilationSession` now owns the module graph, caches, and parallel
+    compile fan-out, while `CompilationContext` owns the task-local
+    resolve/validate/compile mixin boundary. Import work must preserve this
+    session-scoped load path instead of adding ad hoc module state.
   - `doctrine/parser.py` plus `doctrine/_model/core.py` - `ImportDecl`,
     `NameRef`, and `AddressableRef` are the root carriers for import aliasing
     and `self:` shorthand. Today `import_decl` lowers only an `ImportPath`,
     and `path_ref` always lowers an explicit root name plus path.
-  - `doctrine/_compiler/indexing.py` - `_resolve_import_path` and
-    `IndexedUnit.imported_units` already own absolute and relative module
-    loading. Import aliasing should extend this loader and lookup path, not
-    add a route-only or review-only alias layer.
-  - `doctrine/_compiler/resolve/refs.py` and
-    `doctrine/_compiler/resolve/addressables.py` - declaration lookup and
-    addressable-root resolution already define the one compiler-owned truth
-    for named refs and deep path refs.
+  - `doctrine/_compiler/indexing.py`, `doctrine/_compiler/resolve/refs.py`,
+    and `doctrine/_compiler/reference_diagnostics.py` -
+    `_resolve_import_path`, `IndexedUnit.imported_units`, and the shared
+    reference diagnostics helpers already own absolute and relative module
+    loading plus fail-loud named-ref lookup. Import aliasing should extend
+    this path, not add a route-only or review-only alias layer.
+  - `doctrine/_compiler/resolve/addressables.py` and
+    `doctrine/_compiler/reference_diagnostics.py` - addressable-root
+    resolution, deep path descent, and fail-loud addressable diagnostics
+    already define the one compiler-owned truth for deep path refs.
   - `doctrine/_model/io.py`, `doctrine/_parser/io.py`,
+    `doctrine/_compiler/validate/contracts.py`,
     `doctrine/_compiler/resolve/io_contracts.py`, and
-    `doctrine/_compiler/validate/contracts.py` - `IoSection`,
-    `OverrideIoSection`, and `_resolve_contract_bucket_ref_entry` already own
-    first-class IO wrapper structure, inherited IO accounting, and direct
-    declaration refs inside `inputs` and `outputs`.
+    `doctrine/_compiler/resolve/outputs.py` - `IoSection`,
+    `OverrideIoSection`, contract-summary helpers, bucket-level contract
+    lowering, inherited IO-body lowering, omitted-title rules, and previous-
+    turn output bindings already live on a real shared owner path. IO
+    shorthand should extend that path, not replace it with a third one.
   - `doctrine/_model/review.py`, `doctrine/_parser/reviews.py`,
     `doctrine/_parser/agents.py`, `doctrine/_compiler/resolve/reviews.py`, and
     `doctrine/_compiler/compile/review_contract.py` - `ReviewFieldsConfig` and
     `ReviewFieldBinding` already own review semantic bindings on both
     `review.fields` and `final_output.review_fields`.
-  - `doctrine/_model/io.py` and
-    `doctrine/_compiler/resolve/output_schemas.py` - `OutputSchemaFlag` now
-    carries `nullable`, and the resolver already fails loud with `E236` and
-    `E237` for retired `required` and `optional`.
+  - `doctrine/_model/io.py`,
+    `doctrine/_compiler/resolve/output_schemas.py`,
+    `doctrine/_compiler/output_schema_validation.py`, and
+    `doctrine/_compiler/output_schema_diagnostics.py` - `OutputSchemaFlag` now
+    carries `nullable`, the resolver already fails loud with `E236` and
+    `E237` for retired `required` and `optional`, and the dedicated validator
+    owns the Draft 2020-12 and OpenAI-subset checks that guard lowered final
+    output schemas.
   - `doctrine/_compiler/resolve/agent_slots.py`,
     `doctrine/_compiler/resolve/analysis.py`,
     `doctrine/_compiler/resolve/documents.py`,
@@ -378,33 +399,44 @@ to the same internal shapes.
     `inherit` should follow the whole carrier family instead of only outputs.
 - Canonical path / owner to reuse:
   - import aliasing: `doctrine/parser.py`, `doctrine/_model/core.py`,
-    `doctrine/_compiler/indexing.py`, and `doctrine/_compiler/resolve/refs.py`
-    - keep one named-ref lookup story.
+    `doctrine/_compiler/session.py`, `doctrine/_compiler/indexing.py`,
+    `doctrine/_compiler/resolve/refs.py`, and
+    `doctrine/_compiler/reference_diagnostics.py` - keep one named-ref lookup
+    story on the current session-scoped import graph.
   - grouped explicit `inherit`: the existing `InheritItem` carrier in
     `doctrine/_model/core.py` plus each inherited-family resolver - keep one
     explicit accounting story.
   - review-binding shorthand: `ReviewFieldsConfig` /
     `ReviewFieldBinding` in `doctrine/_model/review.py` plus existing parser
     and compile paths - keep one semantic-binding story.
-  - IO wrapper shorthand: `IoSection`, `OverrideIoSection`, plus one shared
-    helper boundary used by `ResolveIoContractsMixin` and
-    `ResolveOutputsMixin` - keep one IO-wrapper story.
+  - IO wrapper shorthand: `IoSection`, `OverrideIoSection`,
+    `ValidateContractsMixin`, `ResolveIoContractsMixin`, and
+    `ResolveOutputsMixin` - keep the current IO owner split coherent and avoid
+    a third lowering path.
   - `self:` shorthand: `AddressableRef` in `doctrine/_model/core.py` plus
     addressable resolution in `doctrine/_compiler/resolve/addressables.py` -
     keep one addressable-ref story.
-  - output-schema nullability cleanup: `OutputSchemaFlag` and
-    `doctrine/_compiler/resolve/output_schemas.py` - keep one nullability
-    story and one set of retirement errors.
+  - output-schema nullability cleanup: `OutputSchemaFlag`,
+    `doctrine/_compiler/resolve/output_schemas.py`,
+    `doctrine/_compiler/output_schema_validation.py`, and
+    `doctrine/_compiler/output_schema_diagnostics.py` - keep one nullability
+    story, one set of retirement errors, and one lowered-schema validation
+    path.
 - Adjacent surfaces tied to the same contract family:
   - `tests/test_import_loading.py`, `tests/test_compiler_boundary.py`,
-    `examples/03_imports`, and `examples/README.md` - import loading and typed
-    imported-ref proof that must stay aligned if aliasing is added.
+    `tests/test_emit_flow.py`, `tests/test_review_imported_outputs.py`,
+    `examples/03_imports`, `examples/86_imported_review_comment_local_routes`,
+    `examples/109_imported_review_handoff_output_inheritance`, and
+    `examples/README.md` - import loading and imported-output proof that must
+    stay aligned if aliasing is added.
   - `tests/test_output_inheritance.py`, `examples/24_io_block_inheritance`,
     `examples/107_output_inheritance_basic`, and
     `examples/108_output_inheritance_attachments` - inherited-entry proof and
     examples that must move together if grouped `inherit` lands.
   - `tests/test_final_output.py`, `tests/test_emit_docs.py`,
+    `tests/test_review_imported_outputs.py`,
     `examples/85_review_split_final_output_output_schema`,
+    `examples/86_imported_review_comment_local_routes`,
     `examples/90_split_handoff_and_final_output_shared_route_semantics`,
     `examples/104_review_final_output_output_schema_blocked_control_ready`,
     `examples/105_review_split_final_output_output_schema_control_ready`, and
@@ -417,9 +449,11 @@ to the same internal shapes.
     tutorial track.
   - `tests/test_output_schema_surface.py`,
     `tests/test_output_schema_lowering.py`,
+    `tests/test_output_schema_validation.py`,
     `tests/test_validate_output_schema.py`,
     `tests/test_prove_output_schema_openai.py`,
     `tests/test_emit_docs.py`, `tests/test_final_output.py`,
+    `tests/test_route_output_semantics.py`,
     `examples/79_final_output_output_schema`,
     `examples/85_review_split_final_output_output_schema`,
     `examples/90_split_handoff_and_final_output_shared_route_semantics`,
@@ -428,23 +462,23 @@ to the same internal shapes.
     `examples/106_review_split_final_output_output_schema_partial`, and
     `examples/121_nullable_route_field_final_output_contract` - the full
     output-schema and routed-final-output family that must stay aligned while
-    the nullability cut finishes.
+    the nullability baseline stays locked.
   - `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`,
     `docs/AUTHORING_PATTERNS.md`, `docs/REVIEW_SPEC.md`,
     `docs/COMPILER_ERRORS.md`, `docs/VERSIONING.md`, and `CHANGELOG.md` - the
     live public docs that will drift if this wave lands only in code.
 - Compatibility posture (separate from `fallback_policy`):
   - Mixed by surface, with no bridge:
-    - `output schema` nullability is a clean authored-language cutover to
-      `nullable`, with legacy `required` and `optional` kept only as targeted
+    - `output schema` nullability now uses `nullable` as the live authored
+      baseline, with legacy `required` and `optional` kept only as targeted
       hard errors.
     - import aliasing, grouped explicit `inherit`, review-binding shorthand,
       IO wrapper shorthand, and `self:` are additive surface wins that should
       preserve existing authored files.
-  - This is the right posture because the nullability cut is already underway
-    in grammar, parser, resolver, and tests, while the other five wins lower
-    cleanly to existing compiler-owned truth without changing emitted
-    contracts.
+  - This is the right posture because the nullability baseline already ships
+    in grammar, parser, resolver, docs, examples, and tests, while the other
+    five wins lower cleanly to existing compiler-owned truth without changing
+    emitted contracts.
 - Existing patterns to reuse:
   - `tests/test_output_inheritance.py` and the repeated `E003` / undefined-key
     resolver checks - reuse the same explicit-accounting fail-loud pattern for
@@ -461,10 +495,10 @@ to the same internal shapes.
     the same addressable carrier and resolver path.
 - Prompt surfaces / agent contract to reuse:
   - `examples/03_imports`, `examples/24_io_block_inheritance`,
-    `examples/28_addressable_workflow_paths`, and the `79` / `85` / `90` /
-    `104` / `105` / `106` / `121` final-output examples already teach the
-    real authored pressure points. Later planning should use these examples as
-    the main public teaching ladder.
+    `examples/28_addressable_workflow_paths`, and the `79` / `85` / `86` /
+    `90` / `104` / `105` / `106` / `109` / `121` final-output examples
+    already teach the real authored pressure points. Later planning should
+    use these examples as the main public teaching ladder.
   - `docs/DOCTRINE_AUTHORING_SYNTAX_SUGAR_AUDIT_2026-04-16.md` and
     `docs/DOCTRINE_LANGUAGE_AUDIT_2026-04-16.md` already rank the candidate
     wins and the consistency rules. They are useful planning inputs, but the
@@ -478,18 +512,25 @@ to the same internal shapes.
     runtime bridge is needed for planning or implementation.
 - Duplicate or drifting paths relevant to this change:
   - `examples/121_nullable_route_field_final_output_contract` is already the
-    live example path and now authors `nullable` on the route field. The
-    remaining nullability cleanup is in live docs, proof alignment, and any
-    stale repo references that still describe `optional` or `required` as live
-    words on this surface.
+    live example path and authors `nullable` on the route field. The main
+    nullability risk now is stale stragglers or validation drift, not a broad
+    cutover that still needs to happen.
   - `examples/28_addressable_workflow_paths` already carries a self-owned
     addressable pressure case, but it still repeats explicit declaration roots
     like `WorkflowRoot:shared...`. That is the concrete proof that `self:`
     should be a shorthand over existing addressable truth, not a new concept.
+  - The live output-schema docs already teach `nullable` as the public word,
+    and `examples/79_final_output_output_schema` still keeps the retired
+    `required` and `optional` prompts only as negative diagnostics proof.
   - `doctrine/grammars/doctrine.lark` still contains only singular `inherit`
     rules and only `semantic: field_path` review bindings. The planned sugar
     is not shipped yet, so later stages must not assume these surfaces already
     exist just because the audit docs describe them.
+  - `doctrine/_compiler/resolve/outputs.py` already calls
+    `_resolve_contract_bucket_items()` and owns `_resolve_io_body()`,
+    `_resolve_io_section_item()`, and `_lower_omitted_io_section()`. Phase 5
+    should extend this live split instead of planning a new shared-helper
+    extraction from scratch.
 - Capability-first opportunities before new tooling:
   - Keep this as direct language work in existing grammar, parser, model,
     resolver, tests, and docs.
@@ -499,8 +540,11 @@ to the same internal shapes.
   - `tests/test_import_loading.py`, `tests/test_output_inheritance.py`,
     `tests/test_output_schema_surface.py`,
     `tests/test_output_schema_lowering.py`, `tests/test_final_output.py`,
-    `tests/test_emit_docs.py`, `tests/test_validate_output_schema.py`, and
-    `tests/test_prove_output_schema_openai.py` - direct behavior proof on the
+    `tests/test_emit_docs.py`, `tests/test_validate_output_schema.py`,
+    `tests/test_output_schema_validation.py`,
+    `tests/test_prove_output_schema_openai.py`,
+    `tests/test_review_imported_outputs.py`, and
+    `tests/test_route_output_semantics.py` - direct behavior proof on the
     touched contract families.
   - `make verify-diagnostics` - exact compile-error proof for retired
     nullability words and any new malformed shorthand.
@@ -539,21 +583,36 @@ to the same internal shapes.
   - `doctrine/_model/review.py` owns `ReviewFieldBinding` and
     `ReviewFieldsConfig`.
 - Compile-time ownership is split across existing compiler paths.
+  - `doctrine/_compiler/session.py` owns the stable compile session boundary,
+    import-root resolution, module cache, and parallel compile fan-out.
+  - `doctrine/_compiler/context.py` owns the task-local
+    resolve/validate/compile/flow mixin boundary over that session.
   - `doctrine/_compiler/indexing.py` loads imported modules and builds each
     `IndexedUnit`.
-  - `doctrine/_compiler/resolve/refs.py` owns named declaration lookup.
-  - `doctrine/_compiler/resolve/addressables.py` owns addressable-root and
+  - `doctrine/_compiler/resolve/refs.py` plus
+    `doctrine/_compiler/reference_diagnostics.py` own named declaration lookup
+    and its fail-loud diagnostics.
+  - `doctrine/_compiler/resolve/addressables.py` plus
+    `doctrine/_compiler/reference_diagnostics.py` own addressable-root and
     path resolution.
-  - first-class IO ownership is split in two places today:
-    - `doctrine/_compiler/resolve/io_contracts.py` owns agent-level `inputs`
-      and `outputs` field resolution
-    - `doctrine/_compiler/resolve/outputs.py` owns named `inputs` / `outputs`
-      declaration inheritance, omitted-title lowering, and bucket binding
-      behavior
+  - first-class IO ownership is already split across three focused surfaces:
+    - `doctrine/_compiler/validate/contracts.py` owns contract-summary and
+      explicit-accounting checks for typed `inputs` / `outputs` fields
+    - `doctrine/_compiler/resolve/io_contracts.py` owns bucket-level contract
+      lowering and direct declaration refs
+    - `doctrine/_compiler/resolve/outputs.py` owns inherited named
+      `inputs` / `outputs` bodies, omitted-title lowering, field ref/patch
+      resolution, previous-turn selector validation, and output bindings
   - inherited keyed-item ownership is spread across
     `agent_slots.py`, `workflows.py`, `analysis.py`, `documents.py`,
     `skills.py`, `addressable_skills.py`, `io_contracts.py`, `reviews.py`,
     `outputs.py`, and `output_schemas.py`.
+  - output-schema lowering and schema-shape diagnostics are split between
+    `doctrine/_compiler/resolve/output_schemas.py`,
+    `doctrine/_compiler/output_schema_validation.py`, and
+    `doctrine/_compiler/output_schema_diagnostics.py`.
+  - package- and file-scoped compiler diagnostics now have focused helpers in
+    `doctrine/_compiler/package_diagnostics.py`.
 - Public truth beyond code lives in:
   - manifest-backed examples under `examples/`
   - tests under `tests/`
@@ -564,19 +623,29 @@ to the same internal shapes.
 
 1. `doctrine/parser.py` parses authored `.prompt` files into Doctrine model
    carriers.
-2. `doctrine/_compiler/indexing.py` resolves absolute and relative imports into
-   `IndexedUnit.imported_units`.
+2. `doctrine/_compiler/session.py` builds the session-scoped module graph and
+   `doctrine/_compiler/indexing.py` resolves absolute and relative imports
+   into `IndexedUnit.imported_units`.
 3. resolve paths fan out by concept:
-   - named refs through `doctrine/_compiler/resolve/refs.py`
+   - named refs through `doctrine/_compiler/resolve/refs.py` plus shared
+     reference diagnostics
    - addressable refs through `doctrine/_compiler/resolve/addressables.py`
+     plus shared reference diagnostics
    - inherited keyed items through the family-specific resolvers
+   - IO bodies through `doctrine/_compiler/validate/contracts.py`,
+     `doctrine/_compiler/resolve/io_contracts.py`, and
+     `doctrine/_compiler/resolve/outputs.py`
+   - output-schema lowering and validation through
+     `doctrine/_compiler/resolve/output_schemas.py` and
+     `doctrine/_compiler/output_schema_validation.py`
 4. compile paths consume the resolved declarations:
    - `doctrine/_compiler/compile/review_contract.py` normalizes review and
      split-final-response bindings
    - `doctrine/_compiler/compile/final_output.py` and
      `doctrine/_compiler/compile/agent.py` compile final-output metadata
    - `doctrine/emit_docs.py` and renderers expose public docs and contract
-     output
+     output, including the current top-level runtime `io` payload in
+     `final_output.contract.json`
 5. proof paths validate the language:
    - targeted unit tests
    - `make verify-diagnostics`
@@ -606,9 +675,16 @@ to the same internal shapes.
 
 - Import loading already fails loud on duplicate declaration names in one
   module (`E288`) and relative imports that walk above the prompt root
-  (`E290`).
+  (`E290`). Imported-review and imported-output cases now also have direct
+  proof in `tests/test_emit_flow.py`, `tests/test_review_imported_outputs.py`,
+  and `examples/86_imported_review_comment_local_routes`.
 - Output-schema nullability already fails loud with `E236` and `E237` for
-  retired `required` and `optional`.
+  retired `required` and `optional`, and the live docs plus public examples
+  already teach `nullable` as the shipped word.
+- Lowered schema and example validation now fail loud through
+  `doctrine/_compiler/output_schema_validation.py` with dedicated proof in
+  `tests/test_output_schema_validation.py` and route-output coverage in
+  `tests/test_route_output_semantics.py`.
 - Inherited keyed-item families already fail loud on missing inherited entries
   and undefined inherited keys, usually through `E003` plus family-specific
   detail text.
@@ -618,8 +694,9 @@ to the same internal shapes.
   - `examples/121_nullable_route_field_final_output_contract` is the live
     route-field nullability example and already teaches `nullable`
   - import-resolution proof already extends past `03_imports` into
-    `tests/test_emit_flow.py` and `tests/test_compiler_boundary.py`, so alias
-    work must preserve imported runtime-package behavior too
+    `tests/test_emit_flow.py`, `tests/test_compiler_boundary.py`, and
+    `tests/test_review_imported_outputs.py`, so alias work must preserve
+    imported runtime-package and imported review/output behavior too
   - the audit docs describe the planned sugar, but grammar and parser still
     ship only the long forms
 
@@ -634,7 +711,7 @@ Not applicable. This is language, compiler, docs, and corpus work.
 ## 5.1 On-disk structure (future)
 
 - Keep all ownership in the existing grammar, parser, model, resolve, compile,
-  tests, examples, and docs paths.
+  tests, examples, docs, and the current session/context boundary.
 - Add only the minimum authored-surface support needed for this wave:
   - import alias and symbol-import grammar in `doctrine/grammars/doctrine.lark`
   - grouped explicit `inherit` grammar on the existing inherited families
@@ -653,11 +730,12 @@ Not applicable. This is language, compiler, docs, and corpus work.
   - allow a small authored sentinel for `self:` only if `AddressableRef`
     cannot cleanly carry it without ambiguity; resolve it back into ordinary
     addressable truth before path descent
-- Converge duplicated IO wrapper ownership in this wave:
-  - extract one shared helper boundary that both
-    `ResolveIoContractsMixin` and `ResolveOutputsMixin` use for one-line
-    keyed-wrapper lowering and omitted-title rules
-  - do not ship lockstep duplicate behavior without that shared owner path
+- Extend the current IO owner split instead of inventing a new one:
+  - `ValidateContractsMixin` keeps contract-summary truth
+  - `ResolveIoContractsMixin` keeps bucket-level direct-ref lowering
+  - `ResolveOutputsMixin` keeps inherited IO bodies, omitted-title rules, and
+    field ref/patch lowering
+  - `doctrine/emit_docs.py` keeps the runtime `io` payload unchanged
 - Do not add sidecar config, helper registries, macro files, or new public
   emitted contracts.
 
@@ -670,8 +748,8 @@ Not applicable. This is language, compiler, docs, and corpus work.
    - one-line keyed IO wrapper -> `IoSection` / `OverrideIoSection` with one
      `RecordRef` child and no extra title
 3. Extend import indexing and ref resolution, not authored refs themselves:
-   - `IndexedUnit` gains one local import-scope story for module aliases and
-     imported symbols
+   - the session-scoped `IndexedUnit` graph gains one local import-scope story
+     for module aliases and imported symbols
    - normal ref resolution continues to own ambiguity and fail-loud behavior
 4. Resolve `self:` through the shared addressable path:
    - bind it to the current owning declaration root where an addressable owner
@@ -679,8 +757,8 @@ Not applicable. This is language, compiler, docs, and corpus work.
    - then run the same path descent, display, and validation code as ordinary
      explicit roots
 5. Keep resolve, compile, emit, and validation semantics unchanged unless they
-   are directly needed to support sharper diagnostics or the nullability
-   cutover cleanup.
+   are directly needed to support sharper diagnostics, preserve the current
+   `nullable` baseline, or keep the runtime `io` contract payload stable.
 
 ## 5.3 Object model + abstractions (future)
 
@@ -702,6 +780,8 @@ Not applicable. This is language, compiler, docs, and corpus work.
   - `inputs` and `outputs` keyed wrappers accept `key: NameRef` when the
     bucket contains exactly one declaration ref
   - base and override wrappers move together
+  - the current `ValidateContractsMixin` -> `ResolveIoContractsMixin` ->
+    `ResolveOutputsMixin` owner split stays the only lowering path
   - `input source` and `output target` stay out of this wave
 - One addressable story:
   - `self:` is valid only on surfaces that already accept `PATH_REF`
@@ -711,6 +791,8 @@ Not applicable. This is language, compiler, docs, and corpus work.
   - `nullable` is the only live authored nullability word
   - legacy `required` and `optional` remain targeted hard errors on this
     surface
+  - lowered-schema and example validation keep flowing through the dedicated
+    output-schema validator path
   - emitted wire shape stays unchanged for the current
     `OpenAIStructuredOutput` profile
 
@@ -747,52 +829,57 @@ Not applicable.
 | ---- | ---- | ------------------ | ---------------- | --------------- | --- | ------------------ | -------------- |
 | Import surface grammar | `doctrine/grammars/doctrine.lark` | `import_decl`, `import_path` | Supports only `import path` with no alias or symbol import form | Add module alias and symbol-import productions; keep wildcard imports out | This is the highest-value repetition cut and must start at the public surface | `import pkg.mod as alias`; `from pkg.mod import Name`; `from pkg.mod import Name as Alias` | new parser tests; `examples/03_imports`; `make verify-examples` |
 | Import parse and model | `doctrine/parser.py`, `doctrine/_model/core.py` | `import_decl`, `ImportDecl` | Lowers only an `ImportPath` | Enrich `ImportDecl` to carry alias-aware import data without changing `NameRef` | Keep one named-ref story and one import carrier | alias-aware import declarations only; `NameRef` stays the ref carrier | import-loading and parser tests |
-| Import indexing and resolution | `doctrine/_compiler/indexing.py`, `doctrine/_compiler/resolve/refs.py` | `_resolve_import_path`, `IndexedUnit.imported_units`, named-ref lookup | Loads imported modules, but no local alias scope or imported-symbol scope | Add one local import-scope map and teach named-ref resolution to use it | Avoid a second alias resolver and keep fail-loud ambiguity in the compiler | module aliases and imported symbols resolve through the existing lookup path | `tests/test_import_loading.py`; `tests/test_compiler_boundary.py`; `tests/test_emit_flow.py`; `examples/03_imports` |
+| Import indexing and resolution | `doctrine/_compiler/session.py`, `doctrine/_compiler/indexing.py`, `doctrine/_compiler/resolve/refs.py`, `doctrine/_compiler/reference_diagnostics.py` | session-scoped module graph, `_resolve_import_path`, `IndexedUnit.imported_units`, named-ref lookup | Loads imported modules through the current session-scoped graph, but no local alias scope or imported-symbol scope exists yet | Add one local import-scope map and teach named-ref resolution to use it | Avoid a second alias resolver and keep fail-loud ambiguity in the compiler | module aliases and imported symbols resolve through the existing lookup path | `tests/test_import_loading.py`; `tests/test_compiler_boundary.py`; `tests/test_emit_flow.py`; `tests/test_review_imported_outputs.py`; `examples/03_imports`; `examples/86_imported_review_comment_local_routes`; `examples/109_imported_review_handoff_output_inheritance` |
 | Grouped inherit grammar | `doctrine/grammars/doctrine.lark` | `agent_slot_inherit`, `workflow_inherit`, `law_inherit`, `analysis_inherit`, `schema_inherit`, `document_inherit`, `review_inherit`, `skills_inherit`, `io_inherit`, `output_inherit`, `output_schema_inherit` | Every inherited family spells singular `inherit key` lines only | Add grouped explicit `inherit { ... }` using each family's existing key token | The repeated accounting rule is shared; the sugar should follow the whole carrier family | grouped explicit `inherit` only; no `inherit *` | new parser coverage; inherited family tests |
 | Grouped inherit parse lowering | `doctrine/_parser/workflows.py`, `doctrine/_parser/analysis_decisions.py`, `doctrine/_parser/transformer.py`, `doctrine/_parser/reviews.py`, `doctrine/_parser/skills.py`, `doctrine/_parser/io.py` | family-specific `*_inherit` methods | Lower only one `InheritItem` at a time | Expand grouped authored forms into repeated `InheritItem`s before resolve | Keep resolver semantics unchanged and fail loud | parser-level sugar only; no resolver-side merge semantics | inherited family tests; `examples/24`; `examples/107`; `examples/108` |
 | Inherited family resolvers | `doctrine/_compiler/resolve/agent_slots.py`, `doctrine/_compiler/resolve/workflows.py`, `doctrine/_compiler/resolve/analysis.py`, `doctrine/_compiler/resolve/documents.py`, `doctrine/_compiler/resolve/skills.py`, `doctrine/_compiler/resolve/addressable_skills.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/_compiler/resolve/output_schemas.py` | missing-entry and undefined-key checks | Already enforce explicit inherited accounting with fail-loud errors | Reuse the same semantics unchanged; only sharpen diagnostics if grouped syntax needs clearer blame | This wave is sugar, not an inheritance redesign | same inherited semantics with grouped authoring | `tests/test_output_inheritance.py`; existing family tests |
-| Review binding grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/reviews.py`, `doctrine/_parser/agents.py` | `semantic_field_binding`, `fields_stmt`, `final_output_review_fields_stmt` | Requires `semantic: field_path` even for identity cases | Add bare semantic-name entries that lower to the same binding tuple | Remove pure ceremony without adding a second binding surface | `fields:` and `review_fields:` accept bare semantic names for identity binds while explicit identity binds stay legal | review and final-output tests; `examples/85`; `examples/90`; `examples/104`; `examples/105`; `examples/106` |
+| Review binding grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/reviews.py`, `doctrine/_parser/agents.py` | `semantic_field_binding`, `fields_stmt`, `final_output_review_fields_stmt` | Requires `semantic: field_path` even for identity cases | Add bare semantic-name entries that lower to the same binding tuple | Remove pure ceremony without adding a second binding surface | `fields:` and `review_fields:` accept bare semantic names for identity binds while explicit identity binds stay legal | review and final-output tests; `tests/test_review_imported_outputs.py`; `examples/85`; `examples/86`; `examples/90`; `examples/104`; `examples/105`; `examples/106` |
 | Review compile validation | `doctrine/_compiler/compile/review_contract.py`, `doctrine/_compiler/compile/final_output.py` | final-response binding validation and payload preview wiring | Consumes explicit bindings only | Accept parser-lowered identity bindings with no semantic change | Keep one semantic-binding truth through compile and emit | no new contract fields; only shorter authoring | `tests/test_final_output.py`; `tests/test_emit_docs.py` |
 | IO wrapper grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_model/io.py` | `io_section`, `io_override_section`, `IoSection`, `OverrideIoSection` | Keyed `inputs` / `outputs` wrappers require multiline bodies, even for one child ref | Add `key: NameRef` and `override key: NameRef` sugar that lowers to one-child wrapper sections with no extra title | This is the cleanest IO-side repetition cut and stays inside one family | one-line keyed IO wrapper refs on `inputs` and `outputs` only | IO parser tests; `examples/24`; `examples/117` |
-| IO resolve and validation | `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/_compiler/validate/contracts.py` | `_resolve_contract_bucket_ref_entry`, `_resolve_non_inherited_io_items`, `_resolve_io_section_item`, `_lower_omitted_io_section`, `_summarize_non_inherited_contract_items` | Agent-level IO and named IO declarations already resolve through two closely related paths | Extract one shared helper boundary for the new one-line keyed-wrapper behavior and route both paths through it before ship | Prevent one IO family member from lowering differently than another | same resolved IO contract; shorter authoring only | IO resolve tests; `examples/24`; `examples/117`; manifest proof |
+| IO resolve and validation | `doctrine/_compiler/validate/contracts.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/emit_docs.py` | `_summarize_contract_field`, `_resolve_contract_bucket_ref_entry`, `_resolve_non_inherited_io_items`, `_resolve_io_section_item`, `_lower_omitted_io_section` | The live IO path already has a real owner split: contract summary in `validate/contracts.py`, bucket lowering in `resolve/io_contracts.py`, inherited IO-body and omitted-title lowering in `resolve/outputs.py`, and public contract emission in `emit_docs.py` | Add one-line keyed-wrapper behavior by extending those existing owners and reusing the current bucket and omitted-title path | Prevent a third IO lowering path and keep the runtime `io` contract stable | same resolved IO contract and emitted runtime payload; shorter authoring only | IO resolve tests; `tests/test_output_rendering.py`; `tests/test_emit_docs.py`; `examples/24`; `examples/117`; manifest proof |
 | `self:` path surface | `doctrine/grammars/doctrine.lark`, `doctrine/parser.py`, `doctrine/_model/core.py` | `PATH_REF`, `path_ref`, `AddressableRef` | Every addressable path requires an explicit declaration root | Add `self:` as an authored shorthand on existing `PATH_REF` surfaces and lower it into the shared addressable path story | Reduce repeated roots without creating a new addressable namespace | `self:path.to.item` on existing addressable-ref surfaces only | addressable parser tests; `examples/28` |
 | `self:` resolution and validation | `doctrine/_compiler/resolve/addressables.py`, `doctrine/_compiler/validate/addressable_children.py`, `doctrine/_compiler/validate/addressable_display.py` | `_resolve_addressable_ref_value`, `_resolve_addressable_root_decl`, child walking and display | Resolve only explicit roots today | Rebind `self:` to the current owning declaration root before normal path descent and display | Keep one addressable-resolution story and one error path | same resolved addressable targets with shorter authoring | addressable tests; route and review path-read tests where affected |
-| Output-schema nullability cleanup | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_compiler/resolve/output_schemas.py`, `doctrine/_model/io.py` | `output_schema_nullable_stmt`, `output_schema_required_stmt`, `output_schema_optional_stmt`, `OutputSchemaFlag`, `E236`, `E237` | Grammar/parser/resolver now point toward `nullable`, but live examples and docs still drift | Finish the cut across examples, tests, docs, and diagnostics while keeping the same lowered wire shape | The rest of the elegance wave should not stack on top of an unfinished nullability story | `nullable` is the live word; `required` / `optional` stay targeted hard errors | output-schema, final-output, emit-docs, and diagnostics tests; `examples/79`; `85`; `90`; `104`; `105`; `106`; `121` |
-| Live docs and release truth | `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`, `docs/REVIEW_SPEC.md`, `docs/COMPILER_ERRORS.md`, `docs/VERSIONING.md`, `CHANGELOG.md`, `examples/README.md` | public teaching and release guidance | Some docs still teach older nullability words and none yet teach the new sugar wave | Update the live authoring story in the same change | Prevent stale public truth and keep versioning honest | one coherent public story for the six in-scope wins | docs emit and example verification; release-truth review |
+| Output-schema nullability cleanup | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_compiler/resolve/output_schemas.py`, `doctrine/_compiler/output_schema_validation.py`, `doctrine/_compiler/output_schema_diagnostics.py`, `doctrine/_model/io.py` | `output_schema_nullable_stmt`, `output_schema_required_stmt`, `output_schema_optional_stmt`, `OutputSchemaFlag`, `E236`, `E237`, lowered-schema validator | Grammar, parser, resolver, live docs, and public examples already align on `nullable`, and retired words remain only as negative diagnostics proof | Keep that baseline locked, close any leftover stale references, and preserve the dedicated validator and diagnostics path while later sugar lands | The rest of the elegance wave should not stack on top of a drifting nullability story | `nullable` is the live word; `required` / `optional` stay targeted hard errors; lowered-schema validation stays on the current path | output-schema, route-output, final-output, emit-docs, and diagnostics tests; `tests/test_output_schema_validation.py`; `tests/test_route_output_semantics.py`; `examples/79`; `104`; `105`; `106`; `121` |
+| Live docs and release truth | `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`, `docs/REVIEW_SPEC.md`, `docs/COMPILER_ERRORS.md`, `docs/VERSIONING.md`, `CHANGELOG.md`, `examples/README.md` | public teaching and release guidance | Live docs already teach the `nullable` baseline, but they do not yet teach the new sugar wave | Update the live authoring story in the same change | Prevent stale public truth and keep versioning honest | one coherent public story for the six in-scope wins | docs emit and example verification; release-truth review |
 | Syntax support | `editors/vscode/` | TextMate grammar and packaged syntax assets | Editor support will drift if grammar changes land without sync | Update syntax support if grammar keywords or forms change | Public syntax support is part of the shipped authoring surface | matching syntax highlight and parsing hints | `cd editors/vscode && make` if touched |
 
 ## 6.2 Migration notes
 
 * Canonical owner path / shared code path:
-  - imports: `doctrine/parser.py` -> `doctrine/_compiler/indexing.py` -> `doctrine/_compiler/resolve/refs.py`
+  - imports: `doctrine/parser.py` -> `doctrine/_compiler/session.py` -> `doctrine/_compiler/indexing.py` -> `doctrine/_compiler/resolve/refs.py` -> `doctrine/_compiler/reference_diagnostics.py`
   - grouped inherit: existing `InheritItem` plus the current family-specific inherited resolvers
   - review bindings: `doctrine/_parser/reviews.py` / `doctrine/_parser/agents.py` -> `doctrine/_compiler/compile/review_contract.py`
-  - IO wrappers: `doctrine/_parser/io.py` -> one shared helper boundary used by `doctrine/_compiler/resolve/io_contracts.py` and `doctrine/_compiler/resolve/outputs.py`
+  - IO wrappers: `doctrine/_parser/io.py` -> `doctrine/_compiler/validate/contracts.py` -> `doctrine/_compiler/resolve/io_contracts.py` -> `doctrine/_compiler/resolve/outputs.py` -> `doctrine/emit_docs.py`
   - `self:`: `doctrine/parser.py` -> `doctrine/_compiler/resolve/addressables.py`
-  - nullability: `doctrine/_parser/io.py` -> `doctrine/_compiler/resolve/output_schemas.py`
+  - nullability: `doctrine/_parser/io.py` -> `doctrine/_compiler/resolve/output_schemas.py` -> `doctrine/_compiler/output_schema_validation.py`
 * Deprecated APIs (if any):
   - `output schema` `required` and `optional` stay retired authored words on this surface only
 * Delete list (what must be removed; include superseded shims/parallel paths if any):
-  - old `optional` / `required` teaching on live output-schema docs
+  - any stray `optional` / `required` teaching on live output-schema docs
+    outside intentional invalid-example proof
   - any stale example refs, docs, or checked-in artifacts that still point at
-    retired output-schema nullability words
+    retired output-schema nullability words as live authoring
   - any temporary example or doc wording that suggests a second alias, binding, or path-root system
 * Adjacent surfaces tied to the same contract family:
-  - `examples/03`, `24`, `28`, `79`, `85`, `90`, `104`, `105`, `106`, `107`, `108`, `117`, and `121`
+  - `examples/03`, `24`, `28`, `79`, `85`, `86`, `90`, `104`, `105`, `106`, `107`, `108`, `109`, `117`, and `121`
   - `tests/test_import_loading.py`
   - `tests/test_compiler_boundary.py`
   - `tests/test_emit_flow.py`
+  - `tests/test_review_imported_outputs.py`
   - `tests/test_output_inheritance.py`
   - `tests/test_output_schema_surface.py`
   - `tests/test_output_schema_lowering.py`
+  - `tests/test_output_schema_validation.py`
   - `tests/test_final_output.py`
   - `tests/test_emit_docs.py`
+  - `tests/test_route_output_semantics.py`
   - `tests/test_validate_output_schema.py`
   - `tests/test_prove_output_schema_openai.py`
   - `tests/test_output_rendering.py`
   - `editors/vscode/` if grammar changes affect public syntax support
 * Compatibility posture / cutover plan:
-  - clean authored-language cutover for output-schema nullability wording
+  - keep the current clean authored-language cutover for output-schema
+    nullability wording
   - additive compatibility for import aliasing, grouped `inherit`, review-binding shorthand, IO wrapper shorthand, and `self:`
   - no bridge and no runtime shim
 * Capability-replacing harnesses to delete or justify:
@@ -806,6 +893,9 @@ Not applicable.
   - `uv sync`
   - `npm ci`
   - targeted unit tests for touched surfaces
+  - `tests/test_review_imported_outputs.py`
+  - `tests/test_output_schema_validation.py`
+  - `tests/test_route_output_semantics.py`
   - `make verify-diagnostics`
   - `make verify-examples`
   - `cd editors/vscode && make` if syntax support changes
@@ -830,11 +920,11 @@ Not applicable.
 
 > Rule: systematic build, foundational first; split Section 7 into the best sequence of coherent self-contained units, optimizing for phases that are fully understood, credibly testable, compliance-complete, and safe to build on later. If two decompositions are both valid, bias toward more phases than fewer. `Work` explains the unit and is explanatory only for modern docs. `Checklist (must all be done)` is the authoritative must-do list inside the phase. `Exit criteria (all required)` names the exhaustive concrete done conditions the audit must validate. Resolve adjacent-surface dispositions and compatibility posture before writing the checklist. Before a phase is valid, run an obligation sweep and move every required promise from architecture, call-site audit, migration notes, delete lists, verification commitments, docs/comments propagation, approved bridges, and required helper follow-through into `Checklist` or `Exit criteria`. The authoritative checklist must name the actual chosen work, not unresolved branches or "if needed" placeholders. Refactors, consolidations, and shared-path extractions must preserve existing behavior with credible evidence proportional to the risk. For agent-backed systems, prefer prompt, grounding, and native-capability changes before new harnesses or scripts. No fallbacks/runtime shims - the system must work correctly or fail loudly (delete superseded paths). If a bridge is explicitly approved, timebox it and include removal work; otherwise plan either clean cutover or preservation work directly. Prefer programmatic checks per phase; defer manual/UI verification to finalization. Avoid negative-value tests and heuristic gates (deletion checks, visual constants, doc-driven gates, keyword or absence gates, repo-shape policing). Also: document new patterns/gotchas in code comments at the canonical boundary (high leverage, not comment spam).
 
-## Phase 1 - Finish the `nullable` cutover and remove stale nullability truth
+## Phase 1 - Lock the `nullable` baseline and remove any leftover drift
 
 Status
 
-- Planned.
+- Partially landed in the current repo. Keep this as the first ship gate.
 
 Goal
 
@@ -843,27 +933,33 @@ Goal
 
 Work
 
-- Finish the breaking authored-language cut for output-schema nullability,
-  remove stale example truth, and keep the emitted wire contract unchanged.
+- Treat `nullable` as current public truth, close any leftover stale
+  references, and keep the emitted wire contract unchanged.
 
 Checklist (must all be done)
 
-- Update the remaining live `output schema` prompts, manifests, and expected
-  refs in `79`, `85`, `90`, `104`, `105`, `106`, and `121` so authored
-  null-allowed fields use `nullable`, not `optional` or `required`.
+- Audit the remaining live `output schema` prompts, manifests, expected refs,
+  docs, and release truth for any stale `required` / `optional` teaching
+  outside intentional invalid-example proof.
 - Keep plain fields and route fields aligned on the same `nullable` story.
+- Keep `examples/79`, `104`, `105`, `106`, and `121` as the main authored
+  nullability proof surfaces, and keep the broader `85` / `90` final-output
+  route proof green where touched.
 - Keep `E236` and `E237` sharp and upgrade-oriented for retired
   `required` and `optional`.
-- Refresh manifest-backed proof and checked-in refs for every touched
-  nullability example.
-- Update the live output-schema docs that currently teach the old words:
-  `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`,
-  `docs/COMPILER_ERRORS.md`, `docs/VERSIONING.md`, and `CHANGELOG.md`.
+- Keep `doctrine/_compiler/output_schema_validation.py` and
+  `doctrine/_compiler/output_schema_diagnostics.py` aligned with the lowered
+  schema and example-validation flow.
+- Refresh manifest-backed proof and checked-in refs only for touched
+  nullability surfaces.
+- Re-audit `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`,
+  `docs/COMPILER_ERRORS.md`, `docs/VERSIONING.md`, and `CHANGELOG.md`, and
+  patch only the surfaces that still drift.
 
 Verification (required proof)
 
 - Run:
-  - `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai`
+  - `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai`
   - `make verify-diagnostics`
   - `make verify-examples`
 
@@ -875,10 +971,12 @@ Docs/comments (propagation; only if needed)
 Exit criteria (all required)
 
 - No live teaching surface describes `optional` or `required` as a live
-  `output schema` field word.
+  `output schema` field word outside intentional invalid-example proof.
 - The live `121` example continues to teach `nullable` on the route field.
 - `E236` and `E237` still prove the intended upgrade path.
 - Output-schema and final-output proof pass with unchanged emitted wire shape.
+- The dedicated output-schema validator path still matches the lowered-schema
+  and example-validation contract.
 
 Rollback
 
@@ -914,15 +1012,18 @@ Checklist (must all be done)
   and ambiguous imported ownership.
 - Preserve current absolute-import, relative-import, and imported runtime
   package behavior.
+- Preserve imported review/output behavior across module boundaries.
 - Update `examples/03_imports` and its manifest-backed refs to teach the new
-  forms.
-- Add targeted parser, import-loading, compiler-boundary, and emit-flow proof
-  for the new import path.
+  forms. Keep `examples/86_imported_review_comment_local_routes` and
+  `examples/109_imported_review_handoff_output_inheritance` green as adjacent
+  imported-ref proof.
+- Add targeted parser, import-loading, compiler-boundary, emit-flow, and
+  imported-review/output proof for the new import path.
 
 Verification (required proof)
 
 - Run:
-  - `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow`
+  - `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_review_imported_outputs`
   - focused parser and resolve tests for alias-aware imports
   - `make verify-examples`
 
@@ -937,6 +1038,7 @@ Exit criteria (all required)
 - Module aliases and imported symbols resolve through the existing import and
   named-ref path, not a sidecar resolver.
 - Imported runtime-package behavior still passes existing proof.
+- Imported review/output behavior still passes existing proof.
 - `examples/03_imports` teaches the new public forms.
 - No route-only or review-only alias surface is introduced.
 
@@ -1031,14 +1133,14 @@ Checklist (must all be done)
 - Preserve existing review completeness checks and split-final-response
   validation.
 - Update the real review-driven example family that teaches these bindings:
-  `85`, `90`, `104`, `105`, and `106`.
-- Add targeted review, final-output, and emitted-contract proof for the new
-  shorthand.
+  `85`, `86`, `90`, `104`, `105`, and `106`.
+- Add targeted review, final-output, imported-review/output, and
+  emitted-contract proof for the new shorthand.
 
 Verification (required proof)
 
 - Run:
-  - `uv run --locked python -m unittest tests.test_final_output tests.test_emit_docs`
+  - `uv run --locked python -m unittest tests.test_final_output tests.test_emit_docs tests.test_review_imported_outputs`
   - focused review-binding parser and compile tests
   - `make verify-examples`
 
@@ -1057,7 +1159,7 @@ Rollback
 
 - Remove shorthand parsing and keep explicit bindings only.
 
-## Phase 5 - Add first-class IO wrapper shorthand and converge the two IO resolver paths
+## Phase 5 - Add first-class IO wrapper shorthand on the current IO owner path
 
 Status
 
@@ -1065,13 +1167,13 @@ Status
 
 Goal
 
-- Make keyed `inputs` and `outputs` wrappers concise without letting the two
-  existing IO resolver paths drift apart.
+- Make keyed `inputs` and `outputs` wrappers concise without creating a third
+  IO lowering path.
 
 Work
 
-- Add one-line keyed wrapper refs on first-class IO wrappers and make both
-  existing IO-resolution paths honor the same lowering and omitted-title rules.
+- Add one-line keyed wrapper refs on first-class IO wrappers and extend the
+  current IO owner split instead of replacing it.
 
 Checklist (must all be done)
 
@@ -1080,38 +1182,45 @@ Checklist (must all be done)
 - Keep `input source` and `output target` out of scope in this wave.
 - Preserve the existing omitted-title rule: only one lowerable direct
   declaration may reuse the child title.
-- Extract one shared helper boundary that both `ResolveIoContractsMixin` and
-  `ResolveOutputsMixin` use before shipping the shorthand.
+- Reuse the current owner split:
+  `ValidateContractsMixin` for contract summary,
+  `ResolveIoContractsMixin._resolve_contract_bucket_items()` for bucket
+  lowering, and `ResolveOutputsMixin._resolve_io_body()` /
+  `_resolve_io_section_item()` / `_lower_omitted_io_section()` for inherited
+  IO bodies and omitted-title lowering.
+- Do not add a third IO helper or duplicate lowering path for this feature.
 - Add fail-loud handling for malformed shorthand and unsupported shapes.
 - Update `examples/24_io_block_inheritance` and
   `examples/117_io_omitted_wrapper_titles`.
-- Add targeted parser, resolve, and output-rendering proof for the new IO
-  path.
+- Add targeted parser, resolve, emitted-contract, and output-rendering proof
+  for the new IO path.
 
 Verification (required proof)
 
 - Run:
   - focused parser and resolve tests for IO shorthand
-  - `uv run --locked python -m unittest tests.test_output_rendering`
+  - `uv run --locked python -m unittest tests.test_output_rendering tests.test_emit_docs`
   - `make verify-examples`
 
 Docs/comments (propagation; only if needed)
 
-- Add one short ownership comment only if the converged IO helper boundary
+- Add one short ownership comment only if the current IO owner split
   would otherwise be easy to misread.
 - Live teaching updates are completed in Phase 7.
 
 Exit criteria (all required)
 
 - One-line keyed wrappers work on both base and override entries.
-- The two IO resolver paths now share one canonical helper boundary for this
-  surface.
+- The current IO owner split stays coherent and remains the only lowering path
+  for this surface.
+- `final_output.contract.json.io` stays unchanged apart from the shorter
+  authoring surface that feeds it.
 - No broad title-defaulting expansion leaks outside the `inputs` / `outputs`
   wrapper family.
 
 Rollback
 
-- Remove IO shorthand and any shared-helper extraction together.
+- Remove IO shorthand and any related owner-path edits together.
 
 ## Phase 6 - Add `self:` shorthand across the existing `PATH_REF` family
 
@@ -1146,6 +1255,7 @@ Verification (required proof)
 
 - Run:
   - focused `PATH_REF` parser and resolver tests
+  - `uv run --locked python -m unittest tests.test_route_output_semantics`
   - `make verify-examples`
   - `make verify-diagnostics`
 
@@ -1206,7 +1316,7 @@ Verification (required proof)
 - Run:
   - `uv sync`
   - `npm ci`
-  - `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_output_inheritance tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_final_output tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+  - `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_review_imported_outputs tests.test_output_inheritance tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
   - `make verify-diagnostics`
   - `make verify-examples`
   - `cd editors/vscode && make`
@@ -1238,11 +1348,14 @@ Rollback
 - `tests/test_import_loading.py`
 - `tests/test_compiler_boundary.py`
 - `tests/test_emit_flow.py`
+- `tests/test_review_imported_outputs.py`
 - `tests/test_output_inheritance.py`
 - `tests/test_output_schema_surface.py`
 - `tests/test_output_schema_lowering.py`
+- `tests/test_output_schema_validation.py`
 - `tests/test_validate_output_schema.py`
 - `tests/test_prove_output_schema_openai.py`
+- `tests/test_route_output_semantics.py`
 - `tests/test_final_output.py`
 - `tests/test_emit_docs.py`
 - `tests/test_output_rendering.py`
@@ -1258,12 +1371,14 @@ Rollback
   - `28_addressable_workflow_paths`
   - `79_final_output_output_schema`
   - `85_review_split_final_output_output_schema`
+  - `86_imported_review_comment_local_routes`
   - `90_split_handoff_and_final_output_shared_route_semantics`
   - `104_review_final_output_output_schema_blocked_control_ready`
   - `105_review_split_final_output_output_schema_control_ready`
   - `106_review_split_final_output_output_schema_partial`
   - `107_output_inheritance_basic`
   - `108_output_inheritance_attachments`
+  - `109_imported_review_handoff_output_inheritance`
   - `117_io_omitted_wrapper_titles`
   - `121_nullable_route_field_final_output_contract`
 
@@ -1278,7 +1393,7 @@ Rollback
 
 - `uv sync`
 - `npm ci`
-- `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_output_inheritance tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_final_output tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+- `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_review_imported_outputs tests.test_output_inheritance tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
 - `make verify-examples`
 - `make verify-diagnostics`
 - if `editors/vscode/` changes, run `cd editors/vscode && make`
@@ -1287,8 +1402,9 @@ Rollback
 
 ## 9.1 Compatibility posture
 
-- `output schema` nullability cleanup is a clean breaking authored-language
-  cut on that one surface.
+- `output schema` nullability cleanup is already the current authored-language
+  baseline on that one surface. Keep it as a clean breaking line with no
+  bridge.
 - The other planned wins are additive and should preserve existing prompt
   files.
 - No runtime shim or alias bridge is approved.
@@ -1315,31 +1431,30 @@ Not applicable beyond compile-time proof and emitted artifact verification.
   - phase-exit completeness, verification burden, rollout duties, and
     canonical owner paths
 - Findings summary:
-  - final verification drift had dropped
-    `tests/test_validate_output_schema.py` and
-    `tests/test_prove_output_schema_openai.py` from the ship gate
-  - the nullability cleanup story still described a stale `121_optional`
-    delete even though the repo already moved to the `121_nullable` example
-  - the call-site audit undercounted review inheritance and review-driven
-    example updates
-  - Phase 4 preserved additive shorthand only by implication instead of
-    stating that explicit identity binds remain legal
-  - the IO shorthand owner path was still framed as an optional convergence
-    choice instead of one chosen canonical helper boundary
+  - the plan still treated `nullable` as unfinished broad cutover work even
+    though live docs, release truth, and the public example ladder already
+    teach it as current truth
+  - the architecture map undercounted newer compiler owners:
+    `CompilationSession`, shared reference diagnostics, output-schema
+    diagnostics, and the dedicated output-schema validator
+  - the IO shorthand plan still proposed a new helper extraction even though
+    the live repo already has a real owner split across
+    `validate/contracts.py`, `resolve/io_contracts.py`, and `resolve/outputs.py`
+  - imported review/output proof and route-output proof were undercounted in
+    the ship gate
 - Integrated repairs:
-  - restored the two output-schema proof modules to Section 8 and the Phase 7
-    final verification command
-  - rewrote the nullability baseline and Phase 1 to match the live `121`
-    example and removed the stale delete obligation
-  - expanded Section 6 to name `review_inherit`,
-    `doctrine/_parser/reviews.py`, and the full review-driven example family
-  - made explicit identity binds an explicit additive-compatibility guarantee
-    in Phase 4
-  - chose one canonical IO convergence story: extract one shared helper
-    boundary before shipping shorthand
-  - tightened the diagnostics language so grouped `inherit` malformed forms
-    fail loud at the parser or compile boundary, not only through
-    compiler-coded errors
+  - reframed nullability as the current baseline and rewrote Phase 1 as a
+    lock-and-audit gate
+  - added the newer compiler owner paths and diagnostics helpers to the
+    architecture and call-site audit
+  - rewrote Phase 5 around the current live IO owner split instead of a new
+    helper extraction
+  - expanded proof surfaces to include
+    `tests/test_review_imported_outputs.py`,
+    `tests/test_output_schema_validation.py`,
+    `tests/test_route_output_semantics.py`,
+    `examples/86_imported_review_comment_local_routes`, and
+    `examples/109_imported_review_handoff_output_inheritance`
 - Remaining inconsistencies:
   - none
 - Unresolved decisions:
@@ -1367,10 +1482,15 @@ Not applicable beyond compile-time proof and emitted artifact verification.
 - 2026-04-16: Import aliasing must extend the existing import/index/ref path,
   and `self:` must resolve through the existing addressable path; neither
   feature gets a second resolver or sidecar registry.
-- 2026-04-16: One-line keyed IO wrapper refs must cover both
-  `ResolveIoContractsMixin` and `ResolveOutputsMixin`; this plan now requires
-  one shared helper boundary before shipping the shorthand so the IO family
-  keeps one owner path.
+- 2026-04-16: One-line keyed IO wrapper refs must stay on the current live IO
+  owner split: `ValidateContractsMixin` for contract summary,
+  `ResolveIoContractsMixin` for bucket lowering, and `ResolveOutputsMixin`
+  for inherited IO bodies and omitted-title lowering.
 - 2026-04-16: Section 7 uses seven phases so the final public-truth, syntax,
   and release-alignment sweep is a distinct ship gate rather than hidden
   cleanup inside the last feature phase.
+- 2026-04-16: Re-audit against the current repo changed this plan in four
+  ways: `nullable` is now treated as shipped baseline, newer diagnostics and
+  validator modules are named as first-class owners, imported review/output
+  proof is part of the ship gate, and the IO shorthand phase now extends the
+  current live owner split instead of planning a fresh helper extraction.

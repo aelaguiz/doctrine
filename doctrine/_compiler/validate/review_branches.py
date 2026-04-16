@@ -446,9 +446,14 @@ class ValidateReviewBranchesMixin:
             fallback_unit=(
                 review_unit if review_unit.module_parts != output_unit.module_parts else None
             ),
+            route_unit=review_unit,
+            route_source_span=route.source_span,
             owner_label=f"output {output_decl.name}.{'.'.join(field_path)}",
             error_message=(
                 f"Review next_owner field must structurally bind the routed target in {owner_label}: "
                 f"{output_decl.name}.{'.'.join(field_path)} -> {route_branch.target_name}"
             ),
+            error_code="E496",
+            error_summary="Review next owner does not match the bound output field",
+            error_hints=(),
         )
