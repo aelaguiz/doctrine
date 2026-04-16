@@ -80,11 +80,7 @@ prompt = "prompts/INVALID_SKILL_PURPOSE_WORKFLOW_REF.prompt"
 agent = "InvalidSkillPurposeInterpolationDemo"
 exception_type = "CompileError"
 error_code = "E271"
-message_contains = [
-  "Workflow refs are not allowed in skill purpose",
-  "use `use` for workflow composition",
-  "SharedRead",
-]
+location_path = "prompts/INVALID_SKILL_PURPOSE_WORKFLOW_REF.prompt"
 
 [[cases]]
 name = "unknown interpolation fields fail loud in role prose"
@@ -94,10 +90,7 @@ prompt = "prompts/INVALID_ROLE_FIELD_PATH.prompt"
 agent = "InvalidRoleFieldPathInterpolationDemo"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path on role prose",
-  "CurrentPlan:source.missing",
-]
+location_path = "prompts/INVALID_ROLE_FIELD_PATH.prompt"
 
 [[cases]]
 name = "route label interpolation paths must stay addressable"
@@ -107,10 +100,7 @@ prompt = "prompts/INVALID_ROUTE_LABEL_NONSCALAR.prompt"
 agent = "InvalidRouteLabelInterpolationDemo"
 exception_type = "CompileError"
 error_code = "E274"
-message_contains = [
-  "Addressable path must stay addressable on route labels",
-  "CurrentPlan:source.path.file_name",
-]
+location_path = "prompts/INVALID_ROUTE_LABEL_NONSCALAR.prompt"
 
 [[cases]]
 name = "ambiguous refs fail loud in record prose interpolation"
@@ -120,9 +110,4 @@ prompt = "prompts/INVALID_AMBIGUOUS_RECORD_PROSE.prompt"
 agent = "InvalidAmbiguousRecordProseDemo"
 exception_type = "CompileError"
 error_code = "E270"
-message_contains = [
-  "Ambiguous inputs prose interpolation ref",
-  "SharedThing",
-  "input declaration",
-  "skill declaration",
-]
+location_path = "prompts/INVALID_AMBIGUOUS_RECORD_PROSE.prompt"

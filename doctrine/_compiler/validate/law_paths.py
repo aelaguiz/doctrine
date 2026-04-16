@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.resolved_types import (
     AgentContract,
     CanonicalLawPath,
@@ -366,12 +367,22 @@ class ValidateLawPathsMixin:
         for item in items:
             if isinstance(item, model.RecordScalar) and item.key in scalar_keys:
                 if item.key in scalar_items:
-                    raise CompileError(f"Duplicate record key in {owner_label}: {item.key}")
+                    raise compile_error(
+                        code="E284",
+                        summary="Duplicate record key",
+                        detail=f"Record owner `{owner_label}` repeats key `{item.key}`.",
+                        source_span=item.source_span,
+                    )
                 scalar_items[item.key] = item
                 continue
             if isinstance(item, model.RecordSection) and item.key in section_keys:
                 if item.key in section_items:
-                    raise CompileError(f"Duplicate record key in {owner_label}: {item.key}")
+                    raise compile_error(
+                        code="E284",
+                        summary="Duplicate record key",
+                        detail=f"Record owner `{owner_label}` repeats key `{item.key}`.",
+                        source_span=item.source_span,
+                    )
                 section_items[item.key] = item
                 continue
             extras.append(item)

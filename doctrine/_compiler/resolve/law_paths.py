@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT, _SCHEMA_FAMILY_TITLES
 from doctrine._compiler.naming import _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
@@ -17,6 +18,72 @@ from doctrine._compiler.support_files import _dotted_decl_name
 
 class ResolveLawPathsMixin:
     """Enum, match, and law-path resolution helpers for ResolveMixin."""
+
+    def _law_path_wrong_kind_diagnostic(
+        self,
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+        owner_label: str,
+        statement_label: str,
+        allowed_text: str,
+        dotted_path: str,
+    ) -> CompileError:
+        if statement_label == "current artifact":
+            return compile_error(
+                code="E335",
+                summary="Current artifact target has wrong kind",
+                detail=(
+                    f"Current-artifact target `{dotted_path}` must resolve to a declared or "
+                    f"bound concrete-turn input or output in {owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        if statement_label == "own only":
+            return compile_error(
+                code="E352",
+                summary="Owned scope target is unknown",
+                detail=(
+                    f"Owned scope target `{dotted_path}` must resolve to a declared or bound "
+                    f"concrete-turn input or output or a declared schema family in "
+                    f"{owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        if statement_label.startswith("preserve "):
+            return compile_error(
+                code="E355",
+                summary="Preserve target is unknown",
+                detail=(
+                    f"`{statement_label}` target `{dotted_path}` must resolve to a "
+                    f"{allowed_text} in {owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        if statement_label == "invalidate":
+            return compile_error(
+                code="E373",
+                summary="Invalidation target is unknown",
+                detail=(
+                    f"Invalidation target `{dotted_path}` must resolve to a declared or bound "
+                    f"concrete-turn input, output, or schema group in {owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        return compile_error(
+            code="E299",
+            summary="Compile failure",
+            detail=(
+                f"{statement_label} target must resolve to a {allowed_text} in "
+                f"{owner_label}: {dotted_path}"
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=source_span,
+        )
 
     def _resolve_constant_enum_member(
         self,
@@ -266,26 +333,28 @@ class ResolveLawPathsMixin:
                 _dotted_decl_name(match.unit.module_parts, self._law_path_decl_identity(match.decl))
                 for match in unique_matches
             )
-            raise CompileError(
-                f"Ambiguous {statement_label} path in {owner_label}: "
-                f"{'.'.join(path.parts)} matches {choices}"
-            ).ensure_location(
+            raise compile_error(
+                code="E299",
+                summary="Ambiguous law path",
+                detail=(
+                    f"Ambiguous {statement_label} path in {owner_label}: "
+                    f"{'.'.join(path.parts)} matches {choices}"
+                ),
                 path=unit.prompt_file.source_path,
-                line=path.source_span.line if path.source_span is not None else None,
-                column=path.source_span.column if path.source_span is not None else None,
+                source_span=path.source_span,
             )
 
         allowed_text = self._law_path_allowed_text(
             allowed_kinds,
             agent_contract=agent_contract,
         )
-        raise CompileError(
-            f"{statement_label} target must resolve to a {allowed_text} in {owner_label}: "
-            f"{'.'.join(path.parts)}"
-        ).ensure_location(
-            path=unit.prompt_file.source_path,
-            line=path.source_span.line if path.source_span is not None else None,
-            column=path.source_span.column if path.source_span is not None else None,
+        raise self._law_path_wrong_kind_diagnostic(
+            unit=unit,
+            source_span=path.source_span,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_text=allowed_text,
+            dotted_path=".".join(path.parts),
         )
 
     def _resolve_bound_law_matches(

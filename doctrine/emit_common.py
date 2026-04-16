@@ -6,8 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.support import path_location
-from doctrine.diagnostics import CompileError, EmitError
+from doctrine.diagnostics import EmitError
 from doctrine.project_config import (
     PYPROJECT_FILE_NAME,
     ProvidedPromptRoot,
@@ -312,9 +313,14 @@ def collect_runtime_emit_roots(
                 concrete_agents = _unit_concrete_agent_names(imported_unit)
                 if len(concrete_agents) != 1:
                     dotted_name = ".".join(imported_unit.module_parts)
-                    raise CompileError(
-                        "Runtime package import must define exactly one concrete agent: "
-                        f"{dotted_name or '<entrypoint>'}"
+                    raise compile_error(
+                        code="E299",
+                        summary="Runtime package import must define one concrete agent",
+                        detail=(
+                            "Runtime package import must define exactly one concrete agent: "
+                            f"{dotted_name or '<entrypoint>'}"
+                        ),
+                        path=imported_unit.prompt_file.source_path,
                     )
                 roots.append(
                     RuntimeEmitRoot(

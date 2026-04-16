@@ -62,8 +62,9 @@ prompt = "prompts/INVALID_BOUND_OWN_AND_DIRECT_EXACT_OVERLAP.prompt"
 agent = "InvalidBoundOwnAndDirectExactOverlapDemo"
 exception_type = "CompileError"
 error_code = "E353"
-message_contains = [
-  "Owned scope overlaps exact-preserved scope",
+location_line = 24
+related = [
+    { label = "overlapping `own only` statement", line = 23 },
 ]
 
 [[cases]]

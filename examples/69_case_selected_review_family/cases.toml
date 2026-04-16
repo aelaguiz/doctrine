@@ -125,9 +125,9 @@ prompt = "prompts/INVALID_OVERLAPPING_CASES.prompt"
 agent = "InvalidCaseOverlapDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "overlapping cases for selector value `draft-rewrite`",
-  "first case for `draft-rewrite`",
+location_line = 96
+related = [
+    { label = "first case for `draft-rewrite`", line = 83 },
 ]
 
 [[cases]]
@@ -255,6 +255,4 @@ prompt = "prompts/INVALID_NON_TOTAL_CASES.prompt"
 agent = "InvalidCaseNonTotalDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "missing cases for selector values: metadata-refresh",
-]
+location_line = 70

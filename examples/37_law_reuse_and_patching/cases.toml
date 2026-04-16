@@ -148,9 +148,9 @@ prompt = "prompts/INVALID_MISSING_INHERITED_LAW_SECTION.prompt"
 agent = "InvalidMissingInheritedLawSection"
 exception_type = "CompileError"
 error_code = "E383"
-message_contains = [
-  "Missing inherited law subsection",
-  "currentness",
+location_line = 48
+related = [
+    { label = "inherited `currentness` subsection", line = 32 },
 ]
 
 [[cases]]
@@ -161,9 +161,9 @@ prompt = "prompts/INVALID_DUPLICATE_INHERITED_LAW_SECTION.prompt"
 agent = "InvalidDuplicateInheritedLawSection"
 exception_type = "CompileError"
 error_code = "E382"
-message_contains = [
-  "Duplicate inherited law subsection",
-  "currentness",
+location_line = 46
+related = [
+    { label = "first `currentness` subsection", line = 43 },
 ]
 
 [[cases]]
@@ -174,10 +174,7 @@ prompt = "prompts/INVALID_OVERRIDE_UNKNOWN_LAW_SECTION.prompt"
 agent = "InvalidOverrideUnknownLawSection"
 exception_type = "CompileError"
 error_code = "E384"
-message_contains = [
-  "Cannot override undefined law subsection",
-  "missing_section",
-]
+location_line = 45
 
 [[cases]]
 name = "inherited law blocks cannot mix bare statements with patch entries"
@@ -187,6 +184,4 @@ prompt = "prompts/INVALID_BARE_LAW_STATEMENT_IN_INHERITED_CHILD.prompt"
 agent = "InvalidBareLawStatementInInheritedChild"
 exception_type = "CompileError"
 error_code = "E381"
-message_contains = [
-  "Inherited law requires named sections",
-]
+location_line = 45

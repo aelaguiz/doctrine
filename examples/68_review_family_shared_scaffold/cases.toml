@@ -78,7 +78,4 @@ prompt = "prompts/INVALID_UNKNOWN_REVIEW_FAMILY.prompt"
 agent = "InvalidUnknownReviewFamilyDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Missing local review declaration",
-  "MissingReviewFamily",
-]
+location_line = 40

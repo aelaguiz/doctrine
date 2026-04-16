@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import (
     _INTERPOLATION_EXPR_RE,
     _INTERPOLATION_RE,
@@ -237,8 +238,20 @@ class ValidateOutputsMixin:
             route_semantics=route_semantics,
         ):
             return
-        raise CompileError(
-            f"Output guard reads disallowed source in {owner_label}: {'.'.join(ref.parts)}"
+        raise compile_error(
+            code="E338",
+            summary="Output guard reads disallowed source",
+            detail=(
+                f"Output guard in {owner_label} reads disallowed source "
+                f"`{'.'.join(ref.parts)}`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=ref.source_span,
+            hints=(
+                "Read only declared inputs and enum members in output guards.",
+                "Do not read workflow-local bindings or emitted output fields inside guarded output items.",
+                "Route-bound outputs may also guard on compiler-owned route refs such as `route.exists` and `route.choice`.",
+            ),
         )
 
     def _output_guard_ref_allowed(
@@ -296,9 +309,19 @@ class ValidateOutputsMixin:
                     review_semantics=review_semantics,
                     route_semantics=route_semantics,
                 ):
-                    raise CompileError(
-                        "standalone_read cannot interpolate guarded output detail "
-                        f"in {owner_label}: {_display_addressable_ref(ref)}"
+                    raise compile_error(
+                        code="E340",
+                        summary="Standalone read references guarded output detail",
+                        detail=(
+                            f"`standalone_read` in {owner_label} references guarded "
+                            f"output detail `{_display_addressable_ref(ref)}`."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=ref.source_span or getattr(item, "source_span", None),
+                        hints=(
+                            "Keep `standalone_read` at branch-level readback only.",
+                            "Do not interpolate guarded item detail inside `standalone_read`.",
+                        ),
                     )
 
     def _iter_output_items_with_paths(

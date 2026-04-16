@@ -120,7 +120,4 @@ prompt = "prompts/INVALID_WRONG_PATCH_BASE.prompt"
 agent = "InvalidWrongPatchBase"
 exception_type = "CompileError"
 error_code = "E249"
-message_contains = [
-  "Inputs patch fields must inherit from inputs blocks, not outputs blocks",
-  "BaseSectionOutputs",
-]
+location_line = 33

@@ -6,7 +6,6 @@ from doctrine._compiler.workflow_diagnostics import (
     workflow_related_site,
 )
 from doctrine._compiler.resolved_types import (
-    CompileError,
     IndexedUnit,
     ResolvedSectionItem,
     ResolvedSkillsBody,
@@ -314,8 +313,27 @@ class ResolveWorkflowsMixin:
 
             if isinstance(item, model.ReadableBlock):
                 if key in parent_items_by_key:
-                    raise CompileError(
-                        f"Inherited workflow requires `override {key}` in {owner_label}"
+                    raise workflow_compile_error(
+                        code="E299",
+                        summary="Invalid workflow inheritance patch",
+                        detail=f"Inherited workflow requires `override {key}` in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=(
+                                    None
+                                    if parent_body is None
+                                    else getattr(
+                                        self._workflow_item_by_key(parent_body.items, key),
+                                        "source_span",
+                                        None,
+                                    )
+                                ),
+                            ),
+                        ),
                     )
                 resolved_items.append(item)
                 continue
@@ -559,8 +577,22 @@ class ResolveWorkflowsMixin:
         for item in law_body.items:
             if isinstance(item, model.LawSection):
                 if item.key in parent_items_by_key:
-                    raise CompileError(
-                        f"Inherited law block accounts for the same parent subsection more than once in {owner_label}: {item.key}"
+                    raise workflow_compile_error(
+                        code="E382",
+                        summary="Duplicate inherited law subsection",
+                        detail=(
+                            f"Inherited law block accounts for the same parent subsection "
+                            f"more than once in {owner_label}: {item.key}"
+                        ),
+                        unit=unit,
+                        source_span=item.source_span or law_body.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{item.key}` subsection",
+                                unit=unit,
+                                source_span=parent_items_by_key[item.key].source_span,
+                            ),
+                        ),
                     )
                 resolved_items.append(item)
                 continue
@@ -738,8 +770,27 @@ class ResolveWorkflowsMixin:
 
             if isinstance(item, model.ReadableBlock):
                 if key in parent_items_by_key:
-                    raise CompileError(
-                        f"Inherited workflow requires `override {key}` in {owner_label}"
+                    raise workflow_compile_error(
+                        code="E299",
+                        summary="Invalid workflow inheritance patch",
+                        detail=f"Inherited workflow requires `override {key}` in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=(
+                                    None
+                                    if parent_body is None
+                                    else getattr(
+                                        self._workflow_item_by_key(parent_body.items, key),
+                                        "source_span",
+                                        None,
+                                    )
+                                ),
+                            ),
+                        ),
                     )
                 resolved_items.append(item)
                 continue

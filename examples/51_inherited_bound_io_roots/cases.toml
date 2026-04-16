@@ -51,7 +51,7 @@ prompt = "prompts/INVALID_CONFLICTING_BOUND_ROOT.prompt"
 agent = "InvalidConflictingBoundRootDemo"
 exception_type = "CompileError"
 error_code = "E260"
-message_contains = [
-  "Concrete-turn binding root `approved_plan` resolves to different artifacts.",
-  "approved_plan",
+location_line = 28
+related = [
+    { label = "first `approved_plan` binding root", line = 16 },
 ]

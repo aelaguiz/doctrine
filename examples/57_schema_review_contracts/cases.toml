@@ -78,7 +78,4 @@ prompt = "prompts/INVALID_SCHEMA_CONTRACT_WITHOUT_GATES.prompt"
 agent = "InvalidGateLessReviewDemo"
 exception_type = "CompileError"
 error_code = "E477"
-message_contains = [
-  "Review contract `GateLessContract`",
-  "must export at least one gate",
-]
+location_line = 41

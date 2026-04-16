@@ -79,10 +79,7 @@ prompt = "prompts/INVALID_ABSTRACT_ROUTE_TARGET.prompt"
 agent = "InvalidRouteOnlyTargetDemo"
 exception_type = "CompileError"
 error_code = "E282"
-message_contains = [
-  "Route target must be a concrete agent",
-  "SpecialistOwner",
-]
+location_line = 32
 
 [[cases]]
 name = "route_only keeps imported output and route targets human-facing"

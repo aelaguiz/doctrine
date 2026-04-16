@@ -96,6 +96,8 @@ class CompileReadableBlocksMixin:
                 block.payload,
                 owner_label=block_owner_label,
                 kind="section",
+                unit=unit,
+                source_span=block.source_span,
             )
             return CompiledSection(
                 title=title or _humanize_key(block.key),
@@ -112,6 +114,8 @@ class CompileReadableBlocksMixin:
                 block.payload,
                 owner_label=block_owner_label,
                 kind=block.kind,
+                unit=unit,
+                source_span=block.source_span,
             ):
                 if not isinstance(list_item, model.ReadableListItem):
                     raise invalid_readable_block_error(
@@ -192,6 +196,8 @@ class CompileReadableBlocksMixin:
                 block.payload,
                 owner_label=block_owner_label,
                 kind="definitions",
+                unit=unit,
+                source_span=block.source_span,
             ):
                 if not isinstance(definition, model.ReadableDefinitionItem):
                     raise invalid_readable_block_error(
@@ -401,6 +407,8 @@ class CompileReadableBlocksMixin:
                 block.payload,
                 owner_label=block_owner_label,
                 kind="guard",
+                unit=unit,
+                source_span=block.source_span,
             )
             if when_text is None:
                 raise invalid_readable_block_error(

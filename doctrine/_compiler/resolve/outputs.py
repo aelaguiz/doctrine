@@ -15,6 +15,7 @@ from doctrine._compiler.final_output_diagnostics import (
 )
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
+from doctrine._compiler.output_schema_diagnostics import output_schema_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     CompileError,
@@ -194,7 +195,13 @@ class ResolveOutputsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._output_shape_resolution_stack, output_shape_key]
             )
-            raise CompileError(f"Cyclic output shape inheritance: {cycle}")
+            raise output_compile_error(
+                code="E299",
+                summary="Cyclic output shape inheritance",
+                detail=f"Cyclic output shape inheritance: {cycle}",
+                unit=unit,
+                source_span=output_shape_decl.source_span,
+            )
 
         self._output_shape_resolution_stack.append(output_shape_key)
         try:
@@ -1678,6 +1685,7 @@ class ResolveOutputsMixin:
             unit=json_summary.schema_unit,
             owner_label=owner_label,
             surface_label="output schema route fields",
+            source_span=field.source_span,
         )
         if not isinstance(route_node.target, model.OutputSchemaRouteField):
             raise final_output_compile_error(
@@ -3059,6 +3067,7 @@ class ResolveOutputsMixin:
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        source_span: model.SourceSpan | None = None,
         review_semantics: ReviewSemanticContext | None = None,
     ) -> AddressableNode:
         def resolve_from_root(
@@ -3095,9 +3104,15 @@ class ResolveOutputsMixin:
                 if semantic_node is not None:
                     return semantic_node
 
-        raise CompileError(
-            f"Unknown output field on {surface_label} in {owner_label}: "
-            f"{decl.name}.{'.'.join(path)}"
+        raise output_compile_error(
+            code="E299",
+            summary="Unknown output field",
+            detail=(
+                f"Unknown output field on {surface_label} in {owner_label}: "
+                f"{decl.name}.{'.'.join(path)}"
+            ),
+            unit=unit,
+            source_span=source_span,
         )
 
     def _resolve_output_schema_field_node(
@@ -3108,14 +3123,21 @@ class ResolveOutputsMixin:
         unit: IndexedUnit,
         owner_label: str,
         surface_label: str,
+        source_span: model.SourceSpan | None = None,
     ) -> AddressableNode:
         current_node = AddressableNode(unit=unit, root_decl=decl, target=decl)
         for segment in path:
             children = self._get_addressable_children(current_node)
             if children is None or segment not in children:
-                raise CompileError(
-                    f"Unknown output schema field on {surface_label} in {owner_label}: "
-                    f"{decl.name}.{'.'.join(path)}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Unknown output schema field",
+                    detail=(
+                        f"Unknown output schema field on {surface_label} in {owner_label}: "
+                        f"{decl.name}.{'.'.join(path)}"
+                    ),
+                    unit=unit,
+                    source_span=source_span,
                 )
             current_node = children[segment]
         return current_node

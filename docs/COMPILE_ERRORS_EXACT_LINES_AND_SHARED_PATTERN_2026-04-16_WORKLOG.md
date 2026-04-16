@@ -1234,3 +1234,44 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
   review, output-schema, validator, and compile families, led by
   `resolve/reviews.py`, `resolve/output_schemas.py`, `compile/agent.py`, and
   the smaller validation tail, then finish Phase 5 proof and bridge cleanup.
+
+## 2026-04-16 - Implement pass 33
+- Finished Phase 5 and closed the plan. The verifier now owns exact compile
+  diagnostics instead of snippet matching.
+- Extended `doctrine/_verify_corpus/manifest.py` and
+  `doctrine/_verify_corpus/runners.py` so `compile_fail` cases now prove
+  `error_code`, exact primary location, and optional related sites. Added the
+  new verifier proof in `tests/test_verify_corpus.py`.
+- Bulk-updated the shipped compile-fail corpus across `examples/*/cases.toml`
+  to use `location_line`, `location_path`, and `related = [{ ... }]` instead
+  of `message_contains`.
+- Updated `doctrine/_diagnostic_smoke/compile_checks.py` so representative
+  agent, final-output, and readable failures now assert exact primary and
+  related lines.
+- Removed compile message recovery by deleting the compile-side regex bridge
+  in `doctrine/diagnostics.py` and the retired compile-only builder modules
+  under `doctrine/_diagnostics/`. `EmitError` still keeps its own fallback
+  path.
+- Converted the remaining emit-side runtime-package compile paths in
+  `doctrine/emit_common.py` and `doctrine/emit_docs.py` to structured
+  diagnostics so no intentional compile family still depends on message
+  recovery.
+- Fixed two exposed import bugs in `doctrine/_compiler/resolve/law_paths.py`,
+  `doctrine/_compiler/validate/law_paths.py`, and one in
+  `doctrine/_compiler/display.py` where `except CompileError` paths had been
+  hidden until the bridge was removed.
+- Updated `docs/COMPILER_ERRORS.md`, `examples/README.md`, and the
+  authoritative audit and phase-status blocks in
+  `docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md` so the
+  shipped docs now describe the final contract.
+- Ran:
+  - `python -m py_compile doctrine/_verify_corpus/manifest.py doctrine/_verify_corpus/runners.py doctrine/verify_corpus.py doctrine/diagnostics.py doctrine/_diagnostics/message_builders.py doctrine/emit_common.py doctrine/emit_docs.py doctrine/_compiler/resolve/law_paths.py doctrine/_compiler/validate/law_paths.py doctrine/_compiler/display.py doctrine/_diagnostic_smoke/compile_checks.py tests/test_verify_corpus.py`
+  - `uv run --locked python -m unittest tests.test_verify_corpus`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+  - `uv run --locked python -m unittest tests.test_verify_corpus tests.test_emit_docs tests.test_project_config tests.test_import_loading tests.test_output_inheritance tests.test_decision_attachment`
+- Result:
+  - All proof passed on the live tree.
+- Current next step: none inside this plan. The implementation and proof scope
+  are complete. Use `arch-docs` only if we want a separate cleanup pass for
+  retiring the plan and worklog artifact.

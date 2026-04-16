@@ -89,11 +89,7 @@ prompt = "prompts/INVALID_WORKFLOW_REF.prompt"
 agent = "InvalidWorkflowBodyRefsAgent"
 exception_type = "CompileError"
 error_code = "E271"
-message_contains = [
-  "Workflow refs are not allowed in workflow section bodies",
-  "use `use` for workflow composition",
-  "SharedRead",
-]
+location_line = 11
 
 [[cases]]
 name = "ambiguous bare workflow section refs fail loud"
@@ -103,9 +99,4 @@ prompt = "prompts/INVALID_AMBIGUOUS_REF.prompt"
 agent = "InvalidAmbiguousBodyRefsAgent"
 exception_type = "CompileError"
 error_code = "E270"
-message_contains = [
-  "Ambiguous workflow section declaration ref",
-  "SharedThing",
-  "input declaration",
-  "skill declaration",
-]
+location_line = 16

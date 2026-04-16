@@ -67,6 +67,8 @@ class ResolveDocumentBlocksMixin:
                 item.payload,
                 owner_label=owner_label,
                 kind=item.kind,
+                unit=unit,
+                source_span=item.source_span,
             ):
                 if not isinstance(list_item, model.ReadableListItem):
                     raise invalid_readable_block_error(
@@ -125,6 +127,8 @@ class ResolveDocumentBlocksMixin:
                 item.payload,
                 owner_label=owner_label,
                 kind="definitions",
+                unit=unit,
+                source_span=item.source_span,
             ):
                 if not isinstance(definition, model.ReadableDefinitionItem):
                     raise invalid_readable_block_error(
@@ -352,6 +356,8 @@ class ResolveDocumentBlocksMixin:
                 item.payload,
                 owner_label=owner_label,
                 kind=item.kind,
+                unit=unit,
+                source_span=item.source_span,
             ),
             item_schema=item_schema,
             row_schema=row_schema,
@@ -367,7 +373,13 @@ class ResolveDocumentBlocksMixin:
         owner_source_span: model.SourceSpan | None = None,
     ) -> tuple[model.ReadableSectionBodyItem, ...]:
         resolved: list[model.ReadableSectionBodyItem] = []
-        for child in self._require_tuple_payload(payload, owner_label=owner_label, kind=kind):
+        for child in self._require_tuple_payload(
+            payload,
+            owner_label=owner_label,
+            kind=kind,
+            unit=unit,
+            source_span=owner_source_span,
+        ):
             if isinstance(child, (str, model.EmphasizedLine)):
                 resolved.append(
                     self._interpolate_authored_prose_line(

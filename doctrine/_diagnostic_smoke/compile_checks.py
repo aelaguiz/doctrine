@@ -26,6 +26,31 @@ from doctrine._diagnostic_smoke.fixtures import (
 )
 
 
+def _expect_compile_diagnostic(
+    exc: Exception,
+    *,
+    code: str,
+    line: int | None,
+    related: tuple[tuple[str, int | None], ...] = (),
+) -> None:
+    _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+    _expect(getattr(exc, "code", None) == code, f"expected {code}, got {getattr(exc, 'code', None)}")
+    location = getattr(exc, "location", None)
+    _expect(location is not None, "expected diagnostic location")
+    _expect(getattr(location, "line", None) == line, f"expected line {line}, got {getattr(location, 'line', None)}")
+    actual_related = tuple(
+        (
+            item.label,
+            item.location.line if item.location is not None else None,
+        )
+        for item in getattr(getattr(exc, "diagnostic", None), "related", ())
+    )
+    _expect(
+        actual_related == related,
+        f"expected related {related}, got {actual_related}",
+    )
+
+
 def run_compile_checks() -> None:
     _check_compile_missing_role_has_specific_code()
     _check_analysis_field_renders()
@@ -59,9 +84,7 @@ def _check_compile_missing_role_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "MissingRole")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E205", f"expected E205, got {getattr(exc, 'code', None)}")
-            _expect("missing role field" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E205", line=1)
             return
         raise SmokeFailure("expected compile failure for missing role field, but compilation succeeded")
 
@@ -214,10 +237,7 @@ def _check_final_output_non_output_ref_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E211", f"expected E211, got {getattr(exc, 'code', None)}")
-            _expect("output declaration" in str(exc), str(exc))
-            _expect("schema declaration" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E211", line=10)
             return
         raise SmokeFailure("expected compile failure for wrong-kind final_output ref, but compilation succeeded")
 
@@ -230,9 +250,7 @@ def _check_final_output_missing_emission_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E212", f"expected E212, got {getattr(exc, 'code', None)}")
-            _expect("not emitted by the concrete turn" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E212", line=10)
             return
         raise SmokeFailure("expected compile failure for non-emitted final_output, but compilation succeeded")
 
@@ -245,13 +263,7 @@ def _check_final_output_missing_local_shape_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E276", f"expected E276, got {getattr(exc, 'code', None)}")
-            _expect(
-                "Output shape declaration `MissingShape` does not exist in the current module."
-                in str(exc),
-                str(exc),
-            )
+            _expect_compile_diagnostic(exc, code="E276", line=3)
             return
         raise SmokeFailure("expected compile failure for missing local final_output shape, but compilation succeeded")
 
@@ -264,9 +276,12 @@ def _check_final_output_file_target_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E213", f"expected E213, got {getattr(exc, 'code', None)}")
-            _expect("TurnResponse" in str(exc), str(exc))
+            _expect_compile_diagnostic(
+                exc,
+                code="E213",
+                line=2,
+                related=(("`final_output` field", 13),),
+            )
             return
         raise SmokeFailure("expected compile failure for file-backed final_output, but compilation succeeded")
 
@@ -279,9 +294,7 @@ def _check_reserved_analysis_slot_key_is_rejected() -> None:
         try:
             compile_prompt(prompt, "AnalysisDemo")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("reserved typed agent field" in str(exc).lower(), str(exc))
-            _expect("analysis" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E299", line=7)
             return
         raise SmokeFailure("expected compile failure for reserved analysis slot key, but compilation succeeded")
 
@@ -317,9 +330,7 @@ def _check_readable_guard_rejects_output_owned_refs() -> None:
         try:
             compile_prompt(prompt, "ReadableGuardDemo")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("Readable guard reads disallowed source" in str(exc), str(exc))
-            _expect("BrokenComment.summary_present" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E296", line=6)
             return
         raise SmokeFailure("expected compile failure for readable guard source, but compilation succeeded")
 
@@ -332,9 +343,7 @@ def _check_readable_table_requires_columns() -> None:
         try:
             compile_prompt(prompt, "ReadableTableDemo")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("must declare at least one column" in str(exc), str(exc))
-            _expect("BrokenGuide.release_gates" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E297", line=2)
             return
         raise SmokeFailure("expected compile failure for readable table without columns, but compilation succeeded")
 

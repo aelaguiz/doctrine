@@ -68,10 +68,7 @@ prompt = "prompts/INVALID_MISSING_SCHEMA_GROUP.prompt"
 agent = "InvalidGroupTargetDemo"
 exception_type = "CompileError"
 error_code = "E373"
-message_contains = [
-  "invalidate target must resolve",
-  "BuildSurfaceSchema.groups.missing_group",
-]
+location_line = 71
 
 [[cases]]
 name = "schema group invalidation rejects groups that contain the current artifact"
@@ -81,6 +78,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_IN_GROUP.prompt"
 agent = "InvalidCurrentArtifactInvalidatedGroupDemo"
 exception_type = "CompileError"
 error_code = "E371"
-message_contains = [
-  "Current artifact invalidated in same branch",
+location_line = 75
+related = [
+    { label = "current artifact statement", line = 74 },
 ]

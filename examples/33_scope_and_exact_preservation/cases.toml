@@ -89,10 +89,7 @@ prompt = "prompts/INVALID_OWN_PATH_NOT_ADDRESSABLE.prompt"
 agent = "InvalidOwnPathNotAddressable"
 exception_type = "CompileError"
 error_code = "E352"
-message_contains = [
-  "Owned scope target is unknown",
-  "MissingArtifact",
-]
+location_line = 35
 
 [[cases]]
 name = "owned paths must stay rooted in the current artifact"
@@ -102,10 +99,7 @@ prompt = "prompts/INVALID_OWN_PATH_NOT_ROOTED_IN_CURRENT_ARTIFACT.prompt"
 agent = "InvalidOwnPathNotRootedInCurrentArtifact"
 exception_type = "CompileError"
 error_code = "E351"
-message_contains = [
-  "Owned scope is outside the allowed modeled surface",
-  "PrimaryManifest.title",
-]
+location_line = 42
 
 [[cases]]
 name = "exact preservation cannot overlap owned scope without an explicit except"
@@ -115,8 +109,9 @@ prompt = "prompts/INVALID_OWN_AND_EXACT_PRESERVE_OVERLAP.prompt"
 agent = "InvalidOwnAndExactPreserveOverlap"
 exception_type = "CompileError"
 error_code = "E353"
-message_contains = [
-  "Owned scope overlaps exact preservation",
+location_line = 37
+related = [
+    { label = "overlapping `own only` statement", line = 34 },
 ]
 
 [[cases]]
@@ -127,6 +122,7 @@ prompt = "prompts/INVALID_OWN_AND_FORBID_OVERLAP.prompt"
 agent = "InvalidOwnAndForbidOverlap"
 exception_type = "CompileError"
 error_code = "E354"
-message_contains = [
-  "Owned scope overlaps forbidden scope",
+location_line = 37
+related = [
+    { label = "overlapping `own only` statement", line = 34 },
 ]

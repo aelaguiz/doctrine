@@ -143,10 +143,7 @@ prompt = "prompts/INVALID_PROSE_ONLY_ROUTE_READ.prompt"
 agent = "ProseOnlyHandoffDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard in output HandoffRouteBindingComment.next_owner reads disallowed source",
-  "route.exists",
-]
+location_line = 12
 
 [[cases]]
 name = "handoff_routing final_output builds emitted route contract metadata"
@@ -162,7 +159,7 @@ prompt = "prompts/INVALID_CONFLICTING_ROUTE_SURFACES.prompt"
 agent = "ConflictingRouteSurfaceDemo"
 exception_type = "CompileError"
 error_code = "E343"
-message_contains = [
-  "more than one live route-bearing control surface",
-  "workflow, handoff_routing",
+location_line = 31
+related = [
+    { label = "live `workflow` route-bearing surface", line = 27 },
 ]

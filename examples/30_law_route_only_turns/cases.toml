@@ -97,10 +97,9 @@ prompt = "prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt"
 agent = "InvalidCurrentNoneAndCurrentArtifact"
 exception_type = "CompileError"
 error_code = "E332"
-message_contains = [
-  "Multiple current-subject forms",
-  "current none",
-  "current artifact",
+location_line = 36
+related = [
+    { label = "first current-subject form", line = 33 },
 ]
 
 [[cases]]
@@ -111,9 +110,7 @@ prompt = "prompts/INVALID_ACTIVE_BRANCH_WITHOUT_CURRENT.prompt"
 agent = "InvalidActiveBranchWithoutCurrent"
 exception_type = "CompileError"
 error_code = "E331"
-message_contains = [
-  "Missing current-subject form",
-]
+location_line = 31
 
 [[cases]]
 name = "route statements still require labels"

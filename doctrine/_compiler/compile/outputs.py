@@ -415,6 +415,7 @@ class CompileOutputsMixin:
                 unit=unit,
                 owner_label=f"output {decl.name}",
                 surface_label="trust_surface",
+                source_span=item.source_span,
                 review_semantics=review_semantics,
             )
             label = self._display_addressable_target_value(

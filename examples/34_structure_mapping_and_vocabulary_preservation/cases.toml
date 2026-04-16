@@ -217,10 +217,7 @@ prompt = "prompts/INVALID_UNKNOWN_STRUCTURE_PRESERVE_TARGET.prompt"
 agent = "InvalidUnknownStructurePreserveTarget"
 exception_type = "CompileError"
 error_code = "E355"
-message_contains = [
-  "Preserve target is unknown",
-  "MissingStructure",
-]
+location_line = 35
 
 [[cases]]
 name = "mapping preservation targets must be addressable"
@@ -230,10 +227,7 @@ prompt = "prompts/INVALID_UNKNOWN_MAPPING_PRESERVE_TARGET.prompt"
 agent = "InvalidUnknownMappingPreserveTarget"
 exception_type = "CompileError"
 error_code = "E355"
-message_contains = [
-  "Preserve target is unknown",
-  "MissingMapping",
-]
+location_line = 35
 
 [[cases]]
 name = "vocabulary preservation targets must stay known"
@@ -243,7 +237,4 @@ prompt = "prompts/INVALID_UNKNOWN_VOCABULARY_PRESERVE_TARGET.prompt"
 agent = "InvalidUnknownVocabularyPreserveTarget"
 exception_type = "CompileError"
 error_code = "E355"
-message_contains = [
-  "Preserve target is unknown",
-  "MissingVerdictEnum",
-]
+location_line = 35

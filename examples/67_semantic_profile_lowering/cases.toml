@@ -47,7 +47,4 @@ prompt = "prompts/INVALID_SEMANTIC_RENDER_PROFILE_MODE.prompt"
 agent = "InvalidSemanticRenderProfileDemo"
 exception_type = "CompileError"
 error_code = "E298"
-message_contains = [
-  "Invalid render_profile mode for analysis.stages",
-  "wire_only",
-]
+location_line = 2

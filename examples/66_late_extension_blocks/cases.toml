@@ -100,10 +100,7 @@ prompt = "prompts/INVALID_MARKDOWN_INLINE_TEXT.prompt"
 agent = "InvalidMarkdownInlineTextDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Readable markdown block",
-  "must use a multiline string",
-]
+location_line = 3
 
 [[cases]]
 name = "inline table cells reject multiline text"
@@ -113,7 +110,4 @@ prompt = "prompts/INVALID_TABLE_INLINE_MULTILINE_CELL.prompt"
 agent = "InvalidTableInlineMultilineCellDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Readable table inline cell",
-  "must stay single-line unless it uses a structured cell body",
-]
+location_line = 9

@@ -82,8 +82,9 @@ prompt = "prompts/INVALID_SUPPORT_ONLY_AND_IGNORE_COMPARISON_CONTRADICTION.promp
 agent = "InvalidSupportOnlyAndIgnoreComparisonContradiction"
 exception_type = "CompileError"
 error_code = "E362"
-message_contains = [
-  "Comparison-only basis contradiction",
+location_line = 45
+related = [
+    { label = "overlapping `support_only` statement", line = 42 },
 ]
 
 [[cases]]
@@ -94,6 +95,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_IGNORED_FOR_TRUTH.prompt"
 agent = "InvalidCurrentArtifactIgnoredForTruth"
 exception_type = "CompileError"
 error_code = "E361"
-message_contains = [
-  "Current artifact ignored for truth",
+location_line = 35
+related = [
+    { label = "current artifact statement", line = 32 },
 ]

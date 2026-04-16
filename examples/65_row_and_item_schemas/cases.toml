@@ -59,9 +59,9 @@ prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_KEY.prompt"
 agent = "InvalidDuplicateItemSchemaKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
-message_contains = [
-  "item_schema key `step_label`",
-  "step_label",
+location_line = 7
+related = [
+    { label = "first `step_label` item_schema", line = 4 },
 ]
 
 [[cases]]
@@ -72,9 +72,9 @@ prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_KEY.prompt"
 agent = "InvalidDuplicateRowSchemaKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
-message_contains = [
-  "row_schema key `topic`",
-  "topic",
+location_line = 7
+related = [
+    { label = "first `topic` row_schema", line = 4 },
 ]
 
 [[cases]]
@@ -85,9 +85,7 @@ prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_BLOCK.prompt"
 agent = "InvalidDuplicateItemSchemaBlockDemo"
 exception_type = "ParseError"
 error_code = "E199"
-message_contains = [
-  "Readable list bodies may define `item_schema:` only once.",
-]
+location_line = 7
 
 [[cases]]
 name = "readable tables reject repeated row_schema blocks"
@@ -97,6 +95,4 @@ prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_BLOCK.prompt"
 agent = "InvalidDuplicateRowSchemaBlockDemo"
 exception_type = "ParseError"
 error_code = "E199"
-message_contains = [
-  "Readable table bodies may define `row_schema:` only once.",
-]
+location_line = 7

@@ -51,7 +51,4 @@ prompt = "prompts/INVALID_CYCLIC_SKILLS_INHERITANCE.prompt"
 agent = "InvalidSkillsCycleDemo"
 exception_type = "CompileError"
 error_code = "E250"
-message_contains = [
-  "Cyclic skills inheritance",
-  "CycleA -> CycleB -> CycleA",
-]
+location_line = 5

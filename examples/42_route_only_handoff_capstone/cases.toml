@@ -85,8 +85,4 @@ prompt = "prompts/INVALID_STANDALONE_READ_REFERENCES_GUARDED_DETAIL.prompt"
 agent = "InvalidRouteOnlyTurnsDemo"
 exception_type = "CompileError"
 error_code = "E340"
-message_contains = [
-  "standalone_read cannot interpolate guarded output detail",
-  "RouteOnlyHandoffOutput.standalone_read",
-  "RouteOnlyHandoffOutput:rewrite_mode.title",
-]
+location_line = 39

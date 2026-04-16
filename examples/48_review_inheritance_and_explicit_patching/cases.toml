@@ -78,9 +78,9 @@ prompt = "prompts/INVALID_MISSING_INHERITED_SECTION.prompt"
 agent = "InvalidMissingInheritedSectionDemo"
 exception_type = "CompileError"
 error_code = "E490"
-message_contains = [
-  "Missing inherited review entry",
-  "shared_checks",
+location_line = 69
+related = [
+    { label = "inherited `shared_checks` entry", line = 65 },
 ]
 
 [[cases]]
@@ -91,9 +91,9 @@ prompt = "prompts/INVALID_DUPLICATE_INHERITED_SECTION_ACCOUNTING.prompt"
 agent = "InvalidDuplicateInheritedSectionAccountingDemo"
 exception_type = "CompileError"
 error_code = "E491"
-message_contains = [
-  "Duplicate review item key",
-  "shared_checks",
+location_line = 74
+related = [
+    { label = "first `shared_checks` entry", line = 73 },
 ]
 
 [[cases]]
@@ -104,7 +104,7 @@ prompt = "prompts/INVALID_ABSTRACT_REVIEW_ON_CONCRETE_AGENT.prompt"
 agent = "InvalidAbstractReviewOnConcreteAgentDemo"
 exception_type = "CompileError"
 error_code = "E494"
-message_contains = [
-  "Concrete agent may not attach abstract review directly",
-  "BaseDraftReview",
+location_line = 54
+related = [
+    { label = "abstract review `BaseDraftReview`", line = 37 },
 ]

@@ -80,11 +80,8 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_CURRENT_ARTIFACT_BAD_CARRIER.prompt"
 agent = "InvalidCurrentArtifactBadCarrierDemo"
 exception_type = "CompileError"
-error_code = "E487"
-message_contains = [
-  "MissingReviewComment.current_artifact",
-  "concrete-turn output",
-]
+error_code = "E299"
+location_line = 71
 
 [[cases]]
 name = "review currentness carriers must be trusted explicitly"
@@ -94,10 +91,7 @@ prompt = "prompts/INVALID_CARRIER_NOT_IN_TRUST_SURFACE.prompt"
 agent = "InvalidCarrierNotInTrustSurfaceDemo"
 exception_type = "CompileError"
 error_code = "E488"
-message_contains = [
-  "trust_surface",
-  "current_artifact",
-]
+location_line = 68
 
 [[cases]]
 name = "review currentness carrier fields must disappear on current-none branches"
@@ -107,9 +101,9 @@ prompt = "prompts/INVALID_CURRENT_NONE_REQUIRES_GUARDED_CARRIER.prompt"
 agent = "InvalidCurrentNoneRequiresGuardedCarrierDemo"
 exception_type = "CompileError"
 error_code = "E497"
-message_contains = [
-  "current none",
-  "CurrentTruthReviewComment.current_artifact",
+location_line = 85
+related = [
+    { label = "carrier field", line = 49 },
 ]
 
 [[cases]]
@@ -120,10 +114,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_OUTSIDE_SUBJECT.prompt"
 agent = "InvalidCurrentArtifactOutsideSubjectDemo"
 exception_type = "CompileError"
 error_code = "E469"
-message_contains = [
-  "Review current artifact must stay rooted in a review subject or emitted output",
-  "OtherSpec",
-]
+location_line = 79
 
 [[cases]]
 name = "review currentness can switch inline on blocked rejects"

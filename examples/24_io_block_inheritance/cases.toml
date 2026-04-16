@@ -64,10 +64,7 @@ prompt = "prompts/INVALID_OVERRIDE.prompt"
 agent = "InvalidOverrideIoBlockDemo"
 exception_type = "CompileError"
 error_code = "E001"
-message_contains = [
-  "Cannot override undefined inputs entry in inputs BaseSectionInputs",
-  "continuity_only",
-]
+location_line = 16
 
 [[cases]]
 name = "missing inherited io block entry fails with E003"
@@ -77,9 +74,9 @@ prompt = "prompts/INVALID_MISSING_INHERITED_ENTRY.prompt"
 agent = "InvalidMissingInheritedIoEntryDemo"
 exception_type = "CompileError"
 error_code = "E003"
-message_contains = [
-  "Missing inherited outputs entry in InvalidMissingOutputs",
-  "coordination_handoff",
+location_line = 22
+related = [
+    { label = "inherited `coordination_handoff` entry", line = 18 },
 ]
 
 [[cases]]
@@ -90,9 +87,7 @@ prompt = "prompts/INVALID_UNDEFINED_INHERIT.prompt"
 agent = "InvalidUndefinedInheritIoDemo"
 exception_type = "CompileError"
 error_code = "E245"
-message_contains = [
-  "cannot inherit undefined key `continuity_only`",
-]
+location_line = 14
 
 [[cases]]
 name = "io patch syntax without inherited block fails with E246"
@@ -102,10 +97,7 @@ prompt = "prompts/INVALID_PATCH_WITHOUT_PARENT.prompt"
 agent = "InvalidPatchWithoutParentIoDemo"
 exception_type = "CompileError"
 error_code = "E246"
-message_contains = [
-  "requires an inherited inputs block in `InvalidStandalonePatch`",
-  "scoped_catalog_truth",
-]
+location_line = 9
 
 [[cases]]
 name = "inherited io blocks fail loud when parent has unkeyed top-level refs"
@@ -115,7 +107,7 @@ prompt = "prompts/INVALID_UNKEYED_PARENT_REF.prompt"
 agent = "InvalidUnkeyedParentIoDemo"
 exception_type = "CompileError"
 error_code = "E247"
-message_contains = [
-  "contains unkeyed top-level refs",
-  "Shared Catalog Packet",
+location_line = 12
+related = [
+    { label = "unkeyed top-level `Shared Catalog Packet` ref", line = 9 },
 ]

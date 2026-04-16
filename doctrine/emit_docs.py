@@ -8,6 +8,7 @@ from pathlib import Path
 
 from doctrine import model
 from doctrine.compiler import CompilationSession
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.resolved_types import PreviousTurnAgentContext
 from doctrine._compiler.package_layout import (
     BundledPackageFile,
@@ -668,8 +669,15 @@ def _build_runtime_emit_plan(
     package_root = runtime_root.unit.package_root
     if source_path is None or package_root is None:
         dotted_name = ".".join(runtime_root.unit.module_parts)
-        raise CompileError(
-            f"Runtime package {dotted_name or runtime_root.agent_name} is missing package metadata."
+        raise CompileError.from_parts(
+            code="E901",
+            summary="Internal compiler error",
+            detail=(
+                f"Runtime package {dotted_name or runtime_root.agent_name} "
+                "is missing package metadata."
+            ),
+            location=path_location(source_path),
+            hints=("This is a compiler bug, not a prompt authoring error.",),
         )
     emitted_dir = output_root / entrypoint_relative_dir(source_path)
     soul_prompt_path = package_root / "SOUL.prompt"
@@ -685,10 +693,15 @@ def _build_runtime_emit_plan(
         if has_soul and bundled_path == soul_prompt_path:
             continue
         if bundled_path.suffix == ".prompt":
-            raise CompileError(
-                "Runtime packages may not contain extra prompt files: "
-                f"{bundled_path.relative_to(package_root).as_posix()}"
-            ).ensure_location(path=bundled_path)
+            raise compile_error(
+                code="E299",
+                summary="Runtime package contains an extra prompt file",
+                detail=(
+                    "Runtime packages may not contain extra prompt files: "
+                    f"{bundled_path.relative_to(package_root).as_posix()}"
+                ),
+                path=bundled_path,
+            )
         ordinary_files.append(bundled_path)
     return RuntimeEmitPlan(
         root=runtime_root,
@@ -710,7 +723,12 @@ def _compile_runtime_package_soul(
     target: EmitTarget,
 ):
     if plan.soul_prompt_path is None:
-        raise CompileError("Internal compiler error: missing SOUL prompt plan.")
+        raise CompileError.from_parts(
+            code="E901",
+            summary="Internal compiler error",
+            detail="Missing SOUL prompt plan.",
+            hints=("This is a compiler bug, not a prompt authoring error.",),
+        )
     prompt_file = parse_file(plan.soul_prompt_path)
     session = CompilationSession(prompt_file, project_config=target.project_config)
     concrete_agents = tuple(
@@ -720,13 +738,24 @@ def _compile_runtime_package_soul(
     )
     # Keep the package companion explicit: one concrete agent, same identity.
     if len(concrete_agents) != 1:
-        raise CompileError(
-            "Runtime package sibling `SOUL.prompt` must define exactly one concrete agent."
-        ).ensure_location(path=plan.soul_prompt_path)
+        raise compile_error(
+            code="E299",
+            summary="Runtime package sibling SOUL.prompt must define one concrete agent",
+            detail=(
+                "Runtime package sibling `SOUL.prompt` must define exactly one concrete agent."
+            ),
+            path=plan.soul_prompt_path,
+        )
     if concrete_agents[0] != plan.root.agent_name:
-        raise CompileError(
-            "Runtime package sibling `SOUL.prompt` must match the concrete agent name in sibling `AGENTS.prompt`."
-        ).ensure_location(path=plan.soul_prompt_path)
+        raise compile_error(
+            code="E299",
+            summary="Runtime package sibling SOUL.prompt name must match AGENTS.prompt",
+            detail=(
+                "Runtime package sibling `SOUL.prompt` must match the concrete agent "
+                "name in sibling `AGENTS.prompt`."
+            ),
+            path=plan.soul_prompt_path,
+        )
     return session.compile_agent(concrete_agents[0])
 
 

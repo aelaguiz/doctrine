@@ -49,11 +49,7 @@ prompt = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
 agent = "InvalidWorkflowRouteBindingDemo"
 exception_type = "CompileError"
 error_code = "E299"
-message_contains = [
-  "route semantics are not live on every branch",
-  "MaybeRoutedComment.next_owner",
-  "guard the read with `route.exists`",
-]
+location_path = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
 
 [[cases]]
 name = "guarded scalar route reads can bind next_owner on maybe-routed workflows"

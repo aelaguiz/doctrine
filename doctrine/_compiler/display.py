@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import (
     _REVIEW_VERDICT_TEXT,
     _resolve_render_profile_mode,
@@ -49,8 +50,13 @@ class DisplayMixin:
         }
         text = decision_required_text.get(item.key)
         if text is None:
-            raise CompileError(
-                f"Internal compiler error: unsupported decision required item `{item.key}`"
+            raise compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=(
+                    "Internal compiler error: unsupported decision required item "
+                    f"`{item.key}`"
+                ),
             )
         return text
 

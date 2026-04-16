@@ -58,10 +58,7 @@ prompt = "prompts/INVALID_SELECTOR_UNKNOWN_OUTPUT_FIELD.prompt"
 agent = "InvalidHandoffRouteFromFieldDemo"
 exception_type = "CompileError"
 error_code = "E346"
-message_contains = [
-  "route_from selector",
-  "ProofResult.missing_choice",
-]
+location_line = 38
 
 [[cases]]
 name = "handoff_routing route_from final_output builds emitted route contract metadata"
@@ -77,7 +74,4 @@ prompt = "prompts/INVALID_SELECTOR_NON_EMITTED_OUTPUT.prompt"
 agent = "InvalidHandoffRouteFromOutputDemo"
 exception_type = "CompileError"
 error_code = "E346"
-message_contains = [
-  "route_from selector",
-  "HiddenResult.route_choice",
-]
+location_line = 37

@@ -5,9 +5,9 @@ from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
 )
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
 from doctrine._compiler.resolved_types import (
-    CompileError,
     CompiledBodyItem,
     CompiledSection,
     ConfigSpec,
@@ -307,7 +307,13 @@ class CompileRecordsMixin:
                 ),
             )
 
-        raise CompileError(f"Unsupported record item: {type(item).__name__}")
+        raise compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=f"Internal compiler error: unsupported record item `{type(item).__name__}`",
+            path=unit.prompt_file.source_path,
+            source_span=getattr(item, "source_span", None),
+        )
 
     def _compile_fallback_scalar(
         self,

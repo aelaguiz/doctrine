@@ -78,10 +78,7 @@ prompt = "prompts/INVALID_UNKNOWN_CONTRACT_GATE.prompt"
 agent = "InvalidUnknownContractGateDemo"
 exception_type = "CompileError"
 error_code = "E477"
-message_contains = [
-  "contract.missing_gate",
-  "Unknown review contract gate",
-]
+location_line = 62
 
 [[cases]]
 name = "review contracts may not target operational workflows with law"
@@ -91,7 +88,4 @@ prompt = "prompts/INVALID_CONTRACT_TARGET_WITH_LAW.prompt"
 agent = "InvalidContractTargetWithLawDemo"
 exception_type = "CompileError"
 error_code = "E477"
-message_contains = [
-  "unsupported workflow features",
-  "OperationalWorkflow",
-]
+location_line = 17

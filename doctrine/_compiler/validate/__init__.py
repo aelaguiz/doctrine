@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
-from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.output_schema_validation import (
     OutputSchemaValidationError,
     validate_lowered_output_schema,
@@ -413,7 +413,7 @@ class ValidateMixin(
                 hints=exc.hints,
             ) from exc
 
-    def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
+    def _enforce_legacy_role_workflow_order(self, agent: model.Agent, *, unit: IndexedUnit) -> None:
         if len(agent.fields) != 2:
             return
 
@@ -425,20 +425,43 @@ class ValidateMixin(
         if not isinstance(first, model.AuthoredSlotField) or first.key != "workflow":
             return
 
-        raise CompileError(
-            f"Agent {agent.name} is outside the shipped subset: expected `role` followed by `workflow`."
+        raise compile_error(
+            code="E206",
+            summary="Unsupported agent field order",
+            detail=(
+                f"Agent `{agent.name}` is outside the shipped subset. "
+                "Expected `role` followed by `workflow`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=second.source_span,
         )
 
-    def _ensure_valid_authored_slot_key(self, key: str, agent_name: str) -> None:
+    def _ensure_valid_authored_slot_key(
+        self,
+        key: str,
+        agent_name: str,
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+    ) -> None:
         if key in _RESERVED_AGENT_FIELD_KEYS:
-            raise CompileError(
-                f"Reserved typed agent field cannot be used as authored slot in {agent_name}: {key}"
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "Reserved typed agent field cannot be used as authored slot "
+                    f"in {agent_name}: {key}"
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
             )
 
     def _validate_route_only_guarded_output(
         self,
         output_decl: model.OutputDecl,
         *,
+        unit: IndexedUnit,
+        output_unit: IndexedUnit,
         facts_ref: model.NameRef,
         guarded: tuple[model.RouteOnlyGuard, ...],
         owner_label: str,
@@ -451,15 +474,41 @@ class ValidateMixin(
         for guard in guarded:
             output_guard = top_level_guards.get(guard.key)
             if output_guard is None:
-                raise CompileError(
-                    f"route_only guarded output item is missing from {output_decl.name} in {owner_label}: "
-                    f"{guard.key}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "route_only guarded output item is missing from "
+                        f"{output_decl.name} in {owner_label}: {guard.key}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=guard.source_span,
+                    related=(
+                        related_prompt_site(
+                            label="output declaration",
+                            path=output_unit.prompt_file.source_path,
+                            source_span=output_decl.source_span,
+                        ),
+                    ),
                 )
             expected_expr = self._prefix_route_only_expr(guard.expr, facts_ref)
             if output_guard.when_expr != expected_expr:
-                raise CompileError(
-                    f"route_only guarded output item does not match output guard in {owner_label}: "
-                    f"{guard.key}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "route_only guarded output item does not match output guard "
+                        f"in {owner_label}: {guard.key}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=guard.source_span,
+                    related=(
+                        related_prompt_site(
+                            label=f"`{guard.key}` output guard",
+                            path=output_unit.prompt_file.source_path,
+                            source_span=output_guard.source_span,
+                        ),
+                    ),
                 )
 
     def _prefix_route_only_expr(

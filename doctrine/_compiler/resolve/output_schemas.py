@@ -41,22 +41,29 @@ class _OutputSchemaNodeParts:
     type_source_span: model.SourceSpan | None = None
     note: str | None = None
     format_name: str | None = None
+    format_source_span: model.SourceSpan | None = None
     pattern: str | None = None
+    pattern_source_span: model.SourceSpan | None = None
     ref: model.NameRef | None = None
+    ref_source_span: model.SourceSpan | None = None
     items_value: model.NameRef | tuple[model.OutputSchemaBodyItem, ...] | None = None
+    items_source_span: model.SourceSpan | None = None
     enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     legacy_enum_source_span: model.SourceSpan | None = None
     inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     inline_enum_source_span: model.SourceSpan | None = None
     any_of: tuple[model.OutputSchemaVariant, ...] = ()
+    any_of_source_span: model.SourceSpan | None = None
     fields: tuple[model.OutputSchemaField | model.OutputSchemaRouteField, ...] = ()
     defs: tuple[model.OutputSchemaDef, ...] = ()
     route_choices: tuple[model.OutputSchemaRouteChoice, ...] = ()
     constraints: tuple[tuple[str, int | float], ...] = ()
+    constraints_source_span: model.SourceSpan | None = None
     const_value: model.OutputSchemaLiteralValue | None = None
     has_const: bool = False
     nullable: bool = False
+    nullable_source_span: model.SourceSpan | None = None
 
 
 class ResolveOutputSchemasMixin:
@@ -64,6 +71,31 @@ class ResolveOutputSchemasMixin:
 
     def _authored_source_span(self, value: object | None) -> model.SourceSpan | None:
         return getattr(value, "source_span", None)
+
+    def _output_schema_internal_error(
+        self,
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+        detail: str,
+    ) -> CompileError:
+        return output_schema_compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=detail,
+            unit=unit,
+            source_span=source_span,
+        )
+
+    def _first_output_schema_source_span(
+        self,
+        items: tuple[object, ...],
+    ) -> model.SourceSpan | None:
+        for item in items:
+            span = self._authored_source_span(item)
+            if span is not None:
+                return span
+        return None
 
     def _output_schema_item_by_key(
         self,
@@ -249,9 +281,13 @@ class ResolveOutputSchemasMixin:
         for item in output_schema_decl.items:
             key = self._output_schema_item_key(item)
             if key is None:
-                raise CompileError(
-                    "Internal compiler error: unsupported output schema item in "
-                    f"{owner_label}: {type(item).__name__}"
+                raise self._output_schema_internal_error(
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
+                    detail=(
+                        "Internal compiler error: unsupported output schema item in "
+                        f"{owner_label}: {type(item).__name__}"
+                    ),
                 )
             if key in emitted_items:
                 raise output_schema_compile_error(
@@ -885,6 +921,7 @@ class ResolveOutputSchemasMixin:
         pointer: tuple[str, ...],
         allow_nullable_flag: bool,
     ) -> dict[str, object]:
+        owner_source_span = self._first_output_schema_source_span(items)
         parts = self._collect_output_schema_node_parts(
             items,
             unit=unit,
@@ -897,8 +934,12 @@ class ResolveOutputSchemasMixin:
             owner_label=owner_label,
         )
         if not allow_nullable_flag and parts.nullable:
-            raise CompileError(
-                f"Output schema `nullable` is only valid on fields in {owner_label}"
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Output schema `nullable` is only valid on fields",
+                detail=f"Output schema `nullable` is only valid on fields in {owner_label}",
+                unit=unit,
+                source_span=parts.nullable_source_span or owner_source_span,
             )
 
         schema: dict[str, object] = {}
@@ -923,13 +964,24 @@ class ResolveOutputSchemasMixin:
                 or parts.pattern is not None
                 or parts.constraints
             ):
-                raise CompileError(
-                    f"Route field cannot be combined with another primary shape in {owner_label}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Route field cannot be combined with another primary shape",
+                    detail=(
+                        "Route field cannot be combined with another primary shape in "
+                        f"{owner_label}"
+                    ),
+                    unit=unit,
+                    source_span=parts.route_choices[0].source_span or owner_source_span,
                 )
             schema["type"] = "string"
             schema["enum"] = [choice.key for choice in parts.route_choices]
             if parts.nullable:
-                return self._wrap_nullable_output_schema(schema)
+                return self._wrap_nullable_output_schema(
+                    schema,
+                    unit=unit,
+                    source_span=parts.nullable_source_span or owner_source_span,
+                )
             return schema
 
         if parts.any_of:
@@ -941,12 +993,26 @@ class ResolveOutputSchemasMixin:
                 or parts.has_const
                 or parts.fields
             ):
-                raise CompileError(
-                    f"Output schema `any_of` cannot be combined with another primary shape in {owner_label}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema `any_of` cannot be combined with another primary shape",
+                    detail=(
+                        "Output schema `any_of` cannot be combined with another primary "
+                        f"shape in {owner_label}"
+                    ),
+                    unit=unit,
+                    source_span=parts.any_of_source_span or owner_source_span,
                 )
             if parts.format_name is not None or parts.pattern is not None or parts.constraints:
-                raise CompileError(
-                    f"Output schema `any_of` cannot carry direct string or numeric constraints in {owner_label}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema `any_of` cannot carry direct constraints",
+                    detail=(
+                        "Output schema `any_of` cannot carry direct string or numeric "
+                        f"constraints in {owner_label}"
+                    ),
+                    unit=unit,
+                    source_span=parts.any_of_source_span or owner_source_span,
                 )
             schema["anyOf"] = [
                 self._lower_output_schema_node(
@@ -971,7 +1037,11 @@ class ResolveOutputSchemasMixin:
                     pointer=pointer,
                 )
             if parts.nullable:
-                return self._wrap_nullable_output_schema(schema)
+                return self._wrap_nullable_output_schema(
+                    schema,
+                    unit=unit,
+                    source_span=parts.nullable_source_span or owner_source_span,
+                )
             return schema
 
         if parts.ref is not None:
@@ -985,8 +1055,15 @@ class ResolveOutputSchemasMixin:
                 or parts.pattern is not None
                 or parts.constraints
             ):
-                raise CompileError(
-                    f"Output schema `ref` cannot be combined with another primary shape in {owner_label}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema `ref` cannot be combined with another primary shape",
+                    detail=(
+                        "Output schema `ref` cannot be combined with another primary shape "
+                        f"in {owner_label}"
+                    ),
+                    unit=unit,
+                    source_span=parts.ref_source_span or owner_source_span,
                 )
             schema.update(
                 self._lower_output_schema_ref_value(
@@ -1006,7 +1083,11 @@ class ResolveOutputSchemasMixin:
                     pointer=pointer,
                 )
             if parts.nullable:
-                return self._wrap_nullable_output_schema(schema)
+                return self._wrap_nullable_output_schema(
+                    schema,
+                    unit=unit,
+                    source_span=parts.nullable_source_span or owner_source_span,
+                )
             return schema
 
         resolved_type = parts.type_name
@@ -1016,7 +1097,13 @@ class ResolveOutputSchemasMixin:
             elif parts.fields or parts.defs:
                 resolved_type = "object"
             else:
-                raise CompileError(f"Output schema entry is missing a type in {owner_label}")
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema entry is missing a type",
+                    detail=f"Output schema entry is missing a type in {owner_label}",
+                    unit=unit,
+                    source_span=owner_source_span,
+                )
 
         schema["type"] = resolved_type
 
@@ -1037,7 +1124,13 @@ class ResolveOutputSchemasMixin:
 
         if resolved_type == "object":
             if parts.items_value is not None:
-                raise CompileError(f"Object output schema cannot declare `items` in {owner_label}")
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Object output schema cannot declare `items`",
+                    detail=f"Object output schema cannot declare `items` in {owner_label}",
+                    unit=unit,
+                    source_span=parts.items_source_span or owner_source_span,
+                )
             schema["additionalProperties"] = False
             properties: dict[str, object] = {}
             required: list[str] = []
@@ -1053,13 +1146,25 @@ class ResolveOutputSchemasMixin:
             schema["properties"] = properties
             schema["required"] = required
         elif parts.fields:
-            raise CompileError(
-                f"Non-object output schema cannot declare nested fields in {owner_label}"
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Non-object output schema cannot declare nested fields",
+                detail=(
+                    f"Non-object output schema cannot declare nested fields in {owner_label}"
+                ),
+                unit=unit,
+                source_span=self._authored_source_span(parts.fields[0]) or owner_source_span,
             )
 
         if resolved_type == "array":
             if parts.items_value is None:
-                raise CompileError(f"Array output schema must declare `items` in {owner_label}")
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Array output schema must declare `items`",
+                    detail=f"Array output schema must declare `items` in {owner_label}",
+                    unit=unit,
+                    source_span=parts.type_source_span or owner_source_span,
+                )
             schema["items"] = self._lower_output_schema_items_value(
                 parts.items_value,
                 unit=unit,
@@ -1068,7 +1173,13 @@ class ResolveOutputSchemasMixin:
                 pointer=(*pointer, "items"),
             )
         elif parts.items_value is not None:
-            raise CompileError(f"Only array output schemas can declare `items` in {owner_label}")
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Only array output schemas can declare `items`",
+                detail=f"Only array output schemas can declare `items` in {owner_label}",
+                unit=unit,
+                source_span=parts.items_source_span or owner_source_span,
+            )
 
         if parts.format_name is not None:
             schema["format"] = parts.format_name
@@ -1082,7 +1193,11 @@ class ResolveOutputSchemasMixin:
             schema[_OUTPUT_SCHEMA_JSON_KEY_MAP[key]] = value
 
         if parts.nullable:
-            return self._wrap_nullable_output_schema(schema)
+            return self._wrap_nullable_output_schema(
+                schema,
+                unit=unit,
+                source_span=parts.nullable_source_span or owner_source_span,
+            )
         return schema
 
     def _lower_output_schema_defs(
@@ -1264,6 +1379,7 @@ class ResolveOutputSchemasMixin:
                             source_span=item.source_span,
                         )
                     parts.format_name = item.value
+                    parts.format_source_span = item.source_span
                     continue
                 if item.key == "pattern":
                     if not isinstance(item.value, str):
@@ -1275,6 +1391,7 @@ class ResolveOutputSchemasMixin:
                             source_span=item.source_span,
                         )
                     parts.pattern = item.value
+                    parts.pattern_source_span = item.source_span
                     continue
                 if item.key == "const":
                     parts.const_value = item.value
@@ -1292,6 +1409,7 @@ class ResolveOutputSchemasMixin:
                             source_span=item.source_span,
                         )
                     parts.ref = item.value
+                    parts.ref_source_span = item.source_span
                     continue
                 if item.key in _OUTPUT_SCHEMA_JSON_KEY_MAP:
                     if not isinstance(item.value, (int, float)):
@@ -1306,6 +1424,8 @@ class ResolveOutputSchemasMixin:
                             source_span=item.source_span,
                         )
                     constraints.append((item.key, item.value))
+                    if parts.constraints_source_span is None:
+                        parts.constraints_source_span = item.source_span
                     continue
                 raise output_schema_compile_error(
                     code="E299",
@@ -1325,6 +1445,7 @@ class ResolveOutputSchemasMixin:
                             source_span=item.source_span,
                         )
                     parts.nullable = True
+                    parts.nullable_source_span = item.source_span
                     continue
                 if item.key == "required":
                     raise output_schema_compile_error(
@@ -1396,6 +1517,7 @@ class ResolveOutputSchemasMixin:
                         source_span=item.source_span,
                     )
                 parts.items_value = item.value
+                parts.items_source_span = item.source_span
                 continue
             if isinstance(item, model.OutputSchemaAnyOf):
                 if variants:
@@ -1405,8 +1527,9 @@ class ResolveOutputSchemasMixin:
                         detail=f"Duplicate output schema any_of block in {owner_label}",
                         unit=unit,
                         source_span=item.source_span,
-                    )
+                )
                 variants = item.variants
+                parts.any_of_source_span = item.source_span
                 continue
             if isinstance(item, model.OutputSchemaField):
                 if item.key in seen_child_items:
@@ -1484,9 +1607,13 @@ class ResolveOutputSchemasMixin:
                 seen_child_items[item.key] = item
                 route_choices.append(item)
                 continue
-            raise CompileError(
-                f"Internal compiler error: unsupported output schema node item in {owner_label}: "
-                f"{type(item).__name__}"
+            raise self._output_schema_internal_error(
+                unit=unit,
+                source_span=self._authored_source_span(item),
+                detail=(
+                    "Internal compiler error: unsupported output schema node item in "
+                    f"{owner_label}: {type(item).__name__}"
+                ),
             )
 
         parts.fields = tuple(fields)
@@ -1676,7 +1803,13 @@ class ResolveOutputSchemasMixin:
             ]
         return value
 
-    def _wrap_nullable_output_schema(self, schema: dict[str, object]) -> dict[str, object]:
+    def _wrap_nullable_output_schema(
+        self,
+        schema: dict[str, object],
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+    ) -> dict[str, object]:
         if "const" in schema:
             outer: dict[str, object] = {}
             branch: dict[str, object] = {}
@@ -1699,7 +1832,11 @@ class ResolveOutputSchemasMixin:
         if "anyOf" in schema:
             any_of = schema.get("anyOf")
             if not isinstance(any_of, list):
-                raise CompileError("Internal compiler error: output schema anyOf must be a list")
+                raise self._output_schema_internal_error(
+                    unit=unit,
+                    source_span=source_span,
+                    detail="Internal compiler error: output schema anyOf must be a list",
+                )
             return {**schema, "anyOf": [*any_of, {"type": "null"}]}
 
         schema_type = schema.get("type")

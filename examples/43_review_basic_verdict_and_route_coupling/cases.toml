@@ -79,10 +79,7 @@ prompt = "prompts/INVALID_MISSING_FIELDS.prompt"
 agent = "InvalidMissingFieldsDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "Review",
-  "fields",
-]
+location_line = 35
 
 [[cases]]
 name = "review requires on_accept"
@@ -92,10 +89,7 @@ prompt = "prompts/INVALID_MISSING_ON_ACCEPT.prompt"
 agent = "InvalidMissingOnAcceptDemo"
 exception_type = "CompileError"
 error_code = "E483"
-message_contains = [
-  "missing",
-  "on_accept",
-]
+location_line = 47
 
 [[cases]]
 name = "review requires on_reject"
@@ -105,10 +99,7 @@ prompt = "prompts/INVALID_MISSING_ON_REJECT.prompt"
 agent = "InvalidMissingOnRejectDemo"
 exception_type = "CompileError"
 error_code = "E483"
-message_contains = [
-  "missing",
-  "on_reject",
-]
+location_line = 47
 
 [[cases]]
 name = "review rejects pre-outcome checks inside on_accept"

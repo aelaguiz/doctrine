@@ -5032,6 +5032,85 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("Readable guard shell `output BrokenComment.follow_up`", str(error))
         self.assertIn("must define a guard expression", str(error))
 
+    def test_output_guard_disallowed_source_points_at_guard_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BrokenComment: "Broken Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    summary: "Summary"
+                    rewrite_note: "Rewrite Note" when BrokenComment.summary
+
+                agent Demo:
+                    role: "Keep output guards on allowed sources."
+                    workflow: "Reply"
+                        "This should fail."
+                    outputs: "Outputs"
+                        BrokenComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E338")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                '    rewrite_note: "Rewrite Note" when BrokenComment.summary'
+            )
+            + 1,
+        )
+        self.assertIn("Output guard reads disallowed source", str(error))
+        self.assertIn("BrokenComment.summary", str(error))
+
+    def test_standalone_read_guarded_detail_points_at_standalone_read_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                output BrokenComment: "Broken Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    rewrite_note: "Rewrite Note" when RouteFacts.should_rewrite
+                    standalone_read: "Standalone Read"
+                        "{{BrokenComment:rewrite_note}}"
+
+                agent Demo:
+                    role: "Keep standalone read at the branch level."
+                    workflow: "Reply"
+                        "This should fail."
+                    inputs: "Inputs"
+                        RouteFacts
+                    outputs: "Outputs"
+                        BrokenComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E340")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    standalone_read: "Standalone Read"') + 1,
+        )
+        self.assertIn("Standalone read references guarded output detail", str(error))
+        self.assertIn("rewrite_note", str(error))
+
     def test_unknown_callout_kind_points_at_kind_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -5652,6 +5731,57 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("`law:` is not allowed on authored slot `notes`", str(error))
 
+    def test_legacy_role_workflow_order_points_at_role_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Demo:
+                    workflow: "Reply"
+                        "This should fail."
+                    role: "This role arrives too late."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E206")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    role: "This role arrives too late."') + 1,
+        )
+        self.assertIn("Unsupported agent field order", str(error))
+        self.assertIn("Expected `role` followed by `workflow`", str(error))
+
+    def test_reserved_authored_slot_key_points_at_slot_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Demo:
+                    role: "Reject reserved authored slot keys."
+                    abstract outputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    abstract outputs") + 1,
+        )
+        self.assertIn(
+            "Reserved typed agent field cannot be used as authored slot in Demo: outputs",
+            str(error),
+        )
+
     def test_cyclic_agent_inheritance_points_at_agent_decl_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -5884,6 +6014,67 @@ class CompileDiagnosticTests(unittest.TestCase):
             rendered.splitlines().index('route_only RouteOnlyRepair: "Route Only Repair"') + 1,
         )
         self.assertIn("route_only must declare `current none`: RouteOnlyRepair", str(error))
+
+    def test_route_only_guard_mismatch_reports_related_output_guard_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                output RouteRepairComment: "Route Repair Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status == "full_rewrite"
+
+                agent RoutingOwner:
+                    role: "Handle the local reroute."
+                    workflow: "Route"
+                        "Keep ownership local."
+
+                route_only RouteRepair: "Route Repair"
+                    facts: RouteFacts
+                    current none
+                    handoff_output: RouteRepairComment
+                    guarded:
+                        rewrite_mode when section_status == "new"
+                    routes:
+                        else -> RoutingOwner
+
+                agent Demo:
+                    role: "Compile the mismatched route-only guard."
+                    workflow: RouteRepair
+                    inputs: "Inputs"
+                        RouteFacts
+                    outputs: "Outputs"
+                        RouteRepairComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        rewrite_mode when section_status == "new"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index(
+                '    rewrite_mode: "Rewrite Mode" when RouteFacts.section_status == "full_rewrite"'
+            )
+            + 1,
+        )
+        self.assertIn("route_only guarded output item does not match output guard", str(error))
+        self.assertIn("`rewrite_mode` output guard", str(error))
 
     def test_route_only_facts_ambiguity_reports_input_and_output_lines(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

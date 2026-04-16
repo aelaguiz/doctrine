@@ -232,10 +232,7 @@ prompt = "prompts/INVALID_SUBJECT_SET_WITHOUT_DISAMBIGUATION.prompt"
 agent = "InvalidSubjectSetWithoutDisambiguationDemo"
 exception_type = "CompileError"
 error_code = "E489"
-message_contains = [
-  "Review subject set requires disambiguation",
-  "on_accept",
-]
+location_line = 84
 
 [[cases]]
 name = "carried active mode requires a bound review field"
@@ -245,10 +242,7 @@ prompt = "prompts/INVALID_MISSING_ACTIVE_MODE_BINDING.prompt"
 agent = "InvalidMissingActiveModeBindingDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "Review fields are incomplete",
-  "active_mode",
-]
+location_line = 95
 
 [[cases]]
 name = "carried trigger reason requires a bound review field"
@@ -258,10 +252,7 @@ prompt = "prompts/INVALID_MISSING_TRIGGER_REASON_BINDING.prompt"
 agent = "InvalidMissingTriggerReasonBindingDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "Review fields are incomplete",
-  "trigger_reason",
-]
+location_line = 95
 
 [[cases]]
 name = "review subject_map entries must stay unique"
@@ -271,9 +262,9 @@ prompt = "prompts/INVALID_DUPLICATE_SUBJECT_MAP_ENTRY.prompt"
 agent = "MultiSubjectReviewDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Duplicate review subject_map entry",
-  "ReviewMode.draft_rewrite",
+location_line = 93
+related = [
+    { label = "first `subject_map` entry", line = 92 },
 ]
 
 [[cases]]
@@ -284,7 +275,4 @@ prompt = "prompts/INVALID_SUBJECT_MAP_TARGET_OUTSIDE_SUBJECT_SET.prompt"
 agent = "MultiSubjectReviewDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Review subject_map target must be one of the declared review subjects",
-  "ReviewFacts",
-]
+location_line = 94

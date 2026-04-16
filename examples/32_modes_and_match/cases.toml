@@ -79,10 +79,7 @@ prompt = "prompts/INVALID_NONEXHAUSTIVE_MODE_MATCH.prompt"
 agent = "InvalidNonexhaustiveModeMatch"
 exception_type = "CompileError"
 error_code = "E342"
-message_contains = [
-  "Non-exhaustive mode match",
-  "EditMode",
-]
+location_line = 49
 
 [[cases]]
 name = "mode values must stay inside the referenced enum"
@@ -92,10 +89,7 @@ prompt = "prompts/INVALID_MODE_VALUE_OUTSIDE_ENUM.prompt"
 agent = "InvalidModeValueOutsideEnum"
 exception_type = "CompileError"
 error_code = "E341"
-message_contains = [
-  "Mode value outside enum",
-  "taxonomy",
-]
+location_line = 16
 
 [[cases]]
 name = "match arms cannot bind multiple current artifacts"
@@ -105,9 +99,9 @@ prompt = "prompts/INVALID_DUPLICATE_CURRENT_IN_MATCH_ARM.prompt"
 agent = "InvalidDuplicateCurrentInMatchArm"
 exception_type = "CompileError"
 error_code = "E332"
-message_contains = [
-  "Multiple current-subject forms",
-  "current artifact",
+location_line = 62
+related = [
+    { label = "first current-subject form", line = 59 },
 ]
 
 [[cases]]
@@ -118,6 +112,4 @@ prompt = "prompts/INVALID_ACTIVE_BRANCH_WITHOUT_CURRENT_AFTER_MATCH.prompt"
 agent = "InvalidActiveBranchWithoutCurrentAfterMatch"
 exception_type = "CompileError"
 error_code = "E331"
-message_contains = [
-  "Missing current-subject form",
-]
+location_line = 64

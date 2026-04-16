@@ -138,7 +138,12 @@ class ResolveAgentSlotsMixin:
 
             for field in agent.fields:
                 if isinstance(field, model.AuthoredSlotField):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
                     first_field = seen_slot_fields.get(field.key)
                     if first_field is not None:
                         raise authored_compile_error(
@@ -223,7 +228,12 @@ class ResolveAgentSlotsMixin:
                     continue
 
                 if isinstance(field, model.AuthoredSlotAbstract):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
                     first_field = seen_slot_fields.get(field.key)
                     if first_field is not None:
                         raise authored_compile_error(
@@ -246,7 +256,12 @@ class ResolveAgentSlotsMixin:
                     continue
 
                 if isinstance(field, model.AuthoredSlotInherit):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
                     first_field = seen_slot_fields.get(field.key)
                     if first_field is not None:
                         raise authored_compile_error(
@@ -303,7 +318,12 @@ class ResolveAgentSlotsMixin:
                     continue
 
                 if isinstance(field, model.AuthoredSlotOverride):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
                     first_field = seen_slot_fields.get(field.key)
                     if first_field is not None:
                         raise authored_compile_error(
@@ -482,6 +502,8 @@ class ResolveAgentSlotsMixin:
         )
         self._validate_route_only_guarded_output(
             output_decl,
+            unit=unit,
+            output_unit=output_unit,
             facts_ref=facts_ref,
             guarded=decl.body.guarded,
             owner_label=owner_label,

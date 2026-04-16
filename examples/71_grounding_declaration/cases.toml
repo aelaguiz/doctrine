@@ -37,10 +37,7 @@ prompt = "prompts/INVALID_ABSTRACT_GROUNDING_ROUTE.prompt"
 agent = "InvalidGroundingRouteDemo"
 exception_type = "CompileError"
 error_code = "E282"
-message_contains = [
-  "Route target must be a concrete agent",
-  "ReviewLead",
-]
+location_line = 20
 
 [[cases]]
 name = "preserve mapping can keep grounding source-to-target maps stable"

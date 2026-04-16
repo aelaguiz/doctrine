@@ -29,6 +29,21 @@ from doctrine._compiler.support_files import _dotted_decl_name
 class ResolveReviewsMixin:
     """Review resolution helpers for ResolveMixin."""
 
+    def _review_internal_error(
+        self,
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+        detail: str,
+    ) -> CompileError:
+        return review_compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=detail,
+            unit=unit,
+            source_span=source_span,
+        )
+
     def _resolve_review_semantic_output_decl(
         self,
         review_semantics: ReviewSemanticContext,
@@ -42,9 +57,13 @@ class ResolveReviewsMixin:
             unit=output_unit,
         )
         if output_decl is None:
-            raise CompileError(
-                "Internal compiler error: missing review comment output while resolving "
-                f"review semantics: {review_semantics.output_name}"
+            raise self._review_internal_error(
+                unit=output_unit,
+                source_span=None,
+                detail=(
+                    "Internal compiler error: missing review comment output while resolving "
+                    f"review semantics: {review_semantics.output_name}"
+                ),
             )
         return output_unit, output_decl
 
@@ -108,8 +127,15 @@ class ResolveReviewsMixin:
                     unit=lookup_target.unit,
                 )
                 if input_decl is not None and output_decl is not None:
-                    raise CompileError(
-                        f"Ambiguous review subject in {owner_label}: {_dotted_ref_name(ref)}"
+                    raise review_compile_error(
+                        code="E299",
+                        summary="Ambiguous review subject",
+                        detail=(
+                            f"Ambiguous review subject in {owner_label}: "
+                            f"{_dotted_ref_name(ref)}"
+                        ),
+                        unit=unit,
+                        source_span=ref.source_span or subject.source_span,
                     )
                 decl = input_decl if input_decl is not None else output_decl
                 if decl is not None:
@@ -157,8 +183,14 @@ class ResolveReviewsMixin:
             _ = lookup_target
             key = (target_unit.module_parts, decl.name)
             if key in seen:
-                raise CompileError(
-                    f"Duplicate review subject in {owner_label}: {_dotted_ref_name(ref)}"
+                raise review_compile_error(
+                    code="E299",
+                    summary="Duplicate review subject",
+                    detail=(
+                        f"Duplicate review subject in {owner_label}: {_dotted_ref_name(ref)}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span or subject.source_span,
                 )
             seen.add(key)
             resolved.append((target_unit, decl))
@@ -201,7 +233,13 @@ class ResolveReviewsMixin:
             workflow_decl = lookup_target.unit.workflows_by_name.get(lookup_target.declaration_name)
             schema_decl = lookup_target.unit.schemas_by_name.get(lookup_target.declaration_name)
             if workflow_decl is not None and schema_decl is not None:
-                raise CompileError(f"Ambiguous review contract in {owner_label}: {dotted_name}")
+                raise review_compile_error(
+                    code="E299",
+                    summary="Ambiguous review contract",
+                    detail=f"Ambiguous review contract in {owner_label}: {dotted_name}",
+                    unit=unit,
+                    source_span=ref.source_span,
+                )
             decl = workflow_decl if workflow_decl is not None else schema_decl
             if decl is not None:
                 matches.append((lookup_target, lookup_target.unit, decl))
@@ -297,9 +335,15 @@ class ResolveReviewsMixin:
                 gates=gates,
             )
 
-        raise CompileError(
-            f"Review contract must resolve to a workflow or schema declaration in {owner_label}: "
-            f"{dotted_name}"
+        raise review_compile_error(
+            code="E477",
+            summary="Invalid review contract target",
+            detail=(
+                f"Review contract `{dotted_name}` in `{owner_label}` must resolve to a "
+                "workflow or schema declaration."
+            ),
+            unit=unit,
+            source_span=ref.source_span,
         )
 
     def _resolve_review_pre_outcome_branches(
@@ -631,21 +675,46 @@ class ResolveReviewsMixin:
                 current_subject_key not in subject_keys
                 and current_subject_key not in agent_contract.outputs
             ):
-                raise CompileError(
-                    "Review current artifact must stay rooted in a review subject or emitted "
-                    f"output in {owner_label}: {_dotted_ref_name(current.artifact_ref)}"
+                raise review_compile_error(
+                    code="E469",
+                    summary="Review current artifact is outside the review subject set",
+                    detail=(
+                        "Review current artifact must stay rooted in a review subject or "
+                        f"emitted output in {owner_label}: "
+                        f"{_dotted_ref_name(current.artifact_ref)}"
+                    ),
+                    unit=unit,
+                    source_span=current.artifact_ref.source_span,
                 )
 
         carried_values: dict[str, model.ReviewCarryStmt] = {}
         for carry in branch.carries:
             if carry.field_name in carried_values:
-                raise CompileError(
-                    f"Duplicate carried review field in {owner_label}: {carry.field_name}"
+                raise review_compile_error(
+                    code="E299",
+                    summary="Duplicate carried review field",
+                    detail=f"Duplicate carried review field in {owner_label}: {carry.field_name}",
+                    unit=unit,
+                    source_span=carry.source_span,
+                    related=(
+                        review_related_site(
+                            label=f"first `{carry.field_name}` carried field",
+                            unit=unit,
+                            source_span=carried_values[carry.field_name].source_span,
+                        ),
+                    ),
                 )
             carried_values[carry.field_name] = carry
             if carry.field_name not in field_bindings:
-                raise CompileError(
-                    f"Carried review field is missing a binding in {owner_label}: {carry.field_name}"
+                raise review_compile_error(
+                    code="E493",
+                    summary="Carried review field is missing a binding",
+                    detail=(
+                        f"Carried review field `{carry.field_name}` is missing a required "
+                        f"binding in {owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=carry.source_span,
                 )
 
         return ResolvedReviewAgreementBranch(
@@ -940,23 +1009,59 @@ class ResolveReviewsMixin:
                 continue
             if isinstance(item, model.ReviewFieldsConfig):
                 if parent_review is not None and parent_review.fields is not None:
-                    raise CompileError(
-                        f"Inherited review fields require `inherit fields` or `override fields` in {owner_label}"
+                    raise review_compile_error(
+                        code="E299",
+                        summary="Invalid review inheritance patch",
+                        detail=(
+                            "Inherited review fields require `inherit fields` or "
+                            f"`override fields` in {owner_label}"
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            review_related_site(
+                                label="inherited `fields` entry",
+                                unit=unit,
+                                source_span=parent_review.fields.source_span,
+                            ),
+                        ),
                     )
                 fields = item
                 fields_accounted = True
                 continue
             if isinstance(item, model.ReviewSelectorConfig):
                 if parent_review is not None and parent_review.selector is not None:
-                    raise CompileError(
-                        f"Inherited review selector cannot be redefined in {owner_label}"
+                    raise review_compile_error(
+                        code="E299",
+                        summary="Invalid review inheritance patch",
+                        detail=f"Inherited review selector cannot be redefined in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            review_related_site(
+                                label="inherited `selector` entry",
+                                unit=unit,
+                                source_span=parent_review.selector.source_span,
+                            ),
+                        ),
                     )
                 selector = item
                 continue
             if isinstance(item, model.ReviewCasesConfig):
                 if parent_review is not None and parent_review.cases:
-                    raise CompileError(
-                        f"Inherited review cases cannot be redefined in {owner_label}"
+                    raise review_compile_error(
+                        code="E299",
+                        summary="Invalid review inheritance patch",
+                        detail=f"Inherited review cases cannot be redefined in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            review_related_site(
+                                label="inherited `cases` entry",
+                                unit=unit,
+                                source_span=parent_review.cases[0].source_span,
+                            ),
+                        ),
                     )
                 cases = tuple(
                     model.ReviewCase(
@@ -998,8 +1103,15 @@ class ResolveReviewsMixin:
 
             if isinstance(item, model.InheritItem) and item.key == "fields":
                 if parent_review is None or parent_review.fields is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined review entry in {parent_label or owner_label}: fields"
+                    raise review_compile_error(
+                        code="E299",
+                        summary="Cannot inherit undefined review entry",
+                        detail=(
+                            "Cannot inherit undefined review entry in "
+                            f"{parent_label or owner_label}: fields"
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
                     )
                 fields = parent_review.fields
                 fields_accounted = True
@@ -1073,8 +1185,15 @@ class ResolveReviewsMixin:
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined review entry in {parent_label or owner_label}: {key}"
+                    raise review_compile_error(
+                        code="E299",
+                        summary="Cannot inherit undefined review entry",
+                        detail=(
+                            "Cannot inherit undefined review entry in "
+                            f"{parent_label or owner_label}: {key}"
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)

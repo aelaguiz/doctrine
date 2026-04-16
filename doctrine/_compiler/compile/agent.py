@@ -47,7 +47,7 @@ class CompileAgentMixin:
     """Agent compile helpers for CompilationContext."""
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
-        self._enforce_legacy_role_workflow_order(agent)
+        self._enforce_legacy_role_workflow_order(agent, unit=unit)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
         agent_key = (unit.module_parts, agent.name)
@@ -233,8 +233,15 @@ class CompileAgentMixin:
                 ):
                     slot_body = resolved_slots.get(field.key)
                     if slot_body is None:
-                        raise CompileError(
-                            f"Internal compiler error: missing resolved authored slot in agent {agent.name}: {field.key}"
+                        raise compile_error(
+                            code="E901",
+                            summary="Internal compiler error",
+                            detail=(
+                                "Internal compiler error: missing resolved authored slot in "
+                                f"agent {agent.name}: {field.key}"
+                            ),
+                            path=unit.prompt_file.source_path,
+                            source_span=getattr(field, "source_span", None),
                         )
                     field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
                     continue
@@ -643,8 +650,15 @@ class CompileAgentMixin:
             ),
         ):
             if spec.slot_body is None:
-                raise CompileError(
-                    f"Internal compiler error: missing resolved authored slot in agent {agent_name}"
+                raise compile_error(
+                    code="E901",
+                    summary="Internal compiler error",
+                    detail=(
+                        "Internal compiler error: missing resolved authored slot in "
+                        f"agent {agent_name}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=getattr(field, "source_span", None),
                 )
             if field.key == "workflow":
                 return self._compile_resolved_workflow(
@@ -663,8 +677,19 @@ class CompileAgentMixin:
                     slot_key=field.key,
                 )
             if spec.slot_body.law is not None and not _authored_slot_allows_law(field.key):
-                raise CompileError(
-                    f"law may appear only on workflow or handoff_routing in agent {agent_name}: {field.key}"
+                raise compile_error(
+                    code="E345",
+                    summary="Law is not allowed on this authored slot",
+                    detail=(
+                        f"`law:` is not allowed on authored slot `{field.key}` in "
+                        f"agent {agent_name}."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=getattr(field, "source_span", None),
+                    hints=(
+                        "Attach `law:` only to `workflow:` or `handoff_routing:`.",
+                        "Keep other authored slots as readable instruction surfaces.",
+                    ),
                 )
             return self._compile_resolved_workflow(
                 spec.slot_body,
@@ -702,9 +727,16 @@ class CompileAgentMixin:
         if isinstance(field, model.ReviewField):
             review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
             if review_decl.abstract:
-                raise CompileError(
-                    "Concrete agents may not attach abstract reviews directly: "
-                    f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+                raise compile_error(
+                    code="E494",
+                    summary="Concrete agent may not attach abstract review directly",
+                    detail=(
+                        "Concrete agent may not attach abstract review "
+                        f"`{_dotted_decl_name(review_unit.module_parts, review_decl.name)}` "
+                        "directly."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
                 )
             return self._compile_review_decl(
                 review_decl,
@@ -714,13 +746,27 @@ class CompileAgentMixin:
             )
         if isinstance(field, model.FinalOutputField):
             if final_output is None or final_output.section is None:
-                raise CompileError(
-                    f"Internal compiler error: missing compiled final_output in agent {agent_name}"
+                raise compile_error(
+                    code="E901",
+                    summary="Internal compiler error",
+                    detail=(
+                        "Internal compiler error: missing compiled final_output in "
+                        f"agent {agent_name}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
                 )
             return final_output.section
 
-        raise CompileError(
-            f"Unsupported agent field in {agent_name}: {type(field).__name__}"
+        raise compile_error(
+            code="E208",
+            summary="Unsupported agent field",
+            detail=(
+                f"Agent `{agent_name}` uses unsupported field type "
+                f"`{type(field).__name__}`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=getattr(field, "source_span", None),
         )
 
     def _compile_inputs_field(
@@ -784,8 +830,15 @@ class CompileAgentMixin:
 
         if isinstance(field.value, tuple):
             if field.title is None:
-                raise CompileError(
-                    f"Internal compiler error: {field_kind} field is missing title in {owner_label}"
+                raise compile_error(
+                    code="E901",
+                    summary="Internal compiler error",
+                    detail=(
+                        f"Internal compiler error: {field_kind} field is missing title "
+                        f"in {owner_label}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
                 )
             compiled_section = CompiledSection(
                 title=field.title,
@@ -816,9 +869,15 @@ class CompileAgentMixin:
                 return None
             return self._compile_resolved_io_body(resolved)
 
-        raise CompileError(
-            f"Internal compiler error: unsupported {field_kind} field value in {owner_label}: "
-            f"{type(field.value).__name__}"
+        raise compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=(
+                f"Internal compiler error: unsupported {field_kind} field value in "
+                f"{owner_label}: {type(field.value).__name__}"
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=field.source_span,
         )
 
     def _compile_resolved_io_body(self, io_body: ResolvedIoBody) -> CompiledSection:
@@ -986,8 +1045,12 @@ class CompileAgentMixin:
         reason = metadata_scalars.get("reason")
         if reason is not None:
             if not isinstance(reason.value, str):
-                raise CompileError(
-                    f"Skill reference reason must be a string in {skill_decl.name}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"Skill reference reason must be a string in {skill_decl.name}",
+                    path=entry.metadata_unit.prompt_file.source_path,
+                    source_span=reason.source_span,
                 )
             body.append(
                 CompiledSection(

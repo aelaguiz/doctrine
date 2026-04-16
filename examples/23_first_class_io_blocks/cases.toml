@@ -65,7 +65,4 @@ prompt = "prompts/INVALID_WRONG_KIND_FIELD_REF.prompt"
 agent = "InvalidWrongKindFieldRef"
 exception_type = "CompileError"
 error_code = "E248"
-message_contains = [
-  "Inputs fields must resolve to inputs blocks, not outputs blocks",
-  "SharedSectionOutputs",
-]
+location_line = 26

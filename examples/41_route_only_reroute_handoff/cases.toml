@@ -54,8 +54,7 @@ prompt = "prompts/INVALID_NEXT_OWNER_OMITS_ROUTE_TARGET.prompt"
 agent = "InvalidRouteOnlyRerouteHandoffDemo"
 exception_type = "CompileError"
 error_code = "E339"
-message_contains = [
-  "next_owner field must interpolate routed target",
-  "RerouteHandoffComment.next_owner",
-  "RoutingOwner",
+location_line = 19
+related = [
+    { label = "routed branch", line = 42 },
 ]

@@ -32,6 +32,15 @@ Each numbered example may contain:
   outputs as short bullet contracts when they only need `Target`, `Shape`,
   and `Requirement`. Richer ordinary outputs still use `Contract | Value`
   tables. `files:` outputs add an `Artifacts` table.
+- `parse_fail` cases still prove stable codes plus `message_contains`
+  snippets.
+- `compile_fail` cases now prove stable codes plus exact diagnostic sites.
+  Use `location_line` for same-prompt failures, add `location_path` when the
+  truthful file is outside the default prompt or when the failure is
+  file-scoped, and add `related = [{ ... }]` when the diagnostic guarantees
+  labeled related sites.
+- Relative `location_path` and `related.path` values resolve against the
+  example directory first, then the repo root.
 - When an output `structure:` only needs titled section summaries, the output
   now uses a compact `Required Structure:` list instead of a larger `Artifact
   Structure` section.

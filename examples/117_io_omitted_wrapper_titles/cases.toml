@@ -71,8 +71,11 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_MULTIPLE_DIRECT_REFS.prompt"
 agent = "InvalidMultipleDirectRefsIoWrapperDemo"
 exception_type = "CompileError"
-message_contains = [
-  "Omitted title in inputs section `issue_ledger` requires exactly one lowerable direct declaration",
+error_code = "E299"
+location_line = 16
+related = [
+    { label = "direct `Lessons Issue Ledger` declaration", line = 17 },
+    { label = "direct `Forward Issue Ledger` declaration", line = 18 },
 ]
 
 [[cases]]
@@ -82,6 +85,5 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_KEYED_CHILD.prompt"
 agent = "InvalidKeyedChildIoWrapperDemo"
 exception_type = "CompileError"
-message_contains = [
-  "Omitted title in inputs section `issue_ledger` requires exactly one lowerable direct declaration",
-]
+error_code = "E299"
+location_line = 9

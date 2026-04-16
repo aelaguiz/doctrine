@@ -27,10 +27,7 @@ from doctrine._diagnostics.formatting import (
     _format_location,
     _json_safe_value,
 )
-from doctrine._diagnostics.message_builders import (
-    _compile_diagnostic_from_message,
-    _emit_diagnostic_from_message,
-)
+from doctrine._diagnostics.message_builders import _emit_diagnostic_from_message
 from doctrine._diagnostics.parse_errors import (
     _classify_unexpected_token,
     _extract_toml_decode_position,
@@ -342,9 +339,6 @@ class CompileError(DoctrineError):
     stage = "compile"
     fallback_code = "E299"
     fallback_summary = "Compile failure"
-
-    def _diagnostic_from_message(self, message: str) -> DoctrineDiagnostic:
-        return _compile_diagnostic_from_message(message)
 
 
 class EmitError(DoctrineError):

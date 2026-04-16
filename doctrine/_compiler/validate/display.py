@@ -5,9 +5,9 @@ from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
 )
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _humanize_key, _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
-    CompileError,
     ConfigSpec,
     DisplayValue,
     IndexedUnit,
@@ -208,8 +208,12 @@ class ValidateDisplayMixin:
         if isinstance(value, str):
             return value
         if isinstance(value, model.AddressableRef):
-            raise CompileError(
-                f"Output shape must stay typed: {owner_label or surface_label or 'output'}"
+            raise authored_compile_error(
+                code="E275",
+                summary="Output shape must stay typed",
+                detail=f"Output shape must stay typed: {owner_label or surface_label or 'output'}",
+                unit=unit,
+                source_span=value.source_span,
             )
         resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
         if resolved_shape is not None:
@@ -332,8 +336,15 @@ class ValidateDisplayMixin:
         if isinstance(value, model.NameRef):
             if value.module_parts and value.module_parts[0] == "route":
                 if owner_label is None or surface_label is None:
-                    raise CompileError(
-                        "Internal compiler error: route refs require an owner label and surface label"
+                    raise compile_error(
+                        code="E901",
+                        summary="Internal compiler error",
+                        detail=(
+                            "Internal compiler error: route refs require an owner label "
+                            "and surface label"
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=value.source_span,
                     )
                 route_value = self._resolve_route_semantic_ref_value(
                     model.AddressableRef(root=value, path=()),
@@ -349,8 +360,15 @@ class ValidateDisplayMixin:
                 return DisplayValue(text=enum_decl.title, kind="title")
             return DisplayValue(text=self._display_ref(value, unit=unit), kind="symbol")
         if owner_label is None or surface_label is None:
-            raise CompileError(
-                "Internal compiler error: addressable refs require an owner label and surface label"
+            raise compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=(
+                    "Internal compiler error: addressable refs require an owner label "
+                    "and surface label"
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=value.source_span,
             )
         return self._resolve_addressable_ref_value(
             value,

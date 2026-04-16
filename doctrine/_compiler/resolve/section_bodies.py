@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.resolved_types import (
-    CompileError,
     IndexedUnit,
     ResolvedRouteLine,
     ResolvedSectionBodyItem,
@@ -71,7 +71,13 @@ class ResolveSectionBodiesMixin:
             target_unit, target_agent = self._resolve_agent_ref(item.target, unit=unit)
             if target_agent.abstract:
                 dotted_name = _dotted_ref_name(item.target)
-                raise CompileError(f"Route target must be a concrete agent: {dotted_name}")
+                raise compile_error(
+                    code="E282",
+                    summary="Route target must be a concrete agent",
+                    detail=f"Route target `{dotted_name}` is not a concrete agent.",
+                    path=unit.prompt_file.source_path,
+                    source_span=item.target.source_span,
+                )
             resolved.append(
                 ResolvedRouteLine(
                     label=self._interpolate_authored_prose_string(

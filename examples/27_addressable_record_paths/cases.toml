@@ -74,10 +74,7 @@ prompt = "prompts/INVALID_UNKNOWN_RECORD_PATH.prompt"
 agent = "InvalidUnknownRecordPathDemo"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path on workflow strings",
-  "SectionConceptsTermsFileOutput:must_include.analysis.tables.missing_table",
-]
+location_path = "prompts/INVALID_UNKNOWN_RECORD_PATH.prompt"
 
 [[cases]]
 name = "deep record path cannot walk past a scalar leaf"
@@ -87,7 +84,4 @@ prompt = "prompts/INVALID_NON_ADDRESSABLE_RECORD_PATH.prompt"
 agent = "InvalidNonAddressableRecordPathDemo"
 exception_type = "CompileError"
 error_code = "E274"
-message_contains = [
-  "Addressable path must stay addressable on workflow strings",
-  "SectionConceptsTermsFileOutput:target.path.file_name",
-]
+location_path = "prompts/INVALID_NON_ADDRESSABLE_RECORD_PATH.prompt"

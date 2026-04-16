@@ -145,10 +145,7 @@ prompt = "prompts/INVALID_FINAL_OUTPUT_REVIEW_FIELDS_WITHOUT_REVIEW.prompt"
 agent = "InvalidFinalOutputReviewFieldsWithoutReviewDemo"
 exception_type = "CompileError"
 error_code = "E500"
-message_contains = [
-  "review_fields",
-  "review-driven agent",
-]
+location_line = 16
 
 [[cases]]
 name = "final_output review_fields may not be repeated on the review carrier"
@@ -158,10 +155,7 @@ prompt = "prompts/INVALID_FINAL_OUTPUT_REVIEW_FIELDS_ON_CARRIER.prompt"
 agent = "InvalidFinalOutputReviewFieldsOnCarrierDemo"
 exception_type = "CompileError"
 error_code = "E500"
-message_contains = [
-  "review_fields",
-  "split final responses",
-]
+location_line = 88
 
 [[cases]]
 name = "split final_output route reads still need route.exists on blocked review branches"
@@ -171,11 +165,7 @@ prompt = "prompts/INVALID_FINAL_OUTPUT_VERDICT_GUARD_OMITS_ROUTE_EXISTS.prompt"
 agent = "InvalidSplitFinalOutputRouteGuardDemo"
 exception_type = "CompileError"
 error_code = "E299"
-message_contains = [
-  "route semantics are not live on every branch",
-  "AcceptanceControlFinalResponse.retry_route",
-  "guard the read with `route.exists`",
-]
+location_path = "prompts/INVALID_FINAL_OUTPUT_VERDICT_GUARD_OMITS_ROUTE_EXISTS.prompt"
 
 [[cases]]
 name = "review split partial final_output builds emitted route contract metadata"

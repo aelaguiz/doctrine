@@ -52,9 +52,7 @@ prompt = "prompts/INVALID_COMPILE_REORDERED.prompt"
 agent = "ReorderedFields"
 exception_type = "CompileError"
 error_code = "E206"
-message_contains = [
-  "expected `role` followed by `workflow`",
-]
+location_line = 5
 
 [[cases]]
 name = "invalid string literal fails in parse stage"

@@ -60,7 +60,4 @@ prompt = "prompts/INVALID_NON_MARKDOWN_OUTPUT_STRUCTURE.prompt"
 agent = "InvalidNonMarkdownOutputStructure"
 exception_type = "CompileError"
 error_code = "E302"
-message_contains = [
-  "Output structure requires a markdown-bearing shape",
-  "InvalidCommentOutput",
-]
+location_line = 8

@@ -76,11 +76,7 @@ prompt = "prompts/INVALID_INVALID_OUTPUT_SCHEMA.prompt"
 agent = "InvalidInvalidOutputSchemaAgent"
 exception_type = "CompileError"
 error_code = "E217"
-message_contains = [
-  "Final output lowered schema is not valid Draft 2020-12 JSON Schema",
-  "output schema RepoStatusSchema",
-  "definitely_not_a_real_json_schema_type",
-]
+location_line = 1
 
 [[cases]]
 name = "output-schema final output fails loud when the lowered schema exceeds OpenAI nesting limits"
@@ -90,11 +86,7 @@ prompt = "prompts/INVALID_EXCESSIVE_NESTING_OUTPUT_SCHEMA.prompt"
 agent = "InvalidExcessiveNestingOutputSchemaAgent"
 exception_type = "CompileError"
 error_code = "E218"
-message_contains = [
-  "Final output lowered schema is outside the OpenAI structured outputs subset",
-  "output schema RepoStatusSchema",
-  "nesting exceeds 5 levels",
-]
+location_line = 1
 
 [[cases]]
 name = "output-schema final output fails loud when `required` is used in output schema"
@@ -104,10 +96,7 @@ prompt = "prompts/INVALID_RETIRED_REQUIRED.prompt"
 agent = "InvalidRetiredRequiredAgent"
 exception_type = "CompileError"
 error_code = "E236"
-message_contains = [
-  "Output schema `required` is retired",
-  "Delete `required`",
-]
+location_line = 4
 
 [[cases]]
 name = "output-schema final output fails loud when `optional` is used in output schema"
@@ -117,10 +106,7 @@ prompt = "prompts/INVALID_RETIRED_OPTIONAL.prompt"
 agent = "InvalidRetiredOptionalAgent"
 exception_type = "CompileError"
 error_code = "E237"
-message_contains = [
-  "Output schema `optional` is retired",
-  "Use `nullable`",
-]
+location_line = 4
 
 [[cases]]
 name = "output-schema final output fails loud when the declared example does not match the lowered schema"
@@ -130,11 +116,7 @@ prompt = "prompts/INVALID_INVALID_EXAMPLE.prompt"
 agent = "InvalidInvalidExampleJsonAgent"
 exception_type = "CompileError"
 error_code = "E216"
-message_contains = [
-  "Final output example does not match the lowered schema",
-  "output schema RepoStatusSchema",
-  "7 is not of type 'string'",
-]
+location_line = 18
 
 [[cases]]
 name = "output-schema final output allows missing example and omits the example section"

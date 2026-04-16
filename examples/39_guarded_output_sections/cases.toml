@@ -147,10 +147,7 @@ prompt = "prompts/INVALID_GUARD_READS_WORKFLOW_MODE.prompt"
 agent = "InvalidGuardReadsWorkflowModeDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard reads disallowed source",
-  "pass_mode",
-]
+location_line = 29
 
 [[cases]]
 name = "output guards cannot read emitted output fields"
@@ -160,10 +157,7 @@ prompt = "prompts/INVALID_GUARD_READS_OUTPUT_FIELD.prompt"
 agent = "InvalidGuardReadsOutputFieldDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard reads disallowed source",
-  "BrokenGuardedComment.next_owner",
-]
+location_line = 15
 
 [[cases]]
 name = "output guards cannot read undeclared runtime names"
@@ -173,10 +167,7 @@ prompt = "prompts/INVALID_GUARD_READS_UNDECLARED_NAME.prompt"
 agent = "InvalidGuardReadsUndeclaredNameDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard reads disallowed source",
-  "route_mode",
-]
+location_line = 12
 
 [[cases]]
 name = "standalone_read cannot interpolate guarded scalar detail"
@@ -186,7 +177,4 @@ prompt = "prompts/INVALID_STANDALONE_READ_REFERENCES_GUARDED_SCALAR.prompt"
 agent = "InvalidStandaloneReadGuardedScalarDemo"
 exception_type = "CompileError"
 error_code = "E340"
-message_contains = [
-  "Standalone read references guarded output detail",
-  "BrokenGuardedScalarComment:rewrite_note",
-]
+location_line = 15

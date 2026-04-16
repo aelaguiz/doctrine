@@ -85,10 +85,7 @@ prompt = "prompts/INVALID_MISSING_BLOCKED_GATE.prompt"
 agent = "InvalidMissingBlockedGateDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "blocked_gate",
-  "Review fields are incomplete",
-]
+location_line = 61
 
 [[cases]]
 name = "review rejects block statements inside on_reject"

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.readable_diagnostics import readable_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     AddressableProjectionTarget,
-    CompileError,
     DisplayValue,
     ReadableColumnsTarget,
     ReadableRowsTarget,
@@ -351,8 +351,15 @@ class ValidateAddressableDisplayMixin:
             return DisplayValue(text="Rows", kind="title")
         if isinstance(target, ReadableSchemaTarget):
             return DisplayValue(text=target.title, kind="title")
-        raise CompileError(
-            f"Internal compiler error: unsupported addressable target {type(target).__name__}"
+        raise compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=(
+                "Internal compiler error: unsupported addressable target "
+                f"{type(target).__name__}"
+            ),
+            path=node.unit.prompt_file.source_path,
+            source_span=getattr(target, "source_span", None),
         )
 
     def _display_addressable_title(

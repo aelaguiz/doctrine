@@ -42,10 +42,7 @@ prompt = "prompts/INVALID_UNKNOWN_ANALYSIS_REF.prompt"
 agent = "InvalidUnknownAnalysisRef"
 exception_type = "CompileError"
 error_code = "E276"
-message_contains = [
-  "analysis declaration",
-  "MissingAnalysis",
-]
+location_line = 5
 
 [[cases]]
 name = "analysis compare using and multi-basis prose render naturally"

@@ -174,9 +174,9 @@ prompt = "prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt"
 agent = "InvalidCurrentNoneAndCurrentArtifactDemo"
 exception_type = "CompileError"
 error_code = "E486"
-message_contains = [
-  "Review outcome resolves more than one currentness result",
-  "on_reject",
+location_line = 143
+related = [
+    { label = "first currentness result", line = 142 },
 ]
 
 [[cases]]
@@ -199,10 +199,7 @@ prompt = "prompts/INVALID_GUARD_READS_OUTPUT_FIELD.prompt"
 agent = "InvalidGuardReadsOutputFieldDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard reads disallowed source",
-  "BrokenCapstoneReviewComment.next_owner",
-]
+location_line = 43
 
 [[cases]]
 name = "review capstone keeps carried active mode guarded when some outcomes omit it"
@@ -212,10 +209,7 @@ prompt = "prompts/INVALID_UNGUARDED_ACTIVE_MODE.prompt"
 agent = "InvalidUnguardedActiveModeDemo"
 exception_type = "CompileError"
 error_code = "E499"
-message_contains = [
-  "active_mode",
-  "CarryModeReviewComment.active_mode",
-]
+location_line = 90
 
 [[cases]]
 name = "review capstone keeps blocked_gate guarded when some reject branches do not block"
@@ -225,7 +219,4 @@ prompt = "prompts/INVALID_UNGUARDED_BLOCKED_GATE.prompt"
 agent = "InvalidUnguardedBlockedGateDemo"
 exception_type = "CompileError"
 error_code = "E499"
-message_contains = [
-  "blocked_gate",
-  "BlockedGateReviewComment.failure_detail.blocked_gate",
-]
+location_line = 84

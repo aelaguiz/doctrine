@@ -42,11 +42,7 @@ prompt = "prompts/INVALID_BARE_WORKFLOW_ROOT.prompt"
 agent = "InvalidBareWorkflowRootDemo"
 exception_type = "CompileError"
 error_code = "E271"
-message_contains = [
-  "Workflow refs are not allowed in workflow section bodies",
-  "use `use` for workflow composition",
-  "ReviewRules",
-]
+location_line = 10
 
 [[cases]]
 name = "unknown workflow path segments fail loud"
@@ -56,10 +52,7 @@ prompt = "prompts/INVALID_UNKNOWN_WORKFLOW_PATH.prompt"
 agent = "InvalidUnknownWorkflowPathDemo"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path on workflow strings",
-  "ReviewRules:gates.build.missing_gate",
-]
+location_path = "prompts/INVALID_UNKNOWN_WORKFLOW_PATH.prompt"
 
 [[cases]]
 name = "self-addressed workflow and skills roots resolve without false cycles"

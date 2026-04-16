@@ -11,16 +11,25 @@ Every user-facing error should carry:
 - a stable code such as `E101` or `E280`
 - a stage label such as `parse`, `compile`, or `emit`
 - a short summary line
-- optional location, source excerpt, trace, hints, and normalized cause text
+- optional location, source excerpt, related sites, trace, hints, and
+  normalized cause text
 
 The formatter order is canonical:
 - first line: `CODE stage error: summary`
 - then location
-- then detail
 - then source excerpt when we know a line and column
+- then related sites
+- then detail
 - then trace
 - then hints
 - then the normalized low-level cause
+
+Compile diagnostics follow one default policy:
+- use the real authored line when the compiler has a truthful `SourceSpan`
+- add one `Related:` block when the failure depends on another real site
+- keep the location file-scoped when there is no truthful authored line to show
+- prove shipped `compile_fail` cases with `error_code`, `location_line` or
+  `location_path`, and optional `related` sites instead of snippet matching
 
 Stability rules:
 - keep existing error identities stable once they are shipped

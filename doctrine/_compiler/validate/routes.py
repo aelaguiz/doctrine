@@ -1602,6 +1602,7 @@ class ValidateRoutesMixin:
             unit=resolved.unit,
             owner_label=owner_label,
             surface_label=f"{statement_label} via",
+            source_span=carrier.source_span,
         )
         if not any(item.path == resolved.remainder for item in resolved.decl.trust_surface):
             default_field_summary = (

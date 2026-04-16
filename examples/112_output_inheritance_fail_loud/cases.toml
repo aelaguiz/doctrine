@@ -8,9 +8,9 @@ kind = "compile_fail"
 agent = "InvalidMissingInheritedOutputDemo"
 exception_type = "CompileError"
 error_code = "E003"
-message_contains = [
-  "Missing inherited output entry in LessonsLeadOutput",
-  "must_include",
+location_line = 11
+related = [
+    { label = "inherited `must_include` entry", line = 6 },
 ]
 
 [[cases]]
@@ -21,10 +21,7 @@ prompt = "prompts/INVALID_PATCH_WITHOUT_PARENT.prompt"
 agent = "InvalidPatchWithoutParentOutputDemo"
 exception_type = "CompileError"
 error_code = "E252"
-message_contains = [
-  "requires an inherited output in `LessonsLeadOutput`",
-  "target",
-]
+location_line = 2
 
 [[cases]]
 name = "undefined output inherit fails with E253"
@@ -34,9 +31,7 @@ prompt = "prompts/INVALID_UNDEFINED_INHERIT.prompt"
 agent = "InvalidUndefinedInheritOutputDemo"
 exception_type = "CompileError"
 error_code = "E253"
-message_contains = [
-  "cannot inherit undefined key `current_truth`",
-]
+location_line = 11
 
 [[cases]]
 name = "inherited outputs fail loud when the parent has unkeyed top-level prose"
@@ -46,10 +41,7 @@ prompt = "prompts/INVALID_UNKEYED_PARENT.prompt"
 agent = "InvalidUnkeyedParentOutputDemo"
 exception_type = "CompileError"
 error_code = "E254"
-message_contains = [
-  "contains unkeyed top-level items",
-  "prose",
-]
+location_line = 1
 
 [[cases]]
 name = "output override kind mismatch fails with E255"
@@ -59,6 +51,7 @@ prompt = "prompts/INVALID_OVERRIDE_KIND.prompt"
 agent = "InvalidOverrideKindOutputDemo"
 exception_type = "CompileError"
 error_code = "E255"
-message_contains = [
-  "overrides entry `must_include` with the wrong kind",
+location_line = 15
+related = [
+    { label = "inherited `must_include` entry", line = 6 },
 ]

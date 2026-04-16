@@ -61,7 +61,7 @@ prompt = "prompts/INVALID_DOCUMENT_OVERRIDE_KIND_MISMATCH.prompt"
 agent = "BrokenLessonPlanDemo"
 exception_type = "CompileError"
 error_code = "E305"
-message_contains = [
-  "overrides entry `read_order` with the wrong block kind",
-  "read_order",
+location_line = 7
+related = [
+    { label = "inherited `read_order` entry", line = 2 },
 ]

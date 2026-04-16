@@ -42,10 +42,7 @@ prompt = "prompts/INVALID_UNKNOWN_ENUM_MEMBER.prompt"
 agent = "InvalidUnknownEnumMemberDemo"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path on workflow strings",
-  "CriticVerdict:missing_member",
-]
+location_path = "prompts/INVALID_UNKNOWN_ENUM_MEMBER.prompt"
 
 [[cases]]
 name = "duplicate enum member keys fail loud"
@@ -55,8 +52,7 @@ prompt = "prompts/INVALID_DUPLICATE_ENUM_MEMBER.prompt"
 agent = "InvalidDuplicateEnumMemberDemo"
 exception_type = "CompileError"
 error_code = "E293"
-message_contains = [
-  "Duplicate enum member key",
-  "enum CriticVerdict",
-  "accept",
+location_line = 3
+related = [
+    { label = "first member", line = 2 },
 ]

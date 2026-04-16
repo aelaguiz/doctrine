@@ -166,9 +166,9 @@ prompt = "prompts/INVALID_DUPLICATE_ROLE_FIELD.prompt"
 agent = "InvalidDuplicateRoleField"
 exception_type = "CompileError"
 error_code = "E203"
-message_contains = [
-  "Duplicate role field",
-  "InvalidDuplicateRoleField",
+location_line = 3
+related = [
+    { label = "first `role` field", line = 2 },
 ]
 
 [[cases]]
@@ -179,7 +179,7 @@ prompt = "prompts/INVALID_DUPLICATE_TYPED_FIELD.prompt"
 agent = "InvalidDuplicateTypedField"
 exception_type = "CompileError"
 error_code = "E204"
-message_contains = [
-  "Duplicate typed field",
-  "inputs",
+location_line = 13
+related = [
+    { label = "first `inputs` field", line = 10 },
 ]

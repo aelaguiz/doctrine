@@ -8,9 +8,15 @@ from doctrine.emit_flow import emit_target_flow
 from doctrine.emit_skill import emit_target_skill
 
 from doctrine._verify_corpus.diff import _build_tree_diff
-from doctrine._verify_corpus.manifest import CaseSpec, ManifestError
+from doctrine._verify_corpus.manifest import (
+    CaseSpec,
+    ExpectedDiagnosticSite,
+    ManifestError,
+    _load_manifest,
+)
 from doctrine._verify_corpus.report import VerificationError, format_report
 from doctrine._verify_corpus.runners import (
+    _assert_expected_exception,
     _run_build_contract as _run_build_contract_internal,
     verify_corpus,
 )
