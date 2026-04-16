@@ -94,6 +94,9 @@ Important rules:
 - Built-in targets used in the shipped corpus include `TurnResponse` and
   `File`.
 - Custom targets may be declared with `output target`.
+- Custom targets may bind one reusable delivery skill with `delivery_skill:`.
+  The output still owns the artifact contract. The target owns where it goes
+  and how delivery is described.
 - Output shapes may be named with `output shape`.
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` points at an `output schema` when the shape kind
@@ -207,6 +210,9 @@ Shipped ordinary output render shape:
 - Named tables do not add a new emitted shape. They use the same summary row,
   detail block, row-backed table, or no-row contract table that inline
   document tables use.
+- A target-owned `delivery_skill:` renders as one `Delivered Via` row after
+  `Target` and before target config rows. The row shows the skill title only;
+  it does not print adapter commands.
 
 Example emitted shape:
 
@@ -218,6 +224,36 @@ Example emitted shape:
 | Target | Turn Response |
 | Shape | Comment |
 | Requirement | Required |
+```
+
+Target-owned delivery example:
+
+```prompt
+skill LedgerNoteDelivery: "ledger-note-delivery"
+    purpose: "Append markdown notes to the shared ledger."
+
+output target LedgerNoteAppend: "Ledger Note Append"
+    delivery_skill: LedgerNoteDelivery
+    required: "Required"
+        ledger_id: "Ledger ID"
+
+output LedgerNote: "Ledger Note"
+    target: LedgerNoteAppend
+        ledger_id: "current-ledger"
+    shape: MarkdownDocument
+    requirement: Advisory
+```
+
+That output contract starts with:
+
+```md
+| Contract | Value |
+| --- | --- |
+| Target | Ledger Note Append |
+| Delivered Via | `ledger-note-delivery` |
+| Ledger ID | `current-ledger` |
+| Shape | Markdown Document |
+| Requirement | Advisory |
 ```
 
 Typed attachment examples:

@@ -22,9 +22,13 @@ behavior.
 - A first-class named declaration such as reusable top-level `table`
   declarations also needs the next minor language version when it ships
   publicly.
+- A new typed attachment such as `delivery_skill:` on `output target` also
+  needs the next minor language version when it ships publicly.
 - A new backward-compatible import or emit language surface such as
   directory-backed runtime package imports and emitted runtime-package trees
   also needs the next minor language version when it ships publicly.
+- A new backward-compatible compile or emit API such as provider-supplied
+  prompt roots needs the next minor release version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
 
 ### Doctrine Release Version
@@ -94,6 +98,12 @@ Every public release uses one release class.
   or `SOUL.md` emit, bundled runtime peer files, or matching shared flow-root
   behavior is an `additive` release when older local-root entrypoints still
   work.
+- Adding target-owned `delivery_skill:` binding on `output target` is an
+  `additive` release when existing output targets without the binding still
+  work.
+- Adding provider-supplied prompt roots is an `additive` release when existing
+  `additional_prompt_roots`, local entrypoints, and emit target placement
+  still work.
 - `soft-deprecated`: behavior still works, but Doctrine now tells users what
   to move away from and how to move early. Release kind: `Non-breaking`.
 - `breaking`: any shipped public surface now needs user action. This includes

@@ -109,12 +109,60 @@ _REFERENCE_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
     ),
     (
         re.compile(
-            r"^Configured additional prompts root must be an existing prompts directory: (?P<path>.+)$"
+            r"^(?P<label>Configured additional prompts root|"
+            r"Provided prompt root `[^`]+`) must be an existing prompts directory: (?P<path>.+)$"
         ),
         "E285",
         "Invalid compile config",
         lambda match: (
-            f"Configured additional prompts root must be an existing `prompts/` directory: `{match.group('path')}`."
+            f"{match.group('label')} must be an existing `prompts/` directory: `{match.group('path')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Provided prompt roots must be ProvidedPromptRoot values\.$"),
+        "E285",
+        "Invalid compile config",
+        lambda _match: "Provided prompt roots must be `ProvidedPromptRoot` values.",
+        (),
+    ),
+    (
+        re.compile(
+            r"^Provided prompt root #(?P<index>\d+) name must be a non-empty string\.$"
+        ),
+        "E285",
+        "Invalid compile config",
+        lambda match: (
+            f"Provided prompt root #{match.group('index')} name must be a non-empty string."
+        ),
+        (),
+    ),
+    (
+        re.compile(
+            r"^Provided prompt root `(?P<name>[^`]+)` name must not contain `:`\.$"
+        ),
+        "E285",
+        "Invalid compile config",
+        lambda match: (
+            f"Provided prompt root `{match.group('name')}` name must not contain `:`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate provided prompt root name: (?P<name>.+)$"),
+        "E285",
+        "Invalid compile config",
+        lambda match: f"Provided prompt root name `{match.group('name')}` is duplicated.",
+        (),
+    ),
+    (
+        re.compile(
+            r"^Provided prompt root `(?P<name>[^`]+)` path must be a string or path-like value\.$"
+        ),
+        "E285",
+        "Invalid compile config",
+        lambda match: (
+            f"Provided prompt root `{match.group('name')}` path must be a string or path-like value."
         ),
         (),
     ),
@@ -127,12 +175,32 @@ _REFERENCE_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
     ),
     (
         re.compile(
+            r"^Duplicate provided prompts root `(?P<name>[^`]+)` matches "
+            r"`(?P<prior>[^`]+)`: (?P<path>.+)$"
+        ),
+        "E286",
+        "Duplicate active prompts root",
+        lambda match: (
+            f"Provided prompt root `{match.group('name')}` duplicates "
+            f"`{match.group('prior')}` at `{match.group('path')}`."
+        ),
+        (),
+    ),
+    (
+        re.compile(r"^Duplicate active prompts root: (?P<detail>.+)$"),
+        "E286",
+        "Duplicate active prompts root",
+        lambda match: f"Active prompts root is duplicated: {match.group('detail')}.",
+        (),
+    ),
+    (
+        re.compile(
             r"^Ambiguous import module: (?P<module>.+) \(matching prompts roots: (?P<roots>.+)\)$"
         ),
         "E287",
         "Ambiguous import module",
         lambda match: (
-            f"Import module `{match.group('module')}` matches more than one configured prompts root: {match.group('roots')}."
+            f"Import module `{match.group('module')}` matches more than one active prompts root: {match.group('roots')}."
         ),
         (),
     ),

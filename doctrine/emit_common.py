@@ -10,6 +10,7 @@ from doctrine._compiler.support import path_location
 from doctrine.diagnostics import CompileError, EmitError
 from doctrine.project_config import (
     PYPROJECT_FILE_NAME,
+    ProvidedPromptRoot,
     ProjectConfig,
     find_nearest_pyproject,
     load_project_config,
@@ -110,9 +111,13 @@ def load_emit_targets(
     pyproject_path: str | Path | None = None,
     *,
     start_dir: str | Path | None = None,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> dict[str, EmitTarget]:
     config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
-    project_config = _load_emit_project_config(config_path)
+    project_config = _load_emit_project_config(
+        config_path,
+        provided_prompt_roots=provided_prompt_roots,
+    )
     emit = project_config.raw_emit if isinstance(project_config.raw_emit, dict) else {}
     raw_targets = emit.get("targets")
     if not isinstance(raw_targets, list) or not raw_targets:
@@ -194,12 +199,16 @@ def resolve_direct_emit_target(
     start_dir: str | Path | None = None,
     name: str | None = None,
     allowed_entrypoints: tuple[str, ...] = SUPPORTED_ENTRYPOINTS,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> EmitTarget:
     base_dir = (Path(start_dir) if start_dir is not None else Path.cwd()).resolve()
     if pyproject_path is not None:
         config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
         config_dir = config_path.parent
-        project_config = _load_emit_project_config(config_path)
+        project_config = _load_emit_project_config(
+            config_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     else:
         config_dir = base_dir
         project_config = None
@@ -228,7 +237,10 @@ def resolve_direct_emit_target(
         )
 
     if project_config is None:
-        project_config = _load_compile_project_config_for_entrypoint(entrypoint_path)
+        project_config = _load_compile_project_config_for_entrypoint(
+            entrypoint_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     _validate_output_dir_within_project_root(
         output_dir_path,
         project_root=project_config.config_dir,
@@ -243,21 +255,37 @@ def resolve_direct_emit_target(
     )
 
 
-def _load_emit_project_config(config_path: Path) -> ProjectConfig:
+def _load_emit_project_config(
+    config_path: Path,
+    *,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
+) -> ProjectConfig:
     try:
-        return load_project_config(config_path)
+        return load_project_config(
+            config_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     except tomllib.TOMLDecodeError as exc:
         raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
 
 
-def _load_compile_project_config_for_entrypoint(entrypoint_path: Path) -> ProjectConfig:
+def _load_compile_project_config_for_entrypoint(
+    entrypoint_path: Path,
+    *,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
+) -> ProjectConfig:
     try:
-        return load_project_config_for_source(entrypoint_path)
+        return load_project_config_for_source(
+            entrypoint_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     except tomllib.TOMLDecodeError as exc:
         config_path = find_nearest_pyproject(entrypoint_path.parent)
         if config_path is None:
             raise
         raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
+
+
 def collect_runtime_emit_roots(
     session: "CompilationSession",
 ) -> tuple[RuntimeEmitRoot, ...]:

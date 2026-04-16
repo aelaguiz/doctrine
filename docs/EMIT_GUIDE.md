@@ -119,6 +119,42 @@ Important rules:
 - In direct `emit_flow` mode without `--pyproject`, Doctrine resolves compile
   config from the entrypoint's nearest `pyproject.toml`.
 
+### Provider Prompt Roots
+
+`additional_prompt_roots` is for host-owned source roots. An embedding runtime
+or framework can also pass provider-owned roots through the Python API without
+writing those paths into the host project config.
+
+```python
+from doctrine.compiler import ProvidedPromptRoot
+from doctrine.emit_common import load_emit_targets
+from doctrine.emit_docs import emit_target
+
+targets = load_emit_targets(
+    host_pyproject,
+    provided_prompt_roots=(
+        ProvidedPromptRoot("framework_stdlib", framework_prompts_path),
+    ),
+)
+emit_target(targets["app"])
+```
+
+Provider roots follow the same import rules as configured roots:
+
+- Each provider root must be an existing directory named `prompts`.
+- The provider name must be stable. Doctrine uses it in diagnostics and in
+  emitted provider-root source identity.
+- Absolute imports search the entrypoint-local root, configured roots, and
+  provider roots as one active root set.
+- There is no root precedence. Duplicate dotted modules across active roots
+  fail loudly.
+- Emit entrypoints and output dirs still stay under the target project root.
+- Imported provider runtime packages emit under the target output dir by
+  their path below the provider `prompts/` root.
+- `final_output.contract.json` records provider source paths as
+  `provider_name:path/below/prompts/AGENTS.prompt`, not as machine-specific
+  install paths.
+
 ## Runtime Packages
 
 Doctrine now ships two runtime module shapes under a `prompts/` root:
@@ -318,6 +354,8 @@ Runtime Markdown shape for ordinary outputs:
   parseable `notes`, and `support_files` now render as tables.
 - `structure:` now renders as one `Artifact Structure` section instead of a
   loose `Structure:` bullet plus a separate peer block.
+- If an `output target` binds `delivery_skill:`, ordinary output contracts
+  render one `Delivered Via` row after `Target` and before target config rows.
 
 Single-artifact example:
 
@@ -329,6 +367,20 @@ Single-artifact example:
 | Target | Turn Response |
 | Shape | Comment |
 | Requirement | Required |
+```
+
+Target-owned delivery example:
+
+```md
+### Ledger Note
+
+| Contract | Value |
+| --- | --- |
+| Target | Ledger Note Append |
+| Delivered Via | `ledger-note-delivery` |
+| Ledger ID | `current-ledger` |
+| Shape | Markdown Document |
+| Requirement | Advisory |
 ```
 
 File-set example:

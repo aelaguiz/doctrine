@@ -112,7 +112,12 @@ from doctrine._compiler.resolved_types import (
     SchemaAddressableItem,
     SchemaFamilyTarget,
 )
-from doctrine._compiler.session import CompilationSession, compile_prompt, extract_target_flow_graph
+from doctrine._compiler.session import (
+    CompilationSession,
+    compile_prompt,
+    extract_target_flow_graph,
+)
+from doctrine.project_config import ProvidedPromptRoot
 
 _PUBLIC_RESOLVED_EXPORTS = [
     "AddressableNode",
@@ -233,6 +238,7 @@ _PUBLIC_RESOLVED_EXPORTS = [
 __all__ = [
     *_PUBLIC_RESOLVED_EXPORTS,
     "CompilationSession",
+    "ProvidedPromptRoot",
     "compile_prompt",
     "extract_target_flow_graph",
 ]

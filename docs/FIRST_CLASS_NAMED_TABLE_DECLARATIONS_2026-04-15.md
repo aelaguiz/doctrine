@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - First-Class Named Table Declarations - Architecture Plan"
 date: 2026-04-15
-status: active
+status: complete
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []
@@ -58,6 +58,25 @@ Make `table` a real top-level declaration, then let documents attach it with the
 - Rendered Markdown must stay the same for the same logical table.
 - The document use site must stay locally addressable by its own key.
 - The first cut must solve named table reuse cleanly without turning all readable blocks into a new generic declaration family.
+
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-15
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None. Focused tests, the dedicated example, `make verify-diagnostics`, and `make verify-examples` all passed in this audit run.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -709,7 +728,7 @@ This phase protects the user-visible output contract. It should prove that named
 
 ## Phase 4 - Focused Proof And Corpus Example
 
-Status: BLOCKED
+Status: COMPLETE
 
 Completed work:
 - Extended `tests/test_table_declarations.py` as the focused unit suite for named table declarations.
@@ -719,10 +738,7 @@ Completed work:
 Proof:
 - `uv run --locked python -m unittest tests.test_table_declarations tests.test_output_rendering tests.test_parse_diagnostics` — passed.
 - `uv run --locked python -m doctrine.verify_corpus --manifest examples/116_first_class_named_tables/cases.toml` — passed.
-- `make verify-examples` — failed on unrelated dirty `examples/117_io_omitted_wrapper_titles` output expectations. The new named-table example passed in that run.
-
-Blocked on:
-- Existing dirty I/O wrapper-title work under `examples/117_io_omitted_wrapper_titles` and related compiler files must reconcile its expected output before full-corpus proof can pass.
+- `make verify-examples` — passed.
 
 ### Goal
 
@@ -778,7 +794,7 @@ This phase adds the feature-specific proof surface and updates the example ladde
 
 ## Phase 5 - Public Docs And Release Alignment
 
-Status: BLOCKED
+Status: COMPLETE
 
 Completed work:
 - Updated the language reference, design notes, agent I/O notes, compiler error catalog, versioning guide, and changelog for first-class named tables.
@@ -787,10 +803,7 @@ Completed work:
 
 Proof:
 - `make verify-diagnostics` — passed.
-- `make verify-examples` — failed on unrelated dirty `examples/117_io_omitted_wrapper_titles` output expectations.
-
-Blocked on:
-- The same unrelated `examples/117_io_omitted_wrapper_titles` corpus failure blocks the final full-corpus proof for the public-doc phase.
+- `make verify-examples` — passed.
 
 ### Goal
 
@@ -915,4 +928,4 @@ This phase syncs the public truth after code and proof are stable. It should rem
 - 2026-04-15: Deep-dive resolved the concrete architecture: add a real `TableDecl`, keep the document use site on the existing `table` block kind, add a small unresolved named-table-use payload before resolution, lower named use back into the ordinary resolved table block before compile/render, and keep notes in declaration-first then use-site order. Rejected a second override system and rejected generic reusable-readable expansion beyond `table`.
 - 2026-04-15: Phase planning split implementation into five phases: declaration foundation, ref-resolution and lowering, addressability/render compatibility, focused proof plus the new `examples/116_first_class_named_tables` surface, and public-doc plus release alignment. This sequencing replaces the earlier rough 3-phase sketch and makes the repo-instruction update in `AGENTS.md` explicit because the new example extends the shipped corpus range.
 - 2026-04-15: Consistency pass repaired three real gaps before implementation: the phase-order bug around `tests/test_table_declarations.py`, the unowned diagnostics and `docs/COMPILER_ERRORS.md` follow-through, and the dropped structured-cell proof obligation. The artifact is now decision-complete and ready for implementation.
-- 2026-04-15: Implementation pass landed the named-table language, compiler, docs, tests, and `examples/116_first_class_named_tables` proof. Focused tests, the named-table manifest, and diagnostics passed. Full `make verify-examples` is blocked by unrelated dirty `examples/117_io_omitted_wrapper_titles` output expectations, so the implementation loop remains active for fresh audit instead of claiming a clean finish.
+- 2026-04-15: Implementation pass landed the named-table language, compiler, docs, tests, and `examples/116_first_class_named_tables` proof. Fresh audit proof passed `tests.test_table_declarations`, `tests.test_output_rendering`, `tests.test_parse_diagnostics`, `doctrine.verify_corpus` for `examples/116_first_class_named_tables`, `make verify-diagnostics`, and `make verify-examples`. Phases 4 and 5 are now complete.

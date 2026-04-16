@@ -28,6 +28,7 @@ from doctrine.emit_common import (
     path_location,
     resolve_pyproject_path,
 )
+from doctrine.project_config import ProvidedPromptRoot
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -39,6 +40,7 @@ FINAL_OUTPUT_CONTRACT_VERSION = 1
 class RuntimeEmitPlan:
     root: RuntimeEmitRoot
     markdown_path: Path
+    provider_root: ProvidedPromptRoot | None = None
     bundled_files: tuple[BundledPackageFile, ...] = ()
     soul_prompt_path: Path | None = None
     soul_output_path: Path | None = None
@@ -122,6 +124,9 @@ def emit_target(
             runtime_root,
             target=target,
             output_root=output_root,
+            provider_root=session.provided_prompt_root_for(
+                runtime_root.unit.prompt_root
+            ),
         )
         for runtime_root in runtime_roots
     )
@@ -256,6 +261,14 @@ def _agent_entrypoint_relpath(*, plan: RuntimeEmitPlan, target: EmitTarget) -> s
     source_path = plan.root.unit.prompt_file.source_path
     if source_path is None:
         return target.entrypoint.as_posix()
+    if plan.provider_root is not None:
+        provider_path = Path(plan.provider_root.path).resolve()
+        try:
+            provider_relpath = source_path.resolve().relative_to(provider_path)
+        except ValueError:
+            pass
+        else:
+            return f"{plan.provider_root.name}:{provider_relpath.as_posix()}"
     project_root = target.project_config.config_dir.resolve()
     resolved = source_path.resolve()
     try:
@@ -357,6 +370,7 @@ def _build_runtime_emit_plan(
     *,
     target: EmitTarget,
     output_root: Path,
+    provider_root: ProvidedPromptRoot | None,
 ) -> RuntimeEmitPlan:
     if runtime_root.unit.module_source_kind != "runtime_package":
         emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
@@ -367,6 +381,7 @@ def _build_runtime_emit_plan(
                 runtime_root.agent_name,
                 output_name=entrypoint_output_name(target.entrypoint),
             ),
+            provider_root=provider_root,
         )
 
     source_path = runtime_root.unit.prompt_file.source_path
@@ -398,6 +413,7 @@ def _build_runtime_emit_plan(
     return RuntimeEmitPlan(
         root=runtime_root,
         markdown_path=emitted_dir / "AGENTS.md",
+        provider_root=provider_root,
         bundled_files=bundle_ordinary_package_files(
             package_root,
             ordinary_files,

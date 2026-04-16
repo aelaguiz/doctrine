@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from doctrine.diagnostics import CompileError, DiagnosticLocation
+
+if TYPE_CHECKING:
+    from doctrine.project_config import ProvidedPromptRoot
 
 
 def default_worker_count(task_count: int) -> int:
@@ -28,14 +32,28 @@ def resolve_prompt_root(source_path: Path | None) -> Path:
 def resolve_import_roots(
     prompt_root: Path,
     additional_prompt_roots: tuple[Path, ...],
+    provided_prompt_roots: tuple["ProvidedPromptRoot", ...] = (),
 ) -> tuple[Path, ...]:
     import_roots = [prompt_root]
-    seen_roots = {prompt_root}
+    seen_roots = {prompt_root: "entrypoint prompts root"}
     for additional_root in additional_prompt_roots:
         if additional_root in seen_roots:
-            raise CompileError(f"Duplicate configured prompts root: {additional_root}")
-        seen_roots.add(additional_root)
+            raise CompileError(
+                "Duplicate active prompts root: "
+                f"{additional_root} ({seen_roots[additional_root]} and configured prompts root)"
+            )
+        seen_roots[additional_root] = "configured prompts root"
         import_roots.append(additional_root)
+    for provided_root in provided_prompt_roots:
+        provided_path = Path(provided_root.path).resolve()
+        owner_label = f"provided prompts root `{provided_root.name}`"
+        if provided_path in seen_roots:
+            raise CompileError(
+                "Duplicate active prompts root: "
+                f"{provided_path} ({seen_roots[provided_path]} and {owner_label})"
+            )
+        seen_roots[provided_path] = owner_label
+        import_roots.append(provided_path)
     return tuple(import_roots)
 
 

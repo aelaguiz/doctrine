@@ -53,6 +53,12 @@ payload text and breaking releases with no real upgrade steps.
   table declarations.
 - Added `117_io_omitted_wrapper_titles` as the focused proof example for
   omitted first-class IO wrapper title lowering.
+- Added target-owned output delivery skill binding with
+  `output target ... delivery_skill:` and the focused
+  `118_output_target_delivery_skill_binding` proof example.
+- Added provider-supplied prompt roots so embedding runtimes can pass named
+  dependency-owned `prompts/` roots without adding install paths to host
+  compile config.
 
 ### Changed
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and

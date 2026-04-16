@@ -22,8 +22,8 @@ for repo setup and proof commands.
   agent systems
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the shipped syntax and
   declaration reference for composition rules, refs, `output schema`,
-  runtime packages, top-level `output[...]` inheritance, markdown emission,
-  and `skill package`
+  target-owned `delivery_skill:`, runtime packages, top-level `output[...]`
+  inheritance, markdown emission, and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
   example gallery
@@ -37,8 +37,8 @@ for repo setup and proof commands.
 ## Feature Guides
 
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
-  bindings, `final_output:`, generated schema files, `trust_surface`, guarded
-  output items, and portable truth
+  bindings, target-owned delivery skills, `final_output:`, generated schema
+  files, `trust_surface`, guarded output items, and portable truth
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): workflow law, currentness, scope,
   preservation, invalidation, and route-only turns
 - [REVIEW_SPEC.md](REVIEW_SPEC.md): first-class `review`, contracts, verdict

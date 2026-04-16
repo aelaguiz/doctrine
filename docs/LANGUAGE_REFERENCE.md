@@ -715,6 +715,8 @@ Important rules:
 - Built-in targets used in the shipped corpus include `TurnResponse` and
   `File`.
 - Custom targets can be declared with `output target`.
+- A custom `output target` may bind one reusable delivery skill with
+  `delivery_skill:`. Put delivery behavior on the target, not on each output.
 - Output shapes can be named with `output shape`.
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` remains the owner-aware attachment point for
@@ -765,6 +767,8 @@ Shipped Markdown render shape:
   inline code.
 - `structure:` renders as one `Artifact Structure` section with a summary
   table and any needed detail blocks.
+- If the target declares `delivery_skill:`, the contract table renders one
+  `Delivered Via` row after `Target` and before target config rows.
 
 Example emitted shape:
 
@@ -776,6 +780,36 @@ Example emitted shape:
 | Target | Turn Response |
 | Shape | Comment |
 | Requirement | Required |
+```
+
+Target-owned delivery example:
+
+```prompt
+skill LedgerNoteDelivery: "ledger-note-delivery"
+    purpose: "Append markdown notes to the shared ledger."
+
+output target LedgerNoteAppend: "Ledger Note Append"
+    delivery_skill: LedgerNoteDelivery
+    required: "Required"
+        ledger_id: "Ledger ID"
+
+output LedgerNote: "Ledger Note"
+    target: LedgerNoteAppend
+        ledger_id: "current-ledger"
+    shape: MarkdownDocument
+    requirement: Advisory
+```
+
+The emitted output contract starts like this:
+
+```md
+| Contract | Value |
+| --- | --- |
+| Target | Ledger Note Append |
+| Delivered Via | `ledger-note-delivery` |
+| Ledger ID | `current-ledger` |
+| Shape | Markdown Document |
+| Requirement | Advisory |
 ```
 
 ### Output Inheritance
@@ -827,12 +861,15 @@ Important rules:
   `<module>.prompt` or `<module>/AGENTS.prompt`.
 - If both shapes exist for the same dotted path, Doctrine fails loudly
   instead of guessing which one owns the module.
-- Absolute imports may also search explicitly configured shared authored roots
-  from `[tool.doctrine.compile].additional_prompt_roots` in the nearest
-  `pyproject.toml`.
+- Absolute imports search the active roots for the compile. Active roots
+  include the entrypoint-local root, configured shared authored roots from
+  `[tool.doctrine.compile].additional_prompt_roots`, and provider roots passed
+  by an embedding runtime.
 - Each `additional_prompt_roots` entry resolves relative to that
   `pyproject.toml` and must point at an existing directory literally named
   `prompts`.
+- Each provider root must also point at an existing directory literally named
+  `prompts`. Provider roots come from the Python API, not from host TOML.
 - A file-backed `<module>.prompt` import is a compile-time module only.
 - A directory-backed `<module>/AGENTS.prompt` import is a runtime package
   root for `emit_docs` and the shared runtime frontier that `emit_flow`
@@ -841,12 +878,12 @@ Important rules:
   runtime emit input. It is not a second import target.
 - Absolute and relative imports both keep typed declaration identity.
 - Relative imports stay rooted in the importing module's own `prompts/` tree.
-  They do not hop across configured roots.
+  They do not hop across configured or provider roots.
 - `SKILL.prompt` uses the same import rules, including bundled package modules
   such as `agents.cold_reviewer`.
 - Imported symbols are still used through normal declaration refs such as
   `shared.contracts.ReviewContract`.
-- Duplicate dotted modules across configured roots fail loudly instead of using
+- Duplicate dotted modules across active roots fail loudly instead of using
   root precedence heuristics.
 - Missing modules, missing declarations, duplicate declarations, and module
   cycles still fail loudly.

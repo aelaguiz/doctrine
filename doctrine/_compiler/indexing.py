@@ -595,7 +595,11 @@ def resolve_module_source(
     if not matching_sources:
         raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
     if len(matching_sources) > 1:
-        root_list = ", ".join(str(source.prompt_root) for source in matching_sources)
+        root_labels = getattr(session, "import_root_labels", {})
+        root_list = ", ".join(
+            root_labels.get(source.prompt_root.resolve(), str(source.prompt_root))
+            for source in matching_sources
+        )
         raise CompileError(
             f"Ambiguous import module: {'.'.join(module_parts)} (matching prompts roots: {root_list})"
         )

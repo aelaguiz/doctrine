@@ -544,6 +544,16 @@ Use:
 - [46_review_current_truth_and_trust_surface](../examples/46_review_current_truth_and_trust_surface/prompts/AGENTS.prompt)
 - [88_review_route_semantics_shared_binding](../examples/88_review_route_semantics_shared_binding/prompts/AGENTS.prompt)
 
+### Many outputs repeat the same delivery glue
+
+Doctrine move:
+- put the reusable capability in `skill`
+- bind that skill once on `output target` with `delivery_skill:`
+- keep each `output` focused on target, shape, structure, and requirement
+
+Use:
+- [118_output_target_delivery_skill_binding](../examples/118_output_target_delivery_skill_binding/prompts/AGENTS.prompt)
+
 ### One giant comment must be both record and host control answer
 
 Doctrine move:

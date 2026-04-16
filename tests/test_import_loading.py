@@ -7,7 +7,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from doctrine.compiler import CompilationSession
+from doctrine.compiler import CompilationSession, ProvidedPromptRoot
 from doctrine.diagnostics import DoctrineError
 from doctrine.parser import parse_file
 
@@ -289,6 +289,137 @@ class ImportLoadingTests(unittest.TestCase):
             loaded.prompt_file.source_path,
             shared_prompts / "shared" / "runtime_home" / "AGENTS.prompt",
         )
+
+    def test_directory_backed_runtime_package_uses_provider_prompt_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            provider_prompts = root / "framework" / "prompts"
+            prompts.mkdir(parents=True, exist_ok=True)
+            self._write_runtime_package(provider_prompts / "framework" / "stdlib")
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import framework.stdlib
+
+                    agent Demo:
+                        role: "Own the build handle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session = CompilationSession(
+                parse_file(prompts / "AGENTS.prompt"),
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                ),
+            )
+            loaded = session.load_module(("framework", "stdlib"))
+
+        self.assertEqual(loaded.module_source_kind, "runtime_package")
+        self.assertEqual(loaded.prompt_root, provider_prompts)
+        self.assertEqual(
+            loaded.package_root,
+            provider_prompts / "framework" / "stdlib",
+        )
+        self.assertEqual(
+            loaded.prompt_file.source_path,
+            provider_prompts / "framework" / "stdlib" / "AGENTS.prompt",
+        )
+
+    def test_duplicate_provider_prompt_root_matches_local_root_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True, exist_ok=True)
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent Demo:
+                        role: "Own the build handle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(DoctrineError) as ctx:
+                CompilationSession(
+                    parse_file(prompts / "AGENTS.prompt"),
+                    provided_prompt_roots=(
+                        ProvidedPromptRoot("framework_stdlib", prompts),
+                    ),
+                )
+
+        self.assertEqual(ctx.exception.code, "E286")
+        self.assertIn("Duplicate active prompts root", str(ctx.exception))
+        self.assertIn("provided prompts root `framework_stdlib`", str(ctx.exception))
+
+    def test_ambiguous_module_across_configured_and_provider_roots_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            configured_prompts = root / "shared" / "prompts"
+            provider_prompts = root / "framework" / "prompts"
+            prompts.mkdir(parents=True, exist_ok=True)
+            (configured_prompts / "shared").mkdir(parents=True, exist_ok=True)
+            (provider_prompts / "shared").mkdir(parents=True, exist_ok=True)
+            (configured_prompts / "shared" / "guide.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow SharedGuide: "Shared Guide"
+                        "Use the configured guide."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (provider_prompts / "shared" / "guide.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow SharedGuide: "Shared Guide"
+                        "Use the provider guide."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import shared.guide
+
+                    agent Demo:
+                        role: "Own the build handle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "pyproject.toml").write_text(
+                textwrap.dedent(
+                    """\
+                    [project]
+                    name = "doctrine-test"
+                    version = "0.0.0"
+
+                    [tool.doctrine.compile]
+                    additional_prompt_roots = ["shared/prompts"]
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(DoctrineError) as ctx:
+                CompilationSession(
+                    parse_file(prompts / "AGENTS.prompt"),
+                    provided_prompt_roots=(
+                        ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                    ),
+                )
+
+        self.assertEqual(ctx.exception.code, "E287")
+        error_text = str(ctx.exception)
+        self.assertIn("Ambiguous import module", error_text)
+        self.assertIn("configured prompts root", error_text)
+        self.assertIn("provided prompts root `framework_stdlib`", error_text)
 
 
 if __name__ == "__main__":

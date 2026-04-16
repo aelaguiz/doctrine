@@ -66,6 +66,25 @@ entrypoints and output dirs will still stay inside the target project root.
 - Do not copy provider-owned prompt files into the host project.
 - Do not put motivating product names in shipped docs or examples.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-16
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None. Verified by `uv run --locked python -m unittest tests.test_project_config tests.test_import_loading tests.test_emit_docs tests.test_emit_flow` and `make verify-diagnostics`.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
@@ -536,7 +555,18 @@ No UI work.
 
 ## Phase 1 - Provider Root Model And Compile Registry
 
-Status: NOT STARTED
+Status: COMPLETE
+
+Completed work:
+
+- Added `ProvidedPromptRoot` and provider-root validation in
+  `doctrine/project_config.py`.
+- Threaded provider roots into `CompilationSession`, `compile_prompt`, and
+  `extract_target_flow_graph`.
+- Kept one active import-root registry and updated duplicate/ambiguous root
+  diagnostics to talk about active roots when provider roots are involved.
+- Proved provider runtime package imports, duplicate active roots, and
+  ambiguous modules across configured and provider roots.
 
 ### Goal
 
@@ -593,7 +623,18 @@ Remove the provider-root API and tests from this phase. Existing
 
 ## Phase 2 - Emit Target Integration And Provider-Safe Source Identity
 
-Status: NOT STARTED
+Status: COMPLETE
+
+Completed work:
+
+- Added provider-root parameters to configured emit target loading and direct
+  flow target resolution.
+- Kept `emit_docs`, `emit_flow`, and `emit_skill` on the shared target config
+  and compile-session path.
+- Updated final-output contract source identity for provider-owned prompts to
+  use `provider_name:path/below/prompts/AGENTS.prompt`.
+- Proved configured docs emit, configured flow emit, and direct flow emit with
+  provider roots and no provider path in host config.
 
 ### Goal
 
@@ -651,7 +692,16 @@ resolution. The configured-root emit path should still work.
 
 ## Phase 3 - Public Docs, Release Notes, And Generic Proof
 
-Status: NOT STARTED
+Status: COMPLETE
+
+Completed work:
+
+- Updated the emit guide, language reference, compiler error catalog,
+  versioning guide, and changelog for provider-supplied prompt roots.
+- Kept public wording generic and avoided product-specific names.
+- Kept example 75 as the config-backed cross-root proof.
+- Used focused unit and emit tests as the provider-root proof instead of
+  adding a manifest example.
 
 ### Goal
 
@@ -817,6 +867,34 @@ Follow-ups
 
 - Keep docs clear that both root sources feed the same active import semantics.
 
+## 2026-04-16 - Use focused tests instead of a provider-root manifest example
+
+Context
+
+Provider roots are supplied through a Python embedding API, not through host
+TOML. A manifest-backed example would need verifier support for runtime-owned
+provider paths.
+
+Options
+
+- Add manifest support for provider roots and a new generic example.
+- Prove the public API with focused unit and emit tests.
+
+Decision
+
+Use focused tests for the first cut. Do not add manifest support or a new
+example now.
+
+Consequences
+
+The API proof stays close to the Python call sites that own provider roots.
+Example 75 keeps proving host-owned configured roots.
+
+Follow-ups
+
+- Add manifest support only if future examples need to prove provider-owned
+  roots through the shipped corpus.
+
 # Appendix B) Conversion Notes
 
 - Converted the compact mini-plan sections into the canonical full
@@ -828,4 +906,4 @@ Follow-ups
   with `Checklist (must all be done)` and `Exit criteria (all required)`.
 - No source content was dropped. No Appendix A is needed because all
   meaning-bearing source content was placed in canonical sections.
-- Status is `draft` after reformat per the `miniarch-step reformat` contract.
+- Status moved to `active` after North Star confirmation.

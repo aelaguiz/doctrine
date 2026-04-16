@@ -229,6 +229,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `115_runtime_agent_packages` | Thin build handles may emit imported runtime packages with package-root `AGENTS.md`, optional sibling `SOUL.md`, and bundled peer files. |
 | `116_first_class_named_tables` | Top-level `table` declarations may be reused by local document table keys without changing rendered Markdown. |
 | `117_io_omitted_wrapper_titles` | Omitted first-class IO wrapper titles lower one direct declaration and fail loud on ambiguous shapes. |
+| `118_output_target_delivery_skill_binding` | Imported output targets may bind a delivery skill and render one clean `Delivered Via` contract row. |
 
 ## Useful Commands
 

@@ -48,6 +48,25 @@ Extend `output target` with a typed `delivery_skill:` attachment. Resolve it thr
 - Existing target config must keep working.
 - Render human-facing delivery intent, not raw shell or adapter internals.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-15
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None. `uv run --locked python -m unittest tests.test_output_target_delivery_skill tests.test_output_rendering tests.test_output_inheritance tests.test_final_output` and `make verify-examples` passed, including the dedicated `examples/118_output_target_delivery_skill_binding` proof.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
@@ -458,6 +477,8 @@ No UI surface is in scope.
 <!-- arch_skill:block:phase_plan:start -->
 ## Phase 1 - Target Syntax And Model Foundation
 
+Status: COMPLETE
+
 ### Goal
 
 Make `delivery_skill:` a first-class `output target` field in the grammar, parser, model, and resolved target contract so later compile work can read one clean target-owned shape.
@@ -497,6 +518,8 @@ This phase lays the typed foundation. It should end with one resolved target con
 - Revert the target-specific parse and model changes before any compile-side dependency lands.
 
 ## Phase 2 - Target Resolution And Output Contract Integration
+
+Status: COMPLETE
 
 ### Goal
 
@@ -545,6 +568,8 @@ This phase connects the new target field to real output behavior. It should keep
 
 ## Phase 3 - Proof Surface And Corpus Example
 
+Status: COMPLETE
+
 ### Goal
 
 Prove the feature end to end with one focused test module and one dedicated generic shared-target corpus example, without overloading older examples that already teach other ideas.
@@ -561,7 +586,7 @@ This phase turns the new syntax into shipped proof. It should keep the example l
   - ordinary output rendering
   - imported target reuse
   - fail-loud missing or unknown skill refs
-- Add [examples/116_output_target_delivery_skill_binding](examples/116_output_target_delivery_skill_binding:1) as the dedicated generic manifest-backed proof for this feature.
+- Add [examples/118_output_target_delivery_skill_binding](examples/118_output_target_delivery_skill_binding:1) as the dedicated generic manifest-backed proof for this feature.
 - Author the new example so it proves:
   - a reusable delivery skill
   - a shared `output target` with `delivery_skill:`
@@ -572,7 +597,7 @@ This phase turns the new syntax into shipped proof. It should keep the example l
 ### Verification
 
 - `uv run --locked python -m unittest tests.test_output_target_delivery_skill`
-- `uv run --locked python -m doctrine.verify_corpus --manifest examples/116_output_target_delivery_skill_binding/cases.toml`
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/118_output_target_delivery_skill_binding/cases.toml`
 - `make verify-examples`
 
 ### Docs / comments
@@ -590,6 +615,8 @@ This phase turns the new syntax into shipped proof. It should keep the example l
 - Drop the new example and targeted test module together if the implementation surface changes before merge and the proof no longer matches the shipped contract.
 
 ## Phase 4 - Public Docs And Release Alignment
+
+Status: COMPLETE
 
 ### Goal
 
@@ -645,8 +672,8 @@ This phase updates the human-facing truth after the implementation and proof sur
 
 ## 8.2 Integration tests (flows)
 
-- Add [examples/116_output_target_delivery_skill_binding](examples/116_output_target_delivery_skill_binding:1) as the dedicated manifest-backed proof for the new syntax, imported shared-target reuse, and render contract.
-- Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/116_output_target_delivery_skill_binding/cases.toml`.
+- Add [examples/118_output_target_delivery_skill_binding](examples/118_output_target_delivery_skill_binding:1) as the dedicated manifest-backed proof for the new syntax, imported shared-target reuse, and render contract.
+- Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/118_output_target_delivery_skill_binding/cases.toml`.
 - Run `make verify-examples`.
 
 ## 8.3 E2E / device tests (realistic)
@@ -721,7 +748,7 @@ Draft the first cut around `output target ... delivery_skill: SkillRef`.
 ### Follow-ups
 
 - Carry the confirmed target-level syntax through `phase-plan`.
-- Execute with [examples/116_output_target_delivery_skill_binding](examples/116_output_target_delivery_skill_binding:1) as the canonical proof example.
+- Execute with [examples/118_output_target_delivery_skill_binding](examples/118_output_target_delivery_skill_binding:1) as the canonical proof example because example numbers `116` and `117` are already occupied in this worktree.
 - Execute with [tests/test_output_target_delivery_skill.py](tests/test_output_target_delivery_skill.py) as the focused feature test module.
 
 ## 2026-04-15 - Make delivery_skill a typed output-target attachment
@@ -750,3 +777,19 @@ Use a typed `delivery_skill:` attachment on `output target`, and introduce a tar
 
 - Encode the exact new target-body parse shape during implementation.
 - Keep output contract row order stable with `Delivered Via` directly under `Target`.
+
+## 2026-04-15 - Use example 118 for delivery-skill proof
+
+### Context
+
+The plan originally named `examples/116_output_target_delivery_skill_binding`, but example numbers `116` and `117` are already occupied in this worktree.
+
+### Decision
+
+Use `examples/118_output_target_delivery_skill_binding` for the delivery-skill proof example.
+
+### Consequences
+
+- The implementation preserves the existing untracked example work.
+- The proof ladder still uses one dedicated generic imported-target example.
+- Docs and verification commands now point at example `118`.

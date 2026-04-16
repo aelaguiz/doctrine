@@ -35,6 +35,25 @@ Plan
 Non-negotiables
 : No duplicate headings from omitted-title shorthand. No dual semantics on the same surface. Explicit-title syntax stays valid. No runtime shims or fallback heuristics. If the current unreleased behavior is wrong, replace it cleanly instead of preserving both stories.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-15
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes

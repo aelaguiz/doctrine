@@ -7,7 +7,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from doctrine.compiler import CompilationSession
+from doctrine.compiler import CompilationSession, ProvidedPromptRoot
 from doctrine.diagnostics import CompileError
 from doctrine.emit_common import collect_runtime_emit_roots, load_emit_targets
 from doctrine.emit_docs import emit_target
@@ -657,6 +657,78 @@ class EmitDocsTests(unittest.TestCase):
             self.assertEqual(peer_path.read_text(encoding="utf-8"), "keep replies crisp\n")
             rendered = markdown_path.read_text(encoding="utf-8")
             self.assertIn("Own the runtime package.", rendered)
+
+    def test_emit_target_uses_provider_prompt_roots_without_host_config_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            provider_prompts = root / "framework" / "prompts"
+            (provider_prompts / "framework" / "stdlib").mkdir(parents=True)
+            (provider_prompts / "framework" / "stdlib" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output ProviderReply: "Provider Reply"
+                        target: TurnResponse
+                        shape: CommentText
+                        requirement: Required
+
+                    agent ProviderAgent:
+                        role: "Own the provider runtime package."
+                        workflow: "Reply"
+                            "Reply from the provider package."
+                        outputs: "Outputs"
+                            ProviderReply
+                        final_output: ProviderReply
+                    """
+                ),
+                encoding="utf-8",
+            )
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                "import framework.stdlib\n",
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(
+                pyproject,
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                ),
+            )["demo"]
+            emitted = emit_target(target)
+
+            markdown_path = root / "build" / "framework" / "stdlib" / "AGENTS.md"
+            contract_path = (
+                root
+                / "build"
+                / "framework"
+                / "stdlib"
+                / "final_output.contract.json"
+            )
+            self.assertEqual(emitted, (markdown_path, contract_path))
+            self.assertNotIn("framework/prompts", pyproject.read_text(encoding="utf-8"))
+            rendered = markdown_path.read_text(encoding="utf-8")
+            self.assertIn("Own the provider runtime package.", rendered)
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                contract_data["agent"]["entrypoint"],
+                "framework_stdlib:framework/stdlib/AGENTS.prompt",
+            )
+            self.assertNotIn(str(provider_prompts), json.dumps(contract_data))
 
     def test_emit_target_emits_matching_runtime_package_soul_prompt(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

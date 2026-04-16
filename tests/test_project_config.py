@@ -7,7 +7,11 @@ from pathlib import Path
 
 from doctrine.diagnostics import EmitError
 from doctrine.emit_common import load_emit_targets, resolve_direct_emit_target
-from doctrine.project_config import ProjectConfigError, load_project_config
+from doctrine.project_config import (
+    ProjectConfigError,
+    ProvidedPromptRoot,
+    load_project_config,
+)
 
 
 class ProjectConfigTests(unittest.TestCase):
@@ -54,6 +58,110 @@ class ProjectConfigTests(unittest.TestCase):
                 project_config.resolve_compile_config()
 
             self.assertIn("Duplicate configured prompts root", str(exc_info.exception))
+
+    def test_provider_prompt_roots_normalize_as_compile_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            provider_prompts = root / "framework" / "prompts"
+            provider_prompts.mkdir(parents=True)
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [project]
+                    name = "doctrine-test"
+                    version = "0.0.0"
+                    """
+                )
+            )
+
+            project_config = load_project_config(
+                pyproject,
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                ),
+            )
+            compile_config = project_config.resolve_compile_config()
+
+            self.assertEqual(
+                compile_config.provided_prompt_roots,
+                (
+                    ProvidedPromptRoot(
+                        "framework_stdlib",
+                        provider_prompts.resolve(),
+                    ),
+                ),
+            )
+
+    def test_invalid_provider_prompt_root_fails_loud(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            not_prompts = root / "framework" / "not_prompts"
+            not_prompts.mkdir(parents=True)
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [project]
+                    name = "doctrine-test"
+                    version = "0.0.0"
+                    """
+                )
+            )
+
+            project_config = load_project_config(
+                pyproject,
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", not_prompts),
+                ),
+            )
+            with self.assertRaises(ProjectConfigError) as exc_info:
+                project_config.resolve_compile_config()
+
+            self.assertIn("Provided prompt root `framework_stdlib`", str(exc_info.exception))
+            self.assertIn("existing prompts directory", str(exc_info.exception))
+
+    def test_emit_targets_attach_provider_prompt_roots_to_project_config(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                """agent Demo:\n    role: "Own the emitted surface."\n"""
+            )
+            provider_prompts = root / "framework" / "prompts"
+            provider_prompts.mkdir(parents=True)
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                )
+            )
+
+            targets = load_emit_targets(
+                pyproject,
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                ),
+            )
+            compile_config = targets["demo"].project_config.resolve_compile_config()
+
+            self.assertEqual(
+                compile_config.provided_prompt_roots,
+                (
+                    ProvidedPromptRoot(
+                        "framework_stdlib",
+                        provider_prompts.resolve(),
+                    ),
+                ),
+            )
 
     def test_emit_targets_still_load_after_shared_project_config_extraction(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

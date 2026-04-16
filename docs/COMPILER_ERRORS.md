@@ -111,9 +111,9 @@ Stability rules:
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
 | `E283` | Cyclic workflow composition | `use`-based workflow composition forms a cycle. |
 | `E284` | Duplicate record key | A record body repeats the same key where the current surface expects uniqueness. |
-| `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]` or a bad `additional_prompt_roots` entry. |
-| `E286` | Duplicate configured prompts root | A configured additional `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
-| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one configured `prompts/` root. |
+| `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]`, a bad `additional_prompt_roots` entry, or a bad provider prompt root. |
+| `E286` | Duplicate active prompts root | A configured or provider `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
+| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one active `prompts/` root. |
 | `E288` | Duplicate declaration name | One module defines the same declaration name more than once. |
 | `E289` | Cyclic import module | Import resolution forms a module cycle. |
 | `E290` | Relative import walks above prompts root | A relative import escapes above the current `prompts/` root. |

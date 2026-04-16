@@ -3,6 +3,7 @@ from __future__ import annotations
 import threading
 import tomllib
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import doctrine._model.declarations as model
 from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey, index_unit, load_module
@@ -16,6 +17,7 @@ from doctrine._compiler.types import (
 )
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.project_config import (
+    ProvidedPromptRoot,
     ProjectConfig,
     ProjectConfigError,
     find_nearest_pyproject,
@@ -37,12 +39,22 @@ class CompilationSession:
         prompt_file: model.PromptFile,
         *,
         project_config: ProjectConfig | None = None,
+        provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
     ):
         self.prompt_root = resolve_prompt_root(prompt_file.source_path)
+        resolved_project_config = project_config
         try:
-            resolved_project_config = project_config or load_project_config_for_source(
-                prompt_file.source_path
-            )
+            if resolved_project_config is None:
+                resolved_project_config = load_project_config_for_source(
+                    prompt_file.source_path,
+                    provided_prompt_roots=provided_prompt_roots,
+                )
+            elif provided_prompt_roots:
+                resolved_project_config = (
+                    resolved_project_config.with_provided_prompt_roots(
+                        provided_prompt_roots
+                    )
+                )
             compile_config = resolved_project_config.resolve_compile_config()
         except tomllib.TOMLDecodeError as exc:
             config_path = project_config.path if project_config is not None else None
@@ -56,14 +68,24 @@ class CompilationSession:
                 cause=getattr(exc, "msg", str(exc)),
             ) from exc
         except ProjectConfigError as exc:
-            raise CompileError(str(exc)).ensure_location(
-                path=resolved_project_config.path
-            ) from exc
+            config_path = (
+                resolved_project_config.path
+                if resolved_project_config is not None
+                else None
+            )
+            raise CompileError(str(exc)).ensure_location(path=config_path) from exc
 
         self.project_config = resolved_project_config
+        self.provided_prompt_roots = compile_config.provided_prompt_roots
+        self.import_root_labels = _import_root_labels(
+            self.prompt_root,
+            compile_config.additional_prompt_roots,
+            compile_config.provided_prompt_roots,
+        )
         self.import_roots = resolve_import_roots(
             self.prompt_root,
             compile_config.additional_prompt_roots,
+            compile_config.provided_prompt_roots,
         )
         self._module_cache: dict[ModuleLoadKey, IndexedUnit] = {}
         self._module_load_errors: dict[ModuleLoadKey, Exception] = {}
@@ -237,16 +259,29 @@ class CompilationSession:
             return self.root_unit
         return load_module(self, module_parts, prompt_root=None, ancestry=())
 
+    def provided_prompt_root_for(
+        self,
+        prompt_root: Path,
+    ) -> ProvidedPromptRoot | None:
+        resolved_prompt_root = prompt_root.resolve()
+        for provided_root in self.provided_prompt_roots:
+            if Path(provided_root.path).resolve() == resolved_prompt_root:
+                return provided_root
+        return None
+
 
 def compile_prompt(
     prompt_file: model.PromptFile,
     agent_name: str,
     *,
     project_config: ProjectConfig | None = None,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> CompiledAgent:
-    return CompilationSession(prompt_file, project_config=project_config).compile_agent(
-        agent_name
-    )
+    return CompilationSession(
+        prompt_file,
+        project_config=project_config,
+        provided_prompt_roots=provided_prompt_roots,
+    ).compile_agent(agent_name)
 
 
 def extract_target_flow_graph(
@@ -254,8 +289,26 @@ def extract_target_flow_graph(
     agent_names: tuple[str, ...],
     *,
     project_config: ProjectConfig | None = None,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> FlowGraph:
     return CompilationSession(
         prompt_file,
         project_config=project_config,
+        provided_prompt_roots=provided_prompt_roots,
     ).extract_target_flow_graph(agent_names)
+
+
+def _import_root_labels(
+    prompt_root: Path,
+    additional_prompt_roots: tuple[Path, ...],
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...],
+) -> dict[Path, str]:
+    labels = {prompt_root.resolve(): f"entrypoint prompts root `{prompt_root}`"}
+    for root in additional_prompt_roots:
+        labels[root.resolve()] = f"configured prompts root `{root}`"
+    for root in provided_prompt_roots:
+        resolved_path = Path(root.path).resolve()
+        labels[resolved_path] = (
+            f"provided prompts root `{root.name}` at `{resolved_path}`"
+        )
+    return labels

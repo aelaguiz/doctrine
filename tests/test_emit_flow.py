@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from doctrine._compiler.types import FlowAgentNode, FlowEdge, FlowGraph
-from doctrine.compiler import CompilationSession
+from doctrine.compiler import CompilationSession, ProvidedPromptRoot
 from doctrine.emit_common import (
     DOCS_ENTRYPOINTS,
     collect_runtime_emit_roots,
@@ -597,6 +597,116 @@ version = "0.0.0"
             d2_path = root / "build" / "AGENTS.flow.d2"
             self.assertEqual(emitted, (d2_path,))
             self.assertIn("RuntimeHome", d2_path.read_text(encoding="utf-8"))
+
+    def test_emit_target_flow_uses_provider_prompt_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            provider_prompts = root / "framework" / "prompts"
+            (provider_prompts / "framework" / "stdlib").mkdir(parents=True)
+            (provider_prompts / "framework" / "stdlib" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent ProviderAgent:
+                        role: "Own the provider runtime package."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import framework.stdlib
+
+                    agent BuildHandle:
+                        role: "Own the build handle."
+                        workflow: "Route"
+                            law:
+                                active when true
+                                current none
+                                stop "Reply and stop."
+                                route "Hand off to the provider package." -> framework.stdlib.ProviderAgent
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(
+                pyproject,
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                ),
+            )["demo"]
+            emitted = emit_target_flow(target, include_svg=False)
+
+            d2_path = root / "build" / "AGENTS.flow.d2"
+            d2_text = d2_path.read_text(encoding="utf-8")
+            self.assertEqual(emitted, (d2_path,))
+            self.assertNotIn("framework/prompts", pyproject.read_text(encoding="utf-8"))
+            self.assertIn("ProviderAgent", d2_text)
+            self.assertIn("Hand off to the provider\\npackage.", d2_text)
+
+    def test_direct_emit_target_flow_uses_provider_prompt_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            provider_prompts = root / "framework" / "prompts"
+            (provider_prompts / "framework" / "stdlib").mkdir(parents=True)
+            (provider_prompts / "framework" / "stdlib" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent ProviderAgent:
+                        role: "Own the provider runtime package."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                "import framework.stdlib\n",
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [project]
+                    name = "doctrine-test"
+                    version = "0.0.0"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = resolve_direct_emit_target(
+                pyproject_path=pyproject,
+                entrypoint="prompts/AGENTS.prompt",
+                output_dir="build",
+                allowed_entrypoints=DOCS_ENTRYPOINTS,
+                provided_prompt_roots=(
+                    ProvidedPromptRoot("framework_stdlib", provider_prompts),
+                ),
+            )
+            emitted = emit_target_flow(target, include_svg=False)
+
+            d2_path = root / "build" / "AGENTS.flow.d2"
+            self.assertEqual(emitted, (d2_path,))
+            self.assertIn("ProviderAgent", d2_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
