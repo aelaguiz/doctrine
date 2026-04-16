@@ -1,0 +1,48 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "WriterNullableRouteFieldFinalOutputDemo",
+    "slug": "writer_nullable_route_field_final_output_demo",
+    "entrypoint": "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "conditional",
+    "has_unrouted_branch": true,
+    "unrouted_review_verdicts": [],
+    "selector": {
+      "surface": "final_output",
+      "field_path": [
+        "next_route"
+      ],
+      "null_behavior": "no_route"
+    },
+    "branches": [
+      {
+        "target": {
+          "key": "RevisionPartner",
+          "module_parts": [],
+          "name": "RevisionPartner",
+          "title": "Revision Partner"
+        },
+        "label": "Send to RevisionPartner for one more pass.",
+        "summary": "Send to RevisionPartner for one more pass. Next owner: Revision Partner.",
+        "choice_members": [
+          {
+            "member_key": "revise_more",
+            "member_title": "Send to RevisionPartner for one more pass.",
+            "member_wire": "revise_more"
+          }
+        ]
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "WriterTurnResult",
+    "declaration_name": "WriterTurnResult",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/writer_turn_result.schema.json"
+  }
+}
