@@ -6,6 +6,7 @@ from typing import Any
 from doctrine._diagnostics.contracts import (
     DiagnosticExcerptLine,
     DiagnosticLocation,
+    DiagnosticRelatedLocation,
     DiagnosticTraceFrame,
     DoctrineDiagnostic,
 )
@@ -36,6 +37,13 @@ def _json_safe_value(value: Any) -> Any:
             "label": value.label,
             "location": _json_safe_value(value.location),
         }
+    if isinstance(value, DiagnosticRelatedLocation):
+        return {
+            "label": value.label,
+            "location": _json_safe_value(value.location),
+            "excerpt": _json_safe_value(value.excerpt),
+            "caret_column": value.caret_column,
+        }
     if isinstance(value, DoctrineDiagnostic):
         return {
             "code": value.code,
@@ -45,6 +53,7 @@ def _json_safe_value(value: Any) -> Any:
             "location": _json_safe_value(value.location),
             "excerpt": _json_safe_value(value.excerpt),
             "caret_column": value.caret_column,
+            "related": _json_safe_value(value.related),
             "hints": _json_safe_value(value.hints),
             "trace": _json_safe_value(value.trace),
             "cause": value.cause,

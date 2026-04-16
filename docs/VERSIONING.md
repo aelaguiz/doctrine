@@ -104,6 +104,9 @@ Every public release uses one release class.
 - Adding provider-supplied prompt roots is an `additive` release when existing
   `additional_prompt_roots`, local entrypoints, and emit target placement
   still work.
+- Adding `type: enum` plus `values:` for local `output schema` enums is an
+  `additive` release when legacy `type: string` plus `enum:` still works and
+  emitted schema files keep the same string-enum wire shape.
 - Adding a top-level `route` block to `final_output.contract.json` is an
   `additive` release when existing `final_output` and `review` keys keep their
   shape and `contract_version` stays compatible.

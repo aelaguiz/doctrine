@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
+from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine, SectionBodyRef
+from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine, SectionBodyRef, SourceSpan
 from doctrine._model.law import LawPathSet
 
 
@@ -79,6 +80,7 @@ class AnalysisDecl:
     body: AnalysisBody
     parent_ref: NameRef | None = None
     render_profile_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property
     def title(self) -> str:
@@ -122,6 +124,7 @@ class DecisionDecl:
     name: str
     body: DecisionBody
     render_profile_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property
     def title(self) -> str:

@@ -14,6 +14,7 @@ from doctrine._parser.parts import (
     _meta_line_column,
     _positioned_body_prose,
     _positioned_enum_member_field,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -21,8 +22,8 @@ from doctrine.diagnostics import TransformParseFailure
 class SkillsTransformerMixin:
     """Shared skills, records, skill package, and enum lowering."""
 
-    @v_args(inline=True)
-    def skills_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def skills_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         skills_body = title_or_body
@@ -30,38 +31,50 @@ class SkillsTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             skills_body = body
-        return model.SkillsDecl(
-            name=name,
-            body=model.SkillsBody(
-                title=title,
-                preamble=skills_body.preamble,
-                items=skills_body.items,
+        return _with_source_span(
+            model.SkillsDecl(
+                name=name,
+                body=model.SkillsBody(
+                    title=title,
+                    preamble=skills_body.preamble,
+                    items=skills_body.items,
+                ),
+                parent_ref=parent_ref,
             ),
-            parent_ref=parent_ref,
+            meta,
         )
 
-    @v_args(inline=True)
-    def skill_package_decl(self, name, title, body):
-        return model.SkillPackageDecl(
-            name=name,
-            title=title,
-            items=body.items,
-            metadata=body.metadata,
+    @v_args(meta=True, inline=True)
+    def skill_package_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.SkillPackageDecl(
+                name=name,
+                title=title,
+                items=body.items,
+                metadata=body.metadata,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def skill_decl(self, name, title, items):
-        return model.SkillDecl(name=name, title=title, items=tuple(items))
+    @v_args(meta=True, inline=True)
+    def skill_decl(self, meta, name, title, items):
+        return _with_source_span(
+            model.SkillDecl(name=name, title=title, items=tuple(items)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def enum_decl(self, name, title, members):
-        return model.EnumDecl(name=name, title=title, members=tuple(members))
+    @v_args(meta=True, inline=True)
+    def enum_decl(self, meta, name, title, members):
+        return _with_source_span(
+            model.EnumDecl(name=name, title=title, members=tuple(members)),
+            meta,
+        )
 
     def enum_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def enum_member(self, key, title, body=None):
+    @v_args(meta=True, inline=True)
+    def enum_member(self, meta, key, title, body=None):
         wire: str | None = None
         for item in body or ():
             if isinstance(item, EnumMemberFieldPart):
@@ -86,7 +99,7 @@ class SkillsTransformerMixin:
                     column=column,
                 )
             wire = field_value
-        return model.EnumMember(key=key, title=title, wire=wire)
+        return _with_source_span(model.EnumMember(key=key, title=title, wire=wire), meta)
 
     def enum_member_body(self, items):
         return tuple(items)
@@ -115,9 +128,9 @@ class SkillsTransformerMixin:
             items=tuple(body or ()),
         )
 
-    @v_args(inline=True)
-    def skills_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def skills_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
     @v_args(inline=True)
     def skills_override_entry(self, key, target, body=None):

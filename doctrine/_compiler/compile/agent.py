@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from doctrine import model
 from concurrent.futures import ThreadPoolExecutor
 
+from doctrine import model
+from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import (
     _agent_typed_field_key,
     _authored_slot_allows_law,
@@ -50,8 +51,25 @@ class CompileAgentMixin:
         ]
         if unresolved_abstract_slots:
             missing = ", ".join(unresolved_abstract_slots)
-            raise CompileError(
-                f"E209 Concrete agent is missing abstract authored slots in agent {agent.name}: {missing}"
+            missing_slot = next(
+                (
+                    field
+                    for field in agent.fields
+                    if isinstance(field, model.AuthoredSlotAbstract)
+                    and field.key in unresolved_abstract_slots
+                ),
+                None,
+            )
+            raise compile_error(
+                code="E209",
+                summary="Concrete agent is missing abstract authored slots",
+                detail=(
+                    f"Concrete agent `{agent.name}` must define abstract authored slots: "
+                    f"{', '.join(f'`{slot}`' for slot in unresolved_abstract_slots)}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=None if missing_slot is None else missing_slot.source_span,
+                hints=("Define each missing slot directly with `slot_key: ...`.",),
             )
         resolved_slots = {
             slot.key: slot.body
@@ -100,20 +118,51 @@ class CompileAgentMixin:
         )
         field_specs: list[AgentFieldCompileSpec] = []
         seen_role = False
-        seen_typed_fields: set[str] = set()
+        first_role_field: model.RoleScalar | model.RoleBlock | None = None
+        seen_typed_fields: dict[str, model.Field] = {}
 
         for field in agent.fields:
             if isinstance(field, model.RoleScalar):
                 if seen_role:
-                    raise CompileError(f"Duplicate role field in agent {agent.name}")
+                    raise compile_error(
+                        code="E203",
+                        summary="Duplicate role field",
+                        detail=f"Agent `{agent.name}` defines `role` more than once.",
+                        path=unit.prompt_file.source_path,
+                        source_span=field.source_span,
+                        related=(
+                            related_prompt_site(
+                                label="first `role` field",
+                                path=unit.prompt_file.source_path,
+                                source_span=None if first_role_field is None else first_role_field.source_span,
+                            ),
+                        ),
+                        hints=("Keep exactly one `role:` field per concrete agent.",),
+                    )
                 seen_role = True
+                first_role_field = field
                 field_specs.append(AgentFieldCompileSpec(field=field))
                 continue
 
             if isinstance(field, model.RoleBlock):
                 if seen_role:
-                    raise CompileError(f"Duplicate role field in agent {agent.name}")
+                    raise compile_error(
+                        code="E203",
+                        summary="Duplicate role field",
+                        detail=f"Agent `{agent.name}` defines `role` more than once.",
+                        path=unit.prompt_file.source_path,
+                        source_span=field.source_span,
+                        related=(
+                            related_prompt_site(
+                                label="first `role` field",
+                                path=unit.prompt_file.source_path,
+                                source_span=None if first_role_field is None else first_role_field.source_span,
+                            ),
+                        ),
+                        hints=("Keep exactly one `role:` field per concrete agent.",),
+                    )
                 seen_role = True
+                first_role_field = field
                 field_specs.append(AgentFieldCompileSpec(field=field))
                 continue
 
@@ -135,13 +184,37 @@ class CompileAgentMixin:
                 continue
 
             field_key = _agent_typed_field_key(field)
-            if field_key in seen_typed_fields:
-                raise CompileError(f"Duplicate typed field in agent {agent.name}: {field_key}")
-            seen_typed_fields.add(field_key)
+            first_typed_field = seen_typed_fields.get(field_key)
+            if first_typed_field is not None:
+                raise compile_error(
+                    code="E204",
+                    summary="Duplicate typed field",
+                    detail=(
+                        f"Agent `{agent.name}` defines typed field `{field_key}` more than once."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=getattr(field, "source_span", None),
+                    related=(
+                        related_prompt_site(
+                            label=f"first `{field_key}` field",
+                            path=unit.prompt_file.source_path,
+                            source_span=getattr(first_typed_field, "source_span", None),
+                        ),
+                    ),
+                    hints=(f"Keep exactly one `{field_key}:` field on the agent.",),
+                )
+            seen_typed_fields[field_key] = field
             field_specs.append(AgentFieldCompileSpec(field=field))
 
         if not seen_role:
-            raise CompileError(f"Concrete agent is missing role field: {agent.name}")
+            raise compile_error(
+                code="E205",
+                summary="Concrete agent is missing role field",
+                detail=f"Concrete agent `{agent.name}` is missing its required `role` field.",
+                path=unit.prompt_file.source_path,
+                source_span=agent.source_span,
+                hints=("Add a `role:` field before the rest of the authored workflow surface.",),
+            )
 
         final_output = (
             self._compile_final_output_spec(

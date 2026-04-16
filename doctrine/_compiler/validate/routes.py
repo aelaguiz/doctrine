@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
+from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import _dotted_ref_name, _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
     AddressableNode,
@@ -39,7 +40,13 @@ class ValidateRoutesMixin:
         _target_unit, agent = self._resolve_agent_ref(ref, unit=unit)
         if agent.abstract:
             dotted_name = _dotted_ref_name(ref)
-            raise CompileError(f"Route target must be a concrete agent: {dotted_name}")
+            raise CompileError(
+                f"Route target must be a concrete agent: {dotted_name}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=ref.source_span.line if ref.source_span is not None else None,
+                column=ref.source_span.column if ref.source_span is not None else None,
+            )
 
     def _flatten_law_items(
         self,
@@ -664,11 +671,31 @@ class ValidateRoutesMixin:
         )
         seen_members: set[str] = set()
         saw_else = False
+        cases_by_value: dict[str, model.RouteFromArm] = {}
+        else_case: model.RouteFromArm | None = None
         for case in stmt.cases:
             if case.head is None:
                 if saw_else:
-                    raise CompileError(f"Duplicate route_from arm in {owner_label}: else")
+                    raise compile_error(
+                        code="E348",
+                        summary="Duplicate route_from arm",
+                        detail=f"`route_from` in {owner_label} names `else` more than once.",
+                        path=unit.prompt_file.source_path,
+                        source_span=case.source_span,
+                        related=(
+                            related_prompt_site(
+                                label="first `else` arm",
+                                path=unit.prompt_file.source_path,
+                                source_span=else_case.source_span if else_case is not None else None,
+                            ),
+                        ),
+                        hints=(
+                            "Name each enum member at most once in `route_from`.",
+                            "Use `else` at most once, and only when you need the remaining members.",
+                        ),
+                    )
                 saw_else = True
+                else_case = case
                 continue
             member = self._resolve_route_from_member(
                 case.head,
@@ -677,16 +704,33 @@ class ValidateRoutesMixin:
                 owner_label=owner_label,
             )
             if member.value in seen_members:
-                raise CompileError(
-                    f"Duplicate route_from arm in {owner_label}: {member.value}"
+                raise compile_error(
+                    code="E348",
+                    summary="Duplicate route_from arm",
+                    detail=f"`route_from` in {owner_label} names `{member.value}` more than once.",
+                    path=unit.prompt_file.source_path,
+                    source_span=case.source_span,
+                    related=(
+                        related_prompt_site(
+                            label=f"first `{member.value}` arm",
+                            path=unit.prompt_file.source_path,
+                            source_span=cases_by_value[member.value].source_span,
+                        ),
+                    ),
+                    hints=(
+                        "Name each enum member at most once in `route_from`.",
+                        "Use `else` at most once, and only when you need the remaining members.",
+                    ),
                 )
             seen_members.add(member.value)
+            cases_by_value[member.value] = case
 
         self._validate_route_from_selector_expr(
             stmt.expr,
             unit=unit,
             agent_contract=agent_contract,
             owner_label=owner_label,
+            fallback_source_span=stmt.source_span,
         )
         fixed_choice = self._resolve_constant_enum_member(stmt.expr, unit=unit)
         if fixed_choice is not None and not any(
@@ -694,6 +738,10 @@ class ValidateRoutesMixin:
         ):
             raise CompileError(
                 f"route_from selector is outside enum {enum_decl.name} in {owner_label}: {fixed_choice}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=stmt.expr.source_span.line if stmt.expr.source_span is not None else None,
+                column=stmt.expr.source_span.column if stmt.expr.source_span is not None else None,
             )
 
         if any(case.head is None for case in stmt.cases):
@@ -711,6 +759,10 @@ class ValidateRoutesMixin:
             if explicit_values == {member.value for member in enum_decl.members}:
                 raise CompileError(
                     f"route_from else is unreachable in {owner_label}: {enum_decl.name}"
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=stmt.source_span.line if stmt.source_span is not None else None,
+                    column=stmt.source_span.column if stmt.source_span is not None else None,
                 )
         else:
             seen_members = set()
@@ -726,6 +778,10 @@ class ValidateRoutesMixin:
             if seen_members != expected_members:
                 raise CompileError(
                     f"route_from on {enum_decl.name} must be exhaustive or include else in {owner_label}"
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=stmt.source_span.line if stmt.source_span is not None else None,
+                    column=stmt.source_span.column if stmt.source_span is not None else None,
                 )
 
         for case in stmt.cases:
@@ -738,11 +794,17 @@ class ValidateRoutesMixin:
         unit: IndexedUnit,
         agent_contract: AgentContract,
         owner_label: str,
+        fallback_source_span: model.SourceSpan | None = None,
     ) -> None:
         if not isinstance(expr, model.ExprRef):
+            source_span = getattr(expr, "source_span", None) or fallback_source_span
             raise CompileError(
                 "route_from selector reads invalid source in "
                 f"{owner_label}: {self._render_expr(expr, unit=unit)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=source_span.line if source_span is not None else None,
+                column=source_span.column if source_span is not None else None,
             )
         if self._expr_ref_matches_enum_member(expr, unit=unit):
             return
@@ -786,6 +848,10 @@ class ValidateRoutesMixin:
                 break
         raise CompileError(
             f"route_from selector reads invalid source in {owner_label}: {'.'.join(ref.parts)}"
+        ).ensure_location(
+            path=unit.prompt_file.source_path,
+            line=ref.source_span.line if ref.source_span is not None else None,
+            column=ref.source_span.column if ref.source_span is not None else None,
         )
 
     def _resolve_route_from_selector_field_node(
@@ -821,11 +887,19 @@ class ValidateRoutesMixin:
         if member_value is None:
             raise CompileError(
                 f"route_from arm must name a member of {enum_decl.name} in {owner_label}"
+            ).ensure_location(
+                path=enum_unit.prompt_file.source_path,
+                line=expr.source_span.line if getattr(expr, "source_span", None) is not None else None,
+                column=expr.source_span.column if getattr(expr, "source_span", None) is not None else None,
             )
         member = next((item for item in enum_decl.members if item.value == member_value), None)
         if member is None:
             raise CompileError(
                 f"route_from arm is outside enum {enum_decl.name} in {owner_label}: {member_value}"
+            ).ensure_location(
+                path=enum_unit.prompt_file.source_path,
+                line=expr.source_span.line if getattr(expr, "source_span", None) is not None else None,
+                column=expr.source_span.column if getattr(expr, "source_span", None) is not None else None,
             )
         return member
 
@@ -1044,6 +1118,10 @@ class ValidateRoutesMixin:
             raise CompileError(
                 f"current artifact must stay rooted at one input or output artifact in {owner_label}: "
                 f"{'.'.join(stmt.target.parts)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=stmt.source_span.line if stmt.source_span is not None else None,
+                column=stmt.source_span.column if stmt.source_span is not None else None,
             )
 
         carrier = self._validate_carrier_path(
@@ -1060,6 +1138,10 @@ class ValidateRoutesMixin:
                 raise CompileError(
                     f"current artifact output must be emitted by the concrete turn in {owner_label}: "
                     f"{target.decl.name}"
+                ).ensure_location(
+                    path=unit.prompt_file.source_path,
+                    line=stmt.source_span.line if stmt.source_span is not None else None,
+                    column=stmt.source_span.column if stmt.source_span is not None else None,
                 )
         return (target.unit.module_parts, target.decl.name)
 
@@ -1112,10 +1194,18 @@ class ValidateRoutesMixin:
         if not isinstance(resolved.decl, model.OutputDecl):
             raise CompileError(
                 f"{statement_label} via carrier must stay rooted in an emitted output in {owner_label}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=carrier.source_span.line if carrier.source_span is not None else None,
+                column=carrier.source_span.column if carrier.source_span is not None else None,
             )
         if not resolved.remainder or resolved.wildcard:
             raise CompileError(
                 f"{statement_label} requires an explicit `via` field on an emitted output in {owner_label}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=carrier.source_span.line if carrier.source_span is not None else None,
+                column=carrier.source_span.column if carrier.source_span is not None else None,
             )
 
         output_key = (resolved.unit.module_parts, resolved.decl.name)
@@ -1123,6 +1213,10 @@ class ValidateRoutesMixin:
             raise CompileError(
                 f"{statement_label} carrier output must be emitted by the concrete turn in {owner_label}: "
                 f"{resolved.decl.name}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=carrier.source_span.line if carrier.source_span is not None else None,
+                column=carrier.source_span.column if carrier.source_span is not None else None,
             )
 
         self._resolve_output_field_node(
@@ -1136,6 +1230,10 @@ class ValidateRoutesMixin:
             raise CompileError(
                 f"{statement_label} carrier field must be listed in trust_surface in {owner_label}: "
                 f"{'.'.join(resolved.remainder)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=carrier.source_span.line if carrier.source_span is not None else None,
+                column=carrier.source_span.column if carrier.source_span is not None else None,
             )
         return resolved
 
@@ -1231,5 +1329,9 @@ class ValidateRoutesMixin:
             raise CompileError(
                 f"{statement_label} enum, schema-family, schema-group, and grounding targets must not descend through fields in {owner_label}: "
                 f"{'.'.join(path.parts)}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=path.source_span.line if path.source_span is not None else None,
+                column=path.source_span.column if path.source_span is not None else None,
             )
         return resolved

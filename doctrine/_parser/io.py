@@ -21,6 +21,7 @@ from doctrine._parser.parts import (
     _positioned_input_structure,
     _positioned_render_profile,
     _positioned_trust_surface,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -28,40 +29,46 @@ from doctrine.diagnostics import TransformParseFailure
 class IoTransformerMixin:
     """Shared inputs, outputs, and IO-body lowering for the public parser boundary."""
 
-    @v_args(inline=True)
-    def inputs_inline_field(self, title, items):
-        return model.InputsField(title=title, value=tuple(items))
+    @v_args(meta=True, inline=True)
+    def inputs_inline_field(self, meta, title, items):
+        return _with_source_span(model.InputsField(title=title, value=tuple(items)), meta)
 
-    @v_args(inline=True)
-    def inputs_ref_field(self, ref):
-        return model.InputsField(title=None, value=ref)
+    @v_args(meta=True, inline=True)
+    def inputs_ref_field(self, meta, ref):
+        return _with_source_span(model.InputsField(title=None, value=ref), meta)
 
-    @v_args(inline=True)
-    def inputs_patch_field(self, parent_ref, title, body):
-        return model.InputsField(
-            title=title,
-            value=self._io_body(title, body),
-            parent_ref=parent_ref,
+    @v_args(meta=True, inline=True)
+    def inputs_patch_field(self, meta, parent_ref, title, body):
+        return _with_source_span(
+            model.InputsField(
+                title=title,
+                value=self._io_body(title, body),
+                parent_ref=parent_ref,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def outputs_inline_field(self, title, items):
-        return model.OutputsField(title=title, value=tuple(items))
+    @v_args(meta=True, inline=True)
+    def outputs_inline_field(self, meta, title, items):
+        return _with_source_span(model.OutputsField(title=title, value=tuple(items)), meta)
 
-    @v_args(inline=True)
-    def outputs_ref_field(self, ref):
-        return model.OutputsField(title=None, value=ref)
+    @v_args(meta=True, inline=True)
+    def outputs_ref_field(self, meta, ref):
+        return _with_source_span(model.OutputsField(title=None, value=ref), meta)
 
-    @v_args(inline=True)
-    def outputs_patch_field(self, parent_ref, title, body):
-        return model.OutputsField(
-            title=title,
-            value=self._io_body(title, body),
-            parent_ref=parent_ref,
+    @v_args(meta=True, inline=True)
+    def outputs_patch_field(self, meta, parent_ref, title, body):
+        return _with_source_span(
+            model.OutputsField(
+                title=title,
+                value=self._io_body(title, body),
+                parent_ref=parent_ref,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def inputs_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def inputs_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         io_body = title_or_body
@@ -69,19 +76,25 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             io_body = body
-        return model.InputsDecl(
-            name=name,
-            body=self._io_body(title, io_body),
-            parent_ref=parent_ref,
+        return _with_source_span(
+            model.InputsDecl(
+                name=name,
+                body=self._io_body(title, io_body),
+                parent_ref=parent_ref,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def input_decl(self, name, title, body):
-        return model.InputDecl(
-            name=name,
-            title=title,
-            items=body.items,
-            structure=body.structure,
+    @v_args(meta=True, inline=True)
+    def input_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.InputDecl(
+                name=name,
+                title=title,
+                items=body.items,
+                structure=body.structure,
+            ),
+            meta,
         )
 
     @v_args(inline=True)
@@ -109,12 +122,15 @@ class IoTransformerMixin:
     def input_structure_stmt(self, meta, ref):
         return _positioned_input_structure(meta, ref)
 
-    @v_args(inline=True)
-    def input_source_decl(self, name, title, items):
-        return model.InputSourceDecl(name=name, title=title, items=tuple(items))
+    @v_args(meta=True, inline=True)
+    def input_source_decl(self, meta, name, title, items):
+        return _with_source_span(
+            model.InputSourceDecl(name=name, title=title, items=tuple(items)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def output_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def output_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         output_body = title_or_body
@@ -122,19 +138,22 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             output_body = body
-        return model.OutputDecl(
-            name=name,
-            title=title,
-            items=output_body.items,
-            schema=output_body.schema,
-            structure=output_body.structure,
-            render_profile_ref=output_body.render_profile_ref,
-            trust_surface=output_body.trust_surface,
-            parent_ref=parent_ref,
-            schema_mode=output_body.schema_mode,
-            structure_mode=output_body.structure_mode,
-            render_profile_mode=output_body.render_profile_mode,
-            trust_surface_mode=output_body.trust_surface_mode,
+        return _with_source_span(
+            model.OutputDecl(
+                name=name,
+                title=title,
+                items=output_body.items,
+                schema=output_body.schema,
+                structure=output_body.structure,
+                render_profile_ref=output_body.render_profile_ref,
+                trust_surface=output_body.trust_surface,
+                parent_ref=parent_ref,
+                schema_mode=output_body.schema_mode,
+                structure_mode=output_body.structure_mode,
+                render_profile_mode=output_body.render_profile_mode,
+                trust_surface_mode=output_body.trust_surface_mode,
+            ),
+            meta,
         )
 
     @v_args(inline=True)
@@ -362,9 +381,9 @@ class IoTransformerMixin:
     def output_record_item(self, value):
         return value
 
-    @v_args(inline=True)
-    def output_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def output_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
     def output_record_item_body(self, items):
         return tuple(items[0])
@@ -374,69 +393,96 @@ class IoTransformerMixin:
         if isinstance(head, str) and body is not None:
             line, column = _meta_line_column(meta)
             return OutputRecordSectionPart(
-                section=model.RecordSection(key=key, title=head, items=tuple(body)),
+                section=_with_source_span(
+                    model.RecordSection(key=key, title=head, items=tuple(body)),
+                    meta,
+                ),
                 line=line,
                 column=column,
             )
-        return model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body))
+        return _with_source_span(
+            model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body)),
+            meta,
+        )
 
     @v_args(meta=True, inline=True)
     def output_override_keyed_item(self, meta, key, head, body=None):
         if isinstance(head, str) and body is not None:
             line, column = _meta_line_column(meta)
             return OutputRecordSectionPart(
-                section=model.OutputOverrideRecordSection(
-                    key=key,
-                    title=head,
-                    items=tuple(body),
+                section=_with_source_span(
+                    model.OutputOverrideRecordSection(
+                        key=key,
+                        title=head,
+                        items=tuple(body),
+                    ),
+                    meta,
                 ),
                 line=line,
                 column=column,
             )
-        return model.OutputOverrideRecordScalar(
-            key=key,
-            value=head,
-            body=None if body is None else tuple(body),
+        return _with_source_span(
+            model.OutputOverrideRecordScalar(
+                key=key,
+                value=head,
+                body=None if body is None else tuple(body),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_record_ref_item(self, ref, body=None):
-        return model.RecordRef(ref=ref, body=None if body is None else tuple(body))
-
-    @v_args(inline=True)
-    def guarded_output_section(self, key, title, when_expr, items):
-        return model.GuardedOutputSection(
-            key=key,
-            title=title,
-            when_expr=when_expr,
-            items=tuple(items),
+    @v_args(meta=True, inline=True)
+    def output_record_ref_item(self, meta, ref, body=None):
+        return _with_source_span(
+            model.RecordRef(ref=ref, body=None if body is None else tuple(body)),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_override_guarded_section(self, key, title, when_expr, items):
-        return model.OutputOverrideGuardedOutputSection(
-            key=key,
-            title=title,
-            when_expr=when_expr,
-            items=tuple(items),
+    @v_args(meta=True, inline=True)
+    def guarded_output_section(self, meta, key, title, when_expr, items):
+        return _with_source_span(
+            model.GuardedOutputSection(
+                key=key,
+                title=title,
+                when_expr=when_expr,
+                items=tuple(items),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def guarded_output_scalar_item(self, key, head, when_expr, body=None):
-        return model.GuardedOutputScalar(
-            key=key,
-            value=head,
-            when_expr=when_expr,
-            body=None if body is None else tuple(body),
+    @v_args(meta=True, inline=True)
+    def output_override_guarded_section(self, meta, key, title, when_expr, items):
+        return _with_source_span(
+            model.OutputOverrideGuardedOutputSection(
+                key=key,
+                title=title,
+                when_expr=when_expr,
+                items=tuple(items),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_override_guarded_scalar_item(self, key, head, when_expr, body=None):
-        return model.OutputOverrideGuardedOutputScalar(
-            key=key,
-            value=head,
-            when_expr=when_expr,
-            body=None if body is None else tuple(body),
+    @v_args(meta=True, inline=True)
+    def guarded_output_scalar_item(self, meta, key, head, when_expr, body=None):
+        return _with_source_span(
+            model.GuardedOutputScalar(
+                key=key,
+                value=head,
+                when_expr=when_expr,
+                body=None if body is None else tuple(body),
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_override_guarded_scalar_item(self, meta, key, head, when_expr, body=None):
+        return _with_source_span(
+            model.OutputOverrideGuardedOutputScalar(
+                key=key,
+                value=head,
+                when_expr=when_expr,
+                body=None if body is None else tuple(body),
+            ),
+            meta,
         )
 
     @v_args(meta=True)
@@ -447,16 +493,19 @@ class IoTransformerMixin:
     def output_override_trust_surface_block(self, meta, items):
         return _positioned_trust_surface(meta, tuple(items), override=True)
 
-    @v_args(inline=True)
-    def trust_surface_item(self, path, when_expr=None):
-        return model.TrustSurfaceItem(path=tuple(path), when_expr=when_expr)
+    @v_args(meta=True, inline=True)
+    def trust_surface_item(self, meta, path, when_expr=None):
+        return _with_source_span(
+            model.TrustSurfaceItem(path=tuple(path), when_expr=when_expr),
+            meta,
+        )
 
     @v_args(inline=True)
     def trust_surface_when(self, expr):
         return expr
 
-    @v_args(inline=True)
-    def outputs_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def outputs_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         io_body = title_or_body
@@ -464,19 +513,25 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             io_body = body
-        return model.OutputsDecl(
-            name=name,
-            body=self._io_body(title, io_body),
-            parent_ref=parent_ref,
+        return _with_source_span(
+            model.OutputsDecl(
+                name=name,
+                body=self._io_body(title, io_body),
+                parent_ref=parent_ref,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_target_decl(self, name, title, body):
-        return model.OutputTargetDecl(
-            name=name,
-            title=title,
-            items=body[0],
-            delivery_skill_ref=body[1],
+    @v_args(meta=True, inline=True)
+    def output_target_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.OutputTargetDecl(
+                name=name,
+                title=title,
+                items=body[0],
+                delivery_skill_ref=body[1],
+            ),
+            meta,
         )
 
     @v_args(inline=True)
@@ -505,8 +560,8 @@ class IoTransformerMixin:
         line, column = _meta_line_column(meta)
         return OutputTargetDeliverySkillPart(ref=ref, line=line, column=column)
 
-    @v_args(inline=True)
-    def output_shape_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def output_shape_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         items = title_or_body
@@ -514,11 +569,14 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             items = body
-        return model.OutputShapeDecl(
-            name=name,
-            title=title,
-            items=tuple(items),
-            parent_ref=parent_ref,
+        return _with_source_span(
+            model.OutputShapeDecl(
+                name=name,
+                title=title,
+                items=tuple(items),
+                parent_ref=parent_ref,
+            ),
+            meta,
         )
 
     def output_schema_body(self, items):
@@ -527,100 +585,118 @@ class IoTransformerMixin:
     def output_schema_item_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def output_schema_type_stmt(self, type_name):
-        return model.OutputSchemaSetting(key="type", value=type_name)
+    @v_args(meta=True, inline=True)
+    def output_schema_type_stmt(self, meta, type_name):
+        return _with_source_span(model.OutputSchemaSetting(key="type", value=type_name), meta)
 
-    @v_args(inline=True)
-    def output_schema_note_stmt(self, value):
-        return model.OutputSchemaSetting(key="note", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_note_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="note", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_format_stmt(self, value):
-        return model.OutputSchemaSetting(key="format", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_format_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="format", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_pattern_stmt(self, value):
-        return model.OutputSchemaSetting(key="pattern", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_pattern_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="pattern", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_const_stmt(self, value):
-        return model.OutputSchemaSetting(key="const", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_const_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="const", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_ref_stmt(self, ref):
-        return model.OutputSchemaSetting(key="ref", value=ref)
+    @v_args(meta=True, inline=True)
+    def output_schema_ref_stmt(self, meta, ref):
+        return _with_source_span(model.OutputSchemaSetting(key="ref", value=ref), meta)
 
-    @v_args(inline=True)
-    def output_schema_items_stmt(self, value):
-        return model.OutputSchemaItems(value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_items_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaItems(value=value), meta)
 
-    def output_schema_items_block(self, items):
-        return model.OutputSchemaItems(value=tuple(items))
+    @v_args(meta=True)
+    def output_schema_items_block(self, meta, items):
+        return _with_source_span(model.OutputSchemaItems(value=tuple(items)), meta)
 
-    def output_schema_required_stmt(self, _items=None):
-        return model.OutputSchemaFlag(key="required")
+    @v_args(meta=True)
+    def output_schema_required_stmt(self, meta, _items=None):
+        return _with_source_span(model.OutputSchemaFlag(key="required"), meta)
 
-    def output_schema_optional_stmt(self, _items=None):
-        return model.OutputSchemaFlag(key="optional")
+    @v_args(meta=True)
+    def output_schema_optional_stmt(self, meta, _items=None):
+        return _with_source_span(model.OutputSchemaFlag(key="optional"), meta)
 
-    def output_schema_enum_block(self, items):
-        return model.OutputSchemaEnum(values=tuple(items))
+    @v_args(meta=True)
+    def output_schema_enum_block(self, meta, items):
+        return _with_source_span(model.OutputSchemaEnum(values=tuple(items)), meta)
+
+    @v_args(meta=True)
+    def output_schema_values_block(self, meta, items):
+        return _with_source_span(model.OutputSchemaValues(values=tuple(items)), meta)
 
     @v_args(inline=True)
     def output_schema_enum_value(self, value):
         return value
 
-    @v_args(inline=True)
-    def output_schema_variant(self, *children):
+    @v_args(meta=True, inline=True)
+    def output_schema_variant(self, meta, *children):
         key: str | None = None
         variant_items = children
         if children and isinstance(children[0], str):
             key = children[0]
             variant_items = children[1:]
-        return model.OutputSchemaVariant(
-            key=key,
-            items=tuple(variant_items),
+        return _with_source_span(
+            model.OutputSchemaVariant(
+                key=key,
+                items=tuple(variant_items),
+            ),
+            meta,
         )
 
-    def output_schema_any_of_block(self, items):
-        return model.OutputSchemaAnyOf(variants=tuple(items))
+    @v_args(meta=True)
+    def output_schema_any_of_block(self, meta, items):
+        return _with_source_span(model.OutputSchemaAnyOf(variants=tuple(items)), meta)
 
-    @v_args(inline=True)
-    def output_schema_min_length_stmt(self, value):
-        return model.OutputSchemaSetting(key="min_length", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_min_length_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="min_length", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_max_length_stmt(self, value):
-        return model.OutputSchemaSetting(key="max_length", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_max_length_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="max_length", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_minimum_stmt(self, value):
-        return model.OutputSchemaSetting(key="minimum", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_minimum_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="minimum", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_maximum_stmt(self, value):
-        return model.OutputSchemaSetting(key="maximum", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_maximum_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="maximum", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_exclusive_minimum_stmt(self, value):
-        return model.OutputSchemaSetting(key="exclusive_minimum", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_exclusive_minimum_stmt(self, meta, value):
+        return _with_source_span(
+            model.OutputSchemaSetting(key="exclusive_minimum", value=value),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def output_schema_exclusive_maximum_stmt(self, value):
-        return model.OutputSchemaSetting(key="exclusive_maximum", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_exclusive_maximum_stmt(self, meta, value):
+        return _with_source_span(
+            model.OutputSchemaSetting(key="exclusive_maximum", value=value),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def output_schema_multiple_of_stmt(self, value):
-        return model.OutputSchemaSetting(key="multiple_of", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_multiple_of_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="multiple_of", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_min_items_stmt(self, value):
-        return model.OutputSchemaSetting(key="min_items", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_min_items_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="min_items", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_max_items_stmt(self, value):
-        return model.OutputSchemaSetting(key="max_items", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_max_items_stmt(self, meta, value):
+        return _with_source_span(model.OutputSchemaSetting(key="max_items", value=value), meta)
 
     @v_args(inline=True)
     def output_schema_identifier(self, value):
@@ -635,32 +711,38 @@ class IoTransformerMixin:
     def output_schema_null(self, _items=None):
         return None
 
-    @v_args(inline=True)
-    def output_schema_field(self, key, title, items=None):
-        return model.OutputSchemaField(
-            key=key,
-            title=title,
-            items=tuple(items) if items is not None else (),
+    @v_args(meta=True, inline=True)
+    def output_schema_field(self, meta, key, title, items=None):
+        return _with_source_span(
+            model.OutputSchemaField(
+                key=key,
+                title=title,
+                items=tuple(items) if items is not None else (),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_schema_def(self, key, title, items=None):
-        return model.OutputSchemaDef(
-            key=key,
-            title=title,
-            items=tuple(items) if items is not None else (),
+    @v_args(meta=True, inline=True)
+    def output_schema_def(self, meta, key, title, items=None):
+        return _with_source_span(
+            model.OutputSchemaDef(
+                key=key,
+                title=title,
+                items=tuple(items) if items is not None else (),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_schema_example(self, value):
-        return model.OutputSchemaExample(key="example", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_example(self, meta, value):
+        return _with_source_span(model.OutputSchemaExample(key="example", value=value), meta)
 
-    @v_args(inline=True)
-    def output_schema_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def output_schema_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def output_schema_override_field(self, key, title_or_items=None, items=None):
+    @v_args(meta=True, inline=True)
+    def output_schema_override_field(self, meta, key, title_or_items=None, items=None):
         title: str | None = None
         body_items = title_or_items
         if items is not None:
@@ -671,14 +753,17 @@ class IoTransformerMixin:
             body_items = ()
         if body_items is None:
             body_items = ()
-        return model.OutputSchemaOverrideField(
-            key=key,
-            title=title,
-            items=tuple(body_items),
+        return _with_source_span(
+            model.OutputSchemaOverrideField(
+                key=key,
+                title=title,
+                items=tuple(body_items),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_schema_override_def(self, key, title_or_items=None, items=None):
+    @v_args(meta=True, inline=True)
+    def output_schema_override_def(self, meta, key, title_or_items=None, items=None):
         title: str | None = None
         body_items = title_or_items
         if items is not None:
@@ -689,15 +774,21 @@ class IoTransformerMixin:
             body_items = ()
         if body_items is None:
             body_items = ()
-        return model.OutputSchemaOverrideDef(
-            key=key,
-            title=title,
-            items=tuple(body_items),
+        return _with_source_span(
+            model.OutputSchemaOverrideDef(
+                key=key,
+                title=title,
+                items=tuple(body_items),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def output_schema_override_example(self, value):
-        return model.OutputSchemaOverrideExample(key="example", value=value)
+    @v_args(meta=True, inline=True)
+    def output_schema_override_example(self, meta, value):
+        return _with_source_span(
+            model.OutputSchemaOverrideExample(key="example", value=value),
+            meta,
+        )
 
     def output_schema_example_object(self, items):
         return model.OutputSchemaExampleObject(entries=tuple(items))
@@ -722,8 +813,8 @@ class IoTransformerMixin:
     def output_schema_example_null(self, _items=None):
         return None
 
-    @v_args(inline=True)
-    def output_schema_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def output_schema_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         items = title_or_body
@@ -731,11 +822,14 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             items = body
-        return model.OutputSchemaDecl(
-            name=name,
-            title=title,
-            items=tuple(items),
-            parent_ref=parent_ref,
+        return _with_source_span(
+            model.OutputSchemaDecl(
+                name=name,
+                title=title,
+                items=tuple(items),
+                parent_ref=parent_ref,
+            ),
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -776,9 +870,9 @@ class IoTransformerMixin:
             section_items = items
         return model.IoSection(key=key, title=title, items=tuple(section_items))
 
-    @v_args(inline=True)
-    def io_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def io_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
     @v_args(inline=True)
     def io_override_section(self, key, title_or_items, items=None):

@@ -1,7 +1,7 @@
 output schema AcceptanceControlSchema: "Acceptance Control Schema"
     field route: "Route"
-        type: string
-        enum:
+        type: enum
+        values:
             follow_up
             revise
         required

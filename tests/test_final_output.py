@@ -204,8 +204,8 @@ class FinalOutputTests(unittest.TestCase):
                     note: "Short natural-language status."
 
                 field status: "Status"
-                    type: string
-                    enum:
+                    type: enum
+                    values:
                         ok
                         action_required
                     required
@@ -280,8 +280,8 @@ class FinalOutputTests(unittest.TestCase):
             """
             output schema StatusSchema: "Status Schema"
                 field status: "Status"
-                    type: string
-                    enum:
+                    type: enum
+                    values:
                         ok
                         blocked
                     optional
@@ -339,8 +339,8 @@ class FinalOutputTests(unittest.TestCase):
                     note: "Routing facts for the next step."
 
                     field action: "Action"
-                        type: string
-                        enum:
+                        type: enum
+                        values:
                             reply
                             handoff
                             end_turn
@@ -429,6 +429,42 @@ class FinalOutputTests(unittest.TestCase):
 
         self.assertEqual(error.code, "E216")
         self.assertIn("does not match lowered schema", str(error))
+
+    def test_json_final_output_keeps_legacy_inline_enum_form_compatible(self) -> None:
+        agent = self._compile_agent(
+            """
+            output schema LegacyStatusSchema: "Legacy Status Schema"
+                field status: "Status"
+                    type: string
+                    enum:
+                        ok
+                        blocked
+                    required
+
+            output shape LegacyStatusJson: "Legacy Status JSON"
+                kind: JsonObject
+                schema: LegacyStatusSchema
+
+            output LegacyStatusFinalResponse: "Legacy Status Final Response"
+                target: TurnResponse
+                shape: LegacyStatusJson
+                requirement: Required
+
+            agent LegacyStatusAgent:
+                role: "Report status in the legacy enum form."
+                outputs: "Outputs"
+                    LegacyStatusFinalResponse
+                final_output: LegacyStatusFinalResponse
+            """,
+            agent_name="LegacyStatusAgent",
+        )
+
+        self.assertIsNotNone(agent.final_output)
+        self.assertIsNotNone(agent.final_output.lowered_schema)
+        self.assertEqual(
+            agent.final_output.lowered_schema["properties"]["status"]["enum"],
+            ["ok", "blocked"],
+        )
 
     def test_json_final_output_allows_missing_schema_owned_example(self) -> None:
         # Structured final-output contracts may omit `example:`. The rendered
@@ -700,8 +736,8 @@ class FinalOutputTests(unittest.TestCase):
             """
             output schema AcceptanceReviewSchema: "Acceptance Review Schema"
                 field verdict: "Verdict"
-                    type: string
-                    enum:
+                    type: enum
+                    values:
                         accepted
                         changes_requested
                     required
@@ -1090,8 +1126,8 @@ class FinalOutputTests(unittest.TestCase):
             """
             output schema AcceptanceControlSchema: "Acceptance Control Schema"
                 field route: "Route"
-                    type: string
-                    enum:
+                    type: enum
+                    values:
                         follow_up
                         revise
                     required
@@ -1253,8 +1289,8 @@ class FinalOutputTests(unittest.TestCase):
             """
             output schema AcceptanceControlSchema: "Acceptance Control Schema"
                 field route: "Route"
-                    type: string
-                    enum:
+                    type: enum
+                    values:
                         follow_up
                         revise
                     required

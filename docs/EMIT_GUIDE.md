@@ -555,6 +555,10 @@ For structured final outputs:
 
 - `output schema` is the only source of truth for payload fields and the
   optional example object.
+- For a local closed string vocabulary inside `output schema`, prefer
+  `type: enum` plus `values:`.
+- In the first cut, legacy `type: string` plus `enum:` still compiles.
+  Both forms emit the same lowered string-enum schema file.
 - Doctrine lowers that schema to the OpenAI-compatible wire shape during
   compile.
 - When an authored `example:` is present, Doctrine validates it against the

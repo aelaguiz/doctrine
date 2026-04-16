@@ -37,8 +37,8 @@ def _final_output_json_source(
         note: "Short natural-language status."
 
     field status: "Status"
-        type: string
-        enum:
+        type: enum
+        values:
             ok
             action_required
         required
@@ -277,8 +277,8 @@ agent SplitReviewFinalOutputAgent:
 def _final_output_review_split_json_source() -> str:
     return """output schema AcceptanceControlSchema: "Acceptance Control Schema"
     field route: "Route"
-        type: string
-        enum:
+        type: enum
+        values:
             follow_up
             revise
         required

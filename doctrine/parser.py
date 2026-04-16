@@ -10,7 +10,7 @@ from doctrine._parser.agents import AgentTransformerMixin
 from doctrine._parser.analysis_decisions import AnalysisDecisionTransformerMixin
 from doctrine._parser.expressions import ExpressionTransformerMixin
 from doctrine._parser.io import IoTransformerMixin
-from doctrine._parser.parts import _name_ref_from_dotted_name
+from doctrine._parser.parts import _name_ref_from_dotted_name, _source_span_from_meta, _with_source_span
 from doctrine._parser.readables import ReadableNodeTransformerMixin
 from doctrine._parser.reviews import ReviewTransformerMixin
 from doctrine._parser.runtime import (
@@ -73,17 +73,24 @@ class ToAst(
     def inheritance(self, parent_ref):
         return parent_ref
 
-    @v_args(inline=True)
-    def import_decl(self, path):
-        return model.ImportDecl(path=path)
+    @v_args(meta=True, inline=True)
+    def import_decl(self, meta, path):
+        return _with_source_span(model.ImportDecl(path=path), meta)
 
-    def render_profile_decl(self, items):
+    @v_args(meta=True)
+    def render_profile_decl(self, meta, items):
         name = items[0]
-        return model.RenderProfileDecl(name=name, rules=tuple(items[1:]))
+        return _with_source_span(
+            model.RenderProfileDecl(name=name, rules=tuple(items[1:])),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def render_profile_rule(self, target_parts, mode):
-        return model.RenderProfileRule(target_parts=tuple(target_parts), mode=mode)
+    @v_args(meta=True, inline=True)
+    def render_profile_rule(self, meta, target_parts, mode):
+        return _with_source_span(
+            model.RenderProfileRule(target_parts=tuple(target_parts), mode=mode),
+            meta,
+        )
 
     @v_args(inline=True)
     def import_path(self, path):
@@ -100,17 +107,25 @@ class ToAst(
     def dotted_name(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def name_ref(self, dotted_name):
+    @v_args(meta=True, inline=True)
+    def name_ref(self, meta, dotted_name):
         parts = tuple(dotted_name)
-        return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
+        return model.NameRef(
+            module_parts=parts[:-1],
+            declaration_name=parts[-1],
+            source_span=_source_span_from_meta(meta),
+        )
 
-    @v_args(inline=True)
-    def path_ref(self, raw_ref):
+    @v_args(meta=True, inline=True)
+    def path_ref(self, meta, raw_ref):
         root_name, path_name = raw_ref.split(":", 1)
         return model.AddressableRef(
-            root=_name_ref_from_dotted_name(root_name),
+            root=_name_ref_from_dotted_name(
+                root_name,
+                source_span=_source_span_from_meta(meta),
+            ),
             path=tuple(path_name.split(".")),
+            source_span=_source_span_from_meta(meta),
         )
 
 

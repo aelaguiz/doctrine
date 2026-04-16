@@ -8,6 +8,7 @@ from doctrine._parser.parts import (
     ReadablePayloadParts,
     _meta_line_column,
     _positioned_readable_field,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -21,188 +22,282 @@ class ReadableNodeTransformerMixin:
     def override_readable_nonsection_block(self, items):
         return items[0]
 
-    @v_args(inline=True)
-    def readable_sequence_block(self, key, *parts):
+    @v_args(meta=True, inline=True)
+    def readable_sequence_block(self, meta, key, *parts):
         title: str | None = None
         readable_parts = parts
         if readable_parts and isinstance(readable_parts[0], str):
             title = readable_parts[0]
             readable_parts = readable_parts[1:]
-        return self._readable_block("sequence", key, title, readable_parts)
-
-    @v_args(inline=True)
-    def readable_properties_block(self, key, title, *parts):
-        return self._readable_block("properties", key, title, parts)
-
-    def readable_inline_properties_block(self, items):
-        return model.ReadableBlock(
-            kind="properties",
-            key="properties",
-            title=None,
-            payload=items[0],
-            anonymous=True,
+        return _with_source_span(
+            self._readable_block("sequence", key, title, readable_parts),
+            meta,
         )
 
-    @v_args(inline=True)
-    def readable_guard_shell_block(self, key, guard, body):
-        return model.ReadableBlock(
-            kind="guard",
-            key=key,
-            title=None,
-            payload=tuple(body),
-            when_expr=guard[1],
+    @v_args(meta=True, inline=True)
+    def readable_properties_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("properties", key, title, parts),
+            meta,
         )
 
-    @v_args(inline=True)
-    def readable_bullets_block(self, key, *parts):
+    @v_args(meta=True)
+    def readable_inline_properties_block(self, meta, items):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="properties",
+                key="properties",
+                title=None,
+                payload=items[0],
+                anonymous=True,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def readable_guard_shell_block(self, meta, key, guard, body):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="guard",
+                key=key,
+                title=None,
+                payload=tuple(body),
+                when_expr=guard[1],
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def readable_bullets_block(self, meta, key, *parts):
         title: str | None = None
         readable_parts = parts
         if readable_parts and isinstance(readable_parts[0], str):
             title = readable_parts[0]
             readable_parts = readable_parts[1:]
-        return self._readable_block("bullets", key, title, readable_parts)
+        return _with_source_span(
+            self._readable_block("bullets", key, title, readable_parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_checklist_block(self, key, *parts):
+    @v_args(meta=True, inline=True)
+    def readable_checklist_block(self, meta, key, *parts):
         title: str | None = None
         readable_parts = parts
         if readable_parts and isinstance(readable_parts[0], str):
             title = readable_parts[0]
             readable_parts = readable_parts[1:]
-        return self._readable_block("checklist", key, title, readable_parts)
+        return _with_source_span(
+            self._readable_block("checklist", key, title, readable_parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_definitions_block(self, key, title, *parts):
-        return self._readable_block("definitions", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_definitions_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("definitions", key, title, parts),
+            meta,
+        )
 
     @v_args(inline=True)
     def readable_table_block(self, value):
         return value
 
-    @v_args(inline=True)
-    def readable_inline_table_block(self, key, title, *parts):
-        return self._readable_block("table", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_inline_table_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("table", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_named_table_block(self, key, table_ref, *parts):
-        return self._named_table_block(model.ReadableBlock, key, table_ref, parts)
+    @v_args(meta=True, inline=True)
+    def readable_named_table_block(self, meta, key, table_ref, *parts):
+        return self._named_table_block(model.ReadableBlock, key, table_ref, parts, meta=meta)
 
-    @v_args(inline=True)
-    def readable_callout_block(self, key, title, *parts):
-        return self._readable_block("callout", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_callout_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("callout", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_code_block(self, key, title, *parts):
-        return self._readable_block("code", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_code_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("code", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_markdown_block(self, key, title, *parts):
-        return self._readable_block("markdown", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_markdown_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("markdown", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_html_block(self, key, title, *parts):
-        return self._readable_block("html", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_html_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("html", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_footnotes_block(self, key, title, *parts):
-        return self._readable_block("footnotes", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_footnotes_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("footnotes", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_image_block(self, key, title, *parts):
-        return self._readable_block("image", key, title, parts)
+    @v_args(meta=True, inline=True)
+    def readable_image_block(self, meta, key, title, *parts):
+        return _with_source_span(
+            self._readable_block("image", key, title, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def readable_rule_block(self, key, *parts):
+    @v_args(meta=True, inline=True)
+    def readable_rule_block(self, meta, key, *parts):
         requirement, when_expr, item_schema, row_schema, _payload = self._split_readable_parts(parts)
-        return model.ReadableBlock(
-            kind="rule",
-            key=key,
-            title=None,
-            payload=None,
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="rule",
+                key=key,
+                title=None,
+                payload=None,
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def override_readable_sequence_block(self, key, *parts):
-        return self._readable_override_block("sequence", key, parts)
-
-    @v_args(inline=True)
-    def override_readable_properties_block(self, key, *parts):
-        return self._readable_override_block("properties", key, parts)
-
-    @v_args(inline=True)
-    def override_readable_guard_shell_block(self, key, guard, body):
-        return model.DocumentOverrideBlock(
-            kind="guard",
-            key=key,
-            title=None,
-            payload=tuple(body),
-            when_expr=guard[1],
+    @v_args(meta=True, inline=True)
+    def override_readable_sequence_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("sequence", key, parts),
+            meta,
         )
 
-    @v_args(inline=True)
-    def override_readable_bullets_block(self, key, *parts):
-        return self._readable_override_block("bullets", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_properties_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("properties", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_checklist_block(self, key, *parts):
-        return self._readable_override_block("checklist", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_guard_shell_block(self, meta, key, guard, body):
+        return _with_source_span(
+            model.DocumentOverrideBlock(
+                kind="guard",
+                key=key,
+                title=None,
+                payload=tuple(body),
+                when_expr=guard[1],
+            ),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_definitions_block(self, key, *parts):
-        return self._readable_override_block("definitions", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_bullets_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("bullets", key, parts),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def override_readable_checklist_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("checklist", key, parts),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def override_readable_definitions_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("definitions", key, parts),
+            meta,
+        )
 
     @v_args(inline=True)
     def override_readable_table_block(self, value):
         return value
 
-    @v_args(inline=True)
-    def override_readable_inline_table_block(self, key, *parts):
-        return self._readable_override_block("table", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_inline_table_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("table", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_named_table_block(self, key, table_ref, *parts):
-        return self._named_table_block(model.DocumentOverrideBlock, key, table_ref, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_named_table_block(self, meta, key, table_ref, *parts):
+        return self._named_table_block(
+            model.DocumentOverrideBlock,
+            key,
+            table_ref,
+            parts,
+            meta=meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_callout_block(self, key, *parts):
-        return self._readable_override_block("callout", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_callout_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("callout", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_code_block(self, key, *parts):
-        return self._readable_override_block("code", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_code_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("code", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_markdown_block(self, key, *parts):
-        return self._readable_override_block("markdown", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_markdown_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("markdown", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_html_block(self, key, *parts):
-        return self._readable_override_block("html", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_html_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("html", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_footnotes_block(self, key, *parts):
-        return self._readable_override_block("footnotes", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_footnotes_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("footnotes", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_image_block(self, key, *parts):
-        return self._readable_override_block("image", key, parts)
+    @v_args(meta=True, inline=True)
+    def override_readable_image_block(self, meta, key, *parts):
+        return _with_source_span(
+            self._readable_override_block("image", key, parts),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def override_readable_rule_block(self, key, *parts):
+    @v_args(meta=True, inline=True)
+    def override_readable_rule_block(self, meta, key, *parts):
         title, requirement, when_expr, item_schema, row_schema, _payload = self._split_readable_override_parts(parts)
-        return model.DocumentOverrideBlock(
-            kind="rule",
-            key=key,
-            title=title,
-            payload=None,
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.DocumentOverrideBlock(
+                kind="rule",
+                key=key,
+                title=title,
+                payload=None,
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )
 
     def readable_list_body(self, items):
@@ -225,24 +320,28 @@ class ReadableNodeTransformerMixin:
             rendered_items.append(model.ReadableListItem(key=None, text=item))
         return ReadablePayloadParts(payload=tuple(rendered_items), item_schema=item_schema)
 
-    @v_args(inline=True)
-    def readable_list_keyed_item(self, key, text):
-        return model.ReadableListItem(key=key, text=text)
+    @v_args(meta=True, inline=True)
+    def readable_list_keyed_item(self, meta, key, text):
+        return _with_source_span(model.ReadableListItem(key=key, text=text), meta)
 
     @v_args(meta=True)
     def readable_item_schema_block(self, meta, items):
         return _positioned_readable_field(
             meta,
             "item_schema",
-            model.ReadableInlineSchemaData(entries=tuple(items)),
+            _with_source_span(model.ReadableInlineSchemaData(entries=tuple(items)), meta),
         )
 
-    def readable_properties_body(self, items):
-        return model.ReadablePropertiesData(entries=tuple(items))
+    @v_args(meta=True)
+    def readable_properties_body(self, meta, items):
+        return _with_source_span(model.ReadablePropertiesData(entries=tuple(items)), meta)
 
-    @v_args(inline=True)
-    def readable_property_item(self, key, title, body=None):
-        return model.ReadablePropertyItem(key=key, title=title, body=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def readable_property_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.ReadablePropertyItem(key=key, title=title, body=tuple(body or ())),
+            meta,
+        )
 
     def readable_property_item_body(self, items):
         return tuple(items[0])
@@ -250,22 +349,26 @@ class ReadableNodeTransformerMixin:
     def readable_definitions_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def readable_definition_item(self, key, title, body=None):
-        return model.ReadableDefinitionItem(
-            key=key,
-            title=title,
-            body=tuple(body or ()),
+    @v_args(meta=True, inline=True)
+    def readable_definition_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.ReadableDefinitionItem(
+                key=key,
+                title=title,
+                body=tuple(body or ()),
+            ),
+            meta,
         )
 
     def readable_definition_item_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def table_decl(self, name, title, body):
-        return model.TableDecl(name=name, title=title, table=body)
+    @v_args(meta=True, inline=True)
+    def table_decl(self, meta, name, title, body):
+        return _with_source_span(model.TableDecl(name=name, title=title, table=body), meta)
 
-    def table_decl_body(self, items):
+    @v_args(meta=True)
+    def table_decl_body(self, meta, items):
         return self._readable_table_data(
             items,
             owner_label="Table declarations",
@@ -276,9 +379,11 @@ class ReadableNodeTransformerMixin:
                 "Put shared table structure on the declaration and put concrete rows "
                 "on each document use site."
             ),
+            meta=meta,
         )
 
-    def readable_table_body(self, items):
+    @v_args(meta=True)
+    def readable_table_body(self, meta, items):
         return ReadablePayloadParts(
             payload=self._readable_table_data(
                 items,
@@ -287,6 +392,7 @@ class ReadableNodeTransformerMixin:
                 allow_rows=True,
                 allow_row_schema=True,
                 invalid_hint="Use `columns:`, `rows:`, `row_schema:`, or `notes:` in readable table bodies.",
+                meta=meta,
             ),
             row_schema=self._readable_table_row_schema(items),
         )
@@ -322,6 +428,7 @@ class ReadableNodeTransformerMixin:
         allow_rows: bool,
         allow_row_schema: bool,
         invalid_hint: str,
+        meta: object | None = None,
     ) -> model.ReadableTableData:
         columns: tuple[model.ReadableTableColumn, ...] = ()
         rows: tuple[model.ReadableTableRow, ...] = ()
@@ -365,12 +472,15 @@ class ReadableNodeTransformerMixin:
                         column=column,
                     )
                 row_schema = block_value
-        return model.ReadableTableData(
+        table_data = model.ReadableTableData(
             columns=columns,
             rows=rows,
             notes=notes,
             row_schema=row_schema,
         )
+        if meta is not None:
+            return _with_source_span(table_data, meta)
+        return table_data
 
     def _readable_table_row_schema(self, items) -> model.ReadableInlineSchemaData | None:
         for item in items:
@@ -385,7 +495,7 @@ class ReadableNodeTransformerMixin:
         block_kind, block_value = item
         return block_kind, block_value, None, None
 
-    def _named_table_block(self, block_cls, key, table_ref, parts):
+    def _named_table_block(self, block_cls, key, table_ref, parts, *, meta: object | None = None):
         requirement: str | None = None
         when_expr: model.Expr | None = None
         rows: tuple[model.ReadableTableRow, ...] = ()
@@ -400,37 +510,46 @@ class ReadableNodeTransformerMixin:
             if isinstance(part, tuple) and part and part[0] == "table_use":
                 rows = part[1]
                 notes = part[2]
-        return block_cls(
+        table_use = model.ReadableTableUseData(
+            table_ref=table_ref,
+            rows=rows,
+            notes=notes,
+        )
+        if meta is not None:
+            table_use = _with_source_span(table_use, meta)
+        block = block_cls(
             kind="table",
             key=key,
             title=None,
-            payload=model.ReadableTableUseData(
-                table_ref=table_ref,
-                rows=rows,
-                notes=notes,
-            ),
+            payload=table_use,
             requirement=requirement,
             when_expr=when_expr,
         )
+        if meta is not None:
+            return _with_source_span(block, meta)
+        return block
 
     @v_args(meta=True)
     def readable_row_schema_block(self, meta, items):
         return _positioned_readable_field(
             meta,
             "row_schema",
-            model.ReadableInlineSchemaData(entries=tuple(items)),
+            _with_source_span(model.ReadableInlineSchemaData(entries=tuple(items)), meta),
         )
 
     @v_args(meta=True)
     def readable_table_columns_block(self, meta, items):
         return _positioned_readable_field(meta, "columns", tuple(items))
 
-    @v_args(inline=True)
-    def readable_table_column(self, key, title, body=None):
-        return model.ReadableTableColumn(
-            key=key,
-            title=title,
-            body=tuple(body or ()),
+    @v_args(meta=True, inline=True)
+    def readable_table_column(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.ReadableTableColumn(
+                key=key,
+                title=title,
+                body=tuple(body or ()),
+            ),
+            meta,
         )
 
     def readable_table_column_body(self, items):
@@ -440,17 +559,17 @@ class ReadableNodeTransformerMixin:
     def readable_table_rows_block(self, meta, items):
         return _positioned_readable_field(meta, "rows", tuple(items))
 
-    @v_args(inline=True)
-    def readable_table_row(self, key, *cells):
-        return model.ReadableTableRow(key=key, cells=tuple(cells))
+    @v_args(meta=True, inline=True)
+    def readable_table_row(self, meta, key, *cells):
+        return _with_source_span(model.ReadableTableRow(key=key, cells=tuple(cells)), meta)
 
-    @v_args(inline=True)
-    def readable_table_cell_text(self, key, text):
-        return model.ReadableTableCell(key=key, text=text)
+    @v_args(meta=True, inline=True)
+    def readable_table_cell_text(self, meta, key, text):
+        return _with_source_span(model.ReadableTableCell(key=key, text=text), meta)
 
-    @v_args(inline=True)
-    def readable_table_cell_body(self, key, body):
-        return model.ReadableTableCell(key=key, body=tuple(body))
+    @v_args(meta=True, inline=True)
+    def readable_table_cell_body(self, meta, key, body):
+        return _with_source_span(model.ReadableTableCell(key=key, body=tuple(body)), meta)
 
     @v_args(meta=True)
     def readable_table_notes_block(self, meta, items):
@@ -460,14 +579,18 @@ class ReadableNodeTransformerMixin:
     def readable_table_note(self, value):
         return value
 
-    @v_args(inline=True)
-    def readable_inline_schema_item(self, key, title, body=None):
-        return model.ReadableSchemaEntry(key=key, title=title, body=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def readable_inline_schema_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.ReadableSchemaEntry(key=key, title=title, body=tuple(body or ())),
+            meta,
+        )
 
     def readable_inline_schema_item_body(self, items):
         return tuple(items[0])
 
-    def readable_callout_body(self, items):
+    @v_args(meta=True)
+    def readable_callout_body(self, meta, items):
         kind: str | None = None
         body: list[model.ProseLine] = []
         for item in items:
@@ -475,13 +598,14 @@ class ReadableNodeTransformerMixin:
                 kind = item[1]
                 continue
             body.append(item)
-        return model.ReadableCalloutData(kind=kind, body=tuple(body))
+        return _with_source_span(model.ReadableCalloutData(kind=kind, body=tuple(body)), meta)
 
     @v_args(inline=True)
     def readable_callout_kind(self, kind):
         return ("kind", kind)
 
-    def readable_code_body(self, items):
+    @v_args(meta=True)
+    def readable_code_body(self, meta, items):
         language: str | None = None
         text: str | None = None
         for item in items:
@@ -489,7 +613,10 @@ class ReadableNodeTransformerMixin:
                 language = item[1]
             elif item[0] == "text":
                 text = item[1]
-        return model.ReadableCodeData(language=language, text="" if text is None else text)
+        return _with_source_span(
+            model.ReadableCodeData(language=language, text="" if text is None else text),
+            meta,
+        )
 
     @v_args(inline=True)
     def readable_code_language(self, language):
@@ -499,7 +626,8 @@ class ReadableNodeTransformerMixin:
     def readable_code_text(self, text):
         return ("text", text)
 
-    def readable_raw_text_body(self, items):
+    @v_args(meta=True)
+    def readable_raw_text_body(self, meta, items):
         text: str | None = None
         for item in items:
             if isinstance(item, ReadableFieldPart):
@@ -519,7 +647,10 @@ class ReadableNodeTransformerMixin:
                     column=column,
                 )
             text = item_value
-        return model.ReadableRawTextData(text="" if text is None else text)
+        return _with_source_span(
+            model.ReadableRawTextData(text="" if text is None else text),
+            meta,
+        )
 
     def readable_raw_text_line(self, items):
         return items[0]
@@ -528,14 +659,16 @@ class ReadableNodeTransformerMixin:
     def readable_raw_text_text(self, meta, text):
         return _positioned_readable_field(meta, "text", text)
 
-    def readable_footnotes_body(self, items):
-        return model.ReadableFootnotesData(entries=tuple(items))
+    @v_args(meta=True)
+    def readable_footnotes_body(self, meta, items):
+        return _with_source_span(model.ReadableFootnotesData(entries=tuple(items)), meta)
 
-    @v_args(inline=True)
-    def readable_footnote_item(self, key, text):
-        return model.ReadableFootnoteItem(key=key, text=text)
+    @v_args(meta=True, inline=True)
+    def readable_footnote_item(self, meta, key, text):
+        return _with_source_span(model.ReadableFootnoteItem(key=key, text=text), meta)
 
-    def readable_image_body(self, items):
+    @v_args(meta=True)
+    def readable_image_body(self, meta, items):
         src: str | None = None
         alt: str | None = None
         caption: str | None = None
@@ -579,7 +712,10 @@ class ReadableNodeTransformerMixin:
                 "Image readable blocks require both `src:` and `alt:`.",
                 hints=("Define both `src:` and `alt:` in the image block body.",),
             )
-        return model.ReadableImageData(src=src, alt=alt, caption=caption)
+        return _with_source_span(
+            model.ReadableImageData(src=src, alt=alt, caption=caption),
+            meta,
+        )
 
     @v_args(meta=True, inline=True)
     def readable_image_src(self, meta, text):
@@ -613,16 +749,19 @@ class ReadableNodeTransformerMixin:
     def shared_readable_block(self, value):
         return value
 
-    @v_args(inline=True)
-    def shared_section_block(self, key, title, *parts):
+    @v_args(meta=True, inline=True)
+    def shared_section_block(self, meta, key, title, *parts):
         requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
-        return model.ReadableBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(payload),
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(payload),
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )

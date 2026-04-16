@@ -8,6 +8,8 @@ from doctrine._parser.parts import (
     FinalOutputOutputPart,
     FinalOutputReviewFieldsPart,
     _meta_line_column,
+    _source_span_from_meta,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -15,37 +17,48 @@ from doctrine.diagnostics import TransformParseFailure
 class AgentTransformerMixin:
     """Shared agent and agent-field lowering for the public parser boundary."""
 
-    def agent(self, items):
-        return self._agent(items, abstract=False)
+    @v_args(meta=True)
+    def agent(self, meta, items):
+        return self._agent(items, abstract=False, source_span=_source_span_from_meta(meta))
 
-    def abstract_agent(self, items):
-        return self._agent(items, abstract=True)
+    @v_args(meta=True)
+    def abstract_agent(self, meta, items):
+        return self._agent(items, abstract=True, source_span=_source_span_from_meta(meta))
 
     def role_body(self, items):
         return items[0]
 
-    @v_args(inline=True)
-    def role_field(self, title_or_text, body=None):
+    @v_args(meta=True, inline=True)
+    def role_field(self, meta, title_or_text, body=None):
         if body is None:
-            return model.RoleScalar(text=title_or_text)
-        return model.RoleBlock(title=title_or_text, lines=tuple(body))
+            return _with_source_span(model.RoleScalar(text=title_or_text), meta)
+        return _with_source_span(
+            model.RoleBlock(title=title_or_text, lines=tuple(body)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def skills_field(self, title_or_ref, body=None):
-        return model.SkillsField(value=self._skills_value(title_or_ref, body))
+    @v_args(meta=True, inline=True)
+    def skills_field(self, meta, title_or_ref, body=None):
+        return _with_source_span(
+            model.SkillsField(value=self._skills_value(title_or_ref, body)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def review_field(self, ref):
-        return model.ReviewField(value=ref)
+    @v_args(meta=True, inline=True)
+    def review_field(self, meta, ref):
+        return _with_source_span(model.ReviewField(value=ref), meta)
 
-    @v_args(inline=True)
-    def final_output_field(self, ref_or_body):
+    @v_args(meta=True, inline=True)
+    def final_output_field(self, meta, ref_or_body):
         if isinstance(ref_or_body, FinalOutputBodyParts):
-            return model.FinalOutputField(
-                value=ref_or_body.output_ref,
-                review_fields=ref_or_body.review_fields,
+            return _with_source_span(
+                model.FinalOutputField(
+                    value=ref_or_body.output_ref,
+                    review_fields=ref_or_body.review_fields,
+                ),
+                meta,
             )
-        return model.FinalOutputField(value=ref_or_body)
+        return _with_source_span(model.FinalOutputField(value=ref_or_body), meta)
 
     @v_args(meta=True, inline=True)
     def final_output_output_stmt(self, meta, ref):

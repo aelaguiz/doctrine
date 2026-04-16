@@ -54,6 +54,7 @@ from doctrine._model.core import (
     RoleScalar,
     RouteLine,
     SectionBodyRef,
+    SourceSpan,
 )
 from doctrine._model.declarations import Declaration, PromptFile
 from doctrine._model.io import (
@@ -83,6 +84,7 @@ from doctrine._model.io import (
     OutputSchemaDecl,
     OutputSchemaDef,
     OutputSchemaEnum,
+    OutputSchemaValues,
     OutputSchemaExample,
     OutputSchemaExampleArray,
     OutputSchemaExampleEntry,

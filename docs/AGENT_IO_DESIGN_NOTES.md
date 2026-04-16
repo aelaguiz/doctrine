@@ -107,6 +107,10 @@ Important rules:
 - `output schema` may also declare an optional `example:` block. When present,
   Doctrine validates it and renders an `Example` section on structured final
   outputs.
+- For a local closed string vocabulary inside `output schema`, prefer
+  `type: enum` plus `values:`.
+- In the first cut, legacy `type: string` plus `enum:` still compiles, and
+  both forms lower to the same emitted string-enum wire shape.
 - Doctrine `schema` declarations may now own reusable `sections:`, optional
   `gates:`, first-class `artifacts:`, and reusable `groups:`.
 - Output-attached schemas must still expose at least one section even when the
@@ -173,6 +177,17 @@ final_output:
   prose or markdown according to the output contract.
 - If that `output schema` omits `example:`, Doctrine still emits the payload
   contract and simply skips the `Example` section.
+
+Preferred local inline enum form:
+
+```prompt
+field route: "Route"
+    type: enum
+    values:
+        follow_up
+        revise
+    required
+```
 
 Shipped markdown render defaults:
 

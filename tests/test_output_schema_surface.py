@@ -120,6 +120,78 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
         self.assertIsInstance(child_decl.items[4], model.OutputSchemaField)
         self.assertIsInstance(child_decl.items[5], model.OutputSchemaOverrideExample)
 
+    def test_parser_builds_new_values_nodes_and_keeps_legacy_enum_nodes(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """
+            output schema ReviewControlSchema: "Review Control Schema"
+                field section_edit: "Section Edit"
+                    type: enum
+                    values:
+                        full_rewrite
+                        new_section
+                        existing_section_edit
+                    required
+
+                field metadata: "Metadata"
+                    type: object
+
+                    field mode: "Mode"
+                        type: enum
+                        values:
+                            auto
+                            manual
+                        optional
+
+                field legacy_status: "Legacy Status"
+                    type: string
+                    enum:
+                        ok
+                        blocked
+                    required
+                """
+            )
+        )
+
+        self.assertEqual(len(prompt.declarations), 1)
+
+        decl = prompt.declarations[0]
+        self.assertIsInstance(decl, model.OutputSchemaDecl)
+        self.assertEqual(decl.name, "ReviewControlSchema")
+        self.assertEqual([item.key for item in decl.items], ["section_edit", "metadata", "legacy_status"])
+
+        section_edit = decl.items[0]
+        self.assertIsInstance(section_edit, model.OutputSchemaField)
+        self.assertEqual(section_edit.items[0], model.OutputSchemaSetting(key="type", value="enum"))
+        self.assertEqual(
+            section_edit.items[1],
+            model.OutputSchemaValues(
+                values=("full_rewrite", "new_section", "existing_section_edit")
+            ),
+        )
+        self.assertEqual(section_edit.items[2], model.OutputSchemaFlag(key="required"))
+
+        metadata = decl.items[1]
+        self.assertIsInstance(metadata, model.OutputSchemaField)
+        nested_mode = metadata.items[1]
+        self.assertIsInstance(nested_mode, model.OutputSchemaField)
+        self.assertEqual(nested_mode.key, "mode")
+        self.assertEqual(nested_mode.items[0], model.OutputSchemaSetting(key="type", value="enum"))
+        self.assertEqual(
+            nested_mode.items[1],
+            model.OutputSchemaValues(values=("auto", "manual")),
+        )
+        self.assertEqual(nested_mode.items[2], model.OutputSchemaFlag(key="optional"))
+
+        legacy_status = decl.items[2]
+        self.assertIsInstance(legacy_status, model.OutputSchemaField)
+        self.assertEqual(legacy_status.items[0], model.OutputSchemaSetting(key="type", value="string"))
+        self.assertEqual(
+            legacy_status.items[1],
+            model.OutputSchemaEnum(values=("ok", "blocked")),
+        )
+        self.assertEqual(legacy_status.items[2], model.OutputSchemaFlag(key="required"))
+
     def test_local_inherited_output_shape_keeps_inherited_items_and_points_schema_at_output_schema(self) -> None:
         agent = self._compile_agent(
             """

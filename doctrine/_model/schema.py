@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
+from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import InheritItem, NameRef, ProseLine
+from doctrine._model.core import InheritItem, NameRef, ProseLine, SourceSpan
 
 
 @_dataclass(slots=True, frozen=True)
@@ -100,6 +101,7 @@ class SchemaDecl:
     body: SchemaBody
     parent_ref: NameRef | None = None
     render_profile_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property
     def title(self) -> str:

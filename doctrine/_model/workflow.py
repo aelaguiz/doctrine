@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
+from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
@@ -10,6 +11,7 @@ from doctrine._model.core import (
     ProseLine,
     RouteLine,
     SectionBodyRef,
+    SourceSpan,
 )
 from doctrine._model.io import RecordItem
 from doctrine._model.law import LawBody
@@ -25,12 +27,14 @@ class LocalSection:
     key: str
     title: str
     items: tuple[SectionBodyItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class WorkflowUse:
     key: str
     target: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -38,12 +42,14 @@ class OverrideSection:
     key: str
     title: str | None
     items: tuple[SectionBodyItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OverrideUse:
     key: str
     target: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -51,6 +57,7 @@ class SkillEntry:
     key: str
     target: NameRef
     items: tuple[RecordItem, ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 SkillsSectionItem: _TypeAlias = ProseLine | SkillEntry
@@ -61,6 +68,7 @@ class SkillsSection:
     key: str
     title: str
     items: tuple[SkillsSectionItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -68,6 +76,7 @@ class OverrideSkillEntry:
     key: str
     target: NameRef
     items: tuple[RecordItem, ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -75,6 +84,7 @@ class OverrideSkillsSection:
     key: str
     title: str | None
     items: tuple[SkillsSectionItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 SkillsItem: _TypeAlias = (
@@ -96,12 +106,14 @@ SkillsValue: _TypeAlias = SkillsBody | NameRef
 class WorkflowSkillsItem:
     key: str
     value: SkillsValue
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OverrideWorkflowSkillsItem:
     key: str
     value: SkillsValue
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 WorkflowItem: _TypeAlias = (
@@ -130,18 +142,21 @@ class WorkflowDecl:
     name: str
     body: WorkflowBody
     parent_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class RouteOnlyGuard:
     key: str
     expr: Expr
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class RouteOnlyRoute:
     key: str | None
     target: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -159,28 +174,33 @@ class RouteOnlyBody:
 class RouteOnlyDecl:
     name: str
     body: RouteOnlyBody
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class GroundingPolicyStartFrom:
     source: str
     unless: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class GroundingPolicyForbid:
     value: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class GroundingPolicyAllow:
     value: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class GroundingPolicyRoute:
     condition: str
     target: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 GroundingPolicyItem: _TypeAlias = (
@@ -203,6 +223,7 @@ class GroundingBody:
 class GroundingDecl:
     name: str
     body: GroundingBody
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -210,6 +231,7 @@ class SkillsDecl:
     name: str
     body: SkillsBody
     parent_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 WorkflowSlotValue: _TypeAlias = WorkflowBody | NameRef

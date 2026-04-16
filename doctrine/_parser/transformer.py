@@ -20,6 +20,7 @@ from doctrine._parser.parts import (
     _schema_block_key,
     _schema_item_location,
     _schema_item_value,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -152,7 +153,7 @@ class DeclarationTransformerMixin:
             license=values.get("license"),
         )
 
-    def _agent(self, items, *, abstract: bool):
+    def _agent(self, items, *, abstract: bool, source_span: model.SourceSpan | None = None):
         name = items[0]
         parent_ref: model.NameRef | None = None
         title: str | None = None
@@ -169,6 +170,7 @@ class DeclarationTransformerMixin:
             fields=tuple(items[fields_start:]),
             abstract=abstract,
             parent_ref=parent_ref,
+            source_span=source_span,
         )
 
     def _workflow_slot_value(
@@ -203,7 +205,14 @@ class DeclarationTransformerMixin:
     def _io_body(self, title: str, body: IoBodyParts) -> model.IoBody:
         return model.IoBody(title=title, preamble=body.preamble, items=body.items)
 
-    def _review_decl(self, items, *, abstract: bool, family: bool):
+    def _review_decl(
+        self,
+        items,
+        *,
+        abstract: bool,
+        family: bool,
+        source_span: model.SourceSpan | None = None,
+    ):
         name = items[0]
         parent_ref: model.NameRef | None = None
         title = items[1]
@@ -218,14 +227,15 @@ class DeclarationTransformerMixin:
             abstract=abstract,
             parent_ref=parent_ref,
             family=family,
+            source_span=source_span,
         )
 
 
 class SchemaDocumentTransformerMixin:
     """Shared schema and document lowering for the public parser boundary."""
 
-    @v_args(inline=True)
-    def schema_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def schema_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         schema_body = title_or_body
@@ -233,15 +243,18 @@ class SchemaDocumentTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             schema_body = body
-        return model.SchemaDecl(
-            name=name,
-            body=model.SchemaBody(
-                title=title,
-                preamble=schema_body.preamble,
-                items=schema_body.items,
+        return _with_source_span(
+            model.SchemaDecl(
+                name=name,
+                body=model.SchemaBody(
+                    title=title,
+                    preamble=schema_body.preamble,
+                    items=schema_body.items,
+                ),
+                parent_ref=parent_ref,
+                render_profile_ref=schema_body.render_profile_ref,
             ),
-            parent_ref=parent_ref,
-            render_profile_ref=schema_body.render_profile_ref,
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -382,7 +395,7 @@ class SchemaDocumentTransformerMixin:
 
     @v_args(meta=True, inline=True)
     def schema_inherit(self, meta, key):
-        return _positioned_schema_item(meta, model.InheritItem(key=key))
+        return _positioned_schema_item(meta, _with_source_span(model.InheritItem(key=key), meta))
 
     @v_args(meta=True)
     def schema_override_sections(self, meta, items):
@@ -412,8 +425,8 @@ class SchemaDocumentTransformerMixin:
     def schema_block_key_groups(self, _items):
         return "groups"
 
-    @v_args(inline=True)
-    def document_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def document_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         document_body = title_or_body
@@ -421,15 +434,18 @@ class SchemaDocumentTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             document_body = body
-        return model.DocumentDecl(
-            name=name,
-            body=model.DocumentBody(
-                title=title,
-                preamble=document_body.preamble,
-                items=document_body.items,
+        return _with_source_span(
+            model.DocumentDecl(
+                name=name,
+                body=model.DocumentBody(
+                    title=title,
+                    preamble=document_body.preamble,
+                    items=document_body.items,
+                ),
+                parent_ref=parent_ref,
+                render_profile_ref=document_body.render_profile_ref,
             ),
-            parent_ref=parent_ref,
-            render_profile_ref=document_body.render_profile_ref,
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -488,47 +504,56 @@ class SchemaDocumentTransformerMixin:
     def document_override_block(self, value):
         return value
 
-    @v_args(inline=True)
-    def document_section_sugar(self, key, title, items):
-        return model.ReadableBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(items),
-            legacy_section=True,
+    @v_args(meta=True, inline=True)
+    def document_section_sugar(self, meta, key, title, items):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(items),
+                legacy_section=True,
+            ),
+            meta,
         )
 
     def document_section_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def document_section_block(self, key, title, *parts):
+    @v_args(meta=True, inline=True)
+    def document_section_block(self, meta, key, title, *parts):
         requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
-        return model.ReadableBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(payload),
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(payload),
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def document_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def document_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def document_override_section_block(self, key, *parts):
+    @v_args(meta=True, inline=True)
+    def document_override_section_block(self, meta, key, *parts):
         title, requirement, when_expr, item_schema, row_schema, payload = self._split_readable_override_parts(parts)
-        return model.DocumentOverrideBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(payload),
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.DocumentOverrideBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(payload),
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )

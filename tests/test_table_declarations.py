@@ -422,7 +422,10 @@ class TableDeclarationTests(unittest.TestCase):
                     ReleaseGuideFile
             """
         )
-        self.assertIn("Duplicate declaration name: ReleaseGates", str(error))
+        error_text = str(error)
+        self.assertIn("E288 compile error: Duplicate declaration name", error_text)
+        self.assertIn("Declaration `ReleaseGates` is defined more than once", error_text)
+        self.assertIn("Related:", error_text)
 
 
 if __name__ == "__main__":

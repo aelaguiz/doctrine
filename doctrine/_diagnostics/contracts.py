@@ -24,6 +24,14 @@ class DiagnosticTraceFrame:
 
 
 @dataclass(slots=True, frozen=True)
+class DiagnosticRelatedLocation:
+    label: str
+    location: DiagnosticLocation | None = None
+    excerpt: tuple["DiagnosticExcerptLine", ...] = ()
+    caret_column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class DoctrineDiagnostic:
     code: str
     stage: str
@@ -32,6 +40,7 @@ class DoctrineDiagnostic:
     location: DiagnosticLocation | None = None
     excerpt: tuple[DiagnosticExcerptLine, ...] = ()
     caret_column: int | None = None
+    related: tuple[DiagnosticRelatedLocation, ...] = ()
     hints: tuple[str, ...] = ()
     trace: tuple[DiagnosticTraceFrame, ...] = ()
     cause: str | None = None

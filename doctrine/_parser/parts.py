@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from doctrine import model
 
@@ -242,6 +242,29 @@ def _meta_line_column(meta: object) -> tuple[int | None, int | None]:
     return getattr(meta, "line", None), getattr(meta, "column", None)
 
 
+def _source_span_from_line_column(
+    line: int | None,
+    column: int | None,
+) -> model.SourceSpan | None:
+    if line is None or column is None:
+        return None
+    return model.SourceSpan(line=line, column=column)
+
+
+def _source_span_from_meta(meta: object) -> model.SourceSpan | None:
+    line, column = _meta_line_column(meta)
+    return _source_span_from_line_column(line, column)
+
+
+def _with_source_span(value: object, meta: object):
+    if not hasattr(value, "source_span"):
+        return value
+    source_span = _source_span_from_meta(meta)
+    if source_span is None:
+        return value
+    return replace(value, source_span=source_span)
+
+
 def _item_line_column(item: object) -> tuple[int | None, int | None]:
     return getattr(item, "line", None), getattr(item, "column", None)
 
@@ -343,9 +366,17 @@ def _schema_block_key(item: model.SchemaItem) -> str | None:
     return None
 
 
-def _name_ref_from_dotted_name(dotted_name: str) -> model.NameRef:
+def _name_ref_from_dotted_name(
+    dotted_name: str,
+    *,
+    source_span: model.SourceSpan | None = None,
+) -> model.NameRef:
     parts = tuple(dotted_name.split("."))
-    return model.NameRef(module_parts=parts[:-1], declaration_name=parts[-1])
+    return model.NameRef(
+        module_parts=parts[:-1],
+        declaration_name=parts[-1],
+        source_span=source_span,
+    )
 
 
 __all__ = [
@@ -378,6 +409,9 @@ __all__ = [
     "ReadableFieldPart",
     "EnumMemberFieldPart",
     "_meta_line_column",
+    "_source_span_from_line_column",
+    "_source_span_from_meta",
+    "_with_source_span",
     "_item_line_column",
     "_positioned_body_prose",
     "_positioned_input_structure",

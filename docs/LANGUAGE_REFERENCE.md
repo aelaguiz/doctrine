@@ -729,6 +729,10 @@ Important rules:
 - `output schema` may also declare an optional `example:` block. When present,
   Doctrine validates it and renders an `Example` section on structured final
   outputs.
+- For a local closed string vocabulary inside `output schema`, prefer
+  `type: enum` plus `values:`.
+- In the first cut, legacy `type: string` plus `enum:` still compiles.
+  Both forms lower to the same emitted string-enum wire shape.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
 - `render_profile:` may attach to a markdown-bearing `output` when exactly one
@@ -759,6 +763,17 @@ Important rules:
   `handoff_routing`, `route_from`, and routed reviews.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
+
+Preferred local inline enum form:
+
+```prompt
+field status: "Status"
+    type: enum
+    values:
+        ok
+        action_required
+    required
+```
 
 Shipped Markdown render shape:
 

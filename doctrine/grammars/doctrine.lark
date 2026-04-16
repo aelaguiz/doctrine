@@ -713,6 +713,7 @@ output_schema_item_body: _INDENT output_schema_item_line+ _DEDENT
                        | output_schema_required_stmt
                        | output_schema_optional_stmt
                        | output_schema_enum_block
+                       | output_schema_values_block
                        | output_schema_any_of_block
                        | output_schema_min_length_stmt
                        | output_schema_max_length_stmt
@@ -736,6 +737,7 @@ output_schema_items_block: "items" ":" _NL _INDENT output_schema_item_line+ _DED
 output_schema_required_stmt: "required" _NL?
 output_schema_optional_stmt: "optional" _NL?
 output_schema_enum_block: "enum" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
+output_schema_values_block: "values" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
 output_schema_enum_value: output_schema_literal _NL?
 output_schema_any_of_block: "any_of" ":" _NL _INDENT output_schema_variant+ _DEDENT
 output_schema_variant: "variant" CNAME? ":" _NL _INDENT output_schema_item_line+ _DEDENT

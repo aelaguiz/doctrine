@@ -8,6 +8,7 @@ from pathlib import Path
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.session import CompilationSession
+from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
 
 
@@ -37,6 +38,21 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 unit=session.root_unit,
             )
             return decl, context._lower_output_schema_decl(decl, unit=unit)
+
+    def _lower_output_schema_error(
+        self,
+        source: str,
+        *,
+        schema_name: str,
+        extra_files: dict[str, str] | None = None,
+    ) -> CompileError:
+        with self.assertRaises(CompileError) as ctx:
+            self._lower_output_schema(
+                source,
+                schema_name=schema_name,
+                extra_files=extra_files,
+            )
+        return ctx.exception
 
     def test_lowerer_handles_inheritance_defs_recursion_and_nullable_fields(self) -> None:
         decl, lowered = self._lower_output_schema(
@@ -81,8 +97,8 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 inherit Node
 
                 field status: "Status"
-                    type: string
-                    enum:
+                    type: enum
+                    values:
                         ok
                         blocked
                     optional
@@ -210,6 +226,107 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 ],
             },
         )
+
+    def test_legacy_string_enum_form_lowers_like_new_inline_enum_values_form(self) -> None:
+        _, new_lowered = self._lower_output_schema(
+            """
+            output schema StatusPayload: "Status Payload"
+                field status: "Status"
+                    type: enum
+                    values:
+                        ok
+                        blocked
+                    optional
+            """,
+            schema_name="StatusPayload",
+        )
+        _, legacy_lowered = self._lower_output_schema(
+            """
+            output schema StatusPayload: "Status Payload"
+                field status: "Status"
+                    type: string
+                    enum:
+                        ok
+                        blocked
+                    optional
+            """,
+            schema_name="StatusPayload",
+        )
+
+        self.assertEqual(new_lowered, legacy_lowered)
+        self.assertEqual(
+            new_lowered["properties"]["status"],
+            {
+                "title": "Status",
+                "type": ["string", "null"],
+                "enum": ["ok", "blocked", None],
+            },
+        )
+
+    def test_malformed_inline_enum_forms_fail_loud(self) -> None:
+        cases = (
+            (
+                "missing_values",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field status: "Status"
+                        type: enum
+                        required
+                """,
+                "E227",
+                "missing `values:`",
+            ),
+            (
+                "values_without_type_enum",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field status: "Status"
+                        values:
+                            ok
+                            blocked
+                        required
+                """,
+                "E228",
+                "`values:` requires `type: enum`",
+            ),
+            (
+                "string_type_with_values",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field status: "Status"
+                        type: string
+                        values:
+                            ok
+                            blocked
+                        required
+                """,
+                "E228",
+                "`values:` requires `type: enum`",
+            ),
+            (
+                "enum_type_with_legacy_enum_block",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field status: "Status"
+                        type: enum
+                        enum:
+                            ok
+                            blocked
+                        required
+                """,
+                "E229",
+                "cannot be mixed",
+            ),
+        )
+
+        for case_name, source, expected_code, expected_text in cases:
+            with self.subTest(case=case_name):
+                error = self._lower_output_schema_error(
+                    source,
+                    schema_name="BrokenPayload",
+                )
+                self.assertEqual(error.code, expected_code)
+                self.assertIn(expected_text, str(error))
 
     def test_imported_parent_keeps_local_def_refs_local_after_rebind(self) -> None:
         decl, lowered = self._lower_output_schema(

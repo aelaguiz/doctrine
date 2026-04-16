@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import doctrine._model.declarations as model
+from doctrine._diagnostics.formatting import _build_excerpt
 from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey, index_unit, load_module
 from doctrine._compiler.types import (
     CompiledAgent,
@@ -15,7 +16,7 @@ from doctrine._compiler.types import (
     CompiledSkillPackage,
     FlowGraph,
 )
-from doctrine.diagnostics import CompileError, DoctrineError
+from doctrine.diagnostics import CompileError, DiagnosticLocation, DoctrineError
 from doctrine.project_config import (
     ProvidedPromptRoot,
     ProjectConfig,
@@ -60,11 +61,14 @@ class CompilationSession:
             config_path = project_config.path if project_config is not None else None
             if config_path is None and prompt_file.source_path is not None:
                 config_path = find_nearest_pyproject(prompt_file.source_path.parent)
+            location, excerpt, caret_column = _toml_decode_site(config_path, exc)
             raise CompileError.from_parts(
                 code="E299",
                 summary="Compile failure",
                 detail="The Doctrine project config is not valid TOML.",
-                location=path_location(config_path),
+                location=location,
+                excerpt=excerpt,
+                caret_column=caret_column,
                 cause=getattr(exc, "msg", str(exc)),
             ) from exc
         except ProjectConfigError as exc:
@@ -103,7 +107,6 @@ class CompilationSession:
             ancestry=(),
             allow_parallel_imports=True,
         )
-
     def _new_module_ready_event(self) -> threading.Event:
         return threading.Event()
 
@@ -268,6 +271,29 @@ class CompilationSession:
             if Path(provided_root.path).resolve() == resolved_prompt_root:
                 return provided_root
         return None
+
+
+def _toml_decode_site(
+    config_path: Path | None,
+    exc: tomllib.TOMLDecodeError,
+) -> tuple[DiagnosticLocation | None, tuple[object, ...], int | None]:
+    if config_path is None:
+        return None, (), None
+    resolved_path = config_path.resolve()
+    line = getattr(exc, "lineno", None)
+    column = getattr(exc, "colno", None)
+    if line is None or column is None:
+        return path_location(resolved_path), (), None
+    try:
+        source = resolved_path.read_text(encoding="utf-8")
+    except OSError:
+        return DiagnosticLocation(path=resolved_path, line=line, column=column), (), None
+    excerpt, caret_column = _build_excerpt(source, line=line, column=column)
+    return (
+        DiagnosticLocation(path=resolved_path, line=line, column=column),
+        excerpt,
+        caret_column,
+    )
 
 
 def compile_prompt(

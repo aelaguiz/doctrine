@@ -49,6 +49,8 @@ for repo setup and proof commands.
 
 - [COMPILER_ERRORS.md](COMPILER_ERRORS.md): stable parse, compile, and emit
   error codes
+- [FAIL_LOUD_GAPS.md](FAIL_LOUD_GAPS.md): easy author mistakes the compiler
+  still accepts today and should turn into clear compile errors
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction

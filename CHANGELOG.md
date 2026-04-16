@@ -64,6 +64,10 @@ payload text and breaking releases with no real upgrade steps.
   finals, `route_only`, `route_from`, and routed review finals. Harnesses
   should read this block instead of asking the model to copy the next owner
   into a private control field.
+- Added `type: enum` plus `values:` as the preferred local inline enum form
+  for `output schema` fields. Legacy `type: string` plus `enum:` still works
+  in this first cut, and both forms lower to the same emitted string-enum
+  schema shape.
 
 ### Changed
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and

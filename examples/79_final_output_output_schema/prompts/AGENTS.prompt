@@ -5,8 +5,8 @@ output schema BaseRepoStatusSchema: "Base Repo Status Schema"
         note: "Short natural-language status."
 
     field status: "Status"
-        type: string
-        enum:
+        type: enum
+        values:
             ok
             action_required
         required

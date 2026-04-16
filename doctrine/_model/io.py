@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
+from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine
+from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
 
 
@@ -11,6 +12,7 @@ from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
 class TrustSurfaceItem:
     path: tuple[str, ...]
     when_expr: Expr | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 RecordScalarValue: _TypeAlias = str | NameRef | AddressableRef
@@ -21,6 +23,7 @@ class RecordScalar:
     key: str
     value: RecordScalarValue
     body: tuple["AnyRecordItem", ...] | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -28,6 +31,7 @@ class RecordSection:
     key: str
     title: str
     items: tuple["AnyRecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -35,6 +39,7 @@ class IoSection:
     key: str
     title: str | None
     items: tuple["RecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -43,6 +48,7 @@ class GuardedOutputSection:
     title: str
     when_expr: Expr
     items: tuple["AnyRecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -51,12 +57,14 @@ class GuardedOutputScalar:
     value: RecordScalarValue
     when_expr: Expr
     body: tuple["AnyRecordItem", ...] | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class RecordRef:
     ref: NameRef
     body: tuple["AnyRecordItem", ...] | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 RecordItem: _TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
@@ -69,6 +77,7 @@ class OutputOverrideRecordScalar:
     key: str
     value: RecordScalarValue
     body: tuple["AnyRecordItem", ...] | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -76,6 +85,7 @@ class OutputOverrideRecordSection:
     key: str
     title: str | None
     items: tuple["AnyRecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -84,6 +94,7 @@ class OutputOverrideGuardedOutputSection:
     title: str | None
     when_expr: Expr
     items: tuple["AnyRecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -92,6 +103,7 @@ class OutputOverrideGuardedOutputScalar:
     value: RecordScalarValue
     when_expr: Expr
     body: tuple["AnyRecordItem", ...] | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 OutputOverrideItem: _TypeAlias = (
@@ -109,6 +121,7 @@ class OverrideIoSection:
     key: str
     title: str | None
     items: tuple[RecordItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 IoItem: _TypeAlias = IoSection | RecordRef | InheritItem | OverrideIoSection
@@ -135,6 +148,7 @@ class InputDecl:
     title: str
     items: tuple[RecordItem, ...]
     structure: InputStructureConfig | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property
     def structure_ref(self) -> NameRef | None:
@@ -146,6 +160,7 @@ class InputsDecl:
     name: str
     body: IoBody
     parent_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -153,6 +168,7 @@ class InputSourceDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -179,6 +195,7 @@ class OutputDecl:
     structure_mode: str | None = None
     render_profile_mode: str | None = None
     trust_surface_mode: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property
     def schema_ref(self) -> NameRef | None:
@@ -194,6 +211,7 @@ class OutputsDecl:
     name: str
     body: IoBody
     parent_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -202,6 +220,7 @@ class OutputTargetDecl:
     title: str
     items: tuple[RecordItem, ...]
     delivery_skill_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem
@@ -213,6 +232,7 @@ class OutputShapeDecl:
     title: str
     items: tuple[OutputShapeAuthoredItem, ...]
     parent_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -220,6 +240,7 @@ class OutputSchemaField:
     key: str
     title: str
     items: tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -227,6 +248,7 @@ class OutputSchemaDef:
     key: str
     title: str
     items: tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -234,6 +256,7 @@ class OutputSchemaOverrideField:
     key: str
     title: str | None
     items: tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -241,6 +264,7 @@ class OutputSchemaOverrideDef:
     key: str
     title: str | None
     items: tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 OutputSchemaLiteralValue: _TypeAlias = str | int | float | bool | None
@@ -249,33 +273,45 @@ OutputSchemaLiteralValue: _TypeAlias = str | int | float | bool | None
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaFlag:
     key: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaSetting:
     key: str
     value: str | int | float | bool | None | NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaEnum:
     values: tuple[OutputSchemaLiteralValue, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaValues:
+    values: tuple[OutputSchemaLiteralValue, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaItems:
     value: NameRef | tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaVariant:
     key: str | None
     items: tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaAnyOf:
     variants: tuple[OutputSchemaVariant, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -303,18 +339,21 @@ OutputSchemaExampleValue: _TypeAlias = (
 class OutputSchemaExample:
     key: str
     value: OutputSchemaExampleObject
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class OutputSchemaOverrideExample:
     key: str
     value: OutputSchemaExampleObject
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 OutputSchemaBodyItem: _TypeAlias = (
     OutputSchemaFlag
     | OutputSchemaSetting
     | OutputSchemaEnum
+    | OutputSchemaValues
     | OutputSchemaItems
     | OutputSchemaAnyOf
     | OutputSchemaField
@@ -337,6 +376,7 @@ class OutputSchemaDecl:
     title: str
     items: tuple[OutputSchemaAuthoredItem, ...]
     parent_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -344,6 +384,7 @@ class SkillDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -360,6 +401,7 @@ class SkillPackageDecl:
     title: str
     items: tuple[RecordItem, ...]
     metadata: SkillPackageMetadata
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -367,6 +409,7 @@ class EnumMember:
     key: str
     title: str
     wire: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property
     def value(self) -> str:
@@ -378,3 +421,4 @@ class EnumDecl:
     name: str
     title: str
     members: tuple[EnumMember, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)

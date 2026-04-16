@@ -266,6 +266,10 @@ class ResolveLawPathsMixin:
             raise CompileError(
                 f"Ambiguous {statement_label} path in {owner_label}: "
                 f"{'.'.join(path.parts)} matches {choices}"
+            ).ensure_location(
+                path=unit.prompt_file.source_path,
+                line=path.source_span.line if path.source_span is not None else None,
+                column=path.source_span.column if path.source_span is not None else None,
             )
 
         allowed_text = self._law_path_allowed_text(
@@ -275,6 +279,10 @@ class ResolveLawPathsMixin:
         raise CompileError(
             f"{statement_label} target must resolve to a {allowed_text} in {owner_label}: "
             f"{'.'.join(path.parts)}"
+        ).ensure_location(
+            path=unit.prompt_file.source_path,
+            line=path.source_span.line if path.source_span is not None else None,
+            column=path.source_span.column if path.source_span is not None else None,
         )
 
     def _resolve_bound_law_matches(

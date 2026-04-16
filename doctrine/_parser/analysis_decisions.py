@@ -15,6 +15,7 @@ from doctrine._parser.parts import (
     _positioned_body_prose,
     _positioned_decision_item,
     _positioned_render_profile,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -22,16 +23,16 @@ from doctrine.diagnostics import TransformParseFailure
 class AnalysisDecisionTransformerMixin:
     """Shared analysis and decision lowering for the public parser boundary."""
 
-    @v_args(inline=True)
-    def analysis_field(self, ref):
-        return model.AnalysisField(value=ref)
+    @v_args(meta=True, inline=True)
+    def analysis_field(self, meta, ref):
+        return _with_source_span(model.AnalysisField(value=ref), meta)
 
-    @v_args(inline=True)
-    def decision_field(self, ref):
-        return model.DecisionField(value=ref)
+    @v_args(meta=True, inline=True)
+    def decision_field(self, meta, ref):
+        return _with_source_span(model.DecisionField(value=ref), meta)
 
-    @v_args(inline=True)
-    def analysis_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def analysis_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         analysis_body = title_or_body
@@ -39,27 +40,33 @@ class AnalysisDecisionTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             analysis_body = body
-        return model.AnalysisDecl(
-            name=name,
-            body=model.AnalysisBody(
-                title=title,
-                preamble=analysis_body.preamble,
-                items=analysis_body.items,
+        return _with_source_span(
+            model.AnalysisDecl(
+                name=name,
+                body=model.AnalysisBody(
+                    title=title,
+                    preamble=analysis_body.preamble,
+                    items=analysis_body.items,
+                ),
+                parent_ref=parent_ref,
+                render_profile_ref=analysis_body.render_profile_ref,
             ),
-            parent_ref=parent_ref,
-            render_profile_ref=analysis_body.render_profile_ref,
+            meta,
         )
 
-    @v_args(inline=True)
-    def decision_decl(self, name, title, decision_body):
-        return model.DecisionDecl(
-            name=name,
-            body=model.DecisionBody(
-                title=title,
-                preamble=decision_body.preamble,
-                items=decision_body.items,
+    @v_args(meta=True, inline=True)
+    def decision_decl(self, meta, name, title, decision_body):
+        return _with_source_span(
+            model.DecisionDecl(
+                name=name,
+                body=model.DecisionBody(
+                    title=title,
+                    preamble=decision_body.preamble,
+                    items=decision_body.items,
+                ),
+                render_profile_ref=decision_body.render_profile_ref,
             ),
-            render_profile_ref=decision_body.render_profile_ref,
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -117,9 +124,9 @@ class AnalysisDecisionTransformerMixin:
     def analysis_section(self, key, title, items):
         return model.AnalysisSection(key=key, title=title, items=tuple(items))
 
-    @v_args(inline=True)
-    def analysis_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def analysis_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
     @v_args(inline=True)
     def analysis_override_section(self, key, title_or_items, items=None):

@@ -40,6 +40,8 @@ class _OutputSchemaNodeParts:
     ref: model.NameRef | None = None
     items_value: model.NameRef | tuple[model.OutputSchemaBodyItem, ...] | None = None
     enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
+    legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
+    inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     any_of: tuple[model.OutputSchemaVariant, ...] = ()
     fields: tuple[model.OutputSchemaField, ...] = ()
     defs: tuple[model.OutputSchemaDef, ...] = ()
@@ -594,6 +596,11 @@ class ResolveOutputSchemasMixin:
             items,
             owner_label=owner_label,
         )
+        # Normalize the two authored inline-enum forms onto one lowered string-enum path.
+        self._normalize_output_schema_inline_enum(
+            parts,
+            owner_label=owner_label,
+        )
         if parts.required_explicit and parts.optional:
             raise CompileError(
                 f"Output schema entry cannot be both required and optional in {owner_label}"
@@ -870,7 +877,8 @@ class ResolveOutputSchemasMixin:
         parts = _OutputSchemaNodeParts()
         fields: list[model.OutputSchemaField] = []
         defs: list[model.OutputSchemaDef] = []
-        enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
+        legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
+        inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
         variants: tuple[model.OutputSchemaVariant, ...] = ()
         constraints: list[tuple[str, int | float]] = []
         seen_child_keys: set[str] = set()
@@ -950,9 +958,14 @@ class ResolveOutputSchemasMixin:
                     f"Unsupported output schema flag in {owner_label}: {item.key}"
                 )
             if isinstance(item, model.OutputSchemaEnum):
-                if enum_values:
+                if legacy_enum_values:
                     raise CompileError(f"Duplicate output schema enum in {owner_label}")
-                enum_values = item.values
+                legacy_enum_values = item.values
+                continue
+            if isinstance(item, model.OutputSchemaValues):
+                if inline_enum_values:
+                    raise CompileError(f"Duplicate output schema values block in {owner_label}")
+                inline_enum_values = item.values
                 continue
             if isinstance(item, model.OutputSchemaItems):
                 if parts.items_value is not None:
@@ -987,10 +1000,76 @@ class ResolveOutputSchemasMixin:
 
         parts.fields = tuple(fields)
         parts.defs = tuple(defs)
-        parts.enum_values = enum_values
+        parts.legacy_enum_values = legacy_enum_values
+        parts.inline_enum_values = inline_enum_values
         parts.any_of = variants
         parts.constraints = tuple(constraints)
         return parts
+
+    def _normalize_output_schema_inline_enum(
+        self,
+        parts: _OutputSchemaNodeParts,
+        *,
+        owner_label: str,
+    ) -> None:
+        if parts.type_name == "enum":
+            if parts.legacy_enum_values:
+                raise CompileError.from_parts(
+                    code="E229",
+                    summary="Output schema inline enum forms cannot be mixed",
+                    detail=(
+                        f"{owner_label} uses `type: enum` with legacy `enum:`."
+                    ),
+                    hints=(
+                        "Use `values:` with `type: enum` for the new inline form.",
+                        "Keep legacy `enum:` only with `type: string`.",
+                    ),
+                )
+            if not parts.inline_enum_values:
+                raise CompileError.from_parts(
+                    code="E227",
+                    summary="Output schema inline enum is missing `values:`",
+                    detail=(
+                        f"{owner_label} uses `type: enum` without a `values:` block."
+                    ),
+                    hints=(
+                        "Add a `values:` block under this output schema entry.",
+                    ),
+                )
+            parts.type_name = "string"
+            parts.enum_values = parts.inline_enum_values
+            return
+
+        if parts.inline_enum_values:
+            detail = (
+                f"{owner_label} uses `values:` without `type: enum`."
+                if parts.type_name is None
+                else f"{owner_label} uses `values:` with `type: {parts.type_name}`."
+            )
+            raise CompileError.from_parts(
+                code="E228",
+                summary="Output schema `values:` requires `type: enum`",
+                detail=detail,
+                hints=(
+                    "Use `type: enum` with `values:` for the new inline enum form.",
+                    "Keep `type: string` plus `enum:` only for the legacy form.",
+                ),
+            )
+
+        if parts.legacy_enum_values and parts.type_name not in {None, "string"}:
+            raise CompileError.from_parts(
+                code="E229",
+                summary="Legacy output schema `enum:` requires `type: string`",
+                detail=(
+                    f"{owner_label} uses legacy `enum:` with `type: {parts.type_name}`."
+                ),
+                hints=(
+                    "Keep legacy `enum:` only with `type: string`.",
+                    "Switch to `type: enum` plus `values:` if you want the new form.",
+                ),
+            )
+
+        parts.enum_values = parts.legacy_enum_values
 
     def _output_schema_example_value(
         self,

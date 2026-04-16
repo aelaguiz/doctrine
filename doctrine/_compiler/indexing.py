@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import doctrine._model.declarations as model
+from doctrine._compiler.diagnostics import compile_error, file_scoped_related, related_prompt_site
 from doctrine._model.core import ImportPath
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
@@ -107,50 +108,140 @@ def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:
 
 def _register_decl(
     registry: dict[str, object],
+    declaration: object,
     name: str,
     module_parts: tuple[str, ...],
+    *,
+    source_path: Path | None,
 ) -> None:
-    if name in registry:
+    existing = registry.get(name)
+    if existing is not None:
         dotted_name = ".".join((*module_parts, name)) or name
-        raise CompileError(f"Duplicate declaration name: {dotted_name}")
+        raise compile_error(
+            code="E288",
+            summary="Duplicate declaration name",
+            detail=f"Declaration `{dotted_name}` is defined more than once in the same module.",
+            path=source_path,
+            source_span=getattr(declaration, "source_span", None),
+            related=(
+                related_prompt_site(
+                    label="first declaration",
+                    path=source_path,
+                    source_span=getattr(existing, "source_span", None),
+                ),
+            ),
+            hints=("Keep one declaration for this name in the module.",),
+        )
 
 
-def _validate_enum_decl(decl: model.EnumDecl, *, owner_label: str) -> None:
-    seen_keys: set[str] = set()
-    seen_wire_values: set[str] = set()
+def _validate_enum_decl(
+    decl: model.EnumDecl,
+    *,
+    owner_label: str,
+    source_path: Path | None,
+) -> None:
+    seen_keys: dict[str, model.EnumMember] = {}
+    seen_wire_values: dict[str, model.EnumMember] = {}
     for member in decl.members:
-        if member.key in seen_keys:
-            raise CompileError(f"Duplicate enum member key in {owner_label}: {member.key}")
-        seen_keys.add(member.key)
-        if member.value in seen_wire_values:
-            raise CompileError(f"Duplicate enum member wire in {owner_label}: {member.value}")
-        seen_wire_values.add(member.value)
+        existing_key = seen_keys.get(member.key)
+        if existing_key is not None:
+            raise compile_error(
+                code="E293",
+                summary="Duplicate enum member key",
+                detail=f"Enum `{owner_label}` repeats member key `{member.key}`.",
+                path=source_path,
+                source_span=member.source_span,
+                related=(
+                    related_prompt_site(
+                        label="first member",
+                        path=source_path,
+                        source_span=existing_key.source_span,
+                    ),
+                ),
+                hints=("Keep each enum member key only once.",),
+            )
+        seen_keys[member.key] = member
+        existing_wire = seen_wire_values.get(member.value)
+        if existing_wire is not None:
+            raise compile_error(
+                code="E294",
+                summary="Duplicate enum member wire",
+                detail=f"Enum `{owner_label}` repeats wire value `{member.value}`.",
+                path=source_path,
+                source_span=member.source_span,
+                related=(
+                    related_prompt_site(
+                        label="first member",
+                        path=source_path,
+                        source_span=existing_wire.source_span,
+                    ),
+                ),
+                hints=("Keep each enum wire value only once.",),
+            )
+        seen_wire_values[member.value] = member
 
 
-def _validate_render_profile_decl(decl: model.RenderProfileDecl, *, owner_label: str) -> None:
-    seen_targets: set[tuple[str, ...]] = set()
+def _validate_render_profile_decl(
+    decl: model.RenderProfileDecl,
+    *,
+    owner_label: str,
+    source_path: Path | None,
+) -> None:
+    seen_targets: dict[tuple[str, ...], model.RenderProfileRule] = {}
     for rule in decl.rules:
         target_text = ".".join(rule.target_parts)
         if target_text not in _KNOWN_RENDER_PROFILE_TARGETS:
-            raise CompileError(f"Unknown render_profile target in {owner_label}: {target_text}")
+            raise compile_error(
+                code="E298",
+                summary="Invalid render_profile declaration",
+                detail=f"Unknown render_profile target in {owner_label}: {target_text}",
+                path=source_path,
+                source_span=rule.source_span,
+                hints=("Use only shipped render_profile targets.",),
+            )
         if rule.mode not in _KNOWN_RENDER_PROFILE_MODES:
-            raise CompileError(f"Unknown render_profile mode in {owner_label}: {rule.mode}")
+            raise compile_error(
+                code="E298",
+                summary="Invalid render_profile declaration",
+                detail=f"Unknown render_profile mode in {owner_label}: {rule.mode}",
+                path=source_path,
+                source_span=rule.source_span,
+                hints=("Use only shipped render_profile modes.",),
+            )
         allowed_modes = _RENDER_PROFILE_TARGET_MODE_CONSTRAINTS.get(target_text)
         if allowed_modes is not None and rule.mode not in allowed_modes:
-            raise CompileError(
-                "Invalid render_profile mode for "
-                f"{target_text} in {owner_label}: {rule.mode}"
+            raise compile_error(
+                code="E298",
+                summary="Invalid render_profile declaration",
+                detail=f"Invalid render_profile mode for {target_text} in {owner_label}: {rule.mode}",
+                path=source_path,
+                source_span=rule.source_span,
+                hints=("Keep each render_profile target on one of its shipped supported modes.",),
             )
-        if rule.target_parts in seen_targets:
-            raise CompileError(
-                f"Duplicate render_profile rule target in {owner_label}: {target_text}"
+        existing_rule = seen_targets.get(rule.target_parts)
+        if existing_rule is not None:
+            raise compile_error(
+                code="E298",
+                summary="Invalid render_profile declaration",
+                detail=f"Duplicate render_profile rule target in {owner_label}: {target_text}",
+                path=source_path,
+                source_span=rule.source_span,
+                related=(
+                    related_prompt_site(
+                        label="first rule",
+                        path=source_path,
+                        source_span=existing_rule.source_span,
+                    ),
+                ),
+                hints=("Declare each render_profile target at most once.",),
             )
-        seen_targets.add(rule.target_parts)
+        seen_targets[rule.target_parts] = rule
 
 
 def _resolve_import_path(
-    import_path: ImportPath, *, module_parts: tuple[str, ...]
+    import_decl: model.ImportDecl, *, module_parts: tuple[str, ...], source_path: Path | None
 ) -> tuple[str, ...]:
+    import_path = import_decl.path
     if import_path.level == 0:
         return import_path.module_parts
 
@@ -161,7 +252,13 @@ def _resolve_import_path(
     )
     if parent_walk > len(current_package_parts):
         dotted_import = "." * import_path.level + ".".join(import_path.module_parts)
-        raise CompileError(f"Relative import walks above prompts root: {dotted_import}")
+        raise compile_error(
+            code="E290",
+            summary="Relative import walks above prompts root",
+            detail=f"Import `{dotted_import}` walks above the prompts root.",
+            path=source_path,
+            source_span=import_decl.source_span,
+        )
 
     return (*package_parts, *import_path.module_parts)
 
@@ -188,6 +285,9 @@ def _module_relpath_text(path: Path, *, prompt_root: Path) -> str:
 def _resolve_module_source_in_root(
     prompt_root: Path,
     module_parts: tuple[str, ...],
+    *,
+    importer_path: Path | None = None,
+    import_source_span=None,
 ) -> ResolvedModuleSource | None:
     file_module_path = _module_path_for_root(prompt_root, module_parts)
     runtime_package_path = _runtime_package_path_for_root(prompt_root, module_parts)
@@ -196,12 +296,20 @@ def _resolve_module_source_in_root(
 
     if has_file_module and has_runtime_package:
         dotted_name = ".".join(module_parts)
-        # Fail loud instead of guessing which module shape owns the dotted path.
-        raise CompileError(
-            "Ambiguous import module: "
-            f"{dotted_name} (both `{_module_relpath_text(file_module_path, prompt_root=prompt_root)}` "
-            f"and `{_module_relpath_text(runtime_package_path, prompt_root=prompt_root)}` exist "
-            f"under prompts root `{prompt_root}`)"
+        raise compile_error(
+            code="E287",
+            summary="Ambiguous import module",
+            detail=(
+                f"Import module `{dotted_name}` matches more than one prompt file shape under "
+                f"`{prompt_root}`."
+            ),
+            path=importer_path,
+            source_span=import_source_span,
+            related=(
+                file_scoped_related(label="file module", path=file_module_path),
+                file_scoped_related(label="runtime package", path=runtime_package_path),
+            ),
+            hints=("Keep one module owner for this dotted import path.",),
         )
     if has_runtime_package:
         return ResolvedModuleSource(
@@ -285,103 +393,243 @@ def index_unit(
             imports.append(declaration)
             continue
         if isinstance(declaration, model.RenderProfileDecl):
-            _register_decl(render_profiles_by_name, declaration.name, module_parts)
+            _register_decl(
+                render_profiles_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             _validate_render_profile_decl(
                 declaration,
-                owner_label=f"render_profile {dotted_decl_name(module_parts, declaration.name)}",
+                owner_label=dotted_decl_name(module_parts, declaration.name),
+                source_path=prompt_file.source_path,
             )
             render_profiles_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.AnalysisDecl):
-            _register_decl(analyses_by_name, declaration.name, module_parts)
+            _register_decl(
+                analyses_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             analyses_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.DecisionDecl):
-            _register_decl(decisions_by_name, declaration.name, module_parts)
+            _register_decl(
+                decisions_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             decisions_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.SchemaDecl):
-            _register_decl(schemas_by_name, declaration.name, module_parts)
+            _register_decl(
+                schemas_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             schemas_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.TableDecl):
-            _register_decl(tables_by_name, declaration.name, module_parts)
+            _register_decl(
+                tables_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             tables_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.DocumentDecl):
-            _register_decl(documents_by_name, declaration.name, module_parts)
+            _register_decl(
+                documents_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             documents_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.WorkflowDecl):
-            _register_decl(workflows_by_name, declaration.name, module_parts)
+            _register_decl(
+                workflows_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             workflows_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.RouteOnlyDecl):
-            _register_decl(route_onlys_by_name, declaration.name, module_parts)
+            _register_decl(
+                route_onlys_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             route_onlys_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.GroundingDecl):
-            _register_decl(groundings_by_name, declaration.name, module_parts)
+            _register_decl(
+                groundings_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             groundings_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.ReviewDecl):
-            _register_decl(reviews_by_name, declaration.name, module_parts)
+            _register_decl(
+                reviews_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             reviews_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.SkillsDecl):
-            _register_decl(skills_blocks_by_name, declaration.name, module_parts)
+            _register_decl(
+                skills_blocks_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             skills_blocks_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.InputsDecl):
-            _register_decl(inputs_blocks_by_name, declaration.name, module_parts)
+            _register_decl(
+                inputs_blocks_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             inputs_blocks_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.InputDecl):
-            _register_decl(inputs_by_name, declaration.name, module_parts)
+            _register_decl(
+                inputs_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             inputs_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.InputSourceDecl):
-            _register_decl(input_sources_by_name, declaration.name, module_parts)
+            _register_decl(
+                input_sources_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             input_sources_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.OutputsDecl):
-            _register_decl(outputs_blocks_by_name, declaration.name, module_parts)
+            _register_decl(
+                outputs_blocks_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             outputs_blocks_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.OutputDecl):
-            _register_decl(outputs_by_name, declaration.name, module_parts)
+            _register_decl(
+                outputs_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             outputs_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.OutputTargetDecl):
-            _register_decl(output_targets_by_name, declaration.name, module_parts)
+            _register_decl(
+                output_targets_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             output_targets_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.OutputShapeDecl):
-            _register_decl(output_shapes_by_name, declaration.name, module_parts)
+            _register_decl(
+                output_shapes_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             output_shapes_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.OutputSchemaDecl):
-            _register_decl(output_schemas_by_name, declaration.name, module_parts)
+            _register_decl(
+                output_schemas_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             output_schemas_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.SkillDecl):
-            _register_decl(skills_by_name, declaration.name, module_parts)
+            _register_decl(
+                skills_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             skills_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.SkillPackageDecl):
-            _register_decl(skill_packages_by_name, declaration.name, module_parts)
+            _register_decl(
+                skill_packages_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             skill_packages_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.EnumDecl):
-            _register_decl(enums_by_name, declaration.name, module_parts)
+            _register_decl(
+                enums_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             _validate_enum_decl(
                 declaration,
-                owner_label=f"enum {dotted_decl_name(module_parts, declaration.name)}",
+                owner_label=dotted_decl_name(module_parts, declaration.name),
+                source_path=prompt_file.source_path,
             )
             enums_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.Agent):
-            _register_decl(agents_by_name, declaration.name, module_parts)
+            _register_decl(
+                agents_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
             agents_by_name[declaration.name] = declaration
             continue
         raise CompileError(f"Unsupported declaration type: {type(declaration).__name__}")
@@ -445,7 +693,14 @@ def load_imports(
         return imported_units
 
     resolved_imports = [
-        (_resolve_import_path(import_decl.path, module_parts=module_parts), import_decl)
+        (
+            _resolve_import_path(
+                import_decl,
+                module_parts=module_parts,
+                source_path=importer_path,
+            ),
+            import_decl,
+        )
         for import_decl in imports
     ]
     # Import loading stays sequential. Parallel sibling loads can deadlock on
@@ -460,6 +715,8 @@ def load_imports(
                 resolved_module_parts,
                 prompt_root=prompt_root if import_decl.path.level > 0 else None,
                 ancestry=ancestry,
+                importer_path=importer_path,
+                import_decl=import_decl,
             )
         except DoctrineError as exc:
             raise exc.prepend_trace(
@@ -475,18 +732,28 @@ def load_module(
     *,
     prompt_root: Path | None,
     ancestry: tuple[ModuleLoadKey, ...],
+    importer_path: Path | None = None,
+    import_decl: model.ImportDecl | None = None,
 ) -> IndexedUnit:
     resolved_source = resolve_module_source(
         session,
         module_parts,
         prompt_root=prompt_root,
+        importer_path=importer_path,
+        import_decl=import_decl,
     )
     module_key = _module_load_key(resolved_source.prompt_root, module_parts)
     cached = session._module_cache.get(module_key)
     if cached is not None:
         return cached
     if module_key in ancestry:
-        raise CompileError(f"Cyclic import module: {'.'.join(module_parts)}")
+        raise compile_error(
+            code="E289",
+            summary="Cyclic import module",
+            detail=f"Import cycle: {'.'.join(module_parts)}.",
+            path=importer_path,
+            source_span=None if import_decl is None else import_decl.source_span,
+        )
 
     with session._module_lock:
         cached = session._module_cache.get(module_key)
@@ -515,7 +782,13 @@ def load_module(
                     waiting_module=waiting_module,
                     target_module=module_key,
                 ):
-                    raise CompileError(f"Cyclic import module: {'.'.join(module_parts)}")
+                    raise compile_error(
+                        code="E289",
+                        summary="Cyclic import module",
+                        detail=f"Import cycle: {'.'.join(module_parts)}.",
+                        path=importer_path,
+                        source_span=None if import_decl is None else import_decl.source_span,
+                    )
                 session._module_waits[waiting_module] = module_key
         try:
             ready.wait()
@@ -579,29 +852,69 @@ def resolve_module_source(
     module_parts: tuple[str, ...],
     *,
     prompt_root: Path | None,
+    importer_path: Path | None = None,
+    import_decl: model.ImportDecl | None = None,
 ) -> ResolvedModuleSource:
     if prompt_root is not None:
-        resolved = _resolve_module_source_in_root(prompt_root, module_parts)
+        resolved = _resolve_module_source_in_root(
+            prompt_root,
+            module_parts,
+            importer_path=importer_path,
+            import_source_span=None if import_decl is None else import_decl.source_span,
+        )
         if resolved is not None:
             return resolved
-        raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
+        raise compile_error(
+            code="E280",
+            summary="Missing import module",
+            detail=(
+                f"Import module `{'.'.join(module_parts)}` could not be found in the active prompts roots."
+            ),
+            path=importer_path,
+            source_span=None if import_decl is None else import_decl.source_span,
+            hints=("Create the missing prompt file, or fix the import path.",),
+        )
 
     matching_sources = tuple(
         resolved
         for candidate_root in session.import_roots
-        for resolved in (_resolve_module_source_in_root(candidate_root, module_parts),)
+        for resolved in (
+            _resolve_module_source_in_root(
+                candidate_root,
+                module_parts,
+                importer_path=importer_path,
+                import_source_span=None if import_decl is None else import_decl.source_span,
+            ),
+        )
         if resolved is not None
     )
     if not matching_sources:
-        raise CompileError(f"Missing import module: {'.'.join(module_parts)}")
+        raise compile_error(
+            code="E280",
+            summary="Missing import module",
+            detail=(
+                f"Import module `{'.'.join(module_parts)}` could not be found in the active prompts roots."
+            ),
+            path=importer_path,
+            source_span=None if import_decl is None else import_decl.source_span,
+            hints=("Create the missing prompt file, or fix the import path.",),
+        )
     if len(matching_sources) > 1:
         root_labels = getattr(session, "import_root_labels", {})
         root_list = ", ".join(
             root_labels.get(source.prompt_root.resolve(), str(source.prompt_root))
             for source in matching_sources
         )
-        raise CompileError(
-            f"Ambiguous import module: {'.'.join(module_parts)} (matching prompts roots: {root_list})"
+        raise compile_error(
+            code="E287",
+            summary="Ambiguous import module",
+            detail=(
+                f"Import module `{'.'.join(module_parts)}` matches more than one active prompts root: "
+                f"{root_list}."
+            ),
+            path=importer_path,
+            source_span=None if import_decl is None else import_decl.source_span,
+            hints=("Narrow the active prompts roots, or rename one of the colliding modules.",),
         )
     return matching_sources[0]
 

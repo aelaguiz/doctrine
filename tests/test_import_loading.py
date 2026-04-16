@@ -242,8 +242,11 @@ class ImportLoadingTests(unittest.TestCase):
                 CompilationSession(parse_file(prompts / "AGENTS.prompt"))
 
         error_text = str(ctx.exception)
-        self.assertIn("Ambiguous import module: shared.speaker", error_text)
+        self.assertIn("E287 compile error: Ambiguous import module", error_text)
+        self.assertIn("Import module `shared.speaker` matches more than one prompt file shape", error_text)
+        self.assertIn("file module:", error_text)
         self.assertIn("shared/speaker.prompt", error_text)
+        self.assertIn("runtime package:", error_text)
         self.assertIn("shared/speaker/AGENTS.prompt", error_text)
         self.assertNotIn("Traceback", error_text)
 
