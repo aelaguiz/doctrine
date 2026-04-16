@@ -250,6 +250,7 @@ class CompileReviewCasesMixin:
             ),
             require_trigger_reason="trigger_reason" in carried_fields,
         )
+        field_binding_spans = self._review_field_binding_source_spans(resolved.fields)
 
         body: list[CompiledBodyItem] = [
             f"Selected review mode: {enum_decl.title}.",
@@ -389,12 +390,14 @@ class CompileReviewCasesMixin:
             accept_branches = self._validate_review_outcome_section(
                 case.on_accept,
                 unit=unit,
+                field_binding_unit=unit,
                 owner_label=f"{owner_label}.cases.{case.key}",
                 agent_contract=agent_contract,
                 comment_output_decl=comment_output_decl,
                 comment_output_unit=comment_output_unit,
                 next_owner_field_path=field_bindings["next_owner"],
                 field_bindings=field_bindings,
+                field_binding_spans=field_binding_spans,
                 subject_keys=subject_keys,
                 subject_map=None,
                 blocked_gate_required=any_block_gates,
@@ -403,12 +406,14 @@ class CompileReviewCasesMixin:
             reject_branches = self._validate_review_outcome_section(
                 case.on_reject,
                 unit=unit,
+                field_binding_unit=unit,
                 owner_label=f"{owner_label}.cases.{case.key}",
                 agent_contract=agent_contract,
                 comment_output_decl=comment_output_decl,
                 comment_output_unit=comment_output_unit,
                 next_owner_field_path=field_bindings["next_owner"],
                 field_bindings=field_bindings,
+                field_binding_spans=field_binding_spans,
                 subject_keys=subject_keys,
                 subject_map=None,
                 blocked_gate_required=any_block_gates,
@@ -456,15 +461,18 @@ class CompileReviewCasesMixin:
 
         self._validate_review_current_artifact_alignment(
             (*all_accept_branches, *all_reject_branches),
+            review_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             owner_label=owner_label,
         )
         self._validate_review_optional_field_alignment(
             (*all_accept_branches, *all_reject_branches),
+            field_binding_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             field_bindings=field_bindings,
+            field_binding_spans=field_binding_spans,
             owner_label=owner_label,
         )
         return CompiledSection(title=resolved.title, body=tuple(body))

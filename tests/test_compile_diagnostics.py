@@ -27,6 +27,17 @@ class CompileDiagnosticTests(unittest.TestCase):
         prompt_path.write_text(textwrap.dedent(source), encoding="utf-8")
         return prompt_path
 
+    def _compile_repo_prompt_error(
+        self,
+        rel_path: str,
+        *,
+        agent: str,
+    ) -> tuple[Path, CompileError]:
+        prompt_path = (Path(__file__).resolve().parents[1] / rel_path).resolve()
+        with self.assertRaises(CompileError) as ctx:
+            CompilationSession(parse_file(prompt_path)).compile_agent(agent)
+        return prompt_path, ctx.exception
+
     def test_missing_import_points_at_import_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -4945,6 +4956,286 @@ class CompileDiagnosticTests(unittest.TestCase):
             ),
         )
         self.assertIn("requires exactly one lowerable direct declaration", str(error))
+
+    def test_review_verdict_binding_points_at_field_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftSpec: "Draft Spec"
+                    source: File
+                        path: "unit_root/DRAFT_SPEC.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                    "Use the draft under review."
+
+                workflow VerdictReviewContract: "Verdict Review Contract"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                agent ReviewLead:
+                    role: "Own accepted review follow-up."
+                    workflow: "Follow Up"
+                        "Take accepted review work."
+
+                agent DraftAuthor:
+                    role: "Own rejected review follow-up."
+                    workflow: "Revise"
+                        "Revise the draft."
+
+                output GuardedVerdictReviewComment: "Guarded Verdict Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    verdict: "Verdict" when verdict == ReviewVerdict.changes_requested:
+                        "Say whether the review accepted the draft or asked for changes."
+
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact this review judged."
+
+                    analysis_performed: "Analysis Performed"
+                        "Sum up the review work that led to the verdict."
+
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "Summarize the parts of the draft the next owner must read first."
+
+                    next_owner: "Next Owner"
+                        "Name the next owner."
+
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "Name the failing review gates in authored order."
+
+                review GuardedVerdictReview: "Guarded Verdict Review"
+                    subject: DraftSpec
+                    contract: VerdictReviewContract
+                    comment_output: GuardedVerdictReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    checks: "Checks"
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        route "Accepted review goes to ReviewLead." -> ReviewLead
+                        route "Accepted review also goes to DraftAuthor." -> DraftAuthor
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected review goes to DraftAuthor." -> DraftAuthor
+
+                agent Demo:
+                    role: "Reject verdict bindings that hide accepted outcomes."
+                    review: GuardedVerdictReview
+                    inputs: "Inputs"
+                        DraftSpec
+                    outputs: "Outputs"
+                        GuardedVerdictReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E495")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        verdict: verdict")
+            + 1,
+        )
+        self.assertEqual(error.diagnostic.related, ())
+        self.assertIn("Resolved review verdict", str(error))
+
+    def test_review_outcome_multiple_currents_report_related_line(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/49_review_capstone/prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt",
+            agent="InvalidCurrentNoneAndCurrentArtifactDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+
+        error = error
+        self.assertEqual(error.diagnostic.code, "E486")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index(
+                "                current artifact DraftSpec via BrokenCapstoneReviewComment.current_artifact"
+            )
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            prompt_lines.index("                current none") + 1,
+        )
+        self.assertIn("first currentness result", str(error))
+
+    def test_review_subject_disambiguation_points_at_outcome_section(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/47_review_multi_subject_mode_and_trigger_carry/prompts/INVALID_SUBJECT_SET_WITHOUT_DISAMBIGUATION.prompt",
+            agent="InvalidSubjectSetWithoutDisambiguationDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+
+        self.assertEqual(error.diagnostic.code, "E489")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index('    on_accept: "If Accepted"') + 1,
+        )
+        self.assertEqual(error.diagnostic.related, ())
+        self.assertIn("branch `on_accept`", str(error))
+
+    def test_review_next_owner_binding_points_at_field_binding_with_route_related_site(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftSpec: "Draft Spec"
+                    source: File
+                        path: "unit_root/DRAFT_SPEC.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                    "Use the draft under review."
+
+                workflow NextOwnerReviewContract: "Next Owner Review Contract"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                agent ReviewLead:
+                    role: "Own accepted review follow-up."
+                    workflow: "Follow Up"
+                        "Take accepted review work."
+
+                agent DraftAuthor:
+                    role: "Own rejected review follow-up."
+                    workflow: "Revise"
+                        "Revise the draft."
+
+                output GuardedNextOwnerReviewComment: "Guarded Next Owner Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    verdict: "Verdict"
+                        "Say whether the review accepted the draft or asked for changes."
+
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact this review judged."
+
+                    analysis_performed: "Analysis Performed"
+                        "Sum up the review work that led to the verdict."
+
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "Summarize the parts of the draft the next owner must read first."
+
+                    next_owner: "Next Owner" when verdict == ReviewVerdict.changes_requested:
+                        "Name the next owner."
+
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "Name the failing review gates in authored order."
+
+                review GuardedNextOwnerReview: "Guarded Next Owner Review"
+                    subject: DraftSpec
+                    contract: NextOwnerReviewContract
+                    comment_output: GuardedNextOwnerReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    checks: "Checks"
+                        reject "The draft still needs changes." when DraftSpec.needs_changes
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        route "Accepted review goes to ReviewLead." -> ReviewLead
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected review goes to DraftAuthor." -> DraftAuthor
+
+                agent Demo:
+                    role: "Reject next-owner bindings that hide routed accept branches."
+                    review: GuardedNextOwnerReview
+                    inputs: "Inputs"
+                        DraftSpec
+                    outputs: "Outputs"
+                        GuardedNextOwnerReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E496")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        next_owner: next_owner") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index(
+                '        route "Accepted review goes to ReviewLead." -> ReviewLead'
+            )
+            + 1,
+        )
+        self.assertIn("resolved route", str(error))
+
+    def test_review_current_none_mismatch_points_at_current_none_line(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/46_review_current_truth_and_trust_surface/prompts/INVALID_CURRENT_NONE_REQUIRES_GUARDED_CARRIER.prompt",
+            agent="InvalidCurrentNoneRequiresGuardedCarrierDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+
+        self.assertEqual(error.diagnostic.code, "E497")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index("        current none") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            prompt_lines.index('    current_artifact: "Current Artifact"') + 1,
+        )
+        self.assertIn("carrier field", str(error))
+
+    def test_review_optional_blocked_gate_binding_points_at_field_binding(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/49_review_capstone/prompts/INVALID_UNGUARDED_BLOCKED_GATE.prompt",
+            agent="InvalidUnguardedBlockedGateDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+
+        self.assertEqual(error.diagnostic.code, "E499")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index("        blocked_gate: failure_detail.blocked_gate") + 1,
+        )
+        self.assertEqual(error.diagnostic.related, ())
+        self.assertIn("`blocked_gate`", str(error))
 
 
 if __name__ == "__main__":

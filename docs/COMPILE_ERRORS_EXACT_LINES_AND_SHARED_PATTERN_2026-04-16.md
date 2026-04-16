@@ -161,74 +161,58 @@ Verdict (code): NOT COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- Phase 4 is still open. The approved compile frontier still has raw string `CompileError` branches and unclassified exceptions across the unresolved compiler, resolver, validator, and entrypoint helpers instead of one shared structured path everywhere. The `doctrine/_compiler/compile/workflows.py` and `doctrine/_compiler/flow.py` slices are now migrated and no longer block this phase, but the live frontier still includes the resolver slices and helper surfaces listed below. Representative anchors: `doctrine/_compiler/compile/agent.py:893`, `doctrine/_compiler/compile/readables.py:413-537`, `doctrine/_compiler/compile/readable_blocks.py:498, 543`, `doctrine/_compiler/compile/records.py:203`, `doctrine/_compiler/resolve/addressable_skills.py:35, 94, 117, 125, 132, 148, 160, 183, 204`, `doctrine/_compiler/resolve/analysis.py:33, 108, 186, 241`, `doctrine/_compiler/resolve/agent_slots.py:238, 245, 247, 259, 307`, `doctrine/_compiler/resolve/documents.py:67`, `doctrine/_compiler/resolve/io_contracts.py:253, 313`, `doctrine/_compiler/resolve/law_paths.py:266, 279`, `doctrine/_compiler/resolve/output_schemas.py:824, 845, 867, 876, 1112, 1118, 1124, 1129, 1287, 1354`, `doctrine/_compiler/resolve/outputs.py:1289, 1301, 2259, 2385`, `doctrine/_compiler/resolve/section_bodies.py:73`, `doctrine/_compiler/resolve/skills.py:34, 94, 183, 247`, `doctrine/_compiler/resolve/workflows.py:315, 558, 735`, `doctrine/_compiler/validate/agents.py:143, 199, 220, 257, 269`, `doctrine/_compiler/validate/display.py:211, 335, 352`, `doctrine/_compiler/validate/law_paths.py:369, 374`, `doctrine/_compiler/validate/review_agreement.py:47, 52, 56, 60, 102, 248, 261, 280, 287, 296, 314, 327, 339, 349, 386, 419, 445, 460, 470, 500, 505`, `doctrine/_compiler/validate/review_preflight.py:205`, `doctrine/_compiler/validate/review_semantics.py:137, 143, 146`, `doctrine/_compiler/validate/review_branches.py:433`, `doctrine/_compiler/validate/route_semantics_context.py:198`, `doctrine/_compiler/validate/routes.py:66, 906, 1740`, `doctrine/_compiler/validate/outputs.py:240, 299`, `doctrine/_compiler/validate/schema_helpers.py:69, 92, 110`, `doctrine/_compiler/validate/addressable_display.py:354`, `doctrine/_compiler/indexing.py:635, 806, 831`, `doctrine/_compiler/context.py:128-180`, and `doctrine/_compiler/support.py:22, 29`. The open work is the full ordered migration frontier, not one small local gap.
-- Phase 5 is still open. The shipped proof still keys `compile_fail` on `message_contains`, the smoke layer still checks codes and snippets instead of exact-line and related-site output, the public docs still describe the older proof surface, and the compile regex bridge in `doctrine/diagnostics.py` is still live. Representative anchors: `doctrine/_verify_corpus/manifest.py:31, 209, 227`, `doctrine/_verify_corpus/runners.py:429`, `doctrine/_diagnostic_smoke/compile_checks.py:29-48`, `docs/COMPILER_ERRORS.md:1`, `examples/README.md:1`, `doctrine/diagnostics.py:347`, and `doctrine/_diagnostics/message_builders.py:80`.
+- Phase 4 is still open. The raw-string frontier is smaller than the previous audit said, but it is still large and still spans planned user-facing families plus entrypoint helpers. A fresh inventory on 2026-04-16 still shows raw `raise CompileError(...)` branches in `doctrine/_compiler/resolve/outputs.py` (48), `doctrine/_compiler/resolve/output_schemas.py` (47), `doctrine/_compiler/resolve/schemas.py` (21), `doctrine/_compiler/resolve/agent_slots.py` (18), `doctrine/_compiler/compile/readables.py` (17), `doctrine/_compiler/resolve/reviews.py` (13), `doctrine/_compiler/context.py` (11), `doctrine/_compiler/resolve/analysis.py` (10), `doctrine/_compiler/resolve/document_blocks.py` (10), `doctrine/_compiler/compile/agent.py` (9), `doctrine/_compiler/resolve/addressable_skills.py` (9), `doctrine/_compiler/resolve/skills.py` (9), `doctrine/_compiler/compile/readable_blocks.py` (8), and `doctrine/_compiler/validate/review_semantics.py` (8), plus smaller helper surfaces in `support.py`, `validate/__init__.py`, `validate/review_preflight.py`, `validate/schema_helpers.py`, `validate/display.py`, `indexing.py`, `resolve/law_paths.py`, `validate/law_paths.py`, `validate/outputs.py`, `compile/records.py`, `display.py`, `session.py`, `validate/addressable_display.py`, `validate/review_branches.py`, and `validate/review_gate_observation.py`. Representative anchors: `doctrine/_compiler/resolve/outputs.py:165, 214, 1289, 1301, 2259, 2385`, `doctrine/_compiler/resolve/output_schemas.py:103, 148, 153, 187, 192, 198`, `doctrine/_compiler/resolve/schemas.py:34, 103, 153, 193`, `doctrine/_compiler/resolve/agent_slots.py:32, 52, 75, 238, 245, 259`, `doctrine/_compiler/compile/readables.py:402, 413, 427, 461, 503, 537`, `doctrine/_compiler/compile/agent.py:236, 646, 666, 717, 819`, `doctrine/_compiler/resolve/reviews.py:45, 106, 123, 164, 218, 552`, `doctrine/_compiler/validate/review_semantics.py:105, 110, 122, 137, 143, 146`, `doctrine/_compiler/context.py:128, 130, 140, 149, 158, 180`, and `doctrine/_compiler/session.py:85`. The open work is still the full ordered migration and classification frontier, not one isolated local gap.
+- Phase 5 is still open. Repo proof is green on the current tree, but it is still green under the legacy compile-fail bridge instead of the final exact-line contract. `make verify-diagnostics` and `make verify-examples` both passed on 2026-04-16, yet the manifest model still only exposes `message_contains`, the runner still checks snippet containment, the smoke layer still checks codes and snippets instead of exact locations or `Related:` output, the public docs still do not define the richer compile-fail contract, and `doctrine/diagnostics.py` still routes raw compile strings through `_compile_diagnostic_from_message()` from `doctrine/_diagnostics/message_builders.py`. Representative anchors: `doctrine/_verify_corpus/manifest.py:31, 209, 227`, `doctrine/_verify_corpus/runners.py:429`, `doctrine/_diagnostic_smoke/compile_checks.py:62, 64, 130, 132, 169, 171, 217, 219, 320, 321`, `examples/README.md:7, 20, 23`, `docs/COMPILER_ERRORS.md:8, 14`, `doctrine/diagnostics.py:31, 67, 347`, and `doctrine/_diagnostics/message_builders.py:80`.
 
 ## Reopened phases (false-complete fixes)
 - Phase 4 (Authored compile-family migration and policy convergence) — reopened because:
   - correction: the bullets below are partial progress history, not a completion claim.
-  - the live frontier still spans the unresolved compiler, resolver, validator, and entrypoint helpers listed in the code-blocker section, so the inventory/classification pass cannot honestly say every remaining compile site is already exact-line, related-site, or truthful file-scoped.
+  - the current frontier is narrower than the old audit block said, but it still spans the resolver, authored-surface, validation, and entrypoint helpers listed in the code-blocker section, so the inventory/classification pass cannot honestly say every remaining compile site is already exact-line, related-site, or truthful file-scoped.
 - Phase 5 (Proof, docs, corpus contract, and cleanup) — reopened because:
-  - `doctrine/_verify_corpus/manifest.py:31` and `:209` still define `message_contains`, `doctrine/_verify_corpus/runners.py:429` still checks snippet containment, and `doctrine/_diagnostic_smoke/compile_checks.py:29-48` still checks codes and snippets instead of the final exact-line and related-site contract.
-  - the public docs and corpus notes still describe the older proof surface, and the compile regex bridge in `doctrine/diagnostics.py` is still live even though the legacy corpus run currently passes.
+  - `doctrine/_verify_corpus/manifest.py:31` and `:209` still define `message_contains`, `doctrine/_verify_corpus/runners.py:429` still checks snippet containment, and `doctrine/_diagnostic_smoke/compile_checks.py:62, 64, 130, 132, 169, 171, 217, 219, 320, 321` still checks codes and snippets instead of the final exact-line and related-site contract.
+  - the public docs and corpus notes still describe the older proof surface, and the compile regex bridge in `doctrine/diagnostics.py:347` is still live through `doctrine/_diagnostics/message_builders.py:80` even though the current repo proof passed.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Remaining compile-family frontier still uses raw `CompileError` branches across the unresolved compiler, resolver, validator, and entrypoint helpers.
+- Remaining compile-family frontier still uses raw `CompileError` branches across resolver, authored-surface, validation, and entrypoint helpers.
   - Evidence anchors:
-    - `doctrine/_compiler/compile/agent.py:236, 646, 666, 705, 717, 722, 787, 819, 989`
-    - `doctrine/_compiler/compile/readables.py:108, 147, 402, 413, 427, 431, 440, 444, 453, 461, 463, 503, 511, 519, 521, 529, 537`
-    - `doctrine/_compiler/compile/readable_blocks.py:100, 175, 215, 390, 432, 451, 498, 543`
-    - `doctrine/_compiler/compile/records.py:203`
-    - `doctrine/_compiler/compile/review_contract.py:49, 76`
-    - `doctrine/_compiler/resolve/addressable_skills.py:35, 94, 117, 125, 132, 148, 160, 183, 204`
-    - `doctrine/_compiler/resolve/analysis.py:33, 108, 186, 241`
-    - `doctrine/_compiler/resolve/agent_slots.py:32, 52, 75, 106, 119, 126, 131, 141, 148, 153, 176, 238, 245, 247, 259, 307, 352, 356`
-    - `doctrine/_compiler/resolve/document_blocks.py:71, 124, 195, 235, 246, 285, 354, 428, 477, 522`
-    - `doctrine/_compiler/resolve/documents.py:67`
-    - `doctrine/_compiler/resolve/io_contracts.py:74, 80, 88, 165, 169, 194, 201, 212, 253, 313, 331`
-    - `doctrine/_compiler/resolve/law_paths.py:266, 279`
-    - `doctrine/_compiler/resolve/output_schemas.py:824, 845, 867, 876, 1112, 1118, 1124, 1129, 1287, 1354`
-    - `doctrine/_compiler/resolve/outputs.py:1289, 1301, 2259, 2385`
-    - `doctrine/_compiler/resolve/reviews.py:45, 106, 123, 164, 218, 552, 560, 565, 861, 869, 876, 919, 994`
-    - `doctrine/_compiler/resolve/schemas.py:34, 103, 153, 193, 196, 199, 203, 241, 256, 260, 290, 294, 324, 328, 360, 363, 366, 369, 383, 387, 389`
-    - `doctrine/_compiler/resolve/section_bodies.py:73`
-    - `doctrine/_compiler/resolve/skills.py:34, 94, 183, 247`
-    - `doctrine/_compiler/resolve/workflows.py:315, 558, 735`
-    - `doctrine/_compiler/validate/agents.py:143, 199, 220, 257, 269`
-    - `doctrine/_compiler/validate/display.py:211, 335, 352`
-    - `doctrine/_compiler/validate/law_paths.py:369, 374`
-    - `doctrine/_compiler/validate/review_agreement.py:47, 52, 56, 60, 102, 248, 261, 280, 287, 296, 314, 327, 339, 349, 386, 419, 445, 460, 470, 500, 505`
+    - `doctrine/_compiler/resolve/outputs.py:165, 214, 1289, 1301, 2259, 2385`
+    - `doctrine/_compiler/resolve/output_schemas.py:103, 148, 153, 187, 192, 198`
+    - `doctrine/_compiler/resolve/schemas.py:34, 103, 153, 193`
+    - `doctrine/_compiler/resolve/agent_slots.py:32, 52, 75, 238, 245, 259`
+    - `doctrine/_compiler/compile/readables.py:402, 413, 427, 461, 503, 537`
+    - `doctrine/_compiler/compile/readable_blocks.py:390, 432, 451, 498, 543`
+    - `doctrine/_compiler/compile/agent.py:236, 646, 666, 717, 819`
+    - `doctrine/_compiler/resolve/reviews.py:45, 106, 123, 164, 218, 552`
+    - `doctrine/_compiler/resolve/analysis.py:33, 108, 113, 133`
+    - `doctrine/_compiler/resolve/document_blocks.py:71, 124, 195, 235`
+    - `doctrine/_compiler/resolve/addressable_skills.py:35, 94, 117, 125`
+    - `doctrine/_compiler/resolve/skills.py:34, 146, 175, 183`
+    - `doctrine/_compiler/validate/review_semantics.py:105, 110, 122, 137, 143, 146`
     - `doctrine/_compiler/validate/review_preflight.py:40, 61, 200, 205`
-    - `doctrine/_compiler/validate/review_gate_observation.py:242`
-    - `doctrine/_compiler/validate/review_semantics.py:105, 110, 122, 137, 143, 146, 156, 173`
-    - `doctrine/_compiler/validate/review_branches.py:433`
-    - `doctrine/_compiler/validate/routes.py:66, 906, 1740`
-    - `doctrine/_compiler/validate/outputs.py:240, 299`
-    - `doctrine/_compiler/validate/schema_helpers.py:57, 69, 92, 110`
-    - `doctrine/_compiler/validate/addressable_display.py:354`
-    - `doctrine/_compiler/indexing.py:635, 806, 831`
-    - `doctrine/_compiler/context.py:128-180`
+    - `doctrine/_compiler/context.py:128, 130, 140, 149, 158, 180`
+    - `doctrine/_compiler/session.py:85`
+    - `doctrine/_compiler/indexing.py:635, 806`
     - `doctrine/_compiler/support.py:22, 29, 41, 51`
   - Plan expects:
-    - every remaining compile site in the approved frontier to be classified and migrated to the shared helper path, or called out as a truthful file-scoped exception.
+    - every remaining compile site in the approved frontier to be classified and migrated to the shared helper path, or called out as a truthful file-scoped or internal exception.
   - Code reality:
-    - raw string `CompileError` branches still survive across the representative compiler, resolver, validator, and entrypoint surfaces, so the inventory/classification sweep is not complete.
+    - raw string `CompileError` branches still survive across the representative resolver, authored-surface, validation, and entrypoint surfaces, including user-facing inheritance and shape families plus last-resort wrappers that still route through message parsing.
   - Fix:
-    - finish the shared-helper migration and classify the remaining sites as exact-line primary, multi-site related-site, or truthful file-scoped exception.
+    - finish the shared-helper migration and classify the remaining sites as exact-line primary, multi-site related-site, truthful file-scoped exception, or explicit internal invariant path.
 
 - Proof, docs, and bridge cleanup still need to reach the final contract.
   - Evidence anchors:
-    - `doctrine/_diagnostic_smoke/compile_checks.py:29-48`
+    - `doctrine/_diagnostic_smoke/compile_checks.py:62, 64, 130, 132, 169, 171, 217, 219, 320, 321`
     - `doctrine/_verify_corpus/manifest.py:31, 209, 227`
     - `doctrine/_verify_corpus/runners.py:429`
-    - `docs/COMPILER_ERRORS.md:1`
-    - `examples/README.md:1`
-    - `doctrine/diagnostics.py:347`
+    - `docs/COMPILER_ERRORS.md:8, 14`
+    - `examples/README.md:7, 20, 23`
+    - `doctrine/diagnostics.py:31, 67, 347`
     - `doctrine/_diagnostics/message_builders.py:80`
   - Plan expects:
     - smoke checks, corpus cases, and public docs to assert the final exact-line and related-site contract, then remove the compile regex bridge.
   - Code reality:
-    - the corpus still keys on `message_contains`, the runner still checks message snippets, the smoke layer still validates codes and snippets instead of exact locations or related sites, the public docs still do not define the richer manifest contract, and `_compile_diagnostic_from_message()` remains the compile regex bridge.
+    - the corpus still keys on `message_contains`, the runner still checks message snippets, the smoke layer still validates codes and snippets instead of exact locations or related sites, the public docs still do not define the richer manifest contract, and `_compile_diagnostic_from_message()` remains the compile regex bridge even though the current repo proof passed.
   - Fix:
     - move the corpus proof and smoke checks to the final contract, update the docs/examples, then remove `_compile_diagnostic_from_message()` and its compile-only builders.
 
@@ -943,26 +927,24 @@ Rollback
 Status
 
 - REOPENED (audit found missing code work).
-- Missing (code): the approved remaining compile frontier still spans raw
-  string `CompileError` branches and unclassified exceptions across the
-  unresolved compiler, resolver, validator, and entrypoint helpers. The live
-  inventory still shows raw-string sites in `compile/agent.py`,
-  `compile/readables.py`, `compile/readable_blocks.py`, `compile/records.py`,
-  `compile/review_contract.py`, `resolve/addressable_skills.py`,
-  `resolve/analysis.py`, `resolve/agent_slots.py`,
-  `resolve/document_blocks.py`, `resolve/documents.py`,
-  `resolve/law_paths.py`,
-  `resolve/output_schemas.py`, `resolve/outputs.py`, `resolve/reviews.py`,
-  `resolve/schemas.py`, `resolve/section_bodies.py`, `resolve/skills.py`,
-  `resolve/workflows.py`,
-  `validate/display.py`,
-  `validate/law_paths.py`, `validate/review_agreement.py`,
-  `validate/review_preflight.py`, `validate/review_semantics.py`,
-  `validate/review_gate_observation.py`, `validate/review_branches.py`,
-  `validate/routes.py`, `validate/outputs.py`,
-  `validate/schema_helpers.py`, `validate/addressable_display.py`,
-  `indexing.py`, `context.py`, and `support.py`. The open work is the full
-  ordered migration frontier, not a narrower local gap.
+- Missing (code): the approved remaining compile frontier is smaller than the
+  previous audit said, but it is still large. A fresh inventory on
+  2026-04-16 still shows raw-string `CompileError` branches in the remaining
+  resolver, authored-surface, validation, and entrypoint helpers, led by
+  `resolve/outputs.py` (48), `resolve/output_schemas.py` (47),
+  `resolve/schemas.py` (21), `resolve/agent_slots.py` (18),
+  `compile/readables.py` (17), `resolve/reviews.py` (13), `context.py` (11),
+  `resolve/analysis.py` (10), `resolve/document_blocks.py` (10),
+  `compile/agent.py` (9), `resolve/addressable_skills.py` (9),
+  `resolve/skills.py` (9), `compile/readable_blocks.py` (8), and
+  `validate/review_semantics.py` (8), plus smaller helper surfaces in
+  `support.py`, `validate/__init__.py`, `validate/review_preflight.py`,
+  `validate/schema_helpers.py`, `validate/display.py`, `indexing.py`,
+  `resolve/law_paths.py`, `validate/law_paths.py`, `validate/outputs.py`,
+  `compile/records.py`, `display.py`, `session.py`,
+  `validate/addressable_display.py`, `validate/review_branches.py`, and
+  `validate/review_gate_observation.py`. The open work is still the full
+  ordered migration and classification frontier, not a narrower local gap.
 - First family slice landed early: duplicate role fields, duplicate typed
   fields, missing role, and missing abstract authored slots now use
   structured, span-aware compile diagnostics.
@@ -1022,8 +1004,8 @@ Status
   lands on structured exact-line `E480`, and missing or mistyped skill
   purposes now land on structured exact-line `E220`.
 - Landed in this pass: the contract-family resolver and validator slices now
-  keep exact authored locations on the shipped IO-block codes. The io-contract
-  slice still has remaining raw anchors in `resolve/io_contracts.py`, while
+  keep exact authored locations on the shipped IO-block codes. The remaining
+  raw `resolve/io_contracts.py` anchors are now gone, while
   `validate/contracts.py` also moved forward: inherited inputs and outputs
   block failures now keep structured
   `E247`, `E248`, `E249`, `E001`, `E003`, and `E260` lines, missing inherited
@@ -1031,6 +1013,21 @@ Status
   omitted wrapper-title failures now anchor on the direct declaration lines
   they depend on while keeping the legacy `message_contains` snippets stable
   for the still-open Phase 5 proof bridge.
+- Landed in this pass: the remaining raw review-agreement validator anchors in
+  `validate/review_agreement.py` are now gone, and the review compile callers
+  now keep the right authored binding unit alive across both review-local
+  `fields:` and agent-local `final_output.review_fields`. Outcome-totality,
+  disambiguation, review currentness, and review output-binding failures now
+  use structured exact-line `E484`, `E486`, `E489`, `E495`, `E496`, `E497`,
+  `E498`, and `E499` diagnostics, with labeled `Related:` sites on the real
+  two-site conflicts such as mixed currentness, routed `next_owner`, carried
+  semantic fields, and live carrier fields on `current none`. The last two
+  small raw review-contract compile guards in `compile/review_contract.py`
+  are also gone now: `E500` `final_output.review_fields` misuse points at the
+  authored `final_output` field, and abstract review attachment now uses the
+  structured `E494` path with a related abstract-review declaration site.
+- Current proof status: `make verify-diagnostics` and `make verify-examples`
+  both pass on the live tree again after the review-agreement migration.
 - Landed in this pass: `DoctrineError.ensure_location()` now upgrades line-aware
   compile failures with source excerpts by default, so migrated families do not
   need one-off excerpt plumbing at every raw `CompileError(...)` site.
@@ -1220,8 +1217,9 @@ Status
 - Missing (code): the shipped `compile_fail` proof still keys on
   `message_contains`, the smoke checks still validate codes and snippets
   instead of exact locations and related sites, the docs still describe the
-  older proof surface, and the compile regex bridge is still live even though
-  the corpus currently passes under the legacy contract.
+  older proof surface, and the compile regex bridge is still live. The repo
+  proof is green on the current tree, but it is still green under that legacy
+  contract rather than the final exact-line and related-site contract.
 
 Goal
 

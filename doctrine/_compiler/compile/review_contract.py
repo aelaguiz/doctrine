@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
 from doctrine._compiler.final_output_diagnostics import final_output_compile_error
 from doctrine._compiler.review_diagnostics import (
@@ -44,10 +45,22 @@ class CompileReviewContractMixin:
         self,
         *,
         agent_name: str,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
         detail: str,
     ) -> None:
-        raise CompileError(
-            f"E500 final_output review_fields are invalid in agent {agent_name}: {detail}"
+        raise compile_error(
+            code="E500",
+            summary="`final_output.review_fields` is used in an invalid place",
+            detail=(
+                f"Agent `{agent_name}` uses `final_output.review_fields` in an invalid "
+                f"place. {detail}"
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=source_span,
+            hints=(
+                "Use `review_fields:` only on split final responses for review-driven agents.",
+            ),
         )
 
     def _compile_agent_review_contract(
@@ -66,6 +79,8 @@ class CompileReviewContractMixin:
             if authored_review_fields is not None:
                 self._invalid_final_output_review_fields(
                     agent_name=agent.name,
+                    unit=unit,
+                    source_span=final_output_field.source_span,
                     detail="review_fields require a review-driven agent",
                 )
             return None
@@ -73,9 +88,23 @@ class CompileReviewContractMixin:
         review_field = review_fields[0]
         review_unit, review_decl = self._resolve_review_ref(review_field.value, unit=unit)
         if review_decl.abstract:
-            raise CompileError(
-                "Concrete agents may not attach abstract reviews directly: "
-                f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+            raise review_compile_error(
+                code="E494",
+                summary="Concrete agent may not attach abstract review directly",
+                detail=(
+                    "Concrete agent may not attach abstract review "
+                    f"`{_dotted_decl_name(review_unit.module_parts, review_decl.name)}` "
+                    "directly."
+                ),
+                unit=unit,
+                source_span=review_field.source_span,
+                related=(
+                    review_related_site(
+                        label="abstract review declaration",
+                        unit=review_unit,
+                        source_span=review_decl.source_span,
+                    ),
+                ),
             )
 
         resolved_review = self._resolve_compiled_review(
@@ -127,6 +156,8 @@ class CompileReviewContractMixin:
                 if authored_review_fields is not None:
                     self._invalid_final_output_review_fields(
                         agent_name=agent.name,
+                        unit=unit,
+                        source_span=final_output_field.source_span,
                         detail="review_fields may appear only on split final responses",
                     )
                 final_mode = "carrier"
@@ -144,12 +175,17 @@ class CompileReviewContractMixin:
                         require_active_mode=False,
                         require_trigger_reason=False,
                     )
+                    final_response_field_spans = self._review_field_binding_source_spans(
+                        authored_review_fields
+                    )
                     self._validate_review_semantic_output_bindings(
                         all_branches,
                         review_unit=review_unit,
+                        field_binding_unit=unit,
                         output_decl=final_output_decl,
                         output_unit=final_output_unit,
                         field_bindings=final_response_fields,
+                        field_binding_spans=final_response_field_spans,
                         owner_label=f"agent {agent.name} final_output.review_fields",
                     )
                 control_ready = self._review_final_response_is_control_ready(
@@ -428,16 +464,19 @@ class CompileReviewContractMixin:
             require_active_mode="active_mode" in carried_fields,
             require_trigger_reason="trigger_reason" in carried_fields,
         )
+        field_binding_spans = self._review_field_binding_source_spans(resolved.fields)
 
         accept_branches = self._validate_review_outcome_section(
             on_accept,
             unit=unit,
+            field_binding_unit=unit,
             owner_label=owner_label,
             agent_contract=agent_contract,
             comment_output_decl=comment_output_decl,
             comment_output_unit=comment_output_unit,
             next_owner_field_path=field_bindings["next_owner"],
             field_bindings=field_bindings,
+            field_binding_spans=field_binding_spans,
             subject_keys=subject_keys,
             subject_map=resolved.subject_map,
             blocked_gate_required=any_block_gates,
@@ -446,12 +485,14 @@ class CompileReviewContractMixin:
         reject_branches = self._validate_review_outcome_section(
             on_reject,
             unit=unit,
+            field_binding_unit=unit,
             owner_label=owner_label,
             agent_contract=agent_contract,
             comment_output_decl=comment_output_decl,
             comment_output_unit=comment_output_unit,
             next_owner_field_path=field_bindings["next_owner"],
             field_bindings=field_bindings,
+            field_binding_spans=field_binding_spans,
             subject_keys=subject_keys,
             subject_map=resolved.subject_map,
             blocked_gate_required=any_block_gates,
@@ -459,15 +500,18 @@ class CompileReviewContractMixin:
         )
         self._validate_review_current_artifact_alignment(
             (*accept_branches, *reject_branches),
+            review_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             owner_label=owner_label,
         )
         self._validate_review_optional_field_alignment(
             (*accept_branches, *reject_branches),
+            field_binding_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             field_bindings=field_bindings,
+            field_binding_spans=field_binding_spans,
             owner_label=owner_label,
         )
 
@@ -702,6 +746,7 @@ class CompileReviewContractMixin:
             ),
             require_trigger_reason="trigger_reason" in carried_fields,
         )
+        field_binding_spans = self._review_field_binding_source_spans(resolved.fields)
 
         for case in resolved.cases:
             contract_spec = self._resolve_review_contract_spec(
@@ -825,12 +870,14 @@ class CompileReviewContractMixin:
             accept_branches = self._validate_review_outcome_section(
                 case.on_accept,
                 unit=unit,
+                field_binding_unit=unit,
                 owner_label=f"{owner_label}.cases.{case.key}",
                 agent_contract=agent_contract,
                 comment_output_decl=comment_output_decl,
                 comment_output_unit=comment_output_unit,
                 next_owner_field_path=field_bindings["next_owner"],
                 field_bindings=field_bindings,
+                field_binding_spans=field_binding_spans,
                 subject_keys=subject_keys,
                 subject_map=None,
                 blocked_gate_required=any_block_gates,
@@ -839,12 +886,14 @@ class CompileReviewContractMixin:
             reject_branches = self._validate_review_outcome_section(
                 case.on_reject,
                 unit=unit,
+                field_binding_unit=unit,
                 owner_label=f"{owner_label}.cases.{case.key}",
                 agent_contract=agent_contract,
                 comment_output_decl=comment_output_decl,
                 comment_output_unit=comment_output_unit,
                 next_owner_field_path=field_bindings["next_owner"],
                 field_bindings=field_bindings,
+                field_binding_spans=field_binding_spans,
                 subject_keys=subject_keys,
                 subject_map=None,
                 blocked_gate_required=any_block_gates,
@@ -855,15 +904,18 @@ class CompileReviewContractMixin:
 
         self._validate_review_current_artifact_alignment(
             (*all_accept_branches, *all_reject_branches),
+            review_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             owner_label=owner_label,
         )
         self._validate_review_optional_field_alignment(
             (*all_accept_branches, *all_reject_branches),
+            field_binding_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             field_bindings=field_bindings,
+            field_binding_spans=field_binding_spans,
             owner_label=owner_label,
         )
 

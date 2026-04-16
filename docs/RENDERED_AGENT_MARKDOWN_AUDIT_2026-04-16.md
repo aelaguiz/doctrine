@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Rendered Agent Markdown Formatting - Architecture Plan"
 date: 2026-04-16
-status: active
+status: complete
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []
@@ -35,6 +35,25 @@ related:
 - Approach: treat this as a Doctrine compile, display, lowering, and render-presentation refactor inside the canonical owner paths, then prove it on the shipped example corpus.
 - Plan: lock the exact owner paths and compaction rules, then implement in phases starting with split review and final-output deduplication, wrapper lowering, artifact-structure compaction, and broader humanizing of guard, mode, and route text.
 - Non-negotiables: no new Doctrine syntax, no payload-shape changes, no review or route semantic changes, no `../psflows` or `../rally` cleanup in this plan, and no content loss from the original audit.
+
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-16
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--

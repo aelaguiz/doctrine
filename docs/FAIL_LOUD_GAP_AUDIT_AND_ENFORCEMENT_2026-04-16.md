@@ -235,35 +235,75 @@ behavior changes.
     should land in the real owner phase instead of a post-render patch.
   - `doctrine/_compiler/validate/__init__.py` - semantic validation boundary.
     Route, review, output, readable, contract, schema-helper, and law-path
-    checks all funnel through this surface today.
+    checks all funnel through this surface today. The validate package is now
+    composed from focused mixins, including `validate/agents.py`,
+    `validate/contracts.py`, `validate/addressable_children.py`,
+    `validate/law_paths.py`, `validate/schema_helpers.py`,
+    `validate/reviews.py` (review composition), and
+    `validate/route_semantics.py` (route composition over the existing
+    context/reads modules).
   - `doctrine/_compiler/resolve/outputs.py`,
-    `doctrine/_compiler/compile/final_output.py`, and
-    `doctrine/_compiler/output_schema_validation.py` - canonical owner path for
-    `final_output`, output-shape/schema lowering, and structured-output
-    validation. Existing `E211` through `E218` are the shipped fail-loud
-    pattern here.
+    `doctrine/_compiler/compile/final_output.py`,
+    `doctrine/_compiler/output_schema_validation.py`, and
+    `doctrine/_compiler/validate/addressable_children.py` - canonical owner
+    path for `final_output`, output-shape/schema lowering, structured-output
+    validation, and the addressable-child structural shape that backs
+    structured final-output paths. Existing `E211` through `E218` are the
+    shipped fail-loud pattern here.
   - `doctrine/_compiler/validate/routes.py`,
+    `doctrine/_compiler/validate/route_semantics.py`,
     `doctrine/_compiler/validate/route_semantics_context.py`,
-    `doctrine/_compiler/validate/route_semantics_reads.py`, and
+    `doctrine/_compiler/validate/route_semantics_reads.py`,
+    `doctrine/_compiler/validate/law_paths.py`, and
     `doctrine/_compiler/resolve/law_paths.py` - canonical owner path for
     workflow-law totality, mode bindings, `match`, `route_from`,
     route/currentness carriers, and route-semantics liveness.
   - `doctrine/_compiler/resolve/reviews.py`,
+    `doctrine/_compiler/resolve/section_bodies.py`,
+    `doctrine/_compiler/validate/reviews.py`,
     `doctrine/_compiler/validate/review_preflight.py`,
+    `doctrine/_compiler/validate/review_semantics.py`,
     `doctrine/_compiler/validate/review_agreement.py`,
     `doctrine/_compiler/validate/review_gate_observation.py`, and
-    `doctrine/_compiler/validate/review_branches.py` - canonical owner path for
-    review declaration shape, gate refs, semantic bindings, carried fields, and
-    currentness alignment.
-  - `doctrine/_compiler/validate/outputs.py` and
-    `doctrine/_compiler/validate/readables.py` - canonical owner path for
-    output and readable guard validation. Current code walks refs and nested
-    expressions, but it does not close helper names, helper arity, or literal
-    guard heads.
-  - `doctrine/_compiler/diagnostics.py` and `docs/COMPILER_ERRORS.md` - stable
-    diagnostic formatting plus the public error-code catalog. New fail-loud
-    rules must land with aligned codes and docs, not raw string-only
-    exceptions.
+    `doctrine/_compiler/validate/review_branches.py` - canonical owner path
+    for review declaration shape, gate refs, semantic bindings, carried
+    fields, currentness alignment, and section-body interpolation that
+    backs review carriers.
+  - `doctrine/_compiler/compile/agent.py`,
+    `doctrine/_compiler/validate/agents.py`,
+    `doctrine/_compiler/resolve/agent_slots.py`, and
+    `doctrine/_compiler/constants.py` - canonical owner path for agent
+    declaration shape, reserved typed fields, and authored slot semantics.
+  - `doctrine/_compiler/validate/outputs.py`,
+    `doctrine/_compiler/validate/readables.py`,
+    `doctrine/_compiler/validate/contracts.py`, and
+    `doctrine/_compiler/validate/schema_helpers.py` - canonical owner path
+    for output, readable, contract, and schema-helper validation. Current
+    code walks refs and nested expressions, but it does not close helper
+    names, helper arity, or literal guard heads.
+  - `doctrine/_compiler/resolve/analysis.py` -
+    analysis-inheritance resolution with cycle detection, relevant to config
+    declaration closure across analysis chains.
+  - `doctrine/_compiler/resolved_types.py` and
+    `doctrine/_compiler/types.py` - resolved compiler contract types
+    (including `CompileError`, `IndexedUnit`, and `ResolvedX` shapes) and
+    compiled body data contracts. New fail-loud rules should fail at
+    resolved-type construction or earlier, not at render time.
+  - `doctrine/_compiler/diagnostics.py` plus the per-domain diagnostic
+    modules `doctrine/_compiler/authored_diagnostics.py`,
+    `doctrine/_compiler/final_output_diagnostics.py`,
+    `doctrine/_compiler/output_diagnostics.py`,
+    `doctrine/_compiler/output_schema_diagnostics.py`,
+    `doctrine/_compiler/package_diagnostics.py`,
+    `doctrine/_compiler/readable_diagnostics.py`,
+    `doctrine/_compiler/reference_diagnostics.py`,
+    `doctrine/_compiler/review_diagnostics.py`, and
+    `doctrine/_compiler/workflow_diagnostics.py`, plus
+    `docs/COMPILER_ERRORS.md` - core diagnostic formatting lives in
+    `diagnostics.py`; domain-scoped error emitters now live in the matching
+    `*_diagnostics.py` module. New fail-loud rules must land in the
+    matching domain module with aligned codes and docs, not as raw
+    string-only exceptions.
   - `doctrine/verify_corpus.py` - manifest-backed proof runner for shipped
     examples and invalid surfaces.
 - Canonical path / owner to reuse:
@@ -275,8 +315,10 @@ behavior changes.
   - `final_output` and output-schema contradictions should fail in the
     existing `resolve/outputs -> compile/final_output ->
     output_schema_validation` pipeline.
-  - New user-facing errors should use `doctrine/_compiler/diagnostics.py` and
-    be documented in `docs/COMPILER_ERRORS.md`.
+  - New user-facing errors should be emitted through the matching per-domain
+    `doctrine/_compiler/<domain>_diagnostics.py` module, which delegates to
+    `doctrine/_compiler/diagnostics.py` for formatting, and be documented in
+    `docs/COMPILER_ERRORS.md`.
 - Adjacent surfaces tied to the same contract family:
   - `docs/FAIL_LOUD_GAPS.md` - must track the audited truth after
     classification.
@@ -301,9 +343,16 @@ behavior changes.
     `examples/91_handoff_routing_route_output_binding/cases.toml`,
     `examples/93_handoff_routing_route_from_final_output/cases.toml`,
     `examples/110_final_output_inherited_output/cases.toml`,
-    `examples/111_inherited_output_route_semantics/cases.toml`, and
-    `examples/114_workflow_root_readable_blocks/cases.toml` - existing
-    manifest-backed proof surfaces closest to the audited gap families.
+    `examples/111_inherited_output_route_semantics/cases.toml`,
+    `examples/112_output_inheritance_fail_loud/cases.toml`,
+    `examples/114_workflow_root_readable_blocks/cases.toml`,
+    `examples/119_route_only_final_output_contract/cases.toml`,
+    `examples/120_route_field_final_output_contract/cases.toml`, and
+    `examples/121_nullable_route_field_final_output_contract/cases.toml` -
+    existing manifest-backed proof surfaces closest to the audited gap
+    families. The shipped corpus now covers `examples/01_hello_world`
+    through `examples/121_nullable_route_field_final_output_contract`, so
+    Phase 1 must scan beyond this list before locking the family ledger.
 - Compatibility posture (separate from `fallback_policy`):
   - Preserve existing contract by default, but treat each newly rejected
     previously accepted authoring pattern as a possible public language change
@@ -390,14 +439,24 @@ ownership is spread across them.
 - `doctrine/_compiler/context.py` and `session.py` are the real compile entry.
   They fan work into resolve, validate, compile, display, and flow mixins.
 - `doctrine/_compiler/resolve/**` merges inheritance, declaration refs, and
-  declaration-level config such as reviews and outputs.
+  declaration-level config such as reviews, outputs, analysis chains, and
+  workflow section bodies. Recent splits include `resolve/analysis.py` and
+  `resolve/section_bodies.py`.
 - `doctrine/_compiler/validate/**` owns most typed semantic checks for
-  workflows, route/currentness, guards, reviews, and carriers.
+  workflows, route/currentness, guards, reviews, agents, contracts,
+  addressable children, law paths, and schema helpers. The package is now a
+  composition of focused mixins (for example `validate/reviews.py` and
+  `validate/route_semantics.py`) over the older sibling modules.
 - `doctrine/_compiler/compile/**` shapes rendered sections and final-output
   contracts after resolution and validation.
-- `doctrine/_compiler/diagnostics.py`, `docs/COMPILER_ERRORS.md`,
-  `tests/**`, and `examples/**/cases.toml` are the public error and proof
-  surface that must stay aligned with code.
+- `doctrine/_compiler/resolved_types.py` and `doctrine/_compiler/types.py`
+  hold resolved compiler contract types and compiled body data contracts.
+- `doctrine/_compiler/diagnostics.py` plus per-domain
+  `doctrine/_compiler/<domain>_diagnostics.py` modules
+  (authored, final_output, output, output_schema, package, readable,
+  reference, review, workflow), `docs/COMPILER_ERRORS.md`, `tests/**`, and
+  `examples/**/cases.toml` are the public error and proof surface that must
+  stay aligned with code.
 
 ## 4.2 Control paths (runtime)
 
@@ -464,6 +523,12 @@ Doctrine already has a strong fail-loud spine, but the coverage is uneven.
     the `E331` through `E384` and `E469` through `E500` ranges
   - parse diagnostics already prove line-accurate later-conflict behavior in
     `tests/test_parse_diagnostics.py`
+  - per-domain diagnostic emitters (`authored_diagnostics.py`,
+    `final_output_diagnostics.py`, `output_diagnostics.py`,
+    `output_schema_diagnostics.py`, `package_diagnostics.py`,
+    `readable_diagnostics.py`, `reference_diagnostics.py`,
+    `review_diagnostics.py`, `workflow_diagnostics.py`) now isolate
+    error-code ownership per domain over a shared `diagnostics.py` backend
 - Weak today:
   - open agent slots plus `_RESERVED_AGENT_FIELD_KEYS` with no close-miss check
     mean reserved-key typos can compile as ordinary authored slots
@@ -609,36 +674,49 @@ No UI surface is in scope.
 
 | Area | File | Symbol / Call site | Current behavior | Required change | Why | New API / contract | Tests impacted |
 | ---- | ---- | ------------------ | ---------------- | --------------- | --- | ------------------ | -------------- |
-| Reserved agent fields | `doctrine/grammars/doctrine.lark`, `doctrine/_compiler/constants.py`, `doctrine/_compiler/compile/agent.py` | `agent_slot_field`, `_RESERVED_AGENT_FIELD_KEYS`, `_compile_agent_decl()` | Unknown slot keys compile as authored slots even when they are close typos of reserved fields | Add near-miss reserved-field rejection on the existing agent field scan while keeping valid custom slots legal | Grammar is intentionally open; the fail-loud fix belongs on the existing agent field boundary, not in rendering | Close-miss reserved keys become compile errors; legitimate custom slot keys stay valid | New unit coverage near agent compile boundary; likely new invalid manifest-backed example |
-| Review singleton config | `doctrine/_compiler/resolve/reviews.py` | `_resolve_review_body()` | `subject`, `subject_map`, `contract`, `comment_output`, `fields`, `selector`, and `cases` silently overwrite earlier values | Track singleton config keys explicitly and reject duplicates in the resolve layer | These conflicts depend on merged review bodies and inheritance, so resolve is the real owner path | Review singleton config is keyed and fail-loud like other compiler-owned review entries | `tests/test_review_imported_outputs.py`; targeted review manifests such as `examples/45_*` and `examples/57_*` |
+| Reserved agent fields | `doctrine/grammars/doctrine.lark`, `doctrine/_compiler/constants.py`, `doctrine/_compiler/compile/agent.py`, `doctrine/_compiler/validate/agents.py`, `doctrine/_compiler/resolve/agent_slots.py` | `agent_slot_field`, `_RESERVED_AGENT_FIELD_KEYS`, `_compile_agent_decl()`, agent-slot validate mixin | Unknown slot keys compile as authored slots even when they are close typos of reserved fields | Add near-miss reserved-field rejection on the existing agent field scan while keeping valid custom slots legal | Grammar is intentionally open; the fail-loud fix belongs on the existing agent field boundary, not in rendering | Close-miss reserved keys become compile errors; legitimate custom slot keys stay valid | New unit coverage near agent compile boundary; likely new invalid manifest-backed example |
+| Review singleton config | `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/resolve/section_bodies.py`, `doctrine/_compiler/validate/reviews.py`, `doctrine/_compiler/validate/review_semantics.py` | `_resolve_review_body()`, review composition mixin, semantic-field/contract lookup | `subject`, `subject_map`, `contract`, `comment_output`, `fields`, `selector`, and `cases` silently overwrite earlier values | Track singleton config keys explicitly and reject duplicates in the resolve layer | These conflicts depend on merged review bodies and inheritance, so resolve is the real owner path | Review singleton config is keyed and fail-loud like other compiler-owned review entries | `tests/test_review_imported_outputs.py`; targeted review manifests such as `examples/45_*` and `examples/57_*` |
 | Duplicate law mode bindings | `doctrine/_compiler/validate/routes.py` | `_validate_law_stmt_tree()`, `_validate_handoff_routing_law_stmt_tree()` | `local_mode_bindings[item.name] = item` overwrites earlier mode meaning | Reject duplicate mode names in one active law scope | `match`, `when`, and `route_from` depend on one stable mode meaning | One mode name per scope; duplicate mode binding is a compile error | `tests/test_route_output_semantics.py`; route and workflow manifests such as `examples/91_*`, `examples/93_*`, and `examples/111_*` |
-| Mode binding type closure | `doctrine/_compiler/validate/routes.py`, `doctrine/_compiler/resolve/law_paths.py` | `_validate_mode_stmt()`, enum and law-path resolution helpers | Some non-constant mode bindings still compile without proving enum-typed meaning | Tighten mode binding validation on the existing law validation path | Route and match logic should not rely on mode sources the compiler has not proved typed | Mode bindings must resolve to the declared enum member or an enum-typed scalar source | `tests/test_route_output_semantics.py`; targeted workflow and routing manifests |
+| Mode binding type closure | `doctrine/_compiler/validate/routes.py`, `doctrine/_compiler/validate/route_semantics.py`, `doctrine/_compiler/validate/law_paths.py`, `doctrine/_compiler/resolve/law_paths.py` | `_validate_mode_stmt()`, enum and law-path resolution helpers, route-semantics composition mixin | Some non-constant mode bindings still compile without proving enum-typed meaning | Tighten mode binding validation on the existing law validation path | Route and match logic should not rely on mode sources the compiler has not proved typed | Mode bindings must resolve to the declared enum member or an enum-typed scalar source | `tests/test_route_output_semantics.py`; targeted workflow and routing manifests |
 | Law branch totality | `doctrine/_compiler/validate/routes.py`, `doctrine/_compiler/validate/route_semantics_context.py` | `_collect_law_leaf_branches()`, route semantics context builders | `when` bodies expand, but the implicit false fallthrough path is dropped | Preserve false-branch fallthrough when collecting reachable law states | Totality, route liveness, and currentness claims are wrong if reachable false branches vanish | Route/currentness totality is computed from all reachable branches, not only true branches | `tests/test_route_output_semantics.py`; manifests close to routed outputs and route-only flows |
 | Closed selector validation | `doctrine/_compiler/validate/routes.py`, `doctrine/_compiler/resolve/law_paths.py` | `_validate_match_stmt()`, `_validate_route_from_stmt()`, selector resolution helpers | Full arm validation is uneven when selectors are fixed, non-mode refs, or `else` is present | Validate selector kind and explicit arm legality before branch narrowing | Authors think they wrote typed branching; compiler must prove that claim before continuing | `match` and `route_from` become closed typed selector surfaces | `tests/test_route_output_semantics.py`; `examples/91_*`, `examples/93_*`, `examples/111_*` |
-| Review helper refs and field meaning | `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/validate/review_preflight.py`, `doctrine/_compiler/validate/review_gate_observation.py`, `doctrine/_compiler/validate/review_agreement.py` | review helper resolution, gate observation, semantic-agreement checks | Gate names, field names, and some semantic bindings are checked unevenly; some wrong refs or wrong meanings still compile | Close helper refs and semantic binding meaning on existing review validation paths | Review semantics are compiler-owned truth, so name and meaning must both be proven | Review helper refs, semantic bindings, and carried field names must resolve and structurally match their declared meaning | `tests/test_review_imported_outputs.py`; targeted review manifests such as `examples/45_*`, `examples/53_*`, and `examples/57_*` |
-| Currentness and invalidation carriers | `doctrine/_compiler/validate/routes.py`, `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/validate/review_agreement.py` | current-artifact and invalidation carrier checks | Existing checks focus on root, emission, and trust-surface presence more than payload meaning | Extend carrier validation to prove the bound field structurally carries the compiler-owned value | Existence-only carrier checks let the wrong field become trusted semantic truth | Carriers must prove meaning, not just path existence | `tests/test_route_output_semantics.py`, `tests/test_review_imported_outputs.py`; routed review and output manifests |
+| Review helper refs and field meaning | `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/validate/reviews.py`, `doctrine/_compiler/validate/review_preflight.py`, `doctrine/_compiler/validate/review_semantics.py`, `doctrine/_compiler/validate/review_gate_observation.py`, `doctrine/_compiler/validate/review_agreement.py` | review helper resolution, gate observation, semantic-agreement checks, review-semantics field/contract lookup | Gate names, field names, and some semantic bindings are checked unevenly; some wrong refs or wrong meanings still compile | Close helper refs and semantic binding meaning on existing review validation paths | Review semantics are compiler-owned truth, so name and meaning must both be proven | Review helper refs, semantic bindings, and carried field names must resolve and structurally match their declared meaning | `tests/test_review_imported_outputs.py`; targeted review manifests such as `examples/45_*`, `examples/53_*`, and `examples/57_*` |
+| Currentness and invalidation carriers | `doctrine/_compiler/validate/routes.py`, `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/resolve/section_bodies.py`, `doctrine/_compiler/validate/review_agreement.py`, `doctrine/_compiler/validate/route_semantics_reads.py` | current-artifact and invalidation carrier checks; section-body interpolation that backs carriers | Existing checks focus on root, emission, and trust-surface presence more than payload meaning | Extend carrier validation to prove the bound field structurally carries the compiler-owned value | Existence-only carrier checks let the wrong field become trusted semantic truth | Carriers must prove meaning, not just path existence | `tests/test_route_output_semantics.py`, `tests/test_review_imported_outputs.py`; routed review and output manifests |
 | Guard helper closure | `doctrine/_compiler/validate/outputs.py`, `doctrine/_compiler/validate/readables.py`, `doctrine/_compiler/validate/review_gate_observation.py` | `_validate_output_guard_expr()`, `_validate_readable_guard_expr()`, review helper expression walkers | Literal guards, unknown helper names, and wrong helper arity can still compile | Add closed helper whitelist, arity checks, and literal rejection on existing guard validation surfaces | Guard text is rendered as if it has compiler meaning; the compiler must reject cases it cannot interpret | Guards become a closed boolean expression surface | New output/readable/review guard unit tests; targeted manifests such as `examples/64_*` and `examples/114_*` |
-| Config declaration closure | `doctrine/_compiler/validate/display.py`, `doctrine/_compiler/compile/outputs.py` | `_config_keys_from_decl()`, `_compile_output_config_rows()` | Unknown config sections are ignored, and one key can still get conflicting required and optional meaning | Close config declaration shape and duplicate cross-section keys on the existing config validation path | Misspelled compiler-owned config sections and split key meaning currently disappear into plausible output | Config declarations accept only shipped sections and one meaning per key | Unit tests around config declarations and output target rendering; likely targeted manifest addition |
-| Typed config value closure | `doctrine/_compiler/compile/outputs.py`, `doctrine/_compiler/validate/display.py` | config value rendering and display helpers | Some single-artifact output target values are humanized for display instead of type-checked as authored literals | Add type-appropriate config value checks on the existing target config path | A missing quote or wrong ref can silently change a file path or similar config surface | Output target config values must satisfy the declared config contract, not just render cleanly | Targeted output-target unit tests and manifest-backed examples |
+| Config declaration closure | `doctrine/_compiler/validate/display.py`, `doctrine/_compiler/validate/contracts.py`, `doctrine/_compiler/compile/outputs.py`, `doctrine/_compiler/resolve/analysis.py` | `_config_keys_from_decl()`, `_compile_output_config_rows()`, contracts validate mixin, analysis-inheritance resolve | Unknown config sections are ignored, and one key can still get conflicting required and optional meaning | Close config declaration shape and duplicate cross-section keys on the existing config validation path | Misspelled compiler-owned config sections and split key meaning currently disappear into plausible output | Config declarations accept only shipped sections and one meaning per key | Unit tests around config declarations and output target rendering; likely targeted manifest addition |
+| Typed config value closure | `doctrine/_compiler/compile/outputs.py`, `doctrine/_compiler/validate/display.py`, `doctrine/_compiler/validate/contracts.py` | config value rendering and display helpers; contracts validate mixin | Some single-artifact output target values are humanized for display instead of type-checked as authored literals | Add type-appropriate config value checks on the existing target config path | A missing quote or wrong ref can silently change a file path or similar config surface | Output target config values must satisfy the declared config contract, not just render cleanly | Targeted output-target unit tests and manifest-backed examples |
 | Special output section closure | `doctrine/_compiler/compile/outputs.py`, `doctrine/_compiler/validate/outputs.py` | special output section compilers for `must_include`, `current_truth`, `support_files`, `notes`, `standalone_read`, and file sets | Wrong section shapes can fall back to generic prose or duplicate rendered rows | Add closed-shape and uniqueness checks on compiler-owned output support sections | Compiler-owned contract sections should not silently lose meaning when misshaped | Special output sections are either well-shaped compiler surfaces or compile errors | `tests/test_output_rendering.py`, `tests/test_output_inheritance.py`, `tests/test_output_target_delivery_skill.py`; targeted manifest additions |
 | Guarded support-surface parity | `doctrine/_compiler/validate/outputs.py`, `doctrine/_compiler/compile/outputs.py` | `_validate_standalone_read_guard_contract()`, trust-surface rendering | Only `standalone_read` gets the guarded-detail parity check; related support surfaces can still leak guarded detail | Extend the same parity rule across `trust_surface` and other compiler-owned support surfaces | Guard leaks confuse downstream readers even when the main output surface is guarded correctly | Support surfaces follow one guard-consistency contract | `tests/test_output_rendering.py`, `tests/test_output_inheritance.py`, `tests/test_final_output.py` |
-| Structured `final_output` contract | `doctrine/_compiler/resolve/outputs.py`, `doctrine/_compiler/compile/final_output.py`, `doctrine/_compiler/output_schema_validation.py` | `_resolve_final_output_decl()`, `_resolve_final_output_json_shape_summary()`, final-output compilation and lowered-schema validation | Existing `E211` through `E218` cover many contradictions, but remaining JsonObject inference and mixed prose/schema cases still need closure | Tighten structured final-output classification only on the existing output-shape and schema pipeline | This surface already has the right owner path and stable error family; do not split it | Structured `final_output` is either one valid prose contract or one valid JSON contract, never both | `tests/test_final_output.py`, `tests/test_output_schema_validation.py`; manifests such as `examples/55_*`, `examples/67_*`, and `examples/110_*` |
-| Output-schema typing closure | `doctrine/_compiler/resolve/output_schemas.py`, `doctrine/_compiler/output_schema_validation.py` | output-schema lowering and validation helpers | Type-incompatible keywords and literal shapes can still lower into misleading or impossible schemas | Add closed type/keyword compatibility checks on the existing output-schema lowering and validation path | Schema-owned final output should not claim enforcement the lowered schema does not actually provide | Output schemas reject incompatible keyword, enum, and const combinations before lowering completes | `tests/test_output_schema_validation.py`, `tests/test_final_output.py`; manifests tied to schema-backed final output |
+| Structured `final_output` contract | `doctrine/_compiler/resolve/outputs.py`, `doctrine/_compiler/compile/final_output.py`, `doctrine/_compiler/output_schema_validation.py`, `doctrine/_compiler/validate/addressable_children.py`, `doctrine/_compiler/final_output_diagnostics.py` | `_resolve_final_output_decl()`, `_resolve_final_output_json_shape_summary()`, final-output compilation, lowered-schema validation, addressable-child structural shape | Existing `E211` through `E218` cover many contradictions, but remaining JsonObject inference and mixed prose/schema cases still need closure | Tighten structured final-output classification only on the existing output-shape and schema pipeline | This surface already has the right owner path and stable error family; do not split it | Structured `final_output` is either one valid prose contract or one valid JSON contract, never both | `tests/test_final_output.py`, `tests/test_output_schema_validation.py`; manifests such as `examples/55_*`, `examples/67_*`, `examples/110_*`, `examples/119_*`, `examples/120_*`, and `examples/121_*` |
+| Output-schema typing closure | `doctrine/_compiler/resolve/output_schemas.py`, `doctrine/_compiler/output_schema_validation.py`, `doctrine/_compiler/validate/schema_helpers.py`, `doctrine/_compiler/output_schema_diagnostics.py` | output-schema lowering and validation helpers; schema-helper validate mixin | Type-incompatible keywords and literal shapes can still lower into misleading or impossible schemas | Add closed type/keyword compatibility checks on the existing output-schema lowering and validation path | Schema-owned final output should not claim enforcement the lowered schema does not actually provide | Output schemas reject incompatible keyword, enum, and const combinations before lowering completes | `tests/test_output_schema_validation.py`, `tests/test_final_output.py`; manifests tied to schema-backed final output |
 | Duplicate compiler-owned output support entries | `doctrine/_compiler/validate/outputs.py`, `doctrine/_compiler/compile/outputs.py` | `trust_surface` items, output support sections, file-target path surfaces | Repeated trusted paths or repeated compiler-owned support entries can still render plausible repeated truth | Add duplicate-entry checks on compiler-owned output support surfaces | Repeated trusted or delivered facts look intentional to users and downstream tooling | Compiler-owned support surfaces should be unique unless the language explicitly models repetition | `tests/test_output_rendering.py`, `tests/test_output_target_delivery_skill.py`; targeted manifest additions if public behavior changes |
-| Law subsection identity | `doctrine/_compiler/resolve/workflows.py` | `_resolve_law_body()` and inherited law section accounting | Parent-accounting duplicates already fail, but duplicate new child-only law subsection keys do not yet have one explicit uniqueness rule | Add one explicit child-law subsection uniqueness rule on the workflow law resolve path | Law subsection keys are stable patch identities and should not have two bodies with one key | New law subsection keys stay unique even outside inherited parent accounting | Workflow-law unit tests plus targeted manifest additions |
+| Law subsection identity | `doctrine/_compiler/resolve/workflows.py`, `doctrine/_compiler/workflow_diagnostics.py` | `_resolve_law_body()` and inherited law section accounting | Parent-accounting duplicates already fail, but duplicate new child-only law subsection keys do not yet have one explicit uniqueness rule | Add one explicit child-law subsection uniqueness rule on the workflow law resolve path | Law subsection keys are stable patch identities and should not have two bodies with one key | New law subsection keys stay unique even outside inherited parent accounting | Workflow-law unit tests plus targeted manifest additions; existing fail-loud surface in `examples/112_output_inheritance_fail_loud/cases.toml` |
 | Public docs and proof sync | `docs/FAIL_LOUD_GAPS.md`, `docs/COMPILER_ERRORS.md`, `docs/VERSIONING.md`, `CHANGELOG.md`, `tests/**`, `examples/**/cases.toml` | public docs, unit tests, manifest-backed corpus | Docs and proof can drift from the compiler if they are treated as follow-up cleanup | Update docs and proof in the same change family as the confirmed compiler rule | The user explicitly wants tests, docs, and examples treated as required shipped work | Each confirmed fail-loud family ships with aligned docs, tests, and examples | `make verify-examples`, `make verify-diagnostics`, targeted unit tests, and targeted manifest verification |
 
 ## 6.2 Migration notes
 
 - Canonical owner path / shared code path:
-  - Agent reserved-key typo checks stay on the agent field scan.
-  - Review singleton config stays in review resolution.
+  - Agent reserved-key typo checks stay on the agent field scan
+    (`compile/agent.py` plus `validate/agents.py`).
+  - Review singleton config stays in review resolution
+    (`resolve/reviews.py` plus `resolve/section_bodies.py` and
+    `validate/reviews.py`).
   - Law totality and selector closure stay in route validation and branch
-    collection.
-  - Review helper meaning stays in review validation.
+    collection (`validate/routes.py`, `validate/route_semantics.py`,
+    `validate/law_paths.py`).
+  - Review helper meaning stays in review validation
+    (`validate/review_semantics.py` plus the existing review preflight,
+    agreement, and gate-observation modules).
   - Guard closure and support-surface parity stay in output and readable
-    validation.
-  - Structured `final_output` stays on the output-shape and schema pipeline.
+    validation (`validate/outputs.py`, `validate/readables.py`,
+    `validate/schema_helpers.py`).
+  - Structured `final_output` stays on the output-shape and schema pipeline
+    (`resolve/outputs.py`, `compile/final_output.py`,
+    `output_schema_validation.py`, plus `validate/addressable_children.py`
+    for structural addressing).
+  - New error emitters land in the matching per-domain
+    `<domain>_diagnostics.py` module that delegates to `diagnostics.py`,
+    not as raw exceptions.
 - Deprecated APIs (if any):
   - None approved yet. Deep-dive pass 1 does not approve any new public
     deprecation surface.
@@ -681,6 +759,9 @@ No UI surface is in scope.
   - `tests/test_route_output_semantics.py`
   - `tests/test_review_imported_outputs.py`
   - `tests/test_verify_corpus.py`
+  - `tests/test_compile_diagnostics.py` and
+    `tests/test_diagnostics_formatting.py` for per-domain diagnostic
+    formatting and code stability
   - targeted `uv run --locked python -m doctrine.verify_corpus --manifest ...`
   - `make verify-diagnostics` when diagnostics move
   - `make verify-examples` for the full shipped corpus when implementation
@@ -690,14 +771,15 @@ No UI surface is in scope.
 
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude/blocker question) |
 | ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
-| Duplicate compiler-owned singleton surfaces | `resolve/reviews.py`, `validate/routes.py`, `validate/outputs.py` | One duplicate-accounting rule for singleton compiler-owned entries | Prevent last-write-wins in one subsystem and fail-loud in another | include |
-| Closed helper vocabulary | `validate/outputs.py`, `validate/readables.py`, `validate/review_gate_observation.py` | Helper-name, arity, and argument-meaning closure | Prevent guard and review-condition drift from typos and unsupported helpers | include |
-| Closed mode sources | `validate/routes.py`, `resolve/law_paths.py` | Duplicate-mode and enum-typed mode-source enforcement | Prevent branch logic from hanging on unproved mode meaning | include |
-| Closed config surfaces | `validate/display.py`, `compile/outputs.py` | Unknown-section rejection, cross-section duplicate-key rejection, and typed config values | Prevent compiler-owned config shape from silently degrading into display-only prose | include |
-| Branch-totality modeling | `validate/routes.py`, `validate/route_semantics_context.py` | Preserve all reachable branches before proving route/currentness totality | Prevent false certainty when `when`, `match`, or `route_from` narrows too early | include |
-| Closed compiler-owned output section shapes | `compile/outputs.py`, `validate/outputs.py` | Shape and uniqueness checks for special output support sections | Prevent compiler-owned contract sections from degrading into generic rendered prose | include |
-| Structured-output consistency | `resolve/outputs.py`, `compile/final_output.py`, `output_schema_validation.py`, `resolve/output_schemas.py` | One structured-output classification and schema-typing path | Prevent mixed prose and JSON contracts and prevent lowered schemas from claiming impossible or ignored constraints | include |
-| Law subsection identity | `resolve/workflows.py` | One uniqueness rule for new child-only law subsection keys | Prevent stable patch identities from splitting into duplicate section bodies | include |
+| Duplicate compiler-owned singleton surfaces | `resolve/reviews.py`, `resolve/section_bodies.py`, `validate/reviews.py`, `validate/routes.py`, `validate/outputs.py` | One duplicate-accounting rule for singleton compiler-owned entries | Prevent last-write-wins in one subsystem and fail-loud in another | include |
+| Closed helper vocabulary | `validate/outputs.py`, `validate/readables.py`, `validate/schema_helpers.py`, `validate/review_gate_observation.py`, `validate/review_semantics.py` | Helper-name, arity, and argument-meaning closure | Prevent guard and review-condition drift from typos and unsupported helpers | include |
+| Closed mode sources | `validate/routes.py`, `validate/route_semantics.py`, `validate/law_paths.py`, `resolve/law_paths.py` | Duplicate-mode and enum-typed mode-source enforcement | Prevent branch logic from hanging on unproved mode meaning | include |
+| Closed config surfaces | `validate/display.py`, `validate/contracts.py`, `compile/outputs.py`, `resolve/analysis.py` | Unknown-section rejection, cross-section duplicate-key rejection, and typed config values | Prevent compiler-owned config shape from silently degrading into display-only prose | include |
+| Branch-totality modeling | `validate/routes.py`, `validate/route_semantics.py`, `validate/route_semantics_context.py` | Preserve all reachable branches before proving route/currentness totality | Prevent false certainty when `when`, `match`, or `route_from` narrows too early | include |
+| Closed compiler-owned output section shapes | `compile/outputs.py`, `validate/outputs.py`, `validate/addressable_children.py` | Shape and uniqueness checks for special output support sections | Prevent compiler-owned contract sections from degrading into generic rendered prose | include |
+| Structured-output consistency | `resolve/outputs.py`, `compile/final_output.py`, `output_schema_validation.py`, `resolve/output_schemas.py`, `validate/addressable_children.py`, `validate/schema_helpers.py` | One structured-output classification and schema-typing path | Prevent mixed prose and JSON contracts and prevent lowered schemas from claiming impossible or ignored constraints | include |
+| Law subsection identity | `resolve/workflows.py`, `workflow_diagnostics.py` | One uniqueness rule for new child-only law subsection keys | Prevent stable patch identities from splitting into duplicate section bodies | include |
+| Per-domain diagnostic emitter discipline | `diagnostics.py`, `authored_diagnostics.py`, `final_output_diagnostics.py`, `output_diagnostics.py`, `output_schema_diagnostics.py`, `package_diagnostics.py`, `readable_diagnostics.py`, `reference_diagnostics.py`, `review_diagnostics.py`, `workflow_diagnostics.py` | Emit new fail-loud errors from the matching per-domain diagnostic module, delegating formatting to the shared `diagnostics.py` backend | Prevent new error codes from landing as raw string exceptions or bypassing the domain-owned emitter split | include |
 | Public error and proof sync | `docs/COMPILER_ERRORS.md`, `tests/**`, `examples/**`, `docs/VERSIONING.md`, `CHANGELOG.md` | Ship code, docs, tests, and examples together | Prevent compiler truth from drifting away from public docs and corpus proof | include |
 <!-- arch_skill:block:call_site_audit:end -->
 
@@ -744,14 +826,36 @@ No UI surface is in scope.
 * Checklist (must all be done):
   - Audit every family currently named in `docs/FAIL_LOUD_GAPS.md` and every
     newly proven family surfaced during local deep-dive probes.
+  - Scan the full shipped corpus (`examples/01_hello_world` through
+    `examples/121_nullable_route_field_final_output_contract`), with
+    explicit coverage of the post-114 examples
+    (`112_output_inheritance_fail_loud`, `115_runtime_agent_packages`,
+    `116_document_block_refs`, `116_first_class_named_tables`,
+    `117_io_omitted_wrapper_titles`,
+    `118_output_target_delivery_skill_binding`,
+    `119_route_only_final_output_contract`,
+    `120_route_field_final_output_contract`, and
+    `121_nullable_route_field_final_output_contract`) so any new fail-loud
+    surface they prove or rely on enters the family ledger.
+  - Walk the new validate mixins (`validate/agents.py`,
+    `validate/contracts.py`, `validate/addressable_children.py`,
+    `validate/law_paths.py`, `validate/review_semantics.py`,
+    `validate/reviews.py`, `validate/route_semantics.py`,
+    `validate/schema_helpers.py`) and the new resolve modules
+    (`resolve/analysis.py`, `resolve/section_bodies.py`) so each family's
+    owner-layer record reflects current shipped layout.
   - Record one disposition per family:
     - confirmed bug fix inside current public compatibility
     - intentional accepted behavior to preserve
     - public compatibility change that newly rejects shipped accepted authoring
   - Record one owner layer per confirmed family: grammar, parser, indexing,
     resolve, validate, or compile.
-  - Record the required unit tests, manifest-backed example changes, error-doc
-    updates, and release-surface updates for each confirmed family.
+  - Record the matching per-domain diagnostic emitter
+    (`<domain>_diagnostics.py`) for each confirmed family that needs a new
+    or tightened error code.
+  - Record the required unit tests, manifest-backed example changes,
+    error-doc updates, and release-surface updates for each confirmed
+    family.
   - Remove accepted-behavior families from the implementation backlog and
     rewrite their entry in `docs/FAIL_LOUD_GAPS.md` so the doc stops claiming
     they should become errors.
@@ -1141,3 +1245,20 @@ docs and release notes. No special runtime telemetry is assumed today.
   planning-level architecture, owner-layer matrix, proof duties, and
   compatibility rubric are already locked, so `# 3.3` no longer stays open as
   an implementation blocker.
+- 2026-04-16: Refreshed Sections 3.2, 4.1, 4.4, 6.1, 6.2, 6.3, and Phase 1
+  to reflect substantial post-draft compiler edits. The validate package is
+  now composed from focused mixins (`validate/agents.py`,
+  `validate/contracts.py`, `validate/addressable_children.py`,
+  `validate/law_paths.py`, `validate/review_semantics.py`,
+  `validate/reviews.py`, `validate/route_semantics.py`,
+  `validate/schema_helpers.py`); the resolve package gained
+  `resolve/analysis.py` and `resolve/section_bodies.py`; the compiler grew
+  shared `resolved_types.py` and `types.py` contracts; and diagnostic
+  emitters split per-domain across nine `<domain>_diagnostics.py` modules
+  over the shared `diagnostics.py` backend. The shipped corpus extended
+  from 114 to 121, with `112_output_inheritance_fail_loud` and
+  `119_*` through `121_*` adding new fail-loud proof surfaces. No
+  architecture, owner-layer matrix, compatibility posture, or phase
+  ordering changed; this entry only re-anchors the doc to current shipped
+  truth so Phase 1 classification work cannot miss the new owner files or
+  proof surfaces.

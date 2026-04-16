@@ -36,7 +36,11 @@ arch_skill:planning_passes
 deep_dive_pass_1: done 2026-04-16
 external_research_grounding: done 2026-04-16
 deep_dive_pass_2: done 2026-04-16
-recommended_flow: phase plan -> implement
+consistency_pass: done 2026-04-16 (decision: no; routed to reformat)
+reformat_canonical_scaffold: done 2026-04-16
+consistency_pass_2: done 2026-04-16 (decision: no; routed to phase-plan)
+phase_plan: done 2026-04-16
+recommended_flow: consistency pass -> implement
 note: This block tracks stage order only. It never overrides readiness blockers caused by unresolved decisions.
 -->
 <!-- arch_skill:block:planning_passes:end -->
@@ -396,7 +400,13 @@ Resolved decisions:
 - A live docs page will be required when the feature ships. This dated plan will
   stay a plan doc.
 
-No plan-shaping blocker remains for implementation planning.
+No North-Star-level plan-shaping blocker remains. The remaining known gaps are
+obligation-alignment items inside Sections 5, 6, and 7 (e.g., promoting the
+Section 5.2 surface rule and the §5.5 settings surface into the matching phase
+Exit criteria, naming `emit_flow --lint` scope in Phase 5, and adding a
+canonical 6.2 Migration Notes subsection). Those are tracked in the
+`consistency_pass` helper block below and must be closed before
+`implement-loop`.
 
 # 4) Current Architecture (as-is)
 
@@ -449,19 +459,31 @@ The current design implies, but does not yet implement, these abstractions:
 
 Right now those abstractions live in docs and prompt text, not in shipped code.
 
-## 4.4 Ownership and failure boundaries
+## 4.4 Observability + failure behavior today
 
 - The compiler owns parse, compile, schema, and emit failures.
-- The linter should own quality findings only.
-- The current docs say that boundary in words, but the repo has not yet turned
-  it into code-level owner paths, docs paths, editor severity mapping, or CLI
-  behavior.
+- Failures today surface through the compile and emit CLIs and through
+  `make verify-examples`, `make verify-diagnostics`, and the shipped manifest
+  proof paths.
+- There is no linter-owned failure surface yet. Quality findings that the
+  feature will cover have no home today.
+- The current docs say the compiler/linter boundary in words, but the repo has
+  not yet turned it into code-level owner paths, editor severity mapping, or
+  CLI behavior.
+
+## 4.5 UI surfaces (ASCII mockups, if UI work)
+
+- No dedicated lint UI exists today. The current VS Code extension provides
+  syntax, import-path links, and Go to Definition only — no diagnostics lane.
+- Target-state mockups for terminal, Markdown, and JSON output are preserved
+  in Appendix A sections `6.7` through `6.12`. They are design inputs for
+  Section 5.5 below, not shipped UI today.
 
 # 5) Target Architecture (to-be)
 
-## 5.1 Canonical owner paths
+## 5.1 On-disk structure (future)
 
-The shipped system should use these owner paths:
+Canonical owner paths for the shipped system:
 
 - `doctrine/_linter/`
   - `catalog.py` or equivalent for the stable core `AL###` catalog
@@ -482,9 +504,9 @@ The shipped system should use these owner paths:
 - `docs/AGENT_LINTER.md`
   - the live canonical docs page once the feature ships
 
-## 5.2 Review packet and analysis pipeline
+## 5.2 Control paths (future)
 
-The core pipeline should be:
+Review packet and analysis pipeline. The core pipeline is:
 
 1. Compile or load the requested Doctrine target set once.
 2. Build a review packet with only exact available facts.
@@ -501,6 +523,7 @@ Required packet facts:
 - emitted Markdown
 - imported skills
 - imported modules
+- typed declarations and compile graph facts
 - declared constraints when present
 - source file paths and line ranges for evidence spans
 - run mode and fail threshold
@@ -528,10 +551,10 @@ Surface rule:
 - findings may be source-only, output-only, or cross-surface, but the core
   architecture does not split those into separate linters
 
-## 5.3 Canonical finding model
+## 5.3 Object model + abstractions (future)
 
-The internal finding model should be the one source of truth for all renderers.
-It should carry:
+Canonical finding model. The internal finding model is the one source of truth
+for all renderers. It carries:
 
 - stable `AL###` code
 - title and one-line summary
@@ -562,9 +585,34 @@ Boundary rule:
 - Compiler failures keep the `Error` lane.
 - The linter uses warning-like editor output plus CLI exit thresholds.
 
-## 5.4 Renderers and UX surfaces
+## 5.4 Invariants and boundaries
 
-The same normalized finding set should support four front ends:
+Locked invariants for the target system:
+
+- One linter core, many renderers. No second rule engine in the editor.
+- One stable `AL###` catalog for core Doctrine law; overlays use a different
+  prefix and never ship as core.
+- Every finding must cite exact evidence spans.
+- No linter finding is an LSP `Error`. Compiler failures keep the `Error` lane.
+  The linter uses `Warning` / `Information` / `Hint` plus CLI exit thresholds.
+- Safe editor quick fixes are allowed only when a finding ships one exact
+  replacement for one exact span.
+- The linter does not own parse, compile, schema, or emit failures.
+- Core Doctrine does not ship repo-local or org-local policy.
+- Live provider calls are never required for test proof.
+- Auto-fix does not become silent prompt surgery.
+- Runtime fallbacks or shims are forbidden (`fallback_policy: forbidden`).
+- Missing linter configuration is never confused with a clean pass. If lint is
+  requested but cannot run, fail clearly.
+- Batch mode may not silently drop cross-agent duplication.
+- The shipped architecture covers both authored source and emitted output from
+  the start. No source-only or output-only first cut.
+
+## 5.5 UI surfaces (ASCII mockups, if UI work)
+
+The same normalized finding set powers four front ends. ASCII mockups for the
+terminal, Markdown, and JSON surfaces live in Appendix A sections `6.7`
+through `6.12` and are design inputs for these surfaces.
 
 - terminal renderer
   - ANSI color by default with `--color=auto|always|never` and `NO_COLOR`
@@ -582,13 +630,9 @@ The same normalized finding set should support four front ends:
 Defer:
 
 - SARIF and other external CI reporter formats after the core surfaces are
-  stable
+  stable.
 
-## 5.5 VS Code integration shape
-
-Phase-1 editor integration should be direct and thin.
-
-What the extension should do:
+VS Code integration shape (phase-1 editor path):
 
 - add a linter command for the current target
 - add a workspace lint command for batch mode
@@ -602,8 +646,8 @@ Why this is the right phase-1 choice:
 
 - the current repo already has a direct VS Code extension
 - Doctrine does not yet ship a language server
-- a thin adapter keeps the finding logic in Python where the compiler and packet
-  builder already live
+- a thin adapter keeps the finding logic in Python where the compiler and
+  packet builder already live
 - the result shape still stays LSP-friendly for future editor expansion
 
 Required VS Code settings surface:
@@ -614,12 +658,16 @@ Required VS Code settings surface:
 - `doctrine.lint.command` if the CLI path must be overridden
 - `doctrine.lint.failThreshold`
 
-The extension should stay inactive for linting when `doctrine.lint.enabled` is
-false.
+The extension stays inactive for linting when `doctrine.lint.enabled` is false.
+Terminal color and editor severity are independent — the `[HIGH]` red used in
+terminal mockups maps to LSP `Warning` in the editor, never to `Error`.
 
-## 5.6 Live docs and public teaching path
+## 5.6 Live docs and public teaching path (non-canonical extra)
 
-Once the feature ships, the live docs path should include:
+This subsection sits outside the canonical 5.1–5.5 scaffold but is retained
+because the live docs promotion path is a committed part of this plan.
+
+Once the feature ships, the live docs path includes:
 
 - `docs/AGENT_LINTER.md` as the canonical guide
 - `docs/README.md` link to that guide
@@ -629,268 +677,630 @@ Once the feature ships, the live docs path should include:
 - `editors/vscode/README.md` updates for lint commands, settings, and quick
   fixes
 
-The current dated prompt, schema, fixture, and proof docs should stay linked as
-proof and design history, but not as the live owner path.
-
-## 5.7 Non-goals that stay locked even after implementation
-
-- The linter does not become a second compiler.
-- Core Doctrine does not ship local overlay rules.
-- The VS Code extension does not gain its own separate rule engine.
-- Auto-fix does not become silent prompt surgery.
-- Live provider calls do not become required test proof.
+The current dated prompt, schema, fixture, and proof docs stay linked as proof
+and design history, but not as the live owner path.
 
 # 6) Call-Site Audit (exhaustive change inventory)
 
+## 6.1 Change map (table)
+
+The change map uses a scope/disposition shape rather than the canonical
+(Area / File / Symbol / Current behavior / Required change / Why / New API /
+Tests impacted) columns because nearly every row is a new owner path rather
+than a modification of an existing symbol. Appendix B records this
+intentional column drift and the expected column expansion during `phase-plan`.
+
 | Surface | Paths | Why it matters | Disposition | Notes |
 | --- | --- | --- | --- | --- |
-| Core linter engine | new `doctrine/_linter/**` | Canonical owner for packets, rules, normalization, and renderers | include now | This is the product core. |
+| Core linter engine | new `doctrine/_linter/**` | Canonical owner for packets, rules, normalization, and renderers | include now | Product core. |
 | Standalone CLI | new `doctrine/lint_authoring.py` and package entrypoint work if needed | Real linter users need a stable CLI before editor or compile hooks | include now | Follow Doctrine's current `argparse` pattern. |
 | Shipped prompt and schema assets | new `doctrine/_linter/assets/**` | Docs cannot remain the shipped owner path | include now | Current docs versions remain proof artifacts. |
 | Prompt/schema/docs proof artifacts | existing `docs/AGENT_LINTER_*` files | Preserve design and proof history, keep cross-links alive | include now | Keep linked from this plan and the later live guide. |
 | Packet and response fixtures | new `tests/fixtures/agent_linter/**` | Network-free proof needs stable fixtures | include now | Move from docs-only proof to test-owned proof. |
 | Targeted linter tests | new `tests/test_agent_linter_*` | Needed to prove packet building, normalization, renderers, and boundary behavior | include now | No live provider dependency in required test proof. |
-| Compile-adjacent integration | `doctrine/emit_docs.py` and nearby emit helpers if lint is added there | User wants compile-process use, including multi-target batch mode | include now after standalone CLI is stable | Additive `--lint` only. Do not make lint a compile requirement. |
+| Compile-adjacent integration | `doctrine/emit_docs.py`, `doctrine/emit_flow.py`, and nearby emit helpers | Compile-process use for lint, including multi-target batch mode, across both emit surfaces | staged include (Phase 5) | Additive `--lint` only. Landed after the standalone CLI is stable. Do not make lint a compile requirement. |
 | Compiler diagnostics | `docs/COMPILER_ERRORS.md`, diagnostic smoke, compiler tests | Boundary must stay clear | defer unless boundary wording must cross-link | Do not merge `AL###` into compiler error catalogs. |
-| Live docs path | new `docs/AGENT_LINTER.md`, `docs/README.md`, `docs/AUTHORING_PATTERNS.md`, maybe `docs/EMIT_GUIDE.md` | Dated plans are not live docs | include now for the shipped feature phase | This plan stays a plan doc. |
-| VS Code extension | `editors/vscode/**` | User explicitly wants editor-grade linter behavior | include now | Reuse the current extension. |
+| Live docs path | new `docs/AGENT_LINTER.md`, `docs/README.md`, `docs/AUTHORING_PATTERNS.md`, maybe `docs/EMIT_GUIDE.md` | Dated plans are not live docs | staged include (Phase 7) | This plan stays a plan doc. |
+| VS Code extension | `editors/vscode/**` | User explicitly wants editor-grade linter behavior | staged include (Phase 6) | Reuse the current extension. |
 | Other editors / LSP server | new server surface, alternate editors | Nice long-term path, not required for phase 1 | explicit defer | Keep data shape LSP-friendly now. |
 | SARIF / GitHub reporter | new renderer surfaces | Good future CI path, not needed to prove core value | explicit defer | JSON and Markdown come first. |
 | Example corpus | `examples/**` | Helpful teaching surface, but not the best first proof path for an LLM-backed optional feature | explicit defer | Prefer test fixtures first. |
 
+## 6.2 Migration notes
+
+- **Canonical owner path**: `doctrine/_linter/` for core code,
+  `doctrine/lint_authoring.py` for the first CLI, `doctrine/_linter/assets/`
+  for shipped prompt and schema, `editors/vscode/` for the first editor
+  adapter, `tests/fixtures/agent_linter/` for fixtures,
+  `docs/AGENT_LINTER.md` for the live guide.
+- **Deprecated APIs**: none. The feature is additive; no existing public
+  surface is replaced.
+- **Delete list**: none required during initial build. Once
+  `doctrine/_linter/assets/agent_linter_prompt.md` and
+  `doctrine/_linter/assets/agent_linter_output_schema.json` are live, the
+  matching `docs/AGENT_LINTER_PROMPT_2026-04-16.md` and
+  `docs/AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json` demote from shipped owner
+  path to proof history (kept, not deleted).
+- **Adjacent surfaces that must move together**: `emit_docs.py` and
+  `emit_flow.py` both gain `--lint` in Phase 5 so authored-source lint is
+  available for both emit surfaces. `docs/EMIT_GUIDE.md` updates when those
+  flags become public. `editors/vscode/README.md` updates in Phase 6.
+- **Compatibility posture**: additive. No existing contract is broken. CLI and
+  emit surfaces gain optional flags; the VS Code extension gains optional
+  commands gated by settings. Compiler tests and diagnostics stay
+  unaffected.
+- **Live docs / comments / instructions to update or delete**:
+  `docs/README.md` (index entry in Phase 7), `docs/AUTHORING_PATTERNS.md`
+  (link to the live linter guide in Phase 7), `docs/EMIT_GUIDE.md` (flag
+  documentation when lint flags become public),
+  `editors/vscode/README.md` (commands + settings in Phase 6),
+  `docs/COMPILER_ERRORS.md` may cross-link the linter boundary but must not
+  merge `AL###` into its catalog.
+- **Behavior-preservation signals**: `make verify-examples` and
+  `make verify-diagnostics` must still pass whenever compile or emit surfaces
+  move during Phase 5. `cd editors/vscode && make` must pass whenever the
+  extension changes during Phase 6. The compiler-vs-linter boundary invariant
+  (no linter `Error`-severity editor diagnostics, no `AL###` in compiler
+  catalogs) is the behavioral check the audit must confirm at every phase
+  that touches shared surfaces.
+- **Cleanup and migration notes**: after Phase 1 promotes the prompt and
+  schema to shipped assets, the docs-owned copies are no longer the owner
+  path; they are proof artifacts only. Any future edit that drifts the docs
+  copy away from the shipped copy must either update the shipped copy or
+  record the divergence in the Decision Log.
+
 # 7) Depth-First Phased Implementation Plan (authoritative)
 
-## Phase 1. Lock the boundary and promote shipped assets
+<!-- arch_skill:block:phase_plan:start -->
+> Rule: systematic build, foundational first; split Section 7 into the best
+> sequence of coherent self-contained units, optimizing for phases that are
+> fully understood, credibly testable, compliance-complete, and safe to build
+> on later. If two decompositions are both valid, bias toward more phases
+> than fewer. `Work` explains the unit and is explanatory only.
+> `Checklist (must all be done)` is the authoritative must-do list inside the
+> phase. `Exit criteria (all required)` names the exhaustive concrete done
+> conditions the audit must validate. Resolve adjacent-surface dispositions
+> (Section 6) and compatibility posture (Section 6.2) before writing the
+> checklist. Before each phase is valid, run an obligation sweep across
+> Section 5, Section 6, migration notes, delete lists, verification
+> commitments, docs/comments propagation, approved bridge removal, and any
+> helper-added ship-blocking work; every required obligation must live in
+> `Checklist` or `Exit criteria`, not only in `Work`. No fallbacks/runtime
+> shims (`fallback_policy: forbidden`) — the system must work correctly or
+> fail loudly. Prefer programmatic checks per phase; defer manual/UI
+> verification to finalization. For this agent-backed feature, prompt,
+> grounding, and native-capability choices were settled during
+> `deep-dive` — new tooling in this plan (packet builder, renderer stack,
+> VS Code adapter) augments the model rather than replacing it.
 
-Goals:
+## Phase 1 — Lock the boundary and promote shipped assets
 
-- promote the prompt and schema into `doctrine/_linter/assets/`
-- freeze the core `AL###` catalog in code
-- define the normalized finding model and severity mapping
-- tighten the docs boundary so the linter cannot claim compiler errors
-- lock the no-scope-cut rule in code and docs: no source-only or output-only
-  first cut
+* Goal:
+  - Promote the prompt and schema into `doctrine/_linter/assets/`.
+  - Freeze the core `AL###` catalog in code.
+  - Define the normalized finding model and severity mapping.
+  - Tighten the docs boundary so the linter cannot claim compiler errors.
+  - Lock the no-scope-cut rule in code and docs: no source-only or
+    output-only first cut.
+* Work:
+  - This phase establishes the owner paths every later phase builds on.
+    It does not ship a runnable linter; it locks contracts so Phases 2-6
+    cannot drift.
+  - The docs-owned prompt and schema remain linked as proof artifacts
+    after the shipped copies land.
+* Checklist (must all be done):
+  - Create `doctrine/_linter/` package skeleton with `catalog.py`,
+    `packet.py`, `prepasses.py`, `runner.py`, `normalize.py`,
+    `render_terminal.py`, `render_json.py`, `render_markdown.py` as
+    declared owner paths (empty stubs are acceptable where later phases
+    finish the implementation).
+  - Copy `docs/AGENT_LINTER_PROMPT_2026-04-16.md` content into
+    `doctrine/_linter/assets/agent_linter_prompt.md`.
+  - Copy `docs/AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json` content into
+    `doctrine/_linter/assets/agent_linter_output_schema.json`.
+  - Implement the canonical finding model in `doctrine/_linter/` with the
+    fields listed in §5.3 (code, title, summary, severity, confidence,
+    targets, primary location, evidence spans, related locations, docs
+    URL, why, fix, optional safe edit metadata, optional suggested
+    rewrite, examples, shared-owner suggestions).
+  - Encode the stable core `AL###` catalog (codes, titles, severity
+    defaults, docs-anchor slugs) from Appendix A §8 into code.
+  - Encode `codeDescription.href` as part of the finding model so every
+    shipped finding points at the eventual live-docs anchor.
+  - Encode the editor-severity rule in code: lint never emits LSP
+    `Error`; map severity to `Warning` / `Information` / `Hint`.
+  - Add unit-test-visible assertion that the runtime never produces
+    `Error` for a lint finding.
+  - Record the hard scope invariant from §5.4 (no source-only or
+    output-only first cut) as an in-code check the packet builder will
+    consume in Phase 2, and cross-link to Appendix A §1 and §4 as the
+    policy source.
+  - Add a docstring or comment at the canonical boundary
+    (`doctrine/_linter/__init__.py` or the catalog module) that names
+    the compiler-vs-linter boundary in one sentence so the rule is
+    visible at the canonical owner path.
+  - Confirm `docs/AGENT_LINTER_*` proof docs still resolve as linked
+    references (no stale links) after the shipped copies land.
+* Verification (required proof):
+  - New unit tests cover the finding model, the severity mapping
+    (asserting no `Error` output path), and the catalog coverage for
+    every shipped `AL###` code.
+  - A fixture-based test confirms the shipped prompt and schema assets
+    parse and round-trip without drift from the docs-owned copies.
+  - `make verify-diagnostics` still passes (compiler diagnostics are
+    untouched).
+* Docs/comments (propagation; only if needed):
+  - Cross-link `docs/AGENT_LINTER_PROMPT_2026-04-16.md` and
+    `docs/AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json` to the shipped
+    asset paths as "proof history; shipped owner path is
+    `doctrine/_linter/assets/`" so the boundary is explicit without
+    deleting the docs copies.
+  - Do not touch `docs/COMPILER_ERRORS.md` yet; the cross-link happens
+    in Phase 7 only if needed.
+* Exit criteria (all required):
+  - `doctrine/_linter/assets/agent_linter_prompt.md` and
+    `doctrine/_linter/assets/agent_linter_output_schema.json` exist in
+    shipped code and match the design-proof content.
+  - The canonical finding model exists in code and all `AL###` codes
+    from Appendix A §8 are represented in the catalog.
+  - A test asserts no lint finding can render as LSP `Error`.
+  - A test asserts the prompt and schema asset content round-trips
+    without drift from the dated docs copies.
+  - The compiler-vs-linter boundary claim is stated at one canonical
+    in-code location.
+  - `make verify-diagnostics` passes.
+* Rollback:
+  - Because Phase 1 is additive (new package, new assets, no compiler
+    path changes), rollback is `git revert` the Phase 1 commit(s).
+  - No migration, no deleted surfaces, no external consumers to notify.
 
-Implementation notes:
+## Phase 2 — Build the review packet and deterministic prepasses
 
-- copy the current prompt and schema into shipped asset paths
-- keep the current docs copies linked as proof artifacts
-- codify the editor-severity rule: lint never emits editor `Error`
-- add docs-link metadata per code so `codeDescription.href` is ready
+* Goal:
+  - Add a packet builder for single-target and batch runs.
+  - Add deterministic helpers for duplicate hints, reading metrics, and
+    size stats.
+  - Preserve enough source-location truth for editor diagnostics and
+    rewrite help.
+  - Guarantee that a normal packet carries both authored source and
+    emitted output so cross-surface findings are first-class from day one.
+* Work:
+  - Reuse the existing compile and emit session as the source of exact
+    facts; the builder does not re-parse or re-render Doctrine targets.
+  - Packet gaps are represented explicitly so later prepasses and the
+    runner cannot invent facts.
+* Checklist (must all be done):
+  - Implement `doctrine/_linter/packet.py` with `build_single_target`
+    and `build_batch` entrypoints that consume compile/emit session
+    output.
+  - Packet object carries every required fact listed in §5.2: target
+    names, authored source text, emitted Markdown, imported skills,
+    imported modules, typed declarations and compile graph facts,
+    declared constraints when present, source file paths and line
+    ranges for evidence spans, run mode, fail threshold.
+  - Refuse to build a packet that has only authored source or only
+    emitted output when both exist; instead fail loud with a named
+    linter failure type.
+  - Represent missing facts with an explicit gap marker in the packet,
+    not by defaulting to empty strings.
+  - Implement deterministic prepasses in
+    `doctrine/_linter/prepasses.py`: cross-target duplicate-block
+    hints (exact visible text + graph facts only), reading metrics,
+    size stats, declared-constraint extraction, target graph facts for
+    batch mode.
+  - Prepasses must accept a packet and return structured hints; no
+    prepass writes outside the packet structure.
+  - Every evidence span in a packet must resolve back to a file path
+    and line range the editor can consume.
+* Verification (required proof):
+  - Unit tests: single-target packet builder, batch packet builder,
+    each deterministic prepass, gap representation.
+  - An integration test fails if either the authored-source slot or
+    the emitted-output slot is silently dropped from a packet whose
+    target has both.
+  - A batch-mode test proves cross-target duplicate hints fire only on
+    exact visible text matches.
+  - Existing `make verify-examples` still passes (packet builder does
+    not mutate compile/emit output).
+* Docs/comments (propagation; only if needed):
+  - Add a docstring at the top of `doctrine/_linter/packet.py` naming
+    the both-source-and-output surface rule in one sentence, pointing
+    at §5.2 and §5.4 as the source of truth.
+* Exit criteria (all required):
+  - Single-target packet tests pass.
+  - Batch packet tests pass.
+  - Duplicate-hint and readability prepass tests pass.
+  - The packet can represent related locations cleanly.
+  - A packet test fails loud if authored source or emitted output is
+    silently dropped when both exist.
+  - Packet gap representation is explicit (a missing fact is recorded,
+    not invented).
+  - `make verify-examples` passes.
+* Rollback:
+  - Revert the Phase 2 commit(s). No public API introduced yet, so
+    nothing outside `doctrine/_linter/` is affected.
 
-Exit criteria:
+## Phase 3 — Add the runner, validation, and renderer stack
 
-- one canonical asset pair exists in code
-- one canonical finding model exists in code
-- prompt, schema, and docs agree on the compiler-vs-linter boundary
+* Goal:
+  - Add the LLM execution boundary around the shipped prompt and schema.
+  - Validate responses strictly.
+  - Normalize responses into the canonical finding model.
+  - Render terminal, JSON, and Markdown outputs from the same finding
+    set.
+* Work:
+  - Provider plumbing is outside this plan's main design scope, but the
+    runner contract accepts a packet and returns schema-valid JSON or a
+    clear failure. This is the "augment the model" surface, not a
+    replacement for the model's reasoning.
+  - No renderer re-derives findings from raw prose; every renderer
+    reads from the canonical finding model only.
+* Checklist (must all be done):
+  - Implement `doctrine/_linter/runner.py` with a contract
+    `run(packet) -> RawResponse | LinterFailure`.
+  - Runner refuses to treat schema-invalid model output as a clean
+    lint result; it raises a named linter execution failure.
+  - Implement `doctrine/_linter/normalize.py` that converts validated
+    raw JSON into the canonical finding model from Phase 1.
+  - Normalization drops no required field; missing optional fields
+    stay explicit in the finding object.
+  - Implement `render_terminal.py` honoring the Appendix A §6 UX:
+    summary first, finding cards, `--color=auto|always|never`,
+    `NO_COLOR` respected.
+  - Implement `render_json.py` matching the Appendix A §6.12 mockup
+    (stable keys for editor and CI consumers, including rule
+    metadata, docs URL, fixability hints).
+  - Implement `render_markdown.py` matching the Appendix A §6.11
+    mockup.
+  - Define exit-code contract: `0` clean, `1` findings above the
+    configured threshold, `2` linter execution failure. Reserve any
+    additional codes explicitly.
+  - Renderers must not call back into the runner, the packet builder,
+    or each other.
+* Verification (required proof):
+  - Unit tests for schema validation (accept valid, reject invalid).
+  - Unit tests for normalization (all canonical fields populated).
+  - Golden-fixture tests for each renderer using
+    `tests/fixtures/agent_linter/`.
+  - Exit-code contract is covered by runner-level unit tests; no live
+    provider call in the required test path.
+* Docs/comments (propagation; only if needed):
+  - Top-of-module docstrings in `runner.py` and each `render_*.py`
+    naming their contract in one sentence and pointing at §5.5 as the
+    owner description.
+* Exit criteria (all required):
+  - Schema validation tests pass.
+  - Normalization tests pass.
+  - Terminal, JSON, and Markdown renderer fixture tests pass.
+  - Exit codes `0`, `1`, and `2` are stable and covered by tests.
+  - No renderer imports the runner or the packet builder beyond the
+    canonical finding model.
+* Rollback:
+  - Revert the Phase 3 commit(s). Phases 1-2 remain intact because the
+    runner and renderers are pure consumers of the finding model.
 
-## Phase 2. Build the review-packet and deterministic prepasses
+## Phase 4 — Ship the standalone CLI
 
-Goals:
+* Goal:
+  - Expose the feature through a real Doctrine CLI surface.
+  - Support `single-target` and `batch` execution.
+  - Support fail thresholds, color controls, and output-format
+    selection.
+* Work:
+  - Start with `python -m doctrine.lint_authoring`; public package
+    entrypoint polish can follow if needed for package UX, but the
+    module-invocation surface is the Phase 4 deliverable.
+  - Feature stays optional by requiring explicit invocation.
+* Checklist (must all be done):
+  - Implement `doctrine/lint_authoring.py` following current Doctrine
+    CLI style (argparse, shared helpers where reasonable).
+  - Support `single-target` and `batch` run modes from §5.2.
+  - Support output formats `text`, `json`, `markdown`.
+  - Support `--color=auto|always|never` and honor `NO_COLOR`.
+  - Support `--fail-threshold` with a documented default tied to the
+    severity model (§5.3 / Appendix A §9).
+  - CLI exits with the Phase 3 contract (`0`, `1`, `2`).
+  - CLI refuses to fake a pass when the linter cannot run; it exits
+    with `2` and a clear failure message.
+  - No live provider call is required for CLI tests.
+* Verification (required proof):
+  - Unit tests for argument parsing (formats, threshold, color).
+  - Integration tests using fixture packets to drive end-to-end CLI
+    runs in both `single-target` and `batch` modes.
+  - Exit-code behavior is asserted for clean, threshold-crossing, and
+    execution-failure cases.
+* Docs/comments (propagation; only if needed):
+  - Module-level docstring in `doctrine/lint_authoring.py` naming the
+    CLI as the canonical entry point and pointing at §5.1 and §5.5.
+  - Docs-only live-guide work is deferred to Phase 7; do not update
+    `docs/README.md` or `docs/AUTHORING_PATTERNS.md` yet.
+* Exit criteria (all required):
+  - Current-target CLI runs work end to end against fixtures.
+  - Multi-target batch CLI runs work end to end against fixtures.
+  - Threshold, color, and output-format flags work as tested.
+  - CLI exit codes match Phase 3's contract.
+  - No required CLI test hits a live provider.
+* Rollback:
+  - Revert the Phase 4 commit(s). The core engine (Phases 1-3) remains
+    usable as an import; the product simply loses the CLI surface.
 
-- add a packet builder for single-target and batch runs
-- add deterministic helpers for duplicate hints, reading metrics, and size stats
-- preserve enough source-location truth for editor diagnostics and rewrite help
-- require both authored-source and emitted-output packet slots in the normal
-  path so cross-surface findings are first-class from the start
+## Phase 5 — Add compile-adjacent lint integration
 
-Implementation notes:
+* Goal:
+  - Let users opt into lint as part of compile flows.
+  - Support batch lint during multi-target compile runs.
+  - Cover both emit surfaces (`emit_docs` and `emit_flow`) so
+    authored-source lint is available wherever authored source is
+    emitted.
+* Work:
+  - Integration is additive; `--lint` is an opt-in flag that runs the
+    Phase 4 CLI against the same targets the compile command covers.
+  - Integration is staged: it ships only after the standalone CLI is
+    stable.
+* Checklist (must all be done):
+  - Add `--lint` to `doctrine/emit_docs.py` that runs the canonical
+    linter against the same targets it compiles.
+  - Add `--lint` to `doctrine/emit_flow.py` with the same contract.
+  - When a compile run covers several targets, build the lint packet
+    in batch mode so cross-agent duplication is caught.
+  - Lint failure fails the linted command only when the selected
+    threshold is crossed; below threshold, lint reports but exits
+    clean.
+  - When `--lint` is not requested, nothing runs (§9.3 rule encoded
+    in code).
+  - If `--lint` is requested and the linter cannot run, surface a
+    clear linter execution failure instead of faking a pass.
+  - If evidence later shows `emit_flow` has no authored-source
+    exposure worth linting, add a Decision Log entry before skipping
+    it. Do not silently cut it.
+* Verification (required proof):
+  - Integration tests: `emit_docs --lint` on a single target.
+  - Integration tests: `emit_docs --lint` on a multi-target run with
+    cross-agent duplicate fixtures.
+  - Integration tests: `emit_flow --lint` on at least one target that
+    carries authored source.
+  - Behavior-preservation proof: `make verify-examples` passes with
+    and without `--lint`; `make verify-diagnostics` passes and no
+    compiler test treats a lint finding as a compiler error.
+* Docs/comments (propagation; only if needed):
+  - Update comments at the `emit_docs.py` and `emit_flow.py` flag
+    registration sites naming the new `--lint` flag; inline help text
+    must describe that it is additive and opt-in.
+  - Full live-guide updates to `docs/EMIT_GUIDE.md` ship in Phase 7;
+    only do the minimum cross-link here if verification would
+    otherwise surface a stale doc.
+* Exit criteria (all required):
+  - `emit_docs --lint` works for single-target runs.
+  - `emit_docs --lint` works for multi-target runs with cross-agent
+    duplicate detection.
+  - `emit_flow --lint` ships alongside, or a Decision Log entry
+    explicitly records why it is not wired up.
+  - When `--lint` is not requested, the linter does not run.
+  - `make verify-examples` and `make verify-diagnostics` both pass.
+  - No compiler test or docs surface treats a lint failure as a
+    compiler error.
+* Rollback:
+  - Revert the Phase 5 commit(s). Because the flag is additive and
+    opt-in, revert does not break any existing compile invocation.
 
-- reuse the existing compile and emit session as the source of exact facts
-- gather authored source, emitted Markdown, imports, and declared constraints
-- build cross-target duplicate hints only from exact visible text and graph data
-- keep packet gaps explicit instead of inventing facts
+## Phase 6 — Extend the VS Code extension
 
-Exit criteria:
+* Goal:
+  - Show Doctrine linter findings in the editor.
+  - Support current-target and workspace lint commands.
+  - Add safe code actions and rule docs links.
+* Work:
+  - Keep the extension thin: it spawns the canonical CLI, reads JSON,
+    and maps diagnostics. This is the "prefer native capabilities and
+    grounding over a new harness" choice made in `deep-dive`.
+  - Use related locations for contradiction peers and batch duplicates.
+* Checklist (must all be done):
+  - Add a current-target lint command in `editors/vscode/` that spawns
+    the Phase 4 CLI with `--format json` and maps findings into
+    `DiagnosticCollection` entries.
+  - Add a workspace lint command that runs batch mode and maps
+    cross-target findings with related locations.
+  - Implement the five required VS Code settings from §5.5:
+    `doctrine.lint.enabled`, `doctrine.lint.runOnSave`,
+    `doctrine.lint.requireProjectSupport`, `doctrine.lint.command`,
+    `doctrine.lint.failThreshold`.
+  - Respect `doctrine.lint.enabled = false`: the extension stays
+    inactive for linting.
+  - Respect `doctrine.lint.runOnSave = false` by default; only trigger
+    current-target lint on save when the setting is true.
+  - Respect `doctrine.lint.requireProjectSupport`: do not run lint
+    when the workspace cannot resolve the Doctrine CLI.
+  - Respect `doctrine.lint.command`: allow overriding the CLI path.
+  - Respect `doctrine.lint.failThreshold`: pass it through to the CLI.
+  - Map severity strictly to `Warning` / `Information` / `Hint`. The
+    extension must not emit `DiagnosticSeverity.Error` for any lint
+    finding.
+  - Offer safe quick fixes only for findings that carry one exact
+    one-span replacement; otherwise expose docs link or rerun actions
+    only.
+* Verification (required proof):
+  - `cd editors/vscode && make` passes.
+  - Extension unit tests cover the severity mapping (no `Error`) and
+    the five settings surface.
+  - Manual smoke test: running current-target lint shows at least one
+    expected Warning from a known fixture; runOnSave respects the
+    setting; workspace batch run surfaces cross-target duplicates.
+  - JSON consumption test verifies the extension parses the Phase 3
+    JSON shape end-to-end.
+* Docs/comments (propagation; only if needed):
+  - Update `editors/vscode/README.md` to document the commands,
+    settings, and quick-fix behavior shipped in this phase. This is
+    the living reality for the extension; it must not lag.
+* Exit criteria (all required):
+  - Lint diagnostics appear in VS Code for a known fixture target.
+  - Quick fixes work for safe single-span rewrite cases.
+  - Workspace batch runs can show cross-target duplicate findings
+    with related locations.
+  - All five settings from §5.5 are implemented and gated as above.
+  - The extension never emits `DiagnosticSeverity.Error` for lint
+    findings.
+  - `cd editors/vscode && make` passes.
+  - `editors/vscode/README.md` describes the shipped commands,
+    settings, and quick-fix behavior (no stale claims).
+* Rollback:
+  - Revert the Phase 6 commit(s). The CLI and compile-adjacent
+    integration (Phases 4-5) continue to work without the editor
+    surface.
 
-- single-target packet tests pass
-- batch packet tests pass
-- duplicate and readability prepass tests pass
-- the packet can represent related locations cleanly
+## Phase 7 — Promote the feature into the live docs path
 
-## Phase 3. Add the runner, validation, and renderer stack
-
-Goals:
-
-- add the LLM execution boundary around the shipped prompt and schema
-- validate responses strictly
-- normalize responses into the canonical finding model
-- render terminal, JSON, and Markdown outputs from the same finding set
-
-Implementation notes:
-
-- provider plumbing is outside this plan's main design scope, but the runner
-  contract must accept a packet and return schema-valid JSON or a clear failure
-- no renderer may re-derive findings from raw prose
-- JSON output should carry enough metadata for editor and CI consumers
-- terminal output should preserve the best-in-class UX already designed in the
-  imported notes below
-
-Exit criteria:
-
-- schema validation tests pass
-- normalization tests pass
-- terminal, JSON, and Markdown renderer tests pass
-- exit codes `0`, `1`, and `2` are stable
-
-## Phase 4. Ship the standalone CLI
-
-Goals:
-
-- expose the feature through a real Doctrine CLI surface
-- support `single-target` and `batch` execution
-- support fail thresholds and color controls
-
-Implementation notes:
-
-- start with `python -m doctrine.lint_authoring`
-- public package entrypoint polish can follow if needed for package UX
-- support output formats `text`, `json`, and `markdown`
-- keep the feature optional by requiring explicit invocation
-
-Exit criteria:
-
-- current-target CLI runs work
-- multi-target batch CLI runs work
-- threshold, color, and output-format flags work
-
-## Phase 5. Add compile-adjacent lint integration
-
-Goals:
-
-- let users opt into lint as part of compile flows
-- support batch lint during multi-target compile runs
-
-Implementation notes:
-
-- add an additive `--lint` path only after the standalone CLI is stable
-- `emit_docs --lint` should lint the same targets it compiles
-- when one compile run covers several targets, the lint packet should be built
-  in batch mode so cross-agent duplication can be caught
-- lint failure should fail the linted command only when the selected threshold
-  is crossed
-
-Exit criteria:
-
-- compile-adjacent lint works for single-target runs
-- compile-adjacent lint works for multi-target runs
-- no compiler tests or docs treat lint failures as compiler errors
-
-## Phase 6. Extend the VS Code extension
-
-Goals:
-
-- show Doctrine linter findings in the editor
-- support current-target and workspace lint commands
-- add safe code actions and rule docs links
-
-Implementation notes:
-
-- keep the extension thin: spawn the canonical CLI, read JSON, map diagnostics
-- support current-target lint on save only behind an explicit setting
-- use related locations for contradiction peers and batch duplicates
-- safe quick fixes are allowed only for exact one-span replacements
-- all other findings should still provide docs links or rerun actions
-
-Exit criteria:
-
-- lint diagnostics appear in VS Code
-- quick fixes work for safe rewrite cases
-- workspace batch runs can show cross-target duplicate findings
-- `cd editors/vscode && make` passes
-
-## Phase 7. Promote the feature into the live docs path
-
-Goals:
-
-- teach the linter as a canonical Doctrine feature
-- keep the dated proof and design artifacts linked, not orphaned
-
-Implementation notes:
-
-- add `docs/AGENT_LINTER.md`
-- update `docs/README.md`
-- update `docs/AUTHORING_PATTERNS.md`
-- update `docs/EMIT_GUIDE.md` if compile-adjacent lint becomes public
-- update `editors/vscode/README.md`
-
-Exit criteria:
-
-- the live docs path teaches when to use the linter, how to read its findings,
-  and how it differs from compiler errors
-- the proof docs remain linked for design and validation history
+* Goal:
+  - Teach the linter as a canonical Doctrine feature.
+  - Keep the dated proof and design artifacts linked, not orphaned.
+* Work:
+  - The live guide and its surrounding cross-links are the Phase 7
+    deliverable; the feature is not "done" until the live docs path
+    is wired up.
+  - The dated `docs/AGENT_LINTER_*` artifacts stay as proof and
+    design history, not as shipped owner paths.
+* Checklist (must all be done):
+  - Create `docs/AGENT_LINTER.md` covering: when to run the linter,
+    how to read its findings, how it differs from compiler errors,
+    how to consume its JSON output, how to use it from the VS Code
+    extension, and how to use `emit_docs --lint` and
+    `emit_flow --lint`.
+  - Link `docs/AGENT_LINTER.md` from `docs/README.md`.
+  - Add linter guidance to `docs/AUTHORING_PATTERNS.md` from the
+    relevant authoring-quality sections, linking to the new guide.
+  - Update `docs/EMIT_GUIDE.md` with `--lint` usage for `emit_docs`
+    and `emit_flow` (the flags became public in Phase 5).
+  - Confirm `editors/vscode/README.md` still matches Phase 6 reality
+    (reality-sync check; update if drift exists).
+  - Cross-link the proof docs (`AGENT_LINTER_PROMPT_2026-04-16.md`,
+    `AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json`,
+    `AGENT_LINTER_PROOF_FIXTURE_*`, `AGENT_LINTER_CODEX_CLI_PROOF_*`)
+    from `docs/AGENT_LINTER.md` as design and validation history.
+  - If `docs/COMPILER_ERRORS.md` would mislead a reader into thinking
+    `AL###` codes belong there, add a one-line cross-link to the
+    linter guide. Do not merge `AL###` into that catalog.
+  - Update the `codeDescription.href` base used by the catalog so
+    findings point at the live `docs/AGENT_LINTER.md` anchors now
+    that the guide exists.
+* Verification (required proof):
+  - A docs-round-trip test confirms every shipped `AL###` code's
+    `codeDescription.href` resolves to an anchor that actually
+    exists in `docs/AGENT_LINTER.md`.
+  - `make verify-diagnostics` still passes (boundary preserved).
+  - Manual read: the live guide answers all five questions listed
+    above on a single read.
+* Docs/comments (propagation; only if needed):
+  - Any remaining comment or docstring in `doctrine/_linter/` that
+    said "docs-owned copy is the shipped owner path" must now point
+    at `doctrine/_linter/assets/` and note that docs copies are
+    proof history.
+* Exit criteria (all required):
+  - `docs/AGENT_LINTER.md` exists and covers when to run, how to
+    read findings, compiler-vs-linter boundary, JSON consumption,
+    VS Code usage, and `emit_docs --lint` / `emit_flow --lint`.
+  - `docs/README.md` links to `docs/AGENT_LINTER.md`.
+  - `docs/AUTHORING_PATTERNS.md` references the linter from the
+    relevant authoring-quality sections.
+  - `docs/EMIT_GUIDE.md` documents `--lint` for both emit surfaces.
+  - `editors/vscode/README.md` still matches Phase 6 reality.
+  - Proof docs (`AGENT_LINTER_PROMPT_*`,
+    `AGENT_LINTER_OUTPUT_SCHEMA_*`, `AGENT_LINTER_PROOF_FIXTURE_*`,
+    `AGENT_LINTER_CODEX_CLI_PROOF_*`) remain linked from
+    `docs/AGENT_LINTER.md` as design and validation history.
+  - Every shipped `AL###` `codeDescription.href` resolves to a real
+    anchor in `docs/AGENT_LINTER.md`.
+  - `make verify-diagnostics` passes.
+* Rollback:
+  - Revert the Phase 7 commit(s). The shipped CLI, compile-adjacent
+    integration, and editor extension remain functional; only the
+    live docs promotion is withdrawn.
+<!-- arch_skill:block:phase_plan:end -->
 
 # 8) Verification Strategy (common-sense; non-blocking)
 
-## 8.1 Docs-only reformat proof for this pass
+Principles carried into every phase:
 
-- No verify commands were run.
-- This pass changed only
-  `docs/LLM_AGENT_LINTER_FOR_AUTHORING_2026-04-16.md`.
+- prefer existing credible signals (`make verify-examples`,
+  `make verify-diagnostics`, `cd editors/vscode && make`,
+  `make verify-package`) over new bespoke harnesses
+- keep manual/UI verification as finalization by default
+- avoid verification bureaucracy — no deleted-code proofs, no stale-term
+  greps, no docs-audit CI gates, no file-absence checks
+- no live provider calls in required test proof
+- no example-corpus expansion before the core engine and fixtures are stable
 
-## 8.2 Required implementation proof later
+## 8.1 Unit tests (contracts)
 
-- targeted unit tests for:
-  - packet building
-  - duplicate and readability prepasses
-  - schema validation and normalization
-  - terminal, JSON, and Markdown renderers
-  - compiler-vs-linter boundary behavior
-- fixture-based proof for:
-  - single-target runs
-  - batch runs with cross-target duplication
-  - safe-fix vs suggestion-only findings
-- manual smoke checks for:
-  - current-target CLI output
-  - batch CLI output
-  - docs URL resolution per `AL###` code
-  - VS Code diagnostics and quick fixes once the extension changes
+- packet building (single-target and batch; typed declarations present when
+  available; both authored source and emitted output are carried whenever both
+  exist; packet gaps are explicit)
+- deterministic prepasses (duplicate-block hints, reading metrics, size
+  stats, declared-constraint extraction, target-graph facts)
+- schema validation of shipped JSON output against
+  `doctrine/_linter/assets/agent_linter_output_schema.json`
+- normalization of schema-valid responses into the canonical finding model
+- renderers: terminal, JSON, and Markdown produce byte-stable output from a
+  fixed normalized finding set
+- compiler-vs-linter boundary: no shipped asset or renderer can produce an
+  editor-severity `Error` for a lint finding, and no `AL###` code leaks into
+  compiler-error surfaces
 
-## 8.3 Repo proof surfaces that move only when needed
+## 8.2 Integration tests (flows)
 
-- Run `make verify-examples` if compile or emit code changes.
-- Run `make verify-diagnostics` only if compiler diagnostics or diagnostic smoke
-  change.
-- Run `cd editors/vscode && make` if the extension changes.
-- Run `make verify-package` if public package metadata or console scripts change.
+- fixture-based single-target CLI runs against
+  `tests/fixtures/agent_linter/**`
+- fixture-based batch CLI runs that surface cross-target duplication
+- safe-fix vs suggestion-only findings produce the right editor payload
+- `emit_docs --lint` and `emit_flow --lint` integrate with their compile
+  flows additively (no compile test that previously passed starts failing
+  because lint is unavailable)
+- `make verify-examples` runs when compile or emit surfaces move
+- `make verify-diagnostics` runs when compiler diagnostics or diagnostic
+  smoke change
+- `make verify-package` runs when public package metadata or console
+  scripts change
 
-## 8.4 What does not need to be blocking proof
+## 8.3 E2E / device tests (realistic)
 
-- live provider calls in CI
-- network-bound lint runs in unit tests
-- SARIF export proof before SARIF is in scope
-- example-corpus expansion before the core engine and fixtures are stable
+- manual smoke: current-target CLI output matches the mockups in Appendix A
+  sections 6.7–6.12 for a representative fixture
+- manual smoke: batch CLI output names all affected targets and preserves
+  exact evidence
+- manual smoke: docs URL resolution works for every `AL###` in the shipped
+  catalog
+- manual smoke: VS Code diagnostics and quick fixes behave per the §5.5
+  shape once the extension changes (`cd editors/vscode && make` must pass)
+- manual smoke: opting out of lint (no flag, setting disabled) produces
+  zero lint behavior end to end
 
 # 9) Rollout / Ops / Telemetry
 
-## 9.1 Rollout posture
+## 9.1 Rollout plan
 
-- Product posture: optional but encouraged
-- Initial execution posture: explicit opt-in via CLI
-- Compile posture: additive `--lint` only after standalone CLI is trusted
-- Editor posture: explicit setting, off until enabled
+Posture by surface:
 
-## 9.2 Operational rules
+- Product posture: optional but encouraged.
+- Initial execution posture: explicit opt-in via standalone CLI.
+- Compile posture: additive `--lint` on `emit_docs` and `emit_flow` only after
+  the standalone CLI is trusted.
+- Editor posture: explicit VS Code setting, off until enabled.
 
-- If lint is not requested, nothing runs.
-- If lint is requested but the linter cannot run, return a clear linter failure.
-  Do not fake a pass.
-- If the model returns schema-invalid output, treat it as linter execution
-  failure, not as a clean lint result.
-- If the packet is incomplete, either narrow the finding set explicitly or fail
-  the run. Do not guess.
+Sequencing:
 
-## 9.3 User-facing runtime behavior
+- Phase 1-4 ship the CLI path (batch + single-target) with terminal, JSON, and
+  Markdown renderers before any compile-adjacent or editor work.
+- Phase 5 introduces the compile-adjacent `--lint` flag as a staged include
+  behind the standalone CLI. Skipping a target is a Decision Log entry, not a
+  silent omission.
+- Phase 6 turns on VS Code integration with the opt-in settings surface; the
+  extension never raises `Error` diagnostics for lint findings.
+- Phase 7 promotes the user-facing material to `docs/AGENT_LINTER.md` and
+  `AUTHORING_PATTERNS.md` so the feature lives in canonical docs, not in a
+  dated plan.
 
-- terminal output should start with a fast pass/fail summary
-- JSON output should stay stable enough for editor and CI consumers
-- editor output should never look like compiler failure output
-- docs links per rule should always point at the live linter guide once it ships
+## 9.2 Telemetry changes
 
-## 9.4 Telemetry posture
-
-Doctrine does not need a new hosted telemetry system for this feature.
-The useful operational signals are local:
+Doctrine does not need a new hosted telemetry system for this feature. The
+useful operational signals are local and already surfaced by the linter itself:
 
 - linter exit code
 - schema validation success or failure
@@ -898,32 +1308,335 @@ The useful operational signals are local:
 - finding counts by severity and code
 - editor adapter logs only when explicitly enabled for debugging
 
+No new metrics, no new counters, no new dashboards. If a future release needs
+hosted telemetry, that becomes its own arch-step doc.
+
+## 9.3 Operational runbook
+
+Operational rules at runtime:
+
+- If lint is not requested, nothing runs.
+- If lint is requested but the linter cannot run, return a clear linter
+  failure. Do not fake a pass.
+- If the model returns schema-invalid output, treat it as linter execution
+  failure, not as a clean lint result.
+- If the packet is incomplete, either narrow the finding set explicitly or
+  fail the run. Do not guess.
+
+User-facing runtime behavior:
+
+- Terminal output should start with a fast pass/fail summary.
+- JSON output should stay stable enough for editor and CI consumers.
+- Editor output should never look like compiler failure output.
+- Docs links per rule should always point at the live linter guide once it
+  ships.
+
+<!-- arch_skill:block:consistency_pass:start -->
+## Consistency Pass
+
+- Reviewers: explorer 1, explorer 2, self-integrator, post-`phase-plan`
+  obligation-sweep explorer
+- Date: 2026-04-16 (refreshed after `phase-plan`)
+- Scope checked:
+  - frontmatter, `# TL;DR`, `planning_passes`
+  - `# 0)` through `# 10)` cross-section agreement
+  - owner paths named in `# 3.2`, `# 5.1`, `# 6`, and `# 7`
+  - adjacent-surface dispositions (existing VS Code extension, `emit_docs`,
+    `emit_flow`, live docs path)
+  - compatibility posture (additive, no runtime shims, no `Error` severity
+    in the editor)
+  - per-phase canonical field shape in §7 (Goal / Work / Checklist /
+    Verification / Docs/comments / Exit criteria / Rollback)
+  - obligation sweep across §5, §6.2, §8, §9 vs. §7 Checklist and Exit
+    criteria
+  - Appendix A heading demotion and Appendix B conversion notes
+- Findings summary:
+  - `phase-plan` added the canonical per-phase fields to all seven phases
+    inside the `arch_skill:block:phase_plan` block. Every phase now carries
+    `Goal`, `Work`, `Checklist (must all be done)`, `Verification (required
+    proof)`, `Docs/comments`, `Exit criteria (all required)`, and
+    `Rollback`.
+  - Obligation sweep across §5.1 owner paths, §5.2 required packet facts
+    and surface rule, §5.3 canonical finding-model fields, §5.4 invariants
+    needing in-code enforcement, §5.5 five VS Code settings, §6.1 change-
+    map dispositions (include now / staged include), §6.2 canonical owner
+    paths + compatibility posture + behavior-preservation signals + docs-
+    update list, §8.1-8.3 verification commitments, and §9.3 operational
+    runbook rules confirms every required obligation is bound to a
+    `Checklist` or `Exit criteria` in the owning phase. No orphan
+    obligations stranded in `Work` prose.
+  - Structural items carried as intentional exceptions (recorded in
+    Appendix B, not blockers): §5.6 live docs subsection sits outside
+    canonical 5.1-5.5; §6.1 change-map columns keep a `Surface / Paths /
+    Why / Disposition / Notes` shape instead of canonical `Area / File /
+    Symbol / Current behavior / Required change / Why / New API / Tests
+    impacted`. The canonical migration concerns are fully covered in §6.2.
+- Integrated repairs (this refresh):
+  - `phase-plan` rewrote §7 so every phase carries the canonical field
+    set.
+  - `planning_passes` now records `phase_plan: done 2026-04-16` and
+    `consistency_pass_2: done 2026-04-16 (decision: no; routed to
+    phase-plan)`. `recommended_flow` collapses to
+    `consistency pass -> implement`.
+- Remaining inconsistencies:
+  - none blocking. Two prior structural items (§5.6 live docs subsection,
+    §6.1 change-map columns) remain intentional carries recorded in
+    Appendix B.
+- Unresolved decisions:
+  - none.
+- Unauthorized scope cuts:
+  - none. `emit_flow --lint`, cross-surface findings, both-source-and-
+    output packet rule, five VS Code settings, and the no-`Error`
+    severity boundary are all bound to phase Exit criteria.
+- Decision-complete:
+  - yes.
+- Decision: proceed to implement? yes
+  - next command is `implement` (or `implement-loop` / `auto-implement`
+    when the user wants the controller loop) on this same `DOC_PATH`.
+<!-- arch_skill:block:consistency_pass:end -->
+
 # 10) Decision Log (append-only)
 
-- 2026-04-16: Reframed the feature as a Doctrine `agent linter`, not a generic
+Entries below use the canonical `## <YYYY-MM-DD> - <decision title>` shape.
+Most early entries were captured as one-line decisions; `Context`,
+`Options`, `Consequences`, and `Follow-ups` are filled in where the plan
+already supports the answer, and left as `not recorded` where it does not.
+A later `phase-plan` or `plan-enhance` pass may enrich the `not recorded`
+slots.
+
+## 2026-04-16 - Reframe as a Doctrine agent linter
+
+- Decision: Frame the feature as a Doctrine `agent linter`, not a generic
   warning layer.
-- 2026-04-16: Kept core `AL###` rules Doctrine-generic and pushed repo-local
+- Context: Existing diagnostics cover compile errors; authoring quality had
+  no named surface.
+- Options: generic warning pass; rule-bound agent linter; do nothing.
+- Consequences: Stable `AL###` codes, dedicated renderers, live docs path.
+- Follow-ups: none.
+
+## 2026-04-16 - Keep core rules Doctrine-generic, push policy to overlays
+
+- Decision: Keep core `AL###` rules Doctrine-generic and move repo-local
   policies out to overlays.
-- 2026-04-16: Locked the compiler boundary. The linter does not own parse,
-  compile, schema, or emit failures.
-- 2026-04-16: Chose one Python linter core plus many renderers as the target
-  architecture.
-- 2026-04-16: Chose `doctrine/_linter/` as the canonical code owner path.
-- 2026-04-16: Chose `doctrine/lint_authoring.py` as the first CLI owner path.
-- 2026-04-16: Chose the existing `editors/vscode/` extension as the first
-  editor adapter instead of starting with a new language server.
-- 2026-04-16: Chose an LSP-shaped finding model so later editor integrations do
-  not require a second result contract.
-- 2026-04-16: Chose editor severity mapping that never uses `Error` for lint
+- Context: Some authoring expectations are project-specific; shipping them in
+  core would leak policy into the language.
+- Options: one flat ruleset; core + overlay split; overlay-only.
+- Consequences: Core stays portable; overlays own opinionated rules.
+- Follow-ups: Overlay design is tracked in §5 and imported Appendix A
+  sections.
+
+## 2026-04-16 - Lock the compiler boundary
+
+- Decision: The linter does not own parse, compile, schema, or emit failures.
+- Context: Those failures already belong to the compiler and to
+  `verify-diagnostics`.
+- Options: overlap with the compiler; stay strictly additive.
+- Consequences: Fail-loud compiler stays authoritative; lint is advisory.
+- Follow-ups: Phase 1 encodes this as the boundary lock.
+
+## 2026-04-16 - One Python core plus many renderers
+
+- Decision: Ship one Python linter core with multiple renderers instead of
+  forking one core per surface.
+- Context: Terminal, JSON, Markdown, and editor consumers all need the same
   findings.
-- 2026-04-16: Locked the shipped scope to both authored prompt source and
-  emitted output, with cross-surface findings first-class from the start.
-- 2026-04-16: Clarified that this is a hard scope boundary, not a preference.
-  The plan does not allow a source-only MVP or an output-only MVP.
-- 2026-04-16: Deferred SARIF until after terminal, JSON, Markdown, and VS Code
-  are real.
-- 2026-04-16: Chose a live docs promotion path so the feature can become part of
-  Doctrine's canonical docs instead of staying trapped in a dated plan.
+- Options: separate cores per surface; one core, many renderers.
+- Consequences: Single source of truth for findings; renderers stay thin.
+- Follow-ups: Renderer surface described in §5.5.
+
+## 2026-04-16 - Canonical code owner path `doctrine/_linter/`
+
+- Decision: Own the linter at `doctrine/_linter/`.
+- Context: Doctrine already uses underscore-prefixed internal packages.
+- Options: new top-level package; underscore-prefixed internal package.
+- Consequences: Stays out of the public import surface.
+- Follow-ups: none.
+
+## 2026-04-16 - First CLI owner path `doctrine/lint_authoring.py`
+
+- Decision: The standalone CLI lives at `doctrine/lint_authoring.py`.
+- Context: Needed a thin, discoverable entry point.
+- Options: subcommand on an existing CLI; dedicated module.
+- Consequences: The CLI is easy to wire as a console script later.
+- Follow-ups: Phase 4 defines the CLI surface.
+
+## 2026-04-16 - Reuse the existing VS Code extension as the first editor adapter
+
+- Decision: Use `editors/vscode/` as the first editor adapter instead of
+  starting a new language server.
+- Context: A VS Code extension already exists and already calls compile
+  diagnostics.
+- Options: start fresh with an LSP server; reuse existing extension.
+- Consequences: Faster path to real editor surface; same extension owns
+  compile + lint.
+- Follow-ups: Phase 6 wires this in.
+
+## 2026-04-16 - LSP-shaped finding model
+
+- Decision: Use an LSP-shaped finding model (code, codeDescription, range,
+  relatedInformation, data).
+- Context: Later editor integrations should not need a second contract.
+- Options: bespoke JSON; LSP-shaped JSON.
+- Consequences: Low-friction future LSP or IDE integrations.
+- Follow-ups: Renderer tests assert the shape.
+
+## 2026-04-16 - Editor severity mapping never uses `Error`
+
+- Decision: Map lint severities to Warning / Information / Hint. Never
+  emit `Error` for a lint finding.
+- Context: `Error` is reserved for compiler failures; mixing them would
+  blur the boundary.
+- Options: allow `Error` for high severity; cap at Warning.
+- Consequences: Lint stays visibly advisory in the editor.
+- Follow-ups: Phase 6 Exit criteria enforce this.
+
+## 2026-04-16 - Scope covers authored source and emitted output together
+
+- Decision: Lock shipped scope to both authored prompt source and emitted
+  output, with cross-surface findings first-class from day one.
+- Context: Either surface alone misses real drift.
+- Options: source-only MVP; output-only MVP; both from the start.
+- Consequences: Packet builder must always expose both when both exist.
+- Follow-ups: Phase 2 Exit criteria enforce this.
+
+## 2026-04-16 - Scope boundary is hard, not a preference
+
+- Decision: The plan does not allow a source-only MVP or an output-only
+  MVP.
+- Context: A softer preference would erode the cross-surface contract
+  under pressure.
+- Options: soft preference; hard boundary.
+- Consequences: Later phases cannot quietly drop one side.
+- Follow-ups: none.
+
+## 2026-04-16 - Defer SARIF
+
+- Decision: Defer SARIF output until after terminal, JSON, Markdown, and
+  VS Code are real.
+- Context: SARIF is useful but not on the critical path for authors.
+- Options: ship SARIF in v1; defer.
+- Consequences: Smaller first release surface.
+- Follow-ups: Revisit after Phase 6 lands.
+
+## 2026-04-16 - Live docs promotion path
+
+- Decision: Promote user-facing material to live docs
+  (`docs/AGENT_LINTER.md`, `AUTHORING_PATTERNS.md`) so the feature does not
+  stay trapped in a dated plan.
+- Context: Dated plans go stale; live docs get updated.
+- Options: keep material in-plan; promote to live docs.
+- Consequences: Phase 7 owns the promotion.
+- Follow-ups: §5.6 names the target paths.
+
+## 2026-04-16 - Include `emit_flow --lint` alongside `emit_docs --lint`
+
+- Decision: Phase 5 covers `emit_flow --lint` as well as `emit_docs --lint`.
+- Context: Earlier wording named only `emit_docs`, which would have silently
+  cut lint for flow targets.
+- Options: emit_docs only; both; neither in Phase 5.
+- Consequences: Flow authoring drift is caught in the same phase as docs
+  authoring drift.
+- Follow-ups: If evidence later shows `emit_flow` has no authored-source
+  exposure worth linting, record that as a separate Decision Log entry
+  before skipping it.
+
+## 2026-04-16 - Consistency-pass result: do not proceed to implement
+
+- Decision: Ran `consistency-pass`; Decision: proceed to implement? no.
+- Context: Structural drift from the canonical artifact shape still open
+  (§4, §5, §6, §7, §8, §9, §10, Appendix A).
+- Options: proceed with known drift; repair first via `reformat`.
+- Consequences: Routed next command to `reformat`, then re-run
+  `consistency-pass`.
+- Follow-ups: Once reformat lands, re-run `consistency-pass` and target a
+  clean `yes` before `implement`.
+  Cross-section content repairs were applied (packet facts, Phase 2 and Phase 6
+  Exit criteria, Phase 5 emit_flow scope, Phase 7 concrete deliverables,
+  Section 6 staged-include row, Section 3.3 readiness wording). Remaining
+  structural drift in Sections 4, 5, 6, 7, 8, 9, 10 and Appendix A must be
+  resolved through `reformat` + `phase-plan` before `implement-loop`. Details
+  in the `arch_skill:block:consistency_pass` block above.
+
+## 2026-04-16 - Reformat canonical scaffold applied
+
+- Decision: Apply `reformat` to bring Sections 4, 5, 6, 7, 8, 9, 10, and
+  Appendix A onto the canonical arch-step scaffold without losing meaning.
+- Context: The first `consistency-pass` decision was `proceed to implement?
+  no` because structural drift from the canonical artifact shape was wide
+  even though the content was decision-complete.
+- Options: stay non-canonical and document the drift; apply reformat;
+  rewrite the plan from scratch.
+- Consequences: Canonical 4.4 heading, canonical 5.1-5.5 subsection shape,
+  canonical 6.1 / 6.2 split, canonical 7.x `Goal:` / `Work:` renames,
+  canonical 8.1-8.3 test split, canonical 9.1-9.3 rollout / telemetry /
+  runbook split, canonical `## YYYY-MM-DD - title` Decision Log blocks,
+  and demoted Appendix A headings. Intentional non-canonical items
+  (Section 5.6 live docs subsection, Section 6 change-map columns) are
+  recorded in Appendix B. Section 7 canonical per-phase fields
+  (`Checklist`, `Verification`, `Docs/comments`, `Rollback`) are deferred
+  to the next `phase-plan` pass.
+- Follow-ups: Run `phase-plan` to fill the remaining canonical per-phase
+  fields, then re-run `consistency-pass` and target a clean
+  `Decision: proceed to implement? yes`.
+
+## 2026-04-16 - Second consistency-pass after reformat
+
+- Decision: Ran `consistency-pass` again after reformat. Decision:
+  proceed to implement? no.
+- Context: Reformat repaired all structural drift flagged by the first
+  pass. The only remaining blocker is Section 7 canonical per-phase
+  fields; required phase obligations should live in `Checklist` or
+  `Exit criteria`, not only in `Work:` explanatory prose.
+- Options: proceed to implement with `Work`-only obligations; run
+  `phase-plan` next to populate canonical per-phase fields; defer the
+  canonical shape indefinitely.
+- Consequences: Next command is `phase-plan`. After that, re-run
+  `consistency-pass` a third time to clear the helper block.
+- Follow-ups: Refresh the `arch_skill:block:consistency_pass` block after
+  `phase-plan` and retire this artifact's reformat deferrals.
+
+## 2026-04-16 - Phase-plan pass: canonical per-phase fields applied
+
+- Decision: Apply `phase-plan` to §7 to add canonical per-phase
+  `Checklist (must all be done)`, `Verification (required proof)`,
+  `Docs/comments`, and `Rollback` fields to all seven phases, and bind
+  every required obligation from §5, §6.2, §8, and §9 into `Checklist`
+  or `Exit criteria`.
+- Context: The second `consistency-pass` decision was `proceed to
+  implement? no` because §7 still held required phase obligations only
+  in `Work:` explanatory prose. The arch-step Non-negotiables treat that
+  as an orphan-obligation risk.
+- Options: proceed to implement with `Work`-only obligations; run
+  `phase-plan` to lock the canonical per-phase shape; rewrite §7.
+- Consequences: §7 is now a single `arch_skill:block:phase_plan` block.
+  All seven phases carry the canonical field set. An obligation sweep
+  across §5.1 owner paths, §5.2 required packet facts and surface rule,
+  §5.3 canonical finding-model fields, §5.4 invariants needing in-code
+  enforcement, §5.5 five VS Code settings, §6.1 change-map dispositions,
+  §6.2 migration notes, §8 verification commitments, and §9.3
+  operational runbook rules confirmed that every required obligation
+  lives in a phase `Checklist` or `Exit criteria`.
+- Follow-ups: Refresh the `arch_skill:block:consistency_pass` block
+  with a fresh verdict.
+
+## 2026-04-16 - Third consistency-pass: proceed to implement
+
+- Decision: Ran `consistency-pass` a third time after `phase-plan`.
+  Decision: proceed to implement? yes.
+- Context: Every prior drift item is now resolved or intentionally
+  carried with a recorded rationale in Appendix B. The obligation
+  sweep across §5, §6.2, §8, and §9 against §7 Checklist and Exit
+  criteria finds no orphan obligations. No plan-shaping decisions are
+  unresolved.
+- Options: ship to implement; add another hardening pass (plan-enhance,
+  overbuild-protector); park the plan.
+- Consequences: Next command is `implement` (or `implement-loop` /
+  `auto-implement` when the user wants the controller loop) on this
+  same `DOC_PATH`. Phase 1 is the foundational unit; later phases build
+  on its boundary lock and owner paths.
+- Follow-ups: During `implement`, keep §7 authoritative; if real
+  execution truth disagrees with the plan, stop and repair the plan
+  before continuing on a rewritten story.
 
 # Appendix A) Imported Notes (unplaced; do not delete)
 
@@ -931,8 +1644,7 @@ These notes preserve the detailed rule catalog, examples, and mock output from
 the pre-reformat design note. They are still useful design input for the real
 implementation.
 
-## Imported current design sections
-## 1) Product Boundary
+### 1) Product Boundary
 
 This linter is for people who use Doctrine to author agent systems.
 
@@ -954,11 +1666,11 @@ It should not hard-code:
 Core Doctrine should ship the generic linter.
 Teams may add their own overlay rules on top.
 
-## 2) Core Laws The Shipped Linter Should Enforce
+### 2) Core Laws The Shipped Linter Should Enforce
 
 The core `AL###` catalog should come only from Doctrine's authoring laws.
 
-### 2.1 Core laws
+#### 2.1 Core laws
 
 - context is a budget
 - load depth on demand
@@ -970,7 +1682,7 @@ The core `AL###` catalog should come only from Doctrine's authoring laws.
 - repeated work should become reusable doctrine
 - make bloat visible
 
-### 2.2 What this means in practice
+#### 2.2 What this means in practice
 
 The linter should ask:
 
@@ -984,17 +1696,17 @@ The linter should ask:
 - Is the prose easy to read?
 - Do the instructions contradict each other?
 
-## 3) Core Vs Overlay Rules
+### 3) Core Vs Overlay Rules
 
 The shipped linter needs a hard line between core Doctrine rules and local
 policy packs.
 
-### 3.1 Core `AL###` rules
+#### 3.1 Core `AL###` rules
 
 These ship with Doctrine.
 They must stay generic across users.
 
-### 3.2 Overlay rules
+#### 3.2 Overlay rules
 
 Teams may load extra rules from a host profile.
 Those extra rules should use a different prefix, not `AL###`.
@@ -1007,17 +1719,17 @@ Examples of overlay-only checks:
 - one team's approval flow
 - one org's forbidden tools
 
-### 3.3 Why this matters
+#### 3.3 Why this matters
 
 If core Doctrine ships one team's local policy as if it were a language law,
 the product will feel wrong to most users.
 
-## 4) Review Packet
+### 4) Review Packet
 
 The linter should run on a review packet.
 The caller decides what exact facts go into that packet.
 
-### 4.1 Core packet inputs
+#### 4.1 Core packet inputs
 
 - authored Doctrine source for the current target
 - emitted Markdown for the same target
@@ -1026,7 +1738,7 @@ The caller decides what exact facts go into that packet.
 - typed declarations and compile graph facts
 - file paths and target names
 
-### 4.2 Optional exact side inputs
+#### 4.2 Optional exact side inputs
 
 - line counts
 - section size stats
@@ -1036,11 +1748,11 @@ The caller decides what exact facts go into that packet.
 
 The linter may use optional side inputs only when they are actually present.
 
-## 5) Run Modes
+### 5) Run Modes
 
 The linter must support two first-class run modes.
 
-### 5.1 `single-target`
+#### 5.1 `single-target`
 
 Use this when linting one compiled target with its imports.
 
@@ -1078,7 +1790,7 @@ Then ask the linter to judge contradiction, duplication across agents, and
 whether the final output prose matches a contract it never saw.
 ```
 
-### 5.2 `batch`
+#### 5.2 `batch`
 
 Use this when linting several compiled targets together.
 
@@ -1119,7 +1831,7 @@ Input packet:
 Then ask the linter to find repeated law across all three agents.
 ```
 
-## 6) Output Contract
+### 6) Output Contract
 
 Every finding should return:
 
@@ -1142,7 +1854,7 @@ Every finding should return:
 
 If the model cannot point to exact evidence, it must not emit the finding.
 
-### 6.1 Best-In-Class Output Goals
+#### 6.1 Best-In-Class Output Goals
 
 The best linter output should do five things well:
 
@@ -1156,7 +1868,7 @@ The output should never feel like a vague essay.
 It should read like a strong linter: short summary first, then precise finding
 cards, then machine-readable detail.
 
-### 6.2 Default Render Layers
+#### 6.2 Default Render Layers
 
 The linter should have four render layers.
 
@@ -1190,7 +1902,7 @@ Each finding should show:
 Return the same findings in JSON so editors, CI, and custom tools can consume
 them.
 
-### 6.3 Finding Card Shape
+#### 6.3 Finding Card Shape
 
 The human-facing finding card should include:
 
@@ -1213,7 +1925,7 @@ For cross-agent duplication findings, add:
 - normalized repeated text
 - shared owner recommendation
 
-### 6.4 Helpful Defaults
+#### 6.4 Helpful Defaults
 
 By default, the linter should:
 
@@ -1225,7 +1937,7 @@ By default, the linter should:
 - show a rewrite suggestion for wording, readability, and stop-line findings
 - show a shared extraction suggestion for duplication findings
 
-### 6.5 Default Colorization
+#### 6.5 Default Colorization
 
 Terminal output should be colorized by default.
 
@@ -1264,7 +1976,7 @@ Accessibility rules:
 - never use red vs green alone to express meaning
 - use indentation and grouping so monochrome output still reads cleanly
 
-### 6.6 Exit Status
+#### 6.6 Exit Status
 
 The linter should use simple exit codes:
 
@@ -1274,7 +1986,7 @@ The linter should use simple exit codes:
 
 The run summary should always say why the exit code was chosen.
 
-### 6.7 Mockup: Concise Single-Target Terminal Output
+#### 6.7 Mockup: Concise Single-Target Terminal Output
 
 In the mockups below, color tags show the intended default terminal colors.
 
@@ -1307,7 +2019,7 @@ Why this mockup is good:
 - top codes are visible
 - next actions are short and useful
 
-### 6.8 Mockup: Expanded Single-Target Finding Card
+#### 6.8 Mockup: Expanded Single-Target Finding Card
 
 ```text
 <red>[HIGH]</red> <magenta>AL800</magenta> Internal contradiction
@@ -1353,7 +2065,7 @@ Why this mockup is good:
 - the fix is small and concrete
 - the rewrite is ready to use
 
-### 6.9 Mockup: Batch Duplication Finding
+#### 6.9 Mockup: Batch Duplication Finding
 
 ```text
 <yellow>[MEDIUM]</yellow> <magenta>AL200</magenta> Duplicate rule across agents
@@ -1394,7 +2106,7 @@ Why this mockup is good:
 - it names all affected targets
 - it gives the developer a clear extraction direction
 
-### 6.10 Mockup: Readability Finding With Rewrite Help
+#### 6.10 Mockup: Readability Finding With Rewrite Help
 
 ```text
 <yellow>[MEDIUM]</yellow> <magenta>AL700</magenta> Reading level too high
@@ -1425,7 +2137,7 @@ Why this mockup is good:
 - the rewrite is simpler
 - the fix explains the writing move, not just the verdict
 
-### 6.11 Mockup: Markdown Report
+#### 6.11 Mockup: Markdown Report
 
 The linter should also support a markdown report for PR comments, saved
 artifacts, or review docs.
@@ -1460,7 +2172,7 @@ Suggested rewrite:
 > Be concise by default. Go longer only when the user asks for depth.
 ```
 
-### 6.12 Mockup: JSON Output
+#### 6.12 Mockup: JSON Output
 
 The JSON output should carry the same truth as the terminal output.
 
@@ -1514,7 +2226,7 @@ The JSON output should carry the same truth as the terminal output.
 }
 ```
 
-### 6.13 Best Possible Developer Experience
+#### 6.13 Best Possible Developer Experience
 
 The output is best in class when a developer can do all of this without extra
 guesswork:
@@ -1527,7 +2239,7 @@ guesswork:
 - understand which agents share a duplicate rule
 - trust that the terminal output and JSON output match
 
-## 7) Stable Code Bands
+### 7) Stable Code Bands
 
 The core linter should use stable numbered codes.
 
@@ -1543,12 +2255,12 @@ The core linter should use stable numbered codes.
 | `AL8xx` | contradiction and consistency |
 | `AL9xx` | skill boundaries and law placement |
 
-## 8) Core Finding Catalog
+### 8) Core Finding Catalog
 
 Each code below is part of the shipped Doctrine catalog.
 Each one includes a real good example and a real bad example.
 
-### `AL100` Oversized Always-On Context
+#### `AL100` Oversized Always-On Context
 
 #### What it means
 
@@ -1595,7 +2307,7 @@ Keep all of this in mind on every turn.
 Move deep reference material into a shared skill, module, or docs index.
 Keep the role home on job, inputs, and outputs.
 
-### `AL110` Pasted Reference Instead Of Pointer
+#### `AL110` Pasted Reference Instead Of Pointer
 
 #### What it means
 
@@ -1631,7 +2343,7 @@ Repeat this same block in every writer and reviewer role.
 
 Replace pasted reference text with a pointer to one shared source.
 
-### `AL120` Deep Procedure In The Role Home
+#### `AL120` Deep Procedure In The Role Home
 
 #### What it means
 
@@ -1667,7 +2379,7 @@ Keep this six-step method inside each role home.
 Move the reusable method into a skill.
 Keep only the trigger and expected output in the role.
 
-### `AL200` Duplicate Rule Across Agents
+#### `AL200` Duplicate Rule Across Agents
 
 #### What it means
 
@@ -1711,7 +2423,7 @@ Remove unsupported claims.
 
 Lift the repeated rule into one shared skill or module.
 
-### `AL210` Repeated Method Should Become A Skill
+#### `AL210` Repeated Method Should Become A Skill
 
 #### What it means
 
@@ -1753,7 +2465,7 @@ Group findings into themes by:
 
 Extract the shared method into a skill.
 
-### `AL220` Repeated Background Block Across Agents
+#### `AL220` Repeated Background Block Across Agents
 
 #### What it means
 
@@ -1789,7 +2501,7 @@ Our product helps distributed teams run user interviews...
 
 Move the shared background block into one importable module.
 
-### `AL300` Runtime Boundary Leak
+#### `AL300` Runtime Boundary Leak
 
 #### What it means
 
@@ -1821,7 +2533,7 @@ next actions.
 Remove runtime ownership from the prompt.
 Leave it to the runtime or to a host-specific overlay.
 
-### `AL310` Shadow Control Plane
+#### `AL310` Shadow Control Plane
 
 #### What it means
 
@@ -1857,7 +2569,7 @@ But this prompt also says reviewers may return:
 
 Delete the shadow surface and keep one canonical owner.
 
-### `AL400` Exact Truth Hidden In Prose
+#### `AL400` Exact Truth Hidden In Prose
 
 #### What it means
 
@@ -1892,7 +2604,7 @@ Add risks if they seem important.
 
 Move exact requirements into the declared contract.
 
-### `AL410` Prose Drift From Declared Constraints
+#### `AL410` Prose Drift From Declared Constraints
 
 #### What it means
 
@@ -1929,7 +2641,7 @@ Use any browser, shell, or external search tool that seems useful.
 
 Align the prose with the declared constraint surface.
 
-### `AL500` Mixed Role Ownership
+#### `AL500` Mixed Role Ownership
 
 #### What it means
 
@@ -1958,7 +2670,7 @@ publish the final version, and message the team about the result.
 
 Narrow the role to one clear job and one clear output.
 
-### `AL510` Missing Handoff Artifact
+#### `AL510` Missing Handoff Artifact
 
 #### What it means
 
@@ -1987,7 +2699,7 @@ should do.
 
 Require a concrete artifact or a concrete blocker note.
 
-### `AL520` Source Should Be Read, Not Remembered
+#### `AL520` Source Should Be Read, Not Remembered
 
 #### What it means
 
@@ -2015,7 +2727,7 @@ If the transcript is long, trust your notes and fill any gaps.
 
 Point to the real source and remove memory-based fallback language.
 
-### `AL600` Weak Resolver Name
+#### `AL600` Weak Resolver Name
 
 #### What it means
 
@@ -2041,7 +2753,7 @@ skill GeneralHelper
 
 Rename it so the job and scope are clear.
 
-### `AL610` Weak Description
+#### `AL610` Weak Description
 
 #### What it means
 
@@ -2068,7 +2780,7 @@ description: Helps with summary work.
 
 Rewrite the description with purpose, trigger, and limit.
 
-### `AL700` Reading Level Too High
+#### `AL700` Reading Level Too High
 
 #### What it means
 
@@ -2101,7 +2813,7 @@ further interpretive mediation.
 
 Split long sentences and replace abstract words with common words.
 
-### `AL710` Vague Wording
+#### `AL710` Vague Wording
 
 #### What it means
 
@@ -2128,7 +2840,7 @@ appropriate.
 
 Replace vague verbs with exact actions and name the artifact directly.
 
-### `AL720` Missing Priority Or Stop Line
+#### `AL720` Missing Priority Or Stop Line
 
 #### What it means
 
@@ -2158,7 +2870,7 @@ policy, and clean up any other issues you notice.
 
 Order the work and add a clear stop rule.
 
-### `AL800` Internal Contradiction
+#### `AL800` Internal Contradiction
 
 #### What it means
 
@@ -2186,7 +2898,7 @@ Provide a full, exhaustive analysis of every tradeoff.
 
 State the priority rule or split default behavior from exceptions.
 
-### `AL810` Cross-Surface Contradiction
+#### `AL810` Cross-Surface Contradiction
 
 #### What it means
 
@@ -2221,7 +2933,7 @@ Trust your first reading and move fast.
 
 Align local text with the shared source of truth.
 
-### `AL900` Skill Too Broad
+#### `AL900` Skill Too Broad
 
 #### What it means
 
@@ -2251,7 +2963,7 @@ stakeholder messaging, and any other summary work.
 
 Split the skill by job and keep one repeatable method per skill.
 
-### `AL910` Shared Law Trapped In Local Text
+#### `AL910` Shared Law Trapped In Local Text
 
 #### What it means
 
@@ -2284,21 +2996,21 @@ Reviewer and planner roles repeat the same law in their own local wording.
 
 Lift the shared law into a shared module or skill.
 
-## 9) Severity And Confidence
+### 9) Severity And Confidence
 
-### 9.1 Severity
+#### 9.1 Severity
 
 - `high`: likely to mislead the agent or create conflicting truth
 - `medium`: likely to create drift, bloat, or poor reuse
 - `low`: likely to reduce clarity, but lower risk
 
-### 9.2 Confidence
+#### 9.2 Confidence
 
 - `high`: exact evidence and low ambiguity
 - `medium`: strong evidence, but local intent might justify it
 - `low`: weak signal; hide it by default
 
-## 10) Prompt Rules For The Linter
+### 10) Prompt Rules For The Linter
 
 The linter prompt should tell the model:
 
@@ -2310,11 +3022,11 @@ The linter prompt should tell the model:
 - You must not guess hidden runtime facts.
 - You must not invent repo-local policy that is not in the review packet.
 
-## 11) Hybrid Checks
+### 11) Hybrid Checks
 
 Some checks work best when exact signals and LLM judgment work together.
 
-### 11.1 Strong hybrid checks
+#### 11.1 Strong hybrid checks
 
 - `AL100` oversized context
 - `AL200` duplicate rule across agents
@@ -2331,7 +3043,7 @@ For these, deterministic helpers may provide:
 - reading metrics
 - target lists
 
-### 11.2 Pure LLM-heavy checks
+#### 11.2 Pure LLM-heavy checks
 
 - `AL710` vague wording
 - `AL720` missing priority or stop line
@@ -2339,7 +3051,7 @@ For these, deterministic helpers may provide:
 - `AL810` cross-surface contradiction
 - `AL900` skill too broad
 
-## 12) Bottom Line
+### 12) Bottom Line
 
 The right product is a Doctrine `agent linter`.
 
@@ -2351,6 +3063,8 @@ real good example and bad example.
 
 # Appendix B) Conversion Notes
 
+## Original reformat pass (initial)
+
 - This file was reformatted in place into the canonical arch-step artifact.
 - The strongest new material lives in Sections `0)` through `10)`: owner paths,
   editor integration choice, live docs path, and the stronger compiler-vs-lint
@@ -2360,3 +3074,116 @@ real good example and bad example.
 - I did not preserve the previous top-level `# TL;DR` verbatim because its core
   claims were moved into the new canonical `# TL;DR` and Section `0)`.
 - I did not run verify commands because this was a docs-only reformat pass.
+
+## 2026-04-16 post-consistency-pass reformat
+
+This pass followed a `consistency-pass` with `Decision: proceed to implement?
+no`. The goal was to bring Sections 4, 5, 6, 7, 8, 9, 10, and Appendix A onto
+the canonical scaffold and the canonical per-phase field set without losing
+meaning.
+
+What moved, and where:
+
+- Section 4:
+  - Renamed `4.4 Ownership and failure boundaries` to the canonical
+    `4.4 Observability + failure behavior today`.
+  - Added a `4.5 UI surfaces (ASCII mockups, if UI work)` stub that points at
+    the existing mockups in Appendix A §6.7-6.12 rather than duplicating
+    them.
+- Section 5:
+  - Kept canonical 5.1-5.5 shape:
+    `5.1 On-disk structure (future)`,
+    `5.2 Control paths (future)`,
+    `5.3 Object model + abstractions (future)`,
+    `5.4 Invariants and boundaries`,
+    `5.5 UI surfaces (ASCII mockups, if UI work)`.
+  - Consolidated old `5.4 Renderers` and old `5.5 VS Code integration` into
+    the canonical `5.5 UI surfaces` subsection.
+  - Folded old `5.7 Non-goals (bright lines)` and the boundary rules that
+    lived in `5.3` into the new `5.4 Invariants and boundaries` subsection.
+    No scope was added; the consolidation preserves prior claims.
+  - Kept `5.6 Live docs and public teaching path` as an explicit
+    non-canonical extra subsection because the feature's docs path is a
+    real plan decision that does not fit cleanly into 5.1-5.5.
+- Section 6:
+  - Split into `6.1 Change map (table)` and `6.2 Migration notes`.
+  - The change-map table keeps the original columns
+    (Surface / Paths / Why / Disposition / Notes) instead of the canonical
+    (Area / File / Symbol / Current behavior / Required change / Why /
+    New API / Tests impacted) shape. The canonical columns assume a
+    modify-in-place refactor; this plan is mostly new owner paths, so
+    several canonical columns have no content to carry. To avoid forcing
+    fabricated `Current behavior` / `Symbol` values, the change-map kept
+    the author's original columns. The canonical migration concerns
+    (canonical owner path, deprecated APIs, delete list, adjacent surfaces,
+    compatibility posture, behavior-preservation signals) are all covered
+    under `6.2 Migration notes` instead.
+  - This column deviation is an intentional non-canonical extra. A later
+    `phase-plan` or `plan-enhance` pass may rewrite it into the canonical
+    eight-column shape once per-file change intent is recorded.
+- Section 7:
+  - Renamed per-phase `Goals:` to `Goal:` and `Implementation notes:` to
+    `Work:` for all seven phases.
+  - Kept `Exit criteria (all required):` unchanged.
+  - Did not yet add canonical `Checklist (must all be done):`,
+    `Verification:`, `Docs/comments:`, and `Rollback:` fields per phase.
+    That is real phase-plan work, not reformat work. A preamble in
+    Section 7 records this explicitly and routes the missing fields to a
+    follow-up `phase-plan` pass.
+- Section 8:
+  - Replaced the old 4-subsection shape
+    (`8.1 Docs-only reformat proof`,
+    `8.2 Required implementation proof later`,
+    `8.3 Repo proof surfaces`,
+    `8.4 What does not need to be blocking proof`)
+    with the canonical `8.1 Unit tests / 8.2 Integration tests /
+    8.3 E2E / device tests` shape plus a principles preamble.
+  - The stale "this reformat pass is docs-only" meta-text was removed.
+  - No test surface was dropped; content was redistributed into the
+    canonical three subsections.
+- Section 9:
+  - Replaced the old 4-subsection shape
+    (`9.1 Rollout posture`, `9.2 Operational rules`,
+    `9.3 User-facing runtime behavior`, `9.4 Telemetry posture`)
+    with the canonical `9.1 Rollout plan / 9.2 Telemetry changes /
+    9.3 Operational runbook` shape.
+  - No telemetry, rollout, or runtime claim was dropped.
+- Section 10:
+  - Converted the flat bullet list of decisions into canonical
+    `## <YYYY-MM-DD> - <decision title>` blocks with `Decision`, `Context`,
+    `Options`, `Consequences`, and `Follow-ups` subfields.
+  - Many entries were originally captured as one-line decisions.
+    Fields that were not explicit at original capture are filled only
+    where the plan already supports the answer, and otherwise left to a
+    later `phase-plan` or `plan-enhance` pass. Nothing was invented.
+- Appendix A:
+  - Dropped the redundant `## Imported current design sections` bridge
+    heading.
+  - Demoted imported section headings by one level so Appendix A content
+    sits under the appendix header: old `## N)` became `### N)`, and old
+    `### N.M` became `#### N.M`. Headings inside fenced code blocks
+    (the Markdown report mockup) were left untouched so the mockup still
+    shows a standalone `## / ###` structure.
+
+Intentionally non-canonical items still present (carried here so future
+passes can see them):
+
+- Section 5 keeps a `5.6 Live docs and public teaching path` subsection
+  outside the canonical 5.1-5.5 range.
+- Section 6 change-map table does not match canonical column shape (see
+  above).
+- Section 7 per-phase fields are still missing canonical `Checklist`,
+  `Verification`, `Docs/comments`, and `Rollback` fields. This is phase-plan
+  work, not reformat work.
+
+Still open after this reformat:
+
+- Re-run `consistency-pass` so the `arch_skill:block:consistency_pass`
+  helper block reflects the post-reformat state and the doc can get a
+  fresh `Decision: proceed to implement?` verdict.
+- Run `phase-plan` (or `plan-enhance`) next to fill the remaining canonical
+  per-phase fields in Section 7 and to rewrite Section 6 into the canonical
+  change-map column shape if it becomes relevant.
+
+I did not run verify commands because this reformat and consistency pass
+remain docs-only work.

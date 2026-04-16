@@ -814,3 +814,47 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
   `validate/review_agreement.py` family and the remaining helper surfaces once
   the broader dirty-tree render drift is either isolated or intentionally
   carried as shared repo work.
+
+## 2026-04-16 - Implement pass 23
+- Advanced the review-agreement validator slice in
+  `doctrine/_compiler/validate/review_agreement.py`, with the supporting
+  binding-span plumbing in `doctrine/_compiler/compile/reviews.py`,
+  `doctrine/_compiler/compile/review_cases.py`, and
+  `doctrine/_compiler/compile/review_contract.py`. The remaining raw
+  validator anchors in `validate/review_agreement.py` are now gone, and the
+  last small raw review-contract compile guards are gone too.
+- Review outcome totality, disambiguation, verdict alignment, next-owner
+  alignment, currentness-carrier alignment, carried semantic field alignment,
+  and conditional review output alignment now land on structured exact-line
+  `E484`, `E486`, `E489`, `E495`, `E496`, `E497`, `E498`, and `E499`
+  diagnostics, with labeled `Related:` sites on the real two-site conflicts.
+  Review-local `fields:` bindings and agent-local `final_output.review_fields`
+  now both keep the authored binding line instead of collapsing back to the
+  output declaration file. `compile/review_contract.py` now also keeps
+  structured `E500` on the authored `final_output` field and structured
+  `E494` on the authored `review:` field with a related abstract-review
+  declaration site.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  guarded verdict bindings, mixed review currentness, multi-subject review
+  disambiguation, routed `next_owner` bindings, current-none carrier drift,
+  and unguarded `blocked_gate` bindings.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/validate/review_agreement.py doctrine/_compiler/compile/reviews.py doctrine/_compiler/compile/review_cases.py doctrine/_compiler/compile/review_contract.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/46_review_current_truth_and_trust_surface/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/47_review_multi_subject_mode_and_trigger_carry/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/49_review_capstone/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/48_review_inheritance_and_explicit_patching/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/106_review_split_final_output_output_schema_partial/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic suite passed.
+  - The shipped `46`, `47`, `48`, `49`, and `106` manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: continue Phase 4 on the remaining review-family helpers
+  in `validate/review_preflight.py`, `validate/review_semantics.py`,
+  `validate/review_gate_observation.py`, and `validate/review_branches.py`,
+  then continue through the remaining unresolved compiler, resolver,
+  validator, and entrypoint helpers.
