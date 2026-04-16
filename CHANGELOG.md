@@ -59,6 +59,11 @@ payload text and breaking releases with no real upgrade steps.
 - Added provider-supplied prompt roots so embedding runtimes can pass named
   dependency-owned `prompts/` roots without adding install paths to host
   compile config.
+- Added a canonical top-level `route` block to `final_output.contract.json`.
+  It exposes compiler-resolved named-agent route targets for ordinary routed
+  finals, `route_only`, `route_from`, and routed review finals. Harnesses
+  should read this block instead of asking the model to copy the next owner
+  into a private control field.
 
 ### Changed
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and
@@ -75,6 +80,9 @@ payload text and breaking releases with no real upgrade steps.
   `schemas/<output-slug>.schema.json` artifact for structured final outputs,
   plus `final_output.contract.json` for final-output and review-control
   metadata. Doctrine no longer emits `AGENTS.contract.json`.
+- Changed emitted final-output companion contracts to include
+  `route.exists: false` for unrouted final responses, so harnesses can consume
+  one route contract shape for routed and unrouted turns.
 - Renamed the shipped structured final-output examples from `_json_schema` to
   `_output_schema` so the public corpus matches the approved feature story.
 - Added `python -m doctrine.validate_output_schema --schema ...` as the

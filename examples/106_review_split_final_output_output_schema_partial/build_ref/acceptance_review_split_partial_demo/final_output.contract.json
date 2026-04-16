@@ -1,0 +1,82 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "AcceptanceReviewSplitPartialDemo",
+    "slug": "acceptance_review_split_partial_demo",
+    "entrypoint": "examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "conditional",
+    "has_unrouted_branch": true,
+    "unrouted_review_verdicts": [
+      "changes requested"
+    ],
+    "branches": [
+      {
+        "target": {
+          "key": "ReviewLead",
+          "module_parts": [],
+          "name": "ReviewLead",
+          "title": "Review Lead"
+        },
+        "label": "Accepted plan goes to ReviewLead.",
+        "summary": "Accepted plan goes to ReviewLead. Next owner: Review Lead.",
+        "review_verdict": "accepted",
+        "choice_members": []
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "AcceptanceControlFinalResponse",
+    "declaration_name": "AcceptanceControlFinalResponse",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/acceptance_control_final_response.schema.json"
+  },
+  "review": {
+    "exists": true,
+    "comment_output": {
+      "declaration_key": "AcceptanceReviewComment",
+      "declaration_name": "AcceptanceReviewComment"
+    },
+    "carrier_fields": {
+      "verdict": "verdict",
+      "reviewed_artifact": "reviewed_artifact",
+      "analysis": "analysis_performed",
+      "readback": "output_contents_that_matter",
+      "current_artifact": "current_artifact",
+      "failing_gates": "failure_detail.failing_gates",
+      "blocked_gate": "failure_detail.blocked_gate",
+      "next_owner": "next_owner"
+    },
+    "final_response": {
+      "mode": "split",
+      "declaration_key": "AcceptanceControlFinalResponse",
+      "declaration_name": "AcceptanceControlFinalResponse",
+      "review_fields": {
+        "current_artifact": "current_artifact",
+        "next_owner": "next_owner"
+      },
+      "control_ready": false
+    },
+    "outcomes": {
+      "accept": {
+        "exists": true,
+        "verdict": "accept",
+        "route_behavior": "always"
+      },
+      "changes_requested": {
+        "exists": true,
+        "verdict": "changes_requested",
+        "route_behavior": "never"
+      },
+      "blocked": {
+        "exists": true,
+        "verdict": "changes_requested",
+        "route_behavior": "never"
+      }
+    }
+  }
+}

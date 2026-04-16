@@ -1,0 +1,43 @@
+input RouteFacts: "Route Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use host route facts for a route-only final response."
+
+
+output RouteOnlyFinalReply: "Route Only Final Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    route_handoff: "Route Handoff" when route.exists:
+        next_owner: route.next_owner
+
+        route_summary: "Route Summary"
+            "{{route.summary}}"
+
+
+agent RoutingOwner:
+    role: "Handle route-only follow-up."
+    workflow: "Route"
+        "Take back the same issue."
+
+
+route_only RouteOnlyFinalResponse: "Route Only Final Response"
+    facts: RouteFacts
+    when:
+        live_job == "route_only_final"
+    current none
+    handoff_output: RouteOnlyFinalReply
+    routes:
+        routing_owner -> RoutingOwner
+
+
+agent RouteOnlyFinalOutputContractDemo:
+    role: "End a route-only turn with emitted route contract metadata."
+    workflow: RouteOnlyFinalResponse
+    inputs: "Inputs"
+        RouteFacts
+    outputs: "Outputs"
+        RouteOnlyFinalReply
+    final_output: RouteOnlyFinalReply

@@ -16,6 +16,10 @@ from doctrine._compiler.resolved_types import (
     CompiledBodyItem,
     CompiledField,
     CompiledFinalOutputSpec,
+    CompiledRouteBranchSpec,
+    CompiledRouteChoiceMemberSpec,
+    CompiledRouteContractSpec,
+    CompiledRouteTargetSpec,
     CompiledSection,
     IndexedUnit,
     OutputDeclKey,
@@ -166,12 +170,109 @@ class CompileAgentMixin:
             route_output_contexts=route_output_contexts,
             final_output=final_output,
         )
+        route_contract = self._compile_final_response_route_contract(
+            final_output=final_output,
+            review_contract=review_contract,
+            route_output_contexts=route_output_contexts,
+        )
         return CompiledAgent(
             name=agent.name,
             fields=compiled_fields,
             final_output=final_output,
             review=review_contract,
+            route=route_contract,
         )
+
+    def _compile_final_response_route_contract(
+        self,
+        *,
+        final_output: CompiledFinalOutputSpec | None,
+        review_contract,
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+    ) -> CompiledRouteContractSpec | None:
+        contract_output_key = self._final_response_contract_output_key(
+            final_output=final_output,
+            review_contract=review_contract,
+        )
+        if contract_output_key is None:
+            return None
+
+        route_semantics = self._route_output_context_for_key(
+            route_output_contexts,
+            contract_output_key,
+        )
+        if route_semantics is None:
+            return self._empty_final_response_route_contract()
+
+        branches = tuple(
+            CompiledRouteBranchSpec(
+                target=CompiledRouteTargetSpec(
+                    key=_dotted_decl_name(
+                        branch.target_module_parts,
+                        branch.target_name,
+                    ),
+                    module_parts=branch.target_module_parts,
+                    name=branch.target_name,
+                    title=self._route_semantic_branch_title(branch),
+                ),
+                label=branch.label,
+                summary=self._route_semantic_branch_summary(branch),
+                review_verdict=branch.review_verdict,
+                choice_members=tuple(
+                    CompiledRouteChoiceMemberSpec(
+                        enum_module_parts=member.enum_module_parts,
+                        enum_name=member.enum_name,
+                        member_key=member.member_key,
+                        member_title=member.member_title,
+                        member_wire=member.member_wire,
+                    )
+                    for member in branch.choice_members
+                ),
+            )
+            for branch in route_semantics.branches
+        )
+        return CompiledRouteContractSpec(
+            exists=bool(branches),
+            behavior=self._route_contract_behavior(route_semantics),
+            has_unrouted_branch=route_semantics.has_unrouted_branch,
+            unrouted_review_verdicts=tuple(sorted(route_semantics.unrouted_review_verdicts)),
+            branches=branches,
+        )
+
+    def _final_response_contract_output_key(
+        self,
+        *,
+        final_output: CompiledFinalOutputSpec | None,
+        review_contract,
+    ) -> OutputDeclKey | None:
+        if final_output is not None:
+            return final_output.output_key
+        if review_contract is None:
+            return None
+        # Review carrier and split final responses share the same top-level
+        # route contract so harnesses do not need a review-only routing bridge.
+        if review_contract.final_response.mode == "split":
+            return review_contract.final_response.output_key
+        return review_contract.comment_output.output_key
+
+    def _empty_final_response_route_contract(self) -> CompiledRouteContractSpec:
+        return CompiledRouteContractSpec(
+            exists=False,
+            behavior="never",
+            has_unrouted_branch=False,
+            unrouted_review_verdicts=(),
+            branches=(),
+        )
+
+    def _route_contract_behavior(
+        self,
+        route_semantics: RouteSemanticContext,
+    ) -> str:
+        if not route_semantics.branches:
+            return "never"
+        if route_semantics.has_unrouted_branch and not route_semantics.route_required:
+            return "conditional"
+        return "always"
 
     def _compile_agent_fields(
         self,

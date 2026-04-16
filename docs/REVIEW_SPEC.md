@@ -25,7 +25,10 @@ This is the same split workflow law uses for producer turns:
 
 - semantic truth stays compiler-owned
 - emitted contracts stay on declared outputs
-- there is no review-only packet, route payload, or shadow trust channel
+- there is no review-only route packet or shadow trust channel
+- when `emit_docs` writes `final_output.contract.json`, the shared top-level
+  `route` block carries the resolved route target for review and non-review
+  turns alike
 
 ## Surface Overview
 
@@ -228,6 +231,9 @@ Important rules:
   do not share the same routed owner
 - split review `final_output:` contracts may consume the same `route.*` truth
   without replacing `comment_output` as the durable review carrier
+- the emitted `final_output.contract.json` file uses the same top-level
+  `route` block for review carrier finals and split finals. It also keeps the
+  existing `review` block for review-specific control metadata.
 
 ## Pre-Outcome Review Logic
 
@@ -328,7 +334,8 @@ Important rules:
 - every terminal review branch must resolve exactly one currentness result
 - a terminal review branch may route or stop without a route
 - when some review outcomes route and others do not, the companion contract
-  reports that route behavior per normalized outcome
+  reports normalized review outcome behavior and the top-level `route` block
+  marks the whole final response as `conditional`
 - blocked outcomes may use `current none`, including guarded
   `current none when present(blocked_gate)` splits
 - carried fields remain on emitted output fields, not on routes
@@ -402,6 +409,9 @@ final_output:
 
 The compiler emits whether that split final response is `control_ready`.
 Authors do not declare that mode by hand.
+The same companion contract also emits the top-level `route` block. Use that
+block for runtime routing. Use the `review` block for carrier fields,
+`review_fields`, and `control_ready`.
 Imported reusable review comments keep that same behavior: the bound output
 field still lives on the imported `comment_output`, while bare owner refs that
 are missing from the imported module may still bind the concrete review's

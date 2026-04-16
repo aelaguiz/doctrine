@@ -53,6 +53,25 @@ surfaces that define this runtime contract.
 - There is no model-copied owner string for canonical routing.
 - Review and non-review turns share one runtime routing model.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-15
+Verdict (code): COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- None.
+
+## Reopened phases (false-complete fixes)
+- None.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- None.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
@@ -61,6 +80,8 @@ recommended_flow: research -> deep dive -> phase plan -> consistency pass -> imp
 note: This block tracks stage order only. It never overrides readiness blockers caused by unresolved decisions.
 -->
 <!-- arch_skill:block:planning_passes:end -->
+
+WORKLOG_PATH: docs/EMIT_ROUTING_CONTRACT_FOR_FINAL_OUTPUTS_AND_REVIEWS_2026-04-15_WORKLOG.md
 
 # 0) Holistic North Star
 
@@ -500,7 +521,7 @@ the turn does not route. The same model will work for workflow-law turns,
 | Final-output emit serializer | `doctrine/emit_docs.py` | `FINAL_OUTPUT_CONTRACT_VERSION`, `_final_output_contract_payload`, new route serializer helper(s) | The emitted contract contains `contract_version`, `agent`, `final_output`, and optional `review` only | Serialize the new top-level `route` block, keep existing keys, and preserve version `1` | Harnesses need one canonical runtime routing payload in the shipped contract | `final_output.contract.json` gains top-level `route` with stable fields | `tests/test_emit_docs.py`, `doctrine/_diagnostic_smoke/emit_checks.py` |
 | Emit smoke proof | `doctrine/_diagnostic_smoke/emit_checks.py` | emitted-contract smoke checks | Smoke checks only confirm contract file presence and schema relpath | Add routed and unrouted contract assertions at the emitted JSON level | Catch wire drift earlier than full corpus review | Smoke expectations include top-level `route` | diagnostic smoke coverage, `make verify-diagnostics`, `make verify-examples` |
 | Ordinary routed examples | `examples/87_workflow_route_output_binding/**`, `examples/91_handoff_routing_route_output_binding/**`, `examples/93_handoff_routing_route_from_final_output/**` | manifest-backed example refs and expected artifacts | These examples prove workflow-law route reads, handoff route reads, and `route_from` reads in final output, but not the emitted runtime contract | Update proofs so emitted `final_output.contract.json` shows the new top-level `route` block for workflow-law and handoff routed finals plus `route_from` branch detail | Keep the ordinary routing story manifest-backed and end to end across the promised route families | Example refs document canonical ordinary routed contract output | `make verify-examples` |
-| Dedicated `route_only` proof | `examples/116_route_only_final_output_contract/**` | new manifest-backed example directory | There is no dedicated example that proves `route_only` through the emitted final-output contract | Add one new example instead of overloading `examples/89_route_only_shared_route_semantics` | Keep one new idea per example and prove the missing acceptance leg | New example proves top-level `route` on a `route_only` final-response contract | `make verify-examples` |
+| Dedicated `route_only` proof | `examples/119_route_only_final_output_contract/**` | new manifest-backed example directory | There is no dedicated example that proves `route_only` through the emitted final-output contract | Add one new example instead of overloading `examples/89_route_only_shared_route_semantics` | Keep one new idea per example and prove the missing acceptance leg | New example proves top-level `route` on a `route_only` final-response contract | `make verify-examples` |
 | Review routed examples | `examples/104_review_final_output_output_schema_blocked_control_ready/**`, `examples/105_review_split_final_output_output_schema_control_ready/**`, `examples/106_review_split_final_output_output_schema_partial/**` | manifest-backed review refs and expected artifacts | These examples prove review control metadata, but not canonical routed target identity in the final-output contract | Extend review proofs so carrier, split, and conditional review finals emit the same top-level `route` model | Review and non-review need one runtime routing story | Example refs show route truth for review finals without replacing `review.outcomes.route_behavior` | `make verify-examples` |
 | Emit contract tests | `tests/test_emit_docs.py` | final-output contract assertions | Tests lock current file shape and review payload only | Add assertions for unrouted `route.exists == false`, ordinary routed branch payloads, and review-routed branch payloads while preserving current `final_output` and `review` assertions | This is the canonical wire-contract test file | Contract tests prove version `1` additive extension | `uv run --locked python -m unittest tests.test_emit_docs` |
 | Public docs and release notes | `docs/EMIT_GUIDE.md`, `docs/WORKFLOW_LAW.md`, `docs/REVIEW_SPEC.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`, `docs/VERSIONING.md`, `docs/README.md`, `examples/README.md`, `CHANGELOG.md` | emit, route, review, versioning, and docs-index text | Public docs explain route reads and review control, but not the new canonical emitted route contract | Update all live docs that define, teach, or version this contract family | Avoid stale truth and meet public-surface release rules | Docs explain top-level `route`, additive compatibility, and example coverage | doc review plus `make verify-examples`; run `make verify-package` when the public release surface changes |
@@ -554,7 +575,7 @@ the turn does not route. The same model will work for workflow-law turns,
 | Final-response contracts | `doctrine/_compiler/compile/agent.py`, `doctrine/emit_docs.py` | One compiled top-level `route` contract for both ordinary and review finals | Prevents a split runtime model between review and non-review routing | include |
 | Branch summary text | `doctrine/_compiler/validate/route_semantics_reads.py` | One shared formatter for route branch titles and summaries | Prevents emitted `summary` text from drifting away from `route.summary` | include |
 | Ordinary route proof ladder | `examples/87_workflow_route_output_binding`, `examples/91_handoff_routing_route_output_binding`, `examples/93_handoff_routing_route_from_final_output`, `examples/111_inherited_output_route_semantics` | Keep ordinary route-contract proof on the existing route-semantics ladder | Prevents docs and manifests from proving route reads but not the emitted contract | include for `87`, `91`, and `93`; defer `111` unless implementation touches inherited contract output |
-| `route_only` proof | `examples/89_route_only_shared_route_semantics`, new `examples/116_route_only_final_output_contract` | Use a dedicated final-output contract example instead of overloading the shared route-semantics example | Prevents one example from trying to prove two new ideas at once | include |
+| `route_only` proof | `examples/89_route_only_shared_route_semantics`, new `examples/119_route_only_final_output_contract` | Use a dedicated final-output contract example instead of overloading the shared route-semantics example | Prevents one example from trying to prove two new ideas at once | include |
 | Review contract family | `examples/104_*` through `examples/106_*`, `tests/test_emit_docs.py` | Keep review control metadata and routed target metadata in one file without duplicate route packets | Prevents review routing from drifting into a special bridge model | include |
 | Public authoring docs | `docs/EMIT_GUIDE.md`, `docs/WORKFLOW_LAW.md`, `docs/REVIEW_SPEC.md`, `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`, `docs/VERSIONING.md`, `docs/README.md`, `examples/README.md` | Teach the emitted top-level `route` block as the canonical runtime contract | Prevents stale docs from sending harness authors back to copied owner strings | include |
 <!-- arch_skill:block:call_site_audit:end -->
@@ -592,6 +613,17 @@ the turn does not route. The same model will work for workflow-law turns,
 * Goal:
   Put all routed final-response truth on one compile-to-emit path that works
   for ordinary finals and review finals.
+* Status: COMPLETE
+* Completed work:
+  - Added compiled route contract specs on `CompiledAgent`.
+  - Added one compile-time contract-response selection helper for ordinary
+    finals, review carrier finals, and review split finals.
+  - Emitted one top-level `route` block in `final_output.contract.json`,
+    including unrouted `exists: false` contracts.
+  - Extended direct emit-contract unit coverage for routed, unrouted, and
+    review-routed contracts.
+* Proof run:
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_final_output tests.test_route_output_semantics` - passed.
 * Work:
   Build the shared contract model first, because later proof and docs work
   should only validate one already-chosen wire contract, not invent it.
@@ -649,6 +681,17 @@ the turn does not route. The same model will work for workflow-law turns,
   Prove the new route contract on ordinary workflow, handoff, `route_from`,
   and `route_only` final responses with manifest-backed examples and emit
   smoke.
+* Status: COMPLETE
+* Completed work:
+  - Added routed and unrouted route-contract assertions to emit smoke.
+  - Added build-contract proof for examples `87`, `91`, and `93`.
+  - Added `examples/119_route_only_final_output_contract` as the dedicated
+    `route_only` final-output contract proof.
+  - Left `examples/111_inherited_output_route_semantics` unchanged because
+    inherited final-output contract emission did not move.
+* Proof run:
+  - `make verify-diagnostics` - passed.
+  - Targeted manifests for examples `87`, `91`, `93`, and `119` - passed.
 * Work:
   Extend the ordinary route proof ladder only after the core wire contract is
   stable, so example churn follows the chosen serializer instead of shaping it.
@@ -664,7 +707,7 @@ the turn does not route. The same model will work for workflow-law turns,
     manifest and reference artifacts prove `route_from` branch detail in the
     emitted contract, including choice members.
   - Add a new manifest-backed example at
-    `examples/116_route_only_final_output_contract` that proves the emitted
+    `examples/119_route_only_final_output_contract` that proves the emitted
     route contract for a `route_only` turn.
   - Keep `examples/89_route_only_shared_route_semantics` focused on shared
     route semantics instead of turning it into the new final-output contract
@@ -678,7 +721,7 @@ the turn does not route. The same model will work for workflow-law turns,
   - Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/87_workflow_route_output_binding/cases.toml`.
   - Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/91_handoff_routing_route_output_binding/cases.toml`.
   - Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/93_handoff_routing_route_from_final_output/cases.toml`.
-  - Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/116_route_only_final_output_contract/cases.toml`.
+  - Run `uv run --locked python -m doctrine.verify_corpus --manifest examples/119_route_only_final_output_contract/cases.toml`.
 * Docs/comments (propagation; only if needed):
   - Keep example names and titles clear about which runtime contract behavior
     each proof owns.
@@ -704,6 +747,17 @@ the turn does not route. The same model will work for workflow-law turns,
   Prove that review carrier finals, split finals, and conditional review
   branches emit the same top-level route contract without losing existing
   review control metadata.
+* Status: COMPLETE
+* Completed work:
+  - Extended review assertions in `tests/test_emit_docs.py`.
+  - Added build-contract proof for review examples `104`, `105`, and `106`.
+  - Split example `106` invalid agents into dedicated invalid prompt files so
+    the default prompt can also serve build-contract proof.
+  - Kept `review.outcomes.route_behavior` present while adding top-level route
+    metadata.
+* Proof run:
+  - `uv run --locked python -m unittest tests.test_emit_docs` - passed.
+  - Targeted manifests for examples `104`, `105`, and `106` - passed.
 * Work:
   Keep review proof separate from ordinary proof so audit can see clearly that
   the shared route model holds across both control families.
@@ -748,6 +802,21 @@ the turn does not route. The same model will work for workflow-law turns,
 * Goal:
   Bring the shipped docs, versioning guidance, and release notes into line
   with the new public route contract and finish with full proof.
+* Status: COMPLETE
+* Completed work:
+  - Updated emit, workflow-law, review, I/O, language-reference, authoring,
+    versioning, docs-index, examples-index, and changelog surfaces.
+  - Documented the additive public `final_output.contract.json` route block
+    and harness migration away from copied owner strings.
+  - Regenerated checked-in build references for the final-output contract
+    examples affected by the new route block.
+* Proof run:
+  - `uv sync` - passed.
+  - `npm ci` - passed.
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_final_output tests.test_route_output_semantics` - passed.
+  - `make verify-diagnostics` - passed.
+  - `make verify-examples` - passed.
+  - `make verify-package` - passed.
 * Work:
   Public contract work is not complete until the shipped docs and release
   surfaces say the same thing as the emitted file and example proof.
@@ -961,3 +1030,62 @@ and reuse the same branch-summary formatter that powers `route.summary`.
   implementation plan.
 - Reopen the plan only if implementation finds repo-backed evidence that the
   additive version-`1` contract cannot hold.
+
+## 2026-04-15 - Use example 119 for the route-only contract proof
+
+### Context
+
+The plan named `examples/116_route_only_final_output_contract`, but the repo
+already had numbered examples at `116_document_block_refs` and
+`116_first_class_named_tables`.
+
+### Options
+
+- Reuse `116` and create another duplicate number.
+- Rename existing examples.
+- Use the next open example number for the new route-only proof.
+
+### Decision
+
+Use `examples/119_route_only_final_output_contract` and update the plan,
+emit target, docs, and proof commands to match.
+
+### Consequences
+
+- The proof stays one new idea in one new example.
+- Existing example numbers are not renamed.
+- The route-only acceptance leg is still covered by a manifest-backed
+  build-contract case.
+
+### Follow-ups
+
+- Completed in implementation: example `119` now builds and verifies cleanly.
+
+## 2026-04-15 - Implementation pass completed all planned phases
+
+### Context
+
+The implementation pass added the shared compile and emit route contract,
+ordinary and review proof ladders, docs, versioning notes, release notes, and
+full proof.
+
+### Options
+
+- Stop after local unit proof and leave public docs or examples for later.
+- Complete the full approved Section 7 frontier before audit.
+
+### Decision
+
+Complete the full approved Section 7 frontier in one pass and leave the
+implement-loop state armed for fresh audit.
+
+### Consequences
+
+- Code, docs, examples, and public release notes now describe the same route
+  contract.
+- The authoritative implementation audit block is still not written by this
+  parent pass. The fresh hook audit owns that verdict.
+
+### Follow-ups
+
+- Await fresh `audit-implementation` from the installed Stop hook.

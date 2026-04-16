@@ -248,6 +248,7 @@ def _final_output_contract_payload(
             "slug": agent_slug(compiled.name),
             "entrypoint": _agent_entrypoint_relpath(plan=plan, target=target),
         },
+        "route": _serialize_route_contract(compiled.route),
         "final_output": _serialize_final_output_contract(compiled.final_output),
         **(
             {"review": _serialize_review_contract(compiled.review)}
@@ -275,6 +276,51 @@ def _agent_entrypoint_relpath(*, plan: RuntimeEmitPlan, target: EmitTarget) -> s
         return resolved.relative_to(project_root).as_posix()
     except ValueError:
         return resolved.as_posix()
+
+
+def _serialize_route_contract(route) -> dict[str, object]:
+    if route is None:
+        return {
+            "exists": False,
+            "behavior": "never",
+            "has_unrouted_branch": False,
+            "unrouted_review_verdicts": [],
+            "branches": [],
+        }
+    return {
+        "exists": route.exists,
+        "behavior": route.behavior,
+        "has_unrouted_branch": route.has_unrouted_branch,
+        "unrouted_review_verdicts": list(route.unrouted_review_verdicts),
+        "branches": [
+            {
+                "target": {
+                    "key": branch.target.key,
+                    "module_parts": list(branch.target.module_parts),
+                    "name": branch.target.name,
+                    "title": branch.target.title,
+                },
+                "label": branch.label,
+                "summary": branch.summary,
+                **(
+                    {"review_verdict": branch.review_verdict}
+                    if branch.review_verdict is not None
+                    else {}
+                ),
+                "choice_members": [
+                    {
+                        "enum_module_parts": list(member.enum_module_parts),
+                        "enum_name": member.enum_name,
+                        "member_key": member.member_key,
+                        "member_title": member.member_title,
+                        "member_wire": member.member_wire,
+                    }
+                    for member in branch.choice_members
+                ],
+            }
+            for branch in route.branches
+        ],
+    }
 
 
 def _serialize_final_output_contract(final_output) -> dict[str, object]:

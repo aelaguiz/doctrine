@@ -5,6 +5,13 @@
     "slug": "repo_status_agent",
     "entrypoint": "examples/79_final_output_output_schema/prompts/AGENTS.prompt"
   },
+  "route": {
+    "exists": false,
+    "behavior": "never",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": []
+  },
   "final_output": {
     "exists": true,
     "declaration_key": "RepoStatusFinalResponse",

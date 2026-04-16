@@ -132,6 +132,9 @@ final_output:
 - `route.next_owner.*` may stay live across several `route_from` branches. It
   means the selected route owner. `route.label` and `route.summary` still need
   one selected branch.
+- If `emit_docs` writes `final_output.contract.json`, it emits this same route
+  truth as a top-level `route` block. Harnesses should use that block for
+  runtime routing instead of copied owner strings in the payload.
 - Name each `route_from` enum member once. Use `else` at most once.
 - Unguarded `route.*` reads fail loudly when some active branches may not
   route. Guard route-specific readback with `when route.exists:` when the
@@ -751,6 +754,9 @@ Important rules:
 - When that second output uses `review_fields:`, the compiler binds those
   paths to review semantics and emits whether the split final response is
   `control_ready`.
+- The emitted `final_output.contract.json` companion also carries the
+  top-level `route` block for ordinary finals, `route_only`,
+  `handoff_routing`, `route_from`, and routed reviews.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 

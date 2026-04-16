@@ -246,6 +246,10 @@ When route semantics are live, read:
 - `route.summary`
 - `route.choice.*` when `route_from` makes that safe
 
+When a harness needs to route the final response, read the top-level `route`
+block in `final_output.contract.json`. Do not ask the model to copy that same
+target into a private control field.
+
 Do not do this:
 - Do not duplicate route owner and route summary as manual output fields.
 - Do not leave route reads unguarded when some branches may not route.
@@ -255,7 +259,9 @@ Best anchors:
 - [88_review_route_semantics_shared_binding](../examples/88_review_route_semantics_shared_binding/prompts/AGENTS.prompt)
 - [89_route_only_shared_route_semantics](../examples/89_route_only_shared_route_semantics/prompts/AGENTS.prompt)
 - [91_handoff_routing_route_output_binding](../examples/91_handoff_routing_route_output_binding/prompts/AGENTS.prompt)
+- [93_handoff_routing_route_from_final_output](../examples/93_handoff_routing_route_from_final_output/prompts/AGENTS.prompt)
 - [94_route_choice_guard_narrowing](../examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt)
+- [119_route_only_final_output_contract](../examples/119_route_only_final_output_contract/prompts/AGENTS.prompt)
 
 ### Use `final_output:` only for the turn-ending answer
 
@@ -464,10 +470,13 @@ Better shape:
 - compiler-owned `route.*`
 - guarded output reads
 - `route_from` when one typed selector chooses the route
+- `final_output.contract.json` as the runtime route contract when a harness
+  needs to dispatch the next turn
 
 Use:
 - [87_workflow_route_output_binding](../examples/87_workflow_route_output_binding/prompts/AGENTS.prompt)
 - [91_handoff_routing_route_output_binding](../examples/91_handoff_routing_route_output_binding/prompts/AGENTS.prompt)
+- [119_route_only_final_output_contract](../examples/119_route_only_final_output_contract/prompts/AGENTS.prompt)
 - [92_route_from_basic](../examples/92_route_from_basic/prompts/AGENTS.prompt)
 - [94_route_choice_guard_narrowing](../examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt)
 
@@ -594,7 +603,8 @@ If you want the fastest path through the corpus, start here.
   [87](../examples/87_workflow_route_output_binding/prompts/AGENTS.prompt),
   [91](../examples/91_handoff_routing_route_output_binding/prompts/AGENTS.prompt),
   [92](../examples/92_route_from_basic/prompts/AGENTS.prompt),
-  [94](../examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt)
+  [94](../examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt),
+  [119](../examples/119_route_only_final_output_contract/prompts/AGENTS.prompt)
 - Output contracts and final answers:
   [56](../examples/56_document_structure_attachments/prompts/AGENTS.prompt),
   [57](../examples/57_schema_review_contracts/prompts/AGENTS.prompt),
@@ -631,6 +641,8 @@ If you want one short path through the guide, read these first:
   structured final answer
 - [105_review_split_final_output_output_schema_control_ready](../examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt):
   durable review plus control-ready final JSON
+- [119_route_only_final_output_contract](../examples/119_route_only_final_output_contract/prompts/AGENTS.prompt):
+  emitted route contract metadata for a route-only final response
 - [99_skill_package_plugin_metadata](../examples/99_skill_package_plugin_metadata/prompts/SKILL.prompt):
   when Doctrine is emitting a real package tree
 

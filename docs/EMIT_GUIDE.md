@@ -7,9 +7,9 @@ pipeline:
   `AGENTS.md` or `SOUL.md` per direct runtime root, or one emitted runtime
   package tree per imported package root. When an agent declares
   `final_output:` or a review contract, it also writes
-  `final_output.contract.json`. For structured final outputs, it also writes
-  the exact lowered schema JSON file that machine consumers should load for
-  payload shape.
+  `final_output.contract.json` with final-output, review, and route metadata.
+  For structured final outputs, it also writes the exact lowered schema JSON
+  file that machine consumers should load for payload shape.
 - `doctrine.emit_skill` writes compiled `SKILL.md` package trees plus bundled
   source-root companion files.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
@@ -290,6 +290,36 @@ writes:
 <output_dir>/<entrypoint-relative-dir>/<agent-slug>/final_output.contract.json
 ```
 
+That companion file is the runtime contract for the turn-ending response.
+It always includes a top-level `route` block when the file exists.
+
+The `route` block has these fields:
+
+- `exists`: whether any emitted branch routes
+- `behavior`: `always`, `never`, or `conditional`
+- `has_unrouted_branch`: whether at least one live branch stops without a route
+- `unrouted_review_verdicts`: review verdicts that stop without a route
+- `branches`: routed branches with resolved agent identity, label, summary,
+  optional review verdict, and optional `route_from` choice members
+
+Each branch target is compiler-resolved:
+
+```json
+{
+  "target": {
+    "key": "ReviewLead",
+    "module_parts": [],
+    "name": "ReviewLead",
+    "title": "Review Lead"
+  }
+}
+```
+
+Harnesses should read this block instead of asking the model to copy the next
+owner into a custom payload field. User-authored fields such as `next_owner`
+may still be useful output content, but they are not the canonical route
+contract.
+
 For workflow flow artifacts, Doctrine writes one file pair per emitted
 entrypoint:
 
@@ -329,6 +359,7 @@ examples/115_runtime_agent_packages/build/editor_home/SOUL.md
 examples/115_runtime_agent_packages/build/editor_home/references/style.txt
 examples/79_final_output_output_schema/build/repo_status_agent/final_output.contract.json
 examples/79_final_output_output_schema/build/repo_status_agent/schemas/repo_status_final_response.schema.json
+examples/119_route_only_final_output_contract/build/route_only_final_output_contract_demo/final_output.contract.json
 
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
@@ -532,9 +563,10 @@ For structured final outputs:
   contract.
 - The emitted payload contract lives at
   `schemas/<output-slug>.schema.json` beside `AGENTS.md`.
-- The emitted `final_output.contract.json` companion carries final-output and
-  review-control metadata such as declaration identity, carrier fields, split
-  final-response fields, and `control_ready`.
+- The emitted `final_output.contract.json` companion carries the top-level
+  `route` block plus final-output and review-control metadata such as
+  declaration identity, carrier fields, split final-response fields, and
+  `control_ready`.
 - `python -m doctrine.validate_output_schema --schema ...` validates that
   emitted file with Draft 2020-12 plus Doctrine's OpenAI subset checks.
 - `uv run --with openai python -m doctrine.prove_output_schema_openai --schema ... --model ...`
@@ -599,6 +631,7 @@ model.
 Representative checked-in proofs live in:
 
 - `examples/79_final_output_output_schema/build_ref/repo_status_agent/schemas/repo_status_final_response.schema.json`
+- `examples/119_route_only_final_output_contract/build_ref/route_only_final_output_contract_demo/final_output.contract.json`
 - `examples/115_runtime_agent_packages/build_ref/writer_home/AGENTS.md`
 - `examples/115_runtime_agent_packages/build_ref/editor_home/SOUL.md`
 - `examples/95_skill_package_minimal/build_ref/SKILL.md`

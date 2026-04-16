@@ -1,0 +1,35 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "RouteOnlyFinalOutputContractDemo",
+    "slug": "route_only_final_output_contract_demo",
+    "entrypoint": "examples/119_route_only_final_output_contract/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "always",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": [
+      {
+        "target": {
+          "key": "RoutingOwner",
+          "module_parts": [],
+          "name": "RoutingOwner",
+          "title": "Routing Owner"
+        },
+        "label": "Route to Routing Owner.",
+        "summary": "Route to Routing Owner. Next owner: Routing Owner.",
+        "choice_members": []
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "RouteOnlyFinalReply",
+    "declaration_name": "RouteOnlyFinalReply",
+    "format_mode": "prose",
+    "schema_profile": null,
+    "emitted_schema_relpath": null
+  }
+}

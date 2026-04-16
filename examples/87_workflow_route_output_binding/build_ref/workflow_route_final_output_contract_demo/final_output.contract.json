@@ -1,0 +1,35 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "WorkflowRouteFinalOutputContractDemo",
+    "slug": "workflow_route_final_output_contract_demo",
+    "entrypoint": "examples/87_workflow_route_output_binding/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "always",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": [
+      {
+        "target": {
+          "key": "ReviewLead",
+          "module_parts": [],
+          "name": "ReviewLead",
+          "title": "Review Lead"
+        },
+        "label": "Hand off to ReviewLead.",
+        "summary": "Hand off to ReviewLead. Next owner: Review Lead.",
+        "choice_members": []
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "WorkflowRouteBindingComment",
+    "declaration_name": "WorkflowRouteBindingComment",
+    "format_mode": "prose",
+    "schema_profile": null,
+    "emitted_schema_relpath": null
+  }
+}

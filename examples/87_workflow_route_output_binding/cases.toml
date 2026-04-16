@@ -42,6 +42,12 @@ expected_lines = [
 ]
 
 [[cases]]
+name = "workflow-owned final output builds emitted route contract metadata"
+status = "active"
+kind = "build_contract"
+build_target = "example_87_workflow_route_output_binding"
+
+[[cases]]
 name = "unguarded route reads fail loudly when workflow law may stay unrouted"
 status = "active"
 kind = "compile_fail"

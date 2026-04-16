@@ -143,37 +143,3 @@ agent AcceptanceReviewSplitPartialDemo:
         review_fields:
             current_artifact: current_artifact
             next_owner: next_owner
-
-
-output SummaryReply: "Summary Reply"
-    target: TurnResponse
-    shape: CommentText
-    requirement: Required
-
-    summary: "Summary"
-        "Summarize the result."
-
-
-agent InvalidFinalOutputReviewFieldsWithoutReviewDemo:
-    role: "Answer plainly."
-    workflow: "Reply"
-        "Reply and stop."
-    outputs: "Outputs"
-        SummaryReply
-    final_output:
-        output: SummaryReply
-        review_fields:
-            verdict: summary
-
-
-agent InvalidFinalOutputReviewFieldsOnCarrierDemo:
-    role: "Emit one review JSON result."
-    review: AcceptanceReview
-    inputs: "Inputs"
-        DraftPlan
-    outputs: "Outputs"
-        AcceptanceReviewComment
-    final_output:
-        output: AcceptanceReviewComment
-        review_fields:
-            verdict: verdict

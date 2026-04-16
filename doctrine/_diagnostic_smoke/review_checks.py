@@ -253,7 +253,7 @@ def _check_final_output_review_fields_require_review_agent() -> None:
     prompt_path = _repo_example_prompt_path(
         "106_review_split_final_output_output_schema_partial",
         "prompts",
-        "AGENTS.prompt",
+        "INVALID_FINAL_OUTPUT_REVIEW_FIELDS_WITHOUT_REVIEW.prompt",
     )
     prompt = parse_file(prompt_path)
     try:
@@ -273,7 +273,7 @@ def _check_final_output_review_fields_reject_review_carrier() -> None:
     prompt_path = _repo_example_prompt_path(
         "106_review_split_final_output_output_schema_partial",
         "prompts",
-        "AGENTS.prompt",
+        "INVALID_FINAL_OUTPUT_REVIEW_FIELDS_ON_CARRIER.prompt",
     )
     prompt = parse_file(prompt_path)
     try:

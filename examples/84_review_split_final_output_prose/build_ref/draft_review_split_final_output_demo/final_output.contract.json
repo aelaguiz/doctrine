@@ -5,6 +5,38 @@
     "slug": "draft_review_split_final_output_demo",
     "entrypoint": "examples/84_review_split_final_output_prose/prompts/AGENTS.prompt"
   },
+  "route": {
+    "exists": true,
+    "behavior": "always",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": [
+      {
+        "target": {
+          "key": "ReviewLead",
+          "module_parts": [],
+          "name": "ReviewLead",
+          "title": "Review Lead"
+        },
+        "label": "Accepted draft goes to ReviewLead.",
+        "summary": "Accepted draft goes to ReviewLead. Next owner: Review Lead.",
+        "review_verdict": "accepted",
+        "choice_members": []
+      },
+      {
+        "target": {
+          "key": "DraftAuthor",
+          "module_parts": [],
+          "name": "DraftAuthor",
+          "title": "Draft Author"
+        },
+        "label": "Rejected draft goes to DraftAuthor.",
+        "summary": "Rejected draft goes to DraftAuthor. Next owner: Draft Author.",
+        "review_verdict": "changes requested",
+        "choice_members": []
+      }
+    ]
+  },
   "final_output": {
     "exists": true,
     "declaration_key": "DraftReviewDecision",

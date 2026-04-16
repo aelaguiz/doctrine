@@ -216,11 +216,47 @@ class CompiledReviewSpec:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledRouteTargetSpec:
+    key: str
+    module_parts: tuple[str, ...]
+    name: str
+    title: str
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteChoiceMemberSpec:
+    enum_module_parts: tuple[str, ...]
+    enum_name: str
+    member_key: str
+    member_title: str
+    member_wire: str
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteBranchSpec:
+    target: CompiledRouteTargetSpec
+    label: str
+    summary: str
+    review_verdict: str | None = None
+    choice_members: tuple[CompiledRouteChoiceMemberSpec, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteContractSpec:
+    exists: bool
+    behavior: str
+    has_unrouted_branch: bool
+    unrouted_review_verdicts: tuple[str, ...]
+    branches: tuple[CompiledRouteBranchSpec, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
     final_output: CompiledFinalOutputSpec | None = None
     review: CompiledReviewSpec | None = None
+    route: CompiledRouteContractSpec | None = None
 
 
 @dataclass(slots=True, frozen=True)

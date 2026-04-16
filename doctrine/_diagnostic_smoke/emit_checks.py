@@ -19,6 +19,7 @@ def run_emit_checks() -> None:
     _check_emit_docs_uses_specific_code_for_missing_entrypoint()
     _check_emit_docs_rejects_legacy_example_file_on_output_shape()
     _check_emit_docs_emits_generated_schema_for_structured_final_output()
+    _check_emit_docs_emits_route_contract_for_routed_final_output()
     _check_emit_docs_emits_runtime_package_trees()
     _check_emit_docs_rejects_output_dir_outside_project_root()
     _check_emit_docs_rejects_entrypoint_outside_project_root()
@@ -184,6 +185,87 @@ output_dir = "build"
         _expect(
             contract_data.get("final_output", {}).get("emitted_schema_relpath")
             == "schemas/repo_status_final_response.schema.json",
+            str(contract_data),
+        )
+        _expect(
+            contract_data.get("route")
+            == {
+                "exists": False,
+                "behavior": "never",
+                "has_unrouted_branch": False,
+                "unrouted_review_verdicts": [],
+                "branches": [],
+            },
+            str(contract_data),
+        )
+
+
+def _check_emit_docs_emits_route_contract_for_routed_final_output() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts"
+        prompts.mkdir(parents=True)
+        (prompts / "AGENTS.prompt").write_text(
+            """agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+output RouteReply: "Route Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+agent Router:
+    role: "Route and answer."
+    workflow: "Route"
+        law:
+            active when true
+            current none
+            route "Go to review." -> ReviewLead
+    outputs: "Outputs"
+        RouteReply
+    final_output: RouteReply
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+
+        exit_code = emit_docs_main(["--pyproject", str(pyproject), "--target", "demo"])
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        contract_path = root / "build" / "router" / "final_output.contract.json"
+        _expect(contract_path.is_file(), f"missing emitted final-output contract: {contract_path}")
+        contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+        _expect(
+            contract_data.get("route")
+            == {
+                "exists": True,
+                "behavior": "always",
+                "has_unrouted_branch": False,
+                "unrouted_review_verdicts": [],
+                "branches": [
+                    {
+                        "target": {
+                            "key": "ReviewLead",
+                            "module_parts": [],
+                            "name": "ReviewLead",
+                            "title": "Review Lead",
+                        },
+                        "label": "Go to review.",
+                        "summary": "Go to review. Next owner: Review Lead.",
+                        "choice_members": [],
+                    }
+                ],
+            },
             str(contract_data),
         )
 

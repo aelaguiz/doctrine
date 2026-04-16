@@ -1,0 +1,62 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "HandoffRouteFromFinalOutputDemo",
+    "slug": "handoff_route_from_final_output_demo",
+    "entrypoint": "examples/93_handoff_routing_route_from_final_output/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "always",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": [
+      {
+        "target": {
+          "key": "AcceptanceCritic",
+          "module_parts": [],
+          "name": "AcceptanceCritic",
+          "title": "Acceptance Critic"
+        },
+        "label": "Send to AcceptanceCritic.",
+        "summary": "Send to AcceptanceCritic. Next owner: Acceptance Critic.",
+        "choice_members": [
+          {
+            "enum_module_parts": [],
+            "enum_name": "ProofRoute",
+            "member_key": "accept",
+            "member_title": "Accept",
+            "member_wire": "Accept"
+          }
+        ]
+      },
+      {
+        "target": {
+          "key": "ChangeEngineer",
+          "module_parts": [],
+          "name": "ChangeEngineer",
+          "title": "Change Engineer"
+        },
+        "label": "Send to ChangeEngineer.",
+        "summary": "Send to ChangeEngineer. Next owner: Change Engineer.",
+        "choice_members": [
+          {
+            "enum_module_parts": [],
+            "enum_name": "ProofRoute",
+            "member_key": "change",
+            "member_title": "Change",
+            "member_wire": "Change"
+          }
+        ]
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "RouteFromFinalReply",
+    "declaration_name": "RouteFromFinalReply",
+    "format_mode": "prose",
+    "schema_profile": null,
+    "emitted_schema_relpath": null
+  }
+}

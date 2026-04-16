@@ -28,9 +28,9 @@ for repo setup and proof commands.
   `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
   example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
-  Markdown, emit structured-output schema files and `final_output` metadata,
-  generate runtime-package and skill-package trees, generate workflow flow
-  diagrams, and troubleshoot emit failures
+  Markdown, emit structured-output schema files, emit final-output, review,
+  and route metadata, generate runtime-package and skill-package trees,
+  generate workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
@@ -38,7 +38,8 @@ for repo setup and proof commands.
 
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
   bindings, target-owned delivery skills, `final_output:`, generated schema
-  files, `trust_surface`, guarded output items, and portable truth
+  files, emitted route metadata, `trust_surface`, guarded output items, and
+  portable truth
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): workflow law, currentness, scope,
   preservation, invalidation, and route-only turns
 - [REVIEW_SPEC.md](REVIEW_SPEC.md): first-class `review`, contracts, verdict

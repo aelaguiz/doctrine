@@ -94,6 +94,9 @@ Important rules:
   means the selected route owner.
 - `route.label` and `route.summary` still need one selected branch. Guard them
   with `route.choice` when more than one route branch stays live.
+- When `emit_docs` writes `final_output.contract.json`, the same route truth
+  appears in the top-level `route` block. Harnesses should read that block for
+  routing instead of treating copied output fields as the route contract.
 
 ## Handoff Routing Reuses The Same Route Surface
 
@@ -114,6 +117,8 @@ Important rules:
   `route.next_owner`, `route.next_owner.key`, `route.next_owner.title`,
   `route.label`, `route.summary`, and `route.choice.*` surface ordinary
   workflow law already uses
+- emitted final-output contracts use the same top-level `route` block for
+  `handoff_routing` as they use for workflow law
 
 ## route_from
 
@@ -224,7 +229,9 @@ turns; they do not carry portable current truth.
 `route_only` is the dedicated declaration that lowers through this same
 `current none` and route validation path. It adds authored `facts:`,
 activation `when:`, `handoff_output:`, guarded top-level output keys, and
-explicit `routes:` without creating a second route engine.
+explicit `routes:` without creating a second route engine. If the turn also
+declares `final_output:`, the emitted `final_output.contract.json` carries the
+same compiler-owned route target in its top-level `route` block.
 
 ## Scope, Preservation, And Evidence Roles
 

@@ -140,6 +140,10 @@ Important rules:
   means the selected route owner.
 - `route.label` and `route.summary` still need one selected branch. Guard them
   with `route.choice` when several route branches stay live.
+- When `emit_docs` writes `final_output.contract.json`, that file includes the
+  same compiler-owned route truth as a top-level `route` block. Harnesses
+  should consume that block for routing. Output fields that show a next owner
+  are content, not the route contract.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
@@ -376,7 +380,8 @@ Instead:
 - that separate final output may bind a review-semantic subset through
   `final_output.review_fields:`
 - the emitted companion contract tells hosts whether the split final output is
-  partial or `control_ready`
+  partial or `control_ready`, and its top-level `route` block tells hosts
+  which resolved named agent the final response routes to
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
 - imported reusable `comment_output` declarations may still bind local routed

@@ -146,3 +146,9 @@ expected_lines = [
   "",
   "This review should stand on its own. A downstream owner should know the verdict, current artifact when one remains, and whether a next owner exists.",
 ]
+
+[[cases]]
+name = "review carrier final_output builds emitted route contract metadata"
+status = "active"
+kind = "build_contract"
+build_target = "example_104_review_final_output_output_schema_blocked_control_ready"

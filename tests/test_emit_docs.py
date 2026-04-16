@@ -170,6 +170,16 @@ class EmitDocsTests(unittest.TestCase):
             self.assertEqual(contract_data["agent"]["slug"], "repo_status_agent")
             self.assertEqual(contract_data["agent"]["entrypoint"], "prompts/AGENTS.prompt")
             self.assertEqual(
+                contract_data["route"],
+                {
+                    "exists": False,
+                    "behavior": "never",
+                    "has_unrouted_branch": False,
+                    "unrouted_review_verdicts": [],
+                    "branches": [],
+                },
+            )
+            self.assertEqual(
                 contract_data["final_output"],
                 {
                     "exists": True,
@@ -181,6 +191,81 @@ class EmitDocsTests(unittest.TestCase):
                 },
             )
             self.assertNotIn("review", contract_data)
+
+    def test_emit_target_writes_route_contract_for_routed_final_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent ReviewLead:
+                        role: "Own routed follow-up."
+                        workflow: "Follow Up"
+                            "Take the routed follow-up."
+
+                    output RouteReply: "Route Reply"
+                        target: TurnResponse
+                        shape: Comment
+                        requirement: Required
+
+                    agent Router:
+                        role: "Route and answer."
+                        workflow: "Route"
+                            law:
+                                active when true
+                                current none
+                                route "Go to review." -> ReviewLead
+                        outputs: "Outputs"
+                            RouteReply
+                        final_output: RouteReply
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "router" / "final_output.contract.json"
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                contract_data["route"],
+                {
+                    "exists": True,
+                    "behavior": "always",
+                    "has_unrouted_branch": False,
+                    "unrouted_review_verdicts": [],
+                    "branches": [
+                        {
+                            "target": {
+                                "key": "ReviewLead",
+                                "module_parts": [],
+                                "name": "ReviewLead",
+                                "title": "Review Lead",
+                            },
+                            "label": "Go to review.",
+                            "summary": "Go to review. Next owner: Review Lead.",
+                            "choice_members": [],
+                        },
+                    ],
+                },
+            )
 
     def test_emit_target_omits_example_section_when_schema_has_no_example(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -383,6 +468,10 @@ class EmitDocsTests(unittest.TestCase):
             contract_data["review"]["carrier_fields"]["blocked_gate"],
             "failure_detail.blocked_gate",
         )
+        self.assertEqual(contract_data["route"]["behavior"], "conditional")
+        self.assertEqual(contract_data["route"]["unrouted_review_verdicts"], ["changes requested"])
+        self.assertEqual(contract_data["route"]["branches"][0]["target"]["key"], "ReviewLead")
+        self.assertEqual(contract_data["route"]["branches"][0]["review_verdict"], "accepted")
 
     def test_emit_target_emits_split_control_ready_review_markdown_without_sidecar(self) -> None:
         rendered, schema_text, contract_data = self._emit_example_markdown(
@@ -408,6 +497,9 @@ class EmitDocsTests(unittest.TestCase):
             contract_data["final_output"]["emitted_schema_relpath"],
             "schemas/acceptance_control_final_response.schema.json",
         )
+        self.assertEqual(contract_data["route"]["behavior"], "conditional")
+        self.assertEqual(contract_data["route"]["branches"][0]["target"]["key"], "ReviewLead")
+        self.assertEqual(contract_data["route"]["branches"][0]["review_verdict"], "accepted")
 
     def test_emit_target_emits_split_partial_review_markdown_without_sidecar(self) -> None:
         prompt_text = (
@@ -437,6 +529,9 @@ class EmitDocsTests(unittest.TestCase):
             contract_data["review"]["final_response"]["review_fields"]["current_artifact"],
             "current_artifact",
         )
+        self.assertEqual(contract_data["route"]["behavior"], "conditional")
+        self.assertEqual(contract_data["route"]["has_unrouted_branch"], True)
+        self.assertEqual(contract_data["route"]["branches"][0]["target"]["key"], "ReviewLead")
 
     def test_emit_target_renders_workflow_root_readable_blocks(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
