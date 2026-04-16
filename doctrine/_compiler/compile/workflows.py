@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _authored_slot_allows_law
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledSection,
     IndexedUnit,
@@ -35,7 +35,13 @@ class CompileWorkflowsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._workflow_compile_stack, workflow_key]
             )
-            raise CompileError(f"Cyclic workflow composition: {cycle}")
+            raise compile_error(
+                code="E283",
+                summary="Cyclic workflow composition",
+                detail=f"Workflow composition cycle: {cycle}.",
+                path=unit.prompt_file.source_path,
+                source_span=workflow_decl.source_span,
+            )
 
         self._workflow_compile_stack.append(workflow_key)
         try:
@@ -61,12 +67,26 @@ class CompileWorkflowsMixin:
         body: list[CompiledBodyItem] = list(workflow_body.preamble)
         if workflow_body.law is not None:
             if unit is None or agent_contract is None or owner_label is None:
-                raise CompileError(
-                    "Internal compiler error: workflow law requires unit, agent contract, and owner label"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "Internal compiler error: workflow law requires unit, agent "
+                        "contract, and owner label"
+                    ),
+                    path=unit.prompt_file.source_path if unit is not None else None,
+                    source_span=workflow_body.law.source_span,
                 )
             if not _authored_slot_allows_law(slot_key):
-                raise CompileError(
-                    f"law may appear only on workflow or handoff_routing in {owner_label}: {slot_key}"
+                raise compile_error(
+                    code="E345",
+                    summary="Law is not allowed on this authored slot",
+                    detail=(
+                        f"`law:` is not allowed on authored slot `{slot_key}` in "
+                        f"{owner_label}."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=workflow_body.law.source_span,
                 )
             if body and body[-1] != "":
                 body.append("")
@@ -106,8 +126,15 @@ class CompileWorkflowsMixin:
 
             if isinstance(item, model.ReadableBlock):
                 if unit is None or owner_label is None:
-                    raise CompileError(
-                        "Internal compiler error: workflow readable block compilation requires unit and owner label"
+                    raise compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            "Internal compiler error: workflow readable block compilation "
+                            "requires unit and owner label"
+                        ),
+                        path=unit.prompt_file.source_path if unit is not None else None,
+                        source_span=item.source_span,
                     )
                 body.append(
                     self._compile_workflow_root_readable_block(
@@ -348,8 +375,15 @@ class CompileWorkflowsMixin:
                 )
             elif isinstance(item, model.ReadableBlock):
                 if unit is None or owner_label is None:
-                    raise CompileError(
-                        "Internal compiler error: workflow readable block compilation requires unit and owner label"
+                    raise compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            "Internal compiler error: workflow readable block compilation "
+                            "requires unit and owner label"
+                        ),
+                        path=unit.prompt_file.source_path if unit is not None else None,
+                        source_span=item.source_span,
                     )
                 body.append(
                     self._compile_authored_readable_block(

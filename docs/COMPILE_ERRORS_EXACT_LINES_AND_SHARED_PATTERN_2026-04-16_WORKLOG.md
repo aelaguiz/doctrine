@@ -682,3 +682,56 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
   `flow.py`, `validate/agents.py`, `validate/contracts.py`, and
   `validate/review_agreement.py` families while the repo proof surface stays
   green.
+
+## 2026-04-16 - Implement pass 19
+- Advanced the raw workflow-compile anchors in
+  `doctrine/_compiler/compile/workflows.py`.
+  Cyclic workflow composition now raises structured exact-line `E283`,
+  authored-slot `law:` policy keeps the shipped `E345` wording on a structured
+  path, and the remaining defensive workflow compile guards now use structured
+  file-aware fallback diagnostics instead of raw `CompileError(...)`.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  cyclic workflow composition.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/compile/workflows.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/05_workflow_merge/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/06_nested_workflows/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic suite passed.
+  - The shipped `05` and `06` workflow manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: continue Phase 4 on the still-open `flow.py`,
+  `validate/agents.py`, `validate/contracts.py`, and
+  `validate/review_agreement.py` families while the repo proof surface stays
+  green.
+
+## 2026-04-16 - Implement pass 20
+- Advanced the raw flow-extraction anchors in `doctrine/_compiler/flow.py`.
+  Root flow target selection now raises structured file-scoped `E201` and
+  `E202`, cyclic workflow composition now lands on the authored workflow line
+  with `E283`, late workflow-law flow checks now stay on the structured
+  `E345` and `E299` path, and the flow input/output/config summaries now use
+  the same structured exact-line and related-site contracts as the ordinary
+  compile families instead of raw `CompileError(...)`.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  flow target selection, flow-side cyclic workflow composition, flow config
+  duplicate related sites, and flow output-file shape failures.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/flow.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_emit_flow`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/06_nested_workflows/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic and flow suites passed.
+  - The shipped `06` workflow manifest passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: continue Phase 4 on the still-open
+  `validate/agents.py`, `validate/contracts.py`, and
+  `validate/review_agreement.py` families while the repo proof surface stays
+  green.

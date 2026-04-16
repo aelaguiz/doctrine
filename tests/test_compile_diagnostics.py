@@ -2697,6 +2697,147 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Output file entry is missing shape in BrokenBundle: artifact", str(error))
 
+    def test_flow_missing_target_agent_reports_file_scoped_e201(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                agent Demo:
+                    role: "Own the flow."
+                """,
+            )
+            session = CompilationSession(parse_file(prompt_path))
+
+            with self.assertRaises(CompileError) as ctx:
+                session.extract_target_flow_graph_from_units(((session.root_unit, "Missing"),))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E201")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertIsNone(error.diagnostic.location.line)
+        self.assertIn("Missing target agent", str(error))
+
+    def test_flow_abstract_target_agent_reports_file_scoped_e202(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                abstract agent Demo:
+                    role: "Own the abstract flow."
+                """,
+            )
+            session = CompilationSession(parse_file(prompt_path))
+
+            with self.assertRaises(CompileError) as ctx:
+                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E202")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertIsNone(error.diagnostic.location.line)
+        self.assertIn("Abstract agent does not render", str(error))
+
+    def test_flow_cyclic_workflow_composition_points_at_workflow_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow FirstWorkflow: "First Workflow"
+                    use second: SecondWorkflow
+
+                workflow SecondWorkflow: "Second Workflow"
+                    use first: FirstWorkflow
+
+                agent Demo:
+                    role: "Own the flow."
+                    workflow: FirstWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            session = CompilationSession(parse_file(prompt_path))
+
+            with self.assertRaises(CompileError) as ctx:
+                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E283")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('workflow SecondWorkflow: "Second Workflow"') + 1,
+        )
+        self.assertIn("Workflow composition cycle", str(error))
+
+    def test_flow_duplicate_config_key_reports_related_first_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input BrokenInput: "Broken Input"
+                    source: File
+                        path: "unit_root/FIRST.md"
+                        path: "unit_root/SECOND.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                agent Demo:
+                    role: "Own the flow."
+                    inputs: "Inputs"
+                        BrokenInput
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            session = CompilationSession(parse_file(prompt_path))
+
+            with self.assertRaises(CompileError) as ctx:
+                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E231")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        path: "unit_root/SECOND.md"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('        path: "unit_root/FIRST.md"') + 1,
+        )
+        self.assertIn("Duplicate config key", str(error))
+        self.assertIn("first `path` config entry", str(error))
+
+    def test_flow_output_file_entry_missing_shape_points_at_artifact_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BrokenBundle: "Broken Bundle"
+                    files: "Files"
+                        artifact: "Artifact"
+                            path: "unit_root/BROKEN.md"
+                    requirement: Required
+
+                agent Demo:
+                    role: "Own the flow."
+                    outputs: "Outputs"
+                        BrokenBundle
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            session = CompilationSession(parse_file(prompt_path))
+
+            with self.assertRaises(CompileError) as ctx:
+                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        artifact: "Artifact"') + 1,
+        )
+        self.assertIn("Output file entry is missing shape in BrokenBundle: artifact", str(error))
+
     def test_output_record_table_failure_points_at_offending_block_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -3566,6 +3707,36 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("repeats key `step_one`", str(error))
         self.assertIn("first `step_one` entry", str(error))
 
+    def test_cyclic_workflow_composition_points_at_workflow_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow FirstWorkflow: "First Workflow"
+                    use second: SecondWorkflow
+
+                workflow SecondWorkflow: "Second Workflow"
+                    use first: FirstWorkflow
+
+                agent Demo:
+                    role: "Reject cyclic workflow composition."
+                    workflow: FirstWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E283")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('workflow SecondWorkflow: "Second Workflow"') + 1,
+        )
+        self.assertIn("Workflow composition cycle", str(error))
+
     def test_workflow_patch_without_parent_points_at_inherit_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -4289,6 +4460,285 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Duplicate skill package bundled path", str(error))
         self.assertIn("Related:", str(error))
+
+    def test_workflow_and_review_conflict_points_at_review_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Demo:
+                    role: "Keep workflow and review separate."
+                    workflow: "Reply"
+                        "Reply directly."
+                    review: MissingReview
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E480")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    review: MissingReview") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    workflow: "Reply"') + 1,
+        )
+        self.assertIn("may not define both `workflow:` and `review:`", str(error))
+
+    def test_agent_slot_law_outside_workflow_points_at_law_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Demo:
+                    role: "Keep custom slots readable."
+                    notes: "Notes"
+                        "Leave this slot as prose only."
+
+                        law:
+                            current none
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E345")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    notes: "Notes"') + 1,
+        )
+        self.assertIn("`law:` is not allowed on authored slot `notes`", str(error))
+
+    def test_abstract_review_on_concrete_agent_points_at_review_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                abstract review BaseDraftReview: "Base Draft Review"
+                    comment_output: ReviewComment
+
+                agent Demo:
+                    role: "Keep abstract reviews off concrete agents."
+                    review: BaseDraftReview
+                    outputs: "Outputs"
+                        ReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E494")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    review: BaseDraftReview") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('abstract review BaseDraftReview: "Base Draft Review"')
+            + 1,
+        )
+        self.assertIn("Concrete agent may not attach abstract review", str(error))
+
+    def test_multiple_route_surfaces_report_related_law_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent ReviewLead:
+                    role: "Own accepted follow-up."
+
+                agent Demo:
+                    role: "Keep one route-bearing surface live."
+                    workflow: "Reply"
+                        law:
+                            active when true
+                            stop "Reply directly."
+                            route "Hand off to ReviewLead." -> ReviewLead
+
+                    handoff_routing: "Handoff Routing"
+                        law:
+                            active when true
+                            stop "Hand off or finish the turn."
+                            route "Hand off to ReviewLead from handoff routing." -> ReviewLead
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E343")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    handoff_routing: "Handoff Routing"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    workflow: "Reply"') + 1,
+        )
+        self.assertIn("workflow, handoff_routing", str(error))
+        self.assertIn("live `workflow` route-bearing surface", str(error))
+
+    def test_review_driven_final_output_route_points_at_final_output_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftPlan: "Draft Plan"
+                    source: File
+                        path: "unit_root/DRAFT_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                schema PlanReviewContract: "Plan Review Contract"
+                    sections:
+                        summary: "Summary"
+                            "Summarize the reviewed plan."
+
+                    gates:
+                        outline_complete: "Outline Complete"
+                            "Confirm the reviewed plan includes the outline."
+
+                agent ReviewLead:
+                    role: "Own accepted plan follow-up."
+
+                agent PlanAuthor:
+                    role: "Repair rejected plans."
+
+                output AcceptanceReviewComment: "Acceptance Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    verdict: "Verdict"
+                        "State whether the plan passed review."
+
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "Summarize what the next owner should read first."
+
+                    next_owner: "Next Owner"
+                        "Name {{ReviewLead}} when accepted and {{PlanAuthor}} when rejected."
+
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List exact failing gates."
+
+                output OtherReply: "Other Reply"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                review AcceptanceReview: "Acceptance Review"
+                    subject: DraftPlan
+                    contract: PlanReviewContract
+                    comment_output: AcceptanceReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    contract_checks: "Contract Checks"
+                        accept "The acceptance review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        route "Accepted plan returns to ReviewLead." -> ReviewLead
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected plan returns to PlanAuthor." -> PlanAuthor
+
+                agent AcceptanceReviewAgent:
+                    role: "Keep review-driven final_output.route out of the first cut."
+                    review: AcceptanceReview
+                    inputs: "Inputs"
+                        DraftPlan
+                    outputs: "Outputs"
+                        AcceptanceReviewComment
+                        OtherReply
+                    final_output:
+                        output: OtherReply
+                        route: next_route
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent(
+                    "AcceptanceReviewAgent"
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    final_output:") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    review: AcceptanceReview") + 1,
+        )
+        self.assertIn("final_output.route is not supported on review-driven agents in v1", str(error))
+
+    def test_skill_purpose_must_be_string_points_at_purpose_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                skill BrokenSkill: "Broken Skill"
+                    purpose: Required
+
+                agent Demo:
+                    role: "Compile one skill."
+                    skills: "Skills"
+                        can_run: "Can Run"
+                            skill broken_skill: BrokenSkill
+                                requirement: Required
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E220")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    purpose: Required") + 1,
+        )
+        self.assertIn("Skill is missing string purpose", str(error))
 
 
 if __name__ == "__main__":

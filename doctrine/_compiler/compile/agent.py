@@ -100,6 +100,23 @@ class CompileAgentMixin:
                 if isinstance(slot, ResolvedAgentSlot)
             }
             has_workflow_slot = "workflow" in resolved_slots
+            workflow_field = next(
+                (
+                    field
+                    for field in agent.fields
+                    if isinstance(
+                        field,
+                        (
+                            model.AuthoredSlotField,
+                            model.AuthoredSlotAbstract,
+                            model.AuthoredSlotInherit,
+                            model.AuthoredSlotOverride,
+                        ),
+                    )
+                    and field.key == "workflow"
+                ),
+                None,
+            )
             review_fields = [
                 field for field in agent.fields if isinstance(field, model.ReviewField)
             ]
@@ -108,8 +125,24 @@ class CompileAgentMixin:
             ]
             final_output_field = final_output_fields[0] if final_output_fields else None
             if has_workflow_slot and review_fields:
-                raise CompileError(
-                    f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
+                raise compile_error(
+                    code="E480",
+                    summary="Concrete agent defines both workflow and review",
+                    detail=(
+                        f"Concrete agent `{agent.name}` may not define both "
+                        "`workflow:` and `review:`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=review_fields[0].source_span,
+                    related=(
+                        related_prompt_site(
+                            label="`workflow` field",
+                            path=unit.prompt_file.source_path,
+                            source_span=(
+                                None if workflow_field is None else workflow_field.source_span
+                            ),
+                        ),
+                    ),
                 )
             self._validate_agent_slot_laws(
                 agent,
@@ -889,8 +922,22 @@ class CompileAgentMixin:
             owner_label=f"skill {skill_decl.name}",
         )
         purpose_item = scalar_items.get("purpose")
-        if purpose_item is None or not isinstance(purpose_item.value, str):
-            raise CompileError(f"Skill is missing string purpose: {skill_decl.name}")
+        if purpose_item is None:
+            raise compile_error(
+                code="E220",
+                summary="Skill is missing string purpose",
+                detail=f"Skill `{skill_decl.name}` is missing a string `purpose` field.",
+                path=target_unit.prompt_file.source_path,
+                source_span=skill_decl.source_span,
+            )
+        if not isinstance(purpose_item.value, str):
+            raise compile_error(
+                code="E220",
+                summary="Skill is missing string purpose",
+                detail=f"Skill `{skill_decl.name}` is missing a string `purpose` field.",
+                path=target_unit.prompt_file.source_path,
+                source_span=purpose_item.source_span or skill_decl.source_span,
+            )
 
         metadata_scalars, _metadata_sections, metadata_extras = self._split_record_items(
             entry.items,

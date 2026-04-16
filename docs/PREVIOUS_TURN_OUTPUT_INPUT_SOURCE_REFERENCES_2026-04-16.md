@@ -24,39 +24,30 @@ related:
   - docs/VERSIONING.md
   - docs/EMIT_ROUTING_CONTRACT_FOR_FINAL_OUTPUTS_AND_REVIEWS_2026-04-15.md
   - CHANGELOG.md
-  - ../rally/stdlib/rally/prompts/rally/base_agent.prompt
-  - ../rally/stdlib/rally/prompts/rally/turn_results.prompt
-  - ../rally/src/rally/domain/flow.py
-  - ../rally/src/rally/services/flow_loader.py
-  - ../rally/src/rally/services/final_response_loader.py
-  - ../rally/src/rally/services/runner.py
-  - ../rally/docs/RALLY_COMMUNICATION_MODEL.md
-  - ../rally/docs/RALLY_MASTER_DESIGN.md
-  - ../psflows/flows/lessons/prompts/shared/outputs.prompt
-  - ../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt
 ---
 
 # TL;DR
 
 ## Outcome
 
-Doctrine and Rally get one first-class way for agent `t+1` to read agent
-`t`'s selected prior output. The selected previous emitted output becomes the
-single source of truth for the next input contract. Durable structured outputs
-stay structured. Readable-only outputs stay readable.
+Doctrine ships the authoring and emit side of previous-turn output references.
+The selected previous emitted output becomes the single source of truth for
+the next input contract, and the emitted `final_output.contract.json` gains an
+additive top-level `io` block. Rally and Lessons follow-through are out of
+scope for this repaired plan.
 
 ## Problem
 
-Today Rally gives later agents `home:issue.md` plus the previous turn's final
-JSON control path. That works for notes and routing, but it does not give
-authors a clean way to feed one selected prior output into the next turn.
-The current draft also drops too much structure by forcing every selected
-prior output into `MarkdownDocument`.
+Doctrine needed a clean way to compile and emit previous-turn output
+references without string selectors, shadow contracts, or a second emitted
+runtime contract file. The earlier broader plan also included Rally runtime
+and Lessons proof follow-through, but the user removed that sibling-repo work
+from this plan.
 
 ## Approach
 
-Add one Rally-owned `input source` declaration in the Rally stdlib named
-`RallyPreviousTurnOutput`.
+Treat `rally.base_agent.RallyPreviousTurnOutput` as the authored source ref
+that Doctrine understands for this feature.
 
 - With no extra config, it means "the previous turn's final output".
 - With explicit `output:`, it accepts one compiler-checked selector:
@@ -70,10 +61,6 @@ Add one Rally-owned `input source` declaration in the Rally stdlib named
   can prove one unique predecessor final contract. If it cannot, it fails loud.
   Explicit selection derives the exact selected previous emitted-output
   contract.
-- Rally reopens the previous artifact in the strongest honest native form:
-  - structured JSON when the selected output has a durable structured wire
-  - readable text when the selected output is readable only
-  - direct runtime error when Rally cannot reopen it honestly
 - Extend the existing public `final_output.contract.json` with one additive
   top-level `io` block instead of creating a second runtime contract file.
 
@@ -83,12 +70,12 @@ Add one Rally-owned `input source` declaration in the Rally stdlib named
    Doctrine.
 2. Extend the existing emitted `final_output.contract.json` with previous-turn
    input metadata plus previous emitted-output metadata.
-3. Teach Rally to load the richer single contract file and reopen the selected
-   previous artifact in native form.
-4. Support typed previous-input field access only when the selected output is
+3. Support typed previous-input field access only when the selected output is
    durably structured JSON.
-5. Update the Lessons proof, tests, docs, and release truth so the shipped
-   story matches the actual contract.
+4. Update Doctrine docs, examples, and release truth so the shipped story
+   matches the actual contract.
+5. Keep sibling Rally stdlib/runtime/readback and Lessons follow-through out
+   of scope for this repaired plan.
 
 ## Non-negotiables
 
@@ -107,83 +94,24 @@ Add one Rally-owned `input source` declaration in the Rally stdlib named
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-16
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- The real remaining frontier is the approved cross-repo Phase 3 to Phase 5 chain in Rally and psflows:
-  - Phase 3: Rally load path and exact zero-config previous final-output runtime
-  - Phase 4: explicit selectors and honest emitted-output readback modes
-  - Phase 5: Lessons proof, docs, and release truth
-- The Doctrine slice is already complete and verified; the locked unit proof passed here with `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`.
+- None in the repaired Doctrine-only scope.
+- The user explicitly removed sibling Rally and psflows work from this plan.
+  Former Phases 3 through 5 are out of scope for this artifact.
 
 ## Reopened phases (false-complete fixes)
-- Phase 3 (Rally load path and exact zero-config previous final-output runtime) — reopened because this fresh audit still found:
-  - `../rally/src/rally/domain/flow.py:90-98` still has no typed `io` model on `CompiledAgentContract`.
-  - `../rally/src/rally/services/flow_loader.py:171-190` still validates only `AGENTS.md` plus `final_output.contract.json`.
-  - `../rally/src/rally/services/runner.py:1118-1131` still injects only `AGENTS.md`.
-  - `../rally/src/rally/services/final_response_loader.py:48-86` still reopens only `last_message.json`.
-- Phase 4 (Explicit selectors and honest emitted-output readback modes) — reopened because this fresh audit still found:
-  - `../rally/src/rally/services/issue_ledger.py:194-212` only manages issue notes and snapshots; it does not provide readback-by-output-identity helpers.
-  - `../rally/src/rally/services/flow_loader.py:171-190` and `../rally/src/rally/services/runner.py:1118-1131` still do not load or inject the richer prior-output packet.
-  - `../rally/docs/RALLY_PORTING_GUIDE.md:98-104` and `../rally/docs/RALLY_RUNTIME.md:53-68` still document the old `AGENTS.md` + `final_output.contract.json` + `last_message.json` story.
-- Phase 5 (Lessons proof, docs, and release truth) — reopened because this fresh audit still found:
-  - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt:1-45` still routes through the old `shared.review.HandoffOutput` / `coordination_handoff` path.
-  - `../psflows/flows/lessons/build/agents/project_lead/final_output.contract.json:1-23` still has no `io` block.
-  - `../rally/docs/RALLY_PORTING_GUIDE.md:98-104` and `../rally/docs/RALLY_RUNTIME.md:53-68` still document only the old `AGENTS.md` + `final_output.contract.json` + `last_message.json` story.
+- None. In-scope Doctrine phases are complete, and former cross-repo phases are
+  now out of scope by user direction.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Rally runtime contract load and prompt path
-  - Evidence anchors:
-    - `../rally/src/rally/domain/flow.py:90-98`
-    - `../rally/src/rally/services/flow_loader.py:171-205`
-    - `../rally/src/rally/services/final_response_loader.py:48-86`
-    - `../rally/src/rally/services/runner.py:1118-1131`
-  - Plan expects:
-    - `CompiledAgentContract` carries typed `io` data.
-    - Rally parses the richer `final_output.contract.json`.
-    - Rally reopens previous-turn artifacts in prompt build, not just `last_message.json`.
-  - Code reality:
-    - The contract model has `final_output` and `review` only.
-    - The loader still validates only `AGENTS.md` plus `final_output.contract.json`.
-    - The runner still injects only `AGENTS.md` and reads only `last_message.json`.
-  - Fix:
-    - Add `io` parsing, previous-turn selector handling, and previous-artifact prompt injection in Rally.
-
-- Explicit prior-output selector and readback modes
-  - Evidence anchors:
-    - `../rally/src/rally/domain/flow.py:90-98`
-    - `../rally/src/rally/services/flow_loader.py:171-205`
-    - `../rally/src/rally/services/final_response_loader.py:48-86`
-    - `../rally/src/rally/services/issue_ledger.py:194-230`
-  - Plan expects:
-    - explicit declaration and binding selectors resolve through the richer single contract file
-    - `structured_json`, `readable_text`, and `unsupported` are honored honestly
-    - note readback is keyed by output identity, not by a latest-note guess
-  - Code reality:
-    - There is no Rally-side selector resolver, no `output_bindings` model, and no note readback helper path.
-  - Fix:
-    - Add explicit selector resolution and output-readback dispatch in Rally.
-
-- Lessons proof and docs truth
-  - Evidence anchors:
-    - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt:1-45`
-    - `../psflows/flows/lessons/build/agents/project_lead/final_output.contract.json:1-23`
-    - `../rally/docs/RALLY_PORTING_GUIDE.md:98-104`
-    - `../rally/docs/RALLY_RUNTIME.md:53-68`
-  - Plan expects:
-    - migrate the proof path to a Rally-owned readback-capable target if the old handoff family stays unsupported
-    - rebuild the real Lessons chain with `RallyPreviousTurnOutput`
-    - teach the new source and `io` block in Rally docs
-  - Code reality:
-    - Lessons still uses the old `IssueComment` handoff path.
-    - The emitted build contract has no `io` block.
-    - Rally docs still describe only the old runtime pair.
-  - Fix:
-    - Move the proof path, rebuild the flow, and update Rally docs/release truth.
+- None in the repaired Doctrine-only scope.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- None.
+- If the sibling Rally or psflows work is wanted later, track it in a separate
+  plan with its own scope and approvals.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -199,29 +127,28 @@ note: This block tracks stage order only. It never overrides readiness blockers 
 
 ## 0.1 The claim (falsifiable)
 
-If Doctrine and Rally ship one Rally-owned previous-turn input source that
-derives its contract from the selected prior output, then authors can chain
-agents through one native previous-output surface without string selectors,
-shadow contracts, or a second runtime contract file.
+If Doctrine ships compile and emit support for
+`rally.base_agent.RallyPreviousTurnOutput`, then authors can reference one
+selected prior output without string selectors, shadow contracts, or a second
+emitted runtime contract file.
 
 This claim is false if any of these remain true after the change:
 
 - authors still have to restate `shape:` for previous-turn inputs
 - structured JSON previous outputs still lose typed structure at the input
   boundary
-- Rally needs a second runtime contract file to make the feature work
+- Doctrine needs a second emitted runtime contract file to make the feature
+  work
 - prose outputs are exposed as fake deterministic field trees
 
 ## 0.2 In scope
 
-- Execution scope note for this pass:
-  - The user limited implementation to the Doctrine repo only.
-  - The approved cross-repo frontier still includes Rally and Lessons
-    follow-through in Phases 3 through 5.
-  - Those phases remain approved work, but they are blocked for this pass
-    because `../rally` and `../psflows` are out of scope.
+- Doctrine repo work only:
+  - compile-time support for zero-config and explicit previous-turn selectors
+  - emitted `io` metadata in `final_output.contract.json`
+  - Doctrine tests, examples, docs, and release truth
 
-- Add one Rally-owned `input source` declaration in Rally stdlib:
+- Use the authored source surface:
 
   ```prompt
   input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
@@ -302,12 +229,6 @@ This claim is false if any of these remain true after the change:
   - previous emitted-output declaration metadata
   - previous emitted-output binding metadata
 
-- Teach Rally to reopen the selected prior artifact in the strongest honest
-  native form:
-  - previous `final_output` JSON from `last_message.json`
-  - ordinary `target: File` outputs from the emitted file path
-  - Rally-owned note outputs from Rally-managed note identity
-
 - Preserve native contract by readback kind:
   - `structured_json`
   - `readable_text`
@@ -321,6 +242,11 @@ This claim is false if any of these remain true after the change:
 
 ## 0.3 Out of scope
 
+- Sibling-repo follow-through in `../rally` and `../psflows`, including:
+  - Rally stdlib, runtime, and readback work
+  - Rally explicit selector resolution and readback dispatch
+  - shipped sibling example proofs and live sibling docs/release truth
+  - Lessons proof and sibling flow migration
 - Quoted-string selectors or dotted string paths.
 - A second emitted runtime contract file such as `runtime_io.contract.json`.
 - A second shared authored ledger beside `home:issue.md`.
@@ -350,10 +276,10 @@ This claim is false if any of these remain true after the change:
   predecessor final contract.
 - Explicit `output:` selectors compile for both `NameRef` and `AddressableRef`
   forms.
-- Previous structured JSON outputs reopen as typed previous inputs, and their
+- Previous structured JSON outputs derive typed previous inputs, and their
   deterministic field paths compile when the selected output is durably
   structured.
-- Previous readable outputs reopen as readable artifact-level inputs without
+- Previous readable outputs compile as readable artifact-level inputs without
   fake field projection.
 - Invalid authored forms fail loud:
   - string selector
@@ -367,11 +293,7 @@ This claim is false if any of these remain true after the change:
   - structured field access attempted on a readable-only previous input
 - `final_output.contract.json` stays the one public emitted runtime contract
   file and gains one additive top-level `io` block.
-- Rally loads that richer single contract file, reopens the selected previous
-  artifact in native form, and injects it during prompt build.
-- Unsupported target kinds fail with direct runtime errors.
-- Doctrine tests, Rally tests, package verification, and the real Lessons proof
-  all pass.
+- Doctrine tests, package verification, and emitted example proof all pass.
 
 ## 0.5 Key invariants (fix immediately if violated)
 
@@ -482,14 +404,14 @@ WORKLOG_PATH: docs/PREVIOUS_TURN_OUTPUT_INPUT_SOURCE_REFERENCES_2026-04-16_WORKL
 
 ## 2.3 Constraints implied by the problem
 
-- The fix must span authored source syntax, compile-time selector resolution,
-  emitted contract metadata, and Rally runtime readback.
+- The in-scope fix must span authored source syntax, compile-time selector
+  resolution, and emitted contract metadata.
 - The solution must preserve the strongest honest native contract for the
   selected output.
 - The solution must not lie about prose outputs having deterministic fields.
 - The zero-config path must stay tiny and exact when the flow graph can prove
   it, and fail loud when it cannot.
-- The public runtime contract story must stay single-file and additive.
+- The public emitted runtime contract story must stay single-file and additive.
 
 <!-- arch_skill:block:research_grounding:start -->
 # 3) Research Grounding (external + internal "ground truth")
@@ -954,12 +876,6 @@ This keeps zero-config tiny and honest.
 | Compiled agent model | `doctrine/_compiler/types.py`, `doctrine/_compiler/compile/agent.py` | `CompiledAgent` | Carries `final_output`, `review`, and `route` only. | Add compiled previous-turn input specs and previous emitted-output readback specs needed by emit. | One canonical compile model for serializer and renderer. | Additive compiled `io` contract model. | `tests/test_emit_docs.py` and targeted compile tests. |
 | Emit contract | `doctrine/emit_docs.py` | `_final_output_contract_payload()` | Emits one public runtime contract file with `agent`, `route`, `final_output`, and optional `review`. | Extend that file with additive top-level `io`; do not create `runtime_io.contract.json`. | Keep one public runtime contract file. | `final_output.contract.json.io`. | `tests/test_emit_docs.py`, `make verify-package`, corpus proof if touched. |
 | Doctrine public docs | `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/LANGUAGE_REFERENCE.md`, `docs/EMIT_GUIDE.md`, `docs/VERSIONING.md`, `CHANGELOG.md` | live docs and release truth | Docs teach current input/output model and current single contract file. | Update docs to teach the new source-specific derived-input contract and additive `io` block on the existing file. | Keep docs aligned with shipped truth. | Updated public contract story. | `make verify-package` if release truth changes. |
-| Rally stdlib | `../rally/stdlib/rally/prompts/rally/base_agent.prompt` | shared inputs and sources | No previous-turn source exists. | Add `input source RallyPreviousTurnOutput` with source-specific prose and examples; keep it opt-in. | Rally should own Rally-specific source behavior. | New stdlib source declaration. | Rally stdlib prompt tests and build/load proof. |
-| Rally contract model | `../rally/src/rally/domain/flow.py` | `CompiledAgentContract` | Carries final-output and review metadata only. | Add typed `io` contract model on the same loaded metadata file. | Runner needs previous-turn input requests plus previous emitted-output metadata. | Additive `CompiledAgentContract.io`. | Rally domain and loader tests. |
-| Rally loader | `../rally/src/rally/services/flow_loader.py` | compiled agent load | Requires `AGENTS.md` plus `final_output.contract.json`. | Keep the same required pair, but parse the richer contract payload and validate the new `io` block when present. | One file, no sidecar. | Same file, richer payload. | Loader tests. |
-| Rally previous-output readback | `../rally/src/rally/services/final_response_loader.py` or new sibling service, `../rally/src/rally/services/runner.py` | previous final-output load and prompt injection | Only opens `last_message.json`; prompt build injects only static `AGENTS.md`. | Add previous-output renderer that reopens selected prior artifacts in native form and appends them during prompt build. | Make prior outputs real runtime inputs. | Structured JSON or readable-text prompt packets. | Runner and readback tests. |
-| Rally note identity | `../rally/src/rally/services/issue_ledger.py` | note lookup | Stores notes, but not by output identity. | Add Rally-owned note identity fields and lookup helpers for readback-capable note targets. | Read note-backed outputs by declaration or binding, not by "latest note". | Rally-owned note readback identity. | Issue-ledger tests and runtime tests. |
-| Lessons proof | `../psflows/flows/lessons/**` | `coordination_handoff` path | Real motivating path uses a target Rally does not reopen yet. | Migrate the proof path onto a Rally-owned readback-capable target or keep it explicitly unsupported until migrated. | Real end-to-end proof matters. | Concrete Lessons proof chain. | Cross-repo proof and build artifact updates as needed. |
 
 ## 6.2 Migration notes
 
@@ -968,6 +884,8 @@ This keeps zero-config tiny and honest.
   can preserve wire compatibility, the same way the top-level `route` block
   stayed additive.
 - Do not create or ship `runtime_io.contract.json`.
+- Sibling Rally and psflows follow-through is out of scope for this repaired
+  plan and should be tracked separately if resumed later.
 - Zero-config previous final-output access should be exact-or-error, not
   base-schema fallback.
 - Direct compile without flow-owned predecessor facts should reject
@@ -1127,179 +1045,32 @@ Status: COMPLETE
 
 ## Phase 3 — Rally load path and exact zero-config previous final-output runtime
 
-Status: REOPENED (fresh audit still found missing cross-repo code work)
+Status: OUT OF SCOPE (removed from the approved frontier by user direction)
 
-* Execution blocker (this pass):
-  - This phase requires `../rally`, and the user limited this pass to the
-    Doctrine repo.
-
-* Goal:
-  - Make the zero-config previous-final-output path work end to end through the
-    richer single contract file.
-* Missing (code):
-  - `../rally/src/rally/domain/flow.py` still has no typed `io` model on `CompiledAgentContract`.
-  - `../rally/src/rally/services/flow_loader.py` still validates only `AGENTS.md` plus `final_output.contract.json`.
-  - `../rally/src/rally/services/runner.py` still injects only `AGENTS.md`.
-  - `../rally/src/rally/services/final_response_loader.py` still reopens only `last_message.json`.
-* Work:
-  - This phase uses Rally's strongest existing durable path:
-    `last_message.json`. It proves the single-file contract load, the new
-    source declaration, and the native structured JSON readback path for the
-    common case with exact prior-final contract truth.
-* Checklist (must all be done):
-  - Add `input source RallyPreviousTurnOutput` to Rally stdlib.
-  - Keep it opt-in. Do not add it to `RallyManagedInputs`.
-  - Extend Rally `CompiledAgentContract` with typed `io` data from the same
-    contract file.
-  - Update Rally loader validation to parse the richer
-    `final_output.contract.json`.
-  - Build the zero-config previous-final-output packet renderer.
-  - Reopen raw previous final JSON from `last_message.json`.
-  - Inject raw JSON into prompt build, not a prose summary.
-  - Validate that the previous final JSON matches the exact resolved
-    predecessor-final contract.
-  - Use the actual immediately previous turn directory for zero-config readback.
-* Verification (required proof):
-  - Focused Rally unit tests for:
-    - contract load
-    - zero-config previous-final-output request load
-    - exact predecessor-final contract load
-    - raw JSON prompt packet injection
-    - ambiguous predecessor-final failure
-    - missing `last_message.json` failure for zero-config readback
-* Exit criteria (all required):
-  - Rally still loads one runtime contract file.
-  - A current agent can request zero-config previous final-output input.
-  - The prior final JSON is reopened in native form and injected into the
-    prompt.
-  - Zero-config previous final-output is exact-or-error.
-  - The default previous-turn path works without authored `shape:`.
+* Scope note:
+  - This sibling Rally work is no longer part of the approved execution
+    frontier for this artifact.
+  - Keep this heading only as historical context so the earlier phase numbers
+    still make sense in the worklog.
 
 ## Phase 4 — Explicit selectors and honest emitted-output readback modes
 
-Status: REOPENED (fresh audit still found missing cross-repo code work)
+Status: OUT OF SCOPE (removed from the approved frontier by user direction)
 
-* Execution blocker (this pass):
-  - This phase requires `../rally`, and the user limited this pass to the
-    Doctrine repo.
-
-* Goal:
-  - Make explicit prior-output selection work for supported target kinds with
-    the correct structured-vs-readable boundary.
-* Missing (code):
-  - Rally still has no explicit prior-output selector resolution path.
-  - Rally still has no `structured_json` / `readable_text` / `unsupported` readback dispatcher.
-  - `../rally/src/rally/services/issue_ledger.py` still only manages issue notes and snapshots; it does not provide readback-by-output-identity helpers.
-  - Rally still has no file-backed prior-output reopen path or note-identity lookup path.
-* Work:
-  - This phase extends the runtime from the common zero-config path to explicit
-    output declarations and bound outputs. It keeps the contract honest by
-    separating `structured_json`, `readable_text`, and `unsupported`, and by
-    refusing to treat non-emitted `TurnResponse` declarations as reopenable
-    prior artifacts.
-* Checklist (must all be done):
-  - Resolve explicit previous-output requests against the previous agent's
-    serialized emitted outputs and bindings.
-  - Resolve binding metadata through the referenced output declaration key
-    instead of duplicating target config on the binding itself.
-  - Use the actual immediately previous turn directory for explicit readback.
-  - Support `structured_json` readback for:
-    - previous final-output JSON
-    - `target: File` outputs whose declared shape is `JsonObject` and whose
-      file content is valid JSON
-  - Support `readable_text` readback for:
-    - readable file outputs
-    - Rally-owned note outputs
-    - Rally-owned readable targets such as note-backed comment, markdown, and
-      plain-text artifacts
-  - Add Rally-owned note identity fields and note lookup helpers for
-    readback-capable note targets.
-  - Resolve file-backed prior outputs from the previous turn home using the
-    emitted target path and fail loud when the file is missing or escapes the
-    turn-owned artifact root.
-  - Fail loud when an explicit selector points at a `TurnResponse` declaration
-    that is not the actual previous `final_output`.
-  - Fail loud when a selected output resolves to `unsupported`.
-  - Keep readable previous outputs artifact-level only.
-  - Do not add parser-heavy extraction from prose outputs.
-* Verification (required proof):
-  - Focused Rally unit tests for:
-    - explicit output-declaration selector runtime resolution
-    - explicit output-binding selector runtime resolution
-    - non-final `TurnResponse` selector failure
-    - structured JSON file-output readback
-    - missing-file failure for file-backed prior output
-    - out-of-root file-path rejection for file-backed prior output
-    - readable file-output readback
-    - Rally-owned note-output readback
-    - unsupported-target runtime errors
-* Exit criteria (all required):
-  - Explicit selectors work through the richer single contract file.
-  - Structured outputs stay structured.
-  - Readable outputs stay readable.
-  - Unsupported outputs fail loud.
-  - Non-final `TurnResponse` declarations are rejected as prior-output
-    selectors instead of being treated as phantom emitted artifacts.
-  - Output bindings resolve through declaration metadata without duplicated
-    target truth.
-  - Rally note readback is keyed by output identity, not "latest note".
+* Scope note:
+  - This sibling Rally work is no longer part of the approved execution
+    frontier for this artifact.
+  - Keep this heading only as historical context so the earlier phase numbers
+    still make sense in the worklog.
 
 ## Phase 5 — Lessons proof, docs, and release truth
 
-Status: REOPENED (fresh audit still found missing cross-repo code work)
+Status: OUT OF SCOPE (removed from the approved frontier by user direction)
 
-* Execution blocker (this pass):
-  - The remaining work in this phase requires `../rally` and `../psflows`,
-    and the user limited this pass to the Doctrine repo.
-  - The Doctrine docs and emitted-contract portion of this phase is already
-    shipped in this repo.
-
-* Goal:
-  - Prove the real motivating chain and align the shipped docs and release
-    story.
-* Missing (code):
-  - `../psflows/flows/lessons/prompts/agents/project_lead/AGENTS.prompt` still routes through the old `shared.review.HandoffOutput` / `coordination_handoff` path.
-  - `../psflows/flows/lessons/build/agents/project_lead/final_output.contract.json` still has no `io` block.
-  - `../rally/docs/RALLY_PORTING_GUIDE.md` and `../rally/docs/RALLY_RUNTIME.md` still document only the old `AGENTS.md` + `final_output.contract.json` + `last_message.json` story.
-* Work:
-  - This phase closes the loop on the real `coordination_handoff` use case and
-    updates Doctrine and Rally docs so they teach the actual contract: derived
-    previous-turn inputs, one public contract file, structured where honest,
-    readable where honest.
-* Checklist (must all be done):
-  - Migrate the Lessons proof path onto a Rally-owned readback-capable target
-    if `coordination_handoff` still uses an unsupported target family.
-  - Add one real proof path where agent `t+1` reads agent `t`'s selected prior
-    output through `RallyPreviousTurnOutput`.
-  - Update Doctrine docs:
-    - `AGENT_IO_DESIGN_NOTES.md`
-    - `LANGUAGE_REFERENCE.md`
-    - `EMIT_GUIDE.md`
-    - `VERSIONING.md`
-    - `CHANGELOG.md`
-  - Update Rally docs to teach:
-    - the new source
-    - zero-config default
-    - explicit selector syntax
-    - single-file `final_output.contract.json` plus top-level `io`
-    - exact-or-error zero-config predecessor-final resolution
-    - structured vs readable readback boundary
-  - Keep Doctrine public examples generic. Use Rally plus psflows as the
-    concrete feature proof.
-* Verification (required proof):
-  - Doctrine:
-    - targeted unit tests
-    - `make verify-examples`
-    - `make verify-package`
-    - `make verify-diagnostics` if diagnostics changed
-  - Rally:
-    - targeted loader, runner, note, and readback tests
-  - Real Lessons proof remains passing
-* Exit criteria (all required):
-  - The real motivating chain works end to end.
-  - No in-scope live doc teaches the old markdown-only previous-output model.
-  - No in-scope live doc teaches a second runtime sidecar.
-  - Public release truth matches the single-file additive contract.
+* Scope note:
+  - This sibling Rally and psflows work is no longer part of the approved
+    execution frontier for this artifact.
+  - Doctrine docs and emitted-contract truth are already shipped in this repo.
 
 <!-- arch_skill:block:phase_plan:end -->
 
@@ -1319,23 +1090,11 @@ Status: REOPENED (fresh audit still found missing cross-repo code work)
 - `make verify-package`
 - `make verify-diagnostics` if new diagnostics appear
 
-## 8.2 Rally proof
+## 8.2 Out-of-scope proof
 
-- unit tests for:
-  - richer `final_output.contract.json` loading
-  - zero-config previous final-output runtime path
-  - explicit selector runtime resolution
-  - structured JSON readback
-  - readable text readback
-  - missing previous-artifact failures
-  - file-path safety for file-backed prior outputs
-  - unsupported-target errors
-  - Rally-owned note identity and lookup
-
-## 8.3 Real-flow proof
-
-One real Lessons chain should show agent `t+1` reading agent `t`'s selected
-prior output without the author restating that content in `home:issue.md`.
+- No Rally or psflows proof is required for this repaired Doctrine-only plan.
+- If sibling follow-through is resumed later, define that proof in a separate
+  plan.
 
 # 9) Rollout / Ops / Telemetry
 
@@ -1410,3 +1169,13 @@ prior output without the author restating that content in `home:issue.md`.
   `tests.test_compile_diagnostics`, `make verify-examples`, `make verify-package`,
   and `make verify-diagnostics`; the remaining approved frontier is Phases 3
   through 5 in Rally and psflows.
+- 2026-04-16: Fresh audit re-ran the Doctrine proof with `uv run --locked python
+  -m unittest tests.test_emit_docs tests.test_output_rendering
+  tests.test_compile_diagnostics` and kept the remaining approved frontier
+  grouped as Phases 3 through 5 in Rally and psflows.
+- 2026-04-16: The user explicitly removed sibling Rally and psflows work from
+  this plan. Former Phases 3 through 5 are now out of scope, and the approved
+  execution frontier for this artifact is Doctrine-only.
+- 2026-04-16: A later docs-only audit drifted this artifact back onto the
+  sibling Rally and psflows frontier. The plan was repaired again to restore
+  the user-directed Doctrine-only scope.

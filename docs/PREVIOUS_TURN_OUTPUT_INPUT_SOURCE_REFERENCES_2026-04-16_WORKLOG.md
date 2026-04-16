@@ -124,3 +124,99 @@ Plan doc: docs/PREVIOUS_TURN_OUTPUT_INPUT_SOURCE_REFERENCES_2026-04-16.md
 - I made no new code changes in this turn.
 - I did not touch `../rally` or `../psflows`.
 - The implementation-loop state remains armed for the next fresh audit.
+
+## Fresh audit with full Phase 3 to Phase 5 frontier
+- A later fresh audit again kept the same real remaining frontier:
+  - Phase 3: Rally load path and exact zero-config previous final-output
+    runtime
+  - Phase 4: explicit selectors and honest emitted-output readback modes
+  - Phase 5: Lessons proof, docs, and release truth
+- The audit block now names that full cross-repo chain directly, but it still
+  does not reopen any new Doctrine-only work.
+- Fresh audit proof already run by the child audit:
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+- I made no new code changes in this turn.
+- I did not touch `../rally` or `../psflows`.
+- The implementation-loop state remains armed for the next fresh audit.
+
+## Fresh audit with Doctrine re-check and approved frontier labels
+- A later fresh audit updated the authoritative audit block so it now says two
+  things plainly:
+  - the Doctrine slice is still complete and re-verified
+  - the approved remaining frontier is still the Phase 3 to Phase 5 chain in
+    Rally and psflows
+- The reopened phase statuses now name that approved frontier directly, and
+  the audit added a matching decision-log entry in the plan doc.
+- This fresh audit still did not reopen any new Doctrine-only implementation
+  work.
+- Fresh audit proof already run by the child audit:
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+  - child audit reported `134` tests passed
+- I made no new code changes in this turn.
+- I did not touch `../rally` or `../psflows`.
+- The implementation-loop state remains armed for the next fresh audit.
+
+## Fresh verification in this turn
+- Checks run in this turn:
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+  - `make verify-examples`
+  - `make verify-package`
+  - `make verify-diagnostics`
+- All four checks passed.
+- I made no new code changes in this turn.
+- I did not touch `../rally` or `../psflows`.
+
+## Fresh audit after full Doctrine re-check
+- A later fresh audit updated the authoritative audit block again and kept the
+  same approved remaining frontier:
+  - Phase 3: Rally load path and exact zero-config previous final-output
+    runtime
+  - Phase 4: explicit selectors and honest emitted-output readback modes
+  - Phase 5: Lessons proof, docs, and release truth
+- The reopened phase statuses still point at those same approved cross-repo
+  phases, and no new Doctrine-only implementation work became reachable.
+- Fresh proof already run by the child audit:
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+  - `make verify-examples`
+  - `make verify-package`
+  - `make verify-diagnostics`
+- All checks passed in the fresh audit.
+- I made no new code changes in this turn.
+- I did not touch `../rally` or `../psflows`.
+- The implementation-loop state remains armed for the next fresh audit.
+
+## User-directed scope repair
+- The user explicitly told me to remove sibling Rally and psflows work from
+  this plan so the loop stops reopening it.
+- I repaired the plan artifact instead of touching any sibling repo:
+  - set the authoritative implementation audit to `COMPLETE` for the repaired
+    Doctrine-only scope
+  - removed sibling-repo work from the approved execution frontier
+  - marked former Phases 3 through 5 as out of scope by user direction
+  - narrowed `0.2 In scope`, expanded `0.3 Out of scope`, and aligned the
+    Doctrine-only definition of done and verification sections
+  - removed sibling-repo files from the frontmatter `related` list
+  - appended a matching Decision Log entry
+- I did not change code.
+- I did not touch `../rally` or `../psflows`.
+- I did not rerun checks in this turn because the fresh child audit had already
+  re-verified Doctrine with:
+  - `uv run --locked python -m unittest tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+  - `make verify-examples`
+  - `make verify-package`
+  - `make verify-diagnostics`
+
+## Scope repair after docs-only audit drift
+- A later docs-only audit drifted the plan back to `NOT COMPLETE` and reopened
+  Phases 3 through 5 against Rally and psflows again.
+- That contradicted the user's explicit scope cut, so I repaired the plan
+  artifact instead of touching any sibling repo.
+- Repair applied:
+  - restored the authoritative implementation audit to `COMPLETE`
+  - restored former Phases 3 through 5 to `OUT OF SCOPE`
+  - restored the Doctrine-only verification section
+  - appended a matching Decision Log entry
+- I did not change code.
+- I did not touch `../rally` or `../psflows`.
+- I did not rerun checks in this turn because the audit that drifted the doc
+  was docs-only and explicitly did not rerun tests.

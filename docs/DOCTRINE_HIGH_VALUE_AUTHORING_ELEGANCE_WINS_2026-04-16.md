@@ -924,7 +924,14 @@ Not applicable.
 
 Status
 
-- Partially landed in the current repo. Keep this as the first ship gate.
+- Status: COMPLETE
+- Completed work:
+  - re-audited the live nullability docs, examples, diagnostics, and release
+    truth named in this phase
+  - confirmed there is no leftover live-teaching drift outside intentional
+    invalid-example proof
+  - reran the phase proof gates and kept the shipped `nullable` baseline
+    green with no code change needed
 
 Goal
 
@@ -987,7 +994,7 @@ Rollback
 
 Status
 
-- Planned.
+- Status: IN PROGRESS
 
 Goal
 
