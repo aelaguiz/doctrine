@@ -108,7 +108,7 @@ class ResolveIoContractsMixin:
         artifacts: list[ContractArtifact] = []
         bindings: list[ContractBinding] = []
         direct_artifacts: list[ContractArtifact] = []
-        direct_titles: list[str] = []
+        direct_sections: list[tuple[int, CompiledSection]] = []
         has_keyed_children = False
 
         for item in items:
@@ -154,10 +154,11 @@ class ResolveIoContractsMixin:
                 if resolved_ref is None:
                     continue
                 compiled_section, artifact = resolved_ref
+                body_index = len(body)
                 body.append(compiled_section)
                 artifacts.append(artifact)
                 direct_artifacts.append(artifact)
-                direct_titles.append(compiled_section.title)
+                direct_sections.append((body_index, compiled_section))
                 continue
 
             if isinstance(item, model.RecordScalar):
@@ -174,7 +175,7 @@ class ResolveIoContractsMixin:
             artifacts=tuple(artifacts),
             bindings=tuple(bindings),
             direct_artifacts=tuple(direct_artifacts),
-            sole_direct_title=direct_titles[0] if len(direct_titles) == 1 else None,
+            direct_sections=tuple(direct_sections),
             has_keyed_children=has_keyed_children,
         )
 

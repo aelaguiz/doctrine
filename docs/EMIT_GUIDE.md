@@ -420,16 +420,15 @@ Concrete shipped proof:
 
 First-class IO wrapper titles:
 
-- This is not list lowering.
 - If an `inputs` or `outputs` wrapper section omits its title and the body
-  resolves to exactly one direct titled declaration, Doctrine reuses that
-  declaration title for the wrapper heading.
+  resolves to exactly one direct declaration, Doctrine lowers the wrapper into
+  that declaration's heading.
 - In inherited `override key:` forms, omitting the title keeps the parent
   heading.
 - If the wrapper body has multiple direct refs or keyed child sections,
   Doctrine fails loud instead of guessing.
-- The outer wrapper heading still renders. Only the authored title string is
-  omitted.
+- The omitted wrapper adds no second heading. The direct declaration body
+  renders under the one child-owned heading.
 
 Authoring example:
 
@@ -454,8 +453,6 @@ Rendered Markdown:
 ### Lessons Issue Ledger
 
 Use this ledger to track repeated section issues.
-
-#### Lessons Issue Ledger
 
 - Source: File
 - Path: `catalog/lessons_issue_ledger.json`

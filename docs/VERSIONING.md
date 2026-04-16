@@ -87,8 +87,9 @@ Every public release uses one release class.
   `Non-breaking`.
 - `additive`: backward-compatible public additions. Release kind:
   `Non-breaking`.
-- Adding omitted first-class IO wrapper titles while keeping the explicit long
-  form valid is an `additive` release.
+- Adding omitted first-class IO wrapper titles that lower one direct
+  declaration while keeping the explicit long form valid is an `additive`
+  release.
 - Adding directory-backed runtime package imports, package-root `AGENTS.md`
   or `SOUL.md` emit, bundled runtime peer files, or matching shared flow-root
   behavior is an `additive` release when older local-root entrypoints still

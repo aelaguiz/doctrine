@@ -11,6 +11,7 @@ from doctrine._parser.parts import (
     OutputRecordSectionPart,
     OutputSchemaPart,
     OutputStructurePart,
+    OutputTargetDeliverySkillPart,
     RenderProfilePart,
     TrustSurfacePart,
     _body_prose_location,
@@ -470,8 +471,39 @@ class IoTransformerMixin:
         )
 
     @v_args(inline=True)
-    def output_target_decl(self, name, title, items):
-        return model.OutputTargetDecl(name=name, title=title, items=tuple(items))
+    def output_target_decl(self, name, title, body):
+        return model.OutputTargetDecl(
+            name=name,
+            title=title,
+            items=body[0],
+            delivery_skill_ref=body[1],
+        )
+
+    @v_args(inline=True)
+    def output_target_body_line(self, value):
+        return value
+
+    def output_target_body(self, items):
+        record_items: list[model.RecordItem] = []
+        delivery_skill_ref: model.NameRef | None = None
+        for item in items:
+            if isinstance(item, OutputTargetDeliverySkillPart):
+                if delivery_skill_ref is not None:
+                    raise TransformParseFailure(
+                        "Output target declarations may define `delivery_skill:` only once.",
+                        hints=("Keep exactly one delivery skill binding per output target.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                delivery_skill_ref = item.ref
+                continue
+            record_items.append(item)
+        return tuple(record_items), delivery_skill_ref
+
+    @v_args(meta=True, inline=True)
+    def output_target_delivery_skill_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return OutputTargetDeliverySkillPart(ref=ref, line=line, column=column)
 
     @v_args(inline=True)
     def output_shape_decl(self, name, parent_ref_or_title, title_or_body, body=None):

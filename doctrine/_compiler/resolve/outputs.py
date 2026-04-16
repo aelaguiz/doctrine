@@ -19,6 +19,8 @@ from doctrine._compiler.resolved_types import (
     ResolvedIoItem,
     ResolvedIoRef,
     ResolvedIoSection,
+    ResolvedOutputTargetDeliverySkill,
+    ResolvedOutputTargetSpec,
     ResolvedRenderProfile,
     ReviewSemanticContext,
     RouteSemanticContext,
@@ -1243,20 +1245,50 @@ class ResolveOutputsMixin:
 
     def _resolve_output_target_spec(
         self, ref: model.NameRef, *, unit: IndexedUnit
-    ) -> ConfigSpec:
+    ) -> ResolvedOutputTargetSpec:
         if not ref.module_parts:
             builtin = _BUILTIN_OUTPUT_TARGETS.get(ref.declaration_name)
             if builtin is not None:
                 return builtin
             local_decl = unit.output_targets_by_name.get(ref.declaration_name)
             if local_decl is not None:
-                return self._config_spec_from_decl(
+                return self._output_target_spec_from_decl(
                     local_decl,
+                    unit=unit,
                     owner_label=f"output target {local_decl.name}",
                 )
 
         target_unit, decl = self._resolve_output_target_decl(ref, unit=unit)
-        return self._config_spec_from_decl(decl, owner_label=f"output target {decl.name}")
+        return self._output_target_spec_from_decl(
+            decl,
+            unit=target_unit,
+            owner_label=f"output target {decl.name}",
+        )
+
+    def _output_target_spec_from_decl(
+        self,
+        decl: model.OutputTargetDecl,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> ResolvedOutputTargetSpec:
+        required_keys, optional_keys = self._config_keys_from_decl(
+            decl,
+            owner_label=owner_label,
+        )
+        delivery_skill: ResolvedOutputTargetDeliverySkill | None = None
+        if decl.delivery_skill_ref is not None:
+            _skill_unit, skill_decl = self._resolve_skill_decl(
+                decl.delivery_skill_ref,
+                unit=unit,
+            )
+            delivery_skill = ResolvedOutputTargetDeliverySkill(title=skill_decl.title)
+        return ResolvedOutputTargetSpec(
+            title=decl.title,
+            required_keys=required_keys,
+            optional_keys=optional_keys,
+            delivery_skill=delivery_skill,
+        )
 
     def _resolve_outputs_decl(
         self,
@@ -1534,17 +1566,21 @@ class ResolveOutputsMixin:
             )
         if not resolved_bucket.body and not resolved_bucket.artifacts and not bindings:
             return None
-        section_title = self._resolve_io_section_title(
-            item,
-            field_kind=field_kind,
-            resolved_bucket=resolved_bucket,
+        section = (
+            self._lower_omitted_io_section(
+                item,
+                field_kind=field_kind,
+                resolved_bucket=resolved_bucket,
+            )
+            if item.title is None
+            else CompiledSection(
+                title=item.title,
+                body=resolved_bucket.body,
+            )
         )
         return ResolvedIoSection(
             key=item.key,
-            section=CompiledSection(
-                title=section_title,
-                body=resolved_bucket.body,
-            ),
+            section=section,
             artifacts=resolved_bucket.artifacts,
             bindings=tuple(bindings),
         )
@@ -1561,12 +1597,32 @@ class ResolveOutputsMixin:
         if (
             resolved_bucket.has_keyed_children
             or len(resolved_bucket.direct_artifacts) != 1
-            or resolved_bucket.sole_direct_title is None
+            or len(resolved_bucket.direct_sections) != 1
         ):
             raise CompileError(
-                f"Omitted title in {field_kind} section `{item.key}` requires exactly one direct declaration title source"
+                f"Omitted title in {field_kind} section `{item.key}` requires exactly one lowerable direct declaration"
             )
-        return resolved_bucket.sole_direct_title
+        return resolved_bucket.direct_sections[0][1].title
+
+    def _lower_omitted_io_section(
+        self,
+        item: model.IoSection,
+        *,
+        field_kind: str,
+        resolved_bucket: ResolvedContractBucket,
+    ) -> CompiledSection:
+        section_title = self._resolve_io_section_title(
+            item,
+            field_kind=field_kind,
+            resolved_bucket=resolved_bucket,
+        )
+        direct_index, direct_section = resolved_bucket.direct_sections[0]
+        lowered_body = (
+            *resolved_bucket.body[:direct_index],
+            *direct_section.body,
+            *resolved_bucket.body[direct_index + 1 :],
+        )
+        return CompiledSection(title=section_title, body=lowered_body)
 
     def _resolve_io_ref_item(
         self,

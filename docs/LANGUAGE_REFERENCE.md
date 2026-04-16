@@ -659,12 +659,13 @@ Important rules:
 - In inherited `inputs` or `outputs`, `override key:` keeps the parent title
   when you omit the override title.
 - In base `inputs` or `outputs`, `key:` may omit the title only when the body
-  resolves to exactly one direct titled declaration. Doctrine reuses that
-  declaration title for the wrapper heading.
+  resolves to exactly one direct declaration. Doctrine lowers the wrapper into
+  that declaration's heading, so the output has one visible heading.
 - If an omitted wrapper title would need a guess, such as multiple direct refs
   or keyed child sections, Doctrine fails loud.
-- This is different from titleless `sequence`, `bullets`, and `checklist`,
-  which lower into the parent instead of keeping a wrapper heading.
+- Titleless `sequence`, `bullets`, and `checklist` also lower into their
+  parent. Inherited `override key:` forms are different because they keep an
+  inherited title.
 
 Example:
 
@@ -689,8 +690,9 @@ outputs SectionDossierOutputs: "Your Outputs"
         SectionHandoff
 ```
 
-The visible wrapper headings render as `Lessons Issue Ledger` and
-`Section Handoff`, the same as the explicit long form.
+The omitted wrappers render one visible heading each: `Lessons Issue Ledger`
+and `Section Handoff`. The direct declaration bodies render under those
+headings without a second nested heading.
 
 Concrete shipped proof:
 

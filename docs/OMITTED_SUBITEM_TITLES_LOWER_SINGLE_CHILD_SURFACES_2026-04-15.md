@@ -526,6 +526,20 @@ Not applicable.
 
 ## Phase 1 - Replace title-copy bucket data with flattening data
 
+Status: COMPLETE
+
+Completed work:
+
+- Replaced `ResolvedContractBucket.sole_direct_title` with direct child section
+  and body-position data.
+- Updated IO bucket resolution to record direct child sections without changing
+  wrapper keys, direct artifacts, keyed-child tracking, or bindings.
+
+Tests run:
+
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/23_first_class_io_blocks/cases.toml` - PASS.
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/27_addressable_record_paths/cases.toml` - PASS.
+
 * Goal:
   Prepare the resolver to lower a single direct child section without guessing or copying only a title.
 
@@ -557,6 +571,20 @@ Not applicable.
   Revert the bucket-shape change and restore the prior resolver fields before Phase 2 depends on them.
 
 ## Phase 2 - Implement IO lowering and focused proof
+
+Status: COMPLETE
+
+Completed work:
+
+- Implemented resolver-owned flattening for omitted base IO wrapper titles.
+- Updated validation to use the same lowerable-direct-declaration rule.
+- Rewrote `examples/117_io_omitted_wrapper_titles` to prove one-heading
+  omitted lowering, explicit long-form nesting, and fail-loud ambiguity.
+
+Tests run:
+
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/117_io_omitted_wrapper_titles/cases.toml` - PASS.
+- `make verify-diagnostics` - PASS.
 
 * Goal:
   Replace duplicate-heading IO output with one visible child-owned heading and prove it in the focused example.
@@ -606,6 +634,21 @@ Not applicable.
 
 ## Phase 3 - Prove adjacent surfaces stayed stable
 
+Status: COMPLETE
+
+Completed work:
+
+- Preserved explicit IO, inherited IO, addressable record paths, and titleless
+  readable list behavior.
+- Left guard prompts unchanged outside the focused `117` proof.
+
+Tests run:
+
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/23_first_class_io_blocks/cases.toml` - PASS.
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/24_io_block_inheritance/cases.toml` - PASS.
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/27_addressable_record_paths/cases.toml` - PASS.
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/113_titleless_readable_lists/cases.toml` - PASS.
+
 * Goal:
   Prove the lowering change did not drift explicit IO, inherited IO, addressable paths, or existing titleless list behavior.
 
@@ -637,6 +680,22 @@ Not applicable.
   Revert guard expected-output changes with the behavior change. Do not change guard prompts to make regressions pass.
 
 ## Phase 4 - Update public docs, release notes, and full verification
+
+Status: COMPLETE
+
+Completed work:
+
+- Updated language, emit, examples, versioning, and changelog docs to describe
+  lower / inherit / fail-loud semantics.
+- Removed scoped public wording that described omitted IO wrapper titles as
+  child-title reuse.
+
+Tests run:
+
+- `uv sync` - PASS.
+- `npm ci` - PASS.
+- `make verify-examples` - PASS.
+- `make verify-diagnostics` - PASS.
 
 * Goal:
   Make shipped prose and release-facing truth match the final omitted-title matrix.
@@ -773,3 +832,23 @@ Consequences
   child section flattening data.
 - Public docs must explain the three outcomes: lower, inherit, or fail loud.
 - No renderer-only dedupe or compatibility bridge is allowed.
+
+## 2026-04-15 - Implement resolver-owned omitted IO lowering
+
+Context
+
+The focused `117` example proved the previous behavior emitted duplicate
+headings when wrapper titles were omitted.
+
+Decision
+
+Replace title-copy data with direct child section position data and lower the
+direct child body into the omitted wrapper's visible heading.
+
+Consequences
+
+- Omitted base IO wrappers now render one heading when they contain exactly one
+  direct declaration and no keyed children.
+- Explicit wrapper titles still render the long nested form.
+- Public docs and release notes now describe lower, inherit, and fail-loud
+  outcomes.

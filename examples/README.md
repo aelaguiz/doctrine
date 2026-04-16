@@ -94,8 +94,8 @@ Some call out landmark examples inside those ranges.
   inheritance errors, titled or titleless readable lists, workflow-root
   readable blocks, directory-backed runtime package emit, and first-class named
   table declarations
-- `117`: omitted first-class IO wrapper titles reuse one direct declaration
-  title and fail loud on ambiguous shapes
+- `117`: omitted first-class IO wrapper titles lower one direct declaration
+  and fail loud on ambiguous shapes
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -228,7 +228,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `114_workflow_root_readable_blocks` | Workflow roots may own readable blocks directly without wrapping them in a local section first. |
 | `115_runtime_agent_packages` | Thin build handles may emit imported runtime packages with package-root `AGENTS.md`, optional sibling `SOUL.md`, and bundled peer files. |
 | `116_first_class_named_tables` | Top-level `table` declarations may be reused by local document table keys without changing rendered Markdown. |
-| `117_io_omitted_wrapper_titles` | Omitted first-class IO wrapper titles reuse one direct declaration title and fail loud on ambiguous shapes. |
+| `117_io_omitted_wrapper_titles` | Omitted first-class IO wrapper titles lower one direct declaration and fail loud on ambiguous shapes. |
 
 ## Useful Commands
 

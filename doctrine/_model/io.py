@@ -201,6 +201,7 @@ class OutputTargetDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+    delivery_skill_ref: NameRef | None = None
 
 
 OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem

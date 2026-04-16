@@ -327,7 +327,7 @@ class ResolvedContractBucket:
     artifacts: tuple[ContractArtifact, ...]
     bindings: tuple[ContractBinding, ...]
     direct_artifacts: tuple[ContractArtifact, ...] = ()
-    sole_direct_title: str | None = None
+    direct_sections: tuple[tuple[int, CompiledSection], ...] = ()
     has_keyed_children: bool = False
 
 
@@ -609,6 +609,20 @@ class ConfigSpec:
     title: str
     required_keys: dict[str, str]
     optional_keys: dict[str, str]
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedOutputTargetDeliverySkill:
+    title: str
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedOutputTargetSpec:
+    # Output targets carry delivery metadata, so they stay separate from input-source config specs.
+    title: str
+    required_keys: dict[str, str]
+    optional_keys: dict[str, str]
+    delivery_skill: ResolvedOutputTargetDeliverySkill | None = None
 
 
 @dataclass(slots=True, frozen=True)

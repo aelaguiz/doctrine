@@ -23,6 +23,6 @@ outputs SectionDossierOutputs: "Your Outputs"
 
 
 agent ExplicitIoWrapperTitlesDemo:
-    role: "Reuse direct declaration titles when IO wrapper titles are authored explicitly."
+    role: "Keep explicit IO wrapper titles as the long form."
     inputs: SectionDossierInputs
     outputs: SectionDossierOutputs

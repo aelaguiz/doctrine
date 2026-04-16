@@ -360,6 +360,8 @@ class CompileOutputsMixin:
             raise CompileError(f"Output target must stay typed: {decl.name}")
         target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
         rows: list[tuple[str, str]] = [("Target", target_spec.title)]
+        if target_spec.delivery_skill is not None:
+            rows.append(("Delivered Via", f"`{target_spec.delivery_skill.title}`"))
         rows.extend(
             self._compile_output_config_rows(
                 target_item.body or (),

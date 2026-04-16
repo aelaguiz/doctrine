@@ -19,5 +19,5 @@ inputs InvalidSectionDossierInputs: "Your Inputs"
 
 
 agent InvalidMultipleDirectRefsIoWrapperDemo:
-    role: "This should fail because the omitted wrapper title has more than one direct declaration title source."
+    role: "This should fail because the omitted wrapper title has more than one lowerable direct declaration."
     inputs: InvalidSectionDossierInputs

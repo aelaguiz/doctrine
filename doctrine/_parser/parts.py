@@ -38,6 +38,13 @@ class InputStructurePart:
 
 
 @dataclass(slots=True, frozen=True)
+class OutputTargetDeliverySkillPart:
+    ref: model.NameRef
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class OutputBodyParts:
     items: tuple[model.OutputAuthoredItem, ...]
     schema: model.OutputSchemaConfig | None

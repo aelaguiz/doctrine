@@ -467,7 +467,7 @@ class ValidateContractsMixin:
         if title is None:
             if has_keyed_children or len(direct_artifacts) != 1:
                 raise CompileError(
-                    f"Omitted title in {field_kind} section `{key}` requires exactly one direct declaration title source"
+                    f"Omitted title in {field_kind} section `{key}` requires exactly one lowerable direct declaration"
                 )
             title = direct_artifacts[0].decl.title
         return ContractSectionSummary(

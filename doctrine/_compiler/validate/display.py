@@ -61,10 +61,22 @@ class ValidateDisplayMixin:
 
     def _config_spec_from_decl(
         self,
-        decl: model.InputSourceDecl | model.OutputTargetDecl,
+        decl: model.InputSourceDecl,
         *,
         owner_label: str,
     ) -> ConfigSpec:
+        required_keys, optional_keys = self._config_keys_from_decl(
+            decl,
+            owner_label=owner_label,
+        )
+        return ConfigSpec(title=decl.title, required_keys=required_keys, optional_keys=optional_keys)
+
+    def _config_keys_from_decl(
+        self,
+        decl: model.InputSourceDecl | model.OutputTargetDecl,
+        *,
+        owner_label: str,
+    ) -> tuple[dict[str, str], dict[str, str]]:
         _scalar_items, section_items, extras = self._split_record_items(
             decl.items,
             section_keys={"required", "optional"},
@@ -84,7 +96,7 @@ class ValidateDisplayMixin:
             if optional_section is not None
             else {}
         )
-        return ConfigSpec(title=decl.title, required_keys=required_keys, optional_keys=optional_keys)
+        return required_keys, optional_keys
 
     def _key_labels_from_section(
         self,

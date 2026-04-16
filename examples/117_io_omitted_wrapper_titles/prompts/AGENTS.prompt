@@ -15,6 +15,7 @@ inputs SectionDossierInputs: "Your Inputs"
     issue_ledger:
         "Use this ledger to track repeated section issues."
         LessonsIssueLedger
+        "Keep the ledger current after each section pass."
 
 
 outputs SectionDossierOutputs: "Your Outputs"
@@ -23,6 +24,6 @@ outputs SectionDossierOutputs: "Your Outputs"
 
 
 agent OmittedIoWrapperTitlesDemo:
-    role: "Reuse direct declaration titles when IO wrapper titles are omitted."
+    role: "Lower omitted IO wrapper titles into one child-owned heading."
     inputs: SectionDossierInputs
     outputs: SectionDossierOutputs

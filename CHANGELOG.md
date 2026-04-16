@@ -38,9 +38,10 @@ payload text and breaking releases with no real upgrade steps.
 - Added a shipped corpus example for titled and titleless ordered and
   unordered readable lists.
 - Added omitted titles for first-class `inputs` and `outputs` wrapper sections
-  when the wrapper body resolves to one direct titled declaration. Ambiguous
-  shapes such as multiple direct refs or keyed child sections fail loud
-  instead of guessing.
+  when the wrapper body resolves to one direct declaration. The omitted wrapper
+  lowers into that declaration's heading instead of adding a second heading.
+  Ambiguous shapes such as multiple direct refs or keyed child sections fail
+  loud instead of guessing.
 - Added workflow-root readable blocks so workflows may own non-section
   readable blocks directly instead of wrapping them in a local section first.
 - Added `115_runtime_agent_packages` as the generic checked-in runtime-package
@@ -51,7 +52,7 @@ payload text and breaking releases with no real upgrade steps.
 - Added `116_first_class_named_tables` as the focused proof example for named
   table declarations.
 - Added `117_io_omitted_wrapper_titles` as the focused proof example for
-  omitted first-class IO wrapper titles.
+  omitted first-class IO wrapper title lowering.
 
 ### Changed
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and

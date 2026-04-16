@@ -47,6 +47,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedSchemaGroup,
     ResolvedSectionBodyItem,
     ResolvedSectionItem,
+    ResolvedOutputTargetSpec,
     ResolvedWorkflowBody,
     ResolvedWorkflowSkillsItem,
 )
@@ -822,7 +823,7 @@ class FlowMixin:
         self,
         config_items: tuple[model.RecordItem, ...],
         *,
-        spec: ConfigSpec,
+        spec: ConfigSpec | ResolvedOutputTargetSpec,
         unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[str, ...]:
@@ -838,7 +839,7 @@ class FlowMixin:
         self,
         config_items: tuple[model.RecordItem, ...],
         *,
-        spec: ConfigSpec,
+        spec: ConfigSpec | ResolvedOutputTargetSpec,
         unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[tuple[str, ...], dict[str, str]]:

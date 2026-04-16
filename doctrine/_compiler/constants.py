@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from doctrine._compiler.resolved_types import ConfigSpec
+from doctrine._compiler.resolved_types import ConfigSpec, ResolvedOutputTargetSpec
 from doctrine._compiler.types import ResolvedRenderProfile
 
 # Canonical constants and small policy helpers previously mixed into shared.py.
@@ -33,8 +33,16 @@ _BUILTIN_INPUT_SOURCES = {
 }
 
 _BUILTIN_OUTPUT_TARGETS = {
-    "TurnResponse": ConfigSpec(title="Turn Response", required_keys={}, optional_keys={}),
-    "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
+    "TurnResponse": ResolvedOutputTargetSpec(
+        title="Turn Response",
+        required_keys={},
+        optional_keys={},
+    ),
+    "File": ResolvedOutputTargetSpec(
+        title="File",
+        required_keys={"path": "Path"},
+        optional_keys={},
+    ),
 }
 
 _BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")

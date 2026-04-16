@@ -2,32 +2,28 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
-name = "omitted io wrapper titles reuse direct declaration titles"
+name = "omitted io wrapper titles lower one direct declaration"
 status = "active"
 kind = "render_contract"
 agent = "OmittedIoWrapperTitlesDemo"
 assertion = "exact_lines"
 expected_lines = [
-  "Reuse direct declaration titles when IO wrapper titles are omitted.",
+  "Lower omitted IO wrapper titles into one child-owned heading.",
   "",
   "## Your Inputs",
   "",
   "### Lessons Issue Ledger",
   "",
   "Use this ledger to track repeated section issues.",
-  "",
-  "#### Lessons Issue Ledger",
-  "",
   "- Source: File",
   "- Path: `catalog/lessons_issue_ledger.json`",
   "- Shape: JSON Document",
   "- Requirement: Required",
+  "Keep the ledger current after each section pass.",
   "",
   "## Your Outputs",
   "",
   "### Section Handoff",
-  "",
-  "#### Section Handoff",
   "",
   "| Contract | Value |",
   "| --- | --- |",
@@ -37,14 +33,14 @@ expected_lines = [
 ]
 
 [[cases]]
-name = "explicit and omitted io wrapper titles render the same"
+name = "explicit io wrapper titles keep long-form nesting"
 status = "active"
 kind = "render_contract"
 prompt = "prompts/EXPLICIT.prompt"
 agent = "ExplicitIoWrapperTitlesDemo"
 assertion = "exact_lines"
 expected_lines = [
-  "Reuse direct declaration titles when IO wrapper titles are authored explicitly.",
+  "Keep explicit IO wrapper titles as the long form.",
   "",
   "## Your Inputs",
   "",
@@ -80,7 +76,7 @@ prompt = "prompts/INVALID_MULTIPLE_DIRECT_REFS.prompt"
 agent = "InvalidMultipleDirectRefsIoWrapperDemo"
 exception_type = "CompileError"
 message_contains = [
-  "Omitted title in inputs section `issue_ledger` requires exactly one direct declaration title source",
+  "Omitted title in inputs section `issue_ledger` requires exactly one lowerable direct declaration",
 ]
 
 [[cases]]
@@ -91,5 +87,5 @@ prompt = "prompts/INVALID_KEYED_CHILD.prompt"
 agent = "InvalidKeyedChildIoWrapperDemo"
 exception_type = "CompileError"
 message_contains = [
-  "Omitted title in inputs section `issue_ledger` requires exactly one direct declaration title source",
+  "Omitted title in inputs section `issue_ledger` requires exactly one lowerable direct declaration",
 ]
