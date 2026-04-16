@@ -1,0 +1,48 @@
+output schema WriterTurnResultSchema: "Writer Turn Result Schema"
+    route field next_route: "Next Route"
+        revise_more: "Send to RevisionPartner for one more pass." -> RevisionPartner
+        nullable
+        note: "Use null when the writer can finish without a handoff."
+
+    field kind: "Kind"
+        type: enum
+        values:
+            handoff
+            done
+        note: "Say whether this turn hands off or finishes."
+
+    field summary: "Summary"
+        type: string
+        note: "Short handoff or closeout summary."
+
+
+output shape WriterTurnResultJson: "Writer Turn Result JSON"
+    kind: JsonObject
+    schema: WriterTurnResultSchema
+
+
+output WriterTurnResult: "Writer Turn Result"
+    target: TurnResponse
+    shape: WriterTurnResultJson
+    requirement: Required
+
+    routed_owner: "Routed Owner" when route.exists
+        "{{route.next_owner}}"
+
+    no_route: "No Route" when route.exists == false
+        "There is no handoff on this turn."
+
+
+agent RevisionPartner:
+    role: "Take one more revision pass."
+    workflow: "Revise"
+        "Revise the draft one more time."
+
+
+agent WriterOptionalRouteFieldFinalOutputDemo:
+    role: "Either hand off or finish from one routed final output."
+    outputs: "Outputs"
+        WriterTurnResult
+    final_output:
+        output: WriterTurnResult
+        route: next_route

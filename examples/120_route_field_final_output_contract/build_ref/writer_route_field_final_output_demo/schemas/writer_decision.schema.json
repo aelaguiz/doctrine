@@ -1,0 +1,25 @@
+{
+  "title": "Writer Decision Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "next_route": {
+      "title": "Next Route",
+      "description": "Pick the one next owner for this turn.",
+      "type": "string",
+      "enum": [
+        "seek_muse",
+        "ready_for_critic"
+      ]
+    },
+    "summary": {
+      "title": "Summary",
+      "description": "Say what changed in this pass.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "next_route",
+    "summary"
+  ]
+}
