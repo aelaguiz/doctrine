@@ -96,6 +96,7 @@ class ValidateAddressableChildrenMixin:
             (
                 model.AnalysisDecl,
                 model.SchemaDecl,
+                model.TableDecl,
                 model.DocumentDecl,
                 model.InputDecl,
                 model.InputSourceDecl,
@@ -119,6 +120,12 @@ class ValidateAddressableChildrenMixin:
             if isinstance(target, model.SchemaDecl):
                 return self._schema_items_to_addressable_children(
                     self._resolve_schema_decl(target, unit=node.unit),
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                )
+            if isinstance(target, model.TableDecl):
+                return self._readable_table_data_to_addressable_children(
+                    self._resolve_table_decl_data(target, unit=node.unit),
                     unit=node.unit,
                     root_decl=node.root_decl,
                 )
@@ -536,28 +543,12 @@ class ValidateAddressableChildrenMixin:
                     )
             return children or None
         if block.kind == "table" and isinstance(block.payload, model.ReadableTableData):
-            if block.payload.columns:
-                children["columns"] = AddressableNode(
-                    unit=unit,
-                    root_decl=root_decl,
-                    target=ReadableColumnsTarget(columns=block.payload.columns),
-                )
-            if block.payload.rows:
-                children["rows"] = AddressableNode(
-                    unit=unit,
-                    root_decl=root_decl,
-                    target=ReadableRowsTarget(rows=block.payload.rows),
-                )
-            if block.payload.row_schema is not None and "row_schema" not in children:
-                children["row_schema"] = AddressableNode(
-                    unit=unit,
-                    root_decl=root_decl,
-                    target=ReadableSchemaTarget(
-                        title="Row Schema",
-                        entries=block.payload.row_schema.entries,
-                    ),
-                )
-            return children or None
+            return self._readable_table_data_to_addressable_children(
+                block.payload,
+                unit=unit,
+                root_decl=root_decl,
+                seed=children,
+            )
         if block.kind == "footnotes" and isinstance(block.payload, model.ReadableFootnotesData):
             for item in block.payload.entries:
                 children[item.key] = AddressableNode(
@@ -567,3 +558,35 @@ class ValidateAddressableChildrenMixin:
                 )
             return children or None
         return None
+
+    def _readable_table_data_to_addressable_children(
+        self,
+        table: model.ReadableTableData,
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+        seed: dict[str, AddressableNode] | None = None,
+    ) -> dict[str, AddressableNode] | None:
+        children: dict[str, AddressableNode] = dict(seed or {})
+        if table.columns:
+            children["columns"] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=ReadableColumnsTarget(columns=table.columns),
+            )
+        if table.rows:
+            children["rows"] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=ReadableRowsTarget(rows=table.rows),
+            )
+        if table.row_schema is not None and "row_schema" not in children:
+            children["row_schema"] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=ReadableSchemaTarget(
+                    title="Row Schema",
+                    entries=table.row_schema.entries,
+                ),
+            )
+        return children or None

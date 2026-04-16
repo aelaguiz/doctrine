@@ -387,6 +387,12 @@ Do not do this:
 - Do not launder stable shared runtime rules through many local prompts.
   Put repo-wide rules once in a shared import, base owner, or shared skill.
 
+Authoring tip:
+- Keep `purpose` short and direct.
+- When `use_when`, `provides`, `does_not`, or a similar field is really a
+  list, use a titleless `bullets` or `checklist` block inside that field.
+  That keeps emitted Markdown compact and easy to scan.
+
 Best anchors:
 - [11_skills_and_tools](../examples/11_skills_and_tools/prompts/AGENTS.prompt)
 - [21_first_class_skills_blocks](../examples/21_first_class_skills_blocks/prompts/AGENTS.prompt)

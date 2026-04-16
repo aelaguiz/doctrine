@@ -160,15 +160,18 @@ _AGENT_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
     ),
     (
         re.compile(
-            r"^E215 final_output example must be declared on output schema in (?P<owner>[^:]+): (?P<detail>.+)$"
+            r"^E215 final_output example_file is retired in (?P<owner>[^:]+): (?P<detail>.+)$"
         ),
         "E215",
-        "Final output example must be declared on output schema",
+        "Final output example_file is retired",
         lambda match: (
-            f"`final_output` in {match.group('owner')} must declare its example on the "
-            f"`output schema`. {match.group('detail')}"
+            f"`final_output` in {match.group('owner')} still uses retired "
+            f"`example_file`. {match.group('detail')}"
         ),
-        ("Move the example into `output schema` with `example:`.",),
+        (
+            "Delete `example_file` from the `output shape`.",
+            "Add `example:` on `output schema` only when you want a rendered example block.",
+        ),
     ),
     (
         re.compile(

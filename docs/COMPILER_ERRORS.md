@@ -62,7 +62,7 @@ Stability rules:
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
 | `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |
-| `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:` or `schema:` plus `structure:`. |
+| `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:`, `schema:` plus `structure:`, or invalid named-table ownership such as `columns:` on a named table use site. |
 
 ### Compile codes
 
@@ -82,7 +82,7 @@ Stability rules:
 | `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
 | `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
 | `E214` | Retired | Reserved error code. Review-driven `final_output:` may now differ from `comment_output:`. |
-| `E215` | Final output example must be declared on output schema | A structured `final_output:` uses `JsonObject`, but its `output schema` does not declare an `example:` block. |
+| `E215` | Final output `example_file` is retired | A structured `final_output:` still uses `example_file` on `output shape`, which is retired. |
 | `E216` | Final output example does not match the lowered schema | A structured `final_output:` declares an `example:`, but that JSON object does not validate against the lowered schema. |
 | `E217` | Final output lowered schema failed Draft 2020-12 validation | Doctrine lowered an `output schema`, but the resulting JSON Schema is not valid Draft 2020-12. |
 | `E218` | Final output lowered schema is outside the OpenAI structured-outputs subset | Doctrine lowered an `output schema`, but the result uses a shape or rule the OpenAI structured-outputs subset does not allow. |
@@ -105,7 +105,7 @@ Stability rules:
 | `E273` | Unknown addressable path | An interpolation or addressable ref asked for a nested path that does not exist on that surface. |
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
-| `E276` | Missing local declaration reference | A local readable, analysis, or addressable ref points at a declaration that does not exist. |
+| `E276` | Missing local declaration reference | A local readable, analysis, named-table, or addressable ref points at a declaration that does not exist. |
 | `E280` | Missing import module | An imported module could not be found in the active import-root registry. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
@@ -123,7 +123,7 @@ Stability rules:
 | `E294` | Duplicate enum member wire | One `enum` body repeats the same host-facing `wire` value. |
 | `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a document block, properties entry, inline schema entry, footnote, or table child. |
 | `E296` | Readable guard reads disallowed source | A readable `when` guard reads emitted output fields or other disallowed sources instead of only declared inputs and enum members. |
-| `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty table, or a multiline inline table cell. |
+| `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty inline or named table, or a multiline inline table cell. |
 | `E298` | Invalid render_profile declaration | A `render_profile` declares an unknown target, unsupported mode, or duplicate target rule. |
 | `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. No shipped manifest-backed compile-fail case currently depends on `E299`. |
 | `E301` | Invalid IO bucket item | An `inputs:` or `outputs:` bucket contains an invalid item shape, inline declaration body, or wrong-kind declaration ref. |

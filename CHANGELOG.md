@@ -37,10 +37,21 @@ payload text and breaking releases with no real upgrade steps.
   blocks while keeping the authored key required for inheritance and refs.
 - Added a shipped corpus example for titled and titleless ordered and
   unordered readable lists.
+- Added omitted titles for first-class `inputs` and `outputs` wrapper sections
+  when the wrapper body resolves to one direct titled declaration. Ambiguous
+  shapes such as multiple direct refs or keyed child sections fail loud
+  instead of guessing.
 - Added workflow-root readable blocks so workflows may own non-section
   readable blocks directly instead of wrapping them in a local section first.
 - Added `115_runtime_agent_packages` as the generic checked-in runtime-package
   proof example.
+- Added first-class named `table` declarations so documents can reuse one
+  table contract with local `table key: TableRef` use sites while keeping
+  inline tables and rendered Markdown unchanged.
+- Added `116_first_class_named_tables` as the focused proof example for named
+  table declarations.
+- Added `117_io_omitted_wrapper_titles` as the focused proof example for
+  omitted first-class IO wrapper titles.
 
 ### Changed
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and
@@ -50,9 +61,9 @@ payload text and breaking releases with no real upgrade steps.
   public work and keep minor bumps for real backward-compatible public
   additions or soft deprecations.
 - Changed structured `JsonObject` final outputs to keep their example object
-  inside `output schema`, validate that example against the lowered
-  OpenAI-compatible schema, and stop reading checked-in `.example.json`
-  support files.
+  inside `output schema`, make that `example:` block optional, validate it
+  against the lowered OpenAI-compatible schema when present, and stop reading
+  checked-in `.example.json` support files.
 - Changed `emit_docs` to write `AGENTS.md` plus the real lowered
   `schemas/<output-slug>.schema.json` artifact for structured final outputs,
   plus `final_output.contract.json` for final-output and review-control
@@ -96,7 +107,7 @@ payload text and breaking releases with no real upgrade steps.
 Release kind: Non-breaking
 Release channel: stable
 Release version: vX.Y.Z
-Language version: unchanged (still 1.0)
+Language version: unchanged (still 1.2)
 Affected surfaces: ...
 Who must act: ...
 Who does not need to act: ...

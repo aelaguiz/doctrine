@@ -56,7 +56,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/115_runtime_agent_packages`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/116_first_class_named_tables`.
 
 ## Authoring Rules
 

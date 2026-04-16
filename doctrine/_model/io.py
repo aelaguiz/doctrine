@@ -31,6 +31,13 @@ class RecordSection:
 
 
 @_dataclass(slots=True, frozen=True)
+class IoSection:
+    key: str
+    title: str | None
+    items: tuple["RecordItem", ...]
+
+
+@_dataclass(slots=True, frozen=True)
 class GuardedOutputSection:
     key: str
     title: str
@@ -104,7 +111,7 @@ class OverrideIoSection:
     items: tuple[RecordItem, ...]
 
 
-IoItem: _TypeAlias = RecordSection | RecordRef | InheritItem | OverrideIoSection
+IoItem: _TypeAlias = IoSection | RecordRef | InheritItem | OverrideIoSection
 
 
 @_dataclass(slots=True, frozen=True)

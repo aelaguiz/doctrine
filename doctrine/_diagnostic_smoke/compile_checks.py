@@ -33,7 +33,7 @@ def run_compile_checks() -> None:
     _check_final_output_invalid_lowered_schema_has_specific_code()
     _check_final_output_excessive_nesting_has_specific_code()
     _check_final_output_invalid_example_json_has_specific_code()
-    _check_final_output_missing_example_has_specific_code()
+    _check_final_output_missing_example_is_allowed()
     _check_final_output_non_output_ref_has_specific_code()
     _check_final_output_missing_emission_has_specific_code()
     _check_final_output_file_target_has_specific_code()
@@ -201,19 +201,15 @@ def _check_final_output_invalid_example_json_has_specific_code() -> None:
         raise SmokeFailure("expected compile failure for invalid final_output example instance, but compilation succeeded")
 
 
-def _check_final_output_missing_example_has_specific_code() -> None:
+def _check_final_output_missing_example_is_allowed() -> None:
     source = _final_output_json_source(example_body=None)
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
         prompt = parse_file(prompt_path)
-        try:
-            compile_prompt(prompt, "RepoStatusAgent")
-        except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E215", f"expected E215, got {getattr(exc, 'code', None)}")
-            _expect("must be declared on output schema" in str(exc), str(exc))
-            return
-        raise SmokeFailure("expected compile failure for missing final_output example, but compilation succeeded")
+        compiled = compile_prompt(prompt, "RepoStatusAgent")
+        rendered = render_markdown(compiled)
+        _expect("#### Payload Fields" in rendered, rendered)
+        _expect("#### Example" not in rendered, rendered)
 
 
 def _check_final_output_non_output_ref_has_specific_code() -> None:

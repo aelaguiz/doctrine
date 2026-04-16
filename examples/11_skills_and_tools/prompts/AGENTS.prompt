@@ -60,12 +60,14 @@ skill DomainGroundingSkill: "domain-grounding-kb"
         "A wording surface or claim that needs domain grounding."
 
     provides: "Provides"
-        "The normal repo workflow for grounding domain wording against current source truth."
-        "A clear route for collecting the receipts this lane needs."
+        bullets items:
+            "The normal repo workflow for grounding domain wording against current source truth."
+            "A clear route for collecting the receipts this lane needs."
 
     does_not: "Does Not"
-        "Does not change the approved structure."
-        "Does not establish final expert authority."
+        bullets items:
+            "Does not change the approved structure."
+            "Does not establish final expert authority."
 
 
 skill CopyRewriteSkill: "domain-copy-rewrite"

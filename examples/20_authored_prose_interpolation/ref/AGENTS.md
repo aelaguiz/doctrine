@@ -29,15 +29,15 @@ Use this as the current plan truth.
 
 #### Grounding Skill
 
-##### Purpose
+**Purpose**
 
 Ground new claims against Current Plan before you write.
 
-##### Provides
+**Provides**
 
 Keep `track_root/current-plan.md` in scope when you cite current plan truth.
 
-##### Reason
+**Reason**
 
 Ask ProjectLead for an owner decision only when the plan truly needs one.
 

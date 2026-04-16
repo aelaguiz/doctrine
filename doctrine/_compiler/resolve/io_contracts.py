@@ -108,6 +108,7 @@ class ResolveIoContractsMixin:
         artifacts: list[ContractArtifact] = []
         bindings: list[ContractBinding] = []
         direct_artifacts: list[ContractArtifact] = []
+        direct_titles: list[str] = []
         has_keyed_children = False
 
         for item in items:
@@ -156,6 +157,7 @@ class ResolveIoContractsMixin:
                 body.append(compiled_section)
                 artifacts.append(artifact)
                 direct_artifacts.append(artifact)
+                direct_titles.append(compiled_section.title)
                 continue
 
             if isinstance(item, model.RecordScalar):
@@ -172,6 +174,7 @@ class ResolveIoContractsMixin:
             artifacts=tuple(artifacts),
             bindings=tuple(bindings),
             direct_artifacts=tuple(direct_artifacts),
+            sole_direct_title=direct_titles[0] if len(direct_titles) == 1 else None,
             has_keyed_children=has_keyed_children,
         )
 
@@ -309,7 +312,7 @@ class ResolveIoContractsMixin:
                 raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
             seen_keys.add(key)
 
-            if isinstance(item, model.RecordSection):
+            if isinstance(item, model.IoSection):
                 resolved_item = self._resolve_io_section_item(
                     item,
                     unit=unit,

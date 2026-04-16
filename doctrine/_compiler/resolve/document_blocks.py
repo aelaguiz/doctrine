@@ -10,6 +10,7 @@ from doctrine._compiler.resolved_types import (
     ReviewSemanticContext,
     RouteSemanticContext,
 )
+from doctrine._compiler.support_files import _dotted_decl_name
 
 
 class ResolveDocumentBlocksMixin:
@@ -140,13 +141,22 @@ class ResolveDocumentBlocksMixin:
                 row_schema=row_schema,
             )
         if item.kind == "table":
-            resolved_table = self._resolve_document_readable_table_payload(
-                item.payload,
-                unit=unit,
-                owner_label=owner_label,
-            )
+            if isinstance(item.payload, model.ReadableTableUseData):
+                table_title, resolved_table = self._resolve_named_document_table_payload(
+                    item.payload,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+            else:
+                table_title = item.title
+                resolved_table = self._resolve_document_readable_table_payload(
+                    item.payload,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
             return replace(
                 item,
+                title=table_title,
                 payload=resolved_table,
                 item_schema=item_schema,
                 row_schema=resolved_table.row_schema,
@@ -430,6 +440,54 @@ class ResolveDocumentBlocksMixin:
     ) -> model.ReadableTableData:
         if not isinstance(payload, model.ReadableTableData):
             raise CompileError(f"Readable table payload must stay table-shaped in {owner_label}")
+        return self._resolve_readable_table_data(payload, unit=unit, owner_label=owner_label)
+
+    def _resolve_table_decl_data(
+        self,
+        table_decl: model.TableDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> model.ReadableTableData:
+        return self._resolve_readable_table_data(
+            table_decl.table,
+            unit=unit,
+            owner_label=f"table {_dotted_decl_name(unit.module_parts, table_decl.name)}",
+        )
+
+    def _resolve_named_document_table_payload(
+        self,
+        payload: model.ReadableTableUseData,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[str, model.ReadableTableData]:
+        table_unit, table_decl = self._resolve_table_ref(payload.table_ref, unit=unit)
+        declaration_table = self._resolve_table_decl_data(table_decl, unit=table_unit)
+        resolved_rows = self._resolve_readable_table_rows(
+            payload.rows,
+            columns=declaration_table.columns,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        resolved_notes = self._resolve_readable_table_notes(
+            payload.notes,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        return table_decl.title, model.ReadableTableData(
+            columns=declaration_table.columns,
+            rows=resolved_rows,
+            notes=(*declaration_table.notes, *resolved_notes),
+            row_schema=declaration_table.row_schema,
+        )
+
+    def _resolve_readable_table_data(
+        self,
+        payload: model.ReadableTableData,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> model.ReadableTableData:
         resolved_columns: list[model.ReadableTableColumn] = []
         column_keys: set[str] = set()
         for column in payload.columns:
@@ -462,9 +520,38 @@ class ResolveDocumentBlocksMixin:
             surface_label="table row schema",
         )
 
+        resolved_rows = self._resolve_readable_table_rows(
+            payload.rows,
+            columns=tuple(resolved_columns),
+            unit=unit,
+            owner_label=owner_label,
+        )
+
+        resolved_notes = self._resolve_readable_table_notes(
+            payload.notes,
+            unit=unit,
+            owner_label=owner_label,
+        )
+
+        return model.ReadableTableData(
+            columns=tuple(resolved_columns),
+            rows=resolved_rows,
+            notes=resolved_notes,
+            row_schema=row_schema,
+        )
+
+    def _resolve_readable_table_rows(
+        self,
+        rows: tuple[model.ReadableTableRow, ...],
+        *,
+        columns: tuple[model.ReadableTableColumn, ...],
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.ReadableTableRow, ...]:
+        column_keys = {column.key for column in columns}
         resolved_rows: list[model.ReadableTableRow] = []
         row_keys: set[str] = set()
-        for row in payload.rows:
+        for row in rows:
             if row.key in row_keys:
                 raise CompileError(f"Duplicate table row key in {owner_label}: {row.key}")
             row_keys.add(row.key)
@@ -507,8 +594,16 @@ class ResolveDocumentBlocksMixin:
                     )
                 resolved_cells.append(model.ReadableTableCell(key=cell.key, text=cell_text))
             resolved_rows.append(model.ReadableTableRow(key=row.key, cells=tuple(resolved_cells)))
+        return tuple(resolved_rows)
 
-        resolved_notes = tuple(
+    def _resolve_readable_table_notes(
+        self,
+        notes: tuple[model.ProseLine, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[model.ProseLine, ...]:
+        return tuple(
             self._interpolate_authored_prose_line(
                 line,
                 unit=unit,
@@ -516,12 +611,5 @@ class ResolveDocumentBlocksMixin:
                 surface_label="table notes",
                 ambiguous_label="table note interpolation ref",
             )
-            for line in payload.notes
-        )
-
-        return model.ReadableTableData(
-            columns=tuple(resolved_columns),
-            rows=tuple(resolved_rows),
-            notes=resolved_notes,
-            row_schema=row_schema,
+            for line in notes
         )

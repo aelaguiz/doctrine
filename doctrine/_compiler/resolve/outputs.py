@@ -1039,30 +1039,28 @@ class ResolveOutputsMixin:
         example_file_item = shape_scalars.get("example_file")
         if example_file_item is not None:
             raise CompileError(
-                "E215 final_output example must be declared on output schema in "
-                f"output shape {shape_decl.name}: retire `example_file` and add `example:` "
-                f"to output schema {schema_decl.name}"
+                "E215 final_output example_file is retired in "
+                f"output shape {shape_decl.name}: retire `example_file`; add optional "
+                f"`example:` to output schema {schema_decl.name} only when you want a "
+                "rendered example block"
             )
         example_value = self._output_schema_example_value(
             schema_decl,
             owner_label=f"output schema {schema_decl.name}",
         )
-        if example_value is None:
-            raise CompileError(
-                "E215 final_output example must be declared on output schema in "
-                f"output schema {schema_decl.name}: add `example:`"
-            )
-        example_instance = self._materialize_output_schema_example_value(
-            example_value,
-            owner_label=f"output schema {schema_decl.name}.example",
-        )
-        self._validate_final_output_example_instance(
-            example_instance,
-            lowered_schema,
-            owner_label=f"output schema {schema_decl.name}",
-        )
         payload_rows = self._build_output_schema_payload_rows(schema_data=lowered_schema)
-        example_text = json.dumps(example_instance, indent=2) + "\n"
+        example_text: str | None = None
+        if example_value is not None:
+            example_instance = self._materialize_output_schema_example_value(
+                example_value,
+                owner_label=f"output schema {schema_decl.name}.example",
+            )
+            self._validate_final_output_example_instance(
+                example_instance,
+                lowered_schema,
+                owner_label=f"output schema {schema_decl.name}",
+            )
+            example_text = json.dumps(example_instance, indent=2) + "\n"
         return FinalOutputJsonShapeSummary(
             shape_unit=shape_unit,
             shape_decl=shape_decl,
@@ -1417,7 +1415,7 @@ class ResolveOutputsMixin:
                 raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
             emitted_keys.add(key)
 
-            if isinstance(item, model.RecordSection):
+            if isinstance(item, model.IoSection):
                 resolved_item = self._resolve_io_section_item(
                     item,
                     unit=unit,
@@ -1507,7 +1505,7 @@ class ResolveOutputsMixin:
 
     def _resolve_io_section_item(
         self,
-        item: model.RecordSection,
+        item: model.IoSection,
         *,
         unit: IndexedUnit,
         field_kind: str,
@@ -1520,7 +1518,7 @@ class ResolveOutputsMixin:
             item.items,
             unit=unit,
             field_kind=field_kind,
-            owner_label=f"{field_kind} section `{item.title}`",
+            owner_label=f"{field_kind} section `{item.title if item.title is not None else item.key}`",
             review_output_contexts=review_output_contexts,
             route_output_contexts=route_output_contexts,
             path_prefix=binding_path,
@@ -1536,15 +1534,39 @@ class ResolveOutputsMixin:
             )
         if not resolved_bucket.body and not resolved_bucket.artifacts and not bindings:
             return None
+        section_title = self._resolve_io_section_title(
+            item,
+            field_kind=field_kind,
+            resolved_bucket=resolved_bucket,
+        )
         return ResolvedIoSection(
             key=item.key,
             section=CompiledSection(
-                title=item.title,
+                title=section_title,
                 body=resolved_bucket.body,
             ),
             artifacts=resolved_bucket.artifacts,
             bindings=tuple(bindings),
         )
+
+    def _resolve_io_section_title(
+        self,
+        item: model.IoSection,
+        *,
+        field_kind: str,
+        resolved_bucket: ResolvedContractBucket,
+    ) -> str:
+        if item.title is not None:
+            return item.title
+        if (
+            resolved_bucket.has_keyed_children
+            or len(resolved_bucket.direct_artifacts) != 1
+            or resolved_bucket.sole_direct_title is None
+        ):
+            raise CompileError(
+                f"Omitted title in {field_kind} section `{item.key}` requires exactly one direct declaration title source"
+            )
+        return resolved_bucket.sole_direct_title
 
     def _resolve_io_ref_item(
         self,

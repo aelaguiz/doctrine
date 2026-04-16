@@ -136,11 +136,11 @@ Stop when the verdict is explicit, the next owner is clear, and the gate log mat
 
 #### lesson-review-checklist
 
-##### Purpose
+**Purpose**
 
 Run the repo's current checklist for critic review of a section dossier.
 
-##### Use When
+**Use When**
 
 Use this when the role needs a repeatable review pass against the current dossier contract.
 

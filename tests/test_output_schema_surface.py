@@ -7,6 +7,7 @@ from pathlib import Path
 
 from doctrine import model
 from doctrine.compiler import CompilationSession
+from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file, parse_text
 from doctrine.renderer import render_markdown
 
@@ -30,6 +31,21 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 target_path.write_text(textwrap.dedent(contents), encoding="utf-8")
             prompt = parse_file(prompt_path)
             return CompilationSession(prompt).compile_agent(agent_name)
+
+    def _compile_error(
+        self,
+        source: str,
+        *,
+        agent_name: str,
+        extra_files: dict[str, str] | None = None,
+    ) -> CompileError:
+        with self.assertRaises(CompileError) as ctx:
+            self._compile_agent(
+                source,
+                agent_name=agent_name,
+                extra_files=extra_files,
+            )
+        return ctx.exception
 
     def test_parser_builds_output_schema_nodes_and_nested_items(self) -> None:
         prompt = parse_text(
@@ -209,6 +225,40 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
         rendered = render_markdown(agent)
         self.assertIn("Schema title: Shared Base Payload Title", rendered)
         self.assertIn("Notes title: Field Notes", rendered)
+
+    def test_inherited_output_schema_example_stays_explicit_when_parent_has_none(self) -> None:
+        error = self._compile_error(
+            """
+            output schema BasePayload: "Base Payload"
+                field kind: "Kind"
+                    type: string
+                    required
+
+            output schema ChildPayload[BasePayload]: "Child Payload"
+                inherit kind
+                inherit example
+
+            output shape ChildJson: "Child JSON"
+                kind: JsonObject
+                schema: ChildPayload
+
+            output ChildResponse: "Child Response"
+                target: TurnResponse
+                shape: ChildJson
+                requirement: Required
+
+            agent Demo:
+                role: "Emit the child response."
+                outputs: "Outputs"
+                    ChildResponse
+                final_output: ChildResponse
+            """,
+            agent_name="Demo",
+        )
+
+        # Child schemas must not silently invent sample data when a parent
+        # never declared an example to inherit.
+        self.assertIn("Cannot inherit undefined output schema entry", str(error))
 
 
 if __name__ == "__main__":

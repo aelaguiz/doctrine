@@ -86,6 +86,7 @@ class ValidateAddressableDisplayMixin:
             (
                 model.AnalysisDecl,
                 model.SchemaDecl,
+                model.TableDecl,
                 model.DocumentDecl,
                 model.InputDecl,
                 model.InputSourceDecl,
@@ -228,6 +229,8 @@ class ValidateAddressableDisplayMixin:
         if isinstance(target, model.DecisionDecl):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaDecl):
+            return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.TableDecl):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentDecl):
             return DisplayValue(text=target.title, kind="title")

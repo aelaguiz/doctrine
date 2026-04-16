@@ -88,11 +88,14 @@ Some call out landmark examples inside those ranges.
   agent companions, larger compendium trees, exact path and case
   preservation, binary assets, and review-native final-response metadata for
   carrier, split control-ready, and split partial review finals
-- `107` through `115`: direct `output[...]` declaration inheritance, inherited
+- `107` through `116`: direct `output[...]` declaration inheritance, inherited
   output attachments, imported reusable handoff outputs, inherited
   `final_output:`, inherited shared `route.*` readback, fail-loud output
   inheritance errors, titled or titleless readable lists, workflow-root
-  readable blocks, and directory-backed runtime package emit
+  readable blocks, directory-backed runtime package emit, and first-class named
+  table declarations
+- `117`: omitted first-class IO wrapper titles reuse one direct declaration
+  title and fail loud on ambiguous shapes
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -187,7 +190,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
 | `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |
 | `78_final_output_and_side_artifacts` | Final assistant messages stay separate from ordinary emitted artifacts. |
-| `79_final_output_output_schema` | `output schema` JSON `final_output:` with payload preview and example shape. |
+| `79_final_output_output_schema` | `output schema` JSON `final_output:` with payload preview and optional rendered example. |
 | `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
 | `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
 | `82_review_final_output_prose_basic` | Review-driven prose `final_output:` may reuse `comment_output` as the dedicated final answer. |
@@ -224,6 +227,8 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `113_titleless_readable_lists` | Titled and titleless readable lists render cleanly, and detailed list blocks drop helper kind metadata lines. |
 | `114_workflow_root_readable_blocks` | Workflow roots may own readable blocks directly without wrapping them in a local section first. |
 | `115_runtime_agent_packages` | Thin build handles may emit imported runtime packages with package-root `AGENTS.md`, optional sibling `SOUL.md`, and bundled peer files. |
+| `116_first_class_named_tables` | Top-level `table` declarations may be reused by local document table keys without changing rendered Markdown. |
+| `117_io_omitted_wrapper_titles` | Omitted first-class IO wrapper titles reuse one direct declaration title and fail loud on ambiguous shapes. |
 
 ## Useful Commands
 

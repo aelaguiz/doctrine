@@ -16,12 +16,17 @@ Build Tables in Section Concepts Terms File before you finish `section_root/_aut
 
 #### Concepts Terms Skill
 
-##### Purpose
+**Purpose**
 
 Use Concept Ladder Table before you finalize the document.
 
-- Canonical Table: Concept Ladder Table
-- Canonical Path: `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`
+**Canonical Table**
+
+Concept Ladder Table
+
+**Canonical Path**
+
+`section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`
 
 ## Outputs
 

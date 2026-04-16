@@ -418,6 +418,55 @@ Concrete shipped proof:
 
 - `examples/113_titleless_readable_lists`
 
+First-class IO wrapper titles:
+
+- This is not list lowering.
+- If an `inputs` or `outputs` wrapper section omits its title and the body
+  resolves to exactly one direct titled declaration, Doctrine reuses that
+  declaration title for the wrapper heading.
+- In inherited `override key:` forms, omitting the title keeps the parent
+  heading.
+- If the wrapper body has multiple direct refs or keyed child sections,
+  Doctrine fails loud instead of guessing.
+- The outer wrapper heading still renders. Only the authored title string is
+  omitted.
+
+Authoring example:
+
+```prompt
+input LessonsIssueLedger: "Lessons Issue Ledger"
+    source: File
+        path: "catalog/lessons_issue_ledger.json"
+    shape: "JSON Document"
+    requirement: Required
+
+inputs SectionDossierInputs: "Your Inputs"
+    issue_ledger:
+        "Use this ledger to track repeated section issues."
+        LessonsIssueLedger
+```
+
+Rendered Markdown:
+
+```md
+## Your Inputs
+
+### Lessons Issue Ledger
+
+Use this ledger to track repeated section issues.
+
+#### Lessons Issue Ledger
+
+- Source: File
+- Path: `catalog/lessons_issue_ledger.json`
+- Shape: JSON Document
+- Requirement: Required
+```
+
+Concrete shipped proof:
+
+- `examples/117_io_omitted_wrapper_titles`
+
 `emit_docs` does not emit `AGENTS.contract.json`.
 It may emit `final_output.contract.json` beside `AGENTS.md` when an agent
 declares `final_output:` or a review contract.
@@ -425,11 +474,11 @@ declares `final_output:` or a review contract.
 For structured final outputs:
 
 - `output schema` is the only source of truth for payload fields and the
-  example object.
+  optional example object.
 - Doctrine lowers that schema to the OpenAI-compatible wire shape during
   compile.
-- Doctrine validates both the lowered schema and the authored example before
-  it renders Markdown.
+- When an authored `example:` is present, Doctrine validates it against the
+  lowered schema before it renders Markdown.
 - The emitted `AGENTS.md` final-output section is the shipped human-facing
   contract.
 - The emitted payload contract lives at

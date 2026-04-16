@@ -130,9 +130,6 @@ def _check_emit_docs_emits_generated_schema_for_structured_final_output() -> Non
         type: string
         required
 
-    example:
-        summary: "Branch is clean."
-
 output shape RepoStatusJson: "Repo Status JSON"
     kind: JsonObject
     schema: RepoStatusSchema
@@ -180,6 +177,9 @@ output_dir = "build"
         schema_data = json.loads(schema_path.read_text(encoding="utf-8"))
         _expect(schema_data.get("type") == "object", str(schema_data))
         _expect(schema_data.get("required") == ["summary"], str(schema_data))
+        rendered = agents_path.read_text(encoding="utf-8")
+        _expect("#### Payload Fields" in rendered, rendered)
+        _expect("#### Example" not in rendered, rendered)
         contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
         _expect(
             contract_data.get("final_output", {}).get("emitted_schema_relpath")

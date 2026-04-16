@@ -154,6 +154,11 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             if declaration is None:
                 raise CompileError(f"Missing target schema declaration: {declaration_name}")
             return self._compile_schema_decl(declaration, unit=self.root_unit)
+        if declaration_kind == "table":
+            declaration = self.root_unit.tables_by_name.get(declaration_name)
+            if declaration is None:
+                raise CompileError(f"Missing target table declaration: {declaration_name}")
+            return self._compile_table_decl(declaration, unit=self.root_unit)
         if declaration_kind == "document":
             declaration = self.root_unit.documents_by_name.get(declaration_name)
             if declaration is None:

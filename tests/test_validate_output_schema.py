@@ -14,21 +14,32 @@ from doctrine.validate_output_schema import main as validate_output_schema_main
 
 
 class ValidateOutputSchemaCliTests(unittest.TestCase):
-    def _emit_structured_schema(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+    def _emit_structured_schema(
+        self,
+        *,
+        include_example: bool = False,
+    ) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temp_dir = tempfile.TemporaryDirectory()
         root = Path(temp_dir.name)
         prompts = root / "prompts"
         prompts.mkdir(parents=True)
+        example_block = ""
+        if include_example:
+            example_block = textwrap.dedent(
+                """\
+
+                    example:
+                        summary: "Branch is clean."
+                """
+            )
         (prompts / "AGENTS.prompt").write_text(
             textwrap.dedent(
-                """\
+                f"""\
                 output schema RepoStatusSchema: "Repo Status Schema"
                     field summary: "Summary"
                         type: string
                         required
-
-                    example:
-                        summary: "Branch is clean."
+                {example_block}
 
                 output shape RepoStatusJson: "Repo Status JSON"
                     kind: JsonObject

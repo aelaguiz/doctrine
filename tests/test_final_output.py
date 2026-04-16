@@ -430,10 +430,11 @@ class FinalOutputTests(unittest.TestCase):
         self.assertEqual(error.code, "E216")
         self.assertIn("does not match lowered schema", str(error))
 
-    def test_json_final_output_requires_schema_owned_example(self) -> None:
-        # The example block is part of the user-visible final contract, so the
-        # structured path must fail loud when the schema does not declare one.
-        error = self._compile_error(
+    def test_json_final_output_allows_missing_schema_owned_example(self) -> None:
+        # Structured final-output contracts may omit `example:`. The rendered
+        # contract should still expose the payload shape and skip the example
+        # block instead of failing at compile time.
+        agent = self._compile_agent(
             """
             output schema RepoStatusSchema: "Repo Status Schema"
                 field summary: "Summary"
@@ -460,8 +461,15 @@ class FinalOutputTests(unittest.TestCase):
             agent_name="RepoStatusAgent",
         )
 
-        self.assertEqual(error.code, "E215")
-        self.assertIn("must be declared on output schema", str(error))
+        self.assertIsNotNone(agent.final_output)
+        self.assertEqual(agent.final_output.format_mode, "json_object")
+        self.assertIsNotNone(agent.final_output.lowered_schema)
+
+        rendered = render_markdown(agent)
+        # Missing sample data must not erase the user-visible payload contract.
+        self.assertIn("#### Payload Fields", rendered)
+        self.assertNotIn("#### Example", rendered)
+        self.assertNotIn("```json", rendered)
 
     def test_final_output_is_omitted_from_outputs_when_side_artifacts_remain(self) -> None:
         agent = self._compile_agent(

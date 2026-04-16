@@ -242,6 +242,26 @@ class CompileReadablesMixin:
             render_profile=resolved.render_profile or ResolvedRenderProfile(name="ContractMarkdown"),
         )
 
+    def _compile_table_decl(
+        self,
+        decl: model.TableDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        return CompiledSection(
+            title=decl.title,
+            body=(
+                CompiledTableBlock(
+                    title=f"{decl.title} Contract",
+                    table=self._compile_resolved_readable_table_payload(
+                        self._resolve_table_decl_data(decl, unit=unit),
+                        unit=unit,
+                    ),
+                ),
+            ),
+            render_profile=ResolvedRenderProfile(name="ContractMarkdown"),
+        )
+
     def _compile_document_body(
         self,
         document_body: ResolvedDocumentBody,

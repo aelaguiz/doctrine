@@ -30,6 +30,16 @@ For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 - Keep public docs and examples generic rather than importing product-specific
   jargon from other repos.
 
+## Named Table Design
+
+First-class `table` declarations follow Doctrine's normal named-type pattern.
+The declaration owns the reusable table contract. The document use site owns
+the local key and local rows. This is why the syntax is
+`table release_gates: ReleaseGates`, not a generic `ref:` field or a path to a
+table hidden inside another document. The compiler lowers named table use back
+to the ordinary document table path, so rendering and inheritance stay the
+same.
+
 ## Shipped Boundaries
 
 Doctrine's current shipped surface is proven across the numbered corpus listed
@@ -49,9 +59,9 @@ That shipped surface includes:
   schema artifacts for `JsonObject` final answers
 - concrete-turn bindings and bound roots for law and review carriers
 - `analysis`, `decision`, owner-aware `schema:` / `structure:`, readable
-  `document` blocks, first-class schema artifacts/groups, multiline code
-  blocks, schema-backed review contracts, and shared route semantics such as
-  `route_from`
+  `document` blocks, first-class named `table` declarations, first-class
+  schema artifacts/groups, multiline code blocks, schema-backed review
+  contracts, and shared route semantics such as `route_from`
 - title-bearing concrete-agent heads plus enum-member key/title/wire identity
   projections
 - authored `render_profile`, compact `properties`, explicit readable guard
@@ -69,6 +79,7 @@ The language intentionally does not ship:
 - implicit merge by omission for inherited structure
 - a second capability surface parallel to `skill`
 - arbitrary free-prose parsing as semantics
+- a generic readable-block `ref:` system
 
 When a new feature earns its place, the expected path is:
 

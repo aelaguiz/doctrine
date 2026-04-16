@@ -17,6 +17,7 @@ prompt_file: _NL* declaration+ _NL*
             | analysis_decl
             | decision_decl
             | schema_decl
+            | table_decl
             | document_decl
             | workflow_decl
             | route_only_decl
@@ -47,6 +48,7 @@ render_profile_rule: dotted_name "->" CNAME _NL?
 analysis_decl: "analysis" CNAME inheritance? ":" string _NL _INDENT analysis_body _DEDENT
 decision_decl: "decision" CNAME ":" string _NL _INDENT decision_body _DEDENT
 schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DEDENT
+table_decl: "table" CNAME ":" string _NL _INDENT table_decl_body _DEDENT
 document_decl: "document" CNAME inheritance? ":" string _NL _INDENT document_body _DEDENT
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
 route_only_decl: "route_only" CNAME ":" string _NL _INDENT route_only_body _DEDENT
@@ -378,6 +380,12 @@ schema_block_key: "sections" -> schema_block_key_sections
                 | "artifacts" -> schema_block_key_artifacts
                 | "groups" -> schema_block_key_groups
 
+table_decl_body: table_decl_body_line+
+?table_decl_body_line: readable_row_schema_block
+                     | readable_table_columns_block
+                     | readable_table_rows_block
+                     | readable_table_notes_block
+
 document_body: document_body_line+
 document_body_line: document_render_profile_stmt
                   | document_string
@@ -438,7 +446,8 @@ readable_guard_shell_block: "guard" CNAME readable_guard _NL _INDENT shared_read
 readable_bullets_block: "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_checklist_block: "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_definitions_block: "definitions" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
-readable_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+readable_table_block: readable_inline_table_block
+                    | readable_named_table_block
 readable_callout_block: "callout" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
 readable_code_block: "code" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
 readable_markdown_block: "markdown" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
@@ -453,7 +462,8 @@ override_readable_guard_shell_block: "override" "guard" CNAME readable_guard _NL
 override_readable_bullets_block: "override" "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 override_readable_checklist_block: "override" "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 override_readable_definitions_block: "override" "definitions" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
-override_readable_table_block: "override" "table" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+override_readable_table_block: override_readable_inline_table_block
+                             | override_readable_named_table_block
 override_readable_callout_block: "override" "callout" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
 override_readable_code_block: "override" "code" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
 override_readable_markdown_block: "override" "markdown" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
@@ -490,6 +500,17 @@ readable_table_body: readable_table_body_line+
                          | readable_table_columns_block
                          | readable_table_rows_block
                          | readable_table_notes_block
+readable_inline_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+readable_named_table_block: "table" CNAME ":" name_ref readable_requirement? readable_guard? readable_named_table_suffix
+readable_named_table_suffix: _NL _INDENT readable_table_use_body _DEDENT
+                           | _NL?
+override_readable_inline_table_block: "override" "table" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+override_readable_named_table_block: "override" "table" CNAME ":" name_ref readable_requirement? readable_guard? readable_named_table_suffix
+readable_table_use_body: readable_table_use_body_line+
+?readable_table_use_body_line: readable_table_rows_block
+                             | readable_table_notes_block
+                             | readable_row_schema_block
+                             | readable_table_columns_block
 readable_row_schema_block: "row_schema" ":" _NL _INDENT readable_inline_schema_item+ _DEDENT
 readable_table_columns_block: "columns" ":" _NL _INDENT readable_table_column+ _DEDENT
 readable_table_column: CNAME ":" string _NL readable_table_column_body?
@@ -612,7 +633,7 @@ io_body_line: io_string
         | io_inherit
         | io_override_section
 
-io_section: CNAME ":" string _NL _INDENT record_body _DEDENT
+io_section: CNAME ":" string? _NL _INDENT record_body _DEDENT
 io_inherit: "inherit" CNAME _NL?
 io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 

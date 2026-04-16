@@ -75,6 +75,13 @@ class ReadableTableData:
 
 
 @_dataclass(slots=True, frozen=True)
+class ReadableTableUseData:
+    table_ref: NameRef
+    rows: tuple[ReadableTableRow, ...] = ()
+    notes: tuple[ProseLine, ...] = ()
+
+
+@_dataclass(slots=True, frozen=True)
 class ReadableCalloutData:
     kind: str | None
     body: tuple[ProseLine, ...]
@@ -116,6 +123,7 @@ ReadablePayload: _TypeAlias = (
     | tuple[ReadableDefinitionItem, ...]
     | ReadablePropertiesData
     | ReadableTableData
+    | ReadableTableUseData
     | ReadableCalloutData
     | ReadableCodeData
     | ReadableRawTextData
@@ -174,3 +182,10 @@ class DocumentDecl:
     @property
     def title(self) -> str:
         return self.body.title
+
+
+@_dataclass(slots=True, frozen=True)
+class TableDecl:
+    name: str
+    title: str
+    table: ReadableTableData

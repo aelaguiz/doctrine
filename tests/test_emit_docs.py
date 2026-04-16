@@ -182,6 +182,74 @@ class EmitDocsTests(unittest.TestCase):
             )
             self.assertNotIn("review", contract_data)
 
+    def test_emit_target_omits_example_section_when_schema_has_no_example(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output schema RepoStatusSchema: "Repo Status Schema"
+                        field summary: "Summary"
+                            type: string
+                            required
+
+                    output shape RepoStatusJson: "Repo Status JSON"
+                        kind: JsonObject
+                        schema: RepoStatusSchema
+
+                    output RepoStatusFinalResponse: "Repo Status Final Response"
+                        target: TurnResponse
+                        shape: RepoStatusJson
+                        requirement: Required
+
+                    agent RepoStatusAgent:
+                        role: "Report repo status."
+                        workflow: "Summarize"
+                            "Summarize the repo state."
+                        outputs: "Outputs"
+                            RepoStatusFinalResponse
+                        final_output: RepoStatusFinalResponse
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            markdown_path = root / "build" / "repo_status_agent" / "AGENTS.md"
+            schema_path = (
+                root
+                / "build"
+                / "repo_status_agent"
+                / "schemas"
+                / "repo_status_final_response.schema.json"
+            )
+            self.assertTrue(markdown_path.is_file())
+            self.assertTrue(schema_path.is_file())
+
+            rendered = markdown_path.read_text(encoding="utf-8")
+            # Installed and repo-local emit paths must agree that no authored
+            # example means no rendered Example section.
+            self.assertIn("#### Payload Fields", rendered)
+            self.assertNotIn("#### Example", rendered)
+
     def test_emit_target_marks_agents_without_final_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

@@ -127,9 +127,6 @@ def smoke_test_distribution(
             '        type: string\n'
             '        required\n'
             "\n"
-            "    example:\n"
-            '        summary: "Hello world."\n'
-            "\n"
             'output shape HelloJson: "Hello JSON"\n'
             "    kind: JsonObject\n"
             "    schema: HelloPayload\n"
@@ -183,9 +180,23 @@ def smoke_test_distribution(
             cwd=project_root,
         )
 
-        if not _build_contains_expected_text(output_root, expected_text="Hello world."):
+        agents_path = output_root / "hello_world" / "AGENTS.md"
+        if not agents_path.is_file():
             raise RuntimeError(
-                f"Smoke output under `{output_root}` did not contain the expected compiled text."
+                f"Smoke output is missing the emitted AGENTS.md file: `{agents_path}`."
+            )
+        agents_text = agents_path.read_text(encoding="utf-8")
+        if "Say hello world." not in agents_text:
+            raise RuntimeError(
+                f"Smoke output under `{agents_path}` did not contain the expected compiled text."
+            )
+        if "#### Payload Fields" not in agents_text:
+            raise RuntimeError(
+                f"Smoke output under `{agents_path}` is missing the structured payload table."
+            )
+        if "#### Example" in agents_text:
+            raise RuntimeError(
+                f"Smoke output under `{agents_path}` rendered an unexpected Example section."
             )
         schema_path = output_root / "hello_world" / "schemas" / "hello_world_reply.schema.json"
         if not schema_path.is_file():
@@ -214,19 +225,6 @@ def _venv_python(venv_root: Path) -> Path:
     if sys.platform == "win32":
         return venv_root / "Scripts" / "python.exe"
     return venv_root / "bin" / "python"
-
-
-def _build_contains_expected_text(output_root: Path, *, expected_text: str) -> bool:
-    for path in output_root.rglob("*"):
-        if not path.is_file():
-            continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        if expected_text in text:
-            return True
-    return False
 
 
 def _run(command: list[str], *, cwd: Path) -> None:

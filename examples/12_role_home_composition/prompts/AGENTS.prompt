@@ -263,8 +263,9 @@ skill DomainGroundingSkill: "domain-grounding-kb"
         "Use this when the lane needs primary-source receipts for reader-facing copy."
 
     does_not: "Does Not"
-        "Does not change the approved structure."
-        "Does not establish final expert authority."
+        bullets items:
+            "Does not change the approved structure."
+            "Does not establish final expert authority."
 
 
 skill CopyRewriteSkill: "domain-copy-rewrite"

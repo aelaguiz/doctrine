@@ -65,6 +65,7 @@ _READABLE_DECL_REGISTRIES = (
     ("analysis declaration", "analyses_by_name"),
     ("decision declaration", "decisions_by_name"),
     ("schema declaration", "schemas_by_name"),
+    ("table declaration", "tables_by_name"),
     ("document declaration", "documents_by_name"),
     ("input declaration", "inputs_by_name"),
     ("input source declaration", "input_sources_by_name"),

@@ -79,6 +79,7 @@ class IndexedUnit:
     analyses_by_name: dict[str, model.AnalysisDecl]
     decisions_by_name: dict[str, model.DecisionDecl]
     schemas_by_name: dict[str, model.SchemaDecl]
+    tables_by_name: dict[str, model.TableDecl]
     documents_by_name: dict[str, model.DocumentDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
     route_onlys_by_name: dict[str, model.RouteOnlyDecl]
@@ -259,6 +260,7 @@ def index_unit(
     analyses_by_name: dict[str, model.AnalysisDecl] = {}
     decisions_by_name: dict[str, model.DecisionDecl] = {}
     schemas_by_name: dict[str, model.SchemaDecl] = {}
+    tables_by_name: dict[str, model.TableDecl] = {}
     documents_by_name: dict[str, model.DocumentDecl] = {}
     workflows_by_name: dict[str, model.WorkflowDecl] = {}
     route_onlys_by_name: dict[str, model.RouteOnlyDecl] = {}
@@ -301,6 +303,10 @@ def index_unit(
         if isinstance(declaration, model.SchemaDecl):
             _register_decl(schemas_by_name, declaration.name, module_parts)
             schemas_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.TableDecl):
+            _register_decl(tables_by_name, declaration.name, module_parts)
+            tables_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.DocumentDecl):
             _register_decl(documents_by_name, declaration.name, module_parts)
@@ -401,6 +407,7 @@ def index_unit(
         analyses_by_name=analyses_by_name,
         decisions_by_name=decisions_by_name,
         schemas_by_name=schemas_by_name,
+        tables_by_name=tables_by_name,
         documents_by_name=documents_by_name,
         workflows_by_name=workflows_by_name,
         route_onlys_by_name=route_onlys_by_name,

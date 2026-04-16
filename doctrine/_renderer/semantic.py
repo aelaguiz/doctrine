@@ -42,9 +42,16 @@ _BUILTIN_PROFILE_MODES = {
 def render_semantic_section(
     block: CompiledSection,
     *,
+    depth: int,
     profile: ResolvedRenderProfile,
     flatten_body_to_sentence,
+    render_body_lines,
 ) -> str | None:
+    if block.semantic_target == "skill.field":
+        body_lines = render_body_lines(block.body, depth=depth, profile=profile)
+        if not body_lines:
+            return f"**{block.title}**"
+        return "\n".join([f"**{block.title}**", "", *body_lines]).rstrip()
     if (
         block.semantic_target == "review.contract_checks"
         and resolve_profile_mode(profile, "review.contract_checks") == "sentence"

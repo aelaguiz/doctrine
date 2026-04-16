@@ -107,6 +107,25 @@ class ResolveRefsMixin:
             missing_label="document declaration",
         )
 
+    def _resolve_table_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.TableDecl]:
+        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+        decl = target_unit.tables_by_name.get(ref.declaration_name)
+        if decl is not None:
+            return target_unit, decl
+
+        dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
+        actual_kind = self._named_non_output_decl_kind(ref.declaration_name, unit=target_unit)
+        if actual_kind is not None:
+            raise CompileError(
+                "Named table use expects a table declaration, "
+                f"but `{dotted_name}` is a {actual_kind}."
+            )
+        if ref.module_parts:
+            raise CompileError(f"Missing imported table declaration: {dotted_name}")
+        raise CompileError(f"Missing local table declaration: {ref.declaration_name}")
+
     def _resolve_enum_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.EnumDecl]:

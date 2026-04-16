@@ -63,6 +63,7 @@ ReadableDecl: TypeAlias = (
     model.Agent
     | model.AnalysisDecl
     | model.SchemaDecl
+    | model.TableDecl
     | model.DocumentDecl
     | model.InputDecl
     | model.InputSourceDecl
@@ -79,6 +80,7 @@ AddressableRootDecl: TypeAlias = (
     | model.SkillsDecl
     | model.AnalysisDecl
     | model.SchemaDecl
+    | model.TableDecl
     | model.DocumentDecl
     | "ReviewSemanticFieldsRoot"
     | "ReviewSemanticContractRoot"
@@ -325,12 +327,14 @@ class ResolvedContractBucket:
     artifacts: tuple[ContractArtifact, ...]
     bindings: tuple[ContractBinding, ...]
     direct_artifacts: tuple[ContractArtifact, ...] = ()
+    sole_direct_title: str | None = None
     has_keyed_children: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class ContractSectionSummary:
     key: str
+    title: str
     artifacts: tuple[ContractArtifact, ...]
     bindings: tuple[ContractBinding, ...]
 

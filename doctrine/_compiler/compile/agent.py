@@ -3,7 +3,11 @@ from __future__ import annotations
 from doctrine import model
 from concurrent.futures import ThreadPoolExecutor
 
-from doctrine._compiler.naming import _agent_typed_field_key, _authored_slot_allows_law
+from doctrine._compiler.naming import (
+    _agent_typed_field_key,
+    _authored_slot_allows_law,
+    _humanize_key,
+)
 from doctrine._compiler.resolved_types import (
     AgentContract,
     AgentFieldCompileSpec,
@@ -551,14 +555,6 @@ class CompileAgentMixin:
         )
 
         body: list[CompiledBodyItem] = []
-        purpose_body: list[CompiledBodyItem] = [
-            self._interpolate_authored_prose_string(
-                purpose_item.value,
-                unit=target_unit,
-                owner_label=f"skill {skill_decl.name}",
-                surface_label="skill purpose",
-            )
-        ]
         requirement = metadata_scalars.get("requirement")
         if (
             requirement is not None
@@ -570,17 +566,25 @@ class CompileAgentMixin:
             )
             == "Required"
         ):
-            purpose_body.extend(
-                [
-                    "",
-                    "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
-                ]
+            body.append("_Required skill_")
+        body.append(
+            CompiledSection(
+                title="Purpose",
+                body=(
+                    self._interpolate_authored_prose_string(
+                        purpose_item.value,
+                        unit=target_unit,
+                        owner_label=f"skill {skill_decl.name}",
+                        surface_label="skill purpose",
+                    ),
+                ),
+                semantic_target="skill.field",
             )
-        body.append(CompiledSection(title="Purpose", body=tuple(purpose_body)))
+        )
 
         for extra in extras:
             body.extend(
-                self._compile_record_item(
+                self._compile_skill_field_item(
                     extra,
                     unit=target_unit,
                     owner_label=f"skill {skill_decl.name}",
@@ -605,12 +609,13 @@ class CompileAgentMixin:
                             surface_label="skill reason",
                         ),
                     ),
+                    semantic_target="skill.field",
                 )
             )
 
         for extra in metadata_extras:
             body.extend(
-                self._compile_record_item(
+                self._compile_skill_field_item(
                     extra,
                     unit=entry.metadata_unit,
                     owner_label=f"skill reference {skill_decl.name}",
@@ -619,3 +624,57 @@ class CompileAgentMixin:
             )
 
         return CompiledSection(title=skill_decl.title, body=tuple(body))
+
+    def _compile_skill_field_item(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> tuple[CompiledBodyItem, ...]:
+        if isinstance(item, model.RecordSection):
+            return (
+                CompiledSection(
+                    title=item.title,
+                    body=self._compile_record_support_items(
+                        item.items,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        surface_label=surface_label,
+                    ),
+                    semantic_target="skill.field",
+                ),
+            )
+
+        if isinstance(item, model.RecordScalar):
+            value = self._format_scalar_value(
+                item.value,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+            )
+            body: list[CompiledBodyItem] = [value]
+            if item.body is not None:
+                body.extend(
+                    self._compile_record_support_items(
+                        item.body,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        surface_label=surface_label,
+                    )
+                )
+            return (
+                CompiledSection(
+                    title=_humanize_key(item.key),
+                    body=tuple(body),
+                    semantic_target="skill.field",
+                ),
+            )
+
+        return self._compile_record_item(
+            item,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )

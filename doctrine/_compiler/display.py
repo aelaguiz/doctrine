@@ -312,6 +312,7 @@ class DisplayMixin:
             (
                 model.AnalysisDecl,
                 model.SchemaDecl,
+                model.TableDecl,
                 model.DocumentDecl,
                 model.WorkflowDecl,
                 model.SkillsDecl,

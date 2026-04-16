@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 1.0
+Current Doctrine language version: 1.2
 
 ## The Version Lines
 
@@ -17,8 +17,11 @@ behavior.
 - Bump the minor version when the language adds backward-compatible syntax or
   semantics.
 - A new backward-compatible language surface such as direct `output`
-  inheritance or workflow-root readable blocks needs the next minor language
-  version when it ships publicly.
+  inheritance, workflow-root readable blocks, or omitted first-class IO
+  wrapper titles needs the next minor language version when it ships publicly.
+- A first-class named declaration such as reusable top-level `table`
+  declarations also needs the next minor language version when it ships
+  publicly.
 - A new backward-compatible import or emit language surface such as
   directory-backed runtime package imports and emitted runtime-package trees
   also needs the next minor language version when it ships publicly.
@@ -84,6 +87,8 @@ Every public release uses one release class.
   `Non-breaking`.
 - `additive`: backward-compatible public additions. Release kind:
   `Non-breaking`.
+- Adding omitted first-class IO wrapper titles while keeping the explicit long
+  form valid is an `additive` release.
 - Adding directory-backed runtime package imports, package-root `AGENTS.md`
   or `SOUL.md` emit, bundled runtime peer files, or matching shared flow-root
   behavior is an `additive` release when older local-root entrypoints still
@@ -131,7 +136,7 @@ one matching release section:
 Release kind: Non-breaking
 Release channel: stable
 Release version: vX.Y.Z
-Language version: unchanged (still 1.0)
+Language version: unchanged (still 1.2)
 Affected surfaces: ...
 Who must act: ...
 Who does not need to act: ...

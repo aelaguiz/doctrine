@@ -28,7 +28,7 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 A prompt file may contain imports and any mix of shipped declarations:
 
-- `render_profile`, `analysis`, `decision`, `schema`, `document`
+- `render_profile`, `analysis`, `decision`, `schema`, `table`, `document`
 - `agent`, `abstract agent`
 - `workflow`, `route_only`, `grounding`
 - `review`, `review_family`, `abstract review`
@@ -390,6 +390,49 @@ Important rules:
   `BuildSurfaceSchema:groups.downstream_rebuild.title`.
 - `review contract:` may point at either a `workflow` or a `schema`.
 
+### Tables
+
+`table` declares a reusable table contract once. Documents can place that
+contract under a local document key.
+
+```prompt
+table ReleaseGates: "Release Gates"
+    columns:
+        gate: "Gate"
+            "What must pass before shipment."
+
+        evidence: "Evidence"
+            "What proves the gate passed."
+
+
+document ReleaseGuide: "Release Guide"
+    table release_gates: ReleaseGates required
+        rows:
+            release_notes:
+                gate: "Release notes"
+                evidence: "Linked to the shipped proof."
+```
+
+Important rules:
+
+- A top-level `table` declaration owns the table title, `columns:`, optional
+  `row_schema:`, and optional default `notes:`.
+- A document use site owns the local key, `required` / `advisory` /
+  `optional`, `when <expr>`, local `rows:`, and local `notes:`.
+- A named document use site uses `table local_key: TableRef`. It does not use
+  a generic `ref:` field.
+- A named use site may be empty. It still renders the normal no-row contract
+  table.
+- A named use site lowers to the same document table shape as an inline table.
+  Rendered Markdown does not change.
+- A child document may still use `override table local_key: TableRef` because
+  named tables keep the existing `table` block kind.
+- Table declarations are addressable roots, such as
+  `ReleaseGates:columns.evidence.title`.
+- Document-local table paths stay addressable under the local key, such as
+  `ReleaseGuide:release_gates.columns.evidence.title` and
+  `ReleaseGuide:release_gates.rows.release_notes`.
+
 ### Documents
 
 `document` declares a reusable markdown structure for markdown-bearing inputs
@@ -419,8 +462,10 @@ Important rules:
 - `sequence`, `bullets`, and `checklist` titles are optional. Keep the key.
   With a title, the list renders as a nested headed block. Without a title,
   the list renders directly inside the parent section.
-- `table` may declare `row_schema:` alongside `columns:` / `rows:` and may use
-  structured cell bodies when a row needs nested readable content.
+- Inline `table` blocks may declare `row_schema:` alongside `columns:` /
+  `rows:` and may use structured cell bodies when a row needs nested readable
+  content. Documents may also use a named top-level table with
+  `table local_key: TableRef`.
 - Raw `markdown`, raw `html`, `footnotes`, and `image` are explicit block
   kinds; they are not silent fallbacks from ordinary prose.
 - `document` inheritance uses the same explicit accounting model as workflows:
@@ -504,6 +549,42 @@ Skill relationships are authored where they are used:
 - when Doctrine should own a real skill-package filesystem tree instead of an
   inline reusable capability, use `skill package` in `SKILL.prompt`
 
+Rendered Markdown keeps each inline skill compact:
+
+- the skill title renders as the skill heading
+- `requirement: Required` renders `_Required skill_` under that heading
+- ordinary fields such as `purpose`, `use_when`, and `reason` render as bold
+  labeled blocks instead of deeper nested headings
+- readable blocks attached to the skill reference body, such as `callout`,
+  still render as ordinary readable blocks
+
+When a field is really a list, author a titleless `bullets` or `checklist`
+block inside that field so the emitted Markdown stays easy to scan.
+
+```prompt
+skill RepoSearch: "repo-search"
+    purpose: "Find the right repo surface for the current job."
+
+    use_when: "Use When"
+        bullets cases:
+            "Use this when the job still needs the right repo entrypoint."
+            "Narrow the task before you search if the request is still broad."
+```
+
+Typical emitted shape inside a `skills` block:
+
+```md
+#### repo-search
+_Required skill_
+
+**Purpose**
+Find the right repo surface for the current job.
+
+**Use When**
+- Use this when the job still needs the right repo entrypoint.
+- Narrow the task before you search if the request is still broad.
+```
+
 ## Skill Packages
 
 Doctrine also ships a first-class package surface for real skill bundles.
@@ -570,6 +651,51 @@ Important rules:
   `definitions`, `table`, `callout`, and `code`.
 - `inputs` blocks group and bind inputs with local keys for a concrete turn.
 
+### Omitted Wrapper Titles
+
+`inputs` and `outputs` wrapper sections have three separate title rules:
+
+- `key: "Title"` is the normal long form.
+- In inherited `inputs` or `outputs`, `override key:` keeps the parent title
+  when you omit the override title.
+- In base `inputs` or `outputs`, `key:` may omit the title only when the body
+  resolves to exactly one direct titled declaration. Doctrine reuses that
+  declaration title for the wrapper heading.
+- If an omitted wrapper title would need a guess, such as multiple direct refs
+  or keyed child sections, Doctrine fails loud.
+- This is different from titleless `sequence`, `bullets`, and `checklist`,
+  which lower into the parent instead of keeping a wrapper heading.
+
+Example:
+
+```prompt
+input LessonsIssueLedger: "Lessons Issue Ledger"
+    source: File
+        path: "catalog/lessons_issue_ledger.json"
+    shape: "JSON Document"
+    requirement: Required
+
+output SectionHandoff: "Section Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+inputs SectionDossierInputs: "Your Inputs"
+    issue_ledger:
+        LessonsIssueLedger
+
+outputs SectionDossierOutputs: "Your Outputs"
+    section_handoff:
+        SectionHandoff
+```
+
+The visible wrapper headings render as `Lessons Issue Ledger` and
+`Section Handoff`, the same as the explicit long form.
+
+Concrete shipped proof:
+
+- `examples/117_io_omitted_wrapper_titles`
+
 ### Outputs
 
 An `output` declares what a turn emits:
@@ -593,6 +719,9 @@ Important rules:
   `output schema` when the shape kind is `JsonObject`.
 - `output schema` owns the machine-readable payload fields for structured
   `JsonObject` outputs.
+- `output schema` may also declare an optional `example:` block. When present,
+  Doctrine validates it and renders an `Example` section on structured final
+  outputs.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
 - `render_profile:` may attach to a markdown-bearing `output` when exactly one
@@ -609,6 +738,8 @@ Important rules:
 - When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
+- If that `output schema` omits `example:`, the structured final-output render
+  still succeeds and skips the `Example` section.
 - On review-driven agents, the designated final output may be either the
   review's `comment_output:` or a second emitted `TurnResponse`.
   `comment_output:` still remains the review carrier for routing and
@@ -737,6 +868,7 @@ Examples:
 - `ReleaseAnalysis:stages.title`
 - `BuildSurfaceSchema:sections.summary.title`
 - `BuildSurfaceSchema:artifacts.manifest_file.title`
+- `ReleaseGates:columns.evidence.title`
 - `LessonPlan:read_order.first`
 - `LessonPlan:step_arc.columns.coaching_level.title`
 - `NextOwner:section_author.wire`
@@ -750,15 +882,17 @@ Nested keyed items can be addressed explicitly:
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
 - `BuildSurfaceSchema:groups.downstream_rebuild.title`
+- `ReleaseGates:columns.evidence.title`
 - `LessonPlan:overview.title`
 - `LessonPlan:step_arc.rows.step_1`
 - `NextOwner:section_author.wire`
 
 Paths follow authored keyed structure only. Trying to descend past a scalar
-leaf fails loudly. Keyed list items, keyed definition items, table columns,
-and table rows are addressable; anonymous list items are not. The first `:`
-separates the root declaration from its path, and any deeper projections use
-dot segments such as `NextOwner:section_author.wire`.
+leaf fails loudly. Keyed list items, keyed definition items, table declaration
+columns, document table columns, and document table rows are addressable;
+anonymous list items are not. The first `:` separates the root declaration
+from its path, and any deeper projections use dot segments such as
+`NextOwner:section_author.wire`.
 
 ### Authored interpolation
 

@@ -35,6 +35,8 @@ This keeps the split clean:
   explicit `guard` shells, `callout`, `code`, raw `markdown`, raw `html`,
   `footnotes`, and `image` may still appear on ordinary record bodies without
   becoming a second structure system
+- named `table` declarations may be reused inside a `document` with a local
+  table key, then lower to the same emitted table shape as inline tables
 - compiler-owned semantics still live in `workflow law` or `review`
 - downstream trust still flows through declared output fields, not through
   hidden side channels
@@ -99,6 +101,9 @@ Important rules:
 - The field name stays owner-aware rather than globally retyped.
 - `output schema` owns the machine-readable payload fields for structured
   `JsonObject` outputs.
+- `output schema` may also declare an optional `example:` block. When present,
+  Doctrine validates it and renders an `Example` section on structured final
+  outputs.
 - Doctrine `schema` declarations may now own reusable `sections:`, optional
   `gates:`, first-class `artifacts:`, and reusable `groups:`.
 - Output-attached schemas must still expose at least one section even when the
@@ -159,6 +164,8 @@ final_output:
 - When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
+- If that `output schema` omits `example:`, Doctrine still emits the payload
+  contract and simply skips the `Example` section.
 
 Shipped markdown render defaults:
 
@@ -197,6 +204,9 @@ Shipped ordinary output render shape:
   render as inline code.
 - `structure:` lowers to one `Artifact Structure` section with a summary table
   and any needed detail blocks.
+- Named tables do not add a new emitted shape. They use the same summary row,
+  detail block, row-backed table, or no-row contract table that inline
+  document tables use.
 
 Example emitted shape:
 
@@ -397,3 +407,5 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `110`: inherited outputs used through `final_output:`
 - `111`: inherited outputs keeping shared `route.*` readback
 - `112`: fail-loud output inheritance errors
+- `116`: first-class named table declarations reused by local document table
+  keys

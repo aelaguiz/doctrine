@@ -261,14 +261,17 @@ class ValidateContractsMixin:
                 raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
             emitted_keys.add(key)
 
-            if isinstance(item, model.RecordSection):
+            if isinstance(item, model.IoSection):
                 resolved_items.append(
                     self._summarize_contract_section(
                         key=key,
+                        title=item.title,
                         items=item.items,
                         unit=unit,
                         field_kind=field_kind,
-                        owner_label=f"{field_kind} section `{item.title}`",
+                        owner_label=(
+                            f"{field_kind} section `{item.title if item.title is not None else item.key}`"
+                        ),
                         binding_path=(key,),
                     )
                 )
@@ -302,11 +305,12 @@ class ValidateContractsMixin:
             resolved_items.append(
                 self._summarize_contract_section(
                     key=key,
+                    title=item.title if item.title is not None else parent_item.title,
                     items=item.items,
                     unit=unit,
                     field_kind=field_kind,
                     owner_label=(
-                        f"{field_kind} section `{item.title if item.title is not None else key}`"
+                        f"{field_kind} section `{item.title if item.title is not None else parent_item.title}`"
                     ),
                     binding_path=(key,),
                 )
@@ -364,14 +368,17 @@ class ValidateContractsMixin:
                 raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
             seen_keys.add(key)
 
-            if isinstance(item, model.RecordSection):
+            if isinstance(item, (model.IoSection, model.RecordSection)):
                 resolved_items.append(
                     self._summarize_contract_section(
                         key=key,
+                        title=item.title,
                         items=item.items,
                         unit=unit,
                         field_kind=field_kind,
-                        owner_label=f"{field_kind} section `{item.title}`",
+                        owner_label=(
+                            f"{field_kind} section `{item.title if item.title is not None else item.key}`"
+                        ),
                         binding_path=(key,),
                     )
                 )
@@ -403,6 +410,7 @@ class ValidateContractsMixin:
         self,
         *,
         key: str,
+        title: str | None,
         items: tuple[model.RecordItem, ...],
         unit: IndexedUnit,
         field_kind: str,
@@ -421,6 +429,7 @@ class ValidateContractsMixin:
                 has_keyed_children = True
                 child = self._summarize_contract_section(
                     key=item.key,
+                    title=item.title,
                     items=item.items,
                     unit=unit,
                     field_kind=field_kind,
@@ -455,8 +464,15 @@ class ValidateContractsMixin:
                     artifact=direct_artifacts[0],
                 )
             )
+        if title is None:
+            if has_keyed_children or len(direct_artifacts) != 1:
+                raise CompileError(
+                    f"Omitted title in {field_kind} section `{key}` requires exactly one direct declaration title source"
+                )
+            title = direct_artifacts[0].decl.title
         return ContractSectionSummary(
             key=key,
+            title=title,
             artifacts=tuple(artifacts),
             bindings=tuple(bindings),
         )

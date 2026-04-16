@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from doctrine import model
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 from doctrine._compiler.output_schema_validation import (
@@ -57,6 +54,7 @@ class ValidateMixin(
             ("analysis declaration", unit.analyses_by_name),
             ("decision declaration", unit.decisions_by_name),
             ("schema declaration", unit.schemas_by_name),
+            ("table declaration", unit.tables_by_name),
             ("document declaration", unit.documents_by_name),
             ("workflow declaration", unit.workflows_by_name),
             ("route_only declaration", unit.route_onlys_by_name),
@@ -385,67 +383,6 @@ class ValidateMixin(
             )
         except OutputSchemaValidationError as exc:
             raise CompileError(str(exc)) from exc
-
-    def _read_declared_support_text(
-        self,
-        unit: IndexedUnit,
-        relative_path: str | None,
-    ) -> str | None:
-        if relative_path is None:
-            return None
-        path = self._resolve_declared_support_path(unit, relative_path)
-        try:
-            return path.read_text()
-        except OSError:
-            return None
-
-    def _resolve_declared_support_path(
-        self,
-        unit: IndexedUnit,
-        relative_path: str,
-    ) -> Path:
-        return (unit.prompt_root.parent / relative_path).resolve()
-
-    def _read_required_final_output_support_text(
-        self,
-        unit: IndexedUnit,
-        relative_path: str,
-        *,
-        owner_label: str,
-    ) -> str:
-        text = self._read_declared_support_text(unit, relative_path)
-        if text is not None:
-            return text
-        raise CompileError(
-            "E215 final_output support file is missing or unreadable in "
-            f"{owner_label}: {relative_path}"
-        )
-
-    def _read_required_final_output_json_object_text(
-        self,
-        unit: IndexedUnit,
-        relative_path: str,
-        *,
-        owner_label: str,
-    ) -> str:
-        text = self._read_required_final_output_support_text(
-            unit,
-            relative_path,
-            owner_label=owner_label,
-        )
-        try:
-            payload = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise CompileError(
-                "E216 final_output example file must contain valid JSON object in "
-                f"{owner_label}: {relative_path}"
-            ) from exc
-        if not isinstance(payload, dict):
-            raise CompileError(
-                "E216 final_output example file must contain valid JSON object in "
-                f"{owner_label}: {relative_path}"
-            )
-        return text
 
     def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
         if len(agent.fields) != 2:

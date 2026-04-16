@@ -41,12 +41,14 @@ def _render_block(
         active_profile = block.render_profile or profile
         semantic_render = _render_semantic_section(
             block,
+            depth=depth,
             profile=active_profile,
             flatten_body_to_sentence=lambda body, *, profile: _flatten_body_to_sentence(
                 body,
                 profile=profile,
                 render_prose_line=_render_prose_line,
             ),
+            render_body_lines=_render_body_lines,
         )
         if semantic_render is not None:
             return semantic_render

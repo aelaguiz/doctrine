@@ -130,28 +130,28 @@ Stop when reader-facing copy and post-copy validation are explicit enough for re
 
 #### domain-grounding-kb
 
-##### Purpose
+_Required skill_
+
+**Purpose**
 
 Ground reader-facing domain wording against current source truth.
 
-This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.
-
-##### Use When
+**Use When**
 
 Use this when the lane needs primary-source receipts for reader-facing copy.
 
-##### Does Not
+**Does Not**
 
 - Does not change the approved structure.
 - Does not establish final expert authority.
 
 #### domain-copy-rewrite
 
-##### Purpose
+**Purpose**
 
 Rewrite reader-facing domain copy in the repo's expected voice.
 
-##### Use When
+**Use When**
 
 Use this when the job is reader-facing domain wording such as titles, hints, coach text, explanations, and feedback.
 

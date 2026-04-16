@@ -70,6 +70,7 @@ from doctrine._model.io import (
     IoBody,
     IoFieldValue,
     IoItem,
+    IoSection,
     OutputDecl,
     OutputRecordItem,
     OutputOverrideGuardedOutputScalar,
@@ -168,6 +169,8 @@ from doctrine._model.readable import (
     ReadableTableColumn,
     ReadableTableData,
     ReadableTableRow,
+    ReadableTableUseData,
+    TableDecl,
 )
 from doctrine._model.review import (
     ContractGateRef,

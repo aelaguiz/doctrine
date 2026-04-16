@@ -27,7 +27,7 @@ expected_lines = [
   "",
   "#### Grounding Skill",
   "",
-  "##### Purpose",
+  "**Purpose**",
   "",
   "Ground the current claim before you write.",
   "",

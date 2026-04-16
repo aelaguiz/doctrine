@@ -736,8 +736,13 @@ class IoTransformerMixin:
         return IoBodyParts(preamble=tuple(preamble), items=tuple(io_items))
 
     @v_args(inline=True)
-    def io_section(self, key, title, items):
-        return model.RecordSection(key=key, title=title, items=tuple(items))
+    def io_section(self, key, title_or_items, items=None):
+        title: str | None = None
+        section_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            section_items = items
+        return model.IoSection(key=key, title=title, items=tuple(section_items))
 
     @v_args(inline=True)
     def io_inherit(self, key):

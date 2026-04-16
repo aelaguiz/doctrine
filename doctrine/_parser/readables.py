@@ -76,8 +76,16 @@ class ReadableNodeTransformerMixin:
         return self._readable_block("definitions", key, title, parts)
 
     @v_args(inline=True)
-    def readable_table_block(self, key, title, *parts):
+    def readable_table_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def readable_inline_table_block(self, key, title, *parts):
         return self._readable_block("table", key, title, parts)
+
+    @v_args(inline=True)
+    def readable_named_table_block(self, key, table_ref, *parts):
+        return self._named_table_block(model.ReadableBlock, key, table_ref, parts)
 
     @v_args(inline=True)
     def readable_callout_block(self, key, title, *parts):
@@ -148,8 +156,16 @@ class ReadableNodeTransformerMixin:
         return self._readable_override_block("definitions", key, parts)
 
     @v_args(inline=True)
-    def override_readable_table_block(self, key, *parts):
+    def override_readable_table_block(self, value):
+        return value
+
+    @v_args(inline=True)
+    def override_readable_inline_table_block(self, key, *parts):
         return self._readable_override_block("table", key, parts)
+
+    @v_args(inline=True)
+    def override_readable_named_table_block(self, key, table_ref, *parts):
+        return self._named_table_block(model.DocumentOverrideBlock, key, table_ref, parts)
 
     @v_args(inline=True)
     def override_readable_callout_block(self, key, *parts):
@@ -245,42 +261,156 @@ class ReadableNodeTransformerMixin:
     def readable_definition_item_body(self, items):
         return tuple(items[0])
 
+    @v_args(inline=True)
+    def table_decl(self, name, title, body):
+        return model.TableDecl(name=name, title=title, table=body)
+
+    def table_decl_body(self, items):
+        return self._readable_table_data(
+            items,
+            owner_label="Table declarations",
+            allow_columns=True,
+            allow_rows=False,
+            allow_row_schema=True,
+            invalid_hint=(
+                "Put shared table structure on the declaration and put concrete rows "
+                "on each document use site."
+            ),
+        )
+
     def readable_table_body(self, items):
+        return ReadablePayloadParts(
+            payload=self._readable_table_data(
+                items,
+                owner_label="Readable table bodies",
+                allow_columns=True,
+                allow_rows=True,
+                allow_row_schema=True,
+                invalid_hint="Use `columns:`, `rows:`, `row_schema:`, or `notes:` in readable table bodies.",
+            ),
+            row_schema=self._readable_table_row_schema(items),
+        )
+
+    def readable_table_use_body(self, items):
+        rows: tuple[model.ReadableTableRow, ...] = ()
+        notes: tuple[model.ProseLine, ...] = ()
+        for item in items:
+            block_kind, block_value, line, column = self._readable_table_field(item)
+            if block_kind == "rows":
+                rows = block_value
+                continue
+            if block_kind == "notes":
+                notes = block_value
+                continue
+            raise TransformParseFailure(
+                "Named table uses may define only `rows:` and `notes:`.",
+                hints=("Move `columns:` and `row_schema:` to the top-level `table` declaration.",),
+                line=line,
+                column=column,
+            )
+        return ("table_use", rows, notes)
+
+    def readable_named_table_suffix(self, items):
+        return items[0] if items else ("table_use", (), ())
+
+    def _readable_table_data(
+        self,
+        items,
+        *,
+        owner_label: str,
+        allow_columns: bool,
+        allow_rows: bool,
+        allow_row_schema: bool,
+        invalid_hint: str,
+    ) -> model.ReadableTableData:
         columns: tuple[model.ReadableTableColumn, ...] = ()
         rows: tuple[model.ReadableTableRow, ...] = ()
         notes: tuple[model.ProseLine, ...] = ()
         row_schema: model.ReadableInlineSchemaData | None = None
         for item in items:
-            if isinstance(item, ReadableFieldPart):
-                block_kind = item.key
-                block_value = item.value
-                line, column = item.line, item.column
-            else:
-                block_kind, block_value = item
-                line, column = None, None
+            block_kind, block_value, line, column = self._readable_table_field(item)
             if block_kind == "columns":
+                if not allow_columns:
+                    raise TransformParseFailure(
+                        f"{owner_label} may not define `columns:`.",
+                        hints=(invalid_hint,),
+                        line=line,
+                        column=column,
+                    )
                 columns = block_value
             elif block_kind == "rows":
+                if not allow_rows:
+                    raise TransformParseFailure(
+                        f"{owner_label} may not define `rows:`.",
+                        hints=(invalid_hint,),
+                        line=line,
+                        column=column,
+                    )
                 rows = block_value
             elif block_kind == "notes":
                 notes = block_value
             elif block_kind == "row_schema":
+                if not allow_row_schema:
+                    raise TransformParseFailure(
+                        f"{owner_label} may not define `row_schema:`.",
+                        hints=(invalid_hint,),
+                        line=line,
+                        column=column,
+                    )
                 if row_schema is not None:
                     raise TransformParseFailure(
-                        "Readable table bodies may define `row_schema:` only once.",
+                        f"{owner_label} may define `row_schema:` only once.",
                         hints=("Keep exactly one `row_schema:` block per readable table.",),
                         line=line,
                         column=column,
                     )
                 row_schema = block_value
-        return ReadablePayloadParts(
-            payload=model.ReadableTableData(
-                columns=columns,
+        return model.ReadableTableData(
+            columns=columns,
+            rows=rows,
+            notes=notes,
+            row_schema=row_schema,
+        )
+
+    def _readable_table_row_schema(self, items) -> model.ReadableInlineSchemaData | None:
+        for item in items:
+            block_kind, block_value, _line, _column = self._readable_table_field(item)
+            if block_kind == "row_schema":
+                return block_value
+        return None
+
+    def _readable_table_field(self, item):
+        if isinstance(item, ReadableFieldPart):
+            return item.key, item.value, item.line, item.column
+        block_kind, block_value = item
+        return block_kind, block_value, None, None
+
+    def _named_table_block(self, block_cls, key, table_ref, parts):
+        requirement: str | None = None
+        when_expr: model.Expr | None = None
+        rows: tuple[model.ReadableTableRow, ...] = ()
+        notes: tuple[model.ProseLine, ...] = ()
+        for part in parts:
+            if isinstance(part, tuple) and part and part[0] == "requirement":
+                requirement = part[1]
+                continue
+            if isinstance(part, tuple) and part and part[0] == "guard":
+                when_expr = part[1]
+                continue
+            if isinstance(part, tuple) and part and part[0] == "table_use":
+                rows = part[1]
+                notes = part[2]
+        return block_cls(
+            kind="table",
+            key=key,
+            title=None,
+            payload=model.ReadableTableUseData(
+                table_ref=table_ref,
                 rows=rows,
                 notes=notes,
-                row_schema=row_schema,
             ),
-            row_schema=row_schema,
+            requirement=requirement,
+            when_expr=when_expr,
         )
 
     @v_args(meta=True)
@@ -291,8 +421,9 @@ class ReadableNodeTransformerMixin:
             model.ReadableInlineSchemaData(entries=tuple(items)),
         )
 
-    def readable_table_columns_block(self, items):
-        return ("columns", tuple(items))
+    @v_args(meta=True)
+    def readable_table_columns_block(self, meta, items):
+        return _positioned_readable_field(meta, "columns", tuple(items))
 
     @v_args(inline=True)
     def readable_table_column(self, key, title, body=None):
@@ -305,8 +436,9 @@ class ReadableNodeTransformerMixin:
     def readable_table_column_body(self, items):
         return tuple(items[0])
 
-    def readable_table_rows_block(self, items):
-        return ("rows", tuple(items))
+    @v_args(meta=True)
+    def readable_table_rows_block(self, meta, items):
+        return _positioned_readable_field(meta, "rows", tuple(items))
 
     @v_args(inline=True)
     def readable_table_row(self, key, *cells):
@@ -320,8 +452,9 @@ class ReadableNodeTransformerMixin:
     def readable_table_cell_body(self, key, body):
         return model.ReadableTableCell(key=key, body=tuple(body))
 
-    def readable_table_notes_block(self, items):
-        return ("notes", tuple(items))
+    @v_args(meta=True)
+    def readable_table_notes_block(self, meta, items):
+        return _positioned_readable_field(meta, "notes", tuple(items))
 
     @v_args(inline=True)
     def readable_table_note(self, value):
