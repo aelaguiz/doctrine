@@ -88,16 +88,19 @@ class ResolveDocumentsMixin:
                     f"document {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_document_body(
-                document_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, document_decl.name),
-                owner_source_span=document_decl.source_span,
-                parent_document=parent_document,
-                parent_body=parent_body,
-                parent_unit=parent_unit,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(document_decl.name)
+            ):
+                resolved = self._resolve_document_body(
+                    document_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, document_decl.name),
+                    owner_source_span=document_decl.source_span,
+                    parent_document=parent_document,
+                    parent_body=parent_body,
+                    parent_unit=parent_unit,
+                    parent_label=parent_label,
+                )
             resolved = replace(
                 resolved,
                 render_profile=(

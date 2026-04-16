@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Compile Errors Exact Lines And Shared Pattern - Architecture Plan"
 date: 2026-04-16
-status: active
+status: complete
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []
@@ -161,13 +161,13 @@ Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- None. Fresh inventory on 2026-04-16 now shows `0` raw
-  `raise CompileError(...)` sites inside `doctrine/_compiler`, the remaining
-  runtime-package compile tail now uses structured diagnostics, the shipped
+- None. Fresh audit on 2026-04-16 confirms `0` raw
+  `raise CompileError(...)` sites in the approved compile frontier, the
+  remaining compile path keeps structured diagnostics, manifest-backed
   `compile_fail` proof now asserts exact location and related-site
-  expectations, the smoke checks assert exact sites on representative compile
-  failures, the public docs describe the final contract, and compile message
-  recovery is gone.
+  expectations, representative smoke checks still lock exact sites, the public
+  docs match the shipped contract, and intentional compile families no longer
+  depend on regex message recovery.
 
 ## Reopened phases (false-complete fixes)
 - None.
@@ -177,11 +177,20 @@ Manual QA: n/a (non-blocking)
 
 ## Verification snapshot (required proof)
 - Ran:
+  - `uv sync`
+  - `npm ci`
+  - `rg -n "raise CompileError\\(" doctrine/_compiler doctrine/project_config.py doctrine/diagnostics.py doctrine/_diagnostics`
   - `make verify-diagnostics`
   - `make verify-examples`
-  - `uv run --locked python -m unittest tests.test_verify_corpus tests.test_emit_docs tests.test_project_config tests.test_import_loading tests.test_output_inheritance tests.test_decision_attachment`
+  - `uv run --locked python -m unittest tests.test_project_config tests.test_import_loading tests.test_output_inheritance tests.test_decision_attachment`
 - Result:
   - All passed on the live tree.
+  - The raw-raise inventory command returned no matches in the approved
+    frontier.
+  - `doctrine/_verify_corpus/manifest.py`,
+    `doctrine/_verify_corpus/runners.py`, `examples/README.md`, and
+    `docs/COMPILER_ERRORS.md` all still match the shipped exact-site and
+    `Related:` compile-fail contract.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 - None.

@@ -106,14 +106,17 @@ class ResolveAnalysisMixin:
                     f"analysis {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_analysis_body(
-                analysis_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, analysis_decl.name),
-                owner_source_span=analysis_decl.source_span,
-                parent_analysis=parent_analysis,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(analysis_decl.name)
+            ):
+                resolved = self._resolve_analysis_body(
+                    analysis_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, analysis_decl.name),
+                    owner_source_span=analysis_decl.source_span,
+                    parent_analysis=parent_analysis,
+                    parent_label=parent_label,
+                )
             resolved = replace(
                 resolved,
                 render_profile=(

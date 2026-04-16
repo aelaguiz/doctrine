@@ -105,14 +105,14 @@ review AcceptanceReview: "Acceptance Review"
     comment_output: AcceptanceReviewComment
 
     fields:
-        verdict: verdict
-        reviewed_artifact: reviewed_artifact
+        verdict
+        reviewed_artifact
         analysis: analysis_performed
         readback: output_contents_that_matter
-        current_artifact: current_artifact
+        current_artifact
         failing_gates: failure_detail.failing_gates
         blocked_gate: failure_detail.blocked_gate
-        next_owner: next_owner
+        next_owner
 
     basis_checks: "Basis Checks"
         block "The review basis is missing." when DraftPlan.basis_missing
@@ -141,5 +141,5 @@ agent AcceptanceReviewSplitPartialDemo:
     final_output:
         output: AcceptanceControlFinalResponse
         review_fields:
-            current_artifact: current_artifact
+            current_artifact
             next_owner: next_owner

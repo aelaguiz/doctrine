@@ -10,7 +10,10 @@ related:
   - docs/AGENT_LINTER_PROMPT_2026-04-16.md
   - docs/AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json
   - docs/AGENT_LINTER_PROOF_FIXTURE_2026-04-16.json
+  - docs/AGENT_LINTER_PROOF_FIXTURE_2026-04-16_v2.json
   - docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json
+  - docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v2.json
+  - docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json
   - docs/LLM_AGENT_LINTER_FOR_AUTHORING_2026-04-16.md
 ---
 
@@ -22,7 +25,7 @@ related:
   [AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json](AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json)
   was accepted by `codex exec --output-schema`.
 - The generated output was saved to
-  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json)
+  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json)
   and then validated again with `jsonschema`.
 
 # Artifacts
@@ -31,10 +34,15 @@ related:
   [AGENT_LINTER_PROMPT_2026-04-16.md](AGENT_LINTER_PROMPT_2026-04-16.md)
 - Plain JSON schema for `codex exec --output-schema`:
   [AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json](AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json)
-- Review-packet fixture:
+- Current review-packet fixture:
+  [AGENT_LINTER_PROOF_FIXTURE_2026-04-16_v2.json](AGENT_LINTER_PROOF_FIXTURE_2026-04-16_v2.json)
+- Current captured structured output:
+  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json)
+- Historical fixture:
   [AGENT_LINTER_PROOF_FIXTURE_2026-04-16.json](AGENT_LINTER_PROOF_FIXTURE_2026-04-16.json)
-- Captured structured output:
-  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json)
+- Historical captured outputs:
+  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json),
+  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v2.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v2.json)
 
 # OpenAI Wrapper
 
@@ -64,7 +72,7 @@ tmp_input=$(mktemp)
 {
   cat docs/AGENT_LINTER_PROMPT_2026-04-16.md
   printf '\n\n## Review Packet\n\n```json\n'
-  cat docs/AGENT_LINTER_PROOF_FIXTURE_2026-04-16.json
+  cat docs/AGENT_LINTER_PROOF_FIXTURE_2026-04-16_v2.json
   printf '\n```\n'
 } > "$tmp_input"
 
@@ -75,7 +83,7 @@ codex exec \
   -m gpt-5.4-mini \
   -c 'model_reasoning_effort="low"' \
   --output-schema docs/AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json \
-  --output-last-message docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json \
+  --output-last-message docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json \
   - < "$tmp_input"
 
 rm -f "$tmp_input"
@@ -95,7 +103,7 @@ The output was validated two ways.
 ## 1. JSON parse check
 
 ```bash
-python -m json.tool docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json >/dev/null
+python -m json.tool docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json >/dev/null
 ```
 
 Result:
@@ -113,7 +121,7 @@ from jsonschema import Draft202012Validator
 
 with open('docs/AGENT_LINTER_OUTPUT_SCHEMA_2026-04-16.json') as f:
     schema = json.load(f)
-with open('docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json') as f:
+with open('docs/AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json') as f:
     data = json.load(f)
 
 Draft202012Validator.check_schema(schema)
@@ -140,19 +148,77 @@ The proof run returned:
 - verdict: `fail`
 - run mode: `batch`
 - fail threshold: `medium`
-- 2 `high` findings
-- 1 `medium` finding
-- 1 `low` finding
+- `strict_mode_blocked: true`
+- 1 `high` finding
+- 2 `medium` findings
+- 0 `low` findings
 
 The returned findings covered:
 
-- `AL410` prose drift from declared constraints
-- `AL800` internal contradiction
-- `AL200` repeated rule across agents
-- `AL700` reading level too high
+- `AL240` skill hardcodes invocation inputs
+- `AL430` deterministic work forced into prose
+- `AL550` read-many work leaves raw notes
 
 # Bottom Line
 
 The real prompt, the real schema, and the real fixture worked together under
 `codex exec --output-schema`.
 The saved output file is valid JSON and schema-valid JSON.
+
+# Re-Proof After 2026-04-16 Sharpening Pass
+
+The sharpening pass added nine new `AL###` codes
+(`AL130`, `AL230`, `AL320`, `AL420`, `AL530`, `AL540`, `AL730`, `AL820`,
+`AL920`), added `shared_owner_suggestion` as a required nullable finding
+field, locked the compiler-vs-linter boundary in the prompt, and expanded the
+hybrid-check prepass signals.
+
+Re-proof artifacts:
+
+- Captured structured output (v2):
+  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v2.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v2.json)
+
+The re-proof used the same overall `codex exec` pattern.
+At that time it still read
+`AGENT_LINTER_PROOF_FIXTURE_2026-04-16.json` and wrote `_v2.json`.
+
+The v2 output validates against the updated schema and exercises the new
+`shared_owner_suggestion` field. The returned findings covered:
+
+- `AL800` internal contradiction (`shared_owner_suggestion: null`)
+- `AL210` repeated method should become a skill
+  (`shared_owner_suggestion` points at a concrete shared skill owner)
+- `AL410` prose drift from declared constraints
+  (`shared_owner_suggestion: null`)
+
+The first proof output (`AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16.json`) was
+produced before the schema gained `shared_owner_suggestion` in the required
+list, so it no longer validates against the current schema. That is expected.
+The v2 file remains a valid historical proof for the sharpening pass.
+
+# Re-Proof After Garry Alignment Pass
+
+The Garry alignment pass added three more core `AL###` codes:
+
+- `AL240` skill hardcodes invocation inputs
+- `AL430` deterministic work forced into prose
+- `AL550` read-many work leaves raw notes
+
+That pass also refreshed the proof packet so the new run could exercise the
+new checks directly without relying on a host-specific overlay.
+
+Re-proof artifacts:
+
+- Review-packet fixture (v2):
+  [AGENT_LINTER_PROOF_FIXTURE_2026-04-16_v2.json](AGENT_LINTER_PROOF_FIXTURE_2026-04-16_v2.json)
+- Captured structured output (v3):
+  [AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json](AGENT_LINTER_CODEX_CLI_OUTPUT_2026-04-16_v3.json)
+
+The v3 output validates against the current schema and exercises all three
+Garry-aligned codes in one batch run. The returned findings covered:
+
+- `AL240` skill hardcodes invocation inputs
+- `AL430` deterministic work forced into prose
+- `AL550` read-many work leaves raw notes
+
+The v3 file is the current proof.

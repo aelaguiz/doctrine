@@ -35,8 +35,7 @@ output CoordinationHandoff: "Coordination Handoff"
 inputs BaseSectionInputs: "Your Inputs"
     "Read these inputs in order."
 
-    scoped_catalog_truth: "Scoped Catalog Truth"
-        ScopedCatalogTruth
+    scoped_catalog_truth: ScopedCatalogTruth
 
     continuity_only: "Continuity Only"
         "Use continuity evidence to re-earn the section."
@@ -55,11 +54,9 @@ inputs ReviewSectionInputs[BaseSectionInputs]: "Your Inputs"
 outputs BaseSectionOutputs: "Your Outputs"
     "Always produce both outputs."
 
-    durable_section_truth: "Durable Section Truth"
-        DurableSectionTruth
+    durable_section_truth: DurableSectionTruth
 
-    coordination_handoff: "Coordination Handoff"
-        CoordinationHandoff
+    coordination_handoff: CoordinationHandoff
 
 
 outputs ReviewSectionOutputs[BaseSectionOutputs]: "Your Outputs"

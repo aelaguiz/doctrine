@@ -98,16 +98,19 @@ class ResolveSchemasMixin:
                 parent_body = parent_decl.body
                 parent_label = f"schema {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
-            resolved = self._resolve_schema_body(
-                schema_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, schema_decl.name),
-                owner_source_span=schema_decl.source_span,
-                parent_schema=parent_schema,
-                parent_body=parent_body,
-                parent_unit=parent_unit,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(schema_decl.name)
+            ):
+                resolved = self._resolve_schema_body(
+                    schema_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, schema_decl.name),
+                    owner_source_span=schema_decl.source_span,
+                    parent_schema=parent_schema,
+                    parent_body=parent_body,
+                    parent_unit=parent_unit,
+                    parent_label=parent_label,
+                )
             resolved = replace(
                 resolved,
                 render_profile=(

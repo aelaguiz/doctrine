@@ -61,13 +61,13 @@ class ReviewImportedOutputsTests(unittest.TestCase):
                 comment_output: ImportedComment
 
                 fields:
-                    verdict: verdict
-                    reviewed_artifact: reviewed_artifact
+                    verdict
+                    reviewed_artifact
                     analysis: analysis_performed
                     readback: output_contents_that_matter
-                    current_artifact: current_artifact
+                    current_artifact
                     failing_gates: failure_detail.failing_gates
-                    next_owner: next_owner
+                    next_owner
 
                 contract_checks: "Contract Checks"
                     accept "The shared draft review contract passes." when contract.passes
@@ -183,13 +183,13 @@ class ReviewImportedOutputsTests(unittest.TestCase):
                 comment_output: ImportedComment
 
                 fields:
-                    verdict: verdict
-                    reviewed_artifact: reviewed_artifact
+                    verdict
+                    reviewed_artifact
                     analysis: analysis_performed
                     readback: output_contents_that_matter
-                    current_artifact: current_artifact
+                    current_artifact
                     failing_gates: failure_detail.failing_gates
-                    next_owner: next_owner
+                    next_owner
 
                 contract_checks: "Contract Checks"
                     accept "The shared draft review contract passes." when contract.passes

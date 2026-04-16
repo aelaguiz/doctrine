@@ -11,6 +11,7 @@ from doctrine._compiler.naming import (
     _display_addressable_ref,
     _dotted_ref_name,
     _name_ref_from_dotted_name,
+    _parse_interpolated_addressable_ref,
 )
 from doctrine._compiler.resolved_types import (
     AddressableNode,
@@ -427,6 +428,9 @@ class ValidateOutputsMixin:
         self,
         expression: str,
     ) -> model.AddressableRef | None:
+        ref = _parse_interpolated_addressable_ref(expression)
+        if ref is not None:
+            return ref
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
         if match is None:
             return None
@@ -445,6 +449,12 @@ class ValidateOutputsMixin:
         route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
         _ = route_semantics
+        ref = self._rebind_self_addressable_ref(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="standalone_read",
+        )
         semantic_parts = self._review_semantic_addressable_parts(ref)
         if (
             review_semantics is not None

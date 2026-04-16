@@ -111,16 +111,19 @@ class ResolveWorkflowsMixin:
                 parent_workflow = self._resolve_workflow_decl(parent_decl, unit=parent_unit)
                 parent_label = f"workflow {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
-            resolved = self._resolve_workflow_body(
-                workflow_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
-                owner_source_span=workflow_decl.source_span,
-                parent_workflow=parent_workflow,
-                parent_body=parent_decl.body if workflow_decl.parent_ref is not None else None,
-                parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(workflow_decl.name)
+            ):
+                resolved = self._resolve_workflow_body(
+                    workflow_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
+                    owner_source_span=workflow_decl.source_span,
+                    parent_workflow=parent_workflow,
+                    parent_body=parent_decl.body if workflow_decl.parent_ref is not None else None,
+                    parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
+                    parent_label=parent_label,
+                )
             self._resolved_workflow_cache[workflow_key] = resolved
             return resolved
         finally:
@@ -193,16 +196,19 @@ class ResolveWorkflowsMixin:
                 )
                 parent_label = f"workflow {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
-            resolved = self._resolve_workflow_addressable_body(
-                workflow_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
-                owner_source_span=workflow_decl.source_span,
-                parent_workflow=parent_workflow,
-                parent_body=parent_decl.body if workflow_decl.parent_ref is not None else None,
-                parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(workflow_decl.name)
+            ):
+                resolved = self._resolve_workflow_addressable_body(
+                    workflow_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
+                    owner_source_span=workflow_decl.source_span,
+                    parent_workflow=parent_workflow,
+                    parent_body=parent_decl.body if workflow_decl.parent_ref is not None else None,
+                    parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
+                    parent_label=parent_label,
+                )
             self._addressable_workflow_cache[workflow_key] = resolved
             return resolved
         finally:

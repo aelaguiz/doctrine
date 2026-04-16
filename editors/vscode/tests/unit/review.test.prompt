@@ -41,10 +41,13 @@ review ReviewBodyDemo: "Review Body"
 #   ^^^^^^ keyword.other.field.doctrine
 #         ^ punctuation.separator.key-value.doctrine
 
-        verdict: verdict
+        verdict
 #       ^^^^^^^ keyword.other.field.doctrine
-#              ^ punctuation.separator.key-value.doctrine
-#                ^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+        reviewed_artifact: reviewed_artifact
+#       ^^^^^^^^^^^^^^^^^ keyword.other.field.doctrine
+#                        ^ punctuation.separator.key-value.doctrine
+#                          ^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
     shared_checks: "Shared Checks"
 #   ^^^^^^^^^^^^^ entity.name.section.doctrine
@@ -73,3 +76,15 @@ review ReviewBodyDemo: "Review Body"
 
         "Read {{fields.reviewed_artifact}} before you reroute."
 #               ^^^^^^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine
+
+agent ReviewFinalOutputDemo:
+    final_output:
+        output: AcceptanceControlFinalResponse
+        review_fields:
+            verdict
+#           ^^^^^^^ keyword.other.field.doctrine
+
+            blocked_gate: blocked_gate
+#           ^^^^^^^^^^^^ keyword.other.field.doctrine
+#                       ^ punctuation.separator.key-value.doctrine
+#                         ^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine

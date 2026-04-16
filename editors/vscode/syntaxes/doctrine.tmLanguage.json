@@ -208,6 +208,9 @@
       "include": "#reviewFieldBinding"
     },
     {
+      "include": "#reviewFieldBindingIdentity"
+    },
+    {
       "include": "#keyValueRef"
     },
     {
@@ -272,7 +275,7 @@
       ]
     },
     "stringInterpolation": {
-      "match": "(\\{\\{)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
+      "match": "(\\{\\{)\\s*((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
       "captures": {
         "1": {
           "name": "punctuation.definition.interpolation.begin.doctrine"
@@ -1517,8 +1520,16 @@
         }
       }
     },
+    "reviewFieldBindingIdentity": {
+      "match": "^(\\s*)(verdict|reviewed_artifact|failing_gates|blocked_gate)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        }
+      }
+    },
     "keyValueRef": {
-      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.section.doctrine"
@@ -1583,7 +1594,7 @@
       }
     },
     "standaloneReference": {
-      "match": "^(\\s+)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
+      "match": "^(\\s+)(?!(?:route)\\b)((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine"

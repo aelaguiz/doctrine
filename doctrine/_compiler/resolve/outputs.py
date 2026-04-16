@@ -221,14 +221,17 @@ class ResolveOutputsMixin:
                     f"output shape {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_inherited_output_shape_decl(
-                output_shape_decl,
-                unit=unit,
-                owner_label=owner_label,
-                parent_unit=parent_unit if output_shape_decl.parent_ref is not None else None,
-                parent_output_shape=parent_output_shape,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(output_shape_decl.name)
+            ):
+                resolved = self._resolve_inherited_output_shape_decl(
+                    output_shape_decl,
+                    unit=unit,
+                    owner_label=owner_label,
+                    parent_unit=parent_unit if output_shape_decl.parent_ref is not None else None,
+                    parent_output_shape=parent_output_shape,
+                    parent_label=parent_label,
+                )
             self._resolved_output_shape_cache[output_shape_key] = resolved
             return resolved
         finally:
@@ -271,14 +274,17 @@ class ResolveOutputsMixin:
                 parent_output = self._resolve_output_decl_body(parent_decl, unit=parent_unit)
                 parent_label = f"output {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
-            resolved = self._resolve_inherited_output_decl(
-                output_decl,
-                unit=unit,
-                owner_label=owner_label,
-                parent_unit=parent_unit if output_decl.parent_ref is not None else None,
-                parent_output=parent_output,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(output_decl.name)
+            ):
+                resolved = self._resolve_inherited_output_decl(
+                    output_decl,
+                    unit=unit,
+                    owner_label=owner_label,
+                    parent_unit=parent_unit if output_decl.parent_ref is not None else None,
+                    parent_output=parent_output,
+                    parent_label=parent_label,
+                )
             self._resolved_output_decl_cache[output_key] = resolved
             return resolved
         finally:
@@ -1145,12 +1151,15 @@ class ResolveOutputsMixin:
             return value
         if isinstance(value, model.NameRef):
             return self._rebind_inherited_output_name_ref(value, parent_unit=parent_unit)
+        if value.self_rooted or value.root is None:
+            return value
         return model.AddressableRef(
             root=self._rebind_inherited_output_name_ref(
                 value.root,
                 parent_unit=parent_unit,
             ),
             path=value.path,
+            source_span=value.source_span,
         )
 
     def _rebind_inherited_output_name_ref(
@@ -2256,6 +2265,12 @@ class ResolveOutputsMixin:
                 _dotted_ref_name(selector),
                 None,
             )
+        selector = self._rebind_self_addressable_ref(
+            selector,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="previous_turn selector",
+        )
         outputs_unit, outputs_decl = self._resolve_outputs_block_ref(selector.root, unit=unit)
         resolved_outputs = self._resolve_outputs_decl(outputs_decl, unit=outputs_unit)
         if not selector.path:
@@ -2614,22 +2629,25 @@ class ResolveOutputsMixin:
                     )
                 parent_label = f"outputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
 
-            resolved = self._resolve_io_body(
-                outputs_decl.body,
-                unit=unit,
-                field_kind="outputs",
-                owner_label=_dotted_decl_name(unit.module_parts, outputs_decl.name),
-                parent_io=parent_io,
-                inheritance_parent_io=inheritance_parent_io,
-                parent_unit=parent_unit if outputs_decl.parent_ref is not None else None,
-                parent_ref_source_span=(
-                    outputs_decl.parent_ref.source_span if outputs_decl.parent_ref is not None else None
-                ),
-                parent_label=parent_label,
-                review_output_contexts=review_output_contexts,
-                route_output_contexts=route_output_contexts,
-                excluded_output_keys=excluded_output_keys,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(outputs_decl.name)
+            ):
+                resolved = self._resolve_io_body(
+                    outputs_decl.body,
+                    unit=unit,
+                    field_kind="outputs",
+                    owner_label=_dotted_decl_name(unit.module_parts, outputs_decl.name),
+                    parent_io=parent_io,
+                    inheritance_parent_io=inheritance_parent_io,
+                    parent_unit=parent_unit if outputs_decl.parent_ref is not None else None,
+                    parent_ref_source_span=(
+                        outputs_decl.parent_ref.source_span if outputs_decl.parent_ref is not None else None
+                    ),
+                    parent_label=parent_label,
+                    review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
+                    excluded_output_keys=excluded_output_keys,
+                )
             self._resolved_outputs_cache[outputs_key] = resolved
             return resolved
         finally:

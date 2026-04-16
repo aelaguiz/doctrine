@@ -9,9 +9,13 @@ const DOTTED_NAME_PATTERN = `${IDENTIFIER_PATTERN}(?:\\.${IDENTIFIER_PATTERN})*`
 const IMPORT_PATH_PATTERN = `(?:\\.+)?${DOTTED_NAME_PATTERN}`;
 const STRING_PATTERN = "\"(?:\\\\.|[^\"\\\\])*\"";
 const STRING_OR_EMPTY_PATTERN = `(?:${STRING_PATTERN})?`;
-const PATH_REF_PATTERN = `${DOTTED_NAME_PATTERN}:${DOTTED_NAME_PATTERN}`;
+const PATH_ROOT_PATTERN = `(?:self|${DOTTED_NAME_PATTERN})`;
+const PATH_REF_PATTERN = `${PATH_ROOT_PATTERN}:${DOTTED_NAME_PATTERN}`;
 const NAME_REF_RE = new RegExp(`^${DOTTED_NAME_PATTERN}$`);
 const INTERPOLATION_RE = /\{\{([^{}]+)\}\}/g;
+const SELF_INTERPOLATION_EXPR_RE = new RegExp(
+  `^\\s*(self)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+);
 const INTERPOLATION_EXPR_RE = new RegExp(
   `^\\s*(${DOTTED_NAME_PATTERN})(?:\\s*:\\s*(${DOTTED_NAME_PATTERN}))?\\s*$`,
 );
@@ -69,10 +73,10 @@ const STANDALONE_REF_RE = new RegExp(
   `^\\s+(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const STANDALONE_PATH_REF_RE = new RegExp(
-  `^\\s*(${DOTTED_NAME_PATTERN}):(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(${PATH_ROOT_PATTERN}):(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEY_VALUE_PATH_REF_RE = new RegExp(
-  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN}):(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${PATH_ROOT_PATTERN}):(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const WORKFLOW_SKILLS_REF_RE = new RegExp(
   `^\\s*skills\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -271,6 +275,21 @@ const ADDRESSABLE_DECLARATION_KINDS = Object.freeze([
   DECLARATION_KIND.OUTPUT_SCHEMA,
   DECLARATION_KIND.SKILL,
   DECLARATION_KIND.ENUM,
+]);
+const SELF_ADDRESSABLE_DECLARATION_KINDS = new Set([
+  DECLARATION_KIND.ANALYSIS,
+  DECLARATION_KIND.SCHEMA_DECL,
+  DECLARATION_KIND.DOCUMENT,
+  DECLARATION_KIND.WORKFLOW,
+  DECLARATION_KIND.SKILLS_BLOCK,
+  DECLARATION_KIND.INPUTS_BLOCK,
+  DECLARATION_KIND.INPUT,
+  DECLARATION_KIND.INPUT_SOURCE,
+  DECLARATION_KIND.OUTPUTS_BLOCK,
+  DECLARATION_KIND.OUTPUT,
+  DECLARATION_KIND.OUTPUT_TARGET,
+  DECLARATION_KIND.OUTPUT_SHAPE,
+  DECLARATION_KIND.OUTPUT_SCHEMA,
 ]);
 
 const DECLARATION_DEFINITIONS = Object.freeze([
@@ -642,7 +661,8 @@ function classifyDefinitionSite(source, position) {
 
   for (const site of sites) {
     if (
-      site.type === "structuralKeyRef"
+      site.type === "addressableRef"
+      || site.type === "structuralKeyRef"
       || site.type === "reviewSemanticRef"
       || site.type === "reviewBoundOutputPathRef"
       || site.type === "boundLawPathRef"
@@ -1220,6 +1240,38 @@ function collectIoBodySites(lineText, lineNumber, fieldKind) {
     sites.push(createStructuralSite(lineText, lineNumber, overrideBody[1]));
   }
 
+  const overrideRef = lineText.match(OVERRIDE_REF_RE);
+  if (overrideRef) {
+    sites.push(createStructuralSite(lineText, lineNumber, overrideRef[1]));
+    sites.push({
+      type: "directDeclRef",
+      declarationKind:
+        fieldKind === "inputs"
+          ? DECLARATION_KIND.INPUT
+          : DECLARATION_KIND.OUTPUT,
+      range: createLastMatchRange(lineText, lineNumber, overrideRef[2]),
+      ref: parseNameRef(overrideRef[2]),
+      requireConcrete: false,
+    });
+    return sites;
+  }
+
+  const keyedRef = lineText.match(AGENT_SLOT_REF_RE);
+  if (keyedRef) {
+    sites.push(createStructuralSite(lineText, lineNumber, keyedRef[1]));
+    sites.push({
+      type: "directDeclRef",
+      declarationKind:
+        fieldKind === "inputs"
+          ? DECLARATION_KIND.INPUT
+          : DECLARATION_KIND.OUTPUT,
+      range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
+      ref: parseNameRef(keyedRef[2]),
+      requireConcrete: false,
+    });
+    return sites;
+  }
+
   const standalone = lineText.match(STANDALONE_REF_RE);
   if (standalone) {
     sites.push({
@@ -1338,6 +1390,25 @@ function collectInterpolationSites(lineText, lineNumber) {
 
   for (const match of lineText.matchAll(INTERPOLATION_RE)) {
     const expression = match[1];
+    const selfExpressionMatch = expression.match(SELF_INTERPOLATION_EXPR_RE);
+    if (selfExpressionMatch) {
+      const rootText = selfExpressionMatch[1];
+      const pathText = selfExpressionMatch[2];
+      const expressionOffset = expression.indexOf(rootText);
+      const rootStart = (match.index ?? 0) + 2 + expressionOffset;
+      const pathOffset = expression.indexOf(pathText, expressionOffset + rootText.length);
+      sites.push(
+        ...createAddressableRefSites({
+          lineNumber,
+          pathText,
+          pathStartCharacter: (match.index ?? 0) + 2 + pathOffset,
+          rootText,
+          startCharacter: rootStart,
+        }),
+      );
+      continue;
+    }
+
     const expressionMatch = expression.match(INTERPOLATION_EXPR_RE);
     if (!expressionMatch) {
       continue;
@@ -1388,6 +1459,10 @@ function collectInterpolationSites(lineText, lineNumber) {
           startCharacter: rootStart,
         }),
       );
+      continue;
+    }
+
+    if (rootText === "self") {
       continue;
     }
 
@@ -1500,16 +1575,29 @@ async function resolveReadableDefinition(site, source) {
   ];
 }
 
+function resolveSelfAddressableSource(lineContext, source) {
+  const declaration = lineContext?.declaration;
+  if (!declaration || !SELF_ADDRESSABLE_DECLARATION_KINDS.has(declaration.kind)) {
+    return undefined;
+  }
+
+  return { declaration, source };
+}
+
 async function resolveAddressableDefinition(site, source) {
-  const resolvedRef = await resolveReferencedSource(site.ref, source);
+  const resolvedRef = site.selfRooted
+    ? resolveSelfAddressableSource(site.lineContext, source)
+    : await resolveReferencedSource(site.ref, source);
   if (!resolvedRef) {
     return undefined;
   }
 
-  const declaration = findAddressableDeclaration(
-    resolvedRef.source.index,
-    resolvedRef.declarationName,
-  );
+  const declaration = site.selfRooted
+    ? resolvedRef.declaration
+    : findAddressableDeclaration(
+      resolvedRef.source.index,
+      resolvedRef.declarationName,
+    );
   if (!declaration || (declaration.kind === DECLARATION_KIND.AGENT && declaration.abstract)) {
     return undefined;
   }
@@ -4576,12 +4664,30 @@ function getIoBodyItems(document, bodySpec) {
       continue;
     }
 
+    const overrideRef = lineText.match(OVERRIDE_REF_RE);
+    if (overrideRef) {
+      items.set(overrideRef[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, overrideRef[1]),
+        lineNumber,
+      });
+      continue;
+    }
+
     if (
       OVERRIDE_BODY_RE.test(lineText)
     ) {
       const overrideKey = lineText.trim().split(/\s+/)[1].replace(":", "");
       items.set(overrideKey, {
         keyRange: createFirstMatchRange(lineText, lineNumber, overrideKey),
+        lineNumber,
+      });
+      continue;
+    }
+
+    const keyedRef = lineText.match(AGENT_SLOT_REF_RE);
+    if (keyedRef) {
+      items.set(keyedRef[1], {
+        keyRange: createFirstMatchRange(lineText, lineNumber, keyedRef[1]),
         lineNumber,
       });
       continue;
@@ -5985,8 +6091,9 @@ function createAddressableRefSites({
   rootText,
   startCharacter,
 }) {
-  const ref = parseNameRef(rootText);
-  if (!ref) {
+  const selfRooted = rootText === "self";
+  const ref = selfRooted ? undefined : parseNameRef(rootText);
+  if (!selfRooted && !ref) {
     return [];
   }
 
@@ -5997,6 +6104,7 @@ function createAddressableRefSites({
       pathSegments,
       range: createRangeFromStart(lineNumber, startCharacter, rootText.length),
       ref,
+      selfRooted,
       segmentIndex: -1,
     },
   ];
@@ -6012,6 +6120,7 @@ function createAddressableRefSites({
       pathSegments,
       range: createRangeFromStart(lineNumber, cursor, segment.length),
       ref,
+      selfRooted,
       segmentIndex: index,
     });
     cursor += segment.length + 1;

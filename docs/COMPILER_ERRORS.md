@@ -149,6 +149,7 @@ Stability rules:
 | `E307` | Duplicate imported symbol | One prompt file binds the same visible imported symbol more than once, such as `from shared.review import Comment` plus another visible `Comment`. |
 | `E308` | Ambiguous imported symbol ownership | A bare visible name is both a local declaration and an imported symbol, so Doctrine refuses to guess which owner the ref should use. |
 | `E309` | Malformed grouped `inherit` | A grouped `inherit { ... }` is empty, repeats the same key, or uses a key that is not legal on that grouped surface. |
+| `E312` | `self:` needs a declaration-root addressable context | `self:` was used on a surface that does not carry a live declaration-root addressable context. Use an explicit `Root:path` ref there. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |

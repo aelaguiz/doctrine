@@ -24,6 +24,8 @@ class ValidateRouteSemanticsReadsMixin:
         self,
         ref: model.AddressableRef,
     ) -> tuple[str, ...] | None:
+        if ref.self_rooted or ref.root is None:
+            return None
         parts = (*ref.root.module_parts, ref.root.declaration_name, *ref.path)
         if not parts or parts[0] != "route":
             return None

@@ -431,8 +431,8 @@ async function testAddressableDefinitionProvider() {
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment:
-      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
-    sourceText: "SharedSkills",
+      '"Keep {{self:can_run.grounding}} available before you act."',
+    sourceText: "self",
   });
 
   await assertDefinitionTarget({
@@ -442,7 +442,7 @@ async function testAddressableDefinitionProvider() {
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment:
-      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+      '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "can_run",
   });
 
@@ -453,7 +453,7 @@ async function testAddressableDefinitionProvider() {
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment:
-      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+      '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "grounding",
   });
 
@@ -463,7 +463,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.title",
+    sourceLineFragment: "self:shared.title",
     sourceText: "title",
   });
 
@@ -473,7 +473,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.title",
+    sourceLineFragment: "self:skills.title",
     sourceText: "title",
   });
 
@@ -483,8 +483,8 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
-    sourceText: "WorkflowRoot",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
+    sourceText: "self",
   });
 
   await assertDefinitionTarget({
@@ -493,7 +493,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "shared",
   });
 
@@ -503,7 +503,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "gates",
   });
 
@@ -513,7 +513,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "build",
   });
 
@@ -523,7 +523,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "check_build_honesty",
   });
 
@@ -533,7 +533,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "skills",
   });
 
@@ -543,7 +543,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "can_run",
   });
 
@@ -553,7 +553,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "grounding",
   });
 }
@@ -1062,9 +1062,8 @@ async function testFullClickableSurface() {
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
     relativePath: "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
-    sourceLineFragment: "ScopedCatalogTruth",
+    sourceLineFragment: "scoped_catalog_truth: ScopedCatalogTruth",
     sourceText: "ScopedCatalogTruth",
-    occurrence: 1,
   });
 
   await assertDefinitionTarget({
@@ -1072,9 +1071,17 @@ async function testFullClickableSurface() {
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
     relativePath: "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
-    sourceLineFragment: "CoordinationHandoff",
+    sourceLineFragment: "coordination_handoff: CoordinationHandoff",
     sourceText: "CoordinationHandoff",
-    occurrence: 1,
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "input LessonsIssueLedger",
+    expectedRelativeTargetPath:
+      "examples/117_io_omitted_wrapper_titles/prompts/AGENTS.prompt",
+    relativePath: "examples/117_io_omitted_wrapper_titles/prompts/AGENTS.prompt",
+    sourceLineFragment: "issue_ledger: LessonsIssueLedger",
+    sourceText: "LessonsIssueLedger",
   });
 
   await assertDefinitionTarget({
@@ -1140,7 +1147,7 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: 'coordination_handoff: "Coordination Handoff"',
+    declarationSnippet: "coordination_handoff: CoordinationHandoff",
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
     relativePath: "examples/24_io_block_inheritance/prompts/AGENTS.prompt",

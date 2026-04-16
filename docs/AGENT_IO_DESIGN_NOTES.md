@@ -73,12 +73,17 @@ Important rules:
 Binding example:
 
 ```prompt
-inputs: "Inputs"
-    draft_spec: "Draft Spec Binding"
-        DraftSpec
+inputs SharedInputs: "Inputs"
+    draft_spec: DraftSpec
+
+agent Demo:
+    inputs: SharedInputs
 ```
 
 That local key becomes a usable root for workflow law or review semantics.
+Prefer the one-line form when the wrapper only binds one declaration and adds
+no local prose. Keep the multiline wrapper when you need prose or more than
+one direct item.
 
 ## Outputs
 

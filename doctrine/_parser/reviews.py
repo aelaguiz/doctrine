@@ -256,11 +256,12 @@ class ReviewTransformerMixin:
         return _with_source_span(model.ReviewFieldsConfig(bindings=tuple(items)), meta)
 
     @v_args(meta=True, inline=True)
-    def semantic_field_binding(self, meta, semantic_field, field_path):
+    def semantic_field_binding(self, meta, semantic_field, field_path=None):
+        binding_path = (semantic_field,) if field_path is None else tuple(field_path)
         return _with_source_span(
             model.ReviewFieldBinding(
                 semantic_field=semantic_field,
-                field_path=tuple(field_path),
+                field_path=binding_path,
             ),
             meta,
         )

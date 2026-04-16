@@ -167,6 +167,13 @@ class ToAst(
     @v_args(meta=True, inline=True)
     def path_ref(self, meta, raw_ref):
         root_name, path_name = raw_ref.split(":", 1)
+        if root_name == "self":
+            return model.AddressableRef(
+                root=None,
+                path=tuple(path_name.split(".")),
+                self_rooted=True,
+                source_span=_source_span_from_meta(meta),
+            )
         return model.AddressableRef(
             root=_name_ref_from_dotted_name(
                 root_name,

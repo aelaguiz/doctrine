@@ -72,74 +72,77 @@ class CompileOutputsMixin:
                 source_span=decl.source_span,
             )
 
-        source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
-        body: list[CompiledBodyItem] = [f"- Source: {source_spec.title}"]
-        if previous_turn_spec is None:
-            body.extend(
-                self._compile_config_lines(
-                    source_item.body or (),
-                    spec=source_spec,
-                    unit=unit,
-                    owner_label=f"input {decl.name} source",
-                    owner_source_span=source_item.source_span or decl.source_span,
+        with self._with_addressable_self_root(
+            self._local_addressable_self_root_ref(decl.name)
+        ):
+            source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
+            body: list[CompiledBodyItem] = [f"- Source: {source_spec.title}"]
+            if previous_turn_spec is None:
+                body.extend(
+                    self._compile_config_lines(
+                        source_item.body or (),
+                        spec=source_spec,
+                        unit=unit,
+                        owner_label=f"input {decl.name} source",
+                        owner_source_span=source_item.source_span or decl.source_span,
+                    )
                 )
-            )
-            body.append(
-                f"- Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
-            )
-            body.append(
-                f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
-            )
-        else:
-            contract_label = (
-                "Structured JSON"
-                if previous_turn_spec.derived_contract_mode == "structured_json"
-                else "Readable Text"
-            )
-            body.append(f"- Previous Output: {previous_turn_spec.selector_text}")
-            body.append(f"- Derived Contract: {contract_label}")
-            if previous_turn_spec.shape_title is not None:
-                body.append(f"- Derived Shape: {previous_turn_spec.shape_title}")
-            if previous_turn_spec.schema_title is not None:
-                body.append(f"- Derived Schema: {previous_turn_spec.schema_title}")
-            body.append(f"- Requirement: {previous_turn_spec.requirement}")
-        if decl.structure_ref is not None and previous_turn_spec is None:
-            document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
-            if not self._is_markdown_shape_value(shape_item.value, unit=unit):
-                raise output_compile_error(
-                    code="E299",
-                    summary="Compile failure",
-                    detail=(
-                        f"Input structure requires a markdown-bearing shape in input "
-                        f"{decl.name}"
-                    ),
-                    unit=unit,
-                    source_span=shape_item.source_span or decl.source_span,
+                body.append(
+                    f"- Shape: {self._display_symbol_value(shape_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
                 )
-            body.append(f"- Structure: {document_decl.title}")
-            body.append("")
-            body.append(
-                CompiledSection(
-                    title=f"Structure: {document_decl.title}",
-                    body=self._compile_document_body(
-                        self._resolve_document_decl(document_decl, unit=document_unit),
-                        unit=document_unit,
-                    ),
+                body.append(
+                    f"- Requirement: {self._display_symbol_value(requirement_item.value, unit=unit, owner_label=f'input {decl.name}', surface_label='input fields')}"
                 )
-            )
+            else:
+                contract_label = (
+                    "Structured JSON"
+                    if previous_turn_spec.derived_contract_mode == "structured_json"
+                    else "Readable Text"
+                )
+                body.append(f"- Previous Output: {previous_turn_spec.selector_text}")
+                body.append(f"- Derived Contract: {contract_label}")
+                if previous_turn_spec.shape_title is not None:
+                    body.append(f"- Derived Shape: {previous_turn_spec.shape_title}")
+                if previous_turn_spec.schema_title is not None:
+                    body.append(f"- Derived Schema: {previous_turn_spec.schema_title}")
+                body.append(f"- Requirement: {previous_turn_spec.requirement}")
+            if decl.structure_ref is not None and previous_turn_spec is None:
+                document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+                if not self._is_markdown_shape_value(shape_item.value, unit=unit):
+                    raise output_compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            f"Input structure requires a markdown-bearing shape in input "
+                            f"{decl.name}"
+                        ),
+                        unit=unit,
+                        source_span=shape_item.source_span or decl.source_span,
+                    )
+                body.append(f"- Structure: {document_decl.title}")
+                body.append("")
+                body.append(
+                    CompiledSection(
+                        title=f"Structure: {document_decl.title}",
+                        body=self._compile_document_body(
+                            self._resolve_document_decl(document_decl, unit=document_unit),
+                            unit=document_unit,
+                        ),
+                    )
+                )
 
-        if extras:
-            body.append("")
-            body.extend(
-                self._compile_record_support_items(
-                    extras,
-                    unit=unit,
-                    owner_label=f"input {decl.name}",
-                    surface_label="input prose",
+            if extras:
+                body.append("")
+                body.extend(
+                    self._compile_record_support_items(
+                        extras,
+                        unit=unit,
+                        owner_label=f"input {decl.name}",
+                        surface_label="input prose",
+                    )
                 )
-            )
 
-        return CompiledSection(title=decl.title, body=tuple(body))
+            return CompiledSection(title=decl.title, body=tuple(body))
 
     def _compile_output_decl(
         self,
@@ -220,182 +223,185 @@ class CompileOutputsMixin:
                 ),
             )
 
-        explicit_render_profile, render_profile = self._resolve_output_render_profiles(
-            decl,
-            unit=unit,
-            files_section=files_section,
-            shape_item=shape_item,
-        )
+        with self._with_addressable_self_root(
+            self._local_addressable_self_root_ref(decl.name)
+        ):
+            explicit_render_profile, render_profile = self._resolve_output_render_profiles(
+                decl,
+                unit=unit,
+                files_section=files_section,
+                shape_item=shape_item,
+            )
 
-        body: list[CompiledBodyItem] = []
-        schema_section: CompiledSection | None = None
-        structure_items: tuple[CompiledBodyItem, ...] = ()
-        use_compact_contract = False
-        if files_section is not None:
-            contract_rows = [
-                ("Target", "File Set"),
-            ]
-            if requirement_item is not None:
-                contract_rows.append(
-                    (
-                        "Requirement",
-                        self._display_symbol_value(
-                            requirement_item.value,
-                            unit=unit,
-                            owner_label=f"output {decl.name}",
-                            surface_label="output fields",
-                        ),
+            body: list[CompiledBodyItem] = []
+            schema_section: CompiledSection | None = None
+            structure_items: tuple[CompiledBodyItem, ...] = ()
+            use_compact_contract = False
+            if files_section is not None:
+                contract_rows = [
+                    ("Target", "File Set"),
+                ]
+                if requirement_item is not None:
+                    contract_rows.append(
+                        (
+                            "Requirement",
+                            self._display_symbol_value(
+                                requirement_item.value,
+                                unit=unit,
+                                owner_label=f"output {decl.name}",
+                                surface_label="output fields",
+                            ),
+                        )
+                    )
+                body.extend(self._compile_ordinary_output_contract_table(tuple(contract_rows)))
+                body.append("")
+                body.append(
+                    self._compile_output_files(
+                        files_section,
+                        unit=unit,
+                        output_name=decl.name,
+                        review_semantics=review_semantics,
+                        route_semantics=route_semantics,
+                        render_profile=render_profile,
                     )
                 )
-            body.extend(self._compile_ordinary_output_contract_table(tuple(contract_rows)))
-            body.append("")
-            body.append(
-                self._compile_output_files(
-                    files_section,
-                    unit=unit,
-                    output_name=decl.name,
-                    review_semantics=review_semantics,
-                    route_semantics=route_semantics,
-                    render_profile=render_profile,
-                )
-            )
-        else:
-            if not isinstance(target_item.value, model.NameRef):
-                raise output_compile_error(
-                    code="E275",
-                    summary="Output target must stay typed",
-                    detail=f"Output `{decl.name}` must keep a typed `target`.",
-                    unit=unit,
-                    source_span=target_item.source_span or decl.source_span,
-                )
-            contract_rows = self._compile_ordinary_output_contract_rows(
-                decl,
-                unit=unit,
-                target_item=target_item,
-                shape_item=shape_item,
-                requirement_item=requirement_item,
-            )
-            use_compact_contract = self._should_compact_ordinary_output_contract(
-                decl,
-                unit=unit,
-                target_item=target_item,
-                shape_item=shape_item,
-                contract_rows=contract_rows,
-                extras=extras,
-            )
-            if use_compact_contract:
-                body.extend(self._compile_compact_ordinary_output_contract(contract_rows))
             else:
-                body.extend(self._compile_ordinary_output_contract_table(contract_rows))
-        if decl.schema_ref is not None:
-            schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
-            resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
-            if not resolved_schema.sections:
-                raise output_compile_error(
-                    code="E302",
-                    summary="Invalid output attachment declaration",
-                    detail=(
-                        "Output-attached schema must export at least one section in output "
-                        f"{decl.name}: {schema_decl.name}"
-                    ),
+                if not isinstance(target_item.value, model.NameRef):
+                    raise output_compile_error(
+                        code="E275",
+                        summary="Output target must stay typed",
+                        detail=f"Output `{decl.name}` must keep a typed `target`.",
+                        unit=unit,
+                        source_span=target_item.source_span or decl.source_span,
+                    )
+                contract_rows = self._compile_ordinary_output_contract_rows(
+                    decl,
                     unit=unit,
-                    source_span=decl.source_span,
-                    related=(
-                        output_related_site(
-                            label=f"attached schema `{schema_decl.name}`",
-                            unit=schema_unit,
-                            source_span=schema_decl.source_span,
+                    target_item=target_item,
+                    shape_item=shape_item,
+                    requirement_item=requirement_item,
+                )
+                use_compact_contract = self._should_compact_ordinary_output_contract(
+                    decl,
+                    unit=unit,
+                    target_item=target_item,
+                    shape_item=shape_item,
+                    contract_rows=contract_rows,
+                    extras=extras,
+                )
+                if use_compact_contract:
+                    body.extend(self._compile_compact_ordinary_output_contract(contract_rows))
+                else:
+                    body.extend(self._compile_ordinary_output_contract_table(contract_rows))
+            if decl.schema_ref is not None:
+                schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
+                resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
+                if not resolved_schema.sections:
+                    raise output_compile_error(
+                        code="E302",
+                        summary="Invalid output attachment declaration",
+                        detail=(
+                            "Output-attached schema must export at least one section in output "
+                            f"{decl.name}: {schema_decl.name}"
                         ),
-                    ),
+                        unit=unit,
+                        source_span=decl.source_span,
+                        related=(
+                            output_related_site(
+                                label=f"attached schema `{schema_decl.name}`",
+                                unit=schema_unit,
+                                source_span=schema_decl.source_span,
+                            ),
+                        ),
+                    )
+                schema_section = self._compile_schema_sections_block(resolved_schema)
+            if decl.structure_ref is not None:
+                if files_section is not None:
+                    raise output_compile_error(
+                        code="E302",
+                        summary="Invalid output attachment declaration",
+                        detail=(
+                            "Output structure requires one markdown-bearing output artifact in "
+                            f"{decl.name}"
+                        ),
+                        unit=unit,
+                        source_span=files_section.source_span or decl.source_span,
+                    )
+                if shape_item is None or not self._is_markdown_shape_value(shape_item.value, unit=unit):
+                    raise output_compile_error(
+                        code="E302",
+                        summary="Invalid output attachment declaration",
+                        detail=(
+                            "Output structure requires a markdown-bearing shape in output "
+                            f"{decl.name}"
+                        ),
+                        unit=unit,
+                        source_span=_source_span(shape_item) or decl.source_span,
+                    )
+                document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
+                resolved_document = self._resolve_document_decl(document_decl, unit=document_unit)
+                structure_items = self._compile_output_structure_items(
+                    resolved_document,
+                    document_title=document_decl.title,
+                    unit=document_unit,
+                    render_profile=explicit_render_profile or resolved_document.render_profile,
                 )
-            schema_section = self._compile_schema_sections_block(resolved_schema)
-        if decl.structure_ref is not None:
-            if files_section is not None:
-                raise output_compile_error(
-                    code="E302",
-                    summary="Invalid output attachment declaration",
-                    detail=(
-                        "Output structure requires one markdown-bearing output artifact in "
-                        f"{decl.name}"
-                    ),
+
+            trust_surface_section = (
+                self._compile_trust_surface_section(
+                    decl,
                     unit=unit,
-                    source_span=files_section.source_span or decl.source_span,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                    inline_code_labels=True,
                 )
-            if shape_item is None or not self._is_markdown_shape_value(shape_item.value, unit=unit):
-                raise output_compile_error(
-                    code="E302",
-                    summary="Invalid output attachment declaration",
-                    detail=(
-                        "Output structure requires a markdown-bearing shape in output "
-                        f"{decl.name}"
-                    ),
-                    unit=unit,
-                    source_span=_source_span(shape_item) or decl.source_span,
-                )
-            document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
-            resolved_document = self._resolve_document_decl(document_decl, unit=document_unit)
-            structure_items = self._compile_output_structure_items(
-                resolved_document,
-                document_title=document_decl.title,
-                unit=document_unit,
-                render_profile=explicit_render_profile or resolved_document.render_profile,
+                if decl.trust_surface
+                else None
             )
 
-        trust_surface_section = (
-            self._compile_trust_surface_section(
-                decl,
-                unit=unit,
-                review_semantics=review_semantics,
-                route_semantics=route_semantics,
+            if schema_section is not None:
+                body.append("")
+                body.append(schema_section)
+            if structure_items:
+                body.append("")
+                body.extend(structure_items)
+
+            if extras:
+                support_items = (
+                    self._compile_compact_ordinary_output_support_items(
+                        extras,
+                        unit=unit,
+                        owner_label=f"output {decl.name}",
+                        surface_label="output prose",
+                        review_semantics=review_semantics,
+                        route_semantics=route_semantics,
+                        render_profile=render_profile,
+                        trust_surface_section=trust_surface_section,
+                    )
+                    if use_compact_contract
+                    else self._compile_ordinary_output_support_items(
+                        extras,
+                        unit=unit,
+                        owner_label=f"output {decl.name}",
+                        surface_label="output prose",
+                        review_semantics=review_semantics,
+                        route_semantics=route_semantics,
+                        render_profile=render_profile,
+                        trust_surface_section=trust_surface_section,
+                    )
+                )
+                body.append("")
+                body.extend(support_items)
+            elif trust_surface_section is not None:
+                body.append("")
+                body.append(trust_surface_section)
+
+            return CompiledSection(
+                title=decl.title,
+                body=tuple(body),
                 render_profile=render_profile,
-                inline_code_labels=True,
             )
-            if decl.trust_surface
-            else None
-        )
-
-        if schema_section is not None:
-            body.append("")
-            body.append(schema_section)
-        if structure_items:
-            body.append("")
-            body.extend(structure_items)
-
-        if extras:
-            support_items = (
-                self._compile_compact_ordinary_output_support_items(
-                    extras,
-                    unit=unit,
-                    owner_label=f"output {decl.name}",
-                    surface_label="output prose",
-                    review_semantics=review_semantics,
-                    route_semantics=route_semantics,
-                    render_profile=render_profile,
-                    trust_surface_section=trust_surface_section,
-                )
-                if use_compact_contract
-                else self._compile_ordinary_output_support_items(
-                    extras,
-                    unit=unit,
-                    owner_label=f"output {decl.name}",
-                    surface_label="output prose",
-                    review_semantics=review_semantics,
-                    route_semantics=route_semantics,
-                    render_profile=render_profile,
-                    trust_surface_section=trust_surface_section,
-                )
-            )
-            body.append("")
-            body.extend(support_items)
-        elif trust_surface_section is not None:
-            body.append("")
-            body.append(trust_surface_section)
-
-        return CompiledSection(
-            title=decl.title,
-            body=tuple(body),
-            render_profile=render_profile,
-        )
 
     def _compile_trust_surface_section(
         self,

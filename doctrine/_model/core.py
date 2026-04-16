@@ -99,8 +99,9 @@ class RenderProfileDecl:
 
 @_dataclass(slots=True, frozen=True)
 class AddressableRef:
-    root: NameRef
+    root: NameRef | None
     path: tuple[str, ...] = ()
+    self_rooted: bool = False
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

@@ -22,6 +22,15 @@ or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
 ### Added
+- Added the high-value authoring wave: import aliases and symbol imports,
+  grouped explicit `inherit { ... }`, bare identity shorthand on
+  `review.fields`, `review override fields`, and
+  `final_output.review_fields`, one-line first-class `inputs` / `outputs`
+  wrapper refs, and `self:` on the existing `PATH_REF` surfaces.
+- Added shipped fail-loud diagnostics `E306`, `E307`, `E308`, `E309`, and
+  `E312` for that wave. `E310` stays reserved for the deferred grouped-
+  override investigation, and `E311` stays reserved for a future dedicated
+  IO-wrapper shorthand diagnostic.
 - Added directory-backed runtime package imports that resolve
   `<module>/AGENTS.prompt` and let thin `AGENTS.prompt` build handles emit
   real runtime package trees.
@@ -78,6 +87,10 @@ payload text and breaking releases with no real upgrade steps.
   schema shape.
 
 ### Changed
+- Changed the public docs, teaching examples, and VS Code support to teach
+  the preferred additive forms for imports, grouped `inherit`, review-field
+  identity binds, first-class IO wrapper shorthand, and self-addressed
+  addressable refs.
 - Changed `output schema` authoring for the next language-major line. Use
   `nullable` when an output-schema field or route field may be `null`.
   Object properties still stay present on the wire on the current

@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 2.0
+Current Doctrine language version: 2.1
 
 ## The Version Lines
 
@@ -30,6 +30,11 @@ behavior.
 - A new backward-compatible import or emit language surface such as
   directory-backed runtime package imports and emitted runtime-package trees
   also needs the next minor language version when it ships publicly.
+- The high-value authoring wave that adds import aliases and symbol imports,
+  grouped explicit `inherit`, review-field identity shorthand, one-line
+  first-class IO wrapper refs, and `self:` path roots is one
+  backward-compatible language move. It advances the language line from
+  `2.0` to `2.1`.
 - A new backward-compatible compile or emit API such as provider-supplied
   prompt roots needs the next minor release version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
@@ -119,6 +124,10 @@ Every public release uses one release class.
 - Adding a top-level `route` block to `final_output.contract.json` is an
   `additive` release when existing `final_output` and `review` keys keep their
   shape and `contract_version` stays compatible.
+- The high-value authoring wave is also `additive`. It ships `E306`,
+  `E307`, `E308`, `E309`, and `E312`. `E310` stays reserved for the deferred
+  grouped-override investigation, and `E311` stays reserved for a future
+  dedicated IO-wrapper shorthand diagnostic.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

@@ -361,14 +361,17 @@ class ResolveIoContractsMixin:
                     f"inputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_io_body(
-                inputs_decl.body,
-                unit=unit,
-                field_kind="inputs",
-                owner_label=_dotted_decl_name(unit.module_parts, inputs_decl.name),
-                parent_io=parent_io,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(inputs_decl.name)
+            ):
+                resolved = self._resolve_io_body(
+                    inputs_decl.body,
+                    unit=unit,
+                    field_kind="inputs",
+                    owner_label=_dotted_decl_name(unit.module_parts, inputs_decl.name),
+                    parent_io=parent_io,
+                    parent_label=parent_label,
+                )
             self._resolved_inputs_cache[inputs_key] = resolved
             return resolved
         finally:

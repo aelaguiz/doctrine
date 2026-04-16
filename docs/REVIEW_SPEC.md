@@ -123,12 +123,12 @@ review DraftReview: "Draft Review"
     comment_output: DraftReviewComment
 
     fields:
-        verdict: verdict
-        reviewed_artifact: reviewed_artifact
+        verdict
+        reviewed_artifact
         analysis: analysis_performed
         readback: output_contents_that_matter
         failing_gates: failure_detail.failing_gates
-        next_owner: next_owner
+        next_owner
 ```
 
 ## Review Families And Case Selection
@@ -197,6 +197,12 @@ These bindings are relative to `comment_output`.
 
 Important rule:
 
+- a bare semantic name like `verdict` is shorthand for the identity bind
+  `verdict: verdict`
+- use the bare form only when the output field key matches the review semantic
+  name
+- keep `semantic: path` for non-identity binds like
+  `analysis: analysis_performed`
 - `fields:` does not alias currentness. Review currentness still uses the
   direct carrier form `current artifact ... via output_root.field`.
 
@@ -401,9 +407,9 @@ That split final output may also bind a review-semantic subset:
 final_output:
     output: AcceptanceControlFinalResponse
     review_fields:
-        verdict: verdict
+        verdict
         current_artifact: current_artifact
-        next_owner: next_owner
+        next_owner
         blocked_gate: blocked_gate
 ```
 

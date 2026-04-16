@@ -45,13 +45,16 @@ class CompileWorkflowsMixin:
 
         self._workflow_compile_stack.append(workflow_key)
         try:
-            return self._compile_resolved_workflow(
-                self._resolve_workflow_decl(workflow_decl, unit=unit),
-                unit=unit,
-                agent_contract=agent_contract,
-                owner_label=f"workflow {_dotted_decl_name(unit.module_parts, workflow_decl.name)}",
-                slot_key=slot_key,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(workflow_decl.name)
+            ):
+                return self._compile_resolved_workflow(
+                    self._resolve_workflow_decl(workflow_decl, unit=unit),
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=f"workflow {_dotted_decl_name(unit.module_parts, workflow_decl.name)}",
+                    slot_key=slot_key,
+                )
         finally:
             self._workflow_compile_stack.pop()
 

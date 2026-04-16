@@ -79,6 +79,53 @@ class EmitDocsTests(unittest.TestCase):
                 ),
             )
 
+    def _emit_prompt_markdown(
+        self,
+        *,
+        prompt_text: str,
+        agent_slug_name: str,
+    ) -> tuple[str, str | None, dict[str, object] | None]:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(prompt_text),
+                encoding="utf-8",
+            )
+
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            markdown_path = root / "build" / agent_slug_name / "AGENTS.md"
+            final_output_contract_path = (
+                root / "build" / agent_slug_name / "final_output.contract.json"
+            )
+            return (
+                markdown_path.read_text(encoding="utf-8"),
+                None,
+                (
+                    json.loads(final_output_contract_path.read_text(encoding="utf-8"))
+                    if final_output_contract_path.is_file()
+                    else None
+                ),
+            )
+
     def test_emit_target_writes_markdown_and_schema_for_structured_final_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -265,6 +312,126 @@ class EmitDocsTests(unittest.TestCase):
                     ],
                 },
             )
+
+    def test_emit_target_keeps_io_contract_stable_for_io_wrapper_shorthand(self) -> None:
+        long_form_prompt = """
+            input BaseReviewPacket: "Base Review Packet"
+                source: File
+                    path: "catalog/base_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            input FreshReviewPacket: "Fresh Review Packet"
+                source: File
+                    path: "catalog/fresh_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            output BaseReviewHandoff: "Base Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output FreshReviewHandoff: "Fresh Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            inputs BaseInputs: "Your Inputs"
+                review_packet: "Review Packet"
+                    BaseReviewPacket
+
+            outputs BaseOutputs: "Your Outputs"
+                review_handoff: "Review Handoff"
+                    BaseReviewHandoff
+
+                final_reply: "Final Reply"
+                    FinalReply
+
+            inputs ChildInputs[BaseInputs]: "Your Inputs"
+                override review_packet:
+                    FreshReviewPacket
+
+            outputs ChildOutputs[BaseOutputs]: "Your Outputs"
+                inherit {final_reply}
+
+                override review_handoff:
+                    FreshReviewHandoff
+
+            agent Demo:
+                role: "Keep IO contracts stable."
+                inputs: ChildInputs
+                outputs: ChildOutputs
+                final_output: FinalReply
+        """
+        shorthand_prompt = """
+            input BaseReviewPacket: "Base Review Packet"
+                source: File
+                    path: "catalog/base_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            input FreshReviewPacket: "Fresh Review Packet"
+                source: File
+                    path: "catalog/fresh_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            output BaseReviewHandoff: "Base Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output FreshReviewHandoff: "Fresh Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            inputs BaseInputs: "Your Inputs"
+                review_packet: BaseReviewPacket
+
+            outputs BaseOutputs: "Your Outputs"
+                review_handoff: BaseReviewHandoff
+
+                final_reply: FinalReply
+
+            inputs ChildInputs[BaseInputs]: "Your Inputs"
+                override review_packet: FreshReviewPacket
+
+            outputs ChildOutputs[BaseOutputs]: "Your Outputs"
+                inherit {final_reply}
+
+                override review_handoff: FreshReviewHandoff
+
+            agent Demo:
+                role: "Keep IO contracts stable."
+                inputs: ChildInputs
+                outputs: ChildOutputs
+                final_output: FinalReply
+        """
+
+        _, _, long_contract = self._emit_prompt_markdown(
+            prompt_text=long_form_prompt,
+            agent_slug_name="demo",
+        )
+        _, _, shorthand_contract = self._emit_prompt_markdown(
+            prompt_text=shorthand_prompt,
+            agent_slug_name="demo",
+        )
+
+        assert long_contract is not None
+        assert shorthand_contract is not None
+        self.assertEqual(shorthand_contract["io"], long_contract["io"])
 
     def test_emit_target_serializes_io_block_for_exact_previous_final_output(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

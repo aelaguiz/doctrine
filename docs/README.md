@@ -67,6 +67,9 @@ Some may stay in the repo while active work is still in flight. Once one is no
 longer active, delete it after a restore-point commit and use git history if
 you need the old context.
 
+- [VSCODE_EXTENSION_AUDIT_2026-04-16.md](VSCODE_EXTENSION_AUDIT_2026-04-16.md):
+  dated audit of VS Code parity against the shipped language truth
+
 ## Repo Truth
 
 - Shipped language truth lives in `doctrine/`.

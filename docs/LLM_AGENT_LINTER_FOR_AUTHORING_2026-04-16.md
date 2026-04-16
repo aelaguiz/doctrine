@@ -559,6 +559,8 @@ for all renderers. It carries:
 - stable `AL###` code
 - title and one-line summary
 - severity and confidence
+- run mode and scope tag (single-target, single-target-with-imports,
+  cross-target, cross-surface)
 - affected targets
 - primary location
 - exact evidence spans
@@ -566,9 +568,13 @@ for all renderers. It carries:
 - docs URL for the rule
 - why it matters
 - recommended fix
+- fix steps
 - optional safe text edit metadata
 - optional suggested rewrite
-- examples and shared-owner suggestions where relevant
+- optional `shared_owner_suggestion` (object or `null`) naming the shared
+  skill, module, contract, or other owner that should hold the duplicated or
+  trapped material, with a one-line rationale
+- good and bad examples
 
 LSP-aligned mapping rules:
 
@@ -1650,6 +1656,87 @@ slots.
 - Follow-ups: Next command stays `implement` (or `implement-loop` /
   `auto-implement` when the user wants the controller loop).
 
+## 2026-04-16 - Sharpening pass: new catalog codes, prepass signals, and shared-owner suggestion
+
+- Decision: Add nine new `AL###` codes, lock a compiler-vs-linter boundary
+  section in the linter prompt, add `shared_owner_suggestion` as a first-class
+  finding field, and expand the hybrid-check prepass signals.
+- Context: A cold read against the real use cases in `../rally` and `../psflows`
+  plus the Doctrine principles found catalog gaps:
+  - Inherited sections that no child reads from.
+  - Semantic duplicates (same rule, different words) across targets.
+  - Host-namespace jargon leaking into generic doctrine.
+  - Prose promising artifacts that declared outputs cannot carry.
+  - Numbered processes that silently change owner mid-sequence.
+  - Prose-only routing that ignores the declared route surface.
+  - Quality-bar sections that mix must-pass gates with craft advice.
+  - Asymmetric `when to use` / `when not to use` scopes.
+  - Prose that restates verdict values, route choices, and other
+    compiler-owned truth.
+  The audit also showed that findings like `AL210` and `AL910` are much more
+  actionable when the finding itself points at a concrete shared owner.
+- Options considered:
+  1. Keep the catalog frozen and rely on the LLM to fold these into existing
+     codes. Rejected: the folded findings lose the narrow recognition test and
+     fall out of stable tooling contracts.
+  2. Promote all nine as core `AL###` codes and keep overlays untouched.
+     Chosen. Each new code is prose-layer quality, so it stays generic across
+     users and never overlaps with compiler checks.
+- Compiler-vs-linter boundary confirmed:
+  - Compiler owns parse, type, schema, route-graph correctness, verdict enums,
+    review-semantic currentness, workflow laws, and emit failures.
+  - Linter owns prose and authoring quality only. `AL920` exists to catch
+    prose that restates compiler-owned semantics, not to re-check them.
+- Consequences:
+  - Stable catalog grows from 22 codes to 31.
+  - Finding model gains `shared_owner_suggestion` (object or `null`).
+  - Hybrid-check prepasses gain inheritance graph, route edges, declared
+    output list, verdict enums, and host-namespace vocab list.
+  - Schema, prompt, and proof artifacts under `docs/AGENT_LINTER_*` are
+    updated and re-proved via codex CLI (`_v2` output).
+- Follow-ups:
+  - Update `doctrine/_linter/` catalog constants when implementation starts.
+  - Update the VS Code renderer mapping to carry `shared_owner_suggestion`
+    through `relatedInformation` or `data`.
+  - Keep the next command as `implement`.
+
+## 2026-04-16 - Garry alignment pass: method-call reuse, deterministic split, and synthesized handoffs
+
+- Decision: Add three more `AL###` codes that pull Doctrine-owned parts of
+  Garry's "thin harness, fat skills" guidance into the core linter:
+  `AL240`, `AL430`, and `AL550`.
+- Context: The Garry note highlighted three pressures that the current linter
+  catalog did not name directly:
+  - a shared skill should hold process, not one hardcoded subject or dataset
+  - exact assignment, counting, validation, and similar deterministic work
+    should not be pushed into prose
+  - read-many enrichment work should leave one compact synthesized handoff, not
+    only raw notes
+  The same review also confirmed that prompt caching, tool latency, structured
+  session memory, cron rules, and parallel sub-agents stay harness-owned and
+  out of core Doctrine lint.
+- Options considered:
+  1. Treat these as examples inside existing codes only. Rejected: that hides
+     real architectural mistakes behind broader labels and makes proof less
+     exact.
+  2. Promote the Doctrine-owned parts into three new stable codes and keep the
+     harness-only parts out of scope. Chosen. The new rules point at clear
+     authoring fixes and stay on the authoring side of the boundary.
+- Consequences:
+  - Stable catalog grows from 31 codes to 34.
+  - `AL240` covers skills that hardcode invocation facts instead of staying
+    reusable.
+  - `AL430` covers deterministic work that prose should not own.
+  - `AL550` covers read-many work that leaves raw notes instead of a compact
+    synthesis artifact.
+  - Prompt, schema, and proof artifacts under `docs/AGENT_LINTER_*` are
+    updated again, with a fresh proof fixture and `_v3` captured output.
+- Follow-ups:
+  - Keep harness-only guidance out of the core catalog.
+  - Decide later whether any helper prepass for read-many detection is worth
+    shipping, or whether `AL550` should stay LLM-heavy.
+  - Keep the next command as `implement`.
+
 # Appendix A) Imported Notes (unplaced; do not delete)
 
 These notes preserve the detailed rule catalog, examples, and mock output from
@@ -2391,6 +2478,47 @@ Keep this six-step method inside each role home.
 Move the reusable method into a skill.
 Keep only the trigger and expected output in the role.
 
+#### `AL130` Dead Inherited Section
+
+#### What it means
+
+The role inherits a section from a shared parent but never reads from or calls
+into it.
+The inherited text sits in the emitted Markdown without earning its keep.
+
+#### Why it matters
+
+Dead inherited sections burn always-on budget and hide the real job of the role.
+They also train the model to ignore whatever sits in that section, which leaks
+over to real content later.
+
+#### Good
+
+```md
+Writer role inherits:
+- `SourceGrounding`
+
+Writer role uses the shared skill in step 2 of its process.
+```
+
+#### Bad
+
+```md
+Writer role inherits:
+- `SourceGrounding`
+- `InterviewContext`
+- `QuotePolicy`
+- `StakeholderVoice`
+
+Writer role only ever writes a short summary and never calls any of the
+inherited sections.
+```
+
+#### Default recommendation
+
+Drop the inherit for any section the role does not use.
+Move the pointer closer to the step that actually needs it.
+
 #### `AL200` Duplicate Rule Across Agents
 
 #### What it means
@@ -2513,6 +2641,91 @@ Our product helps distributed teams run user interviews...
 
 Move the shared background block into one importable module.
 
+#### `AL230` Semantic Duplicate Across Agents
+
+#### What it means
+
+Several targets say the same rule in different words.
+The duplicate hint or a careful read shows one underlying rule, but each role
+wrote it on its own.
+
+#### Why it matters
+
+Divergent wording of one rule drifts over time.
+Drift creates silent contradictions that a reader cannot catch until a real
+run disagrees with itself.
+
+#### Good
+
+```md
+Shared skill `EvidenceCheck`:
+Each claim must come from a direct source quote.
+
+Writer role:
+Run the `EvidenceCheck` skill before you finalize.
+
+Reviewer role:
+Use `EvidenceCheck` when you review factual claims.
+
+Planner role:
+Use `EvidenceCheck` when you decide what to quote.
+```
+
+#### Bad
+
+```md
+Writer role: cite a source quote for every claim.
+Reviewer role: back each claim with evidence from the transcript.
+Planner role: pull a quote to justify each claim you include.
+```
+
+#### Default recommendation
+
+Collapse the semantic copies behind one shared skill or module.
+Point each role at that shared owner by name.
+
+#### `AL240` Skill Hardcodes Invocation Inputs
+
+#### What it means
+
+A skill or shared method hardcodes the changing subject, dataset, or case
+facts that should vary by invocation.
+The process may be reusable, but the skill body freezes one case into place.
+
+#### Why it matters
+
+A shared skill should hold the method, not one example world.
+Hardcoded case facts force forks and destroy reuse.
+
+#### Good
+
+```md
+skill FounderEnrichment
+description: Read the supplied founder sources and leave one founder dossier.
+
+Caller supplies:
+- founder name
+- source set
+- question
+```
+
+#### Bad
+
+```md
+skill FounderEnrichment
+description: Read the supplied founder sources and leave one founder dossier.
+
+Workflow:
+1. Read Maria Santos's application.
+2. Read Contrail's billing-module commits.
+3. Compare Maria's claims to Contrail's code.
+```
+
+#### Default recommendation
+
+Keep the reusable method in the skill.
+Move changing subject matter into inputs, caller text, or source reads.
+
 #### `AL300` Runtime Boundary Leak
 
 #### What it means
@@ -2580,6 +2793,39 @@ But this prompt also says reviewers may return:
 #### Default recommendation
 
 Delete the shadow surface and keep one canonical owner.
+
+#### `AL320` Host-Namespace Jargon Without Grounding
+
+#### What it means
+
+The prose uses host paths, environment variables, or CLI verbs from one harness
+without a shared import, glossary, or pointer a cold reader could resolve.
+
+#### Why it matters
+
+Public docs and shared roles must not import one repo's private names.
+Jargon without grounding blocks reuse by other harnesses and leaks
+company-specific workflow into generic doctrine.
+
+#### Good
+
+```md
+Use the deploy skill from the shared release module to publish an approved
+summary.
+```
+
+#### Bad
+
+```md
+After the reviewer approves, run `psflows deploy quote-check` to publish the
+summary.
+```
+
+#### Default recommendation
+
+Replace host-specific verbs with neutral language.
+If the host term must stay, introduce a shared module that owns it and point at
+that module.
 
 #### `AL400` Exact Truth Hidden In Prose
 
@@ -2652,6 +2898,80 @@ Use any browser, shell, or external search tool that seems useful.
 #### Default recommendation
 
 Align the prose with the declared constraint surface.
+
+#### `AL420` Prose Names Artifact Not In Declared Outputs
+
+#### What it means
+
+The role prose promises an artifact, field, or note that the declared output
+contract does not carry.
+This is the inverse of `AL410`: prose widens the output instead of narrowing it.
+
+#### Why it matters
+
+Prose that names outputs the schema cannot emit creates false expectations.
+Downstream roles and reviewers rely on the declared contract, so promised-but-
+unshipped artifacts become silent failures.
+
+#### Good
+
+```md
+Declared output:
+- `draft_summary`
+- `blocker_note`
+
+Role text:
+Leave behind either a `draft_summary` or a `blocker_note`.
+```
+
+#### Bad
+
+```md
+Declared output:
+- `draft_summary`
+- `blocker_note`
+
+Role text:
+Also return a `root_cause` note with each draft so the reviewer knows why the
+summary took the shape it did.
+```
+
+#### Default recommendation
+
+Either add the artifact to the declared output contract, or delete the promise
+from the prose.
+
+#### `AL430` Deterministic Work Forced Into Prose
+
+#### What it means
+
+The prompt asks prose to own exact counting, assignment, validation, routing,
+or other deterministic work.
+That step should live in a typed surface or deterministic helper instead.
+
+#### Why it matters
+
+Exact work needs trust.
+Prose can sound right while still being wrong.
+
+#### Good
+
+```md
+Use the deterministic matcher to build the seating chart.
+Use prose to judge whether two founders should meet.
+```
+
+#### Bad
+
+```md
+Seat 600 founders into tables of exactly 8, avoid repeats, and keep perfect
+sector balance using your best judgment.
+```
+
+#### Default recommendation
+
+Move exact work into a typed surface or deterministic helper.
+Keep prose on judgment and synthesis.
 
 #### `AL500` Mixed Role Ownership
 
@@ -2738,6 +3058,117 @@ If the transcript is long, trust your notes and fill any gaps.
 #### Default recommendation
 
 Point to the real source and remove memory-based fallback language.
+
+#### `AL530` Role-Shift In Process Without Stop Line
+
+#### What it means
+
+One numbered process silently changes responsibility mid-sequence.
+Authoring steps slide into validation or publishing with no stop line or
+handoff artifact in between.
+
+#### Why it matters
+
+A shifting owner inside one process hides the handoff.
+The role ends up owning several jobs instead of one, and downstream tooling has
+no clean point to take over.
+
+#### Good
+
+```md
+Writer role process:
+1. Read the transcript.
+2. Draft the summary.
+3. Leave `summary_draft.md` for the reviewer.
+Stop here.
+
+Reviewer role owns the next step.
+```
+
+#### Bad
+
+```md
+Writer role process:
+1. Draft the summary.
+2. Verify every quote and stamp the draft approved.
+3. Publish the approved summary to the stakeholder channel.
+```
+
+#### Default recommendation
+
+Add an explicit stop line and handoff artifact before responsibility shifts.
+Split the second job into a separate role if it still belongs in the workflow.
+
+#### `AL540` Prose Routing Without Declared Next Owner
+
+#### What it means
+
+Prose tells the agent to "send it upstream", "route to the next skill", or
+similar without naming a declared next owner or using the declared route
+surface.
+
+#### Why it matters
+
+Prose-only routing ignores the route surface that downstream tooling reads.
+It also leaves the next owner unclear, so the chain can silently fork.
+
+#### Good
+
+```md
+When the draft is approved, route it to `InterviewSummaryReviewer` through the
+declared `draft_ready` route.
+```
+
+#### Bad
+
+```md
+Once the summary looks good, route it upstream to the next skill for action.
+```
+
+#### Default recommendation
+
+Use the declared route surface, or name the exact next owner.
+Do not describe routing only in prose.
+
+#### `AL550` Read-Many Work Leaves Raw Notes
+
+#### What it means
+
+The role reads many sources or runs enrichment, but leaves only raw notes,
+clips, or loose evidence instead of one compact synthesized handoff.
+
+#### Why it matters
+
+Downstream roles should not need to reread everything first.
+They need one brief they can scan and trust.
+
+#### Good
+
+```md
+Read the application, transcript, and commit summary.
+
+Leave behind `founder_dossier.md` with:
+- one summary
+- one timeline
+- one claim-vs-build gap
+- open questions
+```
+
+#### Bad
+
+```md
+Read the application, transcript, and commit summary.
+
+Leave behind:
+- copied quotes
+- browser notes
+- loose screenshots
+```
+
+#### Default recommendation
+
+Require one compact synthesis artifact.
+Keep raw notes as supporting evidence, not the main handoff.
 
 #### `AL600` Weak Resolver Name
 
@@ -2882,6 +3313,46 @@ policy, and clean up any other issues you notice.
 
 Order the work and add a clear stop rule.
 
+#### `AL730` Quality Bar Mixes Gates With Craft
+
+#### What it means
+
+One quality-bar section mixes must-pass gates with taste advice.
+The reader cannot tell which items are required and which are nice to have.
+
+#### Why it matters
+
+Mixed lists train the model to weight every bullet the same, so real gates
+quietly fall off.
+Blended quality bars also hide where a review should stop or block.
+
+#### Good
+
+```md
+Must pass:
+- every claim has a source quote
+- summary names an owner
+
+Prefer:
+- short sentences
+- active verbs
+```
+
+#### Bad
+
+```md
+Quality bar:
+- no missing quotes
+- prefer short sentences
+- no weak verbs
+- block release if the summary lacks an owner
+```
+
+#### Default recommendation
+
+Split must-pass gates into one labeled list and craft advice into another.
+Use verbs like "block" and "prefer" to keep the boundary clear.
+
 #### `AL800` Internal Contradiction
 
 #### What it means
@@ -2944,6 +3415,41 @@ Trust your first reading and move fast.
 #### Default recommendation
 
 Align local text with the shared source of truth.
+
+#### `AL820` Asymmetric When-To-Use Vs When-Not-To-Use
+
+#### What it means
+
+A skill or role names one scope in `when to use` and names an overlapping or
+contradictory scope in `when not to use`.
+The shared boundary is unresolved.
+
+#### Why it matters
+
+A resolver reads both scopes to decide whether to load the skill.
+An overlapping boundary forces the resolver to guess, which defeats the point
+of the two lists.
+
+#### Good
+
+```md
+skill InterviewSummaryDraft
+when to use: first draft of a customer interview summary
+when not to use: final approved summary, stakeholder recap, internal retro
+```
+
+#### Bad
+
+```md
+skill InterviewSummaryDraft
+when to use: any interview summary
+when not to use: internal or external interview summaries
+```
+
+#### Default recommendation
+
+Rewrite the two scopes so they never overlap.
+If one is a subset of the other, say that plainly.
 
 #### `AL900` Skill Too Broad
 
@@ -3008,6 +3514,42 @@ Reviewer and planner roles repeat the same law in their own local wording.
 
 Lift the shared law into a shared module or skill.
 
+#### `AL920` Compiler-Owned Semantics Restated In Prose
+
+#### What it means
+
+Prose restates verdict values, routing choices, current artifact rules, or
+other semantics the compiler already owns.
+The declared surface is authoritative; the prose copy is a second source.
+
+#### Why it matters
+
+Duplicating compiler-owned truth in prose invites drift.
+If the declared enum or route changes, the prose copy goes stale and starts to
+disagree with the real surface.
+
+#### Good
+
+```md
+Use the verdict enum from the declared review contract.
+Do not restate its values in this prompt.
+```
+
+#### Bad
+
+```md
+Declared review contract already defines:
+verdict enum: `approve`, `block`, `needs_info`
+
+Prompt also says:
+"You must answer with one of: approve, block, or needs_info."
+```
+
+#### Default recommendation
+
+Delete the prose copy.
+Point readers at the declared surface by name.
+
 ### 9) Severity And Confidence
 
 #### 9.1 Severity
@@ -3041,26 +3583,44 @@ Some checks work best when exact signals and LLM judgment work together.
 #### 11.1 Strong hybrid checks
 
 - `AL100` oversized context
+- `AL130` dead inherited section
 - `AL200` duplicate rule across agents
 - `AL220` repeated background block
+- `AL230` semantic duplicate across agents
+- `AL240` skill hardcodes invocation inputs
+- `AL320` host-namespace jargon without grounding
 - `AL400` exact truth hidden in prose
 - `AL410` prose drift from declared constraints
+- `AL420` prose names artifact not in declared outputs
+- `AL430` deterministic work forced into prose
+- `AL540` prose routing without declared next owner
 - `AL700` reading level too high
+- `AL920` compiler-owned semantics restated in prose
 
 For these, deterministic helpers may provide:
 
 - size stats
-- duplicate-block hints
-- declared constraints
+- duplicate-block hints (lexical and near-duplicate)
+- inheritance graph showing which inherited sections the child references
+- declared constraint set
+- declared route edges and declared next-owner names
+- declared output field list
+- declared verdict enums and current-artifact rules
+- typed exact-work surfaces when the packet includes them
+- host-namespace vocab list (paths, env vars, CLI verbs that need grounding)
 - reading metrics
 - target lists
 
 #### 11.2 Pure LLM-heavy checks
 
+- `AL530` role-shift in process without stop line
+- `AL550` read-many work leaves raw notes
 - `AL710` vague wording
 - `AL720` missing priority or stop line
+- `AL730` quality bar mixes gates with craft
 - `AL800` internal contradiction
 - `AL810` cross-surface contradiction
+- `AL820` asymmetric when-to-use vs when-not-to-use
 - `AL900` skill too broad
 
 ### 12) Bottom Line

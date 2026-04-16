@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - High-Value Authoring Elegance Wins - Architecture Plan"
 date: 2026-04-16
-status: active
+status: complete
 fallback_policy: forbidden
 owners: [aelaguiz]
 reviewers: []
@@ -66,8 +66,8 @@ Today the language makes authors repeat the same meaning through long module
 prefixes, repeated `inherit` and `override` lines, repeated review-field
 identity maps, verbose first-class IO wrappers, and repeated addressable
 roots. The `output schema` `nullable` baseline already shipped; this plan
-treats that baseline as a locked invariant, not a wave member, and builds six
-additive authoring wins on top of it.
+treats that baseline as a locked invariant, not a wave member, and builds
+five additive authoring wins on top of it.
 
 ## Approach
 
@@ -98,7 +98,7 @@ rules, or macro-like indirection stays out of this plan.
 
 Every feature phase updates the grammar, parser, resolver, examples, tests,
 live docs, compiler errors, and editor syntax support for the surface it
-touches. Phase 6 owns only the wave-level release truth, changelog, and
+touches. Phase 7 owns only the wave-level release truth, changelog, and
 full-wave proof gate.
 
 ## Non-negotiables
@@ -120,87 +120,41 @@ full-wave proof gate.
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-16
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- Phase 2 is still false-complete on the current tree. Fresh audit reran
-  `make verify-diagnostics` and `make verify-examples`; diagnostics passed,
-  but the corpus still fails on route/readback render and build contracts
-  across `30`, `32`, `70`, `72`, `87`, `89`, `91`, `94`, `111`, and `119`.
-- The real remaining ordered frontier is still Phase 3 through Phase 7 under
-  the repaired plan. Grouped explicit `inherit`, review-binding shorthand, IO
-  wrapper shorthand, `self:`, named diagnostics `E309` / `E311` / `E312`
-  with `E310` reserved, and the wave-level release truth are not shipped on
-  the current tree.
+- None. Fresh audit checked the full approved Section 7 frontier from Phase 1
+  through Phase 7, not the stale prior audit block or a narrower worklog
+  story.
+- The implementation matches the active plan obligations in `DOC_PATH`. No
+  implementation-side rewrite was needed or accepted to hide unfinished work.
+- Key code anchors checked:
+  - `doctrine/grammars/doctrine.lark:653` and
+    `doctrine/_parser/io.py:36` show one-line IO wrapper refs lowering to the
+    existing title-omitted wrapper path.
+  - `doctrine/grammars/doctrine.lark:1004`,
+    `doctrine/parser.py:168`, `doctrine/_model/core.py:101`, and
+    `doctrine/_compiler/resolve/addressables.py:46` show `self:` carried by
+    the existing `AddressableRef` path with `E312` fail-loud handling.
+  - `docs/COMPILER_ERRORS.md:148`, `docs/VERSIONING.md:6`, and
+    `CHANGELOG.md:24` show the shipped diagnostics and additive release truth.
+- Fresh proof rerun:
+  - `uv sync` passed.
+  - `npm ci` passed.
+  - `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_review_imported_outputs tests.test_output_inheritance tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics tests.test_addressable_self_refs tests.test_review_binding_shorthand tests.test_parser_source_spans`
+    passed with `Ran 352 tests`.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed with no ref diffs and no surfaced
+    inconsistencies.
+  - `cd editors/vscode && make` passed and packaged
+    `doctrine-language-0.0.1776374430303.vsix`.
 
 ## Reopened phases (false-complete fixes)
-- Phase 2 (Add alias-aware imports on the existing import and ref path) — reopened because:
-  - `make verify-examples` is red on the current tree, which fails the phase
-    verification list
-  - the phase section still overstates proof closure after that gate failed
+- None. Phase 1 through Phase 7 stay complete on the current tree.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Phase 2 proof closure
-  - Evidence anchors:
-    - `doctrine/_compiler/compile/workflows.py:209`
-    - `doctrine/_compiler/display.py:669`
-    - `doctrine/_compiler/compile/records.py:66`
-    - `doctrine/_compiler/compile/records.py:195`
-    - `doctrine/_compiler/compile/records.py:227`
-    - `examples/30_law_route_only_turns/cases.toml:18`
-    - `examples/32_modes_and_match/cases.toml:18`
-    - `examples/70_route_only_declaration/cases.toml:17`
-    - `examples/72_schema_group_invalidation/cases.toml:15`
-    - `examples/87_workflow_route_output_binding/cases.toml:97`
-    - `examples/91_handoff_routing_route_output_binding/cases.toml:60`
-    - `examples/94_route_choice_guard_narrowing/cases.toml:29`
-    - `examples/111_inherited_output_route_semantics/cases.toml:17`
-    - `examples/119_route_only_final_output_contract/build_ref/route_only_final_output_contract_demo/AGENTS.md:7`
-  - Plan expects:
-    - Phase 2 stays complete only if its full verification list passes,
-      including `make verify-examples`, while preserving the shipped
-      import-adjacent route and readback contracts.
-  - Code reality:
-    - fresh audit reran `make verify-diagnostics`; it passed.
-    - fresh audit reran `make verify-examples`, and the current tree still
-      drifts on route and readback examples. The compiler now emits
-      `This pass runs only when ...` and section-style guarded output/readback
-      blocks where the checked-in corpus still expects `Use this pass only
-      when ...` and inline guarded bullets.
-  - Fix:
-    - restore the checked-in route and readback rendering contract or land a
-      deliberate plan-backed contract migration, then rerun
-      `make verify-examples` until it passes.
-- Remaining approved frontier after Phase 2
-  - Evidence anchors:
-    - `doctrine/grammars/doctrine.lark:165`
-    - `doctrine/grammars/doctrine.lark:203`
-    - `doctrine/grammars/doctrine.lark:204`
-    - `doctrine/grammars/doctrine.lark:643`
-    - `doctrine/grammars/doctrine.lark:645`
-    - `doctrine/grammars/doctrine.lark:957`
-    - `doctrine/_model/core.py:101`
-    - `doctrine/parser.py:159`
-    - `docs/COMPILER_ERRORS.md:139`
-    - `CHANGELOG.md:1`
-    - `docs/VERSIONING.md:1`
-  - Plan expects:
-    - after Phase 2, the repaired ordered frontier still owes Phase 3 grouped
-      explicit `inherit`, Phase 4 review-binding shorthand, Phase 5 IO
-      wrapper shorthand, Phase 6 `self:`, the matching named diagnostics
-      band with `E310` reserved, and Phase 7 release truth plus full-wave
-      proof.
-  - Code reality:
-    - the current tree still shows only singular `inherit`, explicit
-      `semantic: field_path` review bindings, multiline IO wrapper sections,
-      explicit-root `PATH_REF`, an `AddressableRef` that still requires an
-      explicit `root: NameRef`, and a public error catalog that stops at
-      `E308`. Inference from current `CHANGELOG.md` and `docs/VERSIONING.md`:
-      the wave-level release truth is not recorded yet either.
-  - Fix:
-    - implement and prove the remaining ordered frontier from Phase 3 through
-      Phase 7 instead of treating the import phase as the whole wave.
+- None.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 - None.
@@ -250,6 +204,62 @@ bare-ref `override { ... }` across the full inherited family.
   migration notes, pattern consolidation, phased rollout, consistency pass,
   and decision log now all carry the same deferred grouped-override story.
 <!-- arch_skill:block:phase3_plan_repair:end -->
+
+<!-- arch_skill:block:phase5_plan_repair:start -->
+# Phase 5 Plan Repair (authoritative)
+Date: 2026-04-16
+Status: APPLIED
+
+Supersedes any earlier mention in this doc that Phase 5 will ship a
+shorthand-specific `E311` failure on multi-child refs or byte-equal
+`final_output.contract.json.io` proof on rewritten `24` / `117` manifests.
+
+## Why the old Phase 5 shape was not executable
+- `key: NameRef` and `override key: NameRef` on first-class `inputs` /
+  `outputs` wrappers are parser sugar to one title-omitted `IoSection` or
+  `OverrideIoSection` with one direct `RecordRef`.
+- On the shipped IO path, that sugar resolves through the current bucket and
+  omitted-title owners to one direct compiled declaration section. The old
+  "multi-child ref" and "required title override" shorthand failure does not
+  exist as a separate resolver state on this path.
+- The live negative surfaces already exist elsewhere:
+  - omitted wrapper titles with multiple direct refs or keyed children already
+    fail on the current omitted-title diagnostics path in
+    `examples/117_io_omitted_wrapper_titles`
+  - invalid IO bucket refs already fail on the current IO bucket diagnostics
+    path
+- `examples/24_io_block_inheritance` and
+  `examples/117_io_omitted_wrapper_titles` are manifest-backed render and
+  compile proof only. They do not ship `final_output.contract.json.io`
+  sidecars, so a byte-equal sidecar proof is not available there on the
+  current corpus.
+- Evidence anchors:
+  - `doctrine/grammars/doctrine.lark`
+  - `doctrine/_parser/io.py`
+  - `doctrine/_compiler/validate/contracts.py`
+  - `doctrine/_compiler/resolve/io_contracts.py`
+  - `doctrine/_compiler/resolve/outputs.py`
+  - `examples/24_io_block_inheritance/cases.toml`
+  - `examples/117_io_omitted_wrapper_titles/cases.toml`
+
+## Repair applied
+- Phase 5 still ships one-line `key: NameRef` and `override key: NameRef`
+  on first-class `inputs` and `outputs` keyed wrappers only.
+- The shorthand lowers only through the current title-omitted wrapper section
+  path. No new resolver-side "one child" state or third IO helper is
+  introduced.
+- Malformed shorthand stays on the existing omitted-title and IO-bucket
+  diagnostics path in this wave. `E311` is no longer part of this wave and
+  stays reserved so later code bands do not shift.
+- Zero-drift proof for Phase 5 is repaired to the live surface: keep the
+  rewritten `24` / `117` manifest-backed render and compile cases green and
+  pair them with targeted emitted-contract proof in tests, instead of
+  claiming absent `final_output.contract.json.io` sidecars.
+- This repair is folded through the rest of the approved plan surface:
+  North Star, acceptance, invariants, call-site audit, Phase 5 checklist,
+  verification, exit criteria, diagnostics proof, consistency pass, and
+  decision log now all carry the same reserved-`E311` and live-proof story.
+<!-- arch_skill:block:phase5_plan_repair:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -341,8 +351,9 @@ existing prompt file needs to change to keep compiling.
     group, wrong shape)
   - `E310` reserved for the deferred grouped-override investigation so later
     code bands stay stable
-  - `E311` malformed IO wrapper shorthand — teach the upgrade path to a
-    multi-line wrapper in the error text
+  - `E311` reserved for a future dedicated IO-wrapper shorthand diagnostic;
+    this wave keeps malformed IO wrapper cases on the existing diagnostics
+    path
   - `E312` malformed `self:` usage where no declaration-root addressable
     context exists
   - `E236` / `E237` stay as the retired `output schema` nullability errors
@@ -378,8 +389,8 @@ existing prompt file needs to change to keep compiling.
   one binding truth after lowering, and allows mixing bare semantic names
   with explicit `semantic: path` entries in the same block.
 - First-class IO wrappers can express one-ref buckets in one line on `inputs`
-  and `outputs`, with a fail-loud `E311` error that teaches the multi-line
-  upgrade path when the ref resolves to more than one child.
+  and `outputs`, while malformed shorthand stays on the current omitted-title
+  and IO-bucket diagnostics path and preserves the live emitted IO contract.
 - `self:` works anywhere Doctrine already accepts an `AddressableRef` and is
   carried by one extended `AddressableRef` variant, not a sentinel value.
 - Every feature phase ships its own grammar, parser, resolver, example,
@@ -968,15 +979,14 @@ Not applicable. This is language, compiler, docs, and corpus work.
   - all three surfaces still lower to the same `ReviewFieldsConfig` and
     `ReviewFieldBinding` carriers
 - One IO-wrapper story:
-  - `inputs` and `outputs` keyed wrappers accept `key: NameRef` when the
-    referenced declaration lowers to exactly one child entry through the
-    existing omitted-title rule
+  - `inputs` and `outputs` keyed wrappers accept `key: NameRef` and
+    `override key: NameRef` as parser sugar for one title-omitted wrapper
+    section with one direct declaration ref
   - base and override wrappers move together
   - the current `ValidateContractsMixin` -> `ResolveIoContractsMixin` ->
     `ResolveOutputsMixin` owner split stays the only lowering path
-  - fail-loud `E311` fires when the shorthand ref does not lower to exactly
-    one child, and the error text teaches the author the multi-line wrapper
-    upgrade path
+  - malformed shorthand stays on the current omitted-title and IO-bucket
+    diagnostics path; this wave does not add a shorthand-only named code
   - `input source` and `output target` stay out of this wave
 - One addressable story:
   - `self:` is a self-rooted variant of `AddressableRef`, valid only on
@@ -1013,8 +1023,9 @@ Not applicable. This is language, compiler, docs, and corpus work.
   - malformed grouped `inherit` (`E309`) fails loud at the parser or compile
     boundary
   - `E310` stays reserved for the deferred grouped-override investigation
-  - malformed IO wrapper shorthand fails loud (`E311`) and the message
-    teaches the multi-line wrapper upgrade path
+  - `E311` stays reserved for a future dedicated IO-wrapper shorthand
+    diagnostic; Phase 5 reuses the existing omitted-title and IO-bucket
+    diagnostics path
   - malformed `self:` usage fails loud (`E312`) where no declaration-root
     addressable context exists
 
@@ -1038,8 +1049,8 @@ Not applicable.
 | Inherited family resolvers | `doctrine/_compiler/resolve/agent_slots.py`, `doctrine/_compiler/resolve/workflows.py`, `doctrine/_compiler/resolve/analysis.py`, `doctrine/_compiler/resolve/documents.py`, `doctrine/_compiler/resolve/skills.py`, `doctrine/_compiler/resolve/addressable_skills.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/_compiler/resolve/output_schemas.py` | missing-entry and undefined-key checks | Already enforce explicit inherited accounting with fail-loud errors | Reuse the same semantics unchanged; only sharpen diagnostics if grouped syntax needs clearer blame | This wave is sugar, not an inheritance redesign | same inherited semantics with grouped authoring | `tests/test_output_inheritance.py`; existing family tests |
 | Review binding grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/reviews.py`, `doctrine/_parser/agents.py` | `semantic_field_binding`, `fields_stmt`, `final_output_review_fields_stmt`, review override fields | Requires `semantic: field_path` even for identity cases; all three surfaces repeat the same full form | Add bare semantic-name entries that lower to the same binding tuple on all three surfaces (`review.fields`, `review override fields`, `final_output.review_fields`); allow bare and explicit entries to mix in the same block | Remove pure ceremony without adding a second binding surface; keep one identity-binding rule across all three review surfaces | all three surfaces accept bare semantic names for identity binds, explicit `semantic: path` entries stay legal, and mixing both forms in the same block is legal | review and final-output tests; `tests/test_review_imported_outputs.py`; `examples/85`; `examples/86`; `examples/90`; `examples/104`; `examples/105`; `examples/106` |
 | Review compile validation | `doctrine/_compiler/compile/review_contract.py`, `doctrine/_compiler/compile/final_output.py` | final-response binding validation and payload preview wiring | Consumes explicit bindings only | Accept parser-lowered identity bindings with no semantic change | Keep one semantic-binding truth through compile and emit | no new contract fields; only shorter authoring | `tests/test_final_output.py`; `tests/test_emit_docs.py` |
-| IO wrapper grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_model/io.py` | `io_section`, `io_override_section`, `IoSection`, `OverrideIoSection` | Keyed `inputs` / `outputs` wrappers require multiline bodies, even for one child ref | Add `key: NameRef` and `override key: NameRef` sugar that lowers to one-child wrapper sections through the existing omitted-title rule; emit `E311` with the multi-line upgrade path in the message when the ref resolves to more than one child | This is the cleanest IO-side repetition cut and stays inside one family | one-line keyed IO wrapper refs on `inputs` and `outputs` only | IO parser tests; `examples/24`; `examples/117` |
-| IO resolve and validation | `doctrine/_compiler/validate/contracts.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/emit_docs.py` | `_summarize_contract_field`, `_resolve_contract_bucket_ref_entry`, `_resolve_non_inherited_io_items`, `_resolve_io_section_item`, `_lower_omitted_io_section` | The live IO path already has a real owner split: contract summary in `validate/contracts.py`, bucket lowering in `resolve/io_contracts.py`, inherited IO-body and omitted-title lowering in `resolve/outputs.py`, and public contract emission in `emit_docs.py` | Add one-line keyed-wrapper behavior by extending those existing owners and reusing the current bucket and omitted-title path; keep `final_output.contract.json.io` byte-equal on rewritten manifests | Prevent a third IO lowering path and keep the runtime `io` contract stable | same resolved IO contract and emitted runtime payload; shorter authoring only | IO resolve tests; `tests/test_output_rendering.py`; `tests/test_emit_docs.py`; `examples/24`; `examples/117`; byte-equal manifest ref proof |
+| IO wrapper grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_model/io.py` | `io_section`, `io_override_section`, `IoSection`, `OverrideIoSection` | Keyed `inputs` / `outputs` wrappers require multiline bodies, even for one child ref | Add `key: NameRef` and `override key: NameRef` sugar that lowers to one title-omitted wrapper section with one direct declaration ref; keep malformed shorthand on the current omitted-title and IO-bucket diagnostics path | This is the cleanest IO-side repetition cut and stays inside one family | one-line keyed IO wrapper refs on `inputs` and `outputs` only | IO parser tests; `examples/24`; `examples/117` |
+| IO resolve and validation | `doctrine/_compiler/validate/contracts.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/emit_docs.py` | `_summarize_contract_field`, `_resolve_contract_bucket_ref_entry`, `_resolve_non_inherited_io_items`, `_resolve_io_section_item`, `_lower_omitted_io_section` | The live IO path already has a real owner split: contract summary in `validate/contracts.py`, bucket lowering in `resolve/io_contracts.py`, inherited IO-body and omitted-title lowering in `resolve/outputs.py`, and public contract emission in `emit_docs.py` | Add one-line keyed-wrapper behavior by extending those existing owners and reusing the current bucket and omitted-title path; keep rewritten manifest-backed render and compile proof green and pair it with targeted emitted-contract proof | Prevent a third IO lowering path and keep the runtime `io` contract stable | same resolved IO contract and emitted runtime payload; shorter authoring only | IO resolve tests; `tests/test_output_rendering.py`; `tests/test_emit_docs.py`; `examples/24`; `examples/117`; manifest render/compile proof plus targeted emit proof |
 | `self:` path surface | `doctrine/grammars/doctrine.lark`, `doctrine/parser.py`, `doctrine/_model/core.py` | `PATH_REF`, `path_ref`, `AddressableRef` | Every addressable path requires an explicit declaration root; `AddressableRef` always carries a declaration root | Add `self:` as an authored shorthand on existing `PATH_REF` surfaces and extend `AddressableRef` with a self-rooted variant (for example a nullable declaration root plus a `self` flag). Lower `self:` into that variant and keep the one addressable-ref carrier | Reduce repeated roots without creating a new addressable namespace or a sentinel value outside the carrier | `self:path.to.item` on existing addressable-ref surfaces only; one `AddressableRef` carrier with a self-rooted variant | addressable parser tests; `examples/28` |
 | `self:` resolution and validation | `doctrine/_compiler/resolve/addressables.py`, `doctrine/_compiler/validate/addressable_children.py`, `doctrine/_compiler/validate/addressable_display.py` | `_resolve_addressable_ref_value`, `_resolve_addressable_root_decl`, child walking and display | Resolve only explicit roots today | Bind the self-rooted variant to the current owning declaration before normal path descent and display; emit `E312` where no declaration-root context exists | Keep one addressable-resolution story and one error path | same resolved addressable targets with shorter authoring | addressable tests; route and review path-read tests where affected; interpolation coverage for `self:` on `PATH_REF` surfaces |
 | Output-schema baseline guard | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_compiler/resolve/output_schemas.py`, `doctrine/_compiler/output_schema_validation.py`, `doctrine/_compiler/output_schema_diagnostics.py`, `doctrine/_model/io.py` | `output_schema_nullable_stmt`, `output_schema_required_stmt`, `output_schema_optional_stmt`, `OutputSchemaFlag`, `E236`, `E237`, lowered-schema validator | Already shipped: grammar, parser, resolver, live docs, examples, and diagnostics all teach `nullable`; retired words stay only as targeted hard errors | Locked regression guard; each feature phase must keep the baseline green and make no authored-language or emitted-wire-shape change to this surface | The additive wave must not reopen a settled baseline | `nullable` is the live word; `required` / `optional` stay targeted hard errors; lowered-schema validation stays on the current path | output-schema, route-output, final-output, emit-docs, and diagnostics tests must stay green through every phase |
@@ -1166,18 +1177,20 @@ Rollback
 
 Status
 
-- Status: REOPENED (audit found missing code work)
+- Status: COMPLETE - proof closure rerun and green on the current tree
 
-Missing (code):
+Resolved reopen
 
-- Fresh audit reran `make verify-diagnostics`; it passed.
-- Fresh audit reran `make verify-examples`, and the current tree still fails on
-  route/readback examples in `30`, `32`, `70`, `72`, `87`, `89`, `91`, `94`,
-  `111`, and `119`.
-- The current drift is not limited to one example. Workflow-law active guards
-  now render `This pass runs only when ...`, and guarded output/readback items
-  now expand into section-style blocks where the shipped corpus still expects
-  `Use this pass only when ...` and inline guarded bullets.
+- Restored the shipped route/readback render contract in
+  `doctrine/_compiler/display.py`,
+  `doctrine/_compiler/compile/workflows.py`, and
+  `doctrine/_compiler/compile/records.py`.
+- Repaired the VS Code import-aware proof in
+  `editors/vscode/resolver.js`,
+  `editors/vscode/tests/integration/suite/index.js`, and
+  `editors/vscode/syntaxes/doctrine.tmLanguage.json`.
+- The reopened route/readback drift and VS Code package blocker are both
+  closed on the current tree.
 
 Goal
 
@@ -1265,12 +1278,19 @@ Docs/comments (propagation; this phase)
 
 Proof closure
 
-- Fresh audit reran `make verify-diagnostics`; it passed.
-- Fresh audit reran `make verify-examples`, and the current tree is still red
-  on route/readback examples in `30`, `32`, `70`, `72`, `87`, `89`, `91`,
-  `94`, `111`, and `119`.
-- Phase 2 stays reopened until the full verification list is green again on
-  the current tree.
+- `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_review_imported_outputs tests.test_parser_source_spans tests.test_compile_diagnostics tests.test_emit_docs`
+  - result: `Ran 233 tests`
+  - result: `OK`
+- `make verify-diagnostics`
+  - result: `diagnostic smoke checks passed`
+- `make verify-examples`
+  - result: `PASS` across the full shipped corpus
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai`
+  - result: `Ran 102 tests`
+  - result: `OK`
+- `cd editors/vscode && make`
+  - result: `Exit code 0`
+  - result: packaged `doctrine-language-0.0.1776368115892.vsix`
 
 Exit criteria (all required)
 
@@ -1296,7 +1316,8 @@ Rollback
 
 Status
 
-- Repaired after plan audit. Implementation not started.
+- Status: COMPLETE - grouped explicit `inherit` ships and proof is green on
+  the current tree
 
 Goal
 
@@ -1308,6 +1329,24 @@ Work
 - Add grouped authored `inherit { ... }` forms that lower to the same
   `InheritItem` stream the current inherited-family resolvers already
   consume.
+
+Completed work
+
+- Added grouped explicit `inherit { ... }` grammar across the full approved
+  inherited family:
+  agent authored slots, workflow items, workflow law sections, analyses,
+  schemas, documents, reviews, skills, inputs, outputs, output shapes, and
+  output schemas.
+- Lowered grouped authored forms into repeated `InheritItem`s` in the parser
+  mixins, keeping resolver semantics unchanged and keeping grouped keys on the
+  inherited-parent path only.
+- Finalized `E309` for malformed grouped `inherit`.
+- Updated `examples/24_io_block_inheritance`,
+  `examples/107_output_inheritance_basic`, and
+  `examples/108_output_inheritance_attachments`.
+- Updated `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`,
+  `docs/COMPILER_ERRORS.md`, and
+  `editors/vscode/syntaxes/doctrine.tmLanguage.json`.
 
 Checklist (must all be done)
 
@@ -1356,6 +1395,22 @@ Docs/comments (propagation; this phase)
   `InheritItem`s and the ownership split would otherwise be easy to miss.
 - Phase 3 owns its live-doc updates for inheritance.
 
+Proof closure
+
+- `uv run --locked python -m unittest tests.test_grouped_inherit tests.test_parse_diagnostics tests.test_output_inheritance tests.test_parser_source_spans`
+  - result: `Ran 48 tests`
+  - result: `OK`
+- `make verify-diagnostics`
+  - result: `diagnostic smoke checks passed`
+- `make verify-examples`
+  - result: `PASS` across the full shipped corpus
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai`
+  - result: `Ran 102 tests`
+  - result: `OK`
+- `cd editors/vscode && make`
+  - result: `Exit code 0`
+  - result: packaged `doctrine-language-0.0.1776368115892.vsix`
+
 Exit criteria (all required)
 
 - Grouped `inherit` works across the full intended family, not just outputs.
@@ -1376,7 +1431,8 @@ Rollback
 
 Status
 
-- Planned.
+- Status: COMPLETE - review-binding shorthand ships and proof is green on the
+  current tree
 
 Goal
 
@@ -1388,6 +1444,28 @@ Work
 - Add bare semantic-name shorthand to the existing `review.fields`,
   `review override fields`, and `final_output.review_fields` surfaces and keep
   all non-identity binds explicit.
+
+Completed work
+
+- Extended the shared review-binding parser surface so bare semantic names
+  lower to ordinary `ReviewFieldBinding` entries on `review.fields`,
+  `override fields`, and `final_output.review_fields`.
+- Kept explicit `semantic: path` bindings and explicit identity binds legal on
+  all three owners.
+- Added focused shorthand proof in:
+  `tests/test_review_binding_shorthand.py`,
+  `tests/test_parser_source_spans.py`,
+  `tests/test_review_imported_outputs.py`,
+  `tests/test_final_output.py`, and
+  `tests/test_emit_docs.py`.
+- Updated `examples/85_review_split_final_output_output_schema`,
+  `examples/86_imported_review_comment_local_routes`,
+  `examples/90_split_handoff_and_final_output_shared_route_semantics`,
+  `examples/104_review_final_output_output_schema_blocked_control_ready`,
+  `examples/105_review_split_final_output_output_schema_control_ready`, and
+  `examples/106_review_split_final_output_output_schema_partial`.
+- Updated `docs/REVIEW_SPEC.md`, `docs/LANGUAGE_REFERENCE.md`,
+  `docs/AUTHORING_PATTERNS.md`, and the VS Code grammar/tests.
 
 Checklist (must all be done)
 
@@ -1431,6 +1509,30 @@ Docs/comments (propagation; this phase)
 
 - Phase 4 owns its live-doc updates for review and final-output bindings.
 
+Proof closure
+
+- `uv run --locked python -m unittest tests.test_review_binding_shorthand tests.test_parser_source_spans tests.test_review_imported_outputs tests.test_final_output tests.test_emit_docs`
+  - result: `Ran 67 tests`
+  - result: `OK`
+- focused manifest proof:
+  - `examples/85_review_split_final_output_output_schema/cases.toml`
+  - `examples/86_imported_review_comment_local_routes/cases.toml`
+  - `examples/90_split_handoff_and_final_output_shared_route_semantics/cases.toml`
+  - `examples/104_review_final_output_output_schema_blocked_control_ready/cases.toml`
+  - `examples/105_review_split_final_output_output_schema_control_ready/cases.toml`
+  - `examples/106_review_split_final_output_output_schema_partial/cases.toml`
+  - result: all passed with no surfaced inconsistencies
+- `make verify-diagnostics`
+  - result: `diagnostic smoke checks passed`
+- `make verify-examples`
+  - result: `PASS` across the full shipped corpus
+- `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai`
+  - result: `Ran 102 tests`
+  - result: `OK`
+- `cd editors/vscode && make`
+  - result: `Exit code 0`
+  - result: packaged `doctrine-language-0.0.1776368115892.vsix`
+
 Exit criteria (all required)
 
 - All three review-binding owners accept the same identity shorthand.
@@ -1451,7 +1553,8 @@ Rollback
 
 Status
 
-- Planned.
+- Status: COMPLETE - first-class IO wrapper shorthand ships and proof is
+  green on the current tree
 
 Goal
 
@@ -1463,13 +1566,37 @@ Work
 - Add one-line keyed wrapper refs on first-class IO wrappers and extend the
   current IO owner split instead of replacing it.
 
+Completed work
+
+- Added one-line `key: NameRef` and `override key: NameRef` parsing on
+  first-class `inputs` and `outputs` wrappers only, and lowered both forms
+  to the existing title-omitted wrapper section shape with one direct
+  declaration ref.
+- Kept the current IO owner split intact in the parser, resolver, and
+  output-rendering path instead of adding a sidecar shorthand lowering path.
+- Added focused shorthand proof in
+  `tests/test_parser_source_spans.py`,
+  `tests/test_compile_diagnostics.py`,
+  `tests/test_output_rendering.py`, and
+  `tests/test_emit_docs.py`.
+- Rewrote `examples/24_io_block_inheritance` and
+  `examples/117_io_omitted_wrapper_titles` to teach the shorthand and kept
+  their manifest-backed render and compile expectations aligned with the
+  shipped output.
+- Updated `docs/AGENT_IO_DESIGN_NOTES.md`,
+  `docs/LANGUAGE_REFERENCE.md`, and
+  `docs/AUTHORING_PATTERNS.md`.
+- Updated the VS Code grammar, unit coverage, integration coverage, and
+  resolver logic so shorthand wrapper refs and wrapper keys both navigate on
+  the shipped editor surface.
+
 Checklist (must all be done)
 
 - Add `key: NameRef` and `override key: NameRef` shorthand on `inputs` and
   `outputs` keyed wrappers only.
 - Keep `input source` and `output target` out of scope in this wave.
-- Preserve the existing omitted-title rule: only one lowerable direct
-  declaration may reuse the child title.
+- Lower the shorthand into one title-omitted wrapper section with one direct
+  declaration ref so the existing omitted-title rule stays the only owner.
 - Reuse the current owner split:
   `ValidateContractsMixin` for contract summary,
   `ResolveIoContractsMixin._resolve_contract_bucket_items()` for bucket
@@ -1477,23 +1604,23 @@ Checklist (must all be done)
   `_resolve_io_section_item()` / `_lower_omitted_io_section()` for inherited
   IO bodies and omitted-title lowering.
 - Do not add a third IO helper or duplicate lowering path for this feature.
-- Add fail-loud diagnostic `E311` when the shorthand ref does not lower to
-  exactly one child (multi-child record, record with a required title
-  override, or any shape that breaks the omitted-title rule). The message
-  must teach the multi-line wrapper upgrade path with a concrete snippet.
-  Finalize the exact code number in `docs/COMPILER_ERRORS.md` in the same
-  phase.
-- Before rewriting the touched examples, capture baseline
-  `final_output.contract.json.io` refs. After the rewrite, assert byte-equal
-  refs to prove zero emit drift.
+- Keep malformed shorthand on the existing omitted-title and IO-bucket
+  diagnostics path. `E311` stays reserved in this wave so later code bands do
+  not shift.
+- Before rewriting the touched examples, capture the live manifest-backed
+  render and compile expectations in `24` and `117`. After the rewrite, keep
+  those proof cases green and pair them with targeted emitted-contract tests
+  to prove zero IO-contract drift.
 - Update `examples/24_io_block_inheritance` and
   `examples/117_io_omitted_wrapper_titles` to teach the shorthand, and
-  rewrite manifest-backed refs only if the emit is provably byte-equal.
+  keep their manifest-backed render and compile expectations aligned with the
+  shipped output.
 - Add targeted parser, resolve, emitted-contract, and output-rendering proof
-  for the new IO path, including an `E311` diagnostics case.
+  for the new IO path, including the existing omitted-title failure surfaces
+  that still define the sharp negative boundary.
 - Update the live docs that teach first-class IO in this phase:
   `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/LANGUAGE_REFERENCE.md`,
-  `docs/AUTHORING_PATTERNS.md`, `docs/COMPILER_ERRORS.md` (for `E311`).
+  `docs/AUTHORING_PATTERNS.md`.
 - Update `editors/vscode/` TextMate grammar for the IO shorthand and run
   `cd editors/vscode && make`.
 - Keep the Phase 1 baseline guard green by rerunning its regression proof.
@@ -1504,8 +1631,8 @@ Verification (required proof)
   - focused parser and resolve tests for IO shorthand
   - `uv run --locked python -m unittest tests.test_output_rendering tests.test_emit_docs`
   - `make verify-diagnostics`
-  - `make verify-examples` (including byte-equal ref check on the rewritten
-    `24` and `117` examples)
+  - `make verify-examples` (including the rewritten `24` and `117`
+    manifest-backed render and compile cases)
   - Phase 1 regression proof
   - `cd editors/vscode && make`
 
@@ -1520,10 +1647,11 @@ Exit criteria (all required)
 - One-line keyed wrappers work on both base and override entries.
 - The current IO owner split stays coherent and remains the only lowering
   path for this surface.
-- `final_output.contract.json.io` is byte-equal on rewritten `24` and `117`
-  manifests.
-- `E311` is named in `docs/COMPILER_ERRORS.md`, fires on multi-child refs,
-  and the message teaches the multi-line wrapper upgrade path.
+- Rewritten `24` and `117` stay green on their manifest-backed render and
+  compile proof, and targeted emitted-contract tests show no IO-contract
+  drift.
+- Malformed shorthand stays on the existing omitted-title and IO-bucket
+  diagnostics path, and `E311` remains reserved and unshipped in this wave.
 - No broad title-defaulting expansion leaks outside the `inputs` / `outputs`
   wrapper family.
 - Editor syntax support for the shorthand ships in `editors/vscode/`.
@@ -1538,7 +1666,8 @@ Rollback
 
 Status
 
-- Planned.
+- COMPLETE - self-rooted addressable shorthand ships and proof is green on
+  the current tree.
 
 Goal
 
@@ -1622,7 +1751,8 @@ Rollback
 
 Status
 
-- Planned.
+- COMPLETE - release truth is aligned and the full wave-level proof is green
+  on the current tree.
 
 Goal
 
@@ -1736,8 +1866,7 @@ Rollback
   - `E308` ambiguous imported symbol ownership
   - `E309` malformed grouped `inherit`
   - `E310` reserved for the deferred grouped-override investigation
-  - `E311` malformed IO wrapper shorthand (error text must teach the
-    multi-line wrapper upgrade path)
+  - `E311` reserved for a future dedicated IO-wrapper shorthand diagnostic
   - `E312` malformed `self:` usage (no declaration-root context)
 - finalize the exact code numbers against `docs/COMPILER_ERRORS.md` in the
   phase that ships each code
@@ -1825,8 +1954,9 @@ Not applicable beyond compile-time proof and emitted artifact verification.
   - added explicit mixing legality and mixed-entry proof to Phase 4
   - stated inherited-parent-names-only scoping for grouped `inherit` keys in
     §0.5, §3.3, §5.3, and Phase 3
-  - strengthened Phase 5 exit criterion to byte-equal
-    `final_output.contract.json.io` on rewritten `24` / `117` manifests
+  - repaired Phase 5 to reserve `E311` and use the live manifest-backed
+    render and compile proof on `24` / `117`, paired with targeted
+    emitted-contract tests, instead of claiming absent sidecar proof
 - Remaining inconsistencies:
   - none
 - Unresolved decisions:
@@ -1884,14 +2014,15 @@ Not applicable beyond compile-time proof and emitted artifact verification.
   - Named provisional diagnostic codes assigned upfront: `E306` duplicate
     module alias, `E307` duplicate imported symbol, `E308` ambiguous
     imported ownership, `E309` malformed grouped `inherit`, `E310` reserved
-    for the deferred grouped-override investigation, `E311` malformed IO
-    wrapper shorthand (message teaches multi-line upgrade path), `E312`
-    malformed `self:` usage. `E236` / `E237` stay as the baseline guard.
+    for the deferred grouped-override investigation, `E311` reserved for a
+    future dedicated IO-wrapper shorthand diagnostic, `E312` malformed
+    `self:` usage. `E236` / `E237` stay as the baseline guard.
   - Live-doc and editor syntax updates move into each feature phase, not
     Phase 7. Phase 7 shrinks to `docs/VERSIONING.md`, `CHANGELOG.md`,
     wave-level index surfaces, full-wave proof, and final editor sync.
-  - IO shorthand exit criterion is strengthened to byte-equal
-    `final_output.contract.json.io` on rewritten `24` and `117` manifests.
+  - IO shorthand proof is repaired to the live manifest-backed render and
+    compile surface on rewritten `24` and `117`, paired with targeted
+    emitted-contract tests.
   - Compact schema heads are recorded as a plausible wave-2 candidate (the
     shipped `nullable` flag already proves the carrier is sugar-friendly);
     deferred here to keep this wave focused, not because the surface is

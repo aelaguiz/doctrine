@@ -9,10 +9,17 @@ outputs SharedOutputs: "Your Outputs"
 # <----- keyword.declaration.doctrine
 #       ^ entity.name.type.doctrine
 
-    coordination_handoff: "Coordination Handoff Binding"
+    coordination_handoff: CoordinationHandoff
 #   ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
-        CoordinationHandoff
-#       ^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine
+#                       ^ punctuation.separator.key-value.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    reusable_title: self:coordination_handoff.title
+#   ^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                 ^ punctuation.separator.key-value.doctrine
+#                   ^^^^ entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+#                       ^ punctuation.separator.interpolation.doctrine
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ variable.other.member.doctrine
 
 agent Reviewer:
     inputs: SharedInputs
@@ -81,6 +88,12 @@ agent Writer:
 #           ^^^^^^^^^^^^^ entity.other.inherited-class.doctrine
 #                        ^ punctuation.section.inheritance.end.doctrine
 #                         ^ punctuation.separator.key-value.doctrine
+
+        override coordination_handoff: ReviewComment
+#       ^^^^^^^^ keyword.control.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                                    ^ punctuation.separator.key-value.doctrine
+#                                      ^^^^^^^^^^^^^ entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 
         inherit {durable_section_truth, scoped_catalog_truth}
 #       ^^^^^^^ keyword.control.doctrine

@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 from doctrine import model
 from doctrine._compiler.constants import _INTERPOLATION_EXPR_RE
-from doctrine._compiler.naming import _display_addressable_ref, _dotted_ref_name, _name_ref_from_dotted_name
+from doctrine._compiler.naming import (
+    _display_addressable_ref,
+    _dotted_ref_name,
+    _name_ref_from_dotted_name,
+    _parse_interpolated_addressable_ref,
+)
 from doctrine._compiler.reference_diagnostics import reference_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableNode,
@@ -20,6 +27,57 @@ from doctrine._compiler.resolved_types import (
 class ResolveAddressablesMixin:
     """Addressable and interpolation resolution helpers for ResolveMixin."""
 
+    @contextmanager
+    def _with_addressable_self_root(self, root_ref: model.NameRef):
+        self._addressable_self_root_stack.append(root_ref)
+        try:
+            yield
+        finally:
+            self._addressable_self_root_stack.pop()
+
+    def _local_addressable_self_root_ref(self, declaration_name: str) -> model.NameRef:
+        return model.NameRef(module_parts=(), declaration_name=declaration_name)
+
+    def _current_addressable_self_root_ref(self) -> model.NameRef | None:
+        if not self._addressable_self_root_stack:
+            return None
+        return self._addressable_self_root_stack[-1]
+
+    def _rebind_self_addressable_ref(
+        self,
+        ref: model.AddressableRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> model.AddressableRef:
+        if not ref.self_rooted:
+            return ref
+
+        current_root = self._current_addressable_self_root_ref()
+        if current_root is None:
+            raise reference_compile_error(
+                code="E312",
+                summary="self ref needs a declaration root",
+                detail=(
+                    f"`self:` needs a declaration-root addressable context in "
+                    f"{surface_label} {owner_label}: {_display_addressable_ref(ref)}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
+                hints=("Use an explicit `Root:path` ref here.",),
+            )
+
+        return model.AddressableRef(
+            root=model.NameRef(
+                module_parts=current_root.module_parts,
+                declaration_name=current_root.declaration_name,
+                source_span=ref.source_span,
+            ),
+            path=ref.path,
+            source_span=ref.source_span,
+        )
+
     def _resolve_authored_prose_interpolation_expr(
         self,
         expression: str,
@@ -32,8 +90,9 @@ class ResolveAddressablesMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
+        ref = _parse_interpolated_addressable_ref(expression)
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
-        if match is None:
+        if ref is None and match is None:
             raise reference_compile_error(
                 code="E299",
                 summary="Compile failure",
@@ -42,10 +101,11 @@ class ResolveAddressablesMixin:
                 source_span=None,
             )
 
-        ref = model.AddressableRef(
-            root=_name_ref_from_dotted_name(match.group(1)),
-            path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
-        )
+        if ref is None:
+            ref = model.AddressableRef(
+                root=_name_ref_from_dotted_name(match.group(1)),
+                path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
+            )
         return self._resolve_addressable_ref_value(
             ref,
             unit=unit,
@@ -243,6 +303,12 @@ class ResolveAddressablesMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> DisplayValue:
+        ref = self._rebind_self_addressable_ref(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
         ref_label = _display_addressable_ref(ref)
         route_value = self._resolve_route_semantic_ref_value(
             ref,

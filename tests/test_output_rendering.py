@@ -66,6 +66,175 @@ class OutputRenderingTests(unittest.TestCase):
                 previous_turn_contexts=previous_turn_contexts,
             )
 
+    def _render_agent_markdown(
+        self,
+        source: str,
+        *,
+        agent_name: str,
+        extra_files: dict[str, str] | None = None,
+    ) -> str:
+        return render_markdown(
+            self._compile_agent(
+                source,
+                agent_name=agent_name,
+                extra_files=extra_files,
+            )
+        )
+
+    def test_io_wrapper_shorthand_renders_like_titleless_long_form(self) -> None:
+        long_form = self._render_agent_markdown(
+            """
+            input LessonsIssueLedger: "Lessons Issue Ledger"
+                source: File
+                    path: "catalog/lessons_issue_ledger.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            output SectionHandoff: "Section Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            inputs SectionDossierInputs: "Your Inputs"
+                issue_ledger:
+                    LessonsIssueLedger
+
+            outputs SectionDossierOutputs: "Your Outputs"
+                section_handoff:
+                    SectionHandoff
+
+            agent Demo:
+                role: "Keep IO wrappers concise."
+                inputs: SectionDossierInputs
+                outputs: SectionDossierOutputs
+            """,
+            agent_name="Demo",
+        )
+        shorthand = self._render_agent_markdown(
+            """
+            input LessonsIssueLedger: "Lessons Issue Ledger"
+                source: File
+                    path: "catalog/lessons_issue_ledger.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            output SectionHandoff: "Section Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            inputs SectionDossierInputs: "Your Inputs"
+                issue_ledger: LessonsIssueLedger
+
+            outputs SectionDossierOutputs: "Your Outputs"
+                section_handoff: SectionHandoff
+
+            agent Demo:
+                role: "Keep IO wrappers concise."
+                inputs: SectionDossierInputs
+                outputs: SectionDossierOutputs
+            """,
+            agent_name="Demo",
+        )
+
+        self.assertEqual(shorthand, long_form)
+
+    def test_override_io_wrapper_shorthand_renders_like_long_form_override(self) -> None:
+        long_form = self._render_agent_markdown(
+            """
+            input BaseReviewPacket: "Base Review Packet"
+                source: File
+                    path: "catalog/base_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            input FreshReviewPacket: "Fresh Review Packet"
+                source: File
+                    path: "catalog/fresh_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            output BaseReviewHandoff: "Base Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output FreshReviewHandoff: "Fresh Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            inputs BaseInputs: "Your Inputs"
+                review_packet: "Review Packet"
+                    BaseReviewPacket
+
+            outputs BaseOutputs: "Your Outputs"
+                review_handoff: "Review Handoff"
+                    BaseReviewHandoff
+
+            inputs ChildInputs[BaseInputs]: "Your Inputs"
+                override review_packet:
+                    FreshReviewPacket
+
+            outputs ChildOutputs[BaseOutputs]: "Your Outputs"
+                override review_handoff:
+                    FreshReviewHandoff
+
+            agent Demo:
+                role: "Keep inherited IO patches concise."
+                inputs: ChildInputs
+                outputs: ChildOutputs
+            """,
+            agent_name="Demo",
+        )
+        shorthand = self._render_agent_markdown(
+            """
+            input BaseReviewPacket: "Base Review Packet"
+                source: File
+                    path: "catalog/base_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            input FreshReviewPacket: "Fresh Review Packet"
+                source: File
+                    path: "catalog/fresh_review_packet.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            output BaseReviewHandoff: "Base Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output FreshReviewHandoff: "Fresh Review Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            inputs BaseInputs: "Your Inputs"
+                review_packet: "Review Packet"
+                    BaseReviewPacket
+
+            outputs BaseOutputs: "Your Outputs"
+                review_handoff: "Review Handoff"
+                    BaseReviewHandoff
+
+            inputs ChildInputs[BaseInputs]: "Your Inputs"
+                override review_packet: FreshReviewPacket
+
+            outputs ChildOutputs[BaseOutputs]: "Your Outputs"
+                override review_handoff: FreshReviewHandoff
+
+            agent Demo:
+                role: "Keep inherited IO patches concise."
+                inputs: ChildInputs
+                outputs: ChildOutputs
+            """,
+            agent_name="Demo",
+        )
+
+        self.assertEqual(shorthand, long_form)
+
     def test_single_artifact_output_renders_grouped_contract_and_support_tables(self) -> None:
         agent = self._compile_agent(
             """

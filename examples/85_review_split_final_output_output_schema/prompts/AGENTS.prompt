@@ -114,13 +114,13 @@ review AcceptanceReview: "Acceptance Review"
     comment_output: AcceptanceReviewComment
 
     fields:
-        verdict: verdict
-        reviewed_artifact: reviewed_artifact
+        verdict
+        reviewed_artifact
         analysis: analysis_performed
         readback: output_contents_that_matter
-        current_artifact: current_artifact
+        current_artifact
         failing_gates: failure_detail.failing_gates
-        next_owner: next_owner
+        next_owner
 
     contract_checks: "Contract Checks"
         reject contract.outline_complete when DraftPlan.outline_missing

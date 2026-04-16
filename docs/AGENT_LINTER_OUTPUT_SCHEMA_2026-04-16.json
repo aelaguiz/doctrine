@@ -128,6 +128,7 @@
           "recommended_fix",
           "fix_steps",
           "suggested_rewrite",
+          "shared_owner_suggestion",
           "good_example",
           "bad_example"
         ],
@@ -138,25 +139,37 @@
               "AL100",
               "AL110",
               "AL120",
+              "AL130",
               "AL200",
               "AL210",
               "AL220",
+              "AL230",
+              "AL240",
               "AL300",
               "AL310",
+              "AL320",
               "AL400",
               "AL410",
+              "AL420",
+              "AL430",
               "AL500",
               "AL510",
               "AL520",
+              "AL530",
+              "AL540",
+              "AL550",
               "AL600",
               "AL610",
               "AL700",
               "AL710",
               "AL720",
+              "AL730",
               "AL800",
               "AL810",
+              "AL820",
               "AL900",
-              "AL910"
+              "AL910",
+              "AL920"
             ]
           },
           "title": {
@@ -314,6 +327,41 @@
           },
           "suggested_rewrite": {
             "type": "string"
+          },
+          "shared_owner_suggestion": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "name",
+                  "rationale"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "skill",
+                      "module",
+                      "contract",
+                      "other"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "good_example": {
             "type": "string",

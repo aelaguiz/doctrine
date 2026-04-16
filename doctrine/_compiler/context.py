@@ -67,6 +67,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             tuple[tuple[str, ...], str],
             "ResolvedPreviousTurnInputSpec",
         ] = {}
+        self._addressable_self_root_stack: list[model.NameRef] = []
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []

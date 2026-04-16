@@ -365,6 +365,12 @@ class ValidateReviewAgreementMixin:
         owner_label: str,
     ) -> tuple[tuple[str, ...], str] | None:
         try:
+            ref = self._rebind_self_addressable_ref(
+                ref,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label="reviewed_artifact",
+            )
             root_unit, root_decl = self._resolve_addressable_root_decl(
                 ref.root,
                 unit=unit,

@@ -658,6 +658,12 @@ class ValidateRoutesMixin:
         owner_label: str,
         route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
+        ref = self._rebind_self_addressable_ref(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="next_owner",
+        )
         route_parts = self._route_semantic_parts(ref)
         if (
             route_semantics is not None

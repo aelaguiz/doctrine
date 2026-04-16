@@ -80,7 +80,7 @@ class ParserSourceSpanTests(unittest.TestCase):
                     contract: DraftReviewContract
                     comment_output: DraftReviewComment
                     fields:
-                        verdict: verdict
+                        verdict
                     contract_checks: "Contract Checks"
                         reject contract.outline_complete when DraftSpec.outline_missing
                     on_accept: "If Accepted"
@@ -98,6 +98,7 @@ class ParserSourceSpanTests(unittest.TestCase):
         self.assertEqual(review.body.items[1].source_span, model.SourceSpan(line=3, column=5))
         self.assertEqual(review.body.items[3].source_span, model.SourceSpan(line=5, column=5))
         self.assertEqual(review.body.items[3].bindings[0].source_span, model.SourceSpan(line=6, column=9))
+        self.assertEqual(review.body.items[3].bindings[0].field_path, ("verdict",))
 
         checks = review.body.items[4]
         self.assertIsInstance(checks, model.ReviewSection)
@@ -108,6 +109,190 @@ class ParserSourceSpanTests(unittest.TestCase):
         self.assertIsInstance(on_accept, model.ReviewOutcomeSection)
         self.assertEqual(on_accept.source_span, model.SourceSpan(line=9, column=5))
         self.assertEqual(on_accept.items[0].source_span, model.SourceSpan(line=10, column=9))
+
+    def test_io_wrapper_shorthand_nodes_keep_source_spans(self) -> None:
+        rendered = textwrap.dedent(
+            """\
+            input LessonsIssueLedger: "Lessons Issue Ledger"
+                source: File
+                    path: "catalog/lessons_issue_ledger.json"
+                shape: "JSON Document"
+                requirement: Required
+
+            input ForwardIssueLedger: "Forward Issue Ledger"
+                source: File
+                    path: "catalog/forward_issue_ledger.json"
+                shape: "JSON Document"
+                requirement: Advisory
+
+            inputs SectionDossierInputs: "Your Inputs"
+                issue_ledger: LessonsIssueLedger
+
+            inputs ForwardSectionInputs[SectionDossierInputs]: "Your Inputs"
+                override issue_ledger: ForwardIssueLedger
+            """
+        )
+        prompt = parse_text(rendered)
+
+        base_inputs = prompt.declarations[2]
+        self.assertIsInstance(base_inputs, model.InputsDecl)
+        base_section = base_inputs.body.items[0]
+        self.assertIsInstance(base_section, model.IoSection)
+        self.assertEqual(
+            base_section.source_span,
+            model.SourceSpan(
+                line=rendered.splitlines().index("    issue_ledger: LessonsIssueLedger") + 1,
+                column=5,
+            ),
+        )
+        self.assertEqual(base_section.title, None)
+        self.assertEqual(
+            base_section.items[0].source_span,
+            model.SourceSpan(
+                line=rendered.splitlines().index("    issue_ledger: LessonsIssueLedger") + 1,
+                column=19,
+            ),
+        )
+
+        child_inputs = prompt.declarations[3]
+        self.assertIsInstance(child_inputs, model.InputsDecl)
+        override_section = child_inputs.body.items[0]
+        self.assertIsInstance(override_section, model.OverrideIoSection)
+        self.assertEqual(
+            override_section.source_span,
+            model.SourceSpan(
+                line=rendered.splitlines().index("    override issue_ledger: ForwardIssueLedger")
+                + 1,
+                column=5,
+            ),
+        )
+        self.assertEqual(override_section.title, None)
+        self.assertEqual(
+            override_section.items[0].source_span,
+            model.SourceSpan(
+                line=rendered.splitlines().index("    override issue_ledger: ForwardIssueLedger")
+                + 1,
+                column=28,
+            ),
+        )
+
+    def test_self_path_ref_nodes_keep_source_spans(self) -> None:
+        rendered = textwrap.dedent(
+            """\
+            workflow WorkflowRoot: "Workflow Root"
+                review_sequence: "Review Sequence"
+                    self:steps.first
+
+                steps: "Steps"
+                    first: "First"
+                        "Do the first step."
+
+            output BaseRouteNote: "Base Route Note"
+                target: TurnResponse
+                shape: MarkdownDocument
+                requirement: Required
+
+                details: "Details"
+                    summary: "Summary"
+                        "Keep the route record honest."
+
+                summary_copy: self:details.summary
+                guarded_summary: self:details.summary when route.exists
+
+            output RouteNote[BaseRouteNote]: "Route Note"
+                override summary_copy: self:details
+
+            input DemoInput: "Demo Input"
+                source: File
+                    path: self:title
+                shape: MarkdownDocument
+                requirement: Required
+            """
+        )
+        prompt = parse_text(rendered)
+        lines = rendered.splitlines()
+
+        workflow = prompt.declarations[0]
+        self.assertIsInstance(workflow, model.WorkflowDecl)
+        workflow_ref = workflow.body.items[0].items[0]
+        self.assertIsInstance(workflow_ref, model.SectionBodyRef)
+        self.assertTrue(workflow_ref.ref.self_rooted)
+        self.assertEqual(
+            workflow_ref.ref.source_span,
+            model.SourceSpan(
+                line=lines.index("        self:steps.first") + 1,
+                column=lines[lines.index("        self:steps.first")].index("self:steps.first") + 1,
+            ),
+        )
+
+        base_output = prompt.declarations[1]
+        self.assertIsInstance(base_output, model.OutputDecl)
+        summary_copy = base_output.items[4]
+        self.assertIsInstance(summary_copy, model.RecordScalar)
+        self.assertIsInstance(summary_copy.value, model.AddressableRef)
+        self.assertTrue(summary_copy.value.self_rooted)
+        self.assertEqual(
+            summary_copy.value.source_span,
+            model.SourceSpan(
+                line=lines.index("    summary_copy: self:details.summary") + 1,
+                column=lines[lines.index("    summary_copy: self:details.summary")].index(
+                    "self:details.summary"
+                )
+                + 1,
+            ),
+        )
+
+        guarded_summary = base_output.items[5]
+        self.assertIsInstance(guarded_summary, model.GuardedOutputScalar)
+        self.assertIsInstance(guarded_summary.value, model.AddressableRef)
+        self.assertTrue(guarded_summary.value.self_rooted)
+        self.assertEqual(
+            guarded_summary.value.source_span,
+            model.SourceSpan(
+                line=lines.index("    guarded_summary: self:details.summary when route.exists")
+                + 1,
+                column=lines[
+                    lines.index(
+                        "    guarded_summary: self:details.summary when route.exists"
+                    )
+                ].index("self:details.summary")
+                + 1,
+            ),
+        )
+
+        child_output = prompt.declarations[2]
+        self.assertIsInstance(child_output, model.OutputDecl)
+        override_summary = child_output.items[0]
+        self.assertIsInstance(override_summary, model.OutputOverrideRecordScalar)
+        self.assertIsInstance(override_summary.value, model.AddressableRef)
+        self.assertTrue(override_summary.value.self_rooted)
+        self.assertEqual(
+            override_summary.value.source_span,
+            model.SourceSpan(
+                line=lines.index("    override summary_copy: self:details") + 1,
+                column=lines[
+                    lines.index("    override summary_copy: self:details")
+                ].index("self:details")
+                + 1,
+            ),
+        )
+
+        input_decl = prompt.declarations[3]
+        self.assertIsInstance(input_decl, model.InputDecl)
+        source_item = input_decl.items[0]
+        self.assertIsInstance(source_item, model.RecordScalar)
+        self.assertIsNotNone(source_item.body)
+        path_item = source_item.body[0]
+        self.assertIsInstance(path_item, model.RecordScalar)
+        self.assertIsInstance(path_item.value, model.AddressableRef)
+        self.assertTrue(path_item.value.self_rooted)
+        self.assertEqual(
+            path_item.value.source_span,
+            model.SourceSpan(
+                line=lines.index("        path: self:title") + 1,
+                column=lines[lines.index("        path: self:title")].index("self:title") + 1,
+            ),
+        )
 
     def test_readable_nodes_keep_source_spans(self) -> None:
         prompt = parse_text(

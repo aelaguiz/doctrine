@@ -57,15 +57,18 @@ class ResolveAddressableSkillsMixin:
                     f"skills {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_skills_addressable_body(
-                skills_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, skills_decl.name),
-                owner_source_span=skills_decl.source_span,
-                parent_skills=parent_skills,
-                parent_unit=parent_unit,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(skills_decl.name)
+            ):
+                resolved = self._resolve_skills_addressable_body(
+                    skills_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, skills_decl.name),
+                    owner_source_span=skills_decl.source_span,
+                    parent_skills=parent_skills,
+                    parent_unit=parent_unit,
+                    parent_label=parent_label,
+                )
             self._addressable_skills_cache[skills_key] = resolved
             return resolved
         finally:

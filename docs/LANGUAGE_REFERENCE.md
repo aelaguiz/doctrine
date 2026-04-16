@@ -121,10 +121,14 @@ final_output: AcceptanceReviewResponse
 final_output:
     output: AcceptanceControlFinalResponse
     review_fields:
-        verdict: verdict
+        verdict
         current_artifact: current_artifact
-        next_owner: next_owner
+        next_owner
 ```
+
+- On `fields:`, `override fields:`, and `review_fields:`, a bare semantic name
+  like `verdict` is shorthand for the identity bind `verdict: verdict`.
+  Keep `semantic: path` for non-identity binds.
 - Structured final outputs may also bind one `route field` on that same output
   as the route owner:
 
@@ -685,14 +689,18 @@ Important rules:
 
 `inputs` and `outputs` wrapper sections have three separate title rules:
 
-- `key: "Title"` is the normal long form.
-- In inherited `inputs` or `outputs`, `override key:` keeps the parent title
-  when you omit the override title.
+- `key: "Title"` is the normal long form when you need a local title or local
+  prose.
+- In base `inputs` or `outputs`, `key: SharedDecl` is the short form for one
+  direct declaration ref. Doctrine lowers it through the same omitted-title
+  wrapper rule, so the child declaration still owns the visible heading.
+- In inherited `inputs` or `outputs`, `override key: SharedDecl` is the short
+  form when the child only swaps one direct declaration and keeps the parent
+  title.
 - In inherited `inputs` or `outputs`, `inherit {left_key, right_key}` keeps
   several wrapper sections with the same explicit accounting model.
-- In base `inputs` or `outputs`, `key:` may omit the title only when the body
-  resolves to exactly one direct declaration. Doctrine lowers the wrapper into
-  that declaration's heading, so the output has one visible heading.
+- The multiline title-omitted form still works too. Use it when you need one
+  direct declaration plus local prose around it.
 - If an omitted wrapper title would need a guess, such as multiple direct refs
   or keyed child sections, Doctrine fails loud.
 - Titleless `sequence`, `bullets`, and `checklist` also lower into their
@@ -714,17 +722,16 @@ output SectionHandoff: "Section Handoff"
     requirement: Required
 
 inputs SectionDossierInputs: "Your Inputs"
-    issue_ledger:
-        LessonsIssueLedger
+    issue_ledger: LessonsIssueLedger
 
 outputs SectionDossierOutputs: "Your Outputs"
-    section_handoff:
-        SectionHandoff
+    section_handoff: SectionHandoff
 ```
 
 The omitted wrappers render one visible heading each: `Lessons Issue Ledger`
 and `Section Handoff`. The direct declaration bodies render under those
-headings without a second nested heading.
+headings without a second nested heading. If you need local prose before or
+after the declaration, keep the multiline wrapper form.
 
 Concrete shipped proof:
 
@@ -804,6 +811,8 @@ Important rules:
 - When that second output uses `review_fields:`, the compiler binds those
   paths to review semantics and emits whether the split final response is
   `control_ready`.
+- `review_fields:` also accepts bare identity binds like `next_owner` when the
+  final-output field key matches the review semantic name.
 - The emitted `final_output.contract.json` companion also carries the
   top-level `route` block for ordinary finals, `route_only`,
   `handoff_routing`, `route_from`, routed reviews, and bound final-output
@@ -1022,6 +1031,7 @@ Examples:
 - `DraftSpec`
 - `ReviewComment`
 - `MetadataContract:files.summary`
+- `self:detail_panel.rewrite_detail`
 - `ProjectLead:title`
 - `ProjectLead:key`
 - `ReleaseAnalysis:stages.title`
@@ -1037,6 +1047,7 @@ Examples:
 Nested keyed items can be addressed explicitly:
 
 - `Decl:path.to.child`
+- `self:path.to.child`
 - `ProjectLead:key`
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
@@ -1053,12 +1064,19 @@ anonymous list items are not. The first `:` separates the root declaration
 from its path, and any deeper projections use dot segments such as
 `NextOwner:section_author.wire`.
 
+Inside a declaration-root addressable context, `self:path` is short for the
+current declaration root. Doctrine ships that on named workflow, analysis,
+schema, document, skills, input, and output bodies. If the current surface
+does not carry that root, `self:` fails loud with `E312`. Use an explicit
+`Root:path` ref there.
+
 ### Authored interpolation
 
 Authored prose surfaces may interpolate declaration data inline:
 
 - `{{Ref}}`
 - `{{Ref:path.to.child}}`
+- `{{self:path.to.child}}`
 - `{{ProjectLead:key}}`
 - `{{AgentRef:name}}`
 - `{{NextOwner:section_author.wire}}`

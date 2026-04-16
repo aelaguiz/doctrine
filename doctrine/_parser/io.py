@@ -24,6 +24,7 @@ from doctrine._parser.parts import (
     _positioned_render_profile,
     _positioned_trust_surface,
     _source_span_from_line_column,
+    _source_span_from_meta,
     _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
@@ -31,6 +32,22 @@ from doctrine.diagnostics import TransformParseFailure
 
 class IoTransformerMixin:
     """Shared inputs, outputs, and IO-body lowering for the public parser boundary."""
+
+    def _io_section_from_ref(
+        self,
+        section_type: type[model.IoSection] | type[model.OverrideIoSection],
+        *,
+        key: str,
+        ref: model.NameRef,
+        meta: object,
+    ) -> model.IoSection | model.OverrideIoSection:
+        record_ref = model.RecordRef(ref=ref, source_span=ref.source_span)
+        return section_type(
+            key=key,
+            title=None,
+            items=(record_ref,),
+            source_span=_source_span_from_meta(meta),
+        )
 
     @v_args(meta=True, inline=True)
     def inputs_inline_field(self, meta, title, items):
@@ -958,6 +975,10 @@ class IoTransformerMixin:
         )
 
     @v_args(meta=True, inline=True)
+    def io_section_ref(self, meta, key, ref):
+        return self._io_section_from_ref(model.IoSection, key=key, ref=ref, meta=meta)
+
+    @v_args(meta=True, inline=True)
     def io_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
 
@@ -979,6 +1000,15 @@ class IoTransformerMixin:
                 items=tuple(section_items),
             ),
             meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def io_override_section_ref(self, meta, key, ref):
+        return self._io_section_from_ref(
+            model.OverrideIoSection,
+            key=key,
+            ref=ref,
+            meta=meta,
         )
 
     @v_args(inline=True)

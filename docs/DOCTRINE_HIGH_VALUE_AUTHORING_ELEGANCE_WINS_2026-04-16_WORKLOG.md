@@ -203,3 +203,233 @@ Plan doc: docs/DOCTRINE_HIGH_VALUE_AUTHORING_ELEGANCE_WINS_2026-04-16.md
 - Current truthful frontier:
   - wait for a fresh audit against the repaired plan
   - do not resume Phase 2 or Phase 3 code from the stale broader story
+
+## Phase 3 grouped inherit completion
+- Landed grouped explicit `inherit { ... }` across the full approved inherited
+  family without changing resolver semantics.
+- Finalized `E309` for malformed grouped `inherit`.
+- Updated shipped teaching surfaces in:
+  - `examples/24_io_block_inheritance`
+  - `examples/107_output_inheritance_basic`
+  - `examples/108_output_inheritance_attachments`
+- Updated live docs and editor syntax:
+  - `docs/LANGUAGE_REFERENCE.md`
+  - `docs/AUTHORING_PATTERNS.md`
+  - `docs/COMPILER_ERRORS.md`
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json`
+- Proof run:
+  - `uv run --locked python -m unittest tests.test_grouped_inherit tests.test_parse_diagnostics tests.test_output_inheritance tests.test_parser_source_spans`
+    - result: `Ran 48 tests`
+    - result: `OK`
+  - `make verify-diagnostics`
+    - result: `diagnostic smoke checks passed`
+  - `make verify-examples`
+    - result: `PASS`
+  - Phase 1 regression slice
+    - result: `Ran 102 tests`
+    - result: `OK`
+  - `cd editors/vscode && make`
+    - result: `Exit code 0`
+
+## Phase 4 review-binding shorthand completion
+- Landed bare identity shorthand on:
+  - `review.fields`
+  - `review override fields`
+  - `final_output.review_fields`
+- Kept all non-identity review binds explicit and kept explicit identity binds
+  legal.
+- Added focused shorthand proof in:
+  - `tests/test_review_binding_shorthand.py`
+  - `tests/test_parser_source_spans.py`
+  - `tests/test_review_imported_outputs.py`
+- Updated the shipped review examples:
+  - `85`, `86`, `90`, `104`, `105`, and `106`
+- Updated live docs and editor syntax:
+  - `docs/REVIEW_SPEC.md`
+  - `docs/LANGUAGE_REFERENCE.md`
+  - `docs/AUTHORING_PATTERNS.md`
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json`
+  - `editors/vscode/tests/unit/review.test.prompt`
+- Proof run:
+  - `uv run --locked python -m unittest tests.test_review_binding_shorthand tests.test_parser_source_spans tests.test_review_imported_outputs tests.test_final_output tests.test_emit_docs`
+    - result: `Ran 67 tests`
+    - result: `OK`
+  - focused manifest proof for `85`, `86`, `90`, `104`, `105`, and `106`
+    - result: all passed
+  - `make verify-diagnostics`
+    - result: `diagnostic smoke checks passed`
+  - `make verify-examples`
+    - result: `PASS`
+  - Phase 1 regression slice
+    - result: `Ran 102 tests`
+    - result: `OK`
+  - `cd editors/vscode && make`
+    - result: `Exit code 0`
+
+## Current frontier after Phase 4
+- Phase 1 through Phase 4 are complete on the current tree.
+- The next ordered frontier is Phase 5 IO wrapper shorthand.
+
+## Phase 5 plan repair
+- While grounding the next code frontier, found that two approved Phase 5
+  obligations did not fit the shipped IO path or the shipped proof surface.
+- Evidence sweep:
+  - `key: NameRef` and `override key: NameRef` on first-class IO wrappers are
+    parser sugar to one title-omitted `IoSection` or `OverrideIoSection`
+    with one direct `RecordRef`
+  - on the current `ValidateContractsMixin` ->
+    `ResolveIoContractsMixin` -> `ResolveOutputsMixin` path, that sugar does
+    not create the old planned shorthand-specific "multi-child ref" failure
+    state; malformed title-omitted wrapper cases already ride the current
+    omitted-title diagnostics path
+  - `examples/24_io_block_inheritance` and
+    `examples/117_io_omitted_wrapper_titles` are manifest-backed render and
+    compile proof only; they do not ship
+    `final_output.contract.json.io` sidecars
+- Updated the canonical plan doc with an authoritative Phase 5 repair block:
+  - Phase 5 still ships one-line `key: NameRef` and `override key: NameRef`
+    on first-class `inputs` / `outputs` wrappers only
+  - `E311` is no longer part of this wave and now stays reserved so later
+    code bands do not shift
+  - the Phase 5 proof surface now uses rewritten `24` / `117`
+    manifest-backed render and compile cases plus targeted emitted-contract
+    tests, instead of absent sidecar byte-equality
+  - folded that repair through the canonical plan surfaces that still carried
+    the old `E311` or `final_output.contract.json.io` story
+- Proof run:
+  - no new code proof in this turn because this was a planning repair only
+
+## Current frontier after Phase 5 repair
+- The next truthful move is a fresh audit against the repaired plan before
+  Phase 5 code starts.
+
+## Phase 5 IO wrapper shorthand completion
+- Landed one-line first-class IO wrapper shorthand on:
+  - `inputs`
+  - `outputs`
+  - base keyed wrappers
+  - override keyed wrappers
+- Lowered both shorthand forms to the existing title-omitted wrapper section
+  path with one direct declaration ref. No sidecar IO lowering path was
+  added.
+- Added focused shorthand proof in:
+  - `tests/test_parser_source_spans.py`
+  - `tests/test_compile_diagnostics.py`
+  - `tests/test_output_rendering.py`
+  - `tests/test_emit_docs.py`
+- Updated the shipped IO shorthand examples:
+  - `24`
+  - `117`
+- Updated live docs and editor support:
+  - `docs/AGENT_IO_DESIGN_NOTES.md`
+  - `docs/LANGUAGE_REFERENCE.md`
+  - `docs/AUTHORING_PATTERNS.md`
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json`
+  - `editors/vscode/tests/unit/io-blocks.test.prompt`
+  - `editors/vscode/tests/integration/suite/index.js`
+  - `editors/vscode/resolver.js`
+- Proof run:
+  - `uv run --locked python -m unittest tests.test_parser_source_spans tests.test_compile_diagnostics tests.test_output_rendering tests.test_emit_docs`
+    - result: `Ran 226 tests`
+    - result: `OK`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/24_io_block_inheritance/cases.toml`
+    - result: all cases passed
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/117_io_omitted_wrapper_titles/cases.toml`
+    - result: all cases passed
+  - `make verify-diagnostics`
+    - result: `diagnostic smoke checks passed`
+  - `make verify-examples`
+    - result: `PASS`
+  - Phase 1 regression slice
+    - result: `Ran 103 tests`
+    - result: `OK`
+  - `cd editors/vscode && make`
+    - result: `Exit code 0`
+    - result: packaged `doctrine-language-0.0.1776372227223.vsix`
+
+## Current frontier after Phase 5
+- Phase 1 through Phase 5 are complete on the current tree.
+- The next ordered frontier is Phase 6 `self:` shorthand on the existing
+  `PATH_REF` family.
+
+## Phase 6 self-addressed `PATH_REF` shorthand completion
+- Landed `self:` as a self-rooted `AddressableRef` shorthand on the approved
+  existing `PATH_REF` family without adding a second addressable resolver or a
+  sentinel root string.
+- Bound self-rooted refs back to the current declaration root before normal
+  addressable descent and kept malformed usage fail-loud on `E312`.
+- Added focused proof in:
+  - `tests/test_addressable_self_refs.py`
+  - `tests/test_parser_source_spans.py`
+  - `tests/test_compile_diagnostics.py`
+- Updated the shipped self-root teaching example:
+  - `examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt`
+- Updated live docs and editor support:
+  - `docs/LANGUAGE_REFERENCE.md`
+  - `docs/AUTHORING_PATTERNS.md`
+  - `docs/COMPILER_ERRORS.md`
+  - `editors/vscode/resolver.js`
+  - `editors/vscode/syntaxes/doctrine.tmLanguage.json`
+  - `editors/vscode/tests/integration/suite/index.js`
+  - `editors/vscode/tests/unit/io-blocks.test.prompt`
+- Proof run:
+  - `uv sync`
+    - result: `Checked 8 packages`
+  - `npm ci`
+    - result: `found 0 vulnerabilities`
+  - `uv run --locked python -m unittest tests.test_addressable_self_refs tests.test_parser_source_spans tests.test_compile_diagnostics tests.test_route_output_semantics`
+    - result: `Ran 202 tests`
+    - result: `OK`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/28_addressable_workflow_paths/cases.toml`
+    - result: all cases passed
+  - Phase 1 regression proof
+    - command: `uv run --locked python -m unittest tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_validate_output_schema tests.test_prove_output_schema_openai`
+    - result: `Ran 103 tests`
+    - result: `OK`
+  - `make verify-diagnostics`
+    - result: `diagnostic smoke checks passed`
+  - `make verify-examples`
+    - result: `PASS`
+  - `cd editors/vscode && make`
+    - result: `Exit code 0`
+    - result: packaged `doctrine-language-0.0.1776374108820.vsix`
+
+## Current frontier after Phase 6
+- Phase 1 through Phase 6 are complete on the current tree.
+- The next ordered frontier is Phase 7 release truth, changelog alignment, and
+  the full-wave proof sweep.
+
+## Phase 7 release truth and full-wave proof completion
+- Updated release truth in:
+  - `docs/VERSIONING.md`
+  - `CHANGELOG.md`
+- Release-truth updates:
+  - advanced the current Doctrine language line from `2.0` to `2.1`
+  - recorded the high-value authoring wave as one additive language move
+  - named shipped diagnostics `E306`, `E307`, `E308`, `E309`, and `E312`
+  - kept `E310` reserved for the deferred grouped-override investigation
+  - kept `E311` reserved for a future dedicated IO-wrapper shorthand
+    diagnostic
+- Checked the wave-level index surfaces:
+  - `docs/README.md`
+  - `examples/README.md`
+  - result: no stale or deprecated teaching track needed a Phase 7 index edit
+- Full wave proof run:
+  - `uv sync`
+    - result: `Checked 8 packages`
+  - `npm ci`
+    - result: `found 0 vulnerabilities`
+  - `uv run --locked python -m unittest tests.test_import_loading tests.test_compiler_boundary tests.test_emit_flow tests.test_review_imported_outputs tests.test_output_inheritance tests.test_output_schema_surface tests.test_output_schema_lowering tests.test_output_schema_validation tests.test_validate_output_schema tests.test_prove_output_schema_openai tests.test_route_output_semantics tests.test_final_output tests.test_emit_docs tests.test_output_rendering tests.test_compile_diagnostics`
+    - result: `Ran 337 tests`
+    - result: `OK`
+  - `make verify-diagnostics`
+    - result: `diagnostic smoke checks passed`
+  - `make verify-examples`
+    - result: `PASS`
+  - `cd editors/vscode && make`
+    - result: `Exit code 0`
+    - result: packaged `doctrine-language-0.0.1776374108820.vsix`
+
+## Current frontier after Phase 7
+- Phase 1 through Phase 7 are complete on the current tree.
+- The next truthful move is a fresh audit against the current plan and tree.

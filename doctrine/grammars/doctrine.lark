@@ -167,7 +167,7 @@ subject_map_entry: enum_member_ref ":" artifact_ref _NL?
 contract_stmt: "contract" ":" review_contract_ref _NL?
 comment_output_stmt: "comment_output" ":" output_ref _NL?
 fields_stmt: "fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
-semantic_field_binding: semantic_field_name ":" field_path _NL?
+semantic_field_binding: semantic_field_name (":" field_path)? _NL?
 
 artifact_subject_expr: artifact_ref
                      | "{" artifact_ref ("," artifact_ref)* "}"
@@ -650,10 +650,12 @@ io_body_line: io_string
         | io_inherit
         | io_override_section
 
-io_section: CNAME ":" string? _NL _INDENT record_body _DEDENT
+io_section: CNAME ":" name_ref _NL? -> io_section_ref
+          | CNAME ":" string? _NL _INDENT record_body _DEDENT
 io_inherit: "inherit" CNAME _NL? -> io_inherit
           | "inherit" "{" grouped_inherit_keys "}" _NL? -> io_inherit_group
-io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
+io_override_section: "override" CNAME ":" name_ref _NL? -> io_override_section_ref
+                   | "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
 input_body: input_body_line+
 input_body_line: input_structure_stmt
@@ -999,7 +1001,7 @@ REQUIRED_KEYWORD.2: /required(?=[ \t]*")/
 IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
 WARNING_KEYWORD.2: /warning(?=[ \t]*")/
 NOTE_KEYWORD.2: /note(?=[ \t]*")/
-PATH_REF: /[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
+PATH_REF: /(?:self|[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*):[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
 LAW_WILDCARD: ".*"
 MULTILINE_STRING.2: /""".*?"""/s
 

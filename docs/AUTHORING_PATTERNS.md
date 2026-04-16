@@ -302,6 +302,10 @@ Port this by host need:
   keep the durable review comment and end on a smaller final output that binds
   only part of the review state.
 
+When a review carrier or split final output keeps the same field key as the
+review semantic name, prefer the bare form like `verdict` or `next_owner`.
+Keep `semantic: path` when the bound output field name differs.
+
 Do not do this:
 - Do not point `final_output:` at a file output.
 - Do not throw away the durable review carrier just because the host also
@@ -408,6 +412,9 @@ Best anchors:
 
 Use grouped `inherit { ... }` when a child keeps several inherited IO wrappers
 unchanged before one local override.
+Use one-line `key: DeclRef` or `override key: DeclRef` when an IO wrapper only
+binds one declaration and adds no local prose. Keep the multiline wrapper when
+the local section still needs prose or more than one item.
 
 ### Keep skills semantic and keep runtime config elsewhere
 
@@ -444,14 +451,23 @@ Keep `emit_flow` entrypoints separate when the family needs a graph view.
 Use `import ... as ...` when a module prefix is repeated a lot.
 Use `from ... import ...` when one declaration is the only thing you need.
 Keep `import module` when you still want the module path to stay visible.
+Use `self:path` when the current declaration root is the prefix you keep
+repeating.
 
 Do not do this:
 - Do not put every owner, contract, skill, and output into one mega-file.
 - Do not make readers reconstruct the family graph from scattered owners if one
   checked flow entrypoint would make it clear.
 
+`self:path` works only where Doctrine already gives that body a
+declaration-root addressable context, such as workflows, named skills,
+first-class IO, inputs, outputs, schemas, documents, and analyses. Use
+explicit `Root:path` when you are reaching into another declaration or when
+that root is not live on the current surface.
+
 Best anchors:
 - [03_imports](../examples/03_imports/prompts/AGENTS.prompt)
+- [28_addressable_workflow_paths](../examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt)
 - [75_cross_root_standard_library_imports](../examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt)
 - [73_flow_visualizer_showcase](../examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt)
 

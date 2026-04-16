@@ -6807,6 +6807,131 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Inputs refs must resolve to input declarations", str(error))
 
+    def test_input_wrapper_shorthand_ref_kind_mismatch_points_at_ref_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                inputs SharedInputs: "Inputs"
+                    review_comment: ReviewComment
+
+                agent Demo:
+                    role: "Keep input wrapper shorthand on input declarations."
+                    inputs: SharedInputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E301")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    review_comment: ReviewComment") + 1,
+        )
+        self.assertIn("Inputs refs must resolve to input declarations", str(error))
+
+    def test_self_ref_without_declaration_root_points_at_review_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                schema PlanReviewContract: "Plan Review Contract"
+                    sections:
+                        summary: "Summary"
+                            "Summarize the reviewed plan."
+
+                    gates:
+                        outline_complete: "Outline Complete"
+                            "Confirm the reviewed plan includes the outline."
+
+                input DraftPlan: "Draft Plan"
+                    source: File
+                        path: "unit_root/DRAFT_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                agent ReviewLead:
+                    role: "Own accepted plan follow-up."
+
+                agent PlanAuthor:
+                    role: "Repair rejected plan defects."
+
+                output PlanReviewComment: "Plan Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                    verdict: "Verdict"
+                        "State the review verdict."
+
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "State what the next owner should read first."
+
+                    next_owner: "Next Owner"
+                        "Name {{ReviewLead}} when accepted and {{PlanAuthor}} when rejected."
+
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List exact failing gates."
+
+                review SchemaBackedPlanReview: "Schema Backed Plan Review"
+                    subject: DraftPlan
+                    contract: PlanReviewContract
+                    comment_output: PlanReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    contract_checks: "Contract Checks"
+                        accept "The schema review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        "Keep {{self:reviewed_artifact}} aligned."
+                        route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected draft returns to PlanAuthor." -> PlanAuthor
+
+                agent Demo:
+                    role: "Fail loud when self has no declaration root."
+                    review: SchemaBackedPlanReview
+                    inputs: "Inputs"
+                        DraftPlan
+                    outputs: "Outputs"
+                        PlanReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E312")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, None)
+        self.assertIn("`self:` needs a declaration-root addressable context", str(error))
+
     def test_inputs_field_ref_kind_mismatch_points_at_field_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
