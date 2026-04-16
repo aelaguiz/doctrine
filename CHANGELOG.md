@@ -112,6 +112,13 @@ payload text and breaking releases with no real upgrade steps.
   `files:` outputs add an `Artifacts` table, and `structure:` now renders as
   one `Artifact Structure` section. Downstream emitted-Markdown snapshots or
   parsers will need to update.
+- Changed emitted runtime Markdown to compact several Doctrine-owned surfaces.
+  Simple `TurnResponse` ordinary outputs may now render as bullet contracts,
+  summary-only output structures may render as `Required Structure:` lists,
+  split review finals now use one short carrier note instead of a repeated
+  review-semantics section, and compiler-owned single-child `* Binding`
+  wrappers may collapse when they add no extra meaning. Downstream emitted-
+  Markdown snapshots or parsers will need to update.
 - Changed detailed readable list rendering to drop helper kind lines such as
   `_ordered list_` and `_unordered list_`. Titled lists keep their heading,
   and titleless lists render directly in the parent section.

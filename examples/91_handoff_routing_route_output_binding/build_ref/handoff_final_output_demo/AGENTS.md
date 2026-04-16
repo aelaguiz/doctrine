@@ -48,7 +48,7 @@ This final JSON should stand on its own.
 
 Route through compiler-owned handoff routing.
 
-This pass runs only when true.
+Use this pass only when true.
 
 Stop: Hand off or finish the turn.
 

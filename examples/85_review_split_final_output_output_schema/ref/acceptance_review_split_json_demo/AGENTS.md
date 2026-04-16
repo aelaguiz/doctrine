@@ -38,35 +38,16 @@ Rejected plan goes to PlanAuthor.
 
 ### Acceptance Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Verdict
-
-State whether the plan passed review.
-
-#### Reviewed Artifact
-
-Name the reviewed artifact.
-
-#### Analysis Performed
-
-Summarize the review analysis.
-
-#### Output Contents That Matter
-
-State what the next owner should read first.
-
-#### Current Artifact
-
-Name the artifact that remains current after review.
-
-#### Next Owner
-
-Name ReviewLead when accepted and PlanAuthor when rejected.
+- Verdict: State whether the plan passed review.
+- Reviewed Artifact: Name the reviewed artifact.
+- Analysis Performed: Summarize the review analysis.
+- Output Contents That Matter: State what the next owner should read first.
+- Current Artifact: Name the artifact that remains current after review.
+- Next Owner: Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 
@@ -80,9 +61,7 @@ List exact failing gates, including Outline Complete when it fails.
 
 - `Current Artifact`
 
-#### Standalone Read
-
-This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner.
+- Standalone Read: This review should stand on its own. A downstream owner should know the acceptance verdict, current artifact, and next owner.
 
 ## Final Output
 
@@ -119,14 +98,8 @@ This review should stand on its own. A downstream owner should know the acceptan
 }
 ```
 
-#### Review Response Semantics
-
 This final response is separate from the review carrier: AcceptanceReviewComment.
-
-This final response does not carry review fields on its own.
-
-This final response is not control-ready. Read the review carrier for the full review outcome.
-
+Read the review carrier for the full review outcome.
 - Kind: Json Object
 
 #### Field Notes

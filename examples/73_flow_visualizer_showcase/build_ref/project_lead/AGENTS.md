@@ -37,23 +37,13 @@ Start research with ResearchSpecialist. -> Research Specialist
 
 ### Shared Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the artifact that is current after this turn.
-
-#### Use Now
-
-Name the file or comment the next owner should read first.
-
-#### Next Owner
-
-Name the honest next owner.
+- Current Artifact: Name the artifact that is current after this turn.
+- Use Now: Name the file or comment the next owner should read first.
+- Next Owner: Name the honest next owner.
 
 #### Trust Surface
 
@@ -61,6 +51,4 @@ Name the honest next owner.
 - `Use Now`
 - `Next Owner`
 
-#### Standalone Read
-
-A downstream owner should be able to read this handoff alone and know what is current now, what to read first, and who owns next.
+- Standalone Read: A downstream owner should be able to read this handoff alone and know what is current now, what to read first, and who owns next.

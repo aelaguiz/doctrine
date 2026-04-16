@@ -61,12 +61,8 @@ Use the turn response to say what changed and where the durable file lives.
 
 #### Dossier Summary
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Turn Summary Text |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Turn Summary Text
+- Requirement: Required
 
-##### Purpose
-
-Summarize what changed and point the reader at dossier_engineer.md.
+- Purpose: Summarize what changed and point the reader at dossier_engineer.md.

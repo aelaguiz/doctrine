@@ -229,7 +229,8 @@ class CompileOutputsMixin:
 
         body: list[CompiledBodyItem] = []
         schema_section: CompiledSection | None = None
-        structure_section: CompiledSection | None = None
+        structure_items: tuple[CompiledBodyItem, ...] = ()
+        use_compact_contract = False
         if files_section is not None:
             contract_rows = [
                 ("Target", "File Set"),
@@ -274,7 +275,18 @@ class CompileOutputsMixin:
                 shape_item=shape_item,
                 requirement_item=requirement_item,
             )
-            body.extend(self._compile_ordinary_output_contract_table(contract_rows))
+            use_compact_contract = self._should_compact_ordinary_output_contract(
+                decl,
+                unit=unit,
+                target_item=target_item,
+                shape_item=shape_item,
+                contract_rows=contract_rows,
+                extras=extras,
+            )
+            if use_compact_contract:
+                body.extend(self._compile_compact_ordinary_output_contract(contract_rows))
+            else:
+                body.extend(self._compile_ordinary_output_contract_table(contract_rows))
         if decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
             resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
@@ -322,7 +334,7 @@ class CompileOutputsMixin:
                 )
             document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             resolved_document = self._resolve_document_decl(document_decl, unit=document_unit)
-            structure_section = self._compile_output_structure_section(
+            structure_items = self._compile_output_structure_items(
                 resolved_document,
                 document_title=document_decl.title,
                 unit=document_unit,
@@ -342,22 +354,36 @@ class CompileOutputsMixin:
             else None
         )
 
-        for detail_section in (schema_section, structure_section):
-            if detail_section is None:
-                continue
+        if schema_section is not None:
             body.append("")
-            body.append(detail_section)
+            body.append(schema_section)
+        if structure_items:
+            body.append("")
+            body.extend(structure_items)
 
         if extras:
-            support_items = self._compile_ordinary_output_support_items(
-                extras,
-                unit=unit,
-                owner_label=f"output {decl.name}",
-                surface_label="output prose",
-                review_semantics=review_semantics,
-                route_semantics=route_semantics,
-                render_profile=render_profile,
-                trust_surface_section=trust_surface_section,
+            support_items = (
+                self._compile_compact_ordinary_output_support_items(
+                    extras,
+                    unit=unit,
+                    owner_label=f"output {decl.name}",
+                    surface_label="output prose",
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                    trust_surface_section=trust_surface_section,
+                )
+                if use_compact_contract
+                else self._compile_ordinary_output_support_items(
+                    extras,
+                    unit=unit,
+                    owner_label=f"output {decl.name}",
+                    surface_label="output prose",
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                    trust_surface_section=trust_surface_section,
+                )
             )
             body.append("")
             body.extend(support_items)
@@ -636,6 +662,104 @@ class CompileOutputsMixin:
         rows: tuple[tuple[str, str], ...],
     ) -> tuple[CompiledBodyItem, ...]:
         return tuple(self._pipe_table_lines(("Contract", "Value"), rows))
+
+    def _should_compact_ordinary_output_contract(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        target_item: model.RecordScalar,
+        shape_item: model.RecordScalar,
+        contract_rows: tuple[tuple[str, str], ...],
+        extras: tuple[model.AnyRecordItem, ...],
+    ) -> bool:
+        if decl.schema_ref is not None or decl.structure_ref is not None:
+            return False
+        if len(contract_rows) != 3:
+            return False
+        if not isinstance(target_item.value, model.NameRef):
+            return False
+        if not self._is_builtin_turn_response_target_ref(target_item.value):
+            return False
+        for item in extras:
+            if isinstance(item, model.ReadableBlock):
+                return False
+            if isinstance(item, model.RecordSection) and item.key in {
+                "must_include",
+                "current_truth",
+                "support_files",
+                "notes",
+            }:
+                return False
+        return not self._is_markdown_shape_value(shape_item.value, unit=unit)
+
+    def _compile_compact_ordinary_output_contract(
+        self,
+        rows: tuple[tuple[str, str], ...],
+    ) -> tuple[CompiledBodyItem, ...]:
+        return tuple(f"- {label}: {value}" for label, value in rows)
+
+    def _compile_compact_ordinary_output_support_items(
+        self,
+        items: tuple[model.AnyRecordItem, ...],
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+        trust_surface_section: CompiledSection | None = None,
+    ) -> list[CompiledBodyItem]:
+        compiled: list[CompiledBodyItem] = []
+        rendered_trust_surface = False
+        for item in items:
+            if (
+                trust_surface_section is not None
+                and not rendered_trust_surface
+                and isinstance(item, model.RecordSection)
+                and item.key == "standalone_read"
+            ):
+                if compiled and compiled[-1] != "":
+                    compiled.append("")
+                compiled.append(trust_surface_section)
+                rendered_trust_surface = True
+
+            compact_line = self._render_compact_record_item_line(
+                item,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
+            )
+            if compact_line is not None:
+                compiled.append(compact_line)
+                continue
+
+            rendered_items = list(
+                self._compile_ordinary_output_support_item(
+                    item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            )
+            if not rendered_items:
+                continue
+            if compiled and compiled[-1] != "":
+                compiled.append("")
+            compiled.extend(rendered_items)
+
+        if trust_surface_section is not None and not rendered_trust_surface:
+            if compiled and compiled[-1] != "":
+                compiled.append("")
+            compiled.append(trust_surface_section)
+        return compiled
 
     def _compile_ordinary_output_support_items(
         self,
@@ -1070,18 +1194,31 @@ class CompileOutputsMixin:
         text = " ".join(line.strip() for line in rendered if line.strip()).strip()
         return text or None
 
-    def _compile_output_structure_section(
+    def _compile_output_structure_items(
         self,
         document_body,
         *,
         document_title: str,
         unit: IndexedUnit,
         render_profile: ResolvedRenderProfile | None = None,
-    ) -> CompiledSection:
+    ) -> tuple[CompiledBodyItem, ...]:
         summary_rows, detail_blocks = self._compile_output_structure_summary_rows(
             document_body,
             unit=unit,
         )
+        if not document_body.preamble and not detail_blocks:
+            return (
+                "Required Structure:",
+                *tuple(
+                    (
+                        f"- {title.replace('**', '')}: {summary}"
+                        if summary and summary != "See the detail below."
+                        else f"- {title.replace('**', '')}"
+                    )
+                    for title, _kind, summary in summary_rows
+                ),
+            )
+
         body: list[CompiledBodyItem] = []
         if document_body.preamble:
             body.extend(document_body.preamble)
@@ -1096,10 +1233,12 @@ class CompileOutputsMixin:
         )
         for detail_block in detail_blocks:
             body.extend(["", detail_block])
-        return CompiledSection(
-            title="Artifact Structure",
-            body=tuple(body),
-            render_profile=render_profile,
+        return (
+            CompiledSection(
+                title="Artifact Structure",
+                body=tuple(body),
+                render_profile=render_profile,
+            ),
         )
 
     def _compile_output_structure_summary_rows(

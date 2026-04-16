@@ -2,7 +2,7 @@ Keep reusable law subsections explicit in the base workflow.
 
 ## Base Metadata Polish
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
 Accepted Peer Set is support only for comparison.
 
@@ -40,25 +40,16 @@ Use the host-provided handoff facts that say whether the preserve basis remains 
 
 ### Base Coordination Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
-
-#### Comparison Basis
-
-Name any comparison-only artifacts used in this pass.
+- Current Artifact: Name the one artifact that is current now.
+- Comparison Basis: Name any comparison-only artifacts used in this pass.
 
 #### Trust Surface
 
 - `Current Artifact`
 - `Comparison Basis`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know what is current now and what was comparison-only.
+- Standalone Read: This output should stand on its own. The next owner should know what is current now and what was comparison-only.

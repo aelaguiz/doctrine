@@ -225,7 +225,7 @@ class OutputInheritanceTests(unittest.TestCase):
         self.assertIn("| Structure | Handoff Structure |", rendered)
         self.assertIn("### Lessons Lead Schema Output", rendered)
         self.assertIn("### Lessons Lead Structure Output", rendered)
-        self.assertIn("#### Artifact Structure", rendered)
+        self.assertIn("Required Structure:", rendered)
         self.assertIn("#### Test", rendered)
 
     def test_missing_inherited_output_entry_fails_loud(self) -> None:

@@ -4,11 +4,9 @@ Read route truth from handoff routing.
 
 ### Handoff Route Binding Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
 - Next Owner: Review Lead
 
@@ -16,7 +14,7 @@ Read route truth from handoff routing.
 
 Route through compiler-owned handoff routing.
 
-This pass runs only when true.
+Use this pass only when true.
 
 Stop: Hand off or finish the turn.
 

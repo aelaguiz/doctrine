@@ -43,39 +43,16 @@ When missing(blocked_gate), current artifact: Draft Plan.
 
 ### Acceptance Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Verdict
-
-State whether the plan passed review or asked for changes.
-
-#### Reviewed Artifact
-
-Name the reviewed artifact.
-
-#### Analysis Performed
-
-Summarize the review analysis.
-
-#### Output Contents That Matter
-
-State what the next owner should read first.
-
-#### Current Artifact
-
-Show this only when present(current_artifact).
-
-Name the artifact that remains current after review.
-
-#### Next Owner
-
-Show this only when present(next_owner).
-
-Name ReviewLead when the review accepts the plan.
+- Verdict: State whether the plan passed review or asked for changes.
+- Reviewed Artifact: Name the reviewed artifact.
+- Analysis Performed: Summarize the review analysis.
+- Output Contents That Matter: State what the next owner should read first.
+- Current Artifact: Show this only when present(current_artifact). Name the artifact that remains current after review.
+- Next Owner: Show this only when present(next_owner). Name ReviewLead when the review accepts the plan.
 
 #### Failure Detail
 
@@ -95,9 +72,7 @@ List exact failing gates in authored order.
 
 - `Current Artifact`
 
-#### Standalone Read
-
-This review should stand on its own. A downstream owner should know the verdict, current artifact when one remains, and whether a next owner exists.
+- Standalone Read: This review should stand on its own. A downstream owner should know the verdict, current artifact when one remains, and whether a next owner exists.
 
 ## Final Output
 
@@ -136,19 +111,8 @@ This review should stand on its own. A downstream owner should know the verdict,
 }
 ```
 
-#### Review Response Semantics
-
 This final response is separate from the review carrier: AcceptanceReviewComment.
-
-| Meaning | Field |
-| --- | --- |
-| Verdict | `verdict` |
-| Current Artifact | `current_artifact` |
-| Next Owner | `next_owner` |
-| Blocked Gate | `blocked_gate` |
-
 This final response is control-ready. A host may read it as the review outcome.
-
 - Kind: Json Object
 
 #### Field Notes

@@ -6,7 +6,7 @@ If unclear(CurrentHandoff.preserve_basis):
 - Stop: Preserve basis is unclear.
 - Route the same issue back to RoutingOwner.
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
 Accepted Peer Set is support only for comparison.
 
@@ -47,27 +47,14 @@ Use the host-provided handoff facts that say whether the preserve basis remains 
 
 ### Rewrite-Aware Coordination Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
-
-#### Comparison Basis
-
-Name any comparison-only artifacts used in this pass.
-
-#### Rewrite Evidence Exclusions
-
-Name any fields whose old values do not count as rewrite evidence.
-
-#### Invalidations
-
-Name any artifacts that are no longer current.
+- Current Artifact: Name the one artifact that is current now.
+- Comparison Basis: Name any comparison-only artifacts used in this pass.
+- Rewrite Evidence Exclusions: Name any fields whose old values do not count as rewrite evidence.
+- Invalidations: Name any artifacts that are no longer current.
 
 #### Trust Surface
 
@@ -76,6 +63,4 @@ Name any artifacts that are no longer current.
 - Rewrite Evidence Exclusions on rewrite passes
 - Invalidations when structure changed
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know what is current, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.
+- Standalone Read: This output should stand on its own. The next owner should know what is current, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.

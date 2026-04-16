@@ -4740,6 +4740,212 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Skill is missing string purpose", str(error))
 
+    def test_inherited_inputs_block_needs_keyed_entries_reports_related_parent_ref_line(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                inputs BaseInputs: "Inputs"
+                    ApprovedPlan
+
+                inputs ReviewInputs[BaseInputs]: "Inputs"
+                    inherit approved_plan
+
+                agent Demo:
+                    role: "Keep inherited IO blocks patchable."
+                    inputs: ReviewInputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E247")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('inputs ReviewInputs[BaseInputs]: "Inputs"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    ApprovedPlan") + 1,
+        )
+        self.assertIn("contains unkeyed top-level refs", str(error))
+
+    def test_missing_inherited_inputs_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                input AlternatePlan: "Alternate Plan"
+                    source: File
+                        path: "unit_root/ALTERNATE_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                inputs BaseInputs: "Inputs"
+                    approved_plan: "Approved Plan Binding"
+                        ApprovedPlan
+                    alternate_plan: "Alternate Plan Binding"
+                        AlternatePlan
+
+                inputs ReviewInputs[BaseInputs]: "Inputs"
+                    inherit approved_plan
+
+                agent Demo:
+                    role: "Keep inherited IO blocks explicit."
+                    inputs: ReviewInputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('inputs ReviewInputs[BaseInputs]: "Inputs"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("        AlternatePlan") + 1,
+        )
+        self.assertIn("Missing inherited inputs entry in ReviewInputs: alternate_plan", str(error))
+
+    def test_input_bucket_ref_with_inline_body_points_at_ref_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                agent Demo:
+                    role: "Keep input refs bare inside IO buckets."
+                    inputs: "Inputs"
+                        ApprovedPlan
+                            "This should fail."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E301")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        ApprovedPlan") + 1,
+        )
+        self.assertIn("Declaration refs cannot define inline bodies", str(error))
+
+    def test_input_bucket_ref_kind_mismatch_points_at_ref_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                agent Demo:
+                    role: "Keep input buckets on input declarations."
+                    inputs: "Inputs"
+                        ReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E301")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        ReviewComment") + 1,
+        )
+        self.assertIn("Inputs refs must resolve to input declarations", str(error))
+
+    def test_omitted_inputs_wrapper_title_reports_direct_ref_sites(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input LessonsIssueLedger: "Lessons Issue Ledger"
+                    source: File
+                        path: "catalog/lessons_issue_ledger.json"
+                    shape: "JSON Document"
+                    requirement: Required
+
+                input ForwardIssueLedger: "Forward Issue Ledger"
+                    source: File
+                        path: "catalog/forward_issue_ledger.json"
+                    shape: "JSON Document"
+                    requirement: Advisory
+
+                inputs InvalidSectionDossierInputs: "Your Inputs"
+                    issue_ledger:
+                        LessonsIssueLedger
+                        ForwardIssueLedger
+
+                agent Demo:
+                    role: "Keep omitted IO wrapper titles unambiguous."
+                    inputs: InvalidSectionDossierInputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        LessonsIssueLedger") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 2)
+        related_lines = sorted(
+            related.location.line
+            for related in error.diagnostic.related
+            if related.location is not None
+        )
+        self.assertEqual(
+            related_lines,
+            sorted(
+                [
+                    rendered.splitlines().index("        LessonsIssueLedger") + 1,
+                    rendered.splitlines().index("        ForwardIssueLedger") + 1,
+                ]
+            ),
+        )
+        self.assertIn("requires exactly one lowerable direct declaration", str(error))
+
 
 if __name__ == "__main__":
     unittest.main()

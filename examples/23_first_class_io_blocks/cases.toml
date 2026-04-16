@@ -53,13 +53,10 @@ expected_lines = [
   "",
   "#### Coordination Handoff",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
 ]
-
 [[cases]]
 name = "wrong-kind first-class io field refs fail loud"
 status = "active"

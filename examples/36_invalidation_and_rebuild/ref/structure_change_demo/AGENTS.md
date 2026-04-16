@@ -2,9 +2,9 @@ Invalidate downstream review when structure changes.
 
 ## Structure Change
 
-This pass runs only when structure changed.
+Use this pass only when structure changed.
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
 Section Review is no longer current.
 
@@ -35,25 +35,16 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 ### Invalidation Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
-
-#### Invalidations
-
-Name any artifacts that are no longer current.
+- Current Artifact: Name the one artifact that is current now.
+- Invalidations: Name any artifacts that are no longer current.
 
 #### Trust Surface
 
 - `Current Artifact`
 - `Invalidations`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know what is current now and what is no longer current.
+- Standalone Read: This output should stand on its own. The next owner should know what is current now and what is no longer current.

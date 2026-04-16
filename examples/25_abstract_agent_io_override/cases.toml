@@ -53,13 +53,10 @@ expected_lines = [
   "",
   "#### Coordination Handoff",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
 ]
-
 [[cases]]
 name = "concrete child can override abstract parent io blocks directly"
 status = "active"
@@ -111,13 +108,10 @@ expected_lines = [
   "",
   "#### Coordination Handoff",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
 ]
-
 [[cases]]
 name = "wrong-kind abstract-parent io patch bases fail loud"
 status = "active"

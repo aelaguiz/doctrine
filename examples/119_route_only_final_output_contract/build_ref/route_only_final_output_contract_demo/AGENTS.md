@@ -4,16 +4,16 @@ End a route-only turn with emitted route contract metadata.
 
 Emit Route Only Final Reply.
 
-This pass runs only when RouteFacts.live_job is route_only_final.
+Use this pass only when route facts live job is route_only_final.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: No specialist artifact is current for this turn.
 
-Use exactly one mode:
+Choose one mode for this turn:
 - Routing Owner
 
-If the mode is Routing Owner:
+When the mode is Routing Owner:
 - Route to Routing Owner.
 
 ## Inputs

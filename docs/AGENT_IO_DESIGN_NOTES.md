@@ -253,32 +253,37 @@ Output bodies can include:
 Shipped ordinary output render shape:
 
 - This is an emitted Markdown rule, not a new input syntax rule.
-- A single-artifact ordinary output starts with one `Contract | Value` table.
+- A simple `TurnResponse` ordinary output with only `Target`, `Shape`, and
+  `Requirement` starts with a short bullet contract.
+- Richer single-artifact ordinary outputs still start with one
+  `Contract | Value` table.
 - A `files:` output starts with the same contract table, then an `Artifacts`
   table.
 - `current_truth`, titled `properties`, parseable `notes`, and
   `support_files` lower to tables when the authored shape is naturally tabular.
 - `trust_surface` still renders as its own section, but ordinary output labels
   render as inline code.
-- `structure:` lowers to one `Artifact Structure` section with a summary table
-  and any needed detail blocks.
+- If `structure:` only needs titled section summaries, Doctrine renders a
+  compact `Required Structure:` list.
+- `structure:` still lowers to one `Artifact Structure` section with a summary
+  table and any needed detail blocks when the shape is richer.
 - Named tables do not add a new emitted shape. They use the same summary row,
   detail block, row-backed table, or no-row contract table that inline
   document tables use.
 - A target-owned `delivery_skill:` renders as one `Delivered Via` row after
   `Target` and before target config rows. The row shows the skill title only;
   it does not print adapter commands.
+- Compiler-owned `* Binding` wrappers may collapse when they only repeat one
+  direct child section and add no keyed content of their own.
 
 Example emitted shape:
 
 ```md
 ### Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 ```
 
 Target-owned delivery example:

@@ -2,19 +2,19 @@ Handle the last narrow wording pass after structure is already locked.
 
 ## Metadata Polish
 
-This pass runs only when metadata polish is owed now.
+Use this pass only when metadata polish is owed now.
 
-Active mode: manifest-title.
+This pass is for `manifest-title` mode.
 
-Current artifact: Primary Manifest.
+The current artifact is Primary Manifest.
 
 Make sure current_handoff.preserve_basis == approved_plan.
 
-Own only `primary_manifest.title`.
+Only edit `primary_manifest.title`.
 
-Preserve exact `primary_manifest.*` except `primary_manifest.title`.
+Keep `primary_manifest.*` unchanged except `primary_manifest.title`.
 
-Preserve decisions `approved_plan`.
+Keep decisions from `approved_plan`.
 
 Accepted Peer Set is support only for comparison.
 
@@ -24,9 +24,7 @@ If unclear(pass_mode, current_handoff.preserve_basis):
 
 ## Inputs
 
-### Current Handoff Binding
-
-#### Current Handoff
+### Current Handoff
 
 - Source: Prompt
 - Shape: Json Object
@@ -34,27 +32,21 @@ If unclear(pass_mode, current_handoff.preserve_basis):
 
 Use the host handoff facts. They say whether metadata polish is owed, which mode is active, which preserve basis still decides, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
 
-### Approved Plan Binding
-
-#### Approved Plan
+### Approved Plan
 
 - Source: File
 - Path: `unit_root/_authoring/APPROVED_PLAN.md`
 - Shape: Markdown Document
 - Requirement: Required
 
-### Approved Structure Binding
-
-#### Approved Structure
+### Approved Structure
 
 - Source: File
 - Path: `unit_root/_authoring/APPROVED_STRUCTURE.md`
 - Shape: Markdown Document
 - Requirement: Required
 
-### Accepted Peer Set Binding
-
-#### Accepted Peer Set
+### Accepted Peer Set
 
 - Source: File
 - Path: `catalog/accepted_peers.json`
@@ -63,9 +55,7 @@ Use the host handoff facts. They say whether metadata polish is owed, which mode
 
 ## Outputs
 
-### Primary Manifest Binding
-
-#### Primary Manifest
+### Primary Manifest
 
 | Contract | Value |
 | --- | --- |
@@ -78,27 +68,14 @@ Use the host handoff facts. They say whether metadata polish is owed, which mode
 
 #### Base Coordination Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-##### Current Artifact
-
-Name the one artifact that is current now.
-
-##### Active Mode
-
-Name the one active mode for this pass.
-
-##### Preserve Basis
-
-Name the upstream declaration that still decides.
-
-##### Comparison Basis
-
-Name any comparison-only artifacts used in this pass.
+- Current Artifact: Name the one artifact that is current now.
+- Active Mode: Name the one active mode for this pass.
+- Preserve Basis: Name the upstream declaration that still decides.
+- Comparison Basis: Name any comparison-only artifacts used in this pass.
 
 ##### Trust Surface
 
@@ -107,6 +84,4 @@ Name any comparison-only artifacts used in this pass.
 - `Preserve Basis`
 - Comparison Basis when peer comparison is used
 
-##### Standalone Read
-
-This output should stand on its own. The next owner should know what is current, which mode is active, and why that preserve basis still decides.
+- Standalone Read: This output should stand on its own. The next owner should know what is current, which mode is active, and why that preserve basis still decides.

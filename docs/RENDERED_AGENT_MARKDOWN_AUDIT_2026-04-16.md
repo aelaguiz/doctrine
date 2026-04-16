@@ -1052,6 +1052,20 @@ Doctrine already has proof that smaller surfaces are possible.
 
 ## Phase 1. Remove split review and final-output restatement
 
+Status: COMPLETE
+
+Completed work:
+- Removed the redundant `Review Response Semantics` section from split review
+  final outputs.
+- Added one short inline carrier note for split prose and schema finals in
+  `doctrine/_compiler/compile/final_output.py`.
+- Kept the control-ready note when present and otherwise told the reader to use
+  the review carrier for the full outcome.
+
+Proof:
+- `uv run --locked python -m unittest tests.test_final_output tests.test_emit_docs tests.test_review_imported_outputs` - passed.
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/84_review_split_final_output_prose/cases.toml --manifest examples/85_review_split_final_output_output_schema/cases.toml --manifest examples/90_split_handoff_and_final_output_shared_route_semantics/cases.toml --manifest examples/105_review_split_final_output_output_schema_control_ready/cases.toml --manifest examples/106_review_split_final_output_output_schema_partial/cases.toml` - passed.
+
 - Goal: make split review outputs explain the review once and the final payload
   once.
 - Work: update `final_output.py` so the review carrier stays rich, the final
@@ -1098,6 +1112,20 @@ Doctrine already has proof that smaller surfaces are possible.
 
 ## Phase 2. Compact ordinary comment contracts and tiny scalar outputs
 
+Status: COMPLETE
+
+Completed work:
+- Added bullet-first ordinary-output compaction for eligible simple
+  `TurnResponse` contracts in `doctrine/_compiler/compile/outputs.py`.
+- Flattened simple scalar and simple guarded support items into one bullet line
+  in `doctrine/_compiler/compile/records.py`.
+- Preserved table rendering for files, target-config rows, delivery-skill
+  rows, schema-bearing shapes, and richer support sections.
+
+Proof:
+- `uv run --locked python -m unittest tests.test_output_rendering tests.test_output_target_delivery_skill tests.test_emit_docs` - passed.
+- `make verify-examples` - passed.
+
 - Goal: stop using tables for contracts that do not need columns.
 - Work: add bullet-first ordinary-output compaction for small turn-response
   contracts and simple comment carriers while preserving table form for real
@@ -1136,6 +1164,21 @@ Doctrine already has proof that smaller surfaces are possible.
 
 ## Phase 3. Flatten compiler-generated binding shells
 
+Status: COMPLETE
+
+Completed work:
+- Moved binding-shell collapse into `doctrine/_compiler/resolve/outputs.py`
+  so redundant compiler-owned `* Binding` wrappers lower away before markdown
+  compile.
+- Preserved explicit wrapper titles and the existing omitted-title fail-loud
+  rule.
+- Refreshed the adjacent IO, currentness, and review examples that share the
+  same lowering path.
+
+Proof:
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/38_metadata_polish_capstone/cases.toml --manifest examples/51_inherited_bound_io_roots/cases.toml --manifest examples/117_io_omitted_wrapper_titles/cases.toml` - passed.
+- `make verify-examples` - passed.
+
 - Goal: remove heading ladders caused by compiler-generated wrapper shells.
 - Work: collapse only the wrappers that are compiler-owned, single-child, and
   semantically empty, while preserving explicit authored long-form wrappers.
@@ -1168,6 +1211,20 @@ Doctrine already has proof that smaller surfaces are possible.
   - revert the shell-collapse change and the matching artifact refresh together
 
 ## Phase 4. Compact simple artifact structure
+
+Status: COMPLETE
+
+Completed work:
+- Added the compact `Required Structure:` render for summary-only structure
+  attachments in `doctrine/_compiler/compile/outputs.py`.
+- Preserved the full `Artifact Structure` section for richer structure shapes
+  that still need preamble or detail blocks.
+- Updated inherited-structure proof and the lesson-plan structure example to
+  match the selector.
+
+Proof:
+- `uv run --locked python -m unittest tests.test_output_rendering tests.test_output_inheritance` - passed.
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/56_document_structure_attachments/cases.toml` - passed.
 
 - Goal: keep simple structure attachments compact while preserving rich
   structure proofs.
@@ -1202,6 +1259,24 @@ Doctrine already has proof that smaller surfaces are possible.
     together
 
 ## Phase 5. Humanize workflow-law wording
+
+Status: COMPLETE
+
+Completed work:
+- Updated workflow-law and display wording in
+  `doctrine/_compiler/compile/workflows.py` and
+  `doctrine/_compiler/display.py` so pass gates, mode selection, currentness,
+  route selection, stop lines, and preservation lines read like plain
+  instructions.
+- Fixed condition rendering so enum-backed refs stay readable after the wording
+  cleanup.
+- Refreshed the route, review, and workflow-law example families that share
+  these compiler-owned lines.
+
+Proof:
+- `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_final_output` - passed.
+- `make verify-diagnostics` - passed.
+- `make verify-examples` - passed.
 
 - Goal: make route-heavy and mode-heavy workflow-law sections read like plain
   instructions without changing the law.
@@ -1243,6 +1318,27 @@ Doctrine already has proof that smaller surfaces are possible.
     artifact refresh
 
 ## Phase 6. Corpus sweep, docs alignment, and final proof
+
+Status: COMPLETE
+
+Completed work:
+- Updated the live emitted-markdown docs in `examples/README.md`,
+  `docs/EMIT_GUIDE.md`, `docs/LANGUAGE_REFERENCE.md`, and
+  `docs/AGENT_IO_DESIGN_NOTES.md`.
+- Updated `docs/VERSIONING.md` and `CHANGELOG.md` because emitted markdown is a
+  public surface and this compaction changes that layout.
+- Ran the full setup and proof path, refreshed every touched manifest-backed
+  example artifact, and manually re-read representative outputs for examples
+  `09`, `38`, `51`, `56`, `64`, `67`, `83`, `84`, `85`, `90`, `104`, `105`,
+  `106`, `117`, and `119`.
+- Kept the change set Doctrine-only. No `../psflows` or `../rally` cleanup
+  entered the implementation.
+
+Proof:
+- `uv sync` - passed.
+- `npm ci` - passed.
+- `make verify-examples` - passed.
+- `make verify-diagnostics` - passed.
 
 - Goal: prove the final render cleanup across the shipped Doctrine corpus and
   leave no stale truth behind.
@@ -1465,6 +1561,80 @@ Doctrine-owned artifacts.
 - Audit each phase against the invariants in Section `0.5`.
 - Update docs only when the public emitted-markdown story truly changes.
 
+## 2026-04-16 - Lower redundant binding shells at resolve time, not at markdown compile time
+
+### Context
+
+The phase-plan draft pointed the binding-shell cleanup at
+`compile/outputs.py` and `compile/records.py`. During implementation, the
+shared shape turned out to be earlier: compiler-owned binding wrappers are born
+in resolved IO sections, and late compile-time flattening would have repeated
+the same rule across multiple output families.
+
+### Options
+
+- Flatten redundant `* Binding` shells late in markdown compile.
+- Lower those shells once in `doctrine/_compiler/resolve/outputs.py` and let
+  the existing compile path consume the simpler shape.
+
+### Decision
+
+Lower redundant compiler-owned binding shells in
+`doctrine/_compiler/resolve/outputs.py` and keep compile-time formatting logic
+focused on markdown shape, not structural cleanup.
+
+### Consequences
+
+- The collapse rule now applies once across inherited IO, bound currentness,
+  review-carrier, and adjacent output families.
+- Explicit authored wrapper titles still keep the long form because the
+  resolver only collapses the compiler-owned redundant shell.
+- Section `7` remains correct about the user-facing goal, but the canonical
+  owner path is now earlier than the initial phase sketch.
+
+### Follow-ups
+
+- Keep future wrapper compaction on the resolved IO path unless the wrapper is
+  truly markdown-only.
+- Preserve the existing omitted-title fail-loud behavior when this area changes
+  again.
+
+## 2026-04-16 - Treat emitted-markdown compaction as a public surface change
+
+### Context
+
+The user wanted a formatting-first implementation with no Doctrine language
+change. That stayed true, but `docs/VERSIONING.md` already says emitted runtime
+markdown is part of Doctrine's public surface.
+
+### Options
+
+- Treat the change as internal and update only manifests and live docs.
+- Treat the change as a public emitted-markdown change and update release
+  policy notes too.
+
+### Decision
+
+Keep the implementation formatting-only at the language and semantic level, but
+record the emitted-markdown layout change in `docs/VERSIONING.md` and
+`CHANGELOG.md`.
+
+### Consequences
+
+- The work still avoids new syntax, payload-shape changes, review-semantic
+  changes, and route-semantic changes.
+- Release-facing docs now say plainly that downstream emitted-markdown
+  snapshots or parsers may need to update.
+- The implementation can stay inside this one Doctrine-only artifact without
+  pretending the output layout change is invisible.
+
+### Follow-ups
+
+- Keep emitted-markdown guide text and release notes aligned when these
+  presentation rules change again.
+- Use patch or breaking release classification based on the real public impact
+  at release time, not on whether the change was "just formatting."
+
 # Appendix A) Imported Notes (unplaced; do not delete)
 
 No unplaced notes remain. The prior audit content was mapped into Sections `1`,
@@ -1478,4 +1648,5 @@ No unplaced notes remain. The prior audit content was mapped into Sections `1`,
 - The old "What Already Looks Good" notes now live in Sections `3` and `6`.
 - The old "Doctrine-only Next Pass" list now lives in Section `7`.
 - No content was intentionally dropped in this reformat.
-- I did not run verify commands for this docs-only reformat.
+- Implementation progress and proof now live in
+  `docs/RENDERED_AGENT_MARKDOWN_AUDIT_2026-04-16_WORKLOG.md`.

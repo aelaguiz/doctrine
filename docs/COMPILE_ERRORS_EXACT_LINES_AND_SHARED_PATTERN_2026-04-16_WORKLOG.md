@@ -735,3 +735,82 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
   `validate/agents.py`, `validate/contracts.py`, and
   `validate/review_agreement.py` families while the repo proof surface stays
   green.
+
+## 2026-04-16 - Implement pass 21
+- Advanced the agent-family validator slice in
+  `doctrine/_compiler/validate/agents.py`, and cleared the small user-facing
+  agent compile checks in `doctrine/_compiler/compile/agent.py` that were
+  still using raw strings. Unsupported slot `law:` now lands on structured
+  exact-line `E345`, abstract review attachment now lands on structured
+  exact-line `E494` with a related abstract-review site, live route-bearing
+  surface conflicts now land on structured `E343` with labeled related sites,
+  review-driven `final_output.route:` now fails on a structured exact-line
+  `E299` path, workflow-plus-review now lands on structured exact-line
+  `E480`, and missing or mistyped skill purposes now land on structured
+  exact-line `E220`.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  workflow-plus-review conflicts, unsupported slot law, abstract review
+  attachment, live route-bearing surface conflicts, review-driven
+  `final_output.route:`, and skill-purpose typing.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/validate/agents.py doctrine/_compiler/compile/agent.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics tests.test_route_output_semantics tests.test_skill_rendering`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/11_skills_and_tools/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/48_review_inheritance_and_explicit_patching/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/91_handoff_routing_route_output_binding/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic, route semantics, and skill-rendering unit
+    suites passed.
+  - The shipped `11`, `48`, and `91` manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: continue Phase 4 on the still-open
+  `validate/contracts.py` and `validate/review_agreement.py` families, then
+  continue through the remaining unresolved compiler and resolver helpers
+  while the repo proof surface stays green.
+
+## 2026-04-16 - Implement pass 22
+- Advanced the contract-family resolver and validator slice in
+  `doctrine/_compiler/resolve/io_contracts.py`,
+  `doctrine/_compiler/validate/contracts.py`, and
+  `doctrine/_compiler/resolved_types.py`. The remaining raw
+  `resolve/io_contracts.py` anchors are now gone. Inherited inputs block
+  cycles now land on structured `E244`, invalid bucket refs and inline bodies
+  now stay on structured exact-line `E301`, patch-without-parent and duplicate
+  resolver failures now use structured authored locations, inherited IO block
+  failures now keep structured `E247`, `E248`, `E249`, `E001`, `E003`, and
+  `E260`, missing inherited entries now add related inherited sites at the
+  best known authored line, and omitted wrapper-title failures now anchor on
+  the direct declaration lines they depend on.
+- Kept the current proof bridge stable while Phase 5 is still open by
+  preserving the legacy `message_contains` substrings for the migrated IO
+  field-ref, patch-base, and bucket-ref failures.
+- Added focused exact-line proof in `tests/test_compile_diagnostics.py` for
+  inherited inputs blocks with unkeyed top-level refs, missing inherited input
+  entries, inline-body bucket refs, wrong-kind bucket refs, and omitted
+  wrapper titles with multiple direct declarations.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/resolved_types.py doctrine/_compiler/resolve/io_contracts.py doctrine/_compiler/validate/contracts.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/51_inherited_bound_io_roots/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/117_io_omitted_wrapper_titles/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused compile-diagnostic suite passed.
+  - The shipped `51` and `117` manifests passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` is still failing, but the remaining failures are on
+    unrelated dirty-tree render drift outside this contract slice. The current
+    diffs are in already-modified output and workflow surfaces such as
+    `doctrine/_compiler/compile/outputs.py`,
+    `doctrine/_compiler/resolve/outputs.py`,
+    `doctrine/_compiler/compile/workflows.py`, and
+    `doctrine/_compiler/display.py`, plus their matching example refs and
+    cases.
+- Current next step: continue Phase 4 on the still-open
+  `validate/review_agreement.py` family and the remaining helper surfaces once
+  the broader dirty-tree render drift is either isolated or intentionally
+  carried as shared repo work.

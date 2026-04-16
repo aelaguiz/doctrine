@@ -41,31 +41,15 @@ Rejected plan goes to PlanAuthor.
 
 ### Plan Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Verdict
-
-State the review verdict.
-
-#### Reviewed Artifact
-
-Name the reviewed artifact.
-
-#### Analysis Performed
-
-Summarize the review analysis.
-
-#### Output Contents That Matter
-
-State what the next owner should read first.
-
-#### Next Owner
-
-Name ReviewLead when accepted and PlanAuthor when rejected.
+- Verdict: State the review verdict.
+- Reviewed Artifact: Name the reviewed artifact.
+- Analysis Performed: Summarize the review analysis.
+- Output Contents That Matter: State what the next owner should read first.
+- Next Owner: Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
 

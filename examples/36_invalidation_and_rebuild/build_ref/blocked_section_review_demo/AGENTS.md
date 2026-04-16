@@ -2,9 +2,9 @@ Do not keep reviewing against invalidated downstream truth.
 
 ## Blocked Section Review
 
-This pass runs only when section review invalidated.
+Use this pass only when section review invalidated.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: Section Review is invalidated until rebuild work completes.
 
@@ -24,20 +24,14 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 ### Blocked Review Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Invalidations
-
-Name any artifacts that are still no longer current.
+- Invalidations: Name any artifacts that are still no longer current.
 
 #### Trust Surface
 
 - `Invalidations`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know what is no longer current.
+- Standalone Read: This output should stand on its own. The next owner should know what is no longer current.

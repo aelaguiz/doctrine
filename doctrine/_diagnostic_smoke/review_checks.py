@@ -105,8 +105,11 @@ def _check_review_split_control_ready_final_output_renders() -> None:
     prompt = parse_file(prompt_path)
     rendered = render_markdown(compile_prompt(prompt, "AcceptanceReviewSplitControlReadyDemo"))
     final_output_block = rendered.split("## Final Output", 1)[1]
-    _expect("#### Review Response Semantics" in final_output_block, rendered)
-    _expect("| Verdict | `verdict` |" in final_output_block, rendered)
+    _expect(
+        "This final response is separate from the review carrier: AcceptanceReviewComment."
+        in final_output_block,
+        rendered,
+    )
     _expect(
         "This final response is control-ready. A host may read it as the review outcome."
         in final_output_block,
@@ -123,12 +126,13 @@ def _check_review_split_partial_final_output_renders() -> None:
     prompt = parse_file(prompt_path)
     rendered = render_markdown(compile_prompt(prompt, "AcceptanceReviewSplitPartialDemo"))
     final_output_block = rendered.split("## Final Output", 1)[1]
-    _expect("#### Review Response Semantics" in final_output_block, rendered)
-    _expect("| Current Artifact | `current_artifact` |" in final_output_block, rendered)
-    _expect("| Next Owner | `next_owner` |" in final_output_block, rendered)
     _expect(
-        "This final response is not control-ready. Read the review carrier for the full review outcome."
+        "This final response is separate from the review carrier: AcceptanceReviewComment."
         in final_output_block,
+        rendered,
+    )
+    _expect(
+        "Read the review carrier for the full review outcome." in final_output_block,
         rendered,
     )
 

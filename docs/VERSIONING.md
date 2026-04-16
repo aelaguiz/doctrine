@@ -128,6 +128,10 @@ Every public release uses one release class.
   `## Outputs` changes from one layout to another, downstream snapshot,
   parser, or scraper users may need to act even when the language version
   stays the same.
+- The same rule applies to render-only compaction such as changing a simple
+  output contract from a table to bullets, collapsing redundant compiler-owned
+  wrapper headings, or replacing a repeated split-review semantics section
+  with one shorter note.
 - Removing emitted sidecar artifacts such as `AGENTS.contract.json` is also a
   breaking public-surface change.
 

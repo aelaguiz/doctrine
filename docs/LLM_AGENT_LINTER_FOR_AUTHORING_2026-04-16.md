@@ -62,7 +62,7 @@ editor-ready findings from the same core run, the claim is false.
 
 - Requested behavior scope:
   - ship a Doctrine `agent linter` for authoring quality
-  - lint both authored prompt source and emitted output, not just one surface
+  - lint both authored prompt source and emitted output in the shipped feature
   - support both `single-target` and `batch` mode
   - keep stable core `AL###` codes with rationale, evidence, and fix help
   - keep the current prompt and schema work, but move shipped truth out of docs
@@ -146,7 +146,10 @@ editor-ready findings from the same core run, the claim is false.
   that lane.
 - No docs-owned shipped prompt or schema once implementation starts.
 - No batch mode that silently drops cross-agent duplication.
-- No source-only MVP and no output-only MVP for the shipped linter.
+- No source-only MVP.
+- No output-only MVP.
+- No later phase may add one of the missing surfaces and pretend the earlier
+  shipped cut was complete.
 
 # 1) Key Design Considerations (what matters most)
 
@@ -515,6 +518,9 @@ is missing, the packet must stay explicit about that gap.
 
 Surface rule:
 
+- the shipped architecture includes both authored source and emitted output from
+  the start
+- this plan does not permit a source-only first cut or an output-only first cut
 - a normal lint packet should include both authored source and emitted output
   for the target set whenever both exist
 - imported skills, imported modules, and declared constraints stay part of the
@@ -662,7 +668,8 @@ Goals:
 - freeze the core `AL###` catalog in code
 - define the normalized finding model and severity mapping
 - tighten the docs boundary so the linter cannot claim compiler errors
-- lock the no-scope-cut rule: no source-only or output-only first cut
+- lock the no-scope-cut rule in code and docs: no source-only or output-only
+  first cut
 
 Implementation notes:
 
@@ -911,6 +918,8 @@ The useful operational signals are local:
   findings.
 - 2026-04-16: Locked the shipped scope to both authored prompt source and
   emitted output, with cross-surface findings first-class from the start.
+- 2026-04-16: Clarified that this is a hard scope boundary, not a preference.
+  The plan does not allow a source-only MVP or an output-only MVP.
 - 2026-04-16: Deferred SARIF until after terminal, JSON, Markdown, and VS Code
   are real.
 - 2026-04-16: Chose a live docs promotion path so the feature can become part of

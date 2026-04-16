@@ -4,7 +4,7 @@ Carry one portable current artifact through a declared handoff field.
 
 Keep one current artifact explicit and portable.
 
-Current artifact: Approved Plan.
+The current artifact is Approved Plan.
 
 ## Inputs
 
@@ -19,20 +19,14 @@ Current artifact: Approved Plan.
 
 ### Coordination Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
 - `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact is current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.

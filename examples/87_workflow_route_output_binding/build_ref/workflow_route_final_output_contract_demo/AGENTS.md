@@ -4,9 +4,9 @@ End with compiler-owned workflow route truth in the emitted contract.
 
 Always route the turn through compiler-owned workflow-law routing.
 
-This pass runs only when true.
+Use this pass only when true.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: Reply and stop.
 

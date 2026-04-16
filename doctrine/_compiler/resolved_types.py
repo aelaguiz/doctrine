@@ -318,12 +318,14 @@ class ContractArtifact:
     kind: str
     unit: IndexedUnit
     decl: model.InputDecl | model.OutputDecl
+    source_span: model.SourceSpan | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class ContractBinding:
     binding_path: tuple[str, ...]
     artifact: ContractArtifact
+    source_span: model.SourceSpan | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -342,6 +344,7 @@ class ContractSectionSummary:
     title: str
     artifacts: tuple[ContractArtifact, ...]
     bindings: tuple[ContractBinding, ...]
+    source_span: model.SourceSpan | None = None
 
 
 @dataclass(slots=True, frozen=True)

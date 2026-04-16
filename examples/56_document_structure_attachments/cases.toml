@@ -47,14 +47,9 @@ expected_lines = [
   "| Requirement | Required |",
   "| Structure | Lesson Plan |",
   "",
-  "#### Artifact Structure",
-  "",
-  "This artifact must follow the `Lesson Plan` structure below.",
-  "",
-  "| Required Section | Kind | What it must do |",
-  "| --- | --- | --- |",
-  "| **Overview** | Section | Start with the plan overview. |",
-  "| **Sequence** | Section | List the lesson steps in order. |",
+  "Required Structure:",
+  "- Overview: Start with the plan overview.",
+  "- Sequence: List the lesson steps in order.",
 ]
 
 [[cases]]

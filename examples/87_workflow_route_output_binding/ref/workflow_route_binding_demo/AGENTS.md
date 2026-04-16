@@ -4,9 +4,9 @@ Bind ordinary output fields from compiler-owned route semantics.
 
 Always route the turn through compiler-owned workflow-law routing.
 
-This pass runs only when true.
+Use this pass only when true.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: Reply and stop.
 
@@ -16,15 +16,10 @@ Hand off to ReviewLead.
 
 ### Workflow Route Binding Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
 - Next Owner: Review Lead
 - Next Owner Key: ReviewLead
-
-#### Route Summary
-
-Hand off to ReviewLead. Next owner: Review Lead.
+- Route Summary: Hand off to ReviewLead. Next owner: Review Lead.

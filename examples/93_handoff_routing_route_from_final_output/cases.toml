@@ -14,11 +14,9 @@ expected_lines = [
   "",
   "### Proof Result",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
   "",
   "- Route Choice: `Route Choice`",
   "",
@@ -41,18 +39,17 @@ expected_lines = [
   "",
   "Read the route choice from the emitted proof result.",
   "",
-  "Select one route from ProofResult.route_choice.",
+  "Choose a route from ProofResult.route_choice.",
   "Use exactly one route choice:",
   "- Accept",
   "- Change",
   "",
-  "If the route choice is Accept:",
+  "When the route choice is Accept:",
   "- Send to AcceptanceCritic.",
   "",
-  "If the route choice is Change:",
+  "When the route choice is Change:",
   "- Send to ChangeEngineer.",
 ]
-
 [[cases]]
 name = "handoff_routing route_from selector must name a declared emitted output field"
 status = "active"

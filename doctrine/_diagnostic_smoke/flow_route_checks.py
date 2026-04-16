@@ -156,7 +156,7 @@ agent RouteFromFinalOutputDemo:
         prompt = parse_file(prompt_path)
         rendered = render_markdown(compile_prompt(prompt, "RouteFromFinalOutputDemo"))
         _expect("- Next Owner: the selected route's next owner key" in rendered, rendered)
-        _expect("Select one route from ProofResult.route_choice." in rendered, rendered)
+        _expect("Choose a route from ProofResult.route_choice." in rendered, rendered)
 
 
 def _check_route_choice_guard_can_narrow_route_summary() -> None:

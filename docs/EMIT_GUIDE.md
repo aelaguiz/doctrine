@@ -404,14 +404,20 @@ Runtime Markdown shape for ordinary outputs:
 
 - This is emitted Markdown layout only. It does not add or change input-side
   syntax.
-- A single-artifact ordinary output renders one grouped `Contract | Value`
-  table.
+- A simple `TurnResponse` ordinary output with only `Target`, `Shape`, and
+  `Requirement` renders as a short bullet contract.
+- Richer single-artifact ordinary outputs still render a grouped
+  `Contract | Value` table.
 - A `files:` output renders the same contract table, then an `Artifacts`
   table.
 - Table-friendly sections such as `current_truth`, titled `properties`,
   parseable `notes`, and `support_files` now render as tables.
-- `structure:` now renders as one `Artifact Structure` section instead of a
-  loose `Structure:` bullet plus a separate peer block.
+- If `structure:` only needs titled section summaries, Doctrine renders a
+  compact `Required Structure:` list.
+- `structure:` still renders an `Artifact Structure` section when it needs a
+  preamble, a summary table, or detail blocks.
+- Compiler-owned `* Binding` wrappers may collapse when they only repeat one
+  direct child section and add no keyed content of their own.
 - If an `output target` binds `delivery_skill:`, ordinary output contracts
   render one `Delivered Via` row after `Target` and before target config rows.
 
@@ -420,11 +426,9 @@ Single-artifact example:
 ```md
 ### Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 ```
 
 Target-owned delivery example:

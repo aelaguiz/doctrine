@@ -71,18 +71,13 @@ expected_lines = [
   "",
   "#### Dossier Summary",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Turn Summary Text |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Turn Summary Text",
+  "- Requirement: Required",
   "",
-  "##### Purpose",
-  "",
-  "Summarize what changed and point the reader at dossier_engineer.md.",
+  "- Purpose: Summarize what changed and point the reader at dossier_engineer.md.",
 ]
 approx_ref = "ref/rich_io_bucket_agent/AGENTS.md"
-
 [[cases]]
 name = "scalar keyed items fail loud inside outputs buckets"
 status = "active"

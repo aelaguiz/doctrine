@@ -206,13 +206,13 @@ class CompileWorkflowsMixin:
             rendered: list[str] = []
             if isinstance(item, model.ActiveWhenStmt):
                 rendered.append(
-                    f"This pass runs only when {self._render_condition_expr(item.expr, unit=unit)}."
+                    f"Use this pass only when {self._render_condition_expr(item.expr, unit=unit)}."
                 )
             elif isinstance(item, model.ModeStmt):
                 mode_bindings[item.name] = item
                 fixed_mode = self._resolve_constant_enum_member(item.expr, unit=unit)
                 if fixed_mode is not None:
-                    rendered.append(f"Active mode: {fixed_mode}.")
+                    rendered.append(f"This pass is for `{fixed_mode}` mode.")
             elif isinstance(item, model.MatchStmt):
                 rendered.extend(
                     self._render_match_stmt(
@@ -287,13 +287,13 @@ class CompileWorkflowsMixin:
             rendered: list[str] = []
             if isinstance(item, model.ActiveWhenStmt):
                 rendered.append(
-                    f"This pass runs only when {self._render_condition_expr(item.expr, unit=unit)}."
+                    f"Use this pass only when {self._render_condition_expr(item.expr, unit=unit)}."
                 )
             elif isinstance(item, model.ModeStmt):
                 mode_bindings[item.name] = item
                 fixed_mode = self._resolve_constant_enum_member(item.expr, unit=unit)
                 if fixed_mode is not None:
-                    rendered.append(f"Active mode: {fixed_mode}.")
+                    rendered.append(f"This pass is for `{fixed_mode}` mode.")
             elif isinstance(item, model.MatchStmt):
                 rendered.extend(
                     self._render_match_stmt(

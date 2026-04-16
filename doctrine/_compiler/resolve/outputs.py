@@ -2504,17 +2504,10 @@ class ResolveOutputsMixin:
             )
         if not resolved_bucket.body and not resolved_bucket.artifacts and not bindings:
             return None
-        section = (
-            self._lower_omitted_io_section(
-                item,
-                field_kind=field_kind,
-                resolved_bucket=resolved_bucket,
-            )
-            if item.title is None
-            else CompiledSection(
-                title=item.title,
-                body=resolved_bucket.body,
-            )
+        section = self._lower_io_section(
+            item,
+            field_kind=field_kind,
+            resolved_bucket=resolved_bucket,
         )
         return ResolvedIoSection(
             key=item.key,
@@ -2522,6 +2515,54 @@ class ResolveOutputsMixin:
             artifacts=resolved_bucket.artifacts,
             bindings=tuple(bindings),
         )
+
+    def _lower_io_section(
+        self,
+        item: model.IoSection,
+        *,
+        field_kind: str,
+        resolved_bucket: ResolvedContractBucket,
+    ) -> CompiledSection:
+        if item.title is None:
+            return self._lower_omitted_io_section(
+                item,
+                field_kind=field_kind,
+                resolved_bucket=resolved_bucket,
+            )
+        if self._should_collapse_redundant_binding_section(
+            item,
+            resolved_bucket=resolved_bucket,
+        ):
+            direct_index, direct_section = resolved_bucket.direct_sections[0]
+            lowered_body = (
+                *resolved_bucket.body[:direct_index],
+                *direct_section.body,
+                *resolved_bucket.body[direct_index + 1 :],
+            )
+            return CompiledSection(title=direct_section.title, body=lowered_body)
+        return CompiledSection(
+            title=item.title,
+            body=resolved_bucket.body,
+        )
+
+    def _should_collapse_redundant_binding_section(
+        self,
+        item: model.IoSection,
+        *,
+        resolved_bucket: ResolvedContractBucket,
+    ) -> bool:
+        if item.title is None:
+            return False
+        if (
+            resolved_bucket.has_keyed_children
+            or len(resolved_bucket.direct_artifacts) != 1
+            or len(resolved_bucket.direct_sections) != 1
+        ):
+            return False
+        direct_index, direct_section = resolved_bucket.direct_sections[0]
+        if len(resolved_bucket.body) != 1 or direct_index != 0:
+            return False
+        return item.title == f"{direct_section.title} Binding"
 
     def _resolve_io_section_title(
         self,

@@ -4,9 +4,9 @@ Guard route-specific fields with route.exists.
 
 Route only when host route facts require it.
 
-This pass runs only when true.
+Use this pass only when true.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: Reply and stop.
 
@@ -26,14 +26,8 @@ When RouteFacts.should_route, hand off to ReviewLead.
 
 ### Guarded Workflow Route Binding Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Next Owner
-
-Show this only when a routed owner exists.
-
-Review Lead
+- Next Owner: Show this only when a routed owner exists. Review Lead

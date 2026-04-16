@@ -7,7 +7,6 @@ from doctrine._compiler.final_output_diagnostics import (
     final_output_compile_error,
     final_output_related_site,
 )
-from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.output_diagnostics import output_related_site
 from doctrine._compiler.resolved_types import (
     AgentContract,
@@ -271,11 +270,11 @@ class CompileFinalOutputMixin:
                 ]
             )
 
-        review_response_semantics = self._compile_final_output_review_response_semantics(
+        review_response_note_lines = self._compile_final_output_review_response_note_lines(
             review_contract=review_contract,
         )
-        if review_response_semantics is not None:
-            body.extend(["", review_response_semantics])
+        if review_response_note_lines:
+            body.extend(["", *review_response_note_lines])
 
         if output_decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(
@@ -385,54 +384,29 @@ class CompileFinalOutputMixin:
     def _generated_final_output_schema_relpath(self, output_name: str) -> str:
         return f"schemas/{name_slug(output_name)}.schema.json"
 
-    def _compile_final_output_review_response_semantics(
+    def _compile_final_output_review_response_note_lines(
         self,
         *,
         review_contract: CompiledReviewSpec | None,
-    ) -> CompiledSection | None:
+    ) -> tuple[CompiledBodyItem, ...]:
         if review_contract is None or review_contract.final_response.mode != "split":
-            return None
+            return ()
 
-        body: list[CompiledBodyItem] = [
+        lines: list[CompiledBodyItem] = [
             (
                 "This final response is separate from the review carrier: "
                 f"{review_contract.comment_output.output_name}."
             )
         ]
-
-        if review_contract.final_response.review_fields:
-            body.extend(
-                [
-                    "",
-                    *self._pipe_table_lines(
-                        ("Meaning", "Field"),
-                        tuple(
-                            (
-                                _humanize_key(field_name),
-                                f"`{'.'.join(field_path)}`",
-                            )
-                            for field_name, field_path in review_contract.final_response.review_fields
-                        ),
-                    ),
-                ]
-            )
-        else:
-            body.extend(["", "This final response does not carry review fields on its own."])
-
-        body.append("")
         if review_contract.final_response.control_ready:
-            body.append(
+            lines.append(
                 "This final response is control-ready. A host may read it as the review outcome."
             )
         else:
-            body.append(
-                "This final response is not control-ready. Read the review carrier for the full review outcome."
+            lines.append(
+                "Read the review carrier for the full review outcome."
             )
-
-        return CompiledSection(
-            title="Review Response Semantics",
-            body=tuple(body),
-        )
+        return tuple(lines)
 
     def _compile_output_support_items(
         self,

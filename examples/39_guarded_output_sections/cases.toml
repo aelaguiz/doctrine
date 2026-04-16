@@ -36,29 +36,14 @@ expected_lines = [
   "",
   "### Guarded Readback Comment",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
   "",
-  "#### Rewrite Mode",
-  "",
-  "Show this only when route facts section status is new or full rewrite.",
-  "",
-  "Name whether the section is brand new or undergoing a full rewrite.",
-  "",
-  "#### Repeated Problem",
-  "",
-  "Show this only when critic miss is repeated.",
-  "",
-  "Say whether the same critic miss has repeated.",
-  "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know which conditional readback blocks might appear.",
+  "- Rewrite Mode: Show this only when route facts section status is new or full rewrite. Name whether the section is brand new or undergoing a full rewrite.",
+  "- Repeated Problem: Show this only when critic miss is repeated. Say whether the same critic miss has repeated.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know which conditional readback blocks might appear.",
 ]
-
 [[cases]]
 name = "nested guarded output sections render at the correct heading depth"
 status = "active"
@@ -94,11 +79,9 @@ expected_lines = [
   "",
   "### Nested Guarded Readback Comment",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
   "",
   "#### Detail Panel",
   "",
@@ -112,11 +95,8 @@ expected_lines = [
   "",
   "Explain why rewrite-aware handling applies on this turn.",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know which nested conditional details might appear.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know which nested conditional details might appear.",
 ]
-
 [[cases]]
 name = "guarded output items can guard one scalar field directly"
 status = "active"
@@ -140,23 +120,13 @@ expected_lines = [
   "",
   "### Guarded Scalar Readback Comment",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
   "",
-  "#### Rewrite Note",
-  "",
-  "Show this only when route facts section status is new or full rewrite.",
-  "",
-  "`Rewrite applies.`",
-  "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know when guarded fields may appear.",
+  "- Rewrite Note: Show this only when route facts section status is new or full rewrite. `Rewrite applies.`",
+  "- Standalone Read: This comment should stand on its own. The next owner should know when guarded fields may appear.",
 ]
-
 [[cases]]
 name = "title-only guarded output syntax is not part of the shipped grammar"
 status = "active"

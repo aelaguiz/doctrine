@@ -2,7 +2,7 @@ Preserve document skeletons while allowing a narrow wording pass.
 
 ## Preserve Structure
 
-Current artifact: Approved Structure.
+The current artifact is Approved Structure.
 
 Preserve structure `ApprovedStructure`.
 
@@ -19,20 +19,14 @@ Preserve structure `ApprovedStructure`.
 
 ### Coordination Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
 - `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact remains current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.

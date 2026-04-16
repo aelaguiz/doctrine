@@ -4,11 +4,9 @@ Read the selected handoff owner from an emitted output.
 
 ### Proof Result
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
 - Route Choice: `Route Choice`
 
@@ -31,13 +29,13 @@ Read the selected handoff owner from an emitted output.
 
 Read the route choice from the emitted proof result.
 
-Select one route from ProofResult.route_choice.
+Choose a route from ProofResult.route_choice.
 Use exactly one route choice:
 - Accept
 - Change
 
-If the route choice is Accept:
+When the route choice is Accept:
 - Send to AcceptanceCritic.
 
-If the route choice is Change:
+When the route choice is Change:
 - Send to ChangeEngineer.

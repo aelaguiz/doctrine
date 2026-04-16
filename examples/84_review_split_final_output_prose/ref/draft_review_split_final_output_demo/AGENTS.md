@@ -34,35 +34,16 @@ Rejected draft goes to DraftAuthor.
 
 ### Draft Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Verdict
-
-Say whether the review accepted the draft or asked for changes.
-
-#### Reviewed Artifact
-
-Name the reviewed artifact this review judged.
-
-#### Analysis Performed
-
-Sum up the review work that led to the verdict.
-
-#### Output Contents That Matter
-
-Summarize the parts of the draft the next owner must read first.
-
-#### Current Artifact
-
-Name the artifact that remains current after review.
-
-#### Next Owner
-
-Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
+- Verdict: Say whether the review accepted the draft or asked for changes.
+- Reviewed Artifact: Name the reviewed artifact this review judged.
+- Analysis Performed: Sum up the review work that led to the verdict.
+- Output Contents That Matter: Summarize the parts of the draft the next owner must read first.
+- Current Artifact: Name the artifact that remains current after review.
+- Next Owner: Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
 
 #### Failure Detail
 
@@ -76,9 +57,7 @@ Name the failing review gates in authored order.
 
 - `Current Artifact`
 
-#### Standalone Read
-
-This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner.
+- Standalone Read: This review should stand on its own. A downstream owner should know the verdict, current artifact, and next owner.
 
 ## Final Output
 
@@ -94,13 +73,8 @@ This review should stand on its own. A downstream owner should know the verdict,
 | Shape | Comment Text |
 | Requirement | Required |
 
-#### Review Response Semantics
-
 This final response is separate from the review carrier: DraftReviewComment.
-
-This final response does not carry review fields on its own.
-
-This final response is not control-ready. Read the review carrier for the full review outcome.
+Read the review carrier for the full review outcome.
 
 #### Control Summary
 

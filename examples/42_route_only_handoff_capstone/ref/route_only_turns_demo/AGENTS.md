@@ -4,9 +4,9 @@ Keep route-only work explicit when no specialist artifact is current.
 
 Handle turns that can only stop, reroute, or keep ownership explicit.
 
-This pass runs only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.
+Use this pass only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: No specialist artifact is current for this turn.
 

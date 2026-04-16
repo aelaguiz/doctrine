@@ -848,16 +848,22 @@ agent Writer:
 Shipped Markdown render shape:
 
 - This is emitted output shape only. It does not change the input language.
-- A single-artifact ordinary output renders one grouped `Contract | Value`
-  table first.
+- A simple `TurnResponse` ordinary output with only `Target`, `Shape`, and
+  `Requirement` renders as a short bullet contract.
+- Richer single-artifact ordinary outputs still start with one grouped
+  `Contract | Value` table.
 - A `files:` output renders that same contract table, then an `Artifacts`
   table for the named files.
 - `current_truth`, titled `properties`, parseable `notes`, and
   `support_files` render as tables when their authored shape is tabular.
 - `trust_surface` keeps its own section, and ordinary output labels render as
   inline code.
-- `structure:` renders as one `Artifact Structure` section with a summary
-  table and any needed detail blocks.
+- If `structure:` only needs titled section summaries, Doctrine renders a
+  compact `Required Structure:` list.
+- `structure:` still renders one `Artifact Structure` section with a summary
+  table and any needed detail blocks when the shape is richer.
+- Compiler-owned `* Binding` wrappers may collapse when they only repeat one
+  direct child section and add no keyed content of their own.
 - If the target declares `delivery_skill:`, the contract table renders one
   `Delivered Via` row after `Target` and before target config rows.
 
@@ -866,11 +872,9 @@ Example emitted shape:
 ```md
 ### Review Comment
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 ```
 
 Target-owned delivery example:

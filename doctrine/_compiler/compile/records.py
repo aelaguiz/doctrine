@@ -21,6 +21,113 @@ from doctrine._compiler.resolved_types import (
 class CompileRecordsMixin:
     """Record and config compile helpers for CompilationContext."""
 
+    def _render_compact_record_item_line(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+        review_semantics: ReviewSemanticContext | None = None,
+        route_semantics: RouteSemanticContext | None = None,
+        render_profile: ResolvedRenderProfile | None = None,
+    ) -> str | None:
+        if isinstance(item, model.RecordSection):
+            summary = self._flatten_output_record_items(
+                item.items,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
+            )
+            if summary is None:
+                return None
+            return f"- {item.title}: {summary}"
+
+        if isinstance(item, model.GuardedOutputSection):
+            summary = self._flatten_output_record_items(
+                item.items,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+                review_semantics=review_semantics,
+                route_semantics=self._narrow_route_semantics(
+                    route_semantics,
+                    item.when_expr,
+                    unit=unit,
+                ),
+                render_profile=render_profile,
+            )
+            if summary is None:
+                return None
+            condition = self._render_condition_expr(item.when_expr, unit=unit)
+            return f"- {item.title}: Show this only when {condition}. {summary}"
+
+        if isinstance(item, model.RecordScalar):
+            label = _humanize_key(item.key)
+            if item.body is None:
+                summary = self._format_scalar_value(
+                    item.value,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            else:
+                summary = self._flatten_output_record_items(
+                    item.body,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+            if summary is None:
+                return None
+            return f"- {label}: {summary}"
+
+        if isinstance(item, model.GuardedOutputScalar):
+            guarded_route_semantics = self._narrow_route_semantics(
+                route_semantics,
+                item.when_expr,
+                unit=unit,
+            )
+            label = _humanize_key(item.key)
+            condition = self._render_condition_expr(item.when_expr, unit=unit)
+            parts = [f"Show this only when {condition}."]
+            parts.append(
+                self._format_scalar_value(
+                    item.value,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=guarded_route_semantics,
+                    render_profile=render_profile,
+                )
+            )
+            if item.body is not None:
+                summary = self._flatten_output_record_items(
+                    item.body,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{item.key}",
+                    surface_label=surface_label,
+                    review_semantics=review_semantics,
+                    route_semantics=guarded_route_semantics,
+                    render_profile=render_profile,
+                )
+                if summary is None:
+                    return None
+                parts.append(summary)
+            return f"- {label}: {' '.join(part for part in parts if part).strip()}"
+
+        return None
+
     def _compile_record_support_items(
         self,
         items: tuple[model.AnyRecordItem, ...],

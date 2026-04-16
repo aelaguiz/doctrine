@@ -98,7 +98,9 @@ Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- None in the repaired Doctrine-only scope.
+- None in the repaired Doctrine-only scope. Fresh proof passed
+  `tests.test_emit_docs`, `tests.test_output_rendering`,
+  `make verify-examples`, and `make verify-package`.
 - The user explicitly removed sibling Rally and psflows work from this plan.
   Former Phases 3 through 5 are out of scope for this artifact.
 

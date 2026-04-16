@@ -390,15 +390,13 @@ class DisplayMixin:
             for case in stmt.cases
             if case.head is not None
         ]
-        lines = ["Use exactly one mode:"]
+        lines = ["Choose one mode for this turn:"]
         lines.extend(f"- {label}" for label in labels)
         for case in stmt.cases:
             if case.head is None:
                 heading = "Else:"
             else:
-                heading = (
-                    f"If the mode is {case.display_label or self._render_expr(case.head, unit=unit)}:"
-                )
+                heading = f"When the mode is {case.display_label or self._render_expr(case.head, unit=unit)}:"
             lines.extend(["", heading])
             lines.extend(
                 self._render_law_stmt_block(
@@ -458,7 +456,7 @@ class DisplayMixin:
             return []
 
         lines = [
-            f"Select one route from {self._render_expr(stmt.expr, unit=unit)}.",
+            f"Choose a route from {self._render_expr(stmt.expr, unit=unit)}.",
             "Use exactly one route choice:",
         ]
         lines.extend(
@@ -470,7 +468,7 @@ class DisplayMixin:
             heading = (
                 "Else:"
                 if case.head is None
-                else f"If the route choice is {self._render_expr(case.head, unit=unit)}:"
+                else f"When the route choice is {self._render_expr(case.head, unit=unit)}:"
             )
             lines.extend(["", heading])
             lines.extend(
@@ -618,15 +616,15 @@ class DisplayMixin:
         bullet: bool,
     ) -> list[str]:
         if isinstance(stmt, model.CurrentArtifactStmt):
-            text = f"Current artifact: {self._display_law_path_root(stmt.target, unit=unit, agent_contract=agent_contract)}."
+            text = f"The current artifact is {self._display_law_path_root(stmt.target, unit=unit, agent_contract=agent_contract)}."
         elif isinstance(stmt, model.CurrentNoneStmt):
-            text = "No artifact is current for this turn."
+            text = "No artifact is current for this pass."
         elif isinstance(stmt, model.MustStmt):
             text = self._render_must_stmt(stmt, unit=unit)
         elif isinstance(stmt, model.OwnOnlyStmt):
-            text = f"Own only {self._render_path_set(stmt.target)}."
+            text = f"Only edit {self._render_path_set_clause(stmt.target)}."
         elif isinstance(stmt, model.PreserveStmt):
-            text = f"Preserve {stmt.kind} {self._render_path_set(stmt.target)}."
+            text = self._render_preserve_stmt_text(stmt)
         elif isinstance(stmt, model.SupportOnlyStmt):
             text = (
                 f"{self._render_path_set_subject(stmt.target, unit=unit, agent_contract=agent_contract)} is support only for comparison."
@@ -653,7 +651,7 @@ class DisplayMixin:
                 message += "."
             text = "Stop." if stmt.message is None else f"Stop: {message}"
             if stmt.when_expr is not None:
-                text = f"When {self._render_condition_expr(stmt.when_expr, unit=unit)}, {_lowercase_initial(text)}"
+                text = f"If {self._render_condition_expr(stmt.when_expr, unit=unit)}, {_lowercase_initial(text)}"
         elif isinstance(stmt, model.LawRouteStmt):
             label = self._interpolate_authored_prose_string(
                 stmt.label,
@@ -668,10 +666,10 @@ class DisplayMixin:
                     f"{_lowercase_initial(text)}"
                 )
         elif isinstance(stmt, model.ActiveWhenStmt):
-            text = f"Run this pass only when {self._render_condition_expr(stmt.expr, unit=unit)}."
+            text = f"Use this pass only when {self._render_condition_expr(stmt.expr, unit=unit)}."
         elif isinstance(stmt, model.ModeStmt):
             fixed_mode = self._resolve_constant_enum_member(stmt.expr, unit=unit)
-            return [] if fixed_mode is None else [f"Active mode: {fixed_mode}."]
+            return [] if fixed_mode is None else [f"This pass is for `{fixed_mode}` mode."]
         else:
             return []
 
@@ -733,6 +731,35 @@ class DisplayMixin:
                 self._render_law_path(path) for path in target.except_paths
             )
         return rendered
+
+    def _render_path_set_clause(
+        self,
+        target: model.LawPathSet | model.LawPath | tuple[model.LawPath, ...],
+    ) -> str:
+        target = self._coerce_path_set(target)
+        main_paths = [self._render_law_path(path) for path in target.paths]
+        rendered = self._natural_language_join(main_paths)
+        if target.except_paths:
+            rendered += " except " + self._natural_language_join(
+                [self._render_law_path(path) for path in target.except_paths]
+            )
+        return rendered
+
+    def _render_preserve_stmt_text(self, stmt: model.PreserveStmt) -> str:
+        if stmt.kind == "exact":
+            target = self._coerce_path_set(stmt.target)
+            kept = self._natural_language_join(
+                [self._render_law_path(path) for path in target.paths]
+            )
+            if target.except_paths:
+                return (
+                    f"Keep {kept} unchanged except "
+                    f"{self._natural_language_join([self._render_law_path(path) for path in target.except_paths])}."
+                )
+            return f"Keep {kept} unchanged."
+        if stmt.kind == "decisions":
+            return f"Keep decisions from {self._render_path_set_clause(stmt.target)}."
+        return f"Preserve {stmt.kind} {self._render_path_set(stmt.target)}."
 
     def _render_analysis_basis(
         self,
@@ -848,9 +875,14 @@ class DisplayMixin:
         parts = ref.parts
         if not parts:
             return ""
+        constant = self._resolve_constant_enum_member(ref, unit=unit)
+        if constant is not None:
+            return constant
         if parts == ("route", "exists"):
             return "a routed owner exists"
         key = parts[-1]
+        if key == "live_job":
+            return f"{self._render_ref_root(parts[:-1], unit=unit)} live job"
         if key == "missing":
             return f"{self._render_ref_root(parts[:-1], unit=unit)} is missing"
         if key == "unclear":

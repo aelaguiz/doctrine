@@ -28,9 +28,13 @@ Each numbered example may contain:
   language version.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
-- Checked-in `ref/AGENTS.md` files now render ordinary outputs as grouped
-  contract tables. Single artifacts start with `Contract | Value`. `files:`
-  outputs add an `Artifacts` table.
+- Checked-in `ref/AGENTS.md` files now render simple `TurnResponse` ordinary
+  outputs as short bullet contracts when they only need `Target`, `Shape`,
+  and `Requirement`. Richer ordinary outputs still use `Contract | Value`
+  tables. `files:` outputs add an `Artifacts` table.
+- When an output `structure:` only needs titled section summaries, the output
+  now uses a compact `Required Structure:` list instead of a larger `Artifact
+  Structure` section.
 - Keep new examples narrow. One new idea per example is the design rule.
 - Package examples `95` through `103` use `SKILL.prompt` and teach the
   source-root bundle model. They do not make `build_ref/` part of the public

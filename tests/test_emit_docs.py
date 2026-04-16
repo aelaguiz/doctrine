@@ -967,8 +967,10 @@ class EmitDocsTests(unittest.TestCase):
         )
         self.assertIsNotNone(schema_text)
         self.assertIsNotNone(contract_data)
-        self.assertIn("#### Review Response Semantics", rendered)
-        self.assertIn("| Blocked Gate | `blocked_gate` |", rendered)
+        self.assertIn(
+            "This final response is separate from the review carrier: AcceptanceReviewComment.",
+            rendered,
+        )
         self.assertIn(
             "This final response is control-ready. A host may read it as the review outcome.",
             rendered,
@@ -1003,10 +1005,16 @@ class EmitDocsTests(unittest.TestCase):
         )
         self.assertIsNotNone(schema_text)
         self.assertIsNotNone(contract_data)
-        self.assertIn("#### Review Response Semantics", rendered)
-        self.assertIn("| Current Artifact | `current_artifact` |", rendered)
         self.assertIn(
-            "This final response is not control-ready. Read the review carrier for the full review outcome.",
+            "This final response is separate from the review carrier: AcceptanceReviewComment.",
+            rendered,
+        )
+        self.assertIn(
+            "Read the review carrier for the full review outcome.",
+            rendered,
+        )
+        self.assertIn(
+            "#### Current Artifact",
             rendered,
         )
         assert contract_data is not None

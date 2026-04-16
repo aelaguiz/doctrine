@@ -2,9 +2,9 @@ Rebuild invalidated review work and reissue it as current truth.
 
 ## Rebuild Section Review
 
-This pass runs only when rebuild requested.
+Use this pass only when rebuild requested.
 
-Current artifact: Section Review.
+The current artifact is Section Review.
 
 ## Inputs
 
@@ -29,20 +29,14 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 
 ### Rebuild Handoff
 
-| Contract | Value |
-| --- | --- |
-| Target | Turn Response |
-| Shape | Comment |
-| Requirement | Required |
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
 - `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know what is current now.
+- Standalone Read: This output should stand on its own. The next owner should know what is current now.

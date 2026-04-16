@@ -25,11 +25,9 @@ expected_lines = [
   "",
   "### Section Handoff",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
 ]
 
 [[cases]]
@@ -61,11 +59,9 @@ expected_lines = [
   "",
   "#### Section Handoff",
   "",
-  "| Contract | Value |",
-  "| --- | --- |",
-  "| Target | Turn Response |",
-  "| Shape | Comment |",
-  "| Requirement | Required |",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
 ]
 
 [[cases]]
