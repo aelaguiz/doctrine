@@ -73,11 +73,19 @@ class CompilationSession:
             ) from exc
         except ProjectConfigError as exc:
             config_path = (
-                resolved_project_config.path
+                exc.path
+                if exc.path is not None
+                else resolved_project_config.path
                 if resolved_project_config is not None
                 else None
             )
-            raise CompileError(str(exc)).ensure_location(path=config_path) from exc
+            # Keep any inner config site truth; this wrapper only fills the
+            # best known config location when the error itself could not.
+            raise CompileError(str(exc)).ensure_location(
+                path=config_path,
+                line=exc.line,
+                column=exc.column,
+            ) from exc
 
         self.project_config = resolved_project_config
         self.provided_prompt_roots = compile_config.provided_prompt_roots

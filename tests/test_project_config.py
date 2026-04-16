@@ -58,6 +58,53 @@ class ProjectConfigTests(unittest.TestCase):
                 project_config.resolve_compile_config()
 
             self.assertIn("Duplicate configured prompts root", str(exc_info.exception))
+            self.assertEqual(exc_info.exception.path, pyproject.resolve())
+            self.assertEqual(exc_info.exception.line, 2)
+            self.assertIsNotNone(exc_info.exception.column)
+
+    def test_additional_prompt_roots_type_error_carries_key_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.compile]
+                    additional_prompt_roots = "shared/prompts"
+                    """
+                )
+            )
+
+            project_config = load_project_config(pyproject)
+            with self.assertRaises(ProjectConfigError) as exc_info:
+                project_config.resolve_compile_config()
+
+            self.assertIn("additional_prompt_roots must be an array of strings", str(exc_info.exception))
+            self.assertEqual(exc_info.exception.path, pyproject.resolve())
+            self.assertEqual(exc_info.exception.line, 2)
+            self.assertIsNotNone(exc_info.exception.column)
+
+    def test_invalid_configured_prompt_root_carries_array_item_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.compile]
+                    additional_prompt_roots = ["shared/not_prompts"]
+                    """
+                )
+            )
+
+            project_config = load_project_config(pyproject)
+            with self.assertRaises(ProjectConfigError) as exc_info:
+                project_config.resolve_compile_config()
+
+            self.assertIn("Configured additional prompts root", str(exc_info.exception))
+            self.assertEqual(exc_info.exception.path, pyproject.resolve())
+            self.assertEqual(exc_info.exception.line, 2)
+            self.assertIsNotNone(exc_info.exception.column)
 
     def test_provider_prompt_roots_normalize_as_compile_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

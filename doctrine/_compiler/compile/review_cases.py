@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
-from doctrine._compiler.naming import _dotted_ref_name
+from doctrine._compiler.review_diagnostics import (
+    collect_review_accept_stmts,
+    find_review_decl_item,
+    review_compile_error,
+    review_related_site,
+)
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledSection,
     IndexedUnit,
@@ -30,12 +34,44 @@ class CompileReviewCasesMixin:
         owner_label: str,
     ) -> CompiledSection:
         if resolved.selector is None:
-            raise CompileError(
-                f"Case-selected review is missing selector: {review_decl.name}"
+            raise review_compile_error(
+                code="E470",
+                summary="Invalid review declaration shape",
+                detail=f"Case-selected review `{review_decl.name}` is missing `selector:`.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add one `selector:` block before the `cases:` block.",),
             )
-        if resolved.subject is not None or resolved.contract is not None or resolved.subject_map is not None:
-            raise CompileError(
-                f"Case-selected review must declare subject and contract inside cases: {review_decl.name}"
+        if (
+            resolved.subject is not None
+            or resolved.contract is not None
+            or resolved.subject_map is not None
+        ):
+            misplaced_item = find_review_decl_item(
+                review_decl,
+                predicate=lambda item: isinstance(
+                    item,
+                    (
+                        model.ReviewSubjectConfig,
+                        model.ReviewSubjectMapConfig,
+                        model.ReviewContractConfig,
+                    ),
+                ),
+            )
+            raise review_compile_error(
+                code="E470",
+                summary="Invalid review declaration shape",
+                detail=(
+                    f"Case-selected review `{review_decl.name}` must declare `subject:`, "
+                    "`subject_map:`, and `contract:` inside each case."
+                ),
+                unit=unit,
+                source_span=(
+                    review_decl.source_span
+                    if misplaced_item is None
+                    else getattr(misplaced_item, "source_span", None)
+                ),
+                hints=("Move shared `subject:` and `contract:` entries into each case block.",),
             )
 
         comment_output_unit, comment_output_decl = self._resolve_output_decl(
@@ -44,9 +80,16 @@ class CompileReviewCasesMixin:
         )
         comment_output_key = (comment_output_unit.module_parts, comment_output_decl.name)
         if comment_output_key not in agent_contract.outputs:
-            raise CompileError(
-                f"Review comment_output must be emitted by the concrete turn in {owner_label}: "
-                f"{comment_output_decl.name}"
+            raise review_compile_error(
+                code="E479",
+                summary="Review comment_output is not emitted",
+                detail=(
+                    f"Review `{review_decl.name}` declares comment output "
+                    f"`{comment_output_decl.name}`, but {owner_label} does not emit it."
+                ),
+                unit=unit,
+                source_span=resolved.comment_output.source_span,
+                hints=("Emit the declared review comment output from the concrete agent.",),
             )
 
         pre_sections = [
@@ -56,43 +99,125 @@ class CompileReviewCasesMixin:
             item for item in resolved.items if isinstance(item, model.ReviewOutcomeSection)
         ]
         if outcome_sections:
-            raise CompileError(
-                f"Case-selected review must keep on_accept and on_reject inside cases: {review_decl.name}"
+            misplaced_section = find_review_decl_item(
+                review_decl,
+                predicate=lambda item: isinstance(item, model.ReviewOutcomeSection),
+            )
+            raise review_compile_error(
+                code="E470",
+                summary="Invalid review declaration shape",
+                detail=(
+                    f"Case-selected review `{review_decl.name}` must keep `on_accept:` and "
+                    "`on_reject:` inside each case."
+                ),
+                unit=unit,
+                source_span=(
+                    review_decl.source_span
+                    if misplaced_section is None
+                    else getattr(misplaced_section, "source_span", None)
+                ),
+                hints=("Move the outcome sections into each case block.",),
             )
 
         enum_decl = self._try_resolve_enum_decl(resolved.selector.enum_ref, unit=unit)
         if enum_decl is None:
-            raise CompileError(
-                f"Review selector must resolve to a closed enum in {owner_label}: "
-                f"{_dotted_ref_name(resolved.selector.enum_ref)}"
+            raise review_compile_error(
+                code="E470",
+                summary="Invalid review declaration shape",
+                detail=(
+                    f"Case-selected review `{review_decl.name}` selector must resolve to a "
+                    "closed enum."
+                ),
+                unit=unit,
+                source_span=resolved.selector.source_span,
+                hints=("Point `selector:` at a closed enum member path.",),
             )
 
-        seen_case_members: dict[str, str] = {}
+        seen_case_members: dict[str, model.ReviewCase] = {}
         expected_case_members = {member.value for member in enum_decl.members}
         for case in resolved.cases:
             if len(case.subject.subjects) != 1:
-                raise CompileError(
-                    f"Review case must declare exactly one subject in {owner_label}: {case.key}"
+                raise review_compile_error(
+                    code="E470",
+                    summary="Invalid review declaration shape",
+                    detail=(
+                        f"Review case `{case.key}` in `{review_decl.name}` must declare "
+                        "exactly one subject."
+                    ),
+                    unit=unit,
+                    source_span=case.subject.source_span or case.source_span,
+                    hints=("Keep one `subject:` entry in each review case.",),
                 )
             for option in case.head.options:
                 resolved_option = self._resolve_review_match_option(option, unit=unit)
                 if resolved_option is None:
-                    raise CompileError(
-                        f"Review case selector must resolve to {enum_decl.name} in {owner_label}: {case.key}"
+                    raise review_compile_error(
+                        code="E470",
+                        summary="Invalid review declaration shape",
+                        detail=(
+                            f"Review case `{case.key}` in `{review_decl.name}` must select "
+                            f"a member of `{enum_decl.name}`."
+                        ),
+                        unit=unit,
+                        source_span=option.source_span or case.head.source_span or case.source_span,
+                        hints=("Use enum member refs from the selected enum in each `when` line.",),
                     )
                 option_enum_decl, member_value = resolved_option
                 if option_enum_decl.name != enum_decl.name:
-                    raise CompileError(
-                        f"Review case selector must resolve to {enum_decl.name} in {owner_label}: {case.key}"
+                    raise review_compile_error(
+                        code="E470",
+                        summary="Invalid review declaration shape",
+                        detail=(
+                            f"Review case `{case.key}` in `{review_decl.name}` must select "
+                            f"a member of `{enum_decl.name}`."
+                        ),
+                        unit=unit,
+                        source_span=option.source_span or case.head.source_span or case.source_span,
+                        hints=("Use enum member refs from the selected enum in each `when` line.",),
                     )
                 previous_case = seen_case_members.get(member_value)
                 if previous_case is not None:
-                    raise CompileError(
-                        f"Review cases overlap in {owner_label}: {previous_case}, {case.key}"
+                    raise review_compile_error(
+                        code="E470",
+                        summary="Invalid review declaration shape",
+                        detail=(
+                            f"Review `{review_decl.name}` has overlapping cases for selector "
+                            f"value `{member_value}`."
+                        ),
+                        unit=unit,
+                        source_span=case.head.source_span or case.source_span,
+                        related=(
+                            review_related_site(
+                                label=f"first case for `{member_value}`",
+                                unit=unit,
+                                source_span=previous_case.head.source_span
+                                or previous_case.source_span,
+                            ),
+                        ),
+                        hints=("Keep each selector value in exactly one case.",),
                     )
-                seen_case_members[member_value] = case.key
+                seen_case_members[member_value] = case
         if set(seen_case_members) != expected_case_members:
-            raise CompileError(f"Review cases must be exhaustive in {owner_label}")
+            cases_config = find_review_decl_item(
+                review_decl,
+                predicate=lambda item: isinstance(item, model.ReviewCasesConfig),
+            )
+            missing_members = ", ".join(sorted(expected_case_members - set(seen_case_members)))
+            raise review_compile_error(
+                code="E470",
+                summary="Invalid review declaration shape",
+                detail=(
+                    f"Review `{review_decl.name}` is missing cases for selector values: "
+                    f"{missing_members}."
+                ),
+                unit=unit,
+                source_span=(
+                    getattr(cases_config, "source_span", None)
+                    or resolved.selector.source_span
+                    or review_decl.source_span
+                ),
+                hints=("Keep the case-selected review exhaustive, or cover every enum member.",),
+            )
 
         shared_titles = {
             section.key: self._review_section_title(section) for section in pre_sections
@@ -198,10 +323,10 @@ class CompileReviewCasesMixin:
                 **shared_titles,
                 case_checks.key: self._review_section_title(case_checks),
             }
-            accept_gate_count = 0
+            accept_stmts: list[model.ReviewAcceptStmt] = []
             any_block_gates = False
             for section in case_pre_sections:
-                accept_gate_count += self._count_review_accept_stmts(section.items)
+                accept_stmts.extend(collect_review_accept_stmts(section.items))
                 any_block_gates = any_block_gates or self._review_items_contain_blocks(section.items)
                 self._validate_review_pre_outcome_items(
                     section.items,
@@ -211,9 +336,36 @@ class CompileReviewCasesMixin:
                     section_titles=case_titles,
                     agent_contract=agent_contract,
                 )
-            if accept_gate_count != 1:
-                raise CompileError(
-                    f"Review case must define exactly one accept gate in {owner_label}: {case.key}"
+            if len(accept_stmts) != 1:
+                if not accept_stmts:
+                    raise review_compile_error(
+                        code="E470",
+                        summary="Invalid review declaration shape",
+                        detail=(
+                            f"Review case `{case.key}` in `{review_decl.name}` must define "
+                            "exactly one `accept` gate."
+                        ),
+                        unit=unit,
+                        source_span=case.source_span or case.head.source_span,
+                        hints=("Add one `accept ... when ...` gate inside the case checks.",),
+                    )
+                raise review_compile_error(
+                    code="E470",
+                    summary="Invalid review declaration shape",
+                    detail=(
+                        f"Review case `{case.key}` in `{review_decl.name}` defines more than "
+                        "one `accept` gate."
+                    ),
+                    unit=unit,
+                    source_span=accept_stmts[-1].source_span,
+                    related=(
+                        review_related_site(
+                            label="first `accept` gate",
+                            unit=unit,
+                            source_span=accept_stmts[0].source_span,
+                        ),
+                    ),
+                    hints=("Keep exactly one `accept ... when ...` gate in each review case.",),
                 )
 
             pre_outcome_branches = self._resolve_review_pre_outcome_branches(

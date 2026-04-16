@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
+from doctrine._compiler.review_diagnostics import (
+    collect_review_accept_stmts,
+    review_compile_error,
+    review_related_site,
+)
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledSection,
     IndexedUnit,
@@ -26,9 +30,23 @@ class CompileReviewsMixin:
     ) -> CompiledSection:
         resolved = self._resolve_review_decl(review_decl, unit=unit)
         if resolved.comment_output is None:
-            raise CompileError(f"Review is missing comment_output: {review_decl.name}")
+            raise review_compile_error(
+                code="E478",
+                summary="Review is missing comment_output",
+                detail=f"Review `{review_decl.name}` is missing `comment_output:`.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add one `comment_output:` entry to the review.",),
+            )
         if resolved.fields is None:
-            raise CompileError(f"Review is missing fields: {review_decl.name}")
+            raise review_compile_error(
+                code="E473",
+                summary="Review is missing fields",
+                detail=f"Review `{review_decl.name}` is missing the required `fields:` block.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add a `fields:` block that binds the required review channels.",),
+            )
         if resolved.cases:
             return self._compile_case_selected_review_decl(
                 review_decl,
@@ -38,9 +56,23 @@ class CompileReviewsMixin:
                 owner_label=owner_label,
             )
         if resolved.subject is None:
-            raise CompileError(f"Review is missing subject: {review_decl.name}")
+            raise review_compile_error(
+                code="E474",
+                summary="Review is missing subject",
+                detail=f"Review `{review_decl.name}` is missing `subject:`.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add one `subject:` entry that names the reviewed artifact.",),
+            )
         if resolved.contract is None:
-            raise CompileError(f"Review is missing contract: {review_decl.name}")
+            raise review_compile_error(
+                code="E476",
+                summary="Review is missing contract",
+                detail=f"Review `{review_decl.name}` is missing `contract:`.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add one `contract:` entry that names the shared review contract.",),
+            )
 
         subjects = self._resolve_review_subjects(
             resolved.subject,
@@ -68,9 +100,16 @@ class CompileReviewsMixin:
         )
         comment_output_key = (comment_output_unit.module_parts, comment_output_decl.name)
         if comment_output_key not in agent_contract.outputs:
-            raise CompileError(
-                f"Review comment_output must be emitted by the concrete turn in {owner_label}: "
-                f"{comment_output_decl.name}"
+            raise review_compile_error(
+                code="E479",
+                summary="Review comment_output is not emitted",
+                detail=(
+                    f"Review `{review_decl.name}` declares comment output "
+                    f"`{comment_output_decl.name}`, but {owner_label} does not emit it."
+                ),
+                unit=unit,
+                source_span=resolved.comment_output.source_span,
+                hints=("Emit the declared review comment output from the concrete agent.",),
             )
 
         pre_sections: list[model.ReviewSection] = []
@@ -86,16 +125,30 @@ class CompileReviewsMixin:
                 on_reject = item
 
         if on_accept is None:
-            raise CompileError(f"Review is missing on_accept: {review_decl.name}")
+            raise review_compile_error(
+                code="E483",
+                summary="Review is missing a reserved outcome section",
+                detail=f"Review `{review_decl.name}` is missing `on_accept:`.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add one `on_accept:` outcome section to the review.",),
+            )
         if on_reject is None:
-            raise CompileError(f"Review is missing on_reject: {review_decl.name}")
+            raise review_compile_error(
+                code="E483",
+                summary="Review is missing a reserved outcome section",
+                detail=f"Review `{review_decl.name}` is missing `on_reject:`.",
+                unit=unit,
+                source_span=review_decl.source_span,
+                hints=("Add one `on_reject:` outcome section to the review.",),
+            )
 
         section_titles = {section.key: self._review_section_title(section) for section in pre_sections}
         gate_observation = self._review_gate_observation(comment_output_decl)
-        accept_gate_count = 0
+        accept_stmts: list[model.ReviewAcceptStmt] = []
         any_block_gates = False
         for section in pre_sections:
-            accept_gate_count += self._count_review_accept_stmts(section.items)
+            accept_stmts.extend(collect_review_accept_stmts(section.items))
             any_block_gates = any_block_gates or self._review_items_contain_blocks(section.items)
             self._validate_review_pre_outcome_items(
                 section.items,
@@ -105,9 +158,30 @@ class CompileReviewsMixin:
                 section_titles=section_titles,
                 agent_contract=agent_contract,
             )
-        if accept_gate_count != 1:
-            raise CompileError(
-                f"Review must define exactly one accept gate in {owner_label}: found {accept_gate_count}"
+        if len(accept_stmts) != 1:
+            if not accept_stmts:
+                raise review_compile_error(
+                    code="E481",
+                    summary="Review is missing accept",
+                    detail=f"Review `{review_decl.name}` must define exactly one `accept` gate.",
+                    unit=unit,
+                    source_span=review_decl.source_span,
+                    hints=("Add one `accept ... when ...` gate inside the review checks.",),
+                )
+            raise review_compile_error(
+                code="E482",
+                summary="Review has multiple accept gates",
+                detail=f"Review `{review_decl.name}` defines more than one `accept` gate.",
+                unit=unit,
+                source_span=accept_stmts[-1].source_span,
+                related=(
+                    review_related_site(
+                        label="first `accept` gate",
+                        unit=unit,
+                        source_span=accept_stmts[0].source_span,
+                    ),
+                ),
+                hints=("Keep exactly one `accept ... when ...` gate across the review checks.",),
             )
         pre_outcome_branches = self._resolve_review_pre_outcome_branches(
             pre_sections,
