@@ -62,6 +62,6 @@ agent = "BrokenLessonPlanDemo"
 exception_type = "CompileError"
 error_code = "E305"
 message_contains = [
-  "Override kind mismatch for document entry",
+  "overrides entry `read_order` with the wrong block kind",
   "read_order",
 ]

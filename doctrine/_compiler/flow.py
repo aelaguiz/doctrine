@@ -124,6 +124,7 @@ class FlowMixin:
                     field.value,
                     unit=unit,
                     owner_label=f"agent {agent.name} final_output",
+                    source_span=field.source_span,
                 )
                 final_output_key = (
                     final_output_unit.module_parts,

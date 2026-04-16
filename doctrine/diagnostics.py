@@ -185,8 +185,10 @@ class DoctrineError(RuntimeError):
         column: int | None = None,
     ) -> DoctrineError:
         current_location = self.diagnostic.location
-        resolved_path = path if path is not None else (
-            current_location.path if current_location is not None else None
+        resolved_path = (
+            current_location.path
+            if current_location is not None and current_location.path is not None
+            else path
         )
         resolved_line = line if line is not None else (
             current_location.line if current_location is not None else None

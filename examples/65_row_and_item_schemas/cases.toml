@@ -60,7 +60,7 @@ agent = "InvalidDuplicateItemSchemaKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
 message_contains = [
-  "Duplicate item_schema key",
+  "item_schema key `step_label`",
   "step_label",
 ]
 
@@ -73,7 +73,7 @@ agent = "InvalidDuplicateRowSchemaKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
 message_contains = [
-  "Duplicate row_schema key",
+  "row_schema key `topic`",
   "topic",
 ]
 

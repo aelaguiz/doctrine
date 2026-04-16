@@ -5,6 +5,10 @@ from dataclasses import replace
 
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.readable_diagnostics import (
+    duplicate_readable_key_error,
+    invalid_readable_block_error,
+)
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledBulletsBlock,
@@ -83,10 +87,10 @@ class CompileReadableBlocksMixin:
                 when_text=when_text,
                 emit_metadata=True,
                 semantic_target=_semantic_render_target_for_block(block.kind, block.key),
-            )
+        )
         if block.kind in {"sequence", "bullets", "checklist"}:
             items: list[model.ProseLine] = []
-            seen_keys: set[str] = set()
+            seen_keys: dict[str, model.ReadableListItem] = {}
             for list_item in self._require_tuple_payload(
                 block.payload,
                 owner_label=block_owner_label,
@@ -98,10 +102,16 @@ class CompileReadableBlocksMixin:
                     )
                 if list_item.key is not None:
                     if list_item.key in seen_keys:
-                        raise CompileError(
-                            f"Duplicate {block.kind} item key in {block_owner_label}: {list_item.key}"
+                        raise duplicate_readable_key_error(
+                            subject_label="Readable surface",
+                            owner_label=block_owner_label,
+                            kind_label=f"{block.kind} item",
+                            key=list_item.key,
+                            unit=unit,
+                            source_span=list_item.source_span,
+                            first_source_span=seen_keys[list_item.key].source_span,
                         )
-                    seen_keys.add(list_item.key)
+                    seen_keys[list_item.key] = list_item
                 items.append(
                     self._interpolate_authored_prose_line(
                         list_item.text,
@@ -155,7 +165,7 @@ class CompileReadableBlocksMixin:
             )
         if block.kind == "definitions":
             definitions: list[model.ReadableDefinitionItem] = []
-            seen_keys: set[str] = set()
+            seen_keys: dict[str, model.ReadableDefinitionItem] = {}
             for definition in self._require_tuple_payload(
                 block.payload,
                 owner_label=block_owner_label,
@@ -166,10 +176,16 @@ class CompileReadableBlocksMixin:
                         f"Readable definitions entries must stay definition items in {block_owner_label}"
                     )
                 if definition.key in seen_keys:
-                    raise CompileError(
-                        f"Duplicate definitions item key in {block_owner_label}: {definition.key}"
+                    raise duplicate_readable_key_error(
+                        subject_label="Readable surface",
+                        owner_label=block_owner_label,
+                        kind_label="definitions item",
+                        key=definition.key,
+                        unit=unit,
+                        source_span=definition.source_span,
+                        first_source_span=seen_keys[definition.key].source_span,
                     )
-                seen_keys.add(definition.key)
+                seen_keys[definition.key] = definition
                 definitions.append(
                     replace(
                         definition,
@@ -200,13 +216,19 @@ class CompileReadableBlocksMixin:
                     f"Readable table payload must stay table-shaped in {block_owner_label}"
                 )
             resolved_columns: list[CompiledTableColumn] = []
-            column_keys: set[str] = set()
+            column_keys: dict[str, model.ReadableTableColumn] = {}
             for column in block.payload.columns:
                 if column.key in column_keys:
-                    raise CompileError(
-                        f"Duplicate table column key in {block_owner_label}: {column.key}"
+                    raise duplicate_readable_key_error(
+                        subject_label="Readable surface",
+                        owner_label=block_owner_label,
+                        kind_label="table column",
+                        key=column.key,
+                        unit=unit,
+                        source_span=column.source_span,
+                        first_source_span=column_keys[column.key].source_span,
                     )
-                column_keys.add(column.key)
+                column_keys[column.key] = column
                 resolved_columns.append(
                     CompiledTableColumn(
                         key=column.key,
@@ -227,29 +249,50 @@ class CompileReadableBlocksMixin:
                     )
                 )
             if not resolved_columns:
-                raise CompileError(
-                    f"Readable table must declare at least one column in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=f"Readable table `{block_owner_label}` must declare at least one column.",
+                    unit=unit,
+                    source_span=block.source_span,
+                    hints=("Declare at least one table column before rows or notes.",),
                 )
             resolved_rows: list[CompiledTableRow] = []
-            row_keys: set[str] = set()
+            row_keys: dict[str, model.ReadableTableRow] = {}
             for row in block.payload.rows:
                 if row.key in row_keys:
-                    raise CompileError(
-                        f"Duplicate table row key in {block_owner_label}: {row.key}"
+                    raise duplicate_readable_key_error(
+                        subject_label="Readable surface",
+                        owner_label=block_owner_label,
+                        kind_label="table row",
+                        key=row.key,
+                        unit=unit,
+                        source_span=row.source_span,
+                        first_source_span=row_keys[row.key].source_span,
                     )
-                row_keys.add(row.key)
-                cell_keys: set[str] = set()
+                row_keys[row.key] = row
+                cell_keys: dict[str, model.ReadableTableCell] = {}
                 resolved_cells: list[CompiledTableCell] = []
                 for cell in row.cells:
                     if cell.key not in column_keys:
-                        raise CompileError(
-                            f"Table row references an unknown column in {block_owner_label}: {cell.key}"
+                        raise invalid_readable_block_error(
+                            detail=(
+                                f"Readable table row in `{block_owner_label}` references "
+                                f"unknown column `{cell.key}`."
+                            ),
+                            unit=unit,
+                            source_span=cell.source_span or row.source_span,
+                            hints=("Match each table cell key to a declared table column key.",),
                         )
                     if cell.key in cell_keys:
-                        raise CompileError(
-                            f"Duplicate table row cell in {block_owner_label}.{row.key}: {cell.key}"
+                        raise duplicate_readable_key_error(
+                            subject_label="Readable surface",
+                            owner_label=f"{block_owner_label}.{row.key}",
+                            kind_label="table row cell",
+                            key=cell.key,
+                            unit=unit,
+                            source_span=cell.source_span,
+                            first_source_span=cell_keys[cell.key].source_span,
                         )
-                    cell_keys.add(cell.key)
+                    cell_keys[cell.key] = cell
                     if cell.body is not None:
                         resolved_cells.append(
                             CompiledTableCell(
@@ -272,9 +315,18 @@ class CompileReadableBlocksMixin:
                         render_profile=render_profile,
                     )
                     if "\n" in cell_text:
-                        raise CompileError(
-                            "Readable table inline cells must stay single-line in "
-                            f"{block_owner_label}.{row.key}.{cell.key}; nested tables require structured cell bodies."
+                        raise invalid_readable_block_error(
+                            detail=(
+                                f"Readable table inline cell "
+                                f"`{block_owner_label}.{row.key}.{cell.key}` must stay "
+                                "single-line unless it uses a structured cell body."
+                            ),
+                            unit=unit,
+                            source_span=cell.source_span or row.source_span,
+                            hints=(
+                                "Move multi-line cell content into a structured cell body instead "
+                                "of an inline table cell.",
+                            ),
                         )
                     resolved_cells.append(CompiledTableCell(key=cell.key, text=cell_text))
                 resolved_rows.append(CompiledTableRow(key=row.key, cells=tuple(resolved_cells)))
@@ -319,8 +371,14 @@ class CompileReadableBlocksMixin:
                 kind="guard",
             )
             if when_text is None:
-                raise CompileError(
-                    f"Readable guard shells must define a guard expression in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable guard shell `{block_owner_label}` must define a guard "
+                        "expression."
+                    ),
+                    unit=unit,
+                    source_span=block.source_span,
+                    hints=("Add a `when ...` guard expression to the guard block.",),
                 )
             return CompiledGuardBlock(
                 title=title or _humanize_key(block.key),
@@ -338,8 +396,17 @@ class CompileReadableBlocksMixin:
                 "warning",
                 "note",
             }:
-                raise CompileError(
-                    f"Unknown callout kind in {block_owner_label}: {block.payload.kind}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable block `{block_owner_label}` uses unknown callout kind "
+                        f"`{block.payload.kind}`."
+                    ),
+                    unit=unit,
+                    source_span=block.payload.source_span or block.source_span,
+                    hints=(
+                        "Use one of the shipped callout kinds: `required`, `important`, "
+                        "`warning`, or `note`.",
+                    ),
                 )
             return CompiledCalloutBlock(
                 title=title or _humanize_key(block.key),
@@ -366,8 +433,11 @@ class CompileReadableBlocksMixin:
                     f"Readable code payload must stay code-shaped in {block_owner_label}"
                 )
             if "\n" not in block.payload.text:
-                raise CompileError(
-                    f"Code block text must use a multiline string in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=f"Readable code block `{block_owner_label}` must use a multiline string.",
+                    unit=unit,
+                    source_span=block.payload.source_span or block.source_span,
+                    hints=("Use a multiline string for readable code block text.",),
                 )
             return CompiledCodeBlock(
                 title=title or _humanize_key(block.key),
@@ -392,8 +462,14 @@ class CompileReadableBlocksMixin:
                 render_profile=render_profile,
             )
             if "\n" not in text:
-                raise CompileError(
-                    f"Raw {block.kind} blocks must use a multiline string in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable {block.kind} block `{block_owner_label}` must use a "
+                        "multiline string."
+                    ),
+                    unit=unit,
+                    source_span=block.payload.source_span or block.source_span,
+                    hints=("Use a multiline string for raw markdown or html readable blocks.",),
                 )
             return CompiledRawTextBlock(
                 title=title or _humanize_key(block.key),

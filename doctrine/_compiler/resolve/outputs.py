@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.constants import _BUILTIN_INPUT_SOURCES, _BUILTIN_OUTPUT_TARGETS
+from doctrine._compiler.final_output_diagnostics import final_output_compile_error
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
@@ -1319,6 +1320,7 @@ class ResolveOutputsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        source_span: model.SourceSpan | None = None,
     ) -> tuple[IndexedUnit, model.OutputDecl]:
         target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
         local_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
@@ -1327,9 +1329,16 @@ class ResolveOutputsMixin:
 
         other_kind = self._named_non_output_decl_kind(ref.declaration_name, unit=target_unit)
         if other_kind is not None:
-            raise CompileError(
-                "E211 final_output must point at an output declaration in "
-                f"{owner_label}: {_dotted_ref_name(ref)} resolves to {other_kind}"
+            raise final_output_compile_error(
+                code="E211",
+                summary="Final output must point at output declaration",
+                detail=(
+                    f"`final_output` in {owner_label} points at `{_dotted_ref_name(ref)}`, "
+                    f"which resolves to {other_kind} instead of an `output` declaration."
+                ),
+                unit=unit,
+                source_span=source_span,
+                hints=("Point `final_output:` at a declared `output`.",),
             )
         return self._resolve_output_decl(ref, unit=unit)
 
@@ -1363,19 +1372,32 @@ class ResolveOutputsMixin:
         self._validate_final_output_lowered_schema(
             lowered_schema,
             owner_label=f"output schema {schema_decl.name}",
+            path=schema_unit.prompt_file.source_path,
+            source_span=schema_decl.source_span,
         )
         example_file_item = shape_scalars.get("example_file")
         if example_file_item is not None:
-            raise CompileError(
-                "E215 final_output example_file is retired in "
-                f"output shape {shape_decl.name}: retire `example_file`; add optional "
-                f"`example:` to output schema {schema_decl.name} only when you want a "
-                "rendered example block"
+            raise final_output_compile_error(
+                code="E215",
+                summary="Final output example_file is retired",
+                detail=(
+                    f"`final_output` in output shape {shape_decl.name} still uses retired "
+                    f"`example_file`. retire `example_file`; add optional `example:` to "
+                    f"output schema {schema_decl.name} only when you want a rendered "
+                    "example block"
+                ),
+                unit=shape_unit,
+                source_span=example_file_item.source_span or shape_decl.source_span,
+                hints=(
+                    "Delete `example_file` from the `output shape`.",
+                    "Add `example:` on `output schema` only when you want a rendered example block.",
+                ),
             )
-        example_value = self._output_schema_example_value(
+        example_item = self._output_schema_example_item(
             schema_decl,
             owner_label=f"output schema {schema_decl.name}",
         )
+        example_value = None if example_item is None else example_item.value
         payload_rows = self._build_output_schema_payload_rows(schema_data=lowered_schema)
         example_text: str | None = None
         if example_value is not None:
@@ -1387,6 +1409,8 @@ class ResolveOutputsMixin:
                 example_instance,
                 lowered_schema,
                 owner_label=f"output schema {schema_decl.name}",
+                path=schema_unit.prompt_file.source_path,
+                source_span=example_item.source_span if example_item is not None else schema_decl.source_span,
             )
             example_text = json.dumps(example_instance, indent=2) + "\n"
         return FinalOutputJsonShapeSummary(
@@ -1417,12 +1441,23 @@ class ResolveOutputsMixin:
             field.value,
             unit=unit,
             owner_label=f"agent {agent_name} final_output",
+            source_span=field.source_span,
         )
         output_key = (output_unit.module_parts, output_decl.name)
         if output_key not in agent_contract.outputs:
-            raise CompileError(
-                "E212 final_output output is not emitted by the concrete turn in "
-                f"agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            raise final_output_compile_error(
+                code="E212",
+                summary="Final output is not emitted by the concrete turn",
+                detail=(
+                    f"Agent `{agent_name}` declares `final_output` as "
+                    f"`{_dotted_decl_name(output_unit.module_parts, output_decl.name)}`, "
+                    "but that output is not emitted by the concrete turn."
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                hints=(
+                    "Add the output to the agent `outputs:` contract, or point `final_output:` at one that already is.",
+                ),
             )
 
         scalar_items, section_items, _extras = self._split_record_items(
@@ -1471,6 +1506,7 @@ class ResolveOutputsMixin:
 
         route_parts = self._collect_output_schema_node_parts(
             route_node.target.items,
+            unit=json_summary.schema_unit,
             owner_label=(
                 f"output schema {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
             ),
@@ -1654,11 +1690,16 @@ class ResolveOutputsMixin:
             if local_decl is not None:
                 return self._config_spec_from_decl(
                     local_decl,
+                    unit=unit,
                     owner_label=f"input source {local_decl.name}",
                 )
 
         target_unit, decl = self._resolve_input_source_decl(ref, unit=unit)
-        return self._config_spec_from_decl(decl, owner_label=f"input source {decl.name}")
+        return self._config_spec_from_decl(
+            decl,
+            unit=target_unit,
+            owner_label=f"input source {decl.name}",
+        )
 
     def _resolve_output_target_spec(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -1691,6 +1732,7 @@ class ResolveOutputsMixin:
     ) -> ResolvedOutputTargetSpec:
         required_keys, optional_keys = self._config_keys_from_decl(
             decl,
+            unit=unit,
             owner_label=owner_label,
         )
         delivery_skill: ResolvedOutputTargetDeliverySkill | None = None

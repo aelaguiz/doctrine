@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.output_schema_validation import (
     OutputSchemaValidationError,
     validate_lowered_output_schema,
@@ -362,11 +363,27 @@ class ValidateMixin(
         schema_data: dict[str, object],
         *,
         owner_label: str,
+        path=None,
+        source_span=None,
     ) -> None:
         try:
             validate_lowered_output_schema(schema_data, owner_label=owner_label)
         except OutputSchemaValidationError as exc:
-            raise CompileError(str(exc)) from exc
+            detail = (
+                f"`final_output` lowered schema in {owner_label} is not valid Draft 2020-12 "
+                f"JSON Schema. {exc.detail}"
+                if exc.code == "E217"
+                else f"`final_output` lowered schema in {owner_label} is outside the supported "
+                f"OpenAI structured outputs subset. {exc.detail}"
+            )
+            raise compile_error(
+                code=exc.code,
+                summary=exc.summary,
+                detail=detail,
+                path=path,
+                source_span=source_span,
+                hints=exc.hints,
+            ) from exc
 
     def _validate_final_output_example_instance(
         self,
@@ -374,6 +391,8 @@ class ValidateMixin(
         schema_data: dict[str, object],
         *,
         owner_label: str,
+        path=None,
+        source_span=None,
     ) -> None:
         try:
             validate_output_example_instance(
@@ -382,7 +401,17 @@ class ValidateMixin(
                 owner_label=owner_label,
             )
         except OutputSchemaValidationError as exc:
-            raise CompileError(str(exc)) from exc
+            raise compile_error(
+                code=exc.code,
+                summary=exc.summary,
+                detail=(
+                    f"`final_output` example in {owner_label} does not match the lowered "
+                    f"schema. {exc.detail}"
+                ),
+                path=path,
+                source_span=source_span,
+                hints=exc.hints,
+            ) from exc
 
     def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
         if len(agent.fields) != 2:

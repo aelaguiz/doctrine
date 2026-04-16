@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from doctrine import model
 from dataclasses import replace
 
+from doctrine import model
+from doctrine._compiler.final_output_diagnostics import (
+    final_output_compile_error,
+    final_output_related_site,
+)
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.output_diagnostics import output_related_site
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledFinalOutputSpec,
     CompiledReviewSpec,
@@ -42,12 +46,23 @@ class CompileFinalOutputMixin:
             field.value,
             unit=unit,
             owner_label=owner_label,
+            source_span=field.source_span,
         )
         output_key = (output_unit.module_parts, output_decl.name)
         if output_key not in agent_contract.outputs:
-            raise CompileError(
-                "E212 final_output output is not emitted by the concrete turn in "
-                f"agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            raise final_output_compile_error(
+                code="E212",
+                summary="Final output is not emitted by the concrete turn",
+                detail=(
+                    f"Agent `{agent_name}` declares `final_output` as "
+                    f"`{_dotted_decl_name(output_unit.module_parts, output_decl.name)}`, "
+                    "but that output is not emitted by the concrete turn."
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                hints=(
+                    "Add the output to the agent `outputs:` contract, or point `final_output:` at one that already is.",
+                ),
             )
         review_semantics = self._review_output_context_for_key(
             review_output_contexts,
@@ -78,9 +93,33 @@ class CompileFinalOutputMixin:
             or not isinstance(target_item.value, model.NameRef)
             or not self._is_builtin_turn_response_target_ref(target_item.value)
         ):
-            raise CompileError(
-                "E213 final_output must designate one TurnResponse output, not files or another "
-                f"target, in agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            source_span = (
+                files_section.source_span
+                if files_section is not None
+                else getattr(target_item, "source_span", None)
+                or getattr(shape_item, "source_span", None)
+                or output_decl.source_span
+            )
+            raise final_output_compile_error(
+                code="E213",
+                summary="Final output must designate one TurnResponse message",
+                detail=(
+                    f"Agent `{agent_name}` points `final_output` at "
+                    f"`{_dotted_decl_name(output_unit.module_parts, output_decl.name)}`, "
+                    "but the designated output is not one `TurnResponse` assistant message."
+                ),
+                unit=output_unit,
+                source_span=source_span,
+                related=(
+                    final_output_related_site(
+                        label="`final_output` field",
+                        unit=unit,
+                        source_span=field.source_span,
+                    ),
+                ),
+                hints=(
+                    "Use a typed `output` with `target: TurnResponse` and no `files:` bundle.",
+                ),
             )
         explicit_render_profile, render_profile = self._resolve_output_render_profiles(
             output_decl,
@@ -245,8 +284,22 @@ class CompileFinalOutputMixin:
             )
             resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
             if not resolved_schema.sections:
-                raise CompileError(
-                    f"Output-attached schema must export at least one section in output {output_decl.name}: {schema_decl.name}"
+                raise final_output_compile_error(
+                    code="E302",
+                    summary="Invalid output attachment declaration",
+                    detail=(
+                        "Output-attached schema must export at least one section in output "
+                        f"{output_decl.name}: {schema_decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=output_decl.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"attached schema `{schema_decl.name}`",
+                            unit=schema_unit,
+                            source_span=schema_decl.source_span,
+                        ),
+                    ),
                 )
             body.extend(
                 [

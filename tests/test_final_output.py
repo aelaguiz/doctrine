@@ -622,7 +622,7 @@ class FinalOutputTests(unittest.TestCase):
         )
 
         self.assertEqual(error.code, "E216")
-        self.assertIn("does not match lowered schema", str(error))
+        self.assertIn("does not match the lowered schema", str(error))
 
     def test_json_final_output_keeps_legacy_inline_enum_form_compatible(self) -> None:
         agent = self._compile_agent(
@@ -1854,7 +1854,7 @@ class FinalOutputTests(unittest.TestCase):
         )
 
         self.assertEqual(error.code, "E213")
-        self.assertIn("another target", str(error))
+        self.assertIn("not one `TurnResponse` assistant message", str(error))
 
     def test_handoff_routing_final_output_can_bind_route_fields(self) -> None:
         agent = self._compile_agent(

@@ -226,15 +226,24 @@ class SkillsTransformerMixin:
     def record_item_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def record_keyed_item(self, key, head, body=None):
+    @v_args(meta=True, inline=True)
+    def record_keyed_item(self, meta, key, head, body=None):
         if isinstance(head, str) and body is not None:
-            return model.RecordSection(key=key, title=head, items=tuple(body))
-        return model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body))
+            return _with_source_span(
+                model.RecordSection(key=key, title=head, items=tuple(body)),
+                meta,
+            )
+        return _with_source_span(
+            model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def record_ref_item(self, ref, body=None):
-        return model.RecordRef(ref=ref, body=None if body is None else tuple(body))
+    @v_args(meta=True, inline=True)
+    def record_ref_item(self, meta, ref, body=None):
+        return _with_source_span(
+            model.RecordRef(ref=ref, body=None if body is None else tuple(body)),
+            meta,
+        )
 
     def skills_body(self, items):
         preamble: list[model.ProseLine] = []

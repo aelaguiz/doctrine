@@ -190,7 +190,7 @@ def _check_final_output_invalid_example_json_has_specific_code() -> None:
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
             _expect(getattr(exc, "code", None) == "E216", f"expected E216, got {getattr(exc, 'code', None)}")
-            _expect("does not match lowered schema" in str(exc), str(exc))
+            _expect("does not match the lowered schema" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for invalid final_output example instance, but compilation succeeded")
 
@@ -333,7 +333,7 @@ def _check_readable_table_requires_columns() -> None:
             compile_prompt(prompt, "ReadableTableDemo")
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("Readable table must declare at least one column" in str(exc), str(exc))
+            _expect("must declare at least one column" in str(exc), str(exc))
             _expect("BrokenGuide.release_gates" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for readable table without columns, but compilation succeeded")

@@ -72,7 +72,9 @@ such as `LessonPlan:read_order.first`,
 `LessonPlan:step_arc.row_schema.topic.title`, shared readable block headers on
 workflow, record, and skill-entry bodies, explicit late block kinds such as
 `properties`, `guard`, `markdown`, `html`, `footnotes`, and `image`, and
-schema-backed `review contract:` references.
+schema-backed `review contract:` references, plus structured-final-output
+route surfaces such as `route field`, inline route choices, and
+`final_output.route:`.
 
 ## What it does not do yet
 

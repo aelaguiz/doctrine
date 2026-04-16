@@ -25,9 +25,20 @@ OPENAI_OUTPUT_SCHEMA_UNSUPPORTED_KEYWORDS = frozenset(
 
 
 class OutputSchemaValidationError(RuntimeError):
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        detail: str,
+        summary: str,
+        hints: tuple[str, ...] = (),
+    ) -> None:
         super().__init__(message)
         self.code = code
+        self.detail = detail
+        self.summary = summary
+        self.hints = hints
 
 
 def validate_lowered_output_schema(
@@ -42,6 +53,9 @@ def validate_lowered_output_schema(
         raise OutputSchemaValidationError(
             "E217",
             f"E217 final_output lowered schema failed Draft 2020-12 validation in {owner_label}: {message}",
+            detail=message,
+            summary="Final output lowered schema is not valid Draft 2020-12 JSON Schema",
+            hints=("Fix the authored `output schema` so the lowered schema is valid Draft 2020-12.",),
         ) from exc
     validate_openai_structured_output_schema(schema_data, owner_label=owner_label)
 
@@ -59,6 +73,9 @@ def validate_output_example_instance(
         raise OutputSchemaValidationError(
             "E216",
             f"E216 final_output example does not match lowered schema in {owner_label}: {message}",
+            detail=message,
+            summary="Final output example does not match the lowered schema",
+            hints=("Fix the authored `example:` so it matches the lowered schema.",),
         ) from exc
 
 
@@ -84,6 +101,9 @@ def validate_openai_structured_output_schema(
                 "E218",
                 "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                 f"{owner_label}: {path} uses unsupported keyword `{unsupported[0]}`",
+                detail=f"{path} uses unsupported keyword `{unsupported[0]}`",
+                summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
             )
 
         if at_root:
@@ -92,12 +112,18 @@ def validate_openai_structured_output_schema(
                     "E218",
                     "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                     f"{owner_label}: root schema cannot use `anyOf`",
+                    detail="root schema cannot use `anyOf`",
+                    summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                    hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                 )
             if not _json_schema_allows_type(node, "object"):
                 raise OutputSchemaValidationError(
                     "E218",
                     "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                     f"{owner_label}: root schema must be an object",
+                    detail="root schema must be an object",
+                    summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                    hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                 )
 
         if depth > OPENAI_OUTPUT_SCHEMA_MAX_NESTING:
@@ -105,6 +131,9 @@ def validate_openai_structured_output_schema(
                 "E218",
                 "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                 f"{owner_label}: nesting exceeds {OPENAI_OUTPUT_SCHEMA_MAX_NESTING} levels at {path}",
+                detail=f"nesting exceeds {OPENAI_OUTPUT_SCHEMA_MAX_NESTING} levels at {path}",
+                summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
             )
 
         properties = node.get("properties")
@@ -114,6 +143,9 @@ def validate_openai_structured_output_schema(
                     "E218",
                     "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                     f"{owner_label}: object schemas must set `additionalProperties: false` at {path}",
+                    detail=f"object schemas must set `additionalProperties: false` at {path}",
+                    summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                    hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                 )
             if isinstance(properties, dict):
                 property_count += len(properties)
@@ -123,6 +155,9 @@ def validate_openai_structured_output_schema(
                         "E218",
                         "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                         f"{owner_label}: property count exceeds {OPENAI_OUTPUT_SCHEMA_MAX_PROPERTIES}",
+                        detail=f"property count exceeds {OPENAI_OUTPUT_SCHEMA_MAX_PROPERTIES}",
+                        summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                        hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                     )
                 required = node.get("required")
                 required_keys = (
@@ -135,6 +170,9 @@ def validate_openai_structured_output_schema(
                         "E218",
                         "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                         f"{owner_label}: object `required` must match property order at {path}",
+                        detail=f"object `required` must match property order at {path}",
+                        summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                        hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                     )
                 for field_name, field_schema in properties.items():
                     walk(
@@ -162,6 +200,9 @@ def validate_openai_structured_output_schema(
                     "E218",
                     "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                     f"{owner_label}: array schemas must declare object `items` at {path}",
+                    detail=f"array schemas must declare object `items` at {path}",
+                    summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                    hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                 )
             walk(
                 items,
@@ -190,6 +231,9 @@ def validate_openai_structured_output_schema(
                     "E218",
                     "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                     f"{owner_label}: enum count exceeds {OPENAI_OUTPUT_SCHEMA_MAX_ENUM_VALUES}",
+                    detail=f"enum count exceeds {OPENAI_OUTPUT_SCHEMA_MAX_ENUM_VALUES}",
+                    summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                    hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                 )
             if (
                 len(enum_values) > OPENAI_OUTPUT_SCHEMA_LARGE_ENUM_THRESHOLD
@@ -200,6 +244,12 @@ def validate_openai_structured_output_schema(
                     "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                     f"{owner_label}: large enum string budget exceeds "
                     f"{OPENAI_OUTPUT_SCHEMA_MAX_LARGE_ENUM_STRING} characters at {path}",
+                    detail=(
+                        "large enum string budget exceeds "
+                        f"{OPENAI_OUTPUT_SCHEMA_MAX_LARGE_ENUM_STRING} characters at {path}"
+                    ),
+                    summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                    hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
                 )
 
         if "const" in node:
@@ -210,6 +260,9 @@ def validate_openai_structured_output_schema(
                 "E218",
                 "E218 final_output lowered schema is outside OpenAI structured outputs subset in "
                 f"{owner_label}: schema string budget exceeds {OPENAI_OUTPUT_SCHEMA_MAX_TOTAL_STRING}",
+                detail=f"schema string budget exceeds {OPENAI_OUTPUT_SCHEMA_MAX_TOTAL_STRING}",
+                summary="Final output lowered schema is outside the OpenAI structured outputs subset",
+                hints=("Fix the authored `output schema` so it stays inside the supported OpenAI subset.",),
             )
 
     walk(schema_data, path="root", depth=1, at_root=True)

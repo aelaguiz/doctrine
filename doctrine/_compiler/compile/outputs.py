@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledBodyItem,
@@ -17,6 +18,10 @@ from doctrine._compiler.resolved_types import (
 
 
 _SUPPORT_SURFACE_PATTERN = re.compile(r"`([^`]+)`")
+
+
+def _source_span(value: object | None) -> model.SourceSpan | None:
+    return getattr(value, "source_span", None)
 
 
 class CompileOutputsMixin:
@@ -32,13 +37,37 @@ class CompileOutputsMixin:
         shape_item = scalar_items.get("shape")
         requirement_item = scalar_items.get("requirement")
         if source_item is None:
-            raise CompileError(f"Input is missing typed source: {decl.name}")
+            raise output_compile_error(
+                code="E221",
+                summary="Input is missing typed source",
+                detail=f"Input `{decl.name}` is missing a typed `source` field.",
+                unit=unit,
+                source_span=decl.source_span,
+            )
         if not isinstance(source_item.value, model.NameRef):
-            raise CompileError(f"Input source must stay typed: {decl.name}")
+            raise output_compile_error(
+                code="E275",
+                summary="Input source must stay typed",
+                detail=f"Input `{decl.name}` must keep a typed `source`.",
+                unit=unit,
+                source_span=source_item.source_span or decl.source_span,
+            )
         if shape_item is None:
-            raise CompileError(f"Input is missing shape: {decl.name}")
+            raise output_compile_error(
+                code="E222",
+                summary="Input is missing shape",
+                detail=f"Input `{decl.name}` is missing a `shape` field.",
+                unit=unit,
+                source_span=decl.source_span,
+            )
         if requirement_item is None:
-            raise CompileError(f"Input is missing requirement: {decl.name}")
+            raise output_compile_error(
+                code="E223",
+                summary="Input is missing requirement",
+                detail=f"Input `{decl.name}` is missing a `requirement` field.",
+                unit=unit,
+                source_span=decl.source_span,
+            )
 
         source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
         body: list[CompiledBodyItem] = [f"- Source: {source_spec.title}"]
@@ -48,6 +77,7 @@ class CompileOutputsMixin:
                 spec=source_spec,
                 unit=unit,
                 owner_label=f"input {decl.name} source",
+                owner_source_span=source_item.source_span or decl.source_span,
             )
         )
         body.append(
@@ -59,8 +89,15 @@ class CompileOutputsMixin:
         if decl.structure_ref is not None:
             document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             if not self._is_markdown_shape_value(shape_item.value, unit=unit):
-                raise CompileError(
-                    f"Input structure requires a markdown-bearing shape in input {decl.name}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Input structure requires a markdown-bearing shape in input "
+                        f"{decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=shape_item.source_span or decl.source_span,
                 )
             body.append(f"- Structure: {document_decl.title}")
             body.append("")
@@ -118,12 +155,52 @@ class CompileOutputsMixin:
         files_section = section_items.get("files")
 
         if files_section is not None and (target_item is not None or shape_item is not None):
-            raise CompileError(
-                f"Output mixes `files` with `target` or `shape`: {decl.name}"
+            related = []
+            if target_item is not None:
+                related.append(
+                    output_related_site(
+                        label="conflicting `target` field",
+                        unit=unit,
+                        source_span=target_item.source_span,
+                    )
+                )
+            if shape_item is not None:
+                related.append(
+                    output_related_site(
+                        label="conflicting `shape` field",
+                        unit=unit,
+                        source_span=shape_item.source_span,
+                    )
+                )
+            raise output_compile_error(
+                code="E224",
+                summary="Output mixes files with target or shape",
+                detail=f"Output `{decl.name}` mixes `files` with `target` or `shape`.",
+                unit=unit,
+                source_span=files_section.source_span or decl.source_span,
+                related=tuple(related),
+                hints=(
+                    "Choose either `files:` or the `target:` / `shape:` pair, not both.",
+                ),
             )
         if files_section is None and (target_item is None or shape_item is None):
-            raise CompileError(
-                f"Output must define either `files` or both `target` and `shape`: {decl.name}"
+            primary_span = (
+                _source_span(target_item)
+                or _source_span(shape_item)
+                or decl.source_span
+            )
+            raise output_compile_error(
+                code="E224",
+                summary="Output declaration is incomplete",
+                detail=(
+                    f"Output `{decl.name}` must define either `files` or both `target` and "
+                    "`shape`."
+                ),
+                unit=unit,
+                source_span=primary_span,
+                hints=(
+                    "Add `files:` for a file set, or add both `target:` and `shape:`.",
+                ),
             )
 
         explicit_render_profile, render_profile = self._resolve_output_render_profiles(
@@ -166,7 +243,13 @@ class CompileOutputsMixin:
             )
         else:
             if not isinstance(target_item.value, model.NameRef):
-                raise CompileError(f"Output target must stay typed: {decl.name}")
+                raise output_compile_error(
+                    code="E275",
+                    summary="Output target must stay typed",
+                    detail=f"Output `{decl.name}` must keep a typed `target`.",
+                    unit=unit,
+                    source_span=target_item.source_span or decl.source_span,
+                )
             contract_rows = self._compile_ordinary_output_contract_rows(
                 decl,
                 unit=unit,
@@ -179,18 +262,46 @@ class CompileOutputsMixin:
             schema_unit, schema_decl = self._resolve_schema_ref(decl.schema_ref, unit=unit)
             resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
             if not resolved_schema.sections:
-                raise CompileError(
-                    f"Output-attached schema must export at least one section in output {decl.name}: {schema_decl.name}"
+                raise output_compile_error(
+                    code="E302",
+                    summary="Invalid output attachment declaration",
+                    detail=(
+                        "Output-attached schema must export at least one section in output "
+                        f"{decl.name}: {schema_decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=decl.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"attached schema `{schema_decl.name}`",
+                            unit=schema_unit,
+                            source_span=schema_decl.source_span,
+                        ),
+                    ),
                 )
             schema_section = self._compile_schema_sections_block(resolved_schema)
         if decl.structure_ref is not None:
             if files_section is not None:
-                raise CompileError(
-                    f"Output structure requires one markdown-bearing output artifact in {decl.name}"
+                raise output_compile_error(
+                    code="E302",
+                    summary="Invalid output attachment declaration",
+                    detail=(
+                        "Output structure requires one markdown-bearing output artifact in "
+                        f"{decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=files_section.source_span or decl.source_span,
                 )
             if shape_item is None or not self._is_markdown_shape_value(shape_item.value, unit=unit):
-                raise CompileError(
-                    f"Output structure requires a markdown-bearing shape in output {decl.name}"
+                raise output_compile_error(
+                    code="E302",
+                    summary="Invalid output attachment declaration",
+                    detail=(
+                        "Output structure requires a markdown-bearing shape in output "
+                        f"{decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=_source_span(shape_item) or decl.source_span,
                 )
             document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             resolved_document = self._resolve_document_decl(document_decl, unit=document_unit)
@@ -295,8 +406,12 @@ class CompileOutputsMixin:
         detail_sections: list[CompiledBodyItem] = []
         for item in section.items:
             if not isinstance(item, model.RecordSection):
-                raise CompileError(
-                    f"`files` entries must be titled sections in output {output_name}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"`files` entries must be titled sections in output {output_name}",
+                    unit=unit,
+                    source_span=_source_span(item) or section.source_span,
                 )
             scalar_items, _section_items, extras = self._split_record_items(
                 item.items,
@@ -306,12 +421,23 @@ class CompileOutputsMixin:
             path_item = scalar_items.get("path")
             shape_item = scalar_items.get("shape")
             if path_item is None or not isinstance(path_item.value, str):
-                raise CompileError(
-                    f"Output file entry is missing string path in {output_name}: {item.key}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Output file entry is missing string path in {output_name}: "
+                        f"{item.key}"
+                    ),
+                    unit=unit,
+                    source_span=_source_span(path_item) or item.source_span,
                 )
             if shape_item is None:
-                raise CompileError(
-                    f"Output file entry is missing shape in {output_name}: {item.key}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"Output file entry is missing shape in {output_name}: {item.key}",
+                    unit=unit,
+                    source_span=item.source_span,
                 )
             rows.append(
                 (
@@ -357,7 +483,13 @@ class CompileOutputsMixin:
         requirement_item: model.RecordScalar | None,
     ) -> tuple[tuple[str, str], ...]:
         if not isinstance(target_item.value, model.NameRef):
-            raise CompileError(f"Output target must stay typed: {decl.name}")
+            raise output_compile_error(
+                code="E275",
+                summary="Output target must stay typed",
+                detail=f"Output `{decl.name}` must keep a typed `target`.",
+                unit=unit,
+                source_span=target_item.source_span or decl.source_span,
+            )
         target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
         rows: list[tuple[str, str]] = [("Target", target_spec.title)]
         if target_spec.delivery_skill is not None:
@@ -368,6 +500,7 @@ class CompileOutputsMixin:
                 spec=target_spec,
                 unit=unit,
                 owner_label=f"output {decl.name} target",
+                owner_source_span=target_item.source_span,
             )
         )
         rows.append(
@@ -408,19 +541,52 @@ class CompileOutputsMixin:
         spec,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None,
     ) -> tuple[tuple[str, str], ...]:
         rows: list[tuple[str, str]] = []
-        seen_keys: set[str] = set()
+        seen_keys: dict[str, model.RecordScalar] = {}
         allowed_keys = {**spec.required_keys, **spec.optional_keys}
 
         for item in config_items:
             if not isinstance(item, model.RecordScalar) or item.body is not None:
-                raise CompileError(f"Config entries must be scalar key/value lines in {owner_label}")
-            if item.key in seen_keys:
-                raise CompileError(f"Duplicate config key in {owner_label}: {item.key}")
-            seen_keys.add(item.key)
+                raise output_compile_error(
+                    code="E230",
+                    summary="Config entries must be scalar key/value lines",
+                    detail=(
+                        f"Config entries must be scalar key/value lines in `{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=_source_span(item) or owner_source_span,
+                )
+            first_item = seen_keys.get(item.key)
+            if first_item is not None:
+                raise output_compile_error(
+                    code="E231",
+                    summary="Duplicate config key",
+                    detail=(
+                        f"Config owner `{owner_label}` repeats key `{item.key}`."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
+                    related=(
+                        output_related_site(
+                            label=f"first `{item.key}` config entry",
+                            unit=unit,
+                            source_span=first_item.source_span,
+                        ),
+                    ),
+                )
+            seen_keys[item.key] = item
             if item.key not in allowed_keys:
-                raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
+                raise output_compile_error(
+                    code="E232",
+                    summary="Unknown config key",
+                    detail=(
+                        f"Config owner `{owner_label}` uses unknown key `{item.key}`."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
+                )
             rows.append(
                 (
                     allowed_keys[item.key],
@@ -436,7 +602,15 @@ class CompileOutputsMixin:
         missing_required = [key for key in spec.required_keys if key not in seen_keys]
         if missing_required:
             missing = ", ".join(missing_required)
-            raise CompileError(f"Missing required config key in {owner_label}: {missing}")
+            raise output_compile_error(
+                code="E233",
+                summary="Missing required config key",
+                detail=(
+                    f"Config owner `{owner_label}` is missing required key `{missing}`."
+                ),
+                unit=unit,
+                source_span=owner_source_span,
+            )
 
         return tuple(rows)
 
@@ -627,10 +801,14 @@ class CompileOutputsMixin:
                                 render_profile=render_profile,
                             ),
                         )
-                    )
+                )
                 continue
-            raise CompileError(
-                f"{section.title} must stay record-shaped in {owner_label}"
+            raise output_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"{section.title} must stay record-shaped in {owner_label}",
+                unit=unit,
+                source_span=_source_span(item) or section.source_span,
             )
         body: list[CompiledBodyItem] = list(
             self._pipe_table_lines(("Field", "What to write"), tuple(rows))
@@ -712,8 +890,12 @@ class CompileOutputsMixin:
         detail_sections: list[CompiledBodyItem] = []
         for item in section.items:
             if not isinstance(item, model.RecordSection):
-                raise CompileError(
-                    f"support_files entries must be titled sections in {owner_label}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"support_files entries must be titled sections in {owner_label}",
+                    unit=unit,
+                    source_span=_source_span(item) or section.source_span,
                 )
             scalar_items, _section_items, extras = self._split_record_items(
                 item.items,
@@ -722,8 +904,15 @@ class CompileOutputsMixin:
             )
             path_item = scalar_items.get("path")
             if path_item is None or not isinstance(path_item.value, str):
-                raise CompileError(
-                    f"support_files entry is missing string path in {owner_label}: {item.key}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"support_files entry is missing string path in {owner_label}: "
+                        f"{item.key}"
+                    ),
+                    unit=unit,
+                    source_span=_source_span(path_item) or item.source_span,
                 )
             when_item = scalar_items.get("when")
             use_when = (

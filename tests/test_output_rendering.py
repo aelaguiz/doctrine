@@ -347,7 +347,7 @@ class OutputRenderingTests(unittest.TestCase):
 
         self.assertEqual(type(caught.exception).__name__, "CompileError")
         self.assertEqual(getattr(caught.exception, "code", None), "E295")
-        self.assertIn("Duplicate properties entry key", str(caught.exception))
+        self.assertIn("properties entry key `verdict`", str(caught.exception))
         self.assertIn("verdict", str(caught.exception))
 
     def test_titled_lists_drop_kind_metadata_and_keep_meaningful_metadata(self) -> None:

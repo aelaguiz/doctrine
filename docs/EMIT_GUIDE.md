@@ -328,7 +328,7 @@ Important route-contract rules:
   live branch.
 - In emitted `final_output.contract.json`, `route.exists` means the final
   response carries route semantics at all.
-- For optional routed final outputs, `route.exists` stays `true`,
+- For nullable routed final outputs, `route.exists` stays `true`,
   `behavior` is `conditional`, `has_unrouted_branch` is `true`, and
   `route.selector.null_behavior` is `no_route`.
 

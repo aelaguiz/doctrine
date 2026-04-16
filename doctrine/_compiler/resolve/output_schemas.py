@@ -4,6 +4,10 @@ from dataclasses import dataclass, replace
 
 from doctrine import model
 from doctrine._compiler.naming import _dotted_ref_name
+from doctrine._compiler.output_schema_diagnostics import (
+    output_schema_compile_error,
+    output_schema_related_site,
+)
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 from doctrine._compiler.support_files import _dotted_decl_name
 
@@ -34,6 +38,7 @@ _OUTPUT_SCHEMA_JSON_KEY_MAP = {
 @dataclass(slots=True)
 class _OutputSchemaNodeParts:
     type_name: str | None = None
+    type_source_span: model.SourceSpan | None = None
     note: str | None = None
     format_name: str | None = None
     pattern: str | None = None
@@ -41,7 +46,9 @@ class _OutputSchemaNodeParts:
     items_value: model.NameRef | tuple[model.OutputSchemaBodyItem, ...] | None = None
     enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
+    legacy_enum_source_span: model.SourceSpan | None = None
     inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
+    inline_enum_source_span: model.SourceSpan | None = None
     any_of: tuple[model.OutputSchemaVariant, ...] = ()
     fields: tuple[model.OutputSchemaField | model.OutputSchemaRouteField, ...] = ()
     defs: tuple[model.OutputSchemaDef, ...] = ()
@@ -685,11 +692,13 @@ class ResolveOutputSchemasMixin:
     ) -> dict[str, object]:
         parts = self._collect_output_schema_node_parts(
             items,
+            unit=unit,
             owner_label=owner_label,
         )
         # Normalize the two authored inline-enum forms onto one lowered string-enum path.
         self._normalize_output_schema_inline_enum(
             parts,
+            unit=unit,
             owner_label=owner_label,
         )
         if not allow_nullable_flag and parts.nullable:
@@ -988,6 +997,7 @@ class ResolveOutputSchemasMixin:
             | tuple[model.OutputSchemaAuthoredItem, ...]
         ),
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> _OutputSchemaNodeParts:
         parts = _OutputSchemaNodeParts()
@@ -1013,6 +1023,7 @@ class ResolveOutputSchemasMixin:
                             f"Output schema type must be a name in {owner_label}"
                         )
                     parts.type_name = item.value
+                    parts.type_source_span = item.source_span
                     continue
                 if item.key == "note":
                     if not isinstance(item.value, str):
@@ -1065,25 +1076,29 @@ class ResolveOutputSchemasMixin:
                     parts.nullable = True
                     continue
                 if item.key == "required":
-                    raise CompileError.from_parts(
+                    raise output_schema_compile_error(
                         code="E236",
                         summary="Output schema `required` is retired",
                         detail=(
                             f"{owner_label} still uses `required`. Delete `required`; "
                             "output schema fields are always present on the wire today."
                         ),
+                        unit=unit,
+                        source_span=item.source_span,
                         hints=(
                             "Delete `required` from this output schema entry.",
                         ),
                     )
                 if item.key == "optional":
-                    raise CompileError.from_parts(
+                    raise output_schema_compile_error(
                         code="E237",
                         summary="Output schema `optional` is retired",
                         detail=(
                             f"{owner_label} still uses `optional`. Replace `optional` "
                             "with `nullable` when the value may be `null`."
                         ),
+                        unit=unit,
+                        source_span=item.source_span,
                         hints=(
                             "Use `nullable` when the value may be `null`.",
                         ),
@@ -1096,11 +1111,13 @@ class ResolveOutputSchemasMixin:
                 if legacy_enum_values:
                     raise CompileError(f"Duplicate output schema enum in {owner_label}")
                 legacy_enum_values = item.values
+                parts.legacy_enum_source_span = item.source_span
                 continue
             if isinstance(item, model.OutputSchemaValues):
                 if inline_enum_values:
                     raise CompileError(f"Duplicate output schema values block in {owner_label}")
                 inline_enum_values = item.values
+                parts.inline_enum_source_span = item.source_span
                 continue
             if isinstance(item, model.OutputSchemaItems):
                 if parts.items_value is not None:
@@ -1162,15 +1179,25 @@ class ResolveOutputSchemasMixin:
         self,
         parts: _OutputSchemaNodeParts,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> None:
         if parts.type_name == "enum":
             if parts.legacy_enum_values:
-                raise CompileError.from_parts(
+                raise output_schema_compile_error(
                     code="E229",
                     summary="Output schema inline enum forms cannot be mixed",
                     detail=(
                         f"{owner_label} uses `type: enum` with legacy `enum:`."
+                    ),
+                    unit=unit,
+                    source_span=parts.legacy_enum_source_span,
+                    related=(
+                        output_schema_related_site(
+                            label="`type: enum`",
+                            unit=unit,
+                            source_span=parts.type_source_span,
+                        ),
                     ),
                     hints=(
                         "Use `values:` with `type: enum` for the new inline form.",
@@ -1178,12 +1205,14 @@ class ResolveOutputSchemasMixin:
                     ),
                 )
             if not parts.inline_enum_values:
-                raise CompileError.from_parts(
+                raise output_schema_compile_error(
                     code="E227",
                     summary="Output schema inline enum is missing `values:`",
                     detail=(
                         f"{owner_label} uses `type: enum` without a `values:` block."
                     ),
+                    unit=unit,
+                    source_span=parts.type_source_span,
                     hints=(
                         "Add a `values:` block under this output schema entry.",
                     ),
@@ -1198,10 +1227,22 @@ class ResolveOutputSchemasMixin:
                 if parts.type_name is None
                 else f"{owner_label} uses `values:` with `type: {parts.type_name}`."
             )
-            raise CompileError.from_parts(
+            related = ()
+            if parts.type_source_span is not None:
+                related = (
+                    output_schema_related_site(
+                        label=f"`type: {parts.type_name}`",
+                        unit=unit,
+                        source_span=parts.type_source_span,
+                    ),
+                )
+            raise output_schema_compile_error(
                 code="E228",
                 summary="Output schema `values:` requires `type: enum`",
                 detail=detail,
+                unit=unit,
+                source_span=parts.inline_enum_source_span,
+                related=related,
                 hints=(
                     "Use `type: enum` with `values:` for the new inline enum form.",
                     "Keep `type: string` plus `enum:` only for the legacy form.",
@@ -1209,11 +1250,20 @@ class ResolveOutputSchemasMixin:
             )
 
         if parts.legacy_enum_values and parts.type_name not in {None, "string"}:
-            raise CompileError.from_parts(
+            raise output_schema_compile_error(
                 code="E229",
                 summary="Legacy output schema `enum:` requires `type: string`",
                 detail=(
                     f"{owner_label} uses legacy `enum:` with `type: {parts.type_name}`."
+                ),
+                unit=unit,
+                source_span=parts.legacy_enum_source_span,
+                related=(
+                    output_schema_related_site(
+                        label=f"`type: {parts.type_name}`",
+                        unit=unit,
+                        source_span=parts.type_source_span,
+                    ),
                 ),
                 hints=(
                     "Keep legacy `enum:` only with `type: string`.",
@@ -1223,12 +1273,12 @@ class ResolveOutputSchemasMixin:
 
         parts.enum_values = parts.legacy_enum_values
 
-    def _output_schema_example_value(
+    def _output_schema_example_item(
         self,
         output_schema_decl: model.OutputSchemaDecl,
         *,
         owner_label: str,
-    ) -> model.OutputSchemaExampleObject | None:
+    ) -> model.OutputSchemaExample | None:
         example_item: model.OutputSchemaExample | None = None
         for item in output_schema_decl.items:
             if not isinstance(item, model.OutputSchemaExample):
@@ -1236,6 +1286,18 @@ class ResolveOutputSchemasMixin:
             if example_item is not None:
                 raise CompileError(f"Duplicate output schema example in {owner_label}")
             example_item = item
+        return example_item
+
+    def _output_schema_example_value(
+        self,
+        output_schema_decl: model.OutputSchemaDecl,
+        *,
+        owner_label: str,
+    ) -> model.OutputSchemaExampleObject | None:
+        example_item = self._output_schema_example_item(
+            output_schema_decl,
+            owner_label=owner_label,
+        )
         return None if example_item is None else example_item.value
 
     def _materialize_output_schema_example_value(

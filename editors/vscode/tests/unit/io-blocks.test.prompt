@@ -41,6 +41,40 @@ agent Reviewer:
 #                           ^ punctuation.separator.key-value.doctrine
 #                             ^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
+output schema WriterDecisionSchema: "Writer Decision Schema"
+# <---- keyword.declaration.doctrine
+#      ^^^^^^ keyword.declaration.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^ entity.name.type.doctrine
+
+    route field next_route: "Next Route"
+#   ^^^^^ keyword.other.field.doctrine
+#         ^^^^^ keyword.other.field.doctrine
+#               ^^^^^^^^^^ entity.name.section.doctrine
+#                         ^ punctuation.separator.key-value.doctrine
+#                           ^^^^^^^^^^^^ string.quoted.double.doctrine
+
+        seek_muse: "Send to Muse." -> Muse
+#       ^^^^^^^^^ entity.name.section.doctrine
+#                ^ punctuation.separator.key-value.doctrine
+#                  ^^^^^^^^^^^^^^^ string.quoted.double.doctrine
+#                                      ^^^^ entity.name.type.reference.key-value.doctrine
+
+    override route field next_route: "Next Route"
+#   ^^^^^^^^ keyword.control.doctrine
+#            ^^^^^ keyword.other.field.doctrine
+#                  ^^^^^ keyword.other.field.doctrine
+#                        ^^^^^^^^^^ entity.name.section.doctrine
+#                                  ^ punctuation.separator.key-value.doctrine
+#                                    ^^^^^^^^^^^^ string.quoted.double.doctrine
+
+agent Writer:
+    final_output:
+        output: CoordinationHandoff
+        route: next_route
+#       ^^^^^ keyword.other.field.doctrine
+#            ^ punctuation.separator.key-value.doctrine
+#              ^^^^^^^^^^ variable.other.member.doctrine
+
     outputs[SharedOutputs]: "Your Outputs"
 #   ^^^^^^^ keyword.other.field.doctrine
 #          ^ punctuation.section.inheritance.begin.doctrine

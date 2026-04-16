@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.readable_diagnostics import invalid_readable_block_error
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledBodyItem,
@@ -335,7 +336,14 @@ class CompileReadablesMixin:
             )
         if block.kind == "guard":
             if when_text is None:
-                raise CompileError("Readable guard shells must define a guard expression.")
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable guard shell `{block.key}` must define a guard expression."
+                    ),
+                    unit=unit,
+                    source_span=block.source_span,
+                    hints=("Add a `when ...` guard expression to the guard block.",),
+                )
             return CompiledGuardBlock(
                 title=title or _humanize_key(block.key),
                 body=self._compile_document_section_payload(block.payload, unit=unit),

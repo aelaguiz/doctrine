@@ -161,60 +161,67 @@ Verdict (code): NOT COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- The approved frontier is still broad. Prompt-authored compile failures still have raw `CompileError(...)` or `CompileError(str(...))` sites across `doctrine/_compiler/compile/*`, `doctrine/_compiler/resolve/*`, and `doctrine/_compiler/validate/*`, including agent, output, readable, workflow, review, route, contract, addressable, and skill families. Some paths still rely on late `ensure_location()` backfill or owner-label strings instead of one structured primary span plus related sites.
-- The proof frontier is still open. Manifest-backed `compile_fail` cases still use `message_contains`, the smoke layer does not assert the final exact-location contract, the public error doc still shows the older single-location shape, and the regex compile bridge is still live.
+- Phase 4 is still open. Helper-based diagnostics have landed in some agent, review, output, and readable slices, but the approved frontier still has raw user-facing branches in later compile, resolve, validate, and file-scoped package helpers such as `resolve/refs.py`, `resolve/reviews.py`, `resolve/workflows.py`, `validate/routes.py`, `validate/contracts.py`, `validate/agents.py`, `validate/review_semantics.py`, `validate/route_semantics_reads.py`, `validate/addressable_display.py`, `compile/skill_package.py`, and `package_layout.py`.
+- Phase 5 is still open. The shipped proof surface still keys `compile_fail` on `message_contains`, the corpus runner still checks message snippets, `docs/COMPILER_ERRORS.md` and `examples/README.md` still describe the older contract, and the compile regex bridge is still live.
 
 ## Reopened phases (false-complete fixes)
-- None.
+- Phase 4 (Authored compile-family migration and policy convergence) — reopened because:
+  - the remaining compile families still have raw string branches instead of the shared structured helper path or explicit file-scoped diagnostics.
+  - the unresolved frontier still spans later resolve and validate helpers plus the file-scoped package helpers, instead of only the smaller slice already landed.
+- Phase 5 (Proof, docs, corpus contract, and cleanup) — reopened because:
+  - `compile_fail` proof still depends on `message_contains`, so the shipped corpus cannot fail on exact-line or related-site regressions yet.
+  - the smoke layer, public docs, and regex-bridge cleanup have not reached the final contract.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Phase 4 - unresolved compile-family migration frontier
+- Phase 4 - Authored compile-family migration and policy convergence
   - Evidence anchors:
-    - `doctrine/_compiler/compile/agent.py:89`
-    - `doctrine/_compiler/compile/outputs.py:35`
-    - `doctrine/_compiler/compile/readables.py:107`
-    - `doctrine/_compiler/compile/readable_blocks.py:96`
-    - `doctrine/_compiler/compile/workflows.py:38`
-    - `doctrine/_compiler/compile/final_output.py:48`
+    - `doctrine/_compiler/compile/agent.py:734`
     - `doctrine/_compiler/compile/records.py:199`
-    - `doctrine/_compiler/resolve/addressables.py:37`
+    - `doctrine/_compiler/compile/readables.py:413`
+    - `doctrine/_compiler/compile/readable_blocks.py:498`
+    - `doctrine/_compiler/compile/skill_package.py:34`
+    - `doctrine/_compiler/package_layout.py:51`
+    - `doctrine/_compiler/resolve/addressables.py:128`
+    - `doctrine/_compiler/resolve/outputs.py:163`
+    - `doctrine/_compiler/resolve/outputs.py:1899`
     - `doctrine/_compiler/resolve/refs.py:121`
     - `doctrine/_compiler/resolve/reviews.py:46`
     - `doctrine/_compiler/resolve/workflows.py:315`
-    - `doctrine/_compiler/validate/routes.py:43`
+    - `doctrine/_compiler/flow.py:73`
+    - `doctrine/_compiler/flow.py:854`
+    - `doctrine/_compiler/validate/display.py:45`
+    - `doctrine/_compiler/validate/addressable_display.py:397`
+    - `doctrine/_compiler/validate/agents.py:142`
     - `doctrine/_compiler/validate/contracts.py:65`
     - `doctrine/_compiler/validate/review_agreement.py:47`
     - `doctrine/_compiler/validate/review_semantics.py:105`
-    - `doctrine/_compiler/validate/display.py:45`
-    - `doctrine/_compiler/validate/readables.py:36`
-    - `doctrine/_compiler/validate/agents.py:142`
-    - `doctrine/_compiler/support.py:22`
-    - `doctrine/_compiler/package_layout.py:51`
+    - `doctrine/_compiler/validate/route_semantics_reads.py:40`
+    - `doctrine/_compiler/validate/routes.py:43`
   - Plan expects:
-    - every remaining compile family to be inventoried and classified, then routed through the shared structured helper path with exact primary spans, labeled related sites for real conflicts, and explicit file-scoped exceptions only where no authored line exists.
+    - every remaining compile family in the approved ordered frontier to be inventoried and classified, then routed through the shared structured helper path with exact primary spans, labeled related sites for real conflicts, and explicit truthful file-scoped exceptions only where no authored line exists.
   - Code reality:
-    - raw `CompileError(...)` sites still remain in prompt-authored families across `resolve`, `compile`, and `validate`; some file-scoped helpers still only stamp a path after the fact.
+    - the remaining frontier still spans raw sites in `compile/agent.py`, `compile/records.py`, `compile/readables.py`, `compile/readable_blocks.py`, `compile/skill_package.py`, `package_layout.py`, `resolve/addressables.py`, `resolve/outputs.py`, `resolve/refs.py`, `resolve/reviews.py`, `resolve/workflows.py`, `flow.py`, `validate/addressable_display.py`, `validate/display.py`, `validate/agents.py`, `validate/contracts.py`, `validate/review_agreement.py`, `validate/review_semantics.py`, `validate/route_semantics_reads.py`, and `validate/routes.py`; the shared helper path is not yet the default everywhere the plan approved.
   - Fix:
-    - finish the remaining family migrations, then delete the raw message-path bridge and any temporary message-driven fallback path.
+    - finish the remaining family migrations, add any missing related-site pairs, and delete the raw message-path bridge and any temporary message-driven fallback path.
 
-- Phase 5 - proof, docs, corpus contract, and cleanup
+- Phase 5 - Proof, docs, corpus contract, and cleanup
   - Evidence anchors:
-    - `doctrine/_diagnostic_smoke/compile_checks.py:1`
+    - `doctrine/_diagnostic_smoke/compile_checks.py:29`
     - `doctrine/_verify_corpus/manifest.py:31`
-    - `doctrine/_verify_corpus/runners.py:429`
-    - `docs/COMPILER_ERRORS.md:1`
-    - `examples/README.md:1`
-    - `doctrine/diagnostics.py:31`
-    - `doctrine/diagnostics.py:345`
-    - `doctrine/_diagnostics/message_builders.py:80`
+    - `doctrine/_verify_corpus/manifest.py:209`
+    - `doctrine/_verify_corpus/runners.py:371`
+    - `docs/COMPILER_ERRORS.md:8`
+    - `examples/README.md:22`
     - `examples/03_imports/cases.toml:83`
     - `examples/112_output_inheritance_fail_loud/cases.toml:11`
+    - `doctrine/_diagnostics/message_builders.py:80`
+    - `doctrine/diagnostics.py:345`
   - Plan expects:
-    - smoke checks, corpus cases, and public docs to assert or describe exact primary lines and related-site output, not only message snippets or `message_contains`.
+    - smoke checks, corpus cases, and public docs to assert the final exact-line and related-site contract, then remove the compile regex bridge.
   - Code reality:
-    - 185 manifest-backed `compile_fail` cases still key on `message_contains`, the smoke layer still lacks final location assertions, the public docs still describe the old formatter contract, and the compile regex bridge remains live in `doctrine/diagnostics.py`.
+    - `compile_fail` still uses `message_contains`, the corpus runner still checks message snippets, the smoke layer still lacks final location assertions, the public docs still describe the old formatter contract, and `_compile_diagnostic_from_message()` remains the compile regex bridge.
   - Fix:
-    - move the corpus proof and smoke checks to the final contract, update the docs, then remove `_compile_diagnostic_from_message()` and its compile-only builders.
+    - move the corpus proof and smoke checks to the final contract, update the docs/examples, then remove `_compile_diagnostic_from_message()` and its compile-only builders.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
 - None.
@@ -926,7 +933,8 @@ Rollback
 
 Status
 
-- In progress.
+- REOPENED (audit found missing code work).
+- Missing (code): raw string branches still remain in the later compile, resolve, validate, and file-scoped package helpers, including the unresolved `resolve/refs.py`, `resolve/reviews.py`, `resolve/workflows.py`, `validate/routes.py`, `validate/contracts.py`, `validate/agents.py`, `validate/review_semantics.py`, `validate/route_semantics_reads.py`, `validate/addressable_display.py`, `compile/skill_package.py`, and `package_layout.py` families.
 - First family slice landed early: duplicate role fields, duplicate typed
   fields, missing role, and missing abstract authored slots now use
   structured, span-aware compile diagnostics.
@@ -968,6 +976,63 @@ Status
   and duplicate inherited law subsections now show `Related:` sites, and
   missing inherited workflow or law sections can point back to the inherited
   parent entry they left out.
+- Landed in this pass: readable block structure and document inheritance now
+  use structured, span-aware diagnostics in
+  `compile/readable_blocks.py`, `resolve/document_blocks.py`, and
+  `resolve/documents.py`. Duplicate readable keys now point at the repeated
+  authored line with a related first site, block-structure failures such as
+  unknown callout kinds, single-line raw or code blocks, empty tables, and
+  multiline inline cells now point at the exact authored line when one exists,
+  and document patch conflicts now show child and parent locations instead of
+  owner-label-only output.
+- Landed in this pass: readable guard validation in
+  `validate/readables.py` now uses structured diagnostics with the exact
+  `when` source line, and the remaining guard-shell compile fallbacks in
+  `compile/readable_blocks.py` and `compile/readables.py` now use the same
+  readable-block diagnostic contract instead of raw owner-label strings.
+- Landed in this pass: the mapped output compile slice in
+  `compile/outputs.py` now uses structured, span-aware diagnostics for input
+  typed-field completeness, mixed `files` versus `target` / `shape` output
+  declarations, incomplete single-artifact outputs, typed-target validation,
+  output-target config key failures, and the shipped output `schema:` /
+  `structure:` attachment errors. Real conflict pairs now emit labeled
+  `Related:` sites for `files` versus `target` / `shape`, duplicate output
+  target config keys, and empty attached schemas.
+- Landed in this pass: the remaining authored output-file helpers in
+  `compile/outputs.py` now use structured, span-aware diagnostics for invalid
+  `files:` entry shape, missing output-file `path` or `shape`, non-record
+  `must_include` / `current_truth` rows, and invalid `support_files:` entry
+  shape or path. Those cases now point at the exact authored line when the
+  compiler can prove it instead of falling back to raw-string owner labels.
+- Landed in this pass: the stable-code `final_output` slice now uses
+  structured, span-aware diagnostics across `resolve/outputs.py`,
+  `compile/final_output.py`, `compile/review_contract.py`, and the schema
+  validation bridge in `validate/__init__.py`. `E211`, `E212`, `E213`,
+  `E215`, `E216`, `E217`, and `E218` now point at the authored `final_output`
+  field, the offending output target or file bundle, the retired
+  `example_file`, the schema `example:`, or the output-schema declaration line
+  as the truthful best-known site, instead of collapsing back to regex-built
+  raw strings.
+- Landed in this pass: the stable-code output-schema lowering slice now uses
+  structured, span-aware diagnostics in `resolve/output_schemas.py` for
+  retired `required` / `optional` flags and inline-enum failures. `E227`,
+  `E228`, `E229`, `E236`, and `E237` now point at the authored `type:`,
+  `values:`, `enum:`, `required`, or `optional` line, with labeled
+  `Related:` sites when the failure depends on the conflicting `type:` line.
+  The route-final-output resolver in `resolve/outputs.py` was also aligned to
+  the new helper signature so route-field final-output proof keeps running on
+  the shared lowering path.
+- Landed in this pass: the typed-declaration and config-helper slice now uses
+  structured, span-aware diagnostics in `compile/records.py` and
+  `validate/display.py`. Input config failures now use exact lines for
+  non-scalar config rows, duplicate config keys, unknown keys, and missing
+  required keys, while input-source and output-target config declaration
+  failures now use exact lines for non-string labels, duplicate key
+  declarations, and missing local output-shape refs. This pass also restored
+  missing nested record spans in `_parser/skills.py` and stopped
+  `DoctrineError.ensure_location()` from overwriting an existing imported file
+  path with the root prompt path, so imported compile errors can keep the true
+  module path once they already know it.
 
 Goal
 
@@ -1040,6 +1105,11 @@ Rollback
   behavior regresses.
 
 ## Phase 5 - Proof, docs, corpus contract, and cleanup
+
+Status
+
+- REOPENED (audit found missing code work).
+- Missing (code): the shipped compile_fail proof, smoke checks, docs, and regex bridge still need to move to the final contract.
 
 Goal
 

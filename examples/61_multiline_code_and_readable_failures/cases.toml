@@ -47,7 +47,7 @@ agent = "InvalidCalloutKindDemo"
 exception_type = "CompileError"
 error_code = "E297"
 message_contains = [
-  "Unknown callout kind",
+  "unknown callout kind",
   "urgent",
 ]
 
@@ -60,8 +60,8 @@ agent = "InvalidCodeBlockDemo"
 exception_type = "CompileError"
 error_code = "E297"
 message_contains = [
-  "Code block text must use a multiline string",
-  "output BrokenGuide",
+  "Readable code block",
+  "must use a multiline string",
 ]
 
 [[cases]]
@@ -73,7 +73,7 @@ agent = "InvalidDuplicateDocumentKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
 message_contains = [
-  "Duplicate document block key",
+  "document block key `summary`",
   "summary",
 ]
 
@@ -99,6 +99,6 @@ agent = "InvalidTableWithoutColumnsDemo"
 exception_type = "CompileError"
 error_code = "E297"
 message_contains = [
-  "Readable table must declare at least one column",
+  "must declare at least one column",
   "BrokenGuide.release_gates",
 ]

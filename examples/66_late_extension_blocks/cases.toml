@@ -101,8 +101,8 @@ agent = "InvalidMarkdownInlineTextDemo"
 exception_type = "CompileError"
 error_code = "E297"
 message_contains = [
-  "Raw markdown blocks must use a multiline string",
-  "ReleaseAppendix.appendix_markdown",
+  "Readable markdown block",
+  "must use a multiline string",
 ]
 
 [[cases]]
@@ -114,6 +114,6 @@ agent = "InvalidTableInlineMultilineCellDemo"
 exception_type = "CompileError"
 error_code = "E297"
 message_contains = [
-  "Readable table inline cells must stay single-line",
-  "nested tables require structured cell bodies",
+  "Readable table inline cell",
+  "must stay single-line unless it uses a structured cell body",
 ]

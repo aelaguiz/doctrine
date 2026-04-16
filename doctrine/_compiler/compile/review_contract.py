@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
+from doctrine._compiler.final_output_diagnostics import final_output_compile_error
 from doctrine._compiler.review_diagnostics import (
     collect_review_accept_stmts,
     find_review_decl_item,
@@ -103,13 +104,24 @@ class CompileReviewContractMixin:
                 final_output_field.value,
                 unit=unit,
                 owner_label=f"agent {agent.name} final_output",
+                source_span=final_output_field.source_span,
             )
             final_output_key = (final_output_unit.module_parts, final_output_decl.name)
             final_output_name = final_output_decl.name
             if final_output_key not in agent_contract.outputs:
-                raise CompileError(
-                    "E212 final_output output is not emitted by the concrete turn in "
-                    f"agent {agent.name}: {_dotted_decl_name(final_output_unit.module_parts, final_output_decl.name)}"
+                raise final_output_compile_error(
+                    code="E212",
+                    summary="Final output is not emitted by the concrete turn",
+                    detail=(
+                        f"Agent `{agent.name}` declares `final_output` as "
+                        f"`{_dotted_decl_name(final_output_unit.module_parts, final_output_decl.name)}`, "
+                        "but that output is not emitted by the concrete turn."
+                    ),
+                    unit=unit,
+                    source_span=final_output_field.source_span,
+                    hints=(
+                        "Add the output to the agent `outputs:` contract, or point `final_output:` at one that already is.",
+                    ),
                 )
             if final_output_key == comment_output_key:
                 if authored_review_fields is not None:

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import (
+    authored_compile_error,
+    authored_related_site,
+)
 from doctrine._compiler.naming import _humanize_key, _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
     CompileError,
@@ -42,7 +46,16 @@ class ValidateDisplayMixin:
             return unit, self._resolve_output_shape_decl_body(local_decl, unit=unit)
         if value.declaration_name in _BUILTIN_OUTPUT_SHAPE_NAMES:
             return None
-        raise CompileError(f"Missing local output shape declaration: {value.declaration_name}")
+        raise authored_compile_error(
+            code="E276",
+            summary="Missing local declaration reference",
+            detail=(
+                f"Output shape declaration `{value.declaration_name}` does not exist in "
+                "the current module."
+            ),
+            unit=unit,
+            source_span=value.source_span,
+        )
 
     def _expr_ref_matches_route_semantic_ref(
         self,
@@ -91,10 +104,12 @@ class ValidateDisplayMixin:
         self,
         decl: model.InputSourceDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> ConfigSpec:
         required_keys, optional_keys = self._config_keys_from_decl(
             decl,
+            unit=unit,
             owner_label=owner_label,
         )
         return ConfigSpec(title=decl.title, required_keys=required_keys, optional_keys=optional_keys)
@@ -103,6 +118,7 @@ class ValidateDisplayMixin:
         self,
         decl: model.InputSourceDecl | model.OutputTargetDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[dict[str, str], dict[str, str]]:
         _scalar_items, section_items, extras = self._split_record_items(
@@ -115,12 +131,12 @@ class ValidateDisplayMixin:
         required_section = section_items.get("required")
         optional_section = section_items.get("optional")
         required_keys = (
-            self._key_labels_from_section(required_section, owner_label=owner_label)
+            self._key_labels_from_section(required_section, unit=unit, owner_label=owner_label)
             if required_section is not None
             else {}
         )
         optional_keys = (
-            self._key_labels_from_section(optional_section, owner_label=owner_label)
+            self._key_labels_from_section(optional_section, unit=unit, owner_label=owner_label)
             if optional_section is not None
             else {}
         )
@@ -130,20 +146,54 @@ class ValidateDisplayMixin:
         self,
         section: model.RecordSection,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> dict[str, str]:
         labels: dict[str, str] = {}
+        seen_items: dict[str, model.RecordScalar] = {}
         for item in section.items:
             if not isinstance(item, model.RecordScalar) or item.body is not None:
-                raise CompileError(
-                    f"Config key declarations must be simple titled scalars in {owner_label}"
+                raise authored_compile_error(
+                    code="E234",
+                    summary="Config key declarations must be simple titled scalars",
+                    detail=(
+                        f"Config key declarations must be simple titled scalars in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=getattr(item, "source_span", None) or section.source_span,
                 )
             if not isinstance(item.value, str):
-                raise CompileError(
-                    f"Config key declarations must use string labels in {owner_label}: {item.key}"
+                raise authored_compile_error(
+                    code="E234",
+                    summary="Config key declarations must use string labels",
+                    detail=(
+                        f"Config key declaration `{item.key}` in `{owner_label}` must use "
+                        "a string label."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or section.source_span,
                 )
-            if item.key in labels:
-                raise CompileError(f"Duplicate config key declaration in {owner_label}: {item.key}")
+            first_item = seen_items.get(item.key)
+            if first_item is not None:
+                raise authored_compile_error(
+                    code="E235",
+                    summary="Duplicate config key declaration",
+                    detail=(
+                        f"Config owner `{owner_label}` repeats config key declaration "
+                        f"`{item.key}`."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or section.source_span,
+                    related=(
+                        authored_related_site(
+                            label=f"first `{item.key}` config key declaration",
+                            unit=unit,
+                            source_span=first_item.source_span,
+                        ),
+                    ),
+                )
+            seen_items[item.key] = item
             labels[item.key] = item.value
         return labels
 

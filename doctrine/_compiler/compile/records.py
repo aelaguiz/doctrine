@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import (
+    authored_compile_error,
+    authored_related_site,
+)
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
 from doctrine._compiler.resolved_types import (
     CompileError,
@@ -243,19 +247,46 @@ class CompileRecordsMixin:
         spec: ConfigSpec,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         body: list[CompiledBodyItem] = []
-        seen_keys: set[str] = set()
+        seen_keys: dict[str, model.RecordScalar] = {}
         allowed_keys = {**spec.required_keys, **spec.optional_keys}
 
         for item in config_items:
             if not isinstance(item, model.RecordScalar) or item.body is not None:
-                raise CompileError(f"Config entries must be scalar key/value lines in {owner_label}")
-            if item.key in seen_keys:
-                raise CompileError(f"Duplicate config key in {owner_label}: {item.key}")
-            seen_keys.add(item.key)
+                raise authored_compile_error(
+                    code="E230",
+                    summary="Config entries must be scalar key/value lines",
+                    detail=f"Config entries must be scalar key/value lines in `{owner_label}`.",
+                    unit=unit,
+                    source_span=getattr(item, "source_span", None) or owner_source_span,
+                )
+            first_item = seen_keys.get(item.key)
+            if first_item is not None:
+                raise authored_compile_error(
+                    code="E231",
+                    summary="Duplicate config key",
+                    detail=f"Config owner `{owner_label}` repeats key `{item.key}`.",
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
+                    related=(
+                        authored_related_site(
+                            label=f"first `{item.key}` config entry",
+                            unit=unit,
+                            source_span=first_item.source_span,
+                        ),
+                    ),
+                )
+            seen_keys[item.key] = item
             if item.key not in allowed_keys:
-                raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
+                raise authored_compile_error(
+                    code="E232",
+                    summary="Unknown config key",
+                    detail=f"Config owner `{owner_label}` uses unknown key `{item.key}`.",
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
+                )
             body.append(
                 f"- {allowed_keys[item.key]}: {self._format_scalar_value(item.value, unit=unit, owner_label=f'{owner_label}.{item.key}', surface_label='config values')}"
             )
@@ -265,6 +296,12 @@ class CompileRecordsMixin:
         ]
         if missing_required:
             missing = ", ".join(missing_required)
-            raise CompileError(f"Missing required config key in {owner_label}: {missing}")
+            raise authored_compile_error(
+                code="E233",
+                summary="Missing required config key",
+                detail=f"Config owner `{owner_label}` is missing required key `{missing}`.",
+                unit=unit,
+                source_span=owner_source_span,
+            )
 
         return tuple(body)

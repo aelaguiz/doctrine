@@ -58,6 +58,12 @@
       "include": "#outputSchema"
     },
     {
+      "include": "#outputSchemaRouteField"
+    },
+    {
+      "include": "#outputSchemaRouteChoice"
+    },
+    {
       "include": "#output"
     },
     {
@@ -170,6 +176,9 @@
     },
     {
       "include": "#finalOutputOutputField"
+    },
+    {
+      "include": "#finalOutputRouteField"
     },
     {
       "include": "#ioPatchField"
@@ -637,6 +646,49 @@
         },
         "11": {
           "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "outputSchemaRouteField": {
+      "match": "^(\\s*)((override)(\\s+))?(route)(\\s+)(field)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
+      "captures": {
+        "3": {
+          "name": "keyword.control.doctrine"
+        },
+        "5": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "7": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "9": {
+          "name": "entity.name.section.doctrine"
+        },
+        "11": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "13": {
+          "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "outputSchemaRouteChoice": {
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")(\\s*)(->)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "entity.name.section.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "string.quoted.double.doctrine"
+        },
+        "8": {
+          "name": "keyword.control.doctrine"
+        },
+        "10": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -1286,6 +1338,20 @@
         },
         "6": {
           "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
+        }
+      }
+    },
+    "finalOutputRouteField": {
+      "match": "^(\\s*)(route)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "variable.other.member.doctrine"
         }
       }
     },

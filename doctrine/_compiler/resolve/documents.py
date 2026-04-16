@@ -3,6 +3,13 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
+from doctrine._compiler.readable_diagnostics import (
+    document_patch_error,
+    duplicate_readable_key_error,
+    readable_compile_error,
+    readable_related_site,
+    readable_source_span,
+)
 from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
@@ -13,6 +20,36 @@ from doctrine._compiler.support_files import _dotted_decl_name
 
 class ResolveDocumentsMixin:
     """Document-declaration resolution helpers for ResolveMixin."""
+
+    def _document_item_by_key(
+        self,
+        items: tuple[model.DocumentItem, ...],
+        key: str,
+    ) -> object | None:
+        return next((item for item in items if getattr(item, "key", None) == key), None)
+
+    def _document_missing_related_sites(
+        self,
+        *,
+        parent_unit: IndexedUnit | None,
+        parent_body: model.DocumentBody | None,
+        missing_keys: tuple[str, ...],
+    ) -> tuple:
+        if parent_unit is None or parent_body is None:
+            return ()
+        related = []
+        for key in missing_keys:
+            parent_item = self._document_item_by_key(parent_body.items, key)
+            if parent_item is None:
+                continue
+            related.append(
+                readable_related_site(
+                    label=f"inherited `{key}` entry",
+                    unit=parent_unit,
+                    source_span=readable_source_span(parent_item),
+                )
+            )
+        return tuple(related)
 
     def _resolve_document_decl(
         self, document_decl: model.DocumentDecl, *, unit: IndexedUnit
@@ -32,6 +69,8 @@ class ResolveDocumentsMixin:
         self._document_resolution_stack.append(document_key)
         try:
             parent_document: ResolvedDocumentBody | None = None
+            parent_body: model.DocumentBody | None = None
+            parent_unit: IndexedUnit | None = None
             parent_label: str | None = None
             if document_decl.parent_ref is not None:
                 parent_unit, parent_decl = self._resolve_parent_document_decl(
@@ -39,6 +78,7 @@ class ResolveDocumentsMixin:
                     unit=unit,
                 )
                 parent_document = self._resolve_document_decl(parent_decl, unit=parent_unit)
+                parent_body = parent_decl.body
                 parent_label = (
                     f"document {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
@@ -47,7 +87,10 @@ class ResolveDocumentsMixin:
                 document_decl.body,
                 unit=unit,
                 owner_label=_dotted_decl_name(unit.module_parts, document_decl.name),
+                owner_source_span=document_decl.source_span,
                 parent_document=parent_document,
+                parent_body=parent_body,
+                parent_unit=parent_unit,
                 parent_label=parent_label,
             )
             resolved = replace(
@@ -69,7 +112,10 @@ class ResolveDocumentsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None = None,
         parent_document: ResolvedDocumentBody | None = None,
+        parent_body: model.DocumentBody | None = None,
+        parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedDocumentBody:
         resolved_preamble = tuple(
@@ -95,19 +141,37 @@ class ResolveDocumentsMixin:
 
         parent_items_by_key = {item.key: item for item in parent_document.items}
         resolved_items: list[model.DocumentBlock] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, object] = {}
         accounted_keys: set[str] = set()
 
         for item in document_body.items:
             key = item.key
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate document block key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            if key in emitted_items:
+                raise duplicate_readable_key_error(
+                    subject_label="Document",
+                    owner_label=owner_label,
+                    kind_label="document block",
+                    key=key,
+                    unit=unit,
+                    source_span=readable_source_span(item),
+                    first_source_span=readable_source_span(emitted_items[key]),
+                )
+            emitted_items[key] = item
 
             if isinstance(item, model.DocumentBlock):
                 if key in parent_items_by_key:
-                    raise CompileError(
-                        f"Inherited document requires `override {key}` in {owner_label}"
+                    raise document_patch_error(
+                        detail=(
+                            f"Document `{owner_label}` must use `override {key}` when it "
+                            "patches an inherited document block."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=self._document_missing_related_sites(
+                            parent_unit=parent_unit,
+                            parent_body=parent_body,
+                            missing_keys=(key,),
+                        ),
                     )
                 resolved_items.append(
                     self._resolve_document_block(
@@ -121,20 +185,36 @@ class ResolveDocumentsMixin:
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined document entry in {parent_label}: {key}"
+                    raise document_patch_error(
+                        detail=f"Document `{owner_label}` cannot inherit undefined entry `{key}`.",
+                        unit=unit,
+                        source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
                 continue
 
             if parent_item is None:
-                raise CompileError(
-                    f"E001 Cannot override undefined document entry in {parent_label}: {key}"
+                raise readable_compile_error(
+                    code="E001",
+                    summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined document entry in {parent_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
                 )
             if item.kind != parent_item.kind:
-                raise CompileError(
-                    f"Override kind mismatch for document entry in {owner_label}: {key}"
+                raise document_patch_error(
+                    detail=(
+                        f"Document `{owner_label}` overrides entry `{key}` with the wrong "
+                        "block kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
+                    related=self._document_missing_related_sites(
+                        parent_unit=parent_unit,
+                        parent_body=parent_body,
+                        missing_keys=(key,),
+                    ),
                 )
             accounted_keys.add(key)
             resolved_items.append(
@@ -166,19 +246,31 @@ class ResolveDocumentsMixin:
                         ),
                         anonymous=parent_item.anonymous,
                         legacy_section=parent_item.legacy_section,
+                        source_span=item.source_span,
                     ),
                     unit=unit,
                     owner_label=f"{owner_label}.{key}",
                 )
             )
 
-        missing_keys = [
+        missing_keys = tuple(
             parent_item.key for parent_item in parent_document.items if parent_item.key not in accounted_keys
-        ]
+        )
         if missing_keys:
-            missing = ", ".join(missing_keys)
-            raise CompileError(
-                f"E003 Missing inherited document entry in {owner_label}: {missing}"
+            raise readable_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=(
+                    f"Missing inherited document entry in {owner_label}: "
+                    f"{', '.join(missing_keys)}"
+                ),
+                unit=unit,
+                source_span=owner_source_span,
+                related=self._document_missing_related_sites(
+                    parent_unit=parent_unit,
+                    parent_body=parent_body,
+                    missing_keys=missing_keys,
+                ),
             )
 
         return ResolvedDocumentBody(
@@ -195,12 +287,20 @@ class ResolveDocumentsMixin:
         owner_label: str,
     ) -> tuple[model.DocumentBlock, ...]:
         resolved: list[model.DocumentBlock] = []
-        seen_keys: set[str] = set()
+        seen_keys: dict[str, model.DocumentBlock] = {}
         for item in items:
             if isinstance(item, model.DocumentBlock):
                 if item.key in seen_keys:
-                    raise CompileError(f"Duplicate document block key in {owner_label}: {item.key}")
-                seen_keys.add(item.key)
+                    raise duplicate_readable_key_error(
+                        subject_label="Document",
+                        owner_label=owner_label,
+                        kind_label="document block",
+                        key=item.key,
+                        unit=unit,
+                        source_span=item.source_span,
+                        first_source_span=seen_keys[item.key].source_span,
+                    )
+                seen_keys[item.key] = item
                 resolved.append(
                     self._resolve_document_block(
                         item,
@@ -210,7 +310,12 @@ class ResolveDocumentsMixin:
                 )
                 continue
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
-            raise CompileError(
-                f"{item_label} requires an inherited document declaration in {owner_label}: {item.key}"
+            raise document_patch_error(
+                detail=(
+                    f"`{item_label}` for document entry `{item.key}` requires an inherited "
+                    f"document declaration in `{owner_label}`."
+                ),
+                unit=unit,
+                source_span=item.source_span,
             )
         return tuple(resolved)

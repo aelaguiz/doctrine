@@ -80,7 +80,7 @@ agent = "InvalidDuplicatePropertyKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
 message_contains = [
-  "Duplicate properties entry key",
+  "properties entry key `verdict`",
   "verdict",
 ]
 

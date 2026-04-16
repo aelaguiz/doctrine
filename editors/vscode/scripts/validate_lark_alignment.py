@@ -338,6 +338,30 @@ def main() -> int:
     )
     _require_pattern_match(
         repository,
+        "finalOutputRouteField",
+        ["        route: next_route"],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "outputSchemaRouteField",
+        [
+            '    route field next_route: "Next Route"',
+            '    override route field next_route: "Next Route"',
+        ],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
+        "outputSchemaRouteChoice",
+        ['        seek_muse: "Send to Muse." -> Muse'],
+        should_match=True,
+        errors=errors,
+    )
+    _require_pattern_match(
+        repository,
         "reviewConfigFieldRef",
         [
             "    subject: DraftSpec",

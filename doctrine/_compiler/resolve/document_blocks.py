@@ -4,10 +4,8 @@ from doctrine import model
 from dataclasses import replace
 
 from doctrine._compiler.readable_diagnostics import (
-    document_patch_error,
     duplicate_readable_key_error,
     invalid_readable_block_error,
-    readable_source_span,
 )
 from doctrine._compiler.resolved_types import (
     CompileError,
