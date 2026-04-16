@@ -167,6 +167,7 @@ class CompileReviewContractMixin:
                 if authored_review_fields is not None:
                     final_response_fields = self._validate_review_field_bindings(
                         authored_review_fields,
+                        field_binding_unit=unit,
                         output_decl=final_output_decl,
                         output_unit=final_output_unit,
                         owner_label=f"agent {agent.name} final_output.review_fields",
@@ -457,6 +458,7 @@ class CompileReviewContractMixin:
         }
         field_bindings = self._validate_review_field_bindings(
             resolved.fields,
+            field_binding_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             owner_label=owner_label,
@@ -734,6 +736,7 @@ class CompileReviewContractMixin:
         }
         field_bindings = self._validate_review_field_bindings(
             resolved.fields,
+            field_binding_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             owner_label=owner_label,

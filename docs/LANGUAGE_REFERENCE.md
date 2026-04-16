@@ -89,6 +89,8 @@ Important rules:
 - `abstract <slot_key>` marks an authored slot that concrete children must
   define directly.
 - `inherit <slot_key>` keeps an inherited authored slot unchanged.
+- `inherit {slot_a, slot_b}` is grouped parser sugar for repeated inherited
+  slot accounting in the same authored order.
 - `override <slot_key>:` replaces an inherited authored slot in place.
 - A concrete agent may not define both `workflow:` and `review:`. Review turns
   use `review:` as their main semantic body.
@@ -226,6 +228,8 @@ Important rules:
 Inherited workflows use explicit ordered patching:
 
 - `inherit key` keeps an inherited keyed item in place
+- `inherit {first_key, second_key}` keeps several inherited keyed items in
+  the same authored position order
 - `override key:` replaces an inherited keyed item in place
 - `override key: "New Title"` also replaces the rendered title
 - `key: "Title"` introduces a new keyed item
@@ -492,6 +496,8 @@ Important rules:
 - `document` inheritance uses the same explicit accounting model as workflows:
   `inherit key` keeps a parent block, `override <kind> key` replaces it in
   place, and changing block kind fails loudly.
+- `inherit {intro, appendix}` is the grouped parser-sugar form when a child
+  keeps several inherited document blocks unchanged.
 - `structure:` on `input` or `output` points at a named `document` and
   requires a markdown-bearing shape such as `MarkdownDocument` or
   `AgentOutputDocument`.
@@ -682,6 +688,8 @@ Important rules:
 - `key: "Title"` is the normal long form.
 - In inherited `inputs` or `outputs`, `override key:` keeps the parent title
   when you omit the override title.
+- In inherited `inputs` or `outputs`, `inherit {left_key, right_key}` keeps
+  several wrapper sections with the same explicit accounting model.
 - In base `inputs` or `outputs`, `key:` may omit the title only when the body
   resolves to exactly one direct declaration. Doctrine lowers the wrapper into
   that declaration's heading, so the output has one visible heading.
@@ -914,6 +922,8 @@ elsewhere:
 
 - `output Child[Parent]: "Title"` inherits from another `output`
 - `inherit key` keeps one inherited top-level output entry
+- `inherit {target, shape, requirement}` keeps several inherited top-level
+  output entries with the same explicit accounting model
 - `override key:` replaces one inherited top-level output entry
 - top-level attachment keys such as `target`, `shape`, `requirement`,
   `schema`, `structure`, `render_profile`, `trust_surface`, and
@@ -944,7 +954,9 @@ For the full I/O model, see [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md)
 Imports compose typed declarations across prompt modules.
 
 ```prompt
-import shared.contracts
+import shared.contracts as shared_contracts
+from shared.review import DraftReviewComment
+from shared.review import DraftReviewComment as ImportedComment
 import .local.sibling
 import ..common.roles
 ```
@@ -976,8 +988,21 @@ Important rules:
   They do not hop across configured or provider roots.
 - `SKILL.prompt` uses the same import rules, including bundled package modules
   such as `agents.cold_reviewer`.
-- Imported symbols are still used through normal declaration refs such as
-  `shared.contracts.ReviewContract`.
+- `import module as alias` keeps the imported module explicit through normal
+  declaration refs such as `shared_contracts.ReviewContract`.
+- `from module import Name` binds the imported declaration on its bare visible
+  name everywhere Doctrine already accepts that declaration kind.
+- `from module import Name as Alias` binds the imported declaration on the
+  renamed visible name.
+- Bare imported symbols follow the same name-resolution path as local refs.
+  That means workflows, review outputs, route targets, output attachments,
+  inheritance parents, addressable roots, and law paths all read the same
+  import scope.
+- `from ... import ...` does not create a visible module path. Keep a normal
+  `import module` line when you also want `module.Name`.
+- Duplicate visible module names, duplicate imported symbol names, and
+  local-versus-imported bare-name conflicts all fail loudly instead of picking
+  one owner by precedence.
 - Duplicate dotted modules across active roots fail loudly instead of using
   root precedence heuristics.
 - Missing modules, missing declarations, duplicate declarations, and module

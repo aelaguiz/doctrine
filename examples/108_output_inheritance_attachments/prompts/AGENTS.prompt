@@ -21,11 +21,7 @@ output BaseReviewComment: "Base Review Comment"
 
 
 output RoutedReviewComment[BaseReviewComment]: "Routed Review Comment"
-    inherit target
-    inherit shape
-    inherit render_profile
-    inherit requirement
-    inherit current_artifact
+    inherit {target, shape, render_profile, requirement, current_artifact}
 
     next_owner: "Next Owner"
         "Name the next owner when follow-up is needed."

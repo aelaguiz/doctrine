@@ -64,6 +64,129 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("import shared.missing", str(error))
         self.assertIn("Create the missing prompt file, or fix the import path.", str(error))
 
+    def test_duplicate_module_alias_reports_related_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_prompt(
+                root,
+                """\
+                workflow Greeting: "Greeting"
+                    "Say hello."
+                """,
+                rel_path="prompts/simple/greeting.prompt",
+            )
+            self._write_prompt(
+                root,
+                """\
+                workflow Object: "Object"
+                    "Say world."
+                """,
+                rel_path="prompts/simple/object.prompt",
+            )
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                import simple.greeting as shared
+                import simple.object as shared
+
+                agent Demo:
+                    role: "Own the reply."
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E306")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 2)
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(error.diagnostic.related[0].location.line, 1)
+        self.assertIn("Duplicate module alias", str(error))
+        self.assertIn("Visible import module `shared`", str(error))
+
+    def test_duplicate_imported_symbol_reports_related_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_prompt(
+                root,
+                """\
+                workflow Greeting: "Greeting"
+                    "Say hello."
+                """,
+                rel_path="prompts/simple/greeting.prompt",
+            )
+            self._write_prompt(
+                root,
+                """\
+                workflow PoliteGreeting: "Polite Greeting"
+                    "Say hello politely."
+                """,
+                rel_path="prompts/simple/nested/polite.prompt",
+            )
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                from simple.greeting import Greeting
+                from simple.nested.polite import PoliteGreeting as Greeting
+
+                agent Demo:
+                    role: "Own the reply."
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path))
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E307")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 2)
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(error.diagnostic.related[0].location.line, 1)
+        self.assertIn("Duplicate imported symbol", str(error))
+        self.assertIn("Imported symbol `Greeting`", str(error))
+
+    def test_imported_symbol_ownership_conflict_reports_related_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_prompt(
+                root,
+                """\
+                workflow Greeting: "Greeting"
+                    "Say hello."
+                """,
+                rel_path="prompts/shared/greeting.prompt",
+            )
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                from shared.greeting import Greeting
+
+                workflow Greeting: "Local Greeting"
+                    "Keep the local workflow."
+
+                agent Demo:
+                    role: "Own the reply."
+                    workflow: "Imported Steps"
+                        use greeting: Greeting
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E308")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 9)
+        self.assertEqual(len(error.diagnostic.related), 2)
+        self.assertEqual(error.diagnostic.related[0].location.line, 3)
+        self.assertEqual(error.diagnostic.related[1].location.line, 1)
+        self.assertIn("Ambiguous imported symbol ownership", str(error))
+        self.assertIn("visible both as a local workflow declaration", str(error))
+
     def test_duplicate_declaration_name_reports_related_location(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -1816,6 +1939,343 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Review contract `GateLessContract`", str(error))
 
+    def test_unknown_review_contract_gate_points_at_gate_ref_line(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/45_review_contract_gate_export_and_exact_failures/prompts/INVALID_UNKNOWN_CONTRACT_GATE.prompt",
+            agent="InvalidUnknownContractGateDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+
+        self.assertEqual(error.diagnostic.code, "E477")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index(
+                "        reject contract.missing_gate when DraftSpec.next_action_missing"
+            )
+            + 1,
+        )
+        self.assertIn("Unknown review contract gate", str(error))
+
+    def test_review_contract_with_workflow_law_points_at_law_line(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/45_review_contract_gate_export_and_exact_failures/prompts/INVALID_CONTRACT_TARGET_WITH_LAW.prompt",
+            agent="InvalidContractTargetWithLawDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+
+        self.assertEqual(error.diagnostic.code, "E477")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index("        active when DraftSpec.ready_for_execution") + 1,
+        )
+        self.assertIn("unsupported workflow features", str(error))
+
+    def test_duplicate_review_subject_map_entry_reports_related_line(self) -> None:
+        prompt_path, error = self._compile_repo_prompt_error(
+            "examples/47_review_multi_subject_mode_and_trigger_carry/prompts/INVALID_DUPLICATE_SUBJECT_MAP_ENTRY.prompt",
+            agent="MultiSubjectReviewDemo",
+        )
+        prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
+        duplicate_line = "        ReviewMode.draft_rewrite: MetadataRecord"
+        first_line = "        ReviewMode.draft_rewrite: DraftSpec"
+
+        self.assertEqual(error.diagnostic.code, "E470")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(
+            error.diagnostic.location.line,
+            prompt_lines.index(duplicate_line) + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            prompt_lines.index(first_line) + 1,
+        )
+        self.assertIn("Duplicate review subject_map entry", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_duplicate_review_field_binding_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftSpec: "Draft Spec"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow DraftReviewContract: "Draft Review Contract"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                agent DraftAuthor:
+                    role: "Repair rejected draft defects."
+                    workflow: "Revise"
+                        "Revise the draft."
+
+                output DraftReviewComment: "Draft Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    verdict: "Verdict"
+                        "State the review verdict."
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "State what the next owner should read first."
+                    next_owner: "Next Owner"
+                        "Name the next owner."
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List failing gates when they fail."
+
+                review DuplicateFieldReview: "Duplicate Field Review"
+                    subject: DraftSpec
+                    contract: DraftReviewContract
+                    comment_output: DraftReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+                        next_owner: next_owner
+
+                    checks: "Checks"
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        route "Accepted draft stays local." -> DraftAuthor
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected draft stays local." -> DraftAuthor
+
+                agent Demo:
+                    role: "Keep duplicate review field bindings from compiling."
+                    review: DuplicateFieldReview
+                    inputs: "Inputs"
+                        DraftSpec
+                    outputs: "Outputs"
+                        DraftReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        next_owner_lines = [
+            line_number
+            for line_number, line in enumerate(rendered.splitlines(), start=1)
+            if line == "        next_owner: next_owner"
+        ]
+        self.assertEqual(error.diagnostic.code, "E473")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, next_owner_lines[1])
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(error.diagnostic.related[0].location.line, next_owner_lines[0])
+        self.assertIn("duplicate binding", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_duplicate_composed_review_contract_gate_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input DraftSpec: "Draft Spec"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow SharedGateA: "Shared Gate A"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                workflow SharedGateB: "Shared Gate B"
+                    completeness: "Completeness"
+                        "Confirm the draft still covers the required sections."
+
+                workflow DuplicateGateContract: "Duplicate Gate Contract"
+                    use first: SharedGateA
+                    use second: SharedGateB
+
+                agent DraftAuthor:
+                    role: "Repair rejected draft defects."
+                    workflow: "Revise"
+                        "Revise the draft."
+
+                output DraftReviewComment: "Draft Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    verdict: "Verdict"
+                        "State the review verdict."
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "State what the next owner should read first."
+                    next_owner: "Next Owner"
+                        "Name the next owner."
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List failing gates when they fail."
+
+                review DuplicateGateReview: "Duplicate Gate Review"
+                    subject: DraftSpec
+                    contract: DuplicateGateContract
+                    comment_output: DraftReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    checks: "Checks"
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        route "Accepted draft stays local." -> DraftAuthor
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected draft stays local." -> DraftAuthor
+
+                agent Demo:
+                    role: "Keep duplicate composed review contract gates from compiling."
+                    review: DuplicateGateReview
+                    inputs: "Inputs"
+                        DraftSpec
+                    outputs: "Outputs"
+                        DraftReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        completeness_lines = [
+            line_number
+            for line_number, line in enumerate(rendered.splitlines(), start=1)
+            if line == '    completeness: "Completeness"'
+        ]
+        self.assertEqual(error.diagnostic.code, "E477")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, completeness_lines[1])
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(error.diagnostic.related[0].location.line, completeness_lines[0])
+        self.assertIn("Duplicate review contract gate", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_review_match_without_else_points_at_match_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                enum ReviewMode: "Review Mode"
+                    draft_rewrite: "draft-rewrite"
+                    metadata_refresh: "metadata-refresh"
+
+                input DraftSpec: "Draft Spec"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                input ReviewFacts: "Review Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                workflow DraftReviewContract: "Draft Review Contract"
+                    completeness: "Completeness"
+                        "Confirm the draft covers the required sections."
+
+                agent DraftAuthor:
+                    role: "Repair rejected draft defects."
+                    workflow: "Revise"
+                        "Revise the draft."
+
+                output DraftReviewComment: "Draft Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+                    verdict: "Verdict"
+                        "State the review verdict."
+                    reviewed_artifact: "Reviewed Artifact"
+                        "Name the reviewed artifact."
+                    analysis_performed: "Analysis Performed"
+                        "Summarize the review analysis."
+                    output_contents_that_matter: "Output Contents That Matter"
+                        "State what the next owner should read first."
+                    next_owner: "Next Owner"
+                        "Name the next owner."
+                    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                        failing_gates: "Failing Gates"
+                            "List failing gates when they fail."
+
+                review IncompleteMatchReview: "Incomplete Match Review"
+                    subject: DraftSpec
+                    contract: DraftReviewContract
+                    comment_output: DraftReviewComment
+
+                    fields:
+                        verdict: verdict
+                        reviewed_artifact: reviewed_artifact
+                        analysis: analysis_performed
+                        readback: output_contents_that_matter
+                        failing_gates: failure_detail.failing_gates
+                        next_owner: next_owner
+
+                    checks: "Checks"
+                        match ReviewFacts.selected_mode:
+                            ReviewMode.draft_rewrite:
+                                reject "The selected draft still needs changes." when ReviewFacts.force_reject
+                        accept "The shared review contract passes." when contract.passes
+
+                    on_accept: "If Accepted"
+                        current none
+                        route "Accepted draft stays local." -> DraftAuthor
+
+                    on_reject: "If Rejected"
+                        current none
+                        route "Rejected draft stays local." -> DraftAuthor
+
+                agent Demo:
+                    role: "Keep non-total review matches from compiling."
+                    review: IncompleteMatchReview
+                    inputs: "Inputs"
+                        DraftSpec
+                        ReviewFacts
+                    outputs: "Outputs"
+                        DraftReviewComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E484")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        match ReviewFacts.selected_mode:") + 1,
+        )
+        self.assertIn("include `else`", str(error))
+
     def test_review_current_carrier_output_not_emitted_uses_review_code(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -2646,6 +3106,201 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Output-attached schema must export at least one section", str(error))
         self.assertIn("attached schema `ArtifactOnlySchema`", str(error))
+
+    def test_cyclic_schema_inheritance_points_at_schema_decl_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input OutlineFile: "Outline File"
+                    source: File
+                        path: "unit_root/OUTLINE.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                schema FirstSchema[SecondSchema]: "First Schema"
+                    inherit artifacts
+
+                schema SecondSchema[FirstSchema]: "Second Schema"
+                    inherit artifacts
+
+                output BuildPlan: "Build Plan"
+                    target: File
+                        path: "unit_root/BUILD_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                    schema: FirstSchema
+
+                agent Demo:
+                    role: "Reject cyclic schema inheritance."
+                    outputs: "Outputs"
+                        BuildPlan
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('schema FirstSchema[SecondSchema]: "First Schema"') + 1,
+        )
+        self.assertIn(
+            "Cyclic schema inheritance: FirstSchema -> SecondSchema -> FirstSchema",
+            str(error),
+        )
+
+    def test_missing_inherited_schema_block_reports_related_parent_block_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input OutlineFile: "Outline File"
+                    source: File
+                        path: "unit_root/OUTLINE.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                schema BaseSchema: "Base Schema"
+                    sections:
+                        summary: "Summary"
+                            "Summarize the release."
+
+                    artifacts:
+                        outline_file: "Outline File"
+                            ref: OutlineFile
+
+                schema ChildSchema[BaseSchema]: "Child Schema"
+                    override sections:
+                        summary: "Summary"
+                            "Keep the child summary."
+
+                output BuildPlan: "Build Plan"
+                    target: File
+                        path: "unit_root/BUILD_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                    schema: ChildSchema
+
+                agent Demo:
+                    role: "Reject missing inherited schema blocks."
+                    outputs: "Outputs"
+                        BuildPlan
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('schema ChildSchema[BaseSchema]: "Child Schema"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    artifacts:") + 1,
+        )
+        self.assertIn("Missing inherited schema block in ChildSchema: artifacts", str(error))
+
+    def test_schema_artifact_wrong_kind_points_at_ref_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                schema BrokenArtifactSchema: "Broken Artifact Schema"
+                    sections:
+                        summary: "Summary"
+                            "Summarize the release."
+
+                    artifacts:
+                        schema_ref: "Schema Ref"
+                            ref: BrokenArtifactSchema
+
+                output BuildPlan: "Build Plan"
+                    target: File
+                        path: "unit_root/BUILD_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                    schema: BrokenArtifactSchema
+
+                agent Demo:
+                    role: "Reject non-root schema artifact refs."
+                    outputs: "Outputs"
+                        BuildPlan
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E303")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("            ref: BrokenArtifactSchema") + 1,
+        )
+        self.assertIn(
+            "Schema artifact refs must resolve to input or output declarations",
+            str(error),
+        )
+
+    def test_unknown_schema_group_member_points_at_group_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input OutlineFile: "Outline File"
+                    source: File
+                        path: "unit_root/OUTLINE.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                schema BrokenGroupSchema: "Broken Group Schema"
+                    sections:
+                        summary: "Summary"
+                            "Summarize the release."
+
+                    artifacts:
+                        outline_file: "Outline File"
+                            ref: OutlineFile
+
+                    groups:
+                        publish_packet: "Publish Packet"
+                            missing_file
+
+                output BuildPlan: "Build Plan"
+                    target: File
+                        path: "unit_root/BUILD_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                    schema: BrokenGroupSchema
+
+                agent Demo:
+                    role: "Reject unknown schema group members."
+                    outputs: "Outputs"
+                        BuildPlan
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E303")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        publish_packet: "Publish Packet"') + 1,
+        )
+        self.assertIn("Unknown schema group member in BrokenGroupSchema: publish_packet.missing_file", str(error))
 
     def test_output_files_entries_must_be_titled_sections_points_at_bad_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -3510,6 +4165,189 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Use `nullable`", str(error))
 
+    def test_output_schema_inherit_without_parent_points_at_inherit_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output schema RepoStatusSchema: "Repo Status Schema"
+                    inherit status
+
+                output shape RepoStatusJson: "Repo Status JSON"
+                    kind: JsonObject
+                    schema: RepoStatusSchema
+
+                output RepoStatusFinalResponse: "Repo Status Final Response"
+                    target: TurnResponse
+                    shape: RepoStatusJson
+                    requirement: Required
+
+                agent RepoStatusAgent:
+                    role: "Report repo status in structured form."
+                    workflow: "Summarize"
+                        "Summarize the repo state and end with the declared final output."
+                    outputs: "Outputs"
+                        RepoStatusFinalResponse
+                    final_output: RepoStatusFinalResponse
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("RepoStatusAgent")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inherit status") + 1,
+        )
+        self.assertIn("inherit requires an inherited output schema", str(error))
+
+    def test_missing_inherited_output_schema_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output schema BaseRepoStatusSchema: "Base Repo Status Schema"
+                    field status: "Status"
+                        type: string
+
+                    field summary: "Summary"
+                        type: string
+
+                output schema RepoStatusSchema[BaseRepoStatusSchema]: "Repo Status Schema"
+                    inherit status
+
+                output shape RepoStatusJson: "Repo Status JSON"
+                    kind: JsonObject
+                    schema: RepoStatusSchema
+
+                output RepoStatusFinalResponse: "Repo Status Final Response"
+                    target: TurnResponse
+                    shape: RepoStatusJson
+                    requirement: Required
+
+                agent RepoStatusAgent:
+                    role: "Report repo status in structured form."
+                    workflow: "Summarize"
+                        "Summarize the repo state and end with the declared final output."
+                    outputs: "Outputs"
+                        RepoStatusFinalResponse
+                    final_output: RepoStatusFinalResponse
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("RepoStatusAgent")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                'output schema RepoStatusSchema[BaseRepoStatusSchema]: "Repo Status Schema"'
+            )
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    field summary: "Summary"') + 1,
+        )
+        self.assertIn("Missing inherited output schema entry", str(error))
+
+    def test_duplicate_output_schema_setting_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output schema RepoStatusSchema: "Repo Status Schema"
+                    field status: "Status"
+                        type: string
+                        type: integer
+
+                output shape RepoStatusJson: "Repo Status JSON"
+                    kind: JsonObject
+                    schema: RepoStatusSchema
+
+                output RepoStatusFinalResponse: "Repo Status Final Response"
+                    target: TurnResponse
+                    shape: RepoStatusJson
+                    requirement: Required
+
+                agent RepoStatusAgent:
+                    role: "Report repo status in structured form."
+                    workflow: "Summarize"
+                        "Summarize the repo state and end with the declared final output."
+                    outputs: "Outputs"
+                        RepoStatusFinalResponse
+                    final_output: RepoStatusFinalResponse
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("RepoStatusAgent")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        type: integer") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("        type: string") + 1,
+        )
+        self.assertIn("Duplicate output schema setting", str(error))
+
+    def test_unknown_output_schema_ref_points_at_ref_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output schema RepoStatusSchema: "Repo Status Schema"
+                    field status: "Status"
+                        ref: MissingStatusSchema
+
+                output shape RepoStatusJson: "Repo Status JSON"
+                    kind: JsonObject
+                    schema: RepoStatusSchema
+
+                output RepoStatusFinalResponse: "Repo Status Final Response"
+                    target: TurnResponse
+                    shape: RepoStatusJson
+                    requirement: Required
+
+                agent RepoStatusAgent:
+                    role: "Report repo status in structured form."
+                    workflow: "Summarize"
+                        "Summarize the repo state and end with the declared final output."
+                    outputs: "Outputs"
+                        RepoStatusFinalResponse
+                    final_output: RepoStatusFinalResponse
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("RepoStatusAgent")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("        ref: MissingStatusSchema") + 1,
+        )
+        self.assertIn("Unknown output schema ref", str(error))
+
     def test_missing_inherited_output_entry_reports_related_parent_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -3681,6 +4519,120 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("overrides entry `must_include` with the wrong kind", str(error))
         self.assertIn("Related:", str(error))
+
+    def test_cyclic_output_inheritance_points_at_output_decl_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output FirstReply[SecondReply]: "First Reply"
+                    inherit target
+                    inherit shape
+                    inherit requirement
+
+                output SecondReply[FirstReply]: "Second Reply"
+                    inherit target
+                    inherit shape
+                    inherit requirement
+
+                agent Demo:
+                    role: "Reject cyclic output inheritance."
+                    outputs: "Outputs"
+                        FirstReply
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E251")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('output FirstReply[SecondReply]: "First Reply"') + 1,
+        )
+        self.assertIn("Output inheritance cycle: FirstReply -> SecondReply -> FirstReply.", str(error))
+
+    def test_inherited_render_profile_entry_points_at_inherit_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output BaseReply: "Base Reply"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                output ChildReply[BaseReply]: "Child Reply"
+                    inherit target
+                    inherit shape
+                    inherit requirement
+                    inherit render_profile
+
+                agent Demo:
+                    role: "Keep inherited output attachments explicit."
+                    outputs: "Outputs"
+                        ChildReply
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E253")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inherit render_profile") + 1,
+        )
+        self.assertIn("cannot inherit undefined key `render_profile`", str(error))
+
+    def test_output_render_profile_requires_one_markdown_artifact_points_at_render_profile_line(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                render_profile CompactComment:
+                    properties -> sentence
+
+                output FileBundle: "File Bundle"
+                    files: "Files"
+                        release_notes: "Release Notes"
+                            path: "artifacts/RELEASE_NOTES.md"
+                            shape: MarkdownDocument
+                            requirement: Required
+                    render_profile: CompactComment
+
+                agent Demo:
+                    role: "Reject render profiles on file bundles."
+                    outputs: "Outputs"
+                        FileBundle
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    render_profile: CompactComment") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    files: "Files"') + 1,
+        )
+        self.assertIn("Output render_profile requires one markdown-bearing output artifact", str(error))
 
     def test_duplicate_workflow_item_key_reports_related_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -4255,6 +5207,177 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("Readable guard shell `follow_up`", str(error))
         self.assertIn("must define a guard expression", str(error))
 
+    def test_workflow_readable_sequence_invalid_item_points_at_block_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow RootReadableGuide: "Guide"
+                    sequence read_first:
+                        "Read the current issue first."
+
+                agent Demo:
+                    role: "Keep workflow readable blocks well formed."
+                    workflow: RootReadableGuide
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+            workflow_decl = next(
+                decl for decl in prompt.declarations if isinstance(decl, model.WorkflowDecl)
+            )
+            sequence_block = next(
+                item
+                for item in workflow_decl.body.items
+                if isinstance(item, model.ReadableBlock) and item.key == "read_first"
+            )
+            mutated_workflow = replace(
+                workflow_decl,
+                body=replace(
+                    workflow_decl.body,
+                    items=tuple(
+                        replace(item, payload=("This should fail.",))
+                        if item is sequence_block
+                        else item
+                        for item in workflow_decl.body.items
+                    ),
+                ),
+            )
+            mutated_prompt = replace(
+                prompt,
+                declarations=tuple(
+                    mutated_workflow if decl is workflow_decl else decl
+                    for decl in prompt.declarations
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(mutated_prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E297")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    sequence read_first:") + 1,
+        )
+        self.assertIn("Readable sequence items must stay list entries", str(error))
+        self.assertIn("agent Demo workflow.read_first", str(error))
+
+    def test_workflow_readable_image_payload_shape_points_at_block_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow RootReadableGuide: "Guide"
+                    image evidence: "Evidence"
+                        src: "https://example.com/release.png"
+                        alt: "Release checklist screenshot"
+
+                agent Demo:
+                    role: "Keep workflow image blocks well formed."
+                    workflow: RootReadableGuide
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+            workflow_decl = next(
+                decl for decl in prompt.declarations if isinstance(decl, model.WorkflowDecl)
+            )
+            image_block = next(
+                item
+                for item in workflow_decl.body.items
+                if isinstance(item, model.ReadableBlock) and item.key == "evidence"
+            )
+            mutated_workflow = replace(
+                workflow_decl,
+                body=replace(
+                    workflow_decl.body,
+                    items=tuple(
+                        replace(item, payload=("This should fail.",))
+                        if item is image_block
+                        else item
+                        for item in workflow_decl.body.items
+                    ),
+                ),
+            )
+            mutated_prompt = replace(
+                prompt,
+                declarations=tuple(
+                    mutated_workflow if decl is workflow_decl else decl
+                    for decl in prompt.declarations
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(mutated_prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E297")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    image evidence: "Evidence"') + 1,
+        )
+        self.assertIn("Readable image payload must stay image-shaped", str(error))
+        self.assertIn("agent Demo workflow.evidence", str(error))
+
+    def test_workflow_unknown_readable_block_kind_reports_internal_error_with_block_line(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow RootReadableGuide: "Guide"
+                    sequence read_first:
+                        "Read the current issue first."
+
+                agent Demo:
+                    role: "Expose impossible readable kinds as compiler bugs."
+                    workflow: RootReadableGuide
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+            workflow_decl = next(
+                decl for decl in prompt.declarations if isinstance(decl, model.WorkflowDecl)
+            )
+            sequence_block = next(
+                item
+                for item in workflow_decl.body.items
+                if isinstance(item, model.ReadableBlock) and item.key == "read_first"
+            )
+            mutated_workflow = replace(
+                workflow_decl,
+                body=replace(
+                    workflow_decl.body,
+                    items=tuple(
+                        replace(item, kind="mystery")
+                        if item is sequence_block
+                        else item
+                        for item in workflow_decl.body.items
+                    ),
+                ),
+            )
+            mutated_prompt = replace(
+                prompt,
+                declarations=tuple(
+                    mutated_workflow if decl is workflow_decl else decl
+                    for decl in prompt.declarations
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(mutated_prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E901")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    sequence read_first:") + 1,
+        )
+        self.assertIn("unsupported readable block kind", str(error))
+        self.assertIn("agent Demo workflow.read_first", str(error))
+
     def test_document_override_without_parent_points_at_override_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -4528,6 +5651,374 @@ class CompileDiagnosticTests(unittest.TestCase):
             rendered.splitlines().index('    notes: "Notes"') + 1,
         )
         self.assertIn("`law:` is not allowed on authored slot `notes`", str(error))
+
+    def test_cyclic_agent_inheritance_points_at_agent_decl_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent First[Second]:
+                    role: "Keep agent inheritance acyclic."
+
+                agent Second[First]:
+                    role: "Reject cycles in authored slot inheritance."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("First")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E207")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("agent First[Second]:") + 1,
+        )
+        self.assertIn("Cyclic agent inheritance: First -> Second -> First", str(error))
+
+    def test_duplicate_authored_slot_key_reports_related_first_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Demo:
+                    role: "Keep authored slot keys unique."
+                    notes: "Notes"
+                        "Keep the shared notes compact."
+                    notes: "Duplicate Notes"
+                        "This second slot should fail."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    notes: "Duplicate Notes"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    notes: "Notes"') + 1,
+        )
+        self.assertIn("Duplicate authored slot key in agent Demo: notes", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_inherited_authored_slot_requires_patch_keyword_reports_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Base:
+                    role: "Share a reusable authored slot."
+                    notes: "Base Notes"
+                        "Keep the base notes stable."
+
+                agent Demo[Base]:
+                    role: "Use explicit inherit or override for shared slots."
+                    notes: "Child Notes"
+                        "This direct replacement should fail."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    notes: "Child Notes"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    notes: "Base Notes"') + 1,
+        )
+        self.assertIn("Inherited authored slot requires `inherit notes` or `override notes`", str(error))
+
+    def test_abstract_authored_slot_inherit_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                abstract agent Base:
+                    role: "Require a child to define notes directly."
+                    abstract notes
+
+                agent Demo[Base]:
+                    role: "Define inherited abstract slots directly."
+                    inherit notes
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E210")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inherit notes") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    abstract notes") + 1,
+        )
+        self.assertIn("must be defined directly in agent Demo: notes", str(error))
+
+    def test_undefined_override_authored_slot_points_at_override_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Base:
+                    role: "Keep the parent authored slots narrow."
+                    notes: "Base Notes"
+                        "Keep only one shared slot."
+
+                agent Demo[Base]:
+                    role: "Override only real inherited slots."
+                    override checklist: "Checklist"
+                        "This key does not exist on the parent."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E001")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    override checklist: "Checklist"') + 1,
+        )
+        self.assertIn("Cannot override undefined authored slot in agent Base: checklist", str(error))
+
+    def test_missing_inherited_authored_slot_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                agent Base:
+                    role: "Share two concrete authored slots."
+                    notes: "Base Notes"
+                        "Keep the base notes stable."
+                    checklist: "Checklist"
+                        "Keep the base checklist stable."
+
+                agent Demo[Base]:
+                    role: "Account for every inherited concrete slot."
+                    inherit notes
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("agent Demo[Base]:") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    checklist: "Checklist"') + 1,
+        )
+        self.assertIn("Missing inherited authored slot in agent Demo: checklist", str(error))
+
+    def test_route_only_missing_current_none_points_at_decl_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                output HandoffComment: "Handoff Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                agent RoutingOwner:
+                    role: "Own the rerouted turn."
+
+                route_only RouteOnlyRepair: "Route Only Repair"
+                    facts: RouteFacts
+                    handoff_output: HandoffComment
+                    routes:
+                        else -> RoutingOwner
+
+                agent Demo:
+                    role: "Require explicit route-only currentness."
+                    workflow: RouteOnlyRepair
+                    inputs: "Inputs"
+                        RouteFacts
+                    outputs: "Outputs"
+                        HandoffComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('route_only RouteOnlyRepair: "Route Only Repair"') + 1,
+        )
+        self.assertIn("route_only must declare `current none`: RouteOnlyRepair", str(error))
+
+    def test_route_only_facts_ambiguity_reports_input_and_output_lines(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input RouteFacts: "Route Facts"
+                    source: Prompt
+                    shape: JsonObject
+                    requirement: Required
+
+                output RouteFacts: "Route Facts Output"
+                    target: File
+                        path: "unit_root/route_facts.json"
+                    shape: JsonObject
+                    requirement: Required
+
+                output HandoffComment: "Handoff Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                agent RoutingOwner:
+                    role: "Own the rerouted turn."
+
+                route_only RouteOnlyRepair: "Route Only Repair"
+                    facts: RouteFacts
+                    current none
+                    handoff_output: HandoffComment
+                    routes:
+                        else -> RoutingOwner
+
+                agent Demo:
+                    role: "Reject ambiguous route-only facts refs."
+                    workflow: RouteOnlyRepair
+                    inputs: "Inputs"
+                        RouteFacts
+                    outputs: "Outputs"
+                        HandoffComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E270")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    facts: RouteFacts") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 2)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('input RouteFacts: "Route Facts"') + 1,
+        )
+        self.assertEqual(
+            error.diagnostic.related[1].location.line,
+            rendered.splitlines().index('output RouteFacts: "Route Facts Output"') + 1,
+        )
+        self.assertIn("Ambiguous route_only facts in agent Demo slot workflow: RouteFacts", str(error))
+
+    def test_route_only_facts_wrong_kind_points_at_facts_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow RouteFacts: "Route Facts"
+                    "This wrong-kind declaration should fail."
+
+                output HandoffComment: "Handoff Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                agent RoutingOwner:
+                    role: "Own the rerouted turn."
+
+                route_only RouteOnlyRepair: "Route Only Repair"
+                    facts: RouteFacts
+                    current none
+                    handoff_output: HandoffComment
+                    routes:
+                        else -> RoutingOwner
+
+                agent Demo:
+                    role: "Keep route-only facts on inputs or outputs."
+                    workflow: RouteOnlyRepair
+                    outputs: "Outputs"
+                        HandoffComment
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    facts: RouteFacts") + 1,
+        )
+        self.assertIn(
+            "route_only facts must resolve to an input or output declaration",
+            str(error),
+        )
+
+    def test_grounding_missing_target_points_at_decl_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                grounding GroundingGuide: "Grounding Guide"
+                    policy:
+                        allow repo_search
+
+                agent Demo:
+                    role: "Require grounding workflows to name a target."
+                    workflow: GroundingGuide
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('grounding GroundingGuide: "Grounding Guide"') + 1,
+        )
+        self.assertIn("grounding is missing target: GroundingGuide", str(error))
 
     def test_abstract_review_on_concrete_agent_points_at_review_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -4838,9 +6329,232 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(len(error.diagnostic.related), 1)
         self.assertEqual(
             error.diagnostic.related[0].location.line,
-            rendered.splitlines().index("        AlternatePlan") + 1,
+            rendered.splitlines().index('    alternate_plan: "Alternate Plan Binding"') + 1,
         )
         self.assertIn("Missing inherited inputs entry in ReviewInputs: alternate_plan", str(error))
+
+    def test_inherited_outputs_block_needs_keyed_entries_reports_related_parent_ref_line(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs BareOutputs: "Outputs"
+                    ReviewComment
+
+                outputs ChildOutputs[BareOutputs]: "Outputs"
+                    "This child should fail before it can inherit the parent block."
+
+                agent Demo:
+                    role: "Keep inherited outputs patchable."
+                    outputs: ChildOutputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E247")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('outputs ChildOutputs[BareOutputs]: "Outputs"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    ReviewComment") + 1,
+        )
+        self.assertIn("contains unkeyed top-level refs", str(error))
+
+    def test_duplicate_inherited_outputs_item_key_reports_related_first_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs BaseOutputs: "Outputs"
+                    review_comment: "Review Comment"
+                        ReviewComment
+
+                outputs ChildOutputs[BaseOutputs]: "Outputs"
+                    override review_comment: "Review Comment"
+                        ReviewComment
+
+                    override review_comment: "Review Comment"
+                        ReviewComment
+
+                agent Demo:
+                    role: "Keep inherited outputs keys unique."
+                    outputs: ChildOutputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        override_lines = [
+            index + 1
+            for index, line in enumerate(rendered.splitlines())
+            if line == '    override review_comment: "Review Comment"'
+        ]
+        self.assertEqual(
+            error.diagnostic.location.line,
+            override_lines[1],
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            override_lines[0],
+        )
+        self.assertIn("Duplicate outputs item key in ChildOutputs: review_comment", str(error))
+
+    def test_undefined_inherited_outputs_entry_points_at_inherit_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs BaseOutputs: "Outputs"
+                    review_comment: "Review Comment"
+                        ReviewComment
+
+                outputs ChildOutputs[BaseOutputs]: "Outputs"
+                    inherit coordination_handoff
+
+                agent Demo:
+                    role: "Keep inherited outputs explicit."
+                    outputs: ChildOutputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E245")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inherit coordination_handoff") + 1,
+        )
+        self.assertIn("cannot inherit undefined key `coordination_handoff`", str(error))
+
+    def test_undefined_override_outputs_entry_points_at_override_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs BaseOutputs: "Outputs"
+                    review_comment: "Review Comment"
+                        ReviewComment
+
+                outputs ChildOutputs[BaseOutputs]: "Outputs"
+                    override coordination_handoff: "Coordination Handoff"
+                        CoordinationHandoff
+
+                agent Demo:
+                    role: "Keep inherited outputs scoped to parent keys."
+                    outputs: ChildOutputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E001")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                '    override coordination_handoff: "Coordination Handoff"'
+            )
+            + 1,
+        )
+        self.assertIn(
+            "Cannot override undefined outputs entry in outputs BaseOutputs: coordination_handoff",
+            str(error),
+        )
+
+    def test_missing_inherited_outputs_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output DurableSectionTruth: "Durable Section Truth"
+                    target: File
+                        path: "section_root/_authoring/durable_section_truth.md"
+                    shape: "Markdown Document"
+                    requirement: Required
+
+                output CoordinationHandoff: "Coordination Handoff"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs BaseOutputs: "Outputs"
+                    durable_section_truth: "Durable Section Truth"
+                        DurableSectionTruth
+                    coordination_handoff: "Coordination Handoff"
+                        CoordinationHandoff
+
+                outputs ChildOutputs[BaseOutputs]: "Outputs"
+                    inherit durable_section_truth
+
+                agent Demo:
+                    role: "Keep inherited outputs explicit."
+                    outputs: ChildOutputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('outputs ChildOutputs[BaseOutputs]: "Outputs"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    coordination_handoff: "Coordination Handoff"') + 1,
+        )
+        self.assertIn(
+            "Missing inherited outputs entry in ChildOutputs: coordination_handoff",
+            str(error),
+        )
 
     def test_input_bucket_ref_with_inline_body_points_at_ref_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -4902,6 +6616,84 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("Inputs refs must resolve to input declarations", str(error))
 
+    def test_inputs_field_ref_kind_mismatch_points_at_field_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs SharedOutputs: "Outputs"
+                    review_comment: "Review Comment"
+                        ReviewComment
+
+                agent Demo:
+                    role: "Keep inputs fields on inputs blocks."
+                    inputs: SharedOutputs
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E248")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inputs: SharedOutputs") + 1,
+        )
+        self.assertIn("Inputs fields must resolve to inputs blocks, not outputs blocks", str(error))
+
+    def test_inputs_patch_base_kind_mismatch_points_at_patch_field_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                input ApprovedPlan: "Approved Plan"
+                    source: File
+                        path: "unit_root/APPROVED_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+
+                output ReviewComment: "Review Comment"
+                    target: TurnResponse
+                    shape: Comment
+                    requirement: Required
+
+                outputs SharedOutputs: "Outputs"
+                    review_comment: "Review Comment"
+                        ReviewComment
+
+                abstract agent BaseAgent:
+                    role: "Own shared IO."
+                    inputs: "Inputs"
+                        approved_plan: "Approved Plan"
+                            ApprovedPlan
+
+                agent Demo[BaseAgent]:
+                    role: "Reject wrong-kind IO patch bases."
+                    inputs[SharedOutputs]: "Inputs"
+                        approved_plan: "Approved Plan"
+                            ApprovedPlan
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E249")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    inputs[SharedOutputs]: "Inputs"') + 1,
+        )
+        self.assertIn("Inputs patch fields must inherit from inputs blocks, not outputs blocks", str(error))
+
     def test_omitted_inputs_wrapper_title_reports_direct_ref_sites(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -4938,7 +6730,7 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
         self.assertEqual(
             error.diagnostic.location.line,
-            rendered.splitlines().index("        LessonsIssueLedger") + 1,
+            rendered.splitlines().index("    issue_ledger:") + 1,
         )
         self.assertEqual(len(error.diagnostic.related), 2)
         related_lines = sorted(
@@ -5236,6 +7028,372 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertEqual(error.diagnostic.related, ())
         self.assertIn("`blocked_gate`", str(error))
+
+    def test_compile_skill_package_missing_target_reports_file_scoped_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                agent Demo:
+                    role: "Keep package compilation explicit."
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertIsNone(error.diagnostic.location.line)
+        self.assertIn("Missing target skill package.", str(error))
+
+    def test_compile_readable_missing_target_document_reports_file_scoped_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                agent Demo:
+                    role: "Keep readable targets explicit."
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_readable_declaration(
+                    "document",
+                    "MissingGuide",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertIsNone(error.diagnostic.location.line)
+        self.assertIn("Missing target document declaration: MissingGuide", str(error))
+
+    def test_compile_readable_unsupported_kind_reports_file_scoped_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                document Guide: "Guide"
+                    section intro: "Intro"
+                        "Start here."
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_readable_declaration(
+                    "worksheet",
+                    "Guide",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertIsNone(error.diagnostic.location.line)
+        self.assertIn("Unsupported readable declaration kind: worksheet", str(error))
+
+    def test_document_cycle_points_at_document_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                document CycleA[CycleB]: "Cycle A"
+                    section intro: "Intro"
+                        "Start here."
+
+                document CycleB[CycleA]: "Cycle B"
+                    section intro: "Intro"
+                        "Stay here."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_readable_declaration(
+                    "document",
+                    "CycleA",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('document CycleA[CycleB]: "Cycle A"') + 1,
+        )
+        self.assertIn("Cyclic document inheritance", str(error))
+
+    def test_document_definitions_invalid_entry_points_at_definition_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                document BrokenGuide: "Broken Guide"
+                    definitions read_order: "Read Order"
+                        draft: "Draft"
+                            "Review the current draft first."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+            document_decl = next(
+                decl for decl in prompt.declarations if isinstance(decl, model.DocumentDecl)
+            )
+            definitions_block = next(
+                item
+                for item in document_decl.body.items
+                if isinstance(item, model.ReadableBlock) and item.kind == "definitions"
+            )
+            mutated_document = replace(
+                document_decl,
+                body=replace(
+                    document_decl.body,
+                    items=tuple(
+                        replace(
+                            item,
+                            payload=(
+                                item.payload[0],
+                                model.ReadableListItem(
+                                    key=None,
+                                    text="Wrong shape.",
+                                    source_span=item.payload[0].source_span,
+                                ),
+                            ),
+                        )
+                        if item is definitions_block
+                        else item
+                        for item in document_decl.body.items
+                    ),
+                ),
+            )
+            mutated_prompt = replace(
+                prompt,
+                declarations=tuple(
+                    mutated_document if decl is document_decl else decl
+                    for decl in prompt.declarations
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(mutated_prompt).compile_readable_declaration(
+                    "document",
+                    "BrokenGuide",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E297")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        draft: "Draft"') + 1,
+        )
+        self.assertIn("Readable definitions entries must stay definition items", str(error))
+
+    def test_skills_cycle_points_at_skills_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                skill GroundingSkill: "Grounding Skill"
+                    purpose: "Ground the reply."
+
+                skills CycleA[CycleB]: "Skills"
+                    skill primary: GroundingSkill
+                        requirement: Required
+
+                skills CycleB[CycleA]: "Skills"
+                    skill primary: GroundingSkill
+                        requirement: Required
+
+                agent Demo:
+                    role: "Use the cyclic skills block."
+                    skills: CycleA
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E250")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('skills CycleA[CycleB]: "Skills"') + 1,
+        )
+        self.assertIn("Cyclic skills inheritance", str(error))
+
+    def test_missing_inherited_skills_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                skill GroundingSkill: "Grounding Skill"
+                    purpose: "Ground the reply."
+
+                skills BaseSkills: "Skills"
+                    skill primary: GroundingSkill
+                        requirement: Required
+
+                skills ChildSkills[BaseSkills]: "Skills"
+                    "Keep the inherited shape."
+
+                agent Demo:
+                    role: "Keep inherited skills complete."
+                    skills: ChildSkills
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('skills ChildSkills[BaseSkills]: "Skills"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("    skill primary: GroundingSkill") + 1,
+        )
+        self.assertIn("Missing inherited skills entry in ChildSkills: primary", str(error))
+
+    def test_analysis_cycle_points_at_analysis_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                analysis CycleA[CycleB]: "Cycle A"
+                    facts: "Facts"
+                        "Keep moving."
+
+                analysis CycleB[CycleA]: "Cycle B"
+                    facts: "Facts"
+                        "Keep moving."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_readable_declaration(
+                    "analysis",
+                    "CycleA",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('analysis CycleA[CycleB]: "Cycle A"') + 1,
+        )
+        self.assertIn("Cyclic analysis inheritance", str(error))
+
+    def test_missing_inherited_analysis_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                analysis BaseAnalysis: "Base Analysis"
+                    facts: "Facts"
+                        "Keep the key fact."
+
+                analysis ChildAnalysis[BaseAnalysis]: "Child Analysis"
+                    "Keep the inherited shape."
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_readable_declaration(
+                    "analysis",
+                    "ChildAnalysis",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index(
+                'analysis ChildAnalysis[BaseAnalysis]: "Child Analysis"'
+            )
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    facts: "Facts"') + 1,
+        )
+        self.assertIn("Missing inherited analysis entry in ChildAnalysis: facts", str(error))
+
+    def test_analysis_empty_basis_points_at_statement_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                analysis BrokenAnalysis: "Broken Analysis"
+                    stages: "Stages"
+                        prove "Release plan" from {CurrentPlan}
+
+                input CurrentPlan: "Current Plan"
+                    source: File
+                        path: "unit_root/CURRENT_PLAN.md"
+                    shape: MarkdownDocument
+                    requirement: Required
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+            analysis_decl = next(
+                decl for decl in prompt.declarations if isinstance(decl, model.AnalysisDecl)
+            )
+            section = analysis_decl.body.items[0]
+            prove_stmt = section.items[0]
+            mutated_analysis = replace(
+                analysis_decl,
+                body=replace(
+                    analysis_decl.body,
+                    items=(
+                        replace(
+                            section,
+                            items=(
+                                replace(
+                                    prove_stmt,
+                                    basis=model.LawPathSet(
+                                        paths=(),
+                                        source_span=prove_stmt.basis.source_span,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+            mutated_prompt = replace(
+                prompt,
+                declarations=tuple(
+                    mutated_analysis if decl is analysis_decl else decl
+                    for decl in prompt.declarations
+                ),
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(mutated_prompt).compile_readable_declaration(
+                    "analysis",
+                    "BrokenAnalysis",
+                )
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('        prove "Release plan" from {CurrentPlan}') + 1,
+        )
+        self.assertIn("Analysis basis may not be empty", str(error))
 
 
 if __name__ == "__main__":

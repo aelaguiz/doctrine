@@ -3,14 +3,15 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.readable_diagnostics import (
     duplicate_readable_key_error,
     invalid_readable_block_error,
+    readable_source_span,
 )
 from doctrine._compiler.resolved_types import (
-    CompileError,
     CompiledBulletsBlock,
     CompiledCalloutBlock,
     CompiledChecklistBlock,
@@ -39,6 +40,22 @@ from doctrine._compiler.resolved_types import (
 
 class CompileReadableBlocksMixin:
     """Readable block compile helpers for CompilationContext."""
+
+    def _internal_readable_block_compile_error(
+        self,
+        *,
+        detail: str,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+    ):
+        return compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=detail,
+            path=unit.prompt_file.source_path,
+            source_span=source_span,
+            hints=("This is a compiler bug, not a prompt authoring error.",),
+        )
 
     def _compile_authored_readable_block(
         self,
@@ -97,8 +114,13 @@ class CompileReadableBlocksMixin:
                 kind=block.kind,
             ):
                 if not isinstance(list_item, model.ReadableListItem):
-                    raise CompileError(
-                        f"Readable {block.kind} items must stay list entries in {block_owner_label}"
+                    raise invalid_readable_block_error(
+                        detail=(
+                            f"Readable {block.kind} items must stay list entries in "
+                            f"{block_owner_label}."
+                        ),
+                        unit=unit,
+                        source_span=readable_source_span(list_item) or block.source_span,
                     )
                 if list_item.key is not None:
                     if list_item.key in seen_keys:
@@ -172,8 +194,13 @@ class CompileReadableBlocksMixin:
                 kind="definitions",
             ):
                 if not isinstance(definition, model.ReadableDefinitionItem):
-                    raise CompileError(
-                        f"Readable definitions entries must stay definition items in {block_owner_label}"
+                    raise invalid_readable_block_error(
+                        detail=(
+                            "Readable definitions entries must stay definition items in "
+                            f"{block_owner_label}."
+                        ),
+                        unit=unit,
+                        source_span=readable_source_span(definition) or block.source_span,
                     )
                 if definition.key in seen_keys:
                     raise duplicate_readable_key_error(
@@ -212,8 +239,13 @@ class CompileReadableBlocksMixin:
             )
         if block.kind == "table":
             if not isinstance(block.payload, model.ReadableTableData):
-                raise CompileError(
-                    f"Readable table payload must stay table-shaped in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable table payload must stay table-shaped in "
+                        f"{block_owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=readable_source_span(block.payload) or block.source_span,
                 )
             resolved_columns: list[CompiledTableColumn] = []
             column_keys: dict[str, model.ReadableTableColumn] = {}
@@ -387,8 +419,13 @@ class CompileReadableBlocksMixin:
             )
         if block.kind == "callout":
             if not isinstance(block.payload, model.ReadableCalloutData):
-                raise CompileError(
-                    f"Readable callout payload must stay callout-shaped in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable callout payload must stay callout-shaped in "
+                        f"{block_owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=readable_source_span(block.payload) or block.source_span,
                 )
             if block.payload.kind is not None and block.payload.kind not in {
                 "required",
@@ -429,8 +466,13 @@ class CompileReadableBlocksMixin:
             )
         if block.kind == "code":
             if not isinstance(block.payload, model.ReadableCodeData):
-                raise CompileError(
-                    f"Readable code payload must stay code-shaped in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable code payload must stay code-shaped in "
+                        f"{block_owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=readable_source_span(block.payload) or block.source_span,
                 )
             if "\n" not in block.payload.text:
                 raise invalid_readable_block_error(
@@ -448,8 +490,13 @@ class CompileReadableBlocksMixin:
             )
         if block.kind in {"markdown", "html"}:
             if not isinstance(block.payload, model.ReadableRawTextData):
-                raise CompileError(
-                    f"Readable {block.kind} payload must stay text-shaped in {block_owner_label}"
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable {block.kind} payload must stay text-shaped in "
+                        f"{block_owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=readable_source_span(block.payload) or block.source_span,
                 )
             text = self._interpolate_authored_prose_string(
                 block.payload.text,
@@ -495,7 +542,14 @@ class CompileReadableBlocksMixin:
             )
         if block.kind == "image":
             if not isinstance(block.payload, model.ReadableImageData):
-                raise CompileError(f"Readable image payload must stay image-shaped in {block_owner_label}")
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable image payload must stay image-shaped in "
+                        f"{block_owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=readable_source_span(block.payload) or block.source_span,
+                )
             return CompiledImageBlock(
                 title=title or _humanize_key(block.key),
                 src=self._interpolate_authored_prose_string(
@@ -540,4 +594,11 @@ class CompileReadableBlocksMixin:
                 requirement=block.requirement,
                 when_text=when_text,
             )
-        raise CompileError(f"Unsupported readable block kind in {block_owner_label}: {block.kind}")
+        raise self._internal_readable_block_compile_error(
+            detail=(
+                f"Internal compiler error: unsupported readable block kind in "
+                f"{block_owner_label}: {block.kind}"
+            ),
+            unit=unit,
+            source_span=block.source_span,
+        )

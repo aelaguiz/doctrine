@@ -141,6 +141,46 @@ class OutputInheritanceTests(unittest.TestCase):
         self.assertIn("| Requirement | Required |", rendered)
         self.assertIn("#### Test", rendered)
 
+    def test_grouped_output_inheritance_can_keep_shared_handoff_shape_and_add_local_field(self) -> None:
+        agent = self._compile_agent(
+            """
+            output BaseHandoff: "Base Handoff"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                must_include: "Must Include"
+                    what_changed: "What Changed"
+                        "Say what changed."
+
+                standalone_read: "Standalone Read"
+                    "The note should stand on its own."
+
+            output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"
+                inherit {target, shape, requirement, must_include, standalone_read}
+
+                hit: "Test"
+                    "blah blah blah"
+
+            agent Demo:
+                role: "Emit the inherited handoff output."
+                outputs: "Outputs"
+                    LessonsLeadOutput
+            """,
+            agent_name="Demo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("### Lessons Lead Output", rendered)
+        self.assertIn("| Contract | Value |", rendered)
+        self.assertIn("| Target | Turn Response |", rendered)
+        self.assertIn("| Shape | Comment |", rendered)
+        self.assertIn("| Requirement | Required |", rendered)
+        self.assertIn("#### Must Include", rendered)
+        self.assertIn("| **What Changed** | Say what changed. |", rendered)
+        self.assertIn("#### Test", rendered)
+        self.assertIn("blah blah blah", rendered)
+
     def test_imported_output_inheritance_keeps_parent_owned_item_and_attachment_refs(self) -> None:
         agent = self._compile_agent(
             """

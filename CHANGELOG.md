@@ -146,6 +146,13 @@ payload text and breaking releases with no real upgrade steps.
 ### Fixed
 - Fixed custom authored workflow slots such as `read_first` so workflows with
   root readable blocks no longer fail with `E901` during emit.
+- Fixed emit-time previous-turn extraction so zero-config
+  `RallyPreviousTurnOutput` now resolves through `final_output.route`, and
+  workflow-root readable blocks no longer crash flow-graph collection on that
+  path.
+- Fixed emit-time previous-turn extraction so attached review outcome routes
+  such as `review.on_reject -> Agent` now count as reachable predecessor
+  edges for explicit `RallyPreviousTurnOutput` selectors.
 - Fixed output-guard validation so ordinary `shape: JsonObject` input fields
   such as `RouteFacts.live_job` still work in workflow-law and route-only
   guards after previous-turn input validation tightened.

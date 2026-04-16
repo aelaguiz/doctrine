@@ -67,15 +67,63 @@ class ToAst(
         return prompt_file
 
     def prompt_file(self, items):
-        return model.PromptFile(declarations=tuple(items))
+        declarations = []
+        for item in items:
+            if isinstance(item, list):
+                declarations.extend(item)
+            else:
+                declarations.append(item)
+        return model.PromptFile(declarations=tuple(declarations))
 
     @v_args(inline=True)
     def inheritance(self, parent_ref):
         return parent_ref
 
-    @v_args(meta=True, inline=True)
-    def import_decl(self, meta, path):
-        return _with_source_span(model.ImportDecl(path=path), meta)
+    def import_alias(self, items):
+        return items[0]
+
+    def grouped_inherit_keys(self, items):
+        return tuple(items)
+
+    def review_grouped_inherit_keys(self, items):
+        return tuple(items)
+
+    def schema_grouped_inherit_keys(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def import_decl(self, declaration):
+        return declaration
+
+    def imported_symbol_binding(self, items):
+        name = items[0]
+        alias = items[1] if len(items) > 1 else None
+        return (name, alias)
+
+    @v_args(meta=True)
+    def module_import_decl(self, meta, items):
+        path = items[0]
+        alias = items[1] if len(items) > 1 else None
+        return _with_source_span(
+            model.ImportDecl(path=path, alias=alias),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def from_import_decl(self, meta, items):
+        path = items[0]
+        bindings = items[1:]
+        return [
+            _with_source_span(
+                model.ImportDecl(
+                    path=path,
+                    imported_name=name,
+                    alias=alias,
+                ),
+                meta,
+            )
+            for name, alias in bindings
+        ]
 
     @v_args(meta=True)
     def render_profile_decl(self, meta, items):

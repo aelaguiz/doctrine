@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
+from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
@@ -33,6 +34,7 @@ class ValidateReviewBranchesMixin:
                     item.cases,
                     unit=unit,
                     owner_label=owner_label,
+                    match_source_span=item.source_span,
                 )
                 for case in item.cases:
                     self._validate_review_outcome_items(
@@ -408,6 +410,8 @@ class ValidateReviewBranchesMixin:
         route: model.ReviewOutcomeRouteStmt,
         *,
         review_unit: IndexedUnit,
+        field_location_unit: IndexedUnit,
+        field_source_span: model.SourceSpan | None,
         output_decl: model.OutputDecl,
         output_unit: IndexedUnit,
         field_path: tuple[str, ...],
@@ -430,9 +434,33 @@ class ValidateReviewBranchesMixin:
                 model.GuardedOutputScalar,
             ),
         ):
-            raise CompileError(
-                f"Review next_owner binding must point at an output field in {owner_label}: "
-                f"{output_decl.name}.{'.'.join(field_path)}"
+            target_source_span = getattr(target, "source_span", None)
+            raise review_compile_error(
+                code="E496",
+                summary="Review next owner does not match the bound output field",
+                detail=(
+                    f"Review next_owner binding must point at an output field in "
+                    f"{owner_label}: {output_decl.name}.{'.'.join(field_path)}"
+                ),
+                unit=field_location_unit,
+                source_span=field_source_span,
+                related=(
+                    ()
+                    if (
+                        target_source_span is None
+                        or (
+                            field_source_span == target_source_span
+                            and field_location_unit == output_unit
+                        )
+                    )
+                    else (
+                        review_related_site(
+                            label="resolved binding target",
+                            unit=output_unit,
+                            source_span=target_source_span,
+                        ),
+                    )
+                ),
             )
         route_branch = self._route_semantic_branch_from_route(
             route,

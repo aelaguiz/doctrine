@@ -40,7 +40,9 @@ consistency_pass: done 2026-04-16 (decision: no; routed to reformat)
 reformat_canonical_scaffold: done 2026-04-16
 consistency_pass_2: done 2026-04-16 (decision: no; routed to phase-plan)
 phase_plan: done 2026-04-16
-recommended_flow: consistency pass -> implement
+consistency_pass_3: done 2026-04-16 (decision: yes; after phase-plan)
+consistency_pass_4: done 2026-04-16 (decision: yes; stale cross-section claims repaired)
+recommended_flow: implement
 note: This block tracks stage order only. It never overrides readiness blockers caused by unresolved decisions.
 -->
 <!-- arch_skill:block:planning_passes:end -->
@@ -401,12 +403,10 @@ Resolved decisions:
   stay a plan doc.
 
 No North-Star-level plan-shaping blocker remains. The remaining known gaps are
-obligation-alignment items inside Sections 5, 6, and 7 (e.g., promoting the
-Section 5.2 surface rule and the §5.5 settings surface into the matching phase
-Exit criteria, naming `emit_flow --lint` scope in Phase 5, and adding a
-canonical 6.2 Migration Notes subsection). Those are tracked in the
-`consistency_pass` helper block below and must be closed before
-`implement-loop`.
+now closed. The earlier obligation-alignment gaps in Sections 5, 6, and 7 were
+resolved by the later `phase-plan` and `consistency-pass` refreshes. The only
+intentional carries left are the recorded Appendix B items (§5.6 live docs
+subsection and §6.1 change-map columns). They do not block `implement`.
 
 # 4) Current Architecture (as-is)
 
@@ -700,7 +700,7 @@ intentional column drift and the expected column expansion during `phase-plan`.
 | Targeted linter tests | new `tests/test_agent_linter_*` | Needed to prove packet building, normalization, renderers, and boundary behavior | include now | No live provider dependency in required test proof. |
 | Compile-adjacent integration | `doctrine/emit_docs.py`, `doctrine/emit_flow.py`, and nearby emit helpers | Compile-process use for lint, including multi-target batch mode, across both emit surfaces | staged include (Phase 5) | Additive `--lint` only. Landed after the standalone CLI is stable. Do not make lint a compile requirement. |
 | Compiler diagnostics | `docs/COMPILER_ERRORS.md`, diagnostic smoke, compiler tests | Boundary must stay clear | defer unless boundary wording must cross-link | Do not merge `AL###` into compiler error catalogs. |
-| Live docs path | new `docs/AGENT_LINTER.md`, `docs/README.md`, `docs/AUTHORING_PATTERNS.md`, maybe `docs/EMIT_GUIDE.md` | Dated plans are not live docs | staged include (Phase 7) | This plan stays a plan doc. |
+| Live docs path | new `docs/AGENT_LINTER.md`, `docs/README.md`, `docs/AUTHORING_PATTERNS.md`, `docs/EMIT_GUIDE.md` | Dated plans are not live docs | staged include (Phase 7) | This plan stays a plan doc. |
 | VS Code extension | `editors/vscode/**` | User explicitly wants editor-grade linter behavior | staged include (Phase 6) | Reuse the current extension. |
 | Other editors / LSP server | new server surface, alternate editors | Nice long-term path, not required for phase 1 | explicit defer | Keep data shape LSP-friendly now. |
 | SARIF / GitHub reporter | new renderer surfaces | Good future CI path, not needed to prove core value | explicit defer | JSON and Markdown come first. |
@@ -1050,9 +1050,9 @@ intentional column drift and the expected column expansion during `phase-plan`.
     in code).
   - If `--lint` is requested and the linter cannot run, surface a
     clear linter execution failure instead of faking a pass.
-  - If evidence later shows `emit_flow` has no authored-source
-    exposure worth linting, add a Decision Log entry before skipping
-    it. Do not silently cut it.
+  - Keep `emit_flow --lint` in the same shipped Phase 5 cut with the
+    same additive, opt-in contract. Do not park it behind a later
+    exception.
 * Verification (required proof):
   - Integration tests: `emit_docs --lint` on a single target.
   - Integration tests: `emit_docs --lint` on a multi-target run with
@@ -1073,8 +1073,10 @@ intentional column drift and the expected column expansion during `phase-plan`.
   - `emit_docs --lint` works for single-target runs.
   - `emit_docs --lint` works for multi-target runs with cross-agent
     duplicate detection.
-  - `emit_flow --lint` ships alongside, or a Decision Log entry
-    explicitly records why it is not wired up.
+  - `emit_flow --lint` works for at least one target-backed run that
+    carries authored source.
+  - `emit_flow --lint` uses the same additive, opt-in, threshold, and
+    failure contract as `emit_docs --lint`.
   - When `--lint` is not requested, the linter does not run.
   - `make verify-examples` and `make verify-diagnostics` both pass.
   - No compiler test or docs surface treats a lint failure as a
@@ -1288,9 +1290,9 @@ Sequencing:
 
 - Phase 1-4 ship the CLI path (batch + single-target) with terminal, JSON, and
   Markdown renderers before any compile-adjacent or editor work.
-- Phase 5 introduces the compile-adjacent `--lint` flag as a staged include
-  behind the standalone CLI. Skipping a target is a Decision Log entry, not a
-  silent omission.
+- Phase 5 introduces the compile-adjacent `--lint` flag on both `emit_docs`
+  and `emit_flow` behind the standalone CLI. Both emit surfaces stay in scope
+  for the same shipped cut.
 - Phase 6 turns on VS Code integration with the opt-in settings surface; the
   extension never raises `Error` diagnostics for lint findings.
 - Phase 7 promotes the user-facing material to `docs/AGENT_LINTER.md` and
@@ -1334,9 +1336,8 @@ User-facing runtime behavior:
 <!-- arch_skill:block:consistency_pass:start -->
 ## Consistency Pass
 
-- Reviewers: explorer 1, explorer 2, self-integrator, post-`phase-plan`
-  obligation-sweep explorer
-- Date: 2026-04-16 (refreshed after `phase-plan`)
+- Reviewers: self-integrator
+- Date: 2026-04-16 (refreshed after stale cross-section repair)
 - Scope checked:
   - frontmatter, `# TL;DR`, `planning_passes`
   - `# 0)` through `# 10)` cross-section agreement
@@ -1351,20 +1352,14 @@ User-facing runtime behavior:
     criteria
   - Appendix A heading demotion and Appendix B conversion notes
 - Findings summary:
-  - `phase-plan` added the canonical per-phase fields to all seven phases
-    inside the `arch_skill:block:phase_plan` block. Every phase now carries
-    `Goal`, `Work`, `Checklist (must all be done)`, `Verification (required
-    proof)`, `Docs/comments`, `Exit criteria (all required)`, and
-    `Rollback`.
-  - Obligation sweep across §5.1 owner paths, §5.2 required packet facts
-    and surface rule, §5.3 canonical finding-model fields, §5.4 invariants
-    needing in-code enforcement, §5.5 five VS Code settings, §6.1 change-
-    map dispositions (include now / staged include), §6.2 canonical owner
-    paths + compatibility posture + behavior-preservation signals + docs-
-    update list, §8.1-8.3 verification commitments, and §9.3 operational
-    runbook rules confirms every required obligation is bound to a
-    `Checklist` or `Exit criteria` in the owning phase. No orphan
-    obligations stranded in `Work` prose.
+  - §3.3 still said obligation-alignment gaps remained open even though the
+    later `phase-plan` pass and the prior `consistency-pass` verdict already
+    said those gaps were closed.
+  - Phase 5 and §9 still left a live `emit_flow --lint` escape hatch even
+    though Sections 0, 3, 5, and 6 already locked both emit surfaces in
+    scope for the same shipped cut.
+  - The VS Code Decision Log entry overstated current repo reality by saying
+    the extension already calls compile diagnostics.
   - Structural items carried as intentional exceptions (recorded in
     Appendix B, not blockers): §5.6 live docs subsection sits outside
     canonical 5.1-5.5; §6.1 change-map columns keep a `Surface / Paths /
@@ -1372,12 +1367,15 @@ User-facing runtime behavior:
     Symbol / Current behavior / Required change / Why / New API / Tests
     impacted`. The canonical migration concerns are fully covered in §6.2.
 - Integrated repairs (this refresh):
-  - `phase-plan` rewrote §7 so every phase carries the canonical field
-    set.
-  - `planning_passes` now records `phase_plan: done 2026-04-16` and
-    `consistency_pass_2: done 2026-04-16 (decision: no; routed to
-    phase-plan)`. `recommended_flow` collapses to
-    `consistency pass -> implement`.
+  - §3.3 now says the earlier obligation-alignment gaps are closed and names
+    only the recorded Appendix B carries as non-blocking.
+  - Phase 5 and §9 now keep `emit_flow --lint` in the same shipped Phase 5
+    cut with no Decision Log escape hatch.
+  - The VS Code Decision Log entry now matches repo truth: the current
+    extension owns language support and navigation, not compile diagnostics.
+  - `planning_passes` now records the post-`phase-plan`
+    `consistency_pass_3`, this refresh as `consistency_pass_4`, and
+    `recommended_flow: implement`.
 - Remaining inconsistencies:
   - none blocking. Two prior structural items (§5.6 live docs subsection,
     §6.1 change-map columns) remain intentional carries recorded in
@@ -1464,11 +1462,11 @@ slots.
 
 - Decision: Use `editors/vscode/` as the first editor adapter instead of
   starting a new language server.
-- Context: A VS Code extension already exists and already calls compile
-  diagnostics.
+- Context: A VS Code extension already exists for Doctrine language support,
+  import-path clicks, and Go to Definition.
 - Options: start fresh with an LSP server; reuse existing extension.
-- Consequences: Faster path to real editor surface; same extension owns
-  compile + lint.
+- Consequences: Faster path to real editor surface; the same extension owns
+  navigation + lint.
 - Follow-ups: Phase 6 wires this in.
 
 ## 2026-04-16 - LSP-shaped finding model
@@ -1536,9 +1534,8 @@ slots.
 - Options: emit_docs only; both; neither in Phase 5.
 - Consequences: Flow authoring drift is caught in the same phase as docs
   authoring drift.
-- Follow-ups: If evidence later shows `emit_flow` has no authored-source
-  exposure worth linting, record that as a separate Decision Log entry
-  before skipping it.
+- Follow-ups: Phase 5 keeps `emit_flow --lint` in the same shipped cut and
+  must prove the surface works on a target-backed authored-source run.
 
 ## 2026-04-16 - Consistency-pass result: do not proceed to implement
 
@@ -1637,6 +1634,21 @@ slots.
 - Follow-ups: During `implement`, keep §7 authoritative; if real
   execution truth disagrees with the plan, stop and repair the plan
   before continuing on a rewritten story.
+
+## 2026-04-16 - Fourth consistency-pass: repair stale cross-section claims
+
+- Decision: Refresh `consistency-pass` and repair the stale cross-section
+  claims before implementation starts.
+- Context: A later cold read found three drifts after the earlier
+  `Decision: proceed to implement? yes`: §3.3 still described already-closed
+  obligation gaps as open, Phase 5 and §9 still allowed an `emit_flow`
+  escape hatch, and the VS Code Decision Log entry overstated current repo
+  reality.
+- Options: implement from the stale artifact; repair the artifact first.
+- Consequences: The plan now says one thing end to end about readiness,
+  `emit_flow --lint` scope, and the current VS Code adapter baseline.
+- Follow-ups: Next command stays `implement` (or `implement-loop` /
+  `auto-implement` when the user wants the controller loop).
 
 # Appendix A) Imported Notes (unplaced; do not delete)
 

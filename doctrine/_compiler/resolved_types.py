@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from typing import TypeAlias
 
 import doctrine._model as model
@@ -157,6 +157,7 @@ class ResolvedSectionItem:
     key: str
     title: str
     items: tuple[ResolvedSectionBodyItem, ...]
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 @dataclass(slots=True, frozen=True)
@@ -173,6 +174,7 @@ class ResolvedSkillEntry:
     target_unit: IndexedUnit
     skill_decl: model.SkillDecl
     items: tuple[model.RecordItem, ...]
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 ResolvedSkillsSectionBodyItem: TypeAlias = model.ProseLine | ResolvedSkillEntry
@@ -183,6 +185,7 @@ class ResolvedSkillsSection:
     key: str
     title: str
     items: tuple[ResolvedSkillsSectionBodyItem, ...]
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 ResolvedSkillsItem = ResolvedSkillsSection | ResolvedSkillEntry
@@ -212,6 +215,7 @@ class ResolvedAnalysisSection:
     key: str
     title: str
     items: tuple[ResolvedAnalysisSectionItem, ...]
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 @dataclass(slots=True, frozen=True)
@@ -228,6 +232,7 @@ class ResolvedSchemaArtifact:
     title: str
     ref: model.NameRef
     artifact: "ContractArtifact"
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 @dataclass(slots=True, frozen=True)
@@ -235,6 +240,7 @@ class ResolvedSchemaGroup:
     key: str
     title: str
     members: tuple[str, ...]
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 SchemaAddressableItem: TypeAlias = (
@@ -274,6 +280,7 @@ class ResolvedIoSection:
     section: CompiledSection
     artifacts: tuple["ContractArtifact", ...] = ()
     bindings: tuple["ContractBinding", ...] = ()
+    source_span: model.SourceSpan | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -298,6 +305,7 @@ class ResolvedIoBody:
 class ResolvedWorkflowSkillsItem:
     key: str
     body: ResolvedSkillsBody
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 ResolvedWorkflowItem = (
@@ -441,6 +449,8 @@ class LawBranch:
 class ReviewContractGate:
     key: str
     title: str
+    unit: IndexedUnit | None = dataclass_field(default=None, compare=False)
+    source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
 @dataclass(slots=True, frozen=True)

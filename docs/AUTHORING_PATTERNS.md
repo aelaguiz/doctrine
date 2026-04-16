@@ -355,6 +355,10 @@ Best anchors:
 - [23_first_class_io_blocks](../examples/23_first_class_io_blocks/prompts/AGENTS.prompt)
 - [24_io_block_inheritance](../examples/24_io_block_inheritance/prompts/AGENTS.prompt)
 
+When one child keeps several inherited keyed items unchanged, prefer grouped
+`inherit { ... }`. Doctrine lowers it to the same explicit inherited
+accounting it already uses for singular `inherit key`.
+
 ### Keep host facts thin
 
 Bind the host state the agent truly needs.
@@ -402,6 +406,9 @@ Best anchors:
 - [24_io_block_inheritance](../examples/24_io_block_inheritance/prompts/AGENTS.prompt)
 - [60_shared_readable_bodies](../examples/60_shared_readable_bodies/prompts/AGENTS.prompt)
 
+Use grouped `inherit { ... }` when a child keeps several inherited IO wrappers
+unchanged before one local override.
+
 ### Keep skills semantic and keep runtime config elsewhere
 
 Use inline `skill` and `skills` to describe capability meaning inside
@@ -434,6 +441,9 @@ Best anchors:
 Split by family, contract, shared role-home, and outputs.
 Import shared doctrine where it is used.
 Keep `emit_flow` entrypoints separate when the family needs a graph view.
+Use `import ... as ...` when a module prefix is repeated a lot.
+Use `from ... import ...` when one declaration is the only thing you need.
+Keep `import module` when you still want the module path to stay visible.
 
 Do not do this:
 - Do not put every owner, contract, skill, and output into one mega-file.

@@ -175,7 +175,7 @@ class RouteOutputSemanticsTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn(
-            "This pass runs only when RouteFacts.live_job is route_repair.",
+            "Use this pass only when route facts live job is route_repair.",
             rendered,
         )
 
@@ -205,7 +205,7 @@ class RouteOutputSemanticsTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn(
-            "This pass runs only when current_handoff.live_job is route_repair.",
+            "Use this pass only when current handoff live job is route_repair.",
             rendered,
         )
 
@@ -396,10 +396,11 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("#### Next Owner", rendered)
-        self.assertIn("Show this only when a routed owner exists.", rendered)
-        self.assertIn("Review Lead", rendered)
-        self.assertNotIn("- Next Owner: Review Lead", rendered)
+        self.assertIn(
+            "- Next Owner: Show this only when a routed owner exists. Review Lead",
+            rendered,
+        )
+        self.assertNotIn("#### Next Owner", rendered)
 
     def test_review_output_can_combine_review_and_route_semantics(self) -> None:
         agent = self._compile_agent(
@@ -715,11 +716,24 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("#### Kind", rendered)
-        self.assertIn("Show this only when a routed owner exists.", rendered)
-        self.assertIn("Show this only when not (a routed owner exists).", rendered)
-        self.assertIn("#### Next Owner", rendered)
-        self.assertIn("ReviewLead", rendered)
+        self.assertIn(
+            "- Kind: Show this only when a routed owner exists. `handoff`",
+            rendered,
+        )
+        self.assertIn(
+            "- Next Owner: Show this only when a routed owner exists. ReviewLead",
+            rendered,
+        )
+        self.assertIn(
+            "- Kind: Show this only when not (a routed owner exists). `done`",
+            rendered,
+        )
+        self.assertIn(
+            "- Summary: Show this only when not (a routed owner exists). `Write one short closeout summary.`",
+            rendered,
+        )
+        self.assertNotIn("#### Kind", rendered)
+        self.assertNotIn("#### Next Owner", rendered)
 
     def test_handoff_routing_prose_routes_do_not_seed_route_semantics(self) -> None:
         error = self._compile_error(

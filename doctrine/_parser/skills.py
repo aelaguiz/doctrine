@@ -11,6 +11,8 @@ from doctrine._parser.parts import (
     SkillsBodyParts,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _meta_line_column,
     _positioned_body_prose,
     _positioned_enum_member_field,
@@ -120,41 +122,57 @@ class SkillsTransformerMixin:
     def skills_body_line(self, value):
         return value
 
-    @v_args(inline=True)
-    def skill_entry(self, key, target, body=None):
-        return model.SkillEntry(
-            key=key,
-            target=target,
-            items=tuple(body or ()),
+    @v_args(meta=True, inline=True)
+    def skill_entry(self, meta, key, target, body=None):
+        return _with_source_span(
+            model.SkillEntry(
+                key=key,
+                target=target,
+                items=tuple(body or ()),
+            ),
+            meta,
         )
 
     @v_args(meta=True, inline=True)
     def skills_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def skills_override_entry(self, key, target, body=None):
-        return model.OverrideSkillEntry(
-            key=key,
-            target=target,
-            items=tuple(body or ()),
+    @v_args(meta=True, inline=True)
+    def skills_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def skills_override_entry(self, meta, key, target, body=None):
+        return _with_source_span(
+            model.OverrideSkillEntry(
+                key=key,
+                target=target,
+                items=tuple(body or ()),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def skills_section(self, key, title, items):
-        return model.SkillsSection(key=key, title=title, items=tuple(items))
+    @v_args(meta=True, inline=True)
+    def skills_section(self, meta, key, title, items):
+        return _with_source_span(
+            model.SkillsSection(key=key, title=title, items=tuple(items)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def skills_override_section(self, key, title_or_items, items=None):
+    @v_args(meta=True, inline=True)
+    def skills_override_section(self, meta, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
         if items is not None:
             title = title_or_items
             section_items = items
-        return model.OverrideSkillsSection(
-            key=key,
-            title=title,
-            items=tuple(section_items),
+        return _with_source_span(
+            model.OverrideSkillsSection(
+                key=key,
+                title=title,
+                items=tuple(section_items),
+            ),
+            meta,
         )
 
     def record_body(self, items):
@@ -248,6 +266,7 @@ class SkillsTransformerMixin:
     def skills_body(self, items):
         preamble: list[model.ProseLine] = []
         skills_items: list[model.SkillsItem] = []
+        items = _flatten_grouped_items(items)
         for item in items:
             prose_value = _body_prose_value(item)
             if prose_value is not None:

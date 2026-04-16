@@ -910,9 +910,10 @@ class DisplayMixin:
             return "this turn"
         try:
             root_path = model.LawPath(parts=parts)
-            return self._display_law_path_root(root_path, unit=unit).lower()
+            root_text = self._display_law_path_root(root_path, unit=unit)
         except CompileError:
-            return _humanize_key(parts[-1]).lower()
+            root_text = ".".join(parts)
+        return ".".join(_humanize_key(part).lower() for part in root_text.split("."))
 
     def _render_expr(self, expr: model.Expr, *, unit: IndexedUnit) -> str:
         if isinstance(expr, model.ExprRef):

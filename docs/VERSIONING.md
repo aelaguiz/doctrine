@@ -51,6 +51,12 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Prefer the next patch tag for routine public work. Use `v1.0.2`, not
   `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
   non-breaking releases.
+- Restoring a broken stable surface such as routed previous-turn emit facts is
+  still a patch fix. It is not a new additive feature when the public shape
+  stays the same.
+- The same patch rule applies when previous-turn predecessor analysis missed an
+  already-shipped route-bearing surface such as `review.on_accept` or
+  `review.on_reject`.
 - Use `CHANGELOG.md`, the latest signed annotated tag, and the matching
   GitHub release as the public release record.
 

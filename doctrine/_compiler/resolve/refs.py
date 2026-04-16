@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from doctrine import model
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
@@ -7,8 +9,9 @@ from doctrine._compiler.constants import (
     _READABLE_DECL_REGISTRIES,
     _REVIEW_VERDICT_TEXT,
 )
+from doctrine._compiler.indexing import ImportedSymbolBinding
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
-from doctrine._compiler.reference_diagnostics import reference_compile_error
+from doctrine._compiler.reference_diagnostics import reference_compile_error, reference_related_site
 from doctrine._compiler.resolved_types import (
     AddressableRootDecl,
     CompileError,
@@ -18,8 +21,106 @@ from doctrine._compiler.resolved_types import (
 )
 
 
+@dataclass(slots=True, frozen=True)
+class _RefLookupTarget:
+    unit: IndexedUnit
+    declaration_name: str
+    imported_symbol: ImportedSymbolBinding | None = None
+
+
 class ResolveRefsMixin:
     """Ref lookup helpers for ResolveMixin."""
+
+    def _resolve_visible_imported_unit(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> IndexedUnit:
+        target_unit = unit.visible_imported_units.get(ref.module_parts)
+        if target_unit is None:
+            target_unit = next(
+                (
+                    binding.target_unit
+                    for binding in unit.imported_symbols_by_name.values()
+                    if binding.target_unit.module_parts == ref.module_parts
+                ),
+                None,
+            )
+        if target_unit is None:
+            raise reference_compile_error(
+                code="E280",
+                summary="Missing import module",
+                detail=f"Missing import module: {'.'.join(ref.module_parts)}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
+        return target_unit
+
+    def _decl_lookup_targets(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[_RefLookupTarget, ...]:
+        if ref.module_parts:
+            if ref.module_parts == unit.module_parts:
+                return (_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name),)
+            return (
+                _RefLookupTarget(
+                    unit=self._resolve_visible_imported_unit(ref, unit=unit),
+                    declaration_name=ref.declaration_name,
+                ),
+            )
+
+        targets = [_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name)]
+        imported_symbol = unit.imported_symbols_by_name.get(ref.declaration_name)
+        if imported_symbol is None:
+            return tuple(targets)
+
+        imported_target = _RefLookupTarget(
+            unit=imported_symbol.target_unit,
+            declaration_name=imported_symbol.target_name,
+            imported_symbol=imported_symbol,
+        )
+        local_target = targets[0]
+        if (
+            imported_target.unit.prompt_root != local_target.unit.prompt_root
+            or imported_target.unit.module_parts != local_target.unit.module_parts
+            or imported_target.declaration_name != local_target.declaration_name
+        ):
+            targets.append(imported_target)
+        return tuple(targets)
+
+    def _raise_imported_symbol_ambiguity(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        binding: ImportedSymbolBinding,
+        detail: str,
+        local_decl: object | None = None,
+        local_label: str = "local declaration",
+    ) -> None:
+        related = [reference_related_site(label="import line", unit=unit, source_span=binding.import_decl.source_span)]
+        if local_decl is not None:
+            related.insert(
+                0,
+                reference_related_site(
+                    label=local_label,
+                    unit=unit,
+                    source_span=getattr(local_decl, "source_span", None),
+                ),
+            )
+        raise reference_compile_error(
+            code="E308",
+            summary="Ambiguous imported symbol ownership",
+            detail=detail,
+            unit=unit,
+            source_span=ref.source_span,
+            related=tuple(related),
+            hints=(
+                "Rename the imported symbol with `as`, or rename the local declaration.",
+                "Use a module alias when you want the imported owner to stay explicit.",
+            ),
+        )
 
     def _resolve_workflow_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -111,24 +212,62 @@ class ResolveRefsMixin:
     def _resolve_table_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.TableDecl]:
-        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-        decl = target_unit.tables_by_name.get(ref.declaration_name)
-        if decl is not None:
-            return target_unit, decl
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        matching_targets: list[tuple[_RefLookupTarget, model.TableDecl]] = []
+        for lookup_target in lookup_targets:
+            decl = lookup_target.unit.tables_by_name.get(lookup_target.declaration_name)
+            if decl is not None:
+                matching_targets.append((lookup_target, decl))
+        if len(matching_targets) == 1:
+            lookup_target, decl = matching_targets[0]
+            return lookup_target.unit, decl
+        if len(matching_targets) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _decl in matching_targets
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, decl in matching_targets
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Named table ref `{ref.declaration_name}` matches both a local table "
+                        "and an imported symbol."
+                    ),
+                    local_decl=local_decl,
+                    local_label="local table",
+                )
 
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
-        actual_kind = self._named_non_output_decl_kind(ref.declaration_name, unit=target_unit)
-        if actual_kind is not None:
-            raise reference_compile_error(
-                code="E299",
-                summary="Compile failure",
-                detail=(
-                    "Named table use expects a table declaration, "
-                    f"but `{dotted_name}` is a {actual_kind}."
-                ),
-                unit=unit,
-                source_span=ref.source_span,
+        for lookup_target in lookup_targets:
+            actual_kind = self._named_non_output_decl_kind(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
             )
+            if actual_kind is not None:
+                raise reference_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "Named table use expects a table declaration, "
+                        f"but `{dotted_name}` is a {actual_kind}."
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
+                )
         if ref.module_parts:
             raise reference_compile_error(
                 code="E281",
@@ -439,22 +578,21 @@ class ResolveRefsMixin:
                 source_span=None,
                 hints=("This is a compiler bug, not a prompt authoring error.",),
             )
-        if not parent_ref.module_parts:
-            registry = getattr(unit, registry_name)
-            parent_decl = registry.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise reference_compile_error(
-                    code="E299",
-                    summary="Compile failure",
-                    detail=(
-                        f"Missing parent {child_label} for {child_name}: "
-                        f"{parent_ref.declaration_name}"
-                    ),
-                    unit=unit,
-                    source_span=parent_ref.source_span,
-                )
-            return unit, parent_decl
-        return resolve_parent_ref(parent_ref, unit=unit)
+        try:
+            return resolve_parent_ref(parent_ref, unit=unit)
+        except CompileError as error:
+            if parent_ref.module_parts or error.diagnostic.code not in {"E276", "E299"}:
+                raise
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Missing parent {child_label} for {child_name}: "
+                    f"{parent_ref.declaration_name}"
+                ),
+                unit=unit,
+                source_span=parent_ref.source_span,
+            ) from error
 
     def _resolve_decl_ref(
         self,
@@ -464,44 +602,46 @@ class ResolveRefsMixin:
         registry_name: str,
         missing_label: str,
     ):
-        if not ref.module_parts:
-            registry = getattr(unit, registry_name)
-            decl = registry.get(ref.declaration_name)
-            if decl is None:
-                raise self._missing_local_decl_error(
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        matches: list[tuple[_RefLookupTarget, object]] = []
+        for lookup_target in lookup_targets:
+            registry = getattr(lookup_target.unit, registry_name)
+            decl = registry.get(lookup_target.declaration_name)
+            if decl is not None:
+                matches.append((lookup_target, decl))
+        if len(matches) == 1:
+            lookup_target, decl = matches[0]
+            return lookup_target.unit, decl
+        if len(matches) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _decl in matches
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, decl in matches
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
                     ref,
                     unit=unit,
-                    missing_label=missing_label,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Reference `{ref.declaration_name}` is visible both as a local "
+                        f"{missing_label} and as an imported symbol."
+                    ),
+                    local_decl=local_decl,
                 )
-            return unit, decl
 
-        if ref.module_parts == unit.module_parts:
-            registry = getattr(unit, registry_name)
-            decl = registry.get(ref.declaration_name)
-            if decl is None:
-                dotted_name = _dotted_ref_name(ref)
-                raise reference_compile_error(
-                    code="E281",
-                    summary="Missing imported declaration",
-                    detail=f"Missing imported declaration: {dotted_name}",
-                    unit=unit,
-                    source_span=ref.source_span,
-                )
-            return unit, decl
-
-        target_unit = unit.imported_units.get(ref.module_parts)
-        if target_unit is None:
-            raise reference_compile_error(
-                code="E280",
-                summary="Missing import module",
-                detail=f"Missing import module: {'.'.join(ref.module_parts)}",
-                unit=unit,
-                source_span=ref.source_span,
-            )
-
-        registry = getattr(target_unit, registry_name)
-        decl = registry.get(ref.declaration_name)
-        if decl is None:
+        if ref.module_parts:
             dotted_name = _dotted_ref_name(ref)
             raise reference_compile_error(
                 code="E281",
@@ -510,7 +650,11 @@ class ResolveRefsMixin:
                 unit=unit,
                 source_span=ref.source_span,
             )
-        return target_unit, decl
+        raise self._missing_local_decl_error(
+            ref,
+            unit=unit,
+            missing_label=missing_label,
+        )
 
     def _missing_local_decl_error(
         self,
@@ -544,14 +688,19 @@ class ResolveRefsMixin:
         )
 
     def _display_ref(self, ref: model.NameRef, *, unit: IndexedUnit) -> str:
+        matches: list[tuple[str, ReadableDecl]] = []
         try:
-            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            for lookup_target in self._decl_lookup_targets(ref, unit=unit):
+                matches.extend(
+                    self._find_readable_decl_matches(
+                        lookup_target.declaration_name,
+                        unit=lookup_target.unit,
+                    )
+                )
         except CompileError:
-            lookup_unit = None
-        if lookup_unit is not None:
-            matches = self._find_readable_decl_matches(ref.declaration_name, unit=lookup_unit)
-            if len(matches) == 1:
-                return self._display_readable_decl(matches[0][1])
+            matches = []
+        if len(matches) == 1:
+            return self._display_readable_decl(matches[0][1])
         if ref.module_parts:
             return ".".join((*ref.module_parts, ref.declaration_name))
         return _humanize_key(ref.declaration_name)
@@ -563,10 +712,16 @@ class ResolveRefsMixin:
         unit: IndexedUnit,
     ) -> model.EnumDecl | None:
         try:
-            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            lookup_unit, decl = self._resolve_decl_ref(
+                ref,
+                unit=unit,
+                registry_name="enums_by_name",
+                missing_label="enum declaration",
+            )
         except CompileError:
             return None
-        return lookup_unit.enums_by_name.get(ref.declaration_name)
+        _ = lookup_unit
+        return decl
 
     def _find_readable_decl_matches(
         self,

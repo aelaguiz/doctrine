@@ -51,6 +51,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedOutputTargetSpec,
     ResolvedWorkflowBody,
     ResolvedWorkflowSkillsItem,
+    ResolvedUseItem,
 )
 from doctrine._compiler.support_files import _default_worker_count, _dotted_decl_name
 
@@ -168,6 +169,20 @@ class FlowMixin:
                 unit=unit,
                 resolved_slots=resolved_slots,
                 agent_contract=agent_contract,
+            )
+            self._collect_flow_from_review_route_context(
+                agent_unit=unit,
+                agent=agent,
+                agent_contract=agent_contract,
+                agent_nodes=agent_nodes,
+                edges=edges,
+            )
+            self._collect_flow_from_final_output_route_contexts(
+                agent_unit=unit,
+                agent=agent,
+                route_output_contexts=route_output_contexts,
+                agent_nodes=agent_nodes,
+                edges=edges,
             )
             for input_key, (input_unit, input_decl) in sorted(agent_contract.inputs.items()):
                 self._flow_upsert_input_node(input_nodes, input_decl, unit=input_unit)
@@ -331,6 +346,19 @@ class FlowMixin:
                 continue
             if isinstance(item, ResolvedWorkflowSkillsItem):
                 continue
+            if isinstance(item, model.ReadableBlock):
+                continue
+            if not isinstance(item, ResolvedUseItem):
+                raise workflow_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Flow extraction found an unsupported workflow item in "
+                        f"{owner_label}: {type(item).__name__}"
+                    ),
+                    unit=workflow_unit,
+                    source_span=_source_span(item),
+                )
 
             workflow_key = (item.target_unit.module_parts, item.workflow_decl.name)
             if workflow_key in workflow_stack:
@@ -562,6 +590,149 @@ class FlowMixin:
                         output_key,
                     ),
                 )
+
+    def _collect_flow_from_final_output_route_contexts(
+        self,
+        *,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        for _output_key, route_context in sorted(route_output_contexts, key=lambda item: item[0]):
+            selector = route_context.selector
+            if selector is None or selector.surface != "final_output":
+                continue
+            self._collect_flow_from_authored_route_context(
+                agent_unit=agent_unit,
+                agent=agent,
+                route_context=route_context,
+                owner_label=f"agent {agent.name} final_output.route",
+                agent_nodes=agent_nodes,
+                edges=edges,
+            )
+
+    def _collect_flow_from_review_route_context(
+        self,
+        *,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        agent_contract: AgentContract,
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        review_field = next(
+            (field for field in agent.fields if isinstance(field, model.ReviewField)),
+            None,
+        )
+        if review_field is None:
+            return
+
+        review_unit, review_decl = self._resolve_review_ref(review_field.value, unit=agent_unit)
+        self._ensure_concrete_review_decl(
+            review_decl,
+            unit=review_unit,
+            owner_unit=agent_unit,
+            attached_review_span=review_field.source_span,
+        )
+        route_context = self._route_semantic_context_from_review_decl(
+            review_decl,
+            unit=review_unit,
+            agent_contract=agent_contract,
+            owner_label=f"agent {agent.name} review",
+        )
+        if route_context is None:
+            return
+
+        self._collect_flow_from_authored_route_context(
+            agent_unit=agent_unit,
+            agent=agent,
+            route_context=route_context,
+            owner_label=f"agent {agent.name} review",
+            agent_nodes=agent_nodes,
+            edges=edges,
+        )
+
+    def _collect_flow_from_authored_route_context(
+        self,
+        *,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        route_context: RouteSemanticContext,
+        owner_label: str,
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        agent_key = (agent_unit.module_parts, agent.name)
+        for branch in route_context.branches:
+            target_unit = (
+                self._load_module(branch.target_module_parts)
+                if branch.target_module_parts
+                else self.root_unit
+            )
+            target_agent = target_unit.agents_by_name.get(branch.target_name)
+            if target_agent is None:
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"{owner_label} points at a missing target agent in "
+                        f"agent `{agent.name}`: "
+                        f"{_dotted_decl_name(branch.target_module_parts, branch.target_name)}"
+                    ),
+                    path=agent_unit.prompt_file.source_path,
+                )
+            self._flow_upsert_agent_node(agent_nodes, target_agent, unit=target_unit)
+            self._flow_add_edge(
+                edges,
+                FlowEdge(
+                    kind="authored_route",
+                    source_kind="agent",
+                    source_module_parts=agent_key[0],
+                    source_name=agent_key[1],
+                    target_kind="agent",
+                    target_module_parts=target_unit.module_parts,
+                    target_name=target_agent.name,
+                    label=branch.label,
+                ),
+            )
 
     def _collect_flow_from_section_items(
         self,

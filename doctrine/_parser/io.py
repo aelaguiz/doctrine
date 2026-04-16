@@ -16,11 +16,14 @@ from doctrine._parser.parts import (
     TrustSurfacePart,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _meta_line_column,
     _positioned_body_prose,
     _positioned_input_structure,
     _positioned_render_profile,
     _positioned_trust_surface,
+    _source_span_from_line_column,
     _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
@@ -152,6 +155,10 @@ class IoTransformerMixin:
                 structure_mode=output_body.structure_mode,
                 render_profile_mode=output_body.render_profile_mode,
                 trust_surface_mode=output_body.trust_surface_mode,
+                schema_source_span=output_body.schema_source_span,
+                structure_source_span=output_body.structure_source_span,
+                render_profile_source_span=output_body.render_profile_source_span,
+                trust_surface_source_span=output_body.trust_surface_source_span,
             ),
             meta,
         )
@@ -162,6 +169,7 @@ class IoTransformerMixin:
 
     def output_body(self, items):
         record_items: list[model.OutputAuthoredItem] = []
+        items = _flatten_grouped_items(items)
         schema: model.OutputSchemaConfig | None = None
         structure: model.OutputStructureConfig | None = None
         render_profile_ref: model.NameRef | None = None
@@ -170,6 +178,10 @@ class IoTransformerMixin:
         structure_mode: str | None = None
         render_profile_mode: str | None = None
         trust_surface_mode: str | None = None
+        schema_source_span: model.SourceSpan | None = None
+        structure_source_span: model.SourceSpan | None = None
+        render_profile_source_span: model.SourceSpan | None = None
+        trust_surface_source_span: model.SourceSpan | None = None
         has_must_include = False
         for item in items:
             if isinstance(item, RenderProfilePart):
@@ -182,6 +194,7 @@ class IoTransformerMixin:
                     )
                 render_profile_ref = item.ref
                 render_profile_mode = "override" if item.override else "set"
+                render_profile_source_span = _source_span_from_line_column(item.line, item.column)
                 continue
             if isinstance(item, TrustSurfacePart):
                 if trust_surface_mode is not None:
@@ -193,6 +206,7 @@ class IoTransformerMixin:
                     )
                 trust_surface = item.items
                 trust_surface_mode = "override" if item.override else "set"
+                trust_surface_source_span = _source_span_from_line_column(item.line, item.column)
                 continue
             if isinstance(item, OutputSchemaPart):
                 if schema_mode is not None:
@@ -224,6 +238,7 @@ class IoTransformerMixin:
                     )
                 schema = item.config
                 schema_mode = "override" if item.override else "set"
+                schema_source_span = _source_span_from_line_column(item.line, item.column)
                 continue
             if isinstance(item, OutputStructurePart):
                 if structure_mode is not None:
@@ -245,6 +260,7 @@ class IoTransformerMixin:
                     )
                 structure = item.config
                 structure_mode = "override" if item.override else "set"
+                structure_source_span = _source_span_from_line_column(item.line, item.column)
                 continue
             if isinstance(item, model.InheritItem):
                 if item.key == "schema":
@@ -254,6 +270,7 @@ class IoTransformerMixin:
                             hints=("Keep exactly one `schema:` attachment per output declaration.",),
                         )
                     schema_mode = "inherit"
+                    schema_source_span = item.source_span
                     continue
                 if item.key == "structure":
                     if structure_mode is not None:
@@ -262,6 +279,7 @@ class IoTransformerMixin:
                             hints=("Keep exactly one `structure:` attachment per output declaration.",),
                         )
                     structure_mode = "inherit"
+                    structure_source_span = item.source_span
                     continue
                 if item.key == "render_profile":
                     if render_profile_mode is not None:
@@ -270,6 +288,7 @@ class IoTransformerMixin:
                             hints=("Keep exactly one `render_profile:` attachment per output declaration.",),
                         )
                     render_profile_mode = "inherit"
+                    render_profile_source_span = item.source_span
                     continue
                 if item.key == "trust_surface":
                     if trust_surface_mode is not None:
@@ -278,6 +297,7 @@ class IoTransformerMixin:
                             hints=("Keep exactly one `trust_surface:` block per output declaration.",),
                         )
                     trust_surface_mode = "inherit"
+                    trust_surface_source_span = item.source_span
                     continue
             if isinstance(item, OutputRecordSectionPart):
                 if item.section.key == "must_include":
@@ -305,9 +325,14 @@ class IoTransformerMixin:
             structure_mode=structure_mode,
             render_profile_mode=render_profile_mode,
             trust_surface_mode=trust_surface_mode,
+            schema_source_span=schema_source_span,
+            structure_source_span=structure_source_span,
+            render_profile_source_span=render_profile_source_span,
+            trust_surface_source_span=trust_surface_source_span,
         )
 
     def output_shape_body(self, items):
+        items = _flatten_grouped_items(items)
         return tuple(
             item.section if isinstance(item, OutputRecordSectionPart) else item
             for item in items
@@ -384,6 +409,10 @@ class IoTransformerMixin:
     @v_args(meta=True, inline=True)
     def output_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def output_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
 
     def output_record_item_body(self, items):
         return tuple(items[0])
@@ -580,7 +609,7 @@ class IoTransformerMixin:
         )
 
     def output_schema_body(self, items):
-        return tuple(items)
+        return _flatten_grouped_items(items)
 
     def output_schema_item_body(self, items):
         return tuple(items)
@@ -760,6 +789,10 @@ class IoTransformerMixin:
         return _with_source_span(model.InheritItem(key=key), meta)
 
     @v_args(meta=True, inline=True)
+    def output_schema_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
     def output_schema_override_field(self, meta, key, title_or_items=None, items=None):
         title: str | None = None
         body_items = title_or_items
@@ -893,6 +926,7 @@ class IoTransformerMixin:
     def io_body(self, items):
         preamble: list[model.ProseLine] = []
         io_items: list[model.IoItem] = []
+        items = _flatten_grouped_items(items)
         for item in items:
             prose_value = _body_prose_value(item)
             if prose_value is not None:
@@ -911,30 +945,40 @@ class IoTransformerMixin:
             io_items.append(item)
         return IoBodyParts(preamble=tuple(preamble), items=tuple(io_items))
 
-    @v_args(inline=True)
-    def io_section(self, key, title_or_items, items=None):
+    @v_args(meta=True, inline=True)
+    def io_section(self, meta, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
         if items is not None:
             title = title_or_items
             section_items = items
-        return model.IoSection(key=key, title=title, items=tuple(section_items))
+        return _with_source_span(
+            model.IoSection(key=key, title=title, items=tuple(section_items)),
+            meta,
+        )
 
     @v_args(meta=True, inline=True)
     def io_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def io_override_section(self, key, title_or_items, items=None):
+    @v_args(meta=True, inline=True)
+    def io_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def io_override_section(self, meta, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
         if items is not None:
             title = title_or_items
             section_items = items
-        return model.OverrideIoSection(
-            key=key,
-            title=title,
-            items=tuple(section_items),
+        return _with_source_span(
+            model.OverrideIoSection(
+                key=key,
+                title=title,
+                items=tuple(section_items),
+            ),
+            meta,
         )
 
     @v_args(inline=True)

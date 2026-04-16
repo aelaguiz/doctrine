@@ -136,6 +136,10 @@ Stability rules:
 | `E303` | Invalid schema declaration | A schema artifact or schema group uses an invalid declaration shape, such as a wrong-kind artifact ref, an unknown group member, or an empty group. |
 | `E304` | Invalid skill package bundle | A `skill package` bundle uses an invalid companion path, collides with another emitted path, points at an unreadable bundled file, or lowers a nested agent prompt with the wrong concrete-agent shape. |
 | `E305` | Invalid document inheritance patch | A document inheritance patch uses the wrong override shape, such as a kind mismatch or a patch without an inherited document parent. |
+| `E306` | Duplicate module alias | One prompt file binds the same visible import-module name more than once, such as `import shared.review as review` plus another visible `review`. |
+| `E307` | Duplicate imported symbol | One prompt file binds the same visible imported symbol more than once, such as `from shared.review import Comment` plus another visible `Comment`. |
+| `E308` | Ambiguous imported symbol ownership | A bare visible name is both a local declaration and an imported symbol, so Doctrine refuses to guess which owner the ref should use. |
+| `E309` | Malformed grouped `inherit` | A grouped `inherit { ... }` is empty, repeats the same key, or uses a key that is not legal on that grouped surface. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |

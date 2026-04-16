@@ -255,6 +255,51 @@ class ParseDiagnosticsTests(unittest.TestCase):
             summary_snippet="Output declarations may define `render_profile:` only once.",
         )
 
+    def test_grouped_inherit_duplicate_key_points_at_the_group_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"
+                inherit {opening, opening}
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/grouped-inherit-duplicate.prompt",
+            anchor_line="    inherit {opening, opening}",
+            summary_snippet="Grouped `inherit` may list key `opening` only once.",
+            expected_code="E309",
+        )
+
+    def test_grouped_inherit_empty_group_points_at_the_group_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output ChildOutput[BaseOutput]: "Child Output"
+                inherit {}
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/grouped-inherit-empty.prompt",
+            anchor_line="    inherit {}",
+            summary_snippet="Grouped `inherit` must list at least one key.",
+            expected_code="E309",
+        )
+
+    def test_grouped_schema_inherit_unknown_key_points_at_the_group_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            schema ChildSchema[BaseSchema]: "Child Schema"
+                inherit {sections, unknown}
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/grouped-schema-inherit-unknown.prompt",
+            anchor_line="    inherit {sections, unknown}",
+            summary_snippet="Grouped `inherit` uses unknown key `unknown`.",
+            expected_code="E309",
+        )
+
     def test_analysis_duplicate_render_profile_points_at_the_later_line(self) -> None:
         source = textwrap.dedent(
             """\

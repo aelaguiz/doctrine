@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import _INTERPOLATION_RE
 from doctrine._compiler.resolved_types import (
     CompileError,
@@ -16,31 +17,62 @@ from doctrine._compiler.resolved_types import (
 class ValidateSchemaHelpersMixin:
     """Schema and interpolation helpers for ValidateMixin."""
 
+    def _schema_body_item(
+        self,
+        items: tuple[model.SchemaItem, ...],
+        *,
+        block_key: str,
+    ) -> model.SchemaItem | None:
+        for item in items:
+            if isinstance(item, model.InheritItem) and item.key == block_key:
+                return item
+            if block_key == "sections" and isinstance(item, model.SchemaSectionsBlock):
+                return item
+            if block_key == "gates" and isinstance(item, model.SchemaGatesBlock):
+                return item
+            if block_key == "artifacts" and isinstance(item, model.SchemaArtifactsBlock):
+                return item
+            if block_key == "groups" and isinstance(item, model.SchemaGroupsBlock):
+                return item
+            if block_key == "sections" and isinstance(item, model.SchemaOverrideSectionsBlock):
+                return item
+            if block_key == "gates" and isinstance(item, model.SchemaOverrideGatesBlock):
+                return item
+            if block_key == "artifacts" and isinstance(item, model.SchemaOverrideArtifactsBlock):
+                return item
+            if block_key == "groups" and isinstance(item, model.SchemaOverrideGroupsBlock):
+                return item
+        return None
+
     def _schema_body_action(
         self,
         items: tuple[model.SchemaItem, ...],
         *,
         block_key: str,
     ) -> tuple[str | None, tuple[object, ...]]:
-        for item in items:
-            if isinstance(item, model.InheritItem) and item.key == block_key:
-                return "inherit", ()
-            if block_key == "sections" and isinstance(item, model.SchemaSectionsBlock):
-                return "define", item.items
-            if block_key == "gates" and isinstance(item, model.SchemaGatesBlock):
-                return "define", item.items
-            if block_key == "artifacts" and isinstance(item, model.SchemaArtifactsBlock):
-                return "define", item.items
-            if block_key == "groups" and isinstance(item, model.SchemaGroupsBlock):
-                return "define", item.items
-            if block_key == "sections" and isinstance(item, model.SchemaOverrideSectionsBlock):
-                return "override", item.items
-            if block_key == "gates" and isinstance(item, model.SchemaOverrideGatesBlock):
-                return "override", item.items
-            if block_key == "artifacts" and isinstance(item, model.SchemaOverrideArtifactsBlock):
-                return "override", item.items
-            if block_key == "groups" and isinstance(item, model.SchemaOverrideGroupsBlock):
-                return "override", item.items
+        item = self._schema_body_item(items, block_key=block_key)
+        if isinstance(item, model.InheritItem):
+            return "inherit", ()
+        if isinstance(
+            item,
+            (
+                model.SchemaSectionsBlock,
+                model.SchemaGatesBlock,
+                model.SchemaArtifactsBlock,
+                model.SchemaGroupsBlock,
+            ),
+        ):
+            return "define", item.items
+        if isinstance(
+            item,
+            (
+                model.SchemaOverrideSectionsBlock,
+                model.SchemaOverrideGatesBlock,
+                model.SchemaOverrideArtifactsBlock,
+                model.SchemaOverrideGroupsBlock,
+            ),
+        ):
+            return "override", item.items
         return None, ()
 
     def _validate_schema_group_members(
@@ -48,14 +80,22 @@ class ValidateSchemaHelpersMixin:
         groups: tuple[ResolvedSchemaGroup, ...],
         *,
         artifacts: tuple[ResolvedSchemaArtifact, ...],
+        unit: IndexedUnit,
         owner_label: str,
     ) -> None:
         artifact_keys = {item.key for item in artifacts}
         for group in groups:
             for member_key in group.members:
                 if member_key not in artifact_keys:
-                    raise CompileError(
-                        f"Unknown schema group member in {owner_label}: {group.key}.{member_key}"
+                    raise authored_compile_error(
+                        code="E303",
+                        summary="Invalid schema declaration",
+                        detail=(
+                            f"Unknown schema group member in {owner_label}: "
+                            f"{group.key}.{member_key}"
+                        ),
+                        unit=unit,
+                        source_span=group.source_span,
                     )
 
     def _require_tuple_payload(

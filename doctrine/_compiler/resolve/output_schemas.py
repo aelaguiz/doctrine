@@ -62,6 +62,46 @@ class _OutputSchemaNodeParts:
 class ResolveOutputSchemasMixin:
     """Inherited output-schema resolution and lowering helpers."""
 
+    def _authored_source_span(self, value: object | None) -> model.SourceSpan | None:
+        return getattr(value, "source_span", None)
+
+    def _output_schema_item_by_key(
+        self,
+        output_schema_decl: model.OutputSchemaDecl,
+        key: str,
+    ) -> object | None:
+        return next(
+            (
+                item
+                for item in output_schema_decl.items
+                if self._output_schema_item_key(item) == key
+            ),
+            None,
+        )
+
+    def _output_schema_missing_related_sites(
+        self,
+        *,
+        parent_output_schema: model.OutputSchemaDecl,
+        parent_unit: IndexedUnit | None,
+        missing_keys: tuple[str, ...],
+    ) -> tuple:
+        if parent_unit is None:
+            return ()
+        related = []
+        for key in missing_keys:
+            parent_item = self._output_schema_item_by_key(parent_output_schema, key)
+            if parent_item is None:
+                continue
+            related.append(
+                output_schema_related_site(
+                    label=f"inherited `{key}` entry",
+                    unit=parent_unit,
+                    source_span=self._authored_source_span(parent_item),
+                )
+            )
+        return tuple(related)
+
     def _resolve_output_schema_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.OutputSchemaDecl]:
@@ -100,7 +140,13 @@ class ResolveOutputSchemasMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._output_schema_resolution_stack, output_schema_key]
             )
-            raise CompileError(f"Cyclic output schema inheritance: {cycle}")
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Cyclic output schema inheritance",
+                detail=f"Cyclic output schema inheritance: {cycle}",
+                unit=unit,
+                source_span=output_schema_decl.source_span,
+            )
 
         self._output_schema_resolution_stack.append(output_schema_key)
         try:
@@ -123,6 +169,7 @@ class ResolveOutputSchemasMixin:
 
             resolved = self._resolve_inherited_output_schema_decl(
                 output_schema_decl,
+                unit=unit,
                 owner_label=owner_label,
                 parent_unit=parent_unit if output_schema_decl.parent_ref is not None else None,
                 parent_output_schema=parent_output_schema,
@@ -137,6 +184,7 @@ class ResolveOutputSchemasMixin:
         self,
         output_schema_decl: model.OutputSchemaDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
         parent_unit: IndexedUnit | None = None,
         parent_output_schema: model.OutputSchemaDecl | None = None,
@@ -145,13 +193,30 @@ class ResolveOutputSchemasMixin:
         if parent_output_schema is None:
             patch_key = self._first_output_schema_patch_key(output_schema_decl)
             if patch_key is not None:
-                raise CompileError(
-                    f"inherit requires an inherited output schema in {owner_label}: {patch_key}"
+                patch_item = self._output_schema_item_by_key(output_schema_decl, patch_key)
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema patch requires an inherited output schema",
+                    detail=(
+                        f"inherit requires an inherited output schema in {owner_label}: {patch_key}"
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(patch_item)
+                    or output_schema_decl.source_span,
                 )
             override_key = self._first_output_schema_override_key(output_schema_decl)
             if override_key is not None:
-                raise CompileError(
-                    f"override requires an inherited output schema in {owner_label}: {override_key}"
+                override_item = self._output_schema_item_by_key(output_schema_decl, override_key)
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema patch requires an inherited output schema",
+                    detail=(
+                        "override requires an inherited output schema in "
+                        f"{owner_label}: {override_key}"
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(override_item)
+                    or output_schema_decl.source_span,
                 )
             return replace(output_schema_decl, parent_ref=None)
 
@@ -178,7 +243,7 @@ class ResolveOutputSchemasMixin:
             )
         }
         resolved_items: list[model.OutputSchemaAuthoredItem] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, object] = {}
         accounted_keys: set[str] = set()
 
         for item in output_schema_decl.items:
@@ -188,15 +253,35 @@ class ResolveOutputSchemasMixin:
                     "Internal compiler error: unsupported output schema item in "
                     f"{owner_label}: {type(item).__name__}"
                 )
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate output schema item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            if key in emitted_items:
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Duplicate output schema item key",
+                    detail=f"Duplicate output schema item key in {owner_label}: {key}",
+                    unit=unit,
+                    source_span=self._authored_source_span(item)
+                    or output_schema_decl.source_span,
+                    related=(
+                        output_schema_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=self._authored_source_span(emitted_items[key]),
+                        ),
+                    ),
+                )
+            emitted_items[key] = item
 
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined output schema entry in {parent_label}: {key}"
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Cannot inherit undefined output schema entry",
+                        detail=(
+                            f"Cannot inherit undefined output schema entry in {parent_label}: {key}"
+                        ),
+                        unit=unit,
+                        source_span=item.source_span or output_schema_decl.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
@@ -204,23 +289,46 @@ class ResolveOutputSchemasMixin:
 
             if self._is_output_schema_override_item(item):
                 if parent_item is None:
-                    raise CompileError(
-                        "E001 Cannot override undefined output schema entry in "
-                        f"{parent_label}: {key}"
+                    raise output_schema_compile_error(
+                        code="E001",
+                        summary="Cannot override undefined inherited entry",
+                        detail=(
+                            "E001 Cannot override undefined output schema entry in "
+                            f"{parent_label}: {key}"
+                        ),
+                        unit=unit,
+                        source_span=self._authored_source_span(item)
+                        or output_schema_decl.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(
                     self._resolve_output_schema_override_item(
                         item,
+                        unit=unit,
                         parent_item=parent_item,
+                        parent_unit=parent_unit or unit,
                         owner_label=owner_label,
                     )
                 )
                 continue
 
             if parent_item is not None:
-                raise CompileError(
-                    f"Inherited output schema requires `override {key}` in {owner_label}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Invalid output schema inheritance patch",
+                    detail=(
+                        f"Inherited output schema requires `override {key}` in {owner_label}"
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(item)
+                    or output_schema_decl.source_span,
+                    related=(
+                        output_schema_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit or unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             resolved_items.append(item)
 
@@ -239,9 +347,20 @@ class ResolveOutputSchemasMixin:
             and item.key not in accounted_keys
         ]
         if missing_keys:
-            raise CompileError(
-                f"E003 Missing inherited output schema entry in {owner_label}: "
-                + ", ".join(missing_keys)
+            raise output_schema_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=(
+                    f"E003 Missing inherited output schema entry in {owner_label}: "
+                    + ", ".join(missing_keys)
+                ),
+                unit=unit,
+                source_span=output_schema_decl.source_span,
+                related=self._output_schema_missing_related_sites(
+                    parent_output_schema=inherited_parent_output_schema,
+                    parent_unit=parent_unit,
+                    missing_keys=tuple(missing_keys),
+                ),
             )
 
         return model.OutputSchemaDecl(
@@ -307,12 +426,14 @@ class ResolveOutputSchemasMixin:
             | model.OutputSchemaOverrideExample
         ),
         *,
+        unit: IndexedUnit,
         parent_item: (
             model.OutputSchemaField
             | model.OutputSchemaRouteField
             | model.OutputSchemaDef
             | model.OutputSchemaExample
         ),
+        parent_unit: IndexedUnit,
         owner_label: str,
     ) -> (
         model.OutputSchemaField
@@ -323,8 +444,21 @@ class ResolveOutputSchemasMixin:
         key = item.key
         if isinstance(item, model.OutputSchemaOverrideField):
             if not isinstance(parent_item, model.OutputSchemaField):
-                raise CompileError(
-                    f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema override kind mismatch",
+                    detail=(
+                        f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_schema_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             return model.OutputSchemaField(
                 key=key,
@@ -333,8 +467,21 @@ class ResolveOutputSchemasMixin:
             )
         if isinstance(item, model.OutputSchemaOverrideRouteField):
             if not isinstance(parent_item, model.OutputSchemaRouteField):
-                raise CompileError(
-                    f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema override kind mismatch",
+                    detail=(
+                        f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_schema_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             return model.OutputSchemaRouteField(
                 key=key,
@@ -343,8 +490,21 @@ class ResolveOutputSchemasMixin:
             )
         if isinstance(item, model.OutputSchemaOverrideDef):
             if not isinstance(parent_item, model.OutputSchemaDef):
-                raise CompileError(
-                    f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Output schema override kind mismatch",
+                    detail=(
+                        f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_schema_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit,
+                            source_span=self._authored_source_span(parent_item),
+                        ),
+                    ),
                 )
             return model.OutputSchemaDef(
                 key=key,
@@ -352,8 +512,21 @@ class ResolveOutputSchemasMixin:
                 items=item.items,
             )
         if not isinstance(parent_item, model.OutputSchemaExample):
-            raise CompileError(
-                f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Output schema override kind mismatch",
+                detail=(
+                    f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                ),
+                unit=unit,
+                source_span=item.source_span,
+                related=(
+                    output_schema_related_site(
+                        label=f"inherited `{key}` entry",
+                        unit=parent_unit,
+                        source_span=self._authored_source_span(parent_item),
+                    ),
+                ),
             )
         return model.OutputSchemaExample(
             key=key,
@@ -423,6 +596,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaRouteField):
             return model.OutputSchemaRouteField(
@@ -433,6 +607,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaDef):
             return model.OutputSchemaDef(
@@ -443,6 +618,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaOverrideField):
             return model.OutputSchemaOverrideField(
@@ -453,6 +629,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaOverrideRouteField):
             return model.OutputSchemaOverrideRouteField(
@@ -463,6 +640,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaOverrideDef):
             return model.OutputSchemaOverrideDef(
@@ -473,6 +651,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         return item
 
@@ -515,6 +694,7 @@ class ResolveOutputSchemasMixin:
                             parent_unit=parent_unit,
                             local_def_scopes=local_def_scopes,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -546,6 +726,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaItems):
             if isinstance(item.value, model.NameRef):
@@ -554,14 +735,16 @@ class ResolveOutputSchemasMixin:
                         item.value,
                         parent_unit=parent_unit,
                         local_def_scopes=local_def_scopes,
-                    )
+                    ),
+                    source_span=item.source_span,
                 )
             return model.OutputSchemaItems(
                 value=self._rebind_output_schema_node_items(
                     item.value,
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
-                )
+                ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaAnyOf):
             return model.OutputSchemaAnyOf(
@@ -573,9 +756,11 @@ class ResolveOutputSchemasMixin:
                             parent_unit=parent_unit,
                             local_def_scopes=local_def_scopes,
                         ),
+                        source_span=variant.source_span,
                     )
                     for variant in item.variants
-                )
+                ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaField):
             return model.OutputSchemaField(
@@ -586,6 +771,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaRouteField):
             return model.OutputSchemaRouteField(
@@ -596,6 +782,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         if isinstance(item, model.OutputSchemaDef):
             return model.OutputSchemaDef(
@@ -606,6 +793,7 @@ class ResolveOutputSchemasMixin:
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
                 ),
+                source_span=item.source_span,
             )
         return item
 
@@ -625,6 +813,7 @@ class ResolveOutputSchemasMixin:
         return model.NameRef(
             module_parts=parent_unit.module_parts,
             declaration_name=ref.declaration_name,
+            source_span=ref.source_span,
         )
 
     def _output_schema_ref_targets_local_def(
@@ -652,7 +841,13 @@ class ResolveOutputSchemasMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._output_schema_lowering_stack, output_schema_key]
             )
-            raise CompileError(f"Cyclic output schema lowering: {cycle}")
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Cyclic output schema lowering",
+                detail=f"Cyclic output schema lowering: {cycle}",
+                unit=unit,
+                source_span=output_schema_decl.source_span,
+            )
 
         self._output_schema_lowering_stack.append(output_schema_key)
         try:
@@ -952,8 +1147,14 @@ class ResolveOutputSchemasMixin:
         if not ref.module_parts and ref.declaration_name in _OUTPUT_SCHEMA_BUILTIN_TYPES:
             return {"type": ref.declaration_name}
         if not self._ref_exists_in_registry(ref, unit=unit, registry_name="output_schemas_by_name"):
-            raise CompileError(
-                f"Unknown output schema ref in {owner_label}: {_dotted_ref_name(ref)}"
+            raise output_schema_compile_error(
+                code="E299",
+                summary="Unknown output schema ref",
+                detail=(
+                    f"Unknown output schema ref in {owner_label}: {_dotted_ref_name(ref)}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
             )
         target_unit, target_decl = self._resolve_output_schema_decl(ref, unit=unit)
         return self._lower_output_schema_decl(
@@ -1008,41 +1209,70 @@ class ResolveOutputSchemasMixin:
         inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
         variants: tuple[model.OutputSchemaVariant, ...] = ()
         constraints: list[tuple[str, int | float]] = []
-        seen_child_keys: set[str] = set()
-        seen_settings: set[str] = set()
+        seen_child_items: dict[str, object] = {}
+        seen_settings: dict[str, object] = {}
         for item in items:
             if isinstance(item, model.OutputSchemaSetting):
                 if item.key in seen_settings:
-                    raise CompileError(
-                        f"Duplicate output schema setting in {owner_label}: {item.key}"
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema setting",
+                        detail=(
+                            f"Duplicate output schema setting in {owner_label}: {item.key}"
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            output_schema_related_site(
+                                label=f"first `{item.key}` setting",
+                                unit=unit,
+                                source_span=self._authored_source_span(seen_settings[item.key]),
+                            ),
+                        ),
                     )
-                seen_settings.add(item.key)
+                seen_settings[item.key] = item
                 if item.key == "type":
                     if not isinstance(item.value, str):
-                        raise CompileError(
-                            f"Output schema type must be a name in {owner_label}"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Invalid output schema setting",
+                            detail=f"Output schema type must be a name in {owner_label}",
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     parts.type_name = item.value
                     parts.type_source_span = item.source_span
                     continue
                 if item.key == "note":
                     if not isinstance(item.value, str):
-                        raise CompileError(
-                            f"Output schema note must be a string in {owner_label}"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Invalid output schema setting",
+                            detail=f"Output schema note must be a string in {owner_label}",
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     parts.note = item.value
                     continue
                 if item.key == "format":
                     if not isinstance(item.value, str):
-                        raise CompileError(
-                            f"Output schema format must be a name in {owner_label}"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Invalid output schema setting",
+                            detail=f"Output schema format must be a name in {owner_label}",
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     parts.format_name = item.value
                     continue
                 if item.key == "pattern":
                     if not isinstance(item.value, str):
-                        raise CompileError(
-                            f"Output schema pattern must be a string in {owner_label}"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Invalid output schema setting",
+                            detail=f"Output schema pattern must be a string in {owner_label}",
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     parts.pattern = item.value
                     continue
@@ -1052,26 +1282,47 @@ class ResolveOutputSchemasMixin:
                     continue
                 if item.key == "ref":
                     if not isinstance(item.value, model.NameRef):
-                        raise CompileError(
-                            f"Output schema ref must point at a named schema in {owner_label}"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Invalid output schema setting",
+                            detail=(
+                                f"Output schema ref must point at a named schema in {owner_label}"
+                            ),
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     parts.ref = item.value
                     continue
                 if item.key in _OUTPUT_SCHEMA_JSON_KEY_MAP:
                     if not isinstance(item.value, (int, float)):
-                        raise CompileError(
-                            f"Output schema constraint must be numeric in {owner_label}: {item.key}"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Invalid output schema setting",
+                            detail=(
+                                "Output schema constraint must be numeric in "
+                                f"{owner_label}: {item.key}"
+                            ),
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     constraints.append((item.key, item.value))
                     continue
-                raise CompileError(
-                    f"Unsupported output schema setting in {owner_label}: {item.key}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Unsupported output schema setting",
+                    detail=f"Unsupported output schema setting in {owner_label}: {item.key}",
+                    unit=unit,
+                    source_span=item.source_span,
                 )
             if isinstance(item, model.OutputSchemaFlag):
                 if item.key == "nullable":
                     if parts.nullable:
-                        raise CompileError(
-                            f"Duplicate output schema flag in {owner_label}: nullable"
+                        raise output_schema_compile_error(
+                            code="E299",
+                            summary="Duplicate output schema flag",
+                            detail=f"Duplicate output schema flag in {owner_label}: nullable",
+                            unit=unit,
+                            source_span=item.source_span,
                         )
                     parts.nullable = True
                     continue
@@ -1104,61 +1355,133 @@ class ResolveOutputSchemasMixin:
                         ),
                     )
                     continue
-                raise CompileError(
-                    f"Unsupported output schema flag in {owner_label}: {item.key}"
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Unsupported output schema flag",
+                    detail=f"Unsupported output schema flag in {owner_label}: {item.key}",
+                    unit=unit,
+                    source_span=item.source_span,
                 )
             if isinstance(item, model.OutputSchemaEnum):
                 if legacy_enum_values:
-                    raise CompileError(f"Duplicate output schema enum in {owner_label}")
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema enum block",
+                        detail=f"Duplicate output schema enum in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                    )
                 legacy_enum_values = item.values
                 parts.legacy_enum_source_span = item.source_span
                 continue
             if isinstance(item, model.OutputSchemaValues):
                 if inline_enum_values:
-                    raise CompileError(f"Duplicate output schema values block in {owner_label}")
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema values block",
+                        detail=f"Duplicate output schema values block in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                    )
                 inline_enum_values = item.values
                 parts.inline_enum_source_span = item.source_span
                 continue
             if isinstance(item, model.OutputSchemaItems):
                 if parts.items_value is not None:
-                    raise CompileError(f"Duplicate output schema items block in {owner_label}")
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema items block",
+                        detail=f"Duplicate output schema items block in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                    )
                 parts.items_value = item.value
                 continue
             if isinstance(item, model.OutputSchemaAnyOf):
                 if variants:
-                    raise CompileError(f"Duplicate output schema any_of block in {owner_label}")
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema any_of block",
+                        detail=f"Duplicate output schema any_of block in {owner_label}",
+                        unit=unit,
+                        source_span=item.source_span,
+                    )
                 variants = item.variants
                 continue
             if isinstance(item, model.OutputSchemaField):
-                if item.key in seen_child_keys:
-                    raise CompileError(
-                        f"Duplicate output schema child key in {owner_label}: {item.key}"
+                if item.key in seen_child_items:
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema child key",
+                        detail=f"Duplicate output schema child key in {owner_label}: {item.key}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            output_schema_related_site(
+                                label=f"first `{item.key}` child",
+                                unit=unit,
+                                source_span=self._authored_source_span(seen_child_items[item.key]),
+                            ),
+                        ),
                     )
-                seen_child_keys.add(item.key)
+                seen_child_items[item.key] = item
                 fields.append(item)
                 continue
             if isinstance(item, model.OutputSchemaRouteField):
-                if item.key in seen_child_keys:
-                    raise CompileError(
-                        f"Duplicate output schema child key in {owner_label}: {item.key}"
+                if item.key in seen_child_items:
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema child key",
+                        detail=f"Duplicate output schema child key in {owner_label}: {item.key}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            output_schema_related_site(
+                                label=f"first `{item.key}` child",
+                                unit=unit,
+                                source_span=self._authored_source_span(seen_child_items[item.key]),
+                            ),
+                        ),
                     )
-                seen_child_keys.add(item.key)
+                seen_child_items[item.key] = item
                 fields.append(item)
                 continue
             if isinstance(item, model.OutputSchemaDef):
-                if item.key in seen_child_keys:
-                    raise CompileError(
-                        f"Duplicate output schema child key in {owner_label}: {item.key}"
+                if item.key in seen_child_items:
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema child key",
+                        detail=f"Duplicate output schema child key in {owner_label}: {item.key}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            output_schema_related_site(
+                                label=f"first `{item.key}` child",
+                                unit=unit,
+                                source_span=self._authored_source_span(seen_child_items[item.key]),
+                            ),
+                        ),
                     )
-                seen_child_keys.add(item.key)
+                seen_child_items[item.key] = item
                 defs.append(item)
                 continue
             if isinstance(item, model.OutputSchemaRouteChoice):
-                if item.key in seen_child_keys:
-                    raise CompileError(
-                        f"Duplicate output schema child key in {owner_label}: {item.key}"
+                if item.key in seen_child_items:
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema child key",
+                        detail=f"Duplicate output schema child key in {owner_label}: {item.key}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            output_schema_related_site(
+                                label=f"first `{item.key}` child",
+                                unit=unit,
+                                source_span=self._authored_source_span(seen_child_items[item.key]),
+                            ),
+                        ),
                     )
-                seen_child_keys.add(item.key)
+                seen_child_items[item.key] = item
                 route_choices.append(item)
                 continue
             raise CompileError(
@@ -1284,7 +1607,20 @@ class ResolveOutputSchemasMixin:
             if not isinstance(item, model.OutputSchemaExample):
                 continue
             if example_item is not None:
-                raise CompileError(f"Duplicate output schema example in {owner_label}")
+                raise output_schema_compile_error(
+                    code="E299",
+                    summary="Duplicate output schema example",
+                    detail=f"Duplicate output schema example in {owner_label}",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        output_schema_related_site(
+                            label="first `example:` block",
+                            unit=unit,
+                            source_span=example_item.source_span,
+                        ),
+                    ),
+                )
             example_item = item
         return example_item
 
@@ -1304,25 +1640,37 @@ class ResolveOutputSchemasMixin:
         self,
         value: model.OutputSchemaExampleValue,
         *,
+        unit: IndexedUnit,
         owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> object:
         if isinstance(value, model.OutputSchemaExampleObject):
             entries: dict[str, object] = {}
             for entry in value.entries:
                 if entry.key in entries:
-                    raise CompileError(
-                        f"Duplicate output schema example key in {owner_label}: {entry.key}"
+                    raise output_schema_compile_error(
+                        code="E299",
+                        summary="Duplicate output schema example key",
+                        detail=(
+                            f"Duplicate output schema example key in {owner_label}: {entry.key}"
+                        ),
+                        unit=unit,
+                        source_span=source_span,
                     )
                 entries[entry.key] = self._materialize_output_schema_example_value(
                     entry.value,
+                    unit=unit,
                     owner_label=f"{owner_label}.{entry.key}",
+                    source_span=source_span,
                 )
             return entries
         if isinstance(value, model.OutputSchemaExampleArray):
             return [
                 self._materialize_output_schema_example_value(
                     item,
+                    unit=unit,
                     owner_label=f"{owner_label}[]",
+                    source_span=source_span,
                 )
                 for item in value.items
             ]

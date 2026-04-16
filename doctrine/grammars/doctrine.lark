@@ -40,7 +40,12 @@ prompt_file: _NL* declaration+ _NL*
             | abstract_agent
             | agent
 
-import_decl: "import" import_path _NL
+import_decl: module_import_decl
+           | from_import_decl
+module_import_decl: "import" import_path import_alias? _NL
+from_import_decl: "from" import_path "import" imported_symbol_binding ("," imported_symbol_binding)* _NL
+imported_symbol_binding: CNAME import_alias?
+import_alias: "as" CNAME
 render_profile_decl: "render_profile" CNAME _NL
                    | "render_profile" CNAME ":" _NL _INDENT render_profile_rule+ _DEDENT
 render_profile_rule: dotted_name "->" CNAME _NL?
@@ -118,10 +123,14 @@ final_output_body: final_output_body_item+
 final_output_output_stmt: "output" ":" name_ref _NL?
 final_output_route_stmt: "route" ":" field_path _NL?
 final_output_review_fields_stmt: "review_fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
+grouped_inherit_keys: [CNAME ("," CNAME)* ","?]
+review_grouped_inherit_keys: [review_item_key ("," review_item_key)* ","?]
+schema_grouped_inherit_keys: [CNAME ("," CNAME)* ","?]
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
 agent_slot_abstract: "abstract" CNAME _NL?
-agent_slot_inherit: "inherit" CNAME _NL?
+agent_slot_inherit: "inherit" CNAME _NL? -> agent_slot_inherit
+                  | "inherit" "{" grouped_inherit_keys "}" _NL? -> agent_slot_inherit_group
 agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
 
 ?slot_value: string | name_ref
@@ -195,7 +204,8 @@ review_case_contract_stmt: "contract" ":" review_contract_ref _NL
 review_case_checks: "checks" ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 review_case_on_accept: "on_accept" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
 review_case_on_reject: "on_reject" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
-review_inherit: "inherit" review_item_key _NL?
+review_inherit: "inherit" review_item_key _NL? -> review_inherit
+              | "inherit" "{" review_grouped_inherit_keys "}" _NL? -> review_inherit_group
 review_override_fields: "override" "fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
 review_override_pre_outcome_section_titled: "override" CNAME ":" string _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 review_override_pre_outcome_section_untitled: "override" CNAME ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
@@ -299,7 +309,8 @@ analysis_body_line: analysis_render_profile_stmt
 analysis_render_profile_stmt: "render_profile" ":" name_ref _NL?
 analysis_string: prose_line _NL?
 analysis_section: CNAME ":" string _NL _INDENT analysis_section_body _DEDENT
-analysis_inherit: "inherit" CNAME _NL?
+analysis_inherit: "inherit" CNAME _NL? -> analysis_inherit
+                | "inherit" "{" grouped_inherit_keys "}" _NL? -> analysis_inherit_group
 analysis_override_section: "override" CNAME ":" string? _NL _INDENT analysis_section_body _DEDENT
 analysis_section_body: analysis_section_item+
 ?analysis_section_item: prose_line _NL?
@@ -372,7 +383,8 @@ schema_artifact_body: _INDENT schema_artifact_ref* _DEDENT
 schema_group_body: _INDENT schema_group_member* _DEDENT
 schema_artifact_ref: "ref" ":" name_ref _NL?
 schema_group_member: CNAME _NL?
-schema_inherit: "inherit" schema_block_key _NL?
+schema_inherit: "inherit" schema_block_key _NL? -> schema_inherit
+              | "inherit" "{" schema_grouped_inherit_keys "}" _NL? -> schema_inherit_group
 schema_override_sections: "override" "sections" ":" _NL _INDENT schema_section_item+ _DEDENT
 schema_override_gates: "override" "gates" ":" _NL _INDENT schema_gate_item+ _DEDENT
 schema_override_artifacts: "override" "artifacts" ":" _NL _INDENT schema_artifact_item+ _DEDENT
@@ -400,7 +412,8 @@ document_readable_block: document_section_sugar
                        | document_section_block
                        | readable_nonsection_block
 document_section_sugar: CNAME ":" string _NL _INDENT document_section_body _DEDENT
-document_inherit: "inherit" CNAME _NL?
+document_inherit: "inherit" CNAME _NL? -> document_inherit
+                | "inherit" "{" grouped_inherit_keys "}" _NL? -> document_inherit_group
 document_override_block: document_override_section_block
                        | override_readable_nonsection_block
 
@@ -580,7 +593,8 @@ workflow_skills_inline: "skills" ":" string _NL _INDENT skills_body _DEDENT
 workflow_skills_ref: "skills" ":" name_ref _NL?
 local_section: CNAME ":" string _NL _INDENT workflow_section_body _DEDENT
 workflow_use: "use" CNAME ":" name_ref _NL?
-workflow_inherit: "inherit" CNAME _NL?
+workflow_inherit: "inherit" CNAME _NL? -> workflow_inherit
+                | "inherit" "{" grouped_inherit_keys "}" _NL? -> workflow_inherit_group
 workflow_override_skills_inline: "override" "skills" ":" string _NL _INDENT skills_body _DEDENT
 workflow_override_skills_ref: "override" "skills" ":" name_ref _NL?
 workflow_override_section: "override" CNAME ":" string? _NL _INDENT workflow_section_body _DEDENT
@@ -615,7 +629,8 @@ skills_body_line: skills_string
 
 skills_section: CNAME ":" string _NL _INDENT skills_section_body _DEDENT
 skill_entry: "skill" CNAME ":" name_ref _NL skill_entry_body?
-skills_inherit: "inherit" CNAME _NL?
+skills_inherit: "inherit" CNAME _NL? -> skills_inherit
+              | "inherit" "{" grouped_inherit_keys "}" _NL? -> skills_inherit_group
 skills_override_section: "override" CNAME ":" string? _NL _INDENT skills_section_body _DEDENT
 skills_override_entry: "override" CNAME ":" name_ref _NL skill_entry_body?
 skill_entry_body: _INDENT record_body _DEDENT
@@ -636,7 +651,8 @@ io_body_line: io_string
         | io_override_section
 
 io_section: CNAME ":" string? _NL _INDENT record_body _DEDENT
-io_inherit: "inherit" CNAME _NL?
+io_inherit: "inherit" CNAME _NL? -> io_inherit
+          | "inherit" "{" grouped_inherit_keys "}" _NL? -> io_inherit_group
 io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
 input_body: input_body_line+
@@ -662,7 +678,8 @@ output_body_line: output_record_item
                 | output_structure_stmt
                 | output_override_structure_stmt
 
-output_inherit: "inherit" CNAME _NL?
+output_inherit: "inherit" CNAME _NL? -> output_inherit
+              | "inherit" "{" grouped_inherit_keys "}" _NL? -> output_inherit_group
 ?output_override_item: output_override_guarded_section
                      | output_override_guarded_scalar_item
                      | output_override_readable_block
@@ -702,7 +719,8 @@ output_schema_field: "field" CNAME ":" string _NL output_schema_item_body?
 output_schema_route_field: "route" "field" CNAME ":" string _NL output_schema_route_field_body?
 output_schema_def: "def" CNAME ":" string _NL output_schema_item_body?
 output_schema_example: "example" ":" _NL _INDENT output_schema_example_object _DEDENT
-output_schema_inherit: "inherit" CNAME _NL?
+output_schema_inherit: "inherit" CNAME _NL? -> output_schema_inherit
+                     | "inherit" "{" grouped_inherit_keys "}" _NL? -> output_schema_inherit_group
 output_schema_override_field: "override" "field" CNAME ":" string? _NL output_schema_item_body?
 output_schema_override_route_field: "override" "route" "field" CNAME ":" string? _NL output_schema_route_field_body?
 output_schema_override_def: "override" "def" CNAME ":" string? _NL output_schema_item_body?
@@ -857,7 +875,8 @@ law_body: law_item+
          | law_override_section
 
 law_section: CNAME ":" _NL _INDENT law_stmt+ _DEDENT
-law_inherit: "inherit" CNAME _NL?
+law_inherit: "inherit" CNAME _NL? -> law_inherit
+           | "inherit" "{" grouped_inherit_keys "}" _NL? -> law_inherit_group
 law_override_section: "override" CNAME ":" _NL _INDENT law_stmt+ _DEDENT
 
 ?law_stmt: active_when_stmt

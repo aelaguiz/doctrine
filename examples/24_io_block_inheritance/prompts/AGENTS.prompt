@@ -44,7 +44,7 @@ inputs BaseSectionInputs: "Your Inputs"
 
 
 inputs ReviewSectionInputs[BaseSectionInputs]: "Your Inputs"
-    inherit scoped_catalog_truth
+    inherit {scoped_catalog_truth}
 
     override continuity_only: "Continuity Only"
         "Use continuity evidence to re-earn the section."
@@ -63,7 +63,7 @@ outputs BaseSectionOutputs: "Your Outputs"
 
 
 outputs ReviewSectionOutputs[BaseSectionOutputs]: "Your Outputs"
-    inherit durable_section_truth
+    inherit {durable_section_truth}
 
     override coordination_handoff: "Coordination Handoff"
         "Point the next owner at the reviewed dossier truth."

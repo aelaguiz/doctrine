@@ -8,6 +8,39 @@ from doctrine.parser import parse_text
 
 
 class ParserSourceSpanTests(unittest.TestCase):
+    def test_import_alias_nodes_keep_source_spans(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """\
+                import shared.review as shared_review
+                from shared.review import DraftReviewComment as ImportedComment
+                from shared.steps import Greeting
+                """
+            )
+        )
+
+        first_import = prompt.declarations[0]
+        second_import = prompt.declarations[1]
+        third_import = prompt.declarations[2]
+
+        self.assertIsInstance(first_import, model.ImportDecl)
+        self.assertEqual(first_import.path.module_parts, ("shared", "review"))
+        self.assertEqual(first_import.alias, "shared_review")
+        self.assertIsNone(first_import.imported_name)
+        self.assertEqual(first_import.source_span, model.SourceSpan(line=1, column=1))
+
+        self.assertIsInstance(second_import, model.ImportDecl)
+        self.assertEqual(second_import.path.module_parts, ("shared", "review"))
+        self.assertEqual(second_import.imported_name, "DraftReviewComment")
+        self.assertEqual(second_import.alias, "ImportedComment")
+        self.assertEqual(second_import.source_span, model.SourceSpan(line=2, column=1))
+
+        self.assertIsInstance(third_import, model.ImportDecl)
+        self.assertEqual(third_import.path.module_parts, ("shared", "steps"))
+        self.assertEqual(third_import.imported_name, "Greeting")
+        self.assertIsNone(third_import.alias)
+        self.assertEqual(third_import.source_span, model.SourceSpan(line=3, column=1))
+
     def test_workflow_law_nodes_keep_source_spans(self) -> None:
         prompt = parse_text(
             textwrap.dedent(
@@ -125,6 +158,173 @@ class ParserSourceSpanTests(unittest.TestCase):
         self.assertEqual(footnotes.source_span, model.SourceSpan(line=12, column=5))
         self.assertIsInstance(footnotes.payload, model.ReadableFootnotesData)
         self.assertEqual(footnotes.payload.entries[0].source_span, model.SourceSpan(line=13, column=9))
+
+    def test_output_attachment_nodes_keep_source_spans(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """\
+                render_profile CompactComment:
+                    properties -> sentence
+
+                output ChildReply[BaseReply]: "Child Reply"
+                    inherit target
+                    override schema: SharedSchema
+                    inherit render_profile
+                    override trust_surface:
+                        verdict
+                """
+            )
+        )
+
+        output_decl = prompt.declarations[1]
+        self.assertIsInstance(output_decl, model.OutputDecl)
+        self.assertEqual(output_decl.source_span, model.SourceSpan(line=4, column=1))
+        self.assertEqual(output_decl.schema_source_span, model.SourceSpan(line=6, column=5))
+        self.assertEqual(
+            output_decl.render_profile_source_span,
+            model.SourceSpan(line=7, column=5),
+        )
+        self.assertEqual(
+            output_decl.trust_surface_source_span,
+            model.SourceSpan(line=8, column=5),
+        )
+
+    def test_schema_nodes_keep_source_spans(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """\
+                schema ReleaseSchema: "Release Schema"
+                    sections:
+                        summary: "Summary"
+                            "Summarize the release."
+
+                    artifacts:
+                        release_notes: "Release Notes"
+                            ref: ReleaseNotes
+
+                    groups:
+                        publish_packet: "Publish Packet"
+                            release_notes
+                """
+            )
+        )
+
+        schema_decl = prompt.declarations[0]
+        self.assertIsInstance(schema_decl, model.SchemaDecl)
+        self.assertEqual(schema_decl.source_span, model.SourceSpan(line=1, column=1))
+
+        sections_block = schema_decl.body.items[0]
+        self.assertIsInstance(sections_block, model.SchemaSectionsBlock)
+        self.assertEqual(sections_block.source_span, model.SourceSpan(line=2, column=5))
+        self.assertEqual(
+            sections_block.items[0].source_span,
+            model.SourceSpan(line=3, column=9),
+        )
+
+        artifacts_block = schema_decl.body.items[1]
+        self.assertIsInstance(artifacts_block, model.SchemaArtifactsBlock)
+        self.assertEqual(artifacts_block.source_span, model.SourceSpan(line=6, column=5))
+        self.assertEqual(
+            artifacts_block.items[0].source_span,
+            model.SourceSpan(line=7, column=9),
+        )
+
+        groups_block = schema_decl.body.items[2]
+        self.assertIsInstance(groups_block, model.SchemaGroupsBlock)
+        self.assertEqual(groups_block.source_span, model.SourceSpan(line=10, column=5))
+        self.assertEqual(
+            groups_block.items[0].source_span,
+            model.SourceSpan(line=11, column=9),
+        )
+
+    def test_analysis_nodes_keep_source_spans(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """\
+                analysis BaseAnalysis: "Base Analysis"
+                    stages: "Stages"
+                        prove "Release plan" from {CurrentPlan}
+                        classify "Risk band" as RiskBand
+                        compare "Coverage" against {CurrentPlan}
+                        defend "Recommendation" using {CurrentPlan}
+
+                analysis ChildAnalysis[BaseAnalysis]: "Child Analysis"
+                    override stages: "Stages"
+                        derive "Updated plan" from {CurrentPlan}
+                """
+            )
+        )
+
+        base_analysis = prompt.declarations[0]
+        self.assertIsInstance(base_analysis, model.AnalysisDecl)
+        self.assertEqual(base_analysis.source_span, model.SourceSpan(line=1, column=1))
+
+        stages = base_analysis.body.items[0]
+        self.assertIsInstance(stages, model.AnalysisSection)
+        self.assertEqual(stages.source_span, model.SourceSpan(line=2, column=5))
+        self.assertEqual(stages.items[0].source_span, model.SourceSpan(line=3, column=9))
+        self.assertEqual(stages.items[1].source_span, model.SourceSpan(line=4, column=9))
+        self.assertEqual(stages.items[2].source_span, model.SourceSpan(line=5, column=9))
+        self.assertEqual(stages.items[3].source_span, model.SourceSpan(line=6, column=9))
+
+        child_analysis = prompt.declarations[1]
+        self.assertIsInstance(child_analysis, model.AnalysisDecl)
+        self.assertEqual(child_analysis.source_span, model.SourceSpan(line=8, column=1))
+
+        override_section = child_analysis.body.items[0]
+        self.assertIsInstance(override_section, model.AnalysisOverrideSection)
+        self.assertEqual(override_section.source_span, model.SourceSpan(line=9, column=5))
+        self.assertEqual(
+            override_section.items[0].source_span,
+            model.SourceSpan(line=10, column=9),
+        )
+
+    def test_skills_nodes_keep_source_spans(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """\
+                skill GroundingSkill: "Grounding Skill"
+                    purpose: "Ground the reply."
+
+                skill ResearchSkill: "Research Skill"
+                    purpose: "Research the facts."
+
+                skills BaseSkills: "Base Skills"
+                    support: "Support"
+                        skill grounding: GroundingSkill
+                            requirement: Required
+
+                skills ChildSkills[BaseSkills]: "Child Skills"
+                    override support: "Support"
+                        skill research: ResearchSkill
+                            requirement: Advisory
+                """
+            )
+        )
+
+        base_skills = prompt.declarations[2]
+        self.assertIsInstance(base_skills, model.SkillsDecl)
+        self.assertEqual(base_skills.source_span, model.SourceSpan(line=7, column=1))
+
+        support_section = base_skills.body.items[0]
+        self.assertIsInstance(support_section, model.SkillsSection)
+        self.assertEqual(support_section.source_span, model.SourceSpan(line=8, column=5))
+        self.assertEqual(
+            support_section.items[0].source_span,
+            model.SourceSpan(line=9, column=9),
+        )
+
+        child_skills = prompt.declarations[3]
+        self.assertIsInstance(child_skills, model.SkillsDecl)
+        self.assertEqual(child_skills.source_span, model.SourceSpan(line=12, column=1))
+
+        override_section = child_skills.body.items[0]
+        self.assertIsInstance(override_section, model.OverrideSkillsSection)
+        self.assertEqual(override_section.source_span, model.SourceSpan(line=13, column=5))
+        self.assertEqual(
+            override_section.items[0].source_span,
+            model.SourceSpan(line=14, column=9),
+        )
 
 
 if __name__ == "__main__":

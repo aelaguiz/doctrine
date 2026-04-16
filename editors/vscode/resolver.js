@@ -16,8 +16,14 @@ const INTERPOLATION_EXPR_RE = new RegExp(
   `^\\s*(${DOTTED_NAME_PATTERN})(?:\\s*:\\s*(${DOTTED_NAME_PATTERN}))?\\s*$`,
 );
 
-const IMPORT_LINE_RE = new RegExp(
-  `^\\s*import\\s+(${IMPORT_PATH_PATTERN})\\s*$`,
+const MODULE_IMPORT_LINE_RE = new RegExp(
+  `^\\s*import\\s+(${IMPORT_PATH_PATTERN})(?:\\s+as\\s+(${IDENTIFIER_PATTERN}))?\\s*$`,
+);
+const FROM_IMPORT_LINE_RE = new RegExp(
+  `^\\s*from\\s+(${IMPORT_PATH_PATTERN})\\s+import\\s+(.+?)\\s*$`,
+);
+const IMPORTED_SYMBOL_BINDING_RE = new RegExp(
+  `^(${IDENTIFIER_PATTERN})(?:\\s+as\\s+(${IDENTIFIER_PATTERN}))?$`,
 );
 const INHERITED_AGENT_RE = new RegExp(
   `^\\s*(?:abstract\\s+)?agent\\s+${IDENTIFIER_PATTERN}\\s*\\[(${DOTTED_NAME_PATTERN})\\]\\s*:\\s*${STRING_OR_EMPTY_PATTERN}\\s*$`,
@@ -451,6 +457,9 @@ async function provideImportLinks(document, token) {
 
   const links = [];
   for (const entry of collectImportEntries(document, context)) {
+    if (!entry.range) {
+      continue;
+    }
     if (token.isCancellationRequested) {
       return [];
     }
@@ -471,7 +480,9 @@ async function provideDefinitionLinks(document, position, token) {
     return undefined;
   }
 
-  const importTarget = source.importEntries.find((entry) => entry.range.contains(position));
+  const importTarget = source.importEntries.find(
+    (entry) => entry.range && entry.range.contains(position),
+  );
   if (importTarget) {
     if (token.isCancellationRequested || !(await uriExists(importTarget.targetUri))) {
       return undefined;
@@ -1467,14 +1478,14 @@ async function resolveDirectDefinition(site, source) {
 }
 
 async function resolveReadableDefinition(site, source) {
-  const targetSource = await openReferencedDocument(site.ref, source);
-  if (!targetSource) {
+  const resolvedRef = await resolveReferencedSource(site.ref, source);
+  if (!resolvedRef) {
     return undefined;
   }
 
   const readable = findReadableDeclaration(
-    targetSource.index,
-    site.ref.declarationName,
+    resolvedRef.source.index,
+    resolvedRef.declarationName,
   );
   if (!readable || (readable.kind === DECLARATION_KIND.AGENT && readable.abstract)) {
     return undefined;
@@ -1483,21 +1494,21 @@ async function resolveReadableDefinition(site, source) {
   return [
     createDeclarationLocationLink(
       site.range,
-      targetSource.document,
+      resolvedRef.source.document,
       readable.nameRange,
     ),
   ];
 }
 
 async function resolveAddressableDefinition(site, source) {
-  const targetSource = await openReferencedDocument(site.ref, source);
-  if (!targetSource) {
+  const resolvedRef = await resolveReferencedSource(site.ref, source);
+  if (!resolvedRef) {
     return undefined;
   }
 
   const declaration = findAddressableDeclaration(
-    targetSource.index,
-    site.ref.declarationName,
+    resolvedRef.source.index,
+    resolvedRef.declarationName,
   );
   if (!declaration || (declaration.kind === DECLARATION_KIND.AGENT && declaration.abstract)) {
     return undefined;
@@ -1507,7 +1518,7 @@ async function resolveAddressableDefinition(site, source) {
     return [
       createDeclarationLocationLink(
         site.range,
-        targetSource.document,
+        resolvedRef.source.document,
         declaration.nameRange,
       ),
     ];
@@ -1516,7 +1527,7 @@ async function resolveAddressableDefinition(site, source) {
   const target = await findAddressablePathTarget({
     declaration,
     pathSegments: site.pathSegments.slice(0, site.segmentIndex + 1),
-    source: targetSource,
+    source: resolvedRef.source,
   });
   if (!target) {
     return undefined;
@@ -2420,22 +2431,22 @@ async function resolveReviewSemanticContext(lineContext, source) {
 }
 
 async function resolveReferenceTarget(ref, source, declarationKind, requireConcrete) {
-  const targetSource = await openReferencedDocument(ref, source);
-  if (!targetSource) {
+  const resolvedRef = await resolveReferencedSource(ref, source);
+  if (!resolvedRef) {
     return undefined;
   }
 
   const declaration = findDeclarationByKind(
-    targetSource.index,
+    resolvedRef.source.index,
     declarationKind,
-    ref.declarationName,
+    resolvedRef.declarationName,
     { requireConcrete },
   );
   if (!declaration) {
     return undefined;
   }
 
-  return { declaration, document: targetSource.document };
+  return { declaration, document: resolvedRef.source.document };
 }
 
 async function resolveWorkflowParentBody(site, source) {
@@ -2838,7 +2849,25 @@ function findStructuralKeyTarget(parentBody, key) {
   }
 }
 
-async function openReferencedDocument(ref, source) {
+async function resolveReferencedSource(ref, source) {
+  const importedSymbol = resolveImportedSymbolEntry(ref, source.importEntries);
+  if (importedSymbol) {
+    if (!(await uriExists(importedSymbol.targetUri))) {
+      return undefined;
+    }
+    if (importedSymbol.targetUri.toString() === source.document.uri.toString()) {
+      return {
+        declarationName: importedSymbol.declarationName,
+        source,
+      };
+    }
+    const document = await vscode.workspace.openTextDocument(importedSymbol.targetUri);
+    return {
+      declarationName: importedSymbol.declarationName,
+      source: getIndexedDocumentState(document),
+    };
+  }
+
   const targetUri = resolveRefTargetUri(
     ref,
     source.document.uri,
@@ -2850,11 +2879,17 @@ async function openReferencedDocument(ref, source) {
   }
 
   if (targetUri.toString() === source.document.uri.toString()) {
-    return source;
+    return {
+      declarationName: ref.declarationName,
+      source,
+    };
   }
 
   const document = await vscode.workspace.openTextDocument(targetUri);
-  return getIndexedDocumentState(document);
+  return {
+    declarationName: ref.declarationName,
+    source: getIndexedDocumentState(document),
+  };
 }
 
 function getIndexedDocumentState(document) {
@@ -5394,15 +5429,18 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
         && declaration.kind === DECLARATION_KIND.DOCUMENT
         && declaration.parentRef
       ) {
-        const parentSource = await openReferencedDocument(declaration.parentRef, currentSource);
-        if (!parentSource) {
+        const resolvedParent = await resolveReferencedSource(
+          declaration.parentRef,
+          currentSource,
+        );
+        if (!resolvedParent) {
           return undefined;
         }
 
         const parentDeclaration = findDeclarationByKind(
-          parentSource.index,
+          resolvedParent.source.index,
           DECLARATION_KIND.DOCUMENT,
-          declaration.parentRef.declarationName,
+          resolvedParent.declarationName,
           { requireConcrete: false },
         );
         if (!parentDeclaration) {
@@ -5414,12 +5452,15 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
           return undefined;
         }
 
-        const parentTarget = getDocumentBodyItems(parentSource.document, parentBody).get(segment);
+        const parentTarget = getDocumentBodyItems(
+          resolvedParent.source.document,
+          parentBody,
+        ).get(segment);
         if (!parentTarget || !parentTarget.bodySpec) {
           return undefined;
         }
 
-        currentSource = parentSource;
+        currentSource = resolvedParent.source;
         currentBody = parentTarget.bodySpec;
         currentTarget = parentTarget;
         continue;
@@ -5429,22 +5470,25 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
         return undefined;
       }
 
-      const nextSource = await openReferencedDocument(target.valueRef, currentSource);
-      if (!nextSource) {
+      const resolvedValueRef = await resolveReferencedSource(
+        target.valueRef,
+        currentSource,
+      );
+      if (!resolvedValueRef) {
         return undefined;
       }
 
       const nextDeclaration = findDeclarationByKind(
-        nextSource.index,
+        resolvedValueRef.source.index,
         target.declarationKind,
-        target.valueRef.declarationName,
+        resolvedValueRef.declarationName,
         { requireConcrete: false },
       );
       if (!nextDeclaration) {
         return undefined;
       }
 
-      currentSource = nextSource;
+      currentSource = resolvedValueRef.source;
       currentBody = getDeclarationBodySpec(nextDeclaration);
       if (!currentBody) {
         return undefined;
@@ -5459,15 +5503,15 @@ async function findAddressablePathTarget({ declaration, pathSegments, source }) 
 
 async function resolveAddressableTitleTarget({ source, target }) {
   if (target.titleRef && target.titleDeclarationKind) {
-    const nextSource = await openReferencedDocument(target.titleRef, source);
-    if (!nextSource) {
+    const resolvedTitleRef = await resolveReferencedSource(target.titleRef, source);
+    if (!resolvedTitleRef) {
       return undefined;
     }
 
     const nextDeclaration = findDeclarationByKind(
-      nextSource.index,
+      resolvedTitleRef.source.index,
       target.titleDeclarationKind,
-      target.titleRef.declarationName,
+      resolvedTitleRef.declarationName,
       { requireConcrete: false },
     );
     if (!nextDeclaration) {
@@ -5475,7 +5519,7 @@ async function resolveAddressableTitleTarget({ source, target }) {
     }
 
     return {
-      document: nextSource.document,
+      document: resolvedTitleRef.source.document,
       lineNumber: nextDeclaration.lineNumber,
       selectionRange: nextDeclaration.nameRange,
     };
@@ -5575,12 +5619,46 @@ function collectImportEntries(document, context) {
 
   for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber += 1) {
     const lineText = document.lineAt(lineNumber).text;
-    const match = lineText.match(IMPORT_LINE_RE);
-    if (!match) {
+    const moduleImport = lineText.match(MODULE_IMPORT_LINE_RE);
+    if (moduleImport) {
+      const parsed = parseImportPath(moduleImport[1]);
+      if (!parsed) {
+        continue;
+      }
+
+      const resolvedModuleParts = resolveImportModuleParts(
+        parsed,
+        context.currentModuleParts,
+      );
+      if (!resolvedModuleParts) {
+        continue;
+      }
+
+      const targetUri = parsed.level === 0
+        ? resolveAbsoluteImportTargetUri(context.importRootUris, resolvedModuleParts)
+        : modulePartsToPromptUri(context.promptRootUri, resolvedModuleParts);
+      if (!targetUri) {
+        continue;
+      }
+
+      entries.push({
+        kind: "module",
+        moduleParts: resolvedModuleParts,
+        range: createFirstMatchRange(lineText, lineNumber, moduleImport[1]),
+        targetUri,
+        visibleModuleParts: moduleImport[2]
+          ? [moduleImport[2]]
+          : resolvedModuleParts,
+      });
       continue;
     }
 
-    const parsed = parseImportPath(match[1]);
+    const fromImport = lineText.match(FROM_IMPORT_LINE_RE);
+    if (!fromImport) {
+      continue;
+    }
+
+    const parsed = parseImportPath(fromImport[1]);
     if (!parsed) {
       continue;
     }
@@ -5601,10 +5679,26 @@ function collectImportEntries(document, context) {
     }
 
     entries.push({
+      kind: "module",
       moduleParts: resolvedModuleParts,
-      range: createLastMatchRange(lineText, lineNumber, match[1]),
+      range: createFirstMatchRange(lineText, lineNumber, fromImport[1]),
       targetUri,
+      visibleModuleParts: undefined,
     });
+
+    const importedBindings = parseImportedSymbolBindings(fromImport[2]);
+    if (!importedBindings) {
+      continue;
+    }
+    for (const binding of importedBindings) {
+      entries.push({
+        declarationName: binding.name,
+        kind: "symbol",
+        moduleParts: resolvedModuleParts,
+        targetUri,
+        visibleName: binding.alias || binding.name,
+      });
+    }
   }
 
   return entries;
@@ -5638,7 +5732,9 @@ function resolveRefTargetUri(ref, documentUri, context, importEntries) {
 
   const dottedTargetModule = ref.moduleParts.join(".");
   const importedModule = importEntries.find(
-    (entry) => entry.moduleParts.join(".") === dottedTargetModule,
+    (entry) => entry.kind === "module"
+      && entry.visibleModuleParts
+      && entry.visibleModuleParts.join(".") === dottedTargetModule,
   );
   return importedModule ? importedModule.targetUri : undefined;
 }
@@ -5743,6 +5839,31 @@ function parseNameRef(rawRef) {
     declarationName: parts[parts.length - 1],
     moduleParts: parts.slice(0, -1),
   };
+}
+
+function parseImportedSymbolBindings(rawBindings) {
+  const entries = [];
+  for (const rawBinding of rawBindings.split(",")) {
+    const binding = rawBinding.trim();
+    const match = binding.match(IMPORTED_SYMBOL_BINDING_RE);
+    if (!match) {
+      return undefined;
+    }
+    entries.push({
+      alias: match[2],
+      name: match[1],
+    });
+  }
+  return entries;
+}
+
+function resolveImportedSymbolEntry(ref, importEntries) {
+  if (ref.moduleParts.length !== 0) {
+    return undefined;
+  }
+  return importEntries.find(
+    (entry) => entry.kind === "symbol" && entry.visibleName === ref.declarationName,
+  );
 }
 
 function maskQuotedText(lineText) {

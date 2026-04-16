@@ -195,6 +195,10 @@ class OutputDecl:
     structure_mode: str | None = None
     render_profile_mode: str | None = None
     trust_surface_mode: str | None = None
+    schema_source_span: SourceSpan | None = _field(default=None, compare=False)
+    structure_source_span: SourceSpan | None = _field(default=None, compare=False)
+    render_profile_source_span: SourceSpan | None = _field(default=None, compare=False)
+    trust_surface_source_span: SourceSpan | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
     @property

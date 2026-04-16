@@ -12,18 +12,21 @@ from doctrine._model.law import LawPathSet
 class ProveStmt:
     target_title: str
     basis: LawPathSet
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class DeriveStmt:
     target_title: str
     basis: LawPathSet
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class ClassifyStmt:
     target_title: str
     enum_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -31,12 +34,14 @@ class CompareStmt:
     target_title: str
     basis: LawPathSet
     using_expr: Expr | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class DefendStmt:
     target_title: str
     basis: LawPathSet
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 AnalysisSectionItem: _TypeAlias = (
@@ -55,6 +60,7 @@ class AnalysisSection:
     key: str
     title: str
     items: tuple[AnalysisSectionItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -62,6 +68,7 @@ class AnalysisOverrideSection:
     key: str
     title: str | None
     items: tuple[AnalysisSectionItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 AnalysisItem: _TypeAlias = AnalysisSection | InheritItem | AnalysisOverrideSection

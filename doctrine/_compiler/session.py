@@ -7,6 +7,7 @@ from pathlib import Path
 
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey, index_unit, load_module
 from doctrine._compiler.types import (
     CompiledAgent,
@@ -80,12 +81,18 @@ class CompilationSession:
                 if resolved_project_config is not None
                 else None
             )
-            # Keep any inner config site truth; this wrapper only fills the
-            # best known config location when the error itself could not.
-            raise CompileError(str(exc)).ensure_location(
-                path=config_path,
+            location, excerpt, caret_column = _project_config_site(
+                config_path,
                 line=exc.line,
                 column=exc.column,
+            )
+            raise CompileError.from_parts(
+                code="E285",
+                summary="Invalid compile config",
+                detail=str(exc),
+                location=location,
+                excerpt=excerpt,
+                caret_column=caret_column,
             ) from exc
 
         self.project_config = resolved_project_config
@@ -134,6 +141,8 @@ class CompilationSession:
                 previous_turn_contexts=previous_turn_contexts,
             ).compile_agent(agent_name)
         except DoctrineError as exc:
+            # Trace frames add session context, but only fill the primary site
+            # when the inner diagnostic did not already prove one.
             raise exc.prepend_trace(
                 f"compile agent `{agent_name}`",
                 location=path_location(self.root_unit.prompt_file.source_path),
@@ -341,6 +350,29 @@ def _toml_decode_site(
     resolved_path = config_path.resolve()
     line = getattr(exc, "lineno", None)
     column = getattr(exc, "colno", None)
+    if line is None or column is None:
+        return path_location(resolved_path), (), None
+    try:
+        source = resolved_path.read_text(encoding="utf-8")
+    except OSError:
+        return DiagnosticLocation(path=resolved_path, line=line, column=column), (), None
+    excerpt, caret_column = _build_excerpt(source, line=line, column=column)
+    return (
+        DiagnosticLocation(path=resolved_path, line=line, column=column),
+        excerpt,
+        caret_column,
+    )
+
+
+def _project_config_site(
+    config_path: Path | None,
+    *,
+    line: int | None,
+    column: int | None,
+) -> tuple[DiagnosticLocation | None, tuple[object, ...], int | None]:
+    if config_path is None:
+        return None, (), None
+    resolved_path = config_path.resolve()
     if line is None or column is None:
         return path_location(resolved_path), (), None
     try:

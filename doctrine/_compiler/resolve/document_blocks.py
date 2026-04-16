@@ -6,9 +6,9 @@ from dataclasses import replace
 from doctrine._compiler.readable_diagnostics import (
     duplicate_readable_key_error,
     invalid_readable_block_error,
+    readable_source_span,
 )
 from doctrine._compiler.resolved_types import (
-    CompileError,
     IndexedUnit,
     ResolvedRenderProfile,
     ReviewSemanticContext,
@@ -53,9 +53,10 @@ class ResolveDocumentBlocksMixin:
                 payload=self._resolve_document_shared_readable_body(
                     item.payload,
                     unit=unit,
-                    owner_label=owner_label,
-                    kind="section",
-                ),
+                owner_label=owner_label,
+                kind="section",
+                owner_source_span=item.source_span,
+            ),
                 item_schema=item_schema,
                 row_schema=row_schema,
         )
@@ -68,8 +69,13 @@ class ResolveDocumentBlocksMixin:
                 kind=item.kind,
             ):
                 if not isinstance(list_item, model.ReadableListItem):
-                    raise CompileError(
-                        f"Readable {item.kind} items must stay list entries in {owner_label}"
+                    raise invalid_readable_block_error(
+                        detail=(
+                            f"Readable {item.kind} items must stay list entries in "
+                            f"{owner_label}."
+                        ),
+                        unit=unit,
+                        source_span=readable_source_span(list_item) or item.source_span,
                     )
                 if list_item.key is not None:
                     if list_item.key in seen_keys:
@@ -121,8 +127,13 @@ class ResolveDocumentBlocksMixin:
                 kind="definitions",
             ):
                 if not isinstance(definition, model.ReadableDefinitionItem):
-                    raise CompileError(
-                        f"Readable definitions entries must stay definition items in {owner_label}"
+                    raise invalid_readable_block_error(
+                        detail=(
+                            f"Readable definitions entries must stay definition items in "
+                            f"{owner_label}."
+                        ),
+                        unit=unit,
+                        source_span=readable_source_span(definition) or item.source_span,
                     )
                 if definition.key in seen_keys:
                     raise duplicate_readable_key_error(
@@ -184,15 +195,20 @@ class ResolveDocumentBlocksMixin:
                 payload=self._resolve_document_shared_readable_body(
                     item.payload,
                     unit=unit,
-                    owner_label=owner_label,
-                    kind="guard",
-                ),
+                owner_label=owner_label,
+                kind="guard",
+                owner_source_span=item.source_span,
+            ),
                 item_schema=item_schema,
                 row_schema=row_schema,
             )
         if item.kind == "callout":
             if not isinstance(item.payload, model.ReadableCalloutData):
-                raise CompileError(f"Readable callout payload must stay callout-shaped in {owner_label}")
+                raise invalid_readable_block_error(
+                    detail=f"Readable callout payload must stay callout-shaped in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(item.payload) or item.source_span,
+                )
             if item.payload.kind is not None and item.payload.kind not in {
                 "required",
                 "important",
@@ -232,7 +248,11 @@ class ResolveDocumentBlocksMixin:
             )
         if item.kind == "code":
             if not isinstance(item.payload, model.ReadableCodeData):
-                raise CompileError(f"Readable code payload must stay code-shaped in {owner_label}")
+                raise invalid_readable_block_error(
+                    detail=f"Readable code payload must stay code-shaped in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(item.payload) or item.source_span,
+                )
             if "\n" not in item.payload.text:
                 raise invalid_readable_block_error(
                     detail=f"Readable code block `{owner_label}` must use a multiline string.",
@@ -243,7 +263,11 @@ class ResolveDocumentBlocksMixin:
             return replace(item, item_schema=item_schema, row_schema=row_schema)
         if item.kind in {"markdown", "html"}:
             if not isinstance(item.payload, model.ReadableRawTextData):
-                raise CompileError(f"Readable {item.kind} payload must stay text-shaped in {owner_label}")
+                raise invalid_readable_block_error(
+                    detail=f"Readable {item.kind} payload must stay text-shaped in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(item.payload) or item.source_span,
+                )
             text = self._interpolate_authored_prose_string(
                 item.payload.text,
                 unit=unit,
@@ -282,7 +306,11 @@ class ResolveDocumentBlocksMixin:
             )
         if item.kind == "image":
             if not isinstance(item.payload, model.ReadableImageData):
-                raise CompileError(f"Readable image payload must stay image-shaped in {owner_label}")
+                raise invalid_readable_block_error(
+                    detail=f"Readable image payload must stay image-shaped in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(item.payload) or item.source_span,
+                )
             return replace(
                 item,
                 payload=model.ReadableImageData(
@@ -336,6 +364,7 @@ class ResolveDocumentBlocksMixin:
         unit: IndexedUnit,
         owner_label: str,
         kind: str,
+        owner_source_span: model.SourceSpan | None = None,
     ) -> tuple[model.ReadableSectionBodyItem, ...]:
         resolved: list[model.ReadableSectionBodyItem] = []
         for child in self._require_tuple_payload(payload, owner_label=owner_label, kind=kind):
@@ -351,8 +380,10 @@ class ResolveDocumentBlocksMixin:
                 )
                 continue
             if not isinstance(child, model.ReadableBlock):
-                raise CompileError(
-                    f"Readable {kind} payload must stay block-shaped in {owner_label}"
+                raise invalid_readable_block_error(
+                    detail=f"Readable {kind} payload must stay block-shaped in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(child) or owner_source_span,
                 )
             resolved.append(
                 self._resolve_document_block(
@@ -425,7 +456,11 @@ class ResolveDocumentBlocksMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ReadablePropertiesData:
         if not isinstance(payload, model.ReadablePropertiesData):
-            raise CompileError(f"Readable properties payload must stay properties-shaped in {owner_label}")
+            raise invalid_readable_block_error(
+                detail=f"Readable properties payload must stay properties-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload),
+            )
         seen_keys: dict[str, model.ReadablePropertyItem] = {}
         entries: list[model.ReadablePropertyItem] = []
         for entry in payload.entries:
@@ -474,7 +509,11 @@ class ResolveDocumentBlocksMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ReadableFootnotesData:
         if not isinstance(payload, model.ReadableFootnotesData):
-            raise CompileError(f"Readable footnotes payload must stay footnotes-shaped in {owner_label}")
+            raise invalid_readable_block_error(
+                detail=f"Readable footnotes payload must stay footnotes-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload),
+            )
         seen_keys: dict[str, model.ReadableFootnoteItem] = {}
         entries: list[model.ReadableFootnoteItem] = []
         for entry in payload.entries:
@@ -519,7 +558,11 @@ class ResolveDocumentBlocksMixin:
         owner_source_span: model.SourceSpan | None = None,
     ) -> model.ReadableTableData:
         if not isinstance(payload, model.ReadableTableData):
-            raise CompileError(f"Readable table payload must stay table-shaped in {owner_label}")
+            raise invalid_readable_block_error(
+                detail=f"Readable table payload must stay table-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or owner_source_span,
+            )
         return self._resolve_readable_table_data(
             payload,
             unit=unit,

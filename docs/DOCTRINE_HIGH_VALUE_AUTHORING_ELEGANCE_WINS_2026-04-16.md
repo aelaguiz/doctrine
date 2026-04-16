@@ -75,7 +75,7 @@ Implement only the parser-level and fail-loud wins that lower to existing
 Doctrine models:
 
 1. add import aliases and symbol imports
-2. add grouped explicit `inherit { ... }` and grouped bare-ref `override { ... }`
+2. add grouped explicit `inherit { ... }` across the current inherited keyed-item families
 3. add identity-binding sugar for `review.fields`, `review override fields`,
    and `final_output.review_fields`
 4. add one-line first-class IO wrapper refs for `inputs` and `outputs`
@@ -88,8 +88,7 @@ rules, or macro-like indirection stays out of this plan.
 ## Plan
 
 1. Add import aliasing across the full `name_ref` family.
-2. Add grouped explicit `inherit` and grouped bare-ref `override` across the
-   inherited keyed-item families.
+2. Add grouped explicit `inherit` across the inherited keyed-item families.
 3. Add review-binding shorthand on the three existing semantic-binding
    surfaces.
 4. Add first-class IO wrapper shorthand on `inputs` and `outputs`.
@@ -117,6 +116,140 @@ full-wave proof gate.
   phase.
 - Every authoring change ships with example, test, live-doc, editor-syntax,
   and diagnostics truth in the same phase.
+
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-16
+Verdict (code): NOT COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- Phase 2 is still false-complete on the current tree. Fresh audit reran
+  `make verify-diagnostics` and `make verify-examples`; diagnostics passed,
+  but the corpus still fails on route/readback render and build contracts
+  across `30`, `32`, `70`, `72`, `87`, `89`, `91`, `94`, `111`, and `119`.
+- The real remaining ordered frontier is still Phase 3 through Phase 7 under
+  the repaired plan. Grouped explicit `inherit`, review-binding shorthand, IO
+  wrapper shorthand, `self:`, named diagnostics `E309` / `E311` / `E312`
+  with `E310` reserved, and the wave-level release truth are not shipped on
+  the current tree.
+
+## Reopened phases (false-complete fixes)
+- Phase 2 (Add alias-aware imports on the existing import and ref path) — reopened because:
+  - `make verify-examples` is red on the current tree, which fails the phase
+    verification list
+  - the phase section still overstates proof closure after that gate failed
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- Phase 2 proof closure
+  - Evidence anchors:
+    - `doctrine/_compiler/compile/workflows.py:209`
+    - `doctrine/_compiler/display.py:669`
+    - `doctrine/_compiler/compile/records.py:66`
+    - `doctrine/_compiler/compile/records.py:195`
+    - `doctrine/_compiler/compile/records.py:227`
+    - `examples/30_law_route_only_turns/cases.toml:18`
+    - `examples/32_modes_and_match/cases.toml:18`
+    - `examples/70_route_only_declaration/cases.toml:17`
+    - `examples/72_schema_group_invalidation/cases.toml:15`
+    - `examples/87_workflow_route_output_binding/cases.toml:97`
+    - `examples/91_handoff_routing_route_output_binding/cases.toml:60`
+    - `examples/94_route_choice_guard_narrowing/cases.toml:29`
+    - `examples/111_inherited_output_route_semantics/cases.toml:17`
+    - `examples/119_route_only_final_output_contract/build_ref/route_only_final_output_contract_demo/AGENTS.md:7`
+  - Plan expects:
+    - Phase 2 stays complete only if its full verification list passes,
+      including `make verify-examples`, while preserving the shipped
+      import-adjacent route and readback contracts.
+  - Code reality:
+    - fresh audit reran `make verify-diagnostics`; it passed.
+    - fresh audit reran `make verify-examples`, and the current tree still
+      drifts on route and readback examples. The compiler now emits
+      `This pass runs only when ...` and section-style guarded output/readback
+      blocks where the checked-in corpus still expects `Use this pass only
+      when ...` and inline guarded bullets.
+  - Fix:
+    - restore the checked-in route and readback rendering contract or land a
+      deliberate plan-backed contract migration, then rerun
+      `make verify-examples` until it passes.
+- Remaining approved frontier after Phase 2
+  - Evidence anchors:
+    - `doctrine/grammars/doctrine.lark:165`
+    - `doctrine/grammars/doctrine.lark:203`
+    - `doctrine/grammars/doctrine.lark:204`
+    - `doctrine/grammars/doctrine.lark:643`
+    - `doctrine/grammars/doctrine.lark:645`
+    - `doctrine/grammars/doctrine.lark:957`
+    - `doctrine/_model/core.py:101`
+    - `doctrine/parser.py:159`
+    - `docs/COMPILER_ERRORS.md:139`
+    - `CHANGELOG.md:1`
+    - `docs/VERSIONING.md:1`
+  - Plan expects:
+    - after Phase 2, the repaired ordered frontier still owes Phase 3 grouped
+      explicit `inherit`, Phase 4 review-binding shorthand, Phase 5 IO
+      wrapper shorthand, Phase 6 `self:`, the matching named diagnostics
+      band with `E310` reserved, and Phase 7 release truth plus full-wave
+      proof.
+  - Code reality:
+    - the current tree still shows only singular `inherit`, explicit
+      `semantic: field_path` review bindings, multiline IO wrapper sections,
+      explicit-root `PATH_REF`, an `AddressableRef` that still requires an
+      explicit `root: NameRef`, and a public error catalog that stops at
+      `E308`. Inference from current `CHANGELOG.md` and `docs/VERSIONING.md`:
+      the wave-level release truth is not recorded yet either.
+  - Fix:
+    - implement and prove the remaining ordered frontier from Phase 3 through
+      Phase 7 instead of treating the import phase as the whole wave.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- None.
+<!-- arch_skill:block:implementation_audit:end -->
+
+<!-- arch_skill:block:phase3_plan_repair:start -->
+# Phase 3 Plan Repair (authoritative)
+Date: 2026-04-16
+Status: APPLIED
+
+Supersedes any earlier mention in this doc that Phase 3 will ship grouped
+bare-ref `override { ... }` across the full inherited family.
+
+## Why the old Phase 3 shape was not executable
+- Grouped explicit `inherit { ... }` can lower cleanly into repeated
+  `InheritItem`s before resolve.
+- Grouped bare-ref `override { ... }` cannot do the same on the current tree.
+  The shipped override carriers for analysis, document, review, schema,
+  workflow, skills, IO, output, and output-schema bodies all require an
+  explicit body, value, kind, or target. Landing grouped bare-ref override
+  across those families would require new resolver-side parent-kind lookup or
+  a new override-preserve semantic owner, which breaks the approved
+  parser-sugar-only constraint for this phase.
+- Evidence anchors:
+  - `doctrine/_model/analysis.py`
+  - `doctrine/_model/readable.py`
+  - `doctrine/_model/review.py`
+  - `doctrine/_model/schema.py`
+  - `doctrine/_model/workflow.py`
+  - `doctrine/_model/io.py`
+  - `doctrine/_compiler/resolve/analysis.py`
+  - `doctrine/_compiler/resolve/documents.py`
+  - `doctrine/_compiler/resolve/reviews.py`
+  - `doctrine/_compiler/resolve/output_schemas.py`
+  - `doctrine/_compiler/resolve/outputs.py`
+
+## Repair applied
+- Phase 3 now ships grouped explicit `inherit { ... }` only.
+- Grouped bare-ref `override` is deferred out of this wave. It may return only
+  in a new approved plan that explicitly allows the needed resolver semantics
+  or a new authored owner.
+- `E309` stays assigned to malformed grouped `inherit`.
+- `E310` stays reserved for the deferred grouped-override investigation so the
+  later code bands in this plan do not shift again.
+- This repair is folded through the rest of the approved plan surface:
+  North Star, scope, acceptance, target architecture, call-site audit,
+  migration notes, pattern consolidation, phased rollout, consistency pass,
+  and decision log now all carry the same deferred grouped-override story.
+<!-- arch_skill:block:phase3_plan_repair:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
 <!--
@@ -156,9 +289,6 @@ existing prompt file needs to change to keep compiling.
   - document blocks
   - review items
   - output, output shape, and output schema items
-- Add grouped bare-ref `override { ... }` on the same families, for the
-  common case where an override is a bare reference to an inherited entry
-  with no new body. Entries that carry a body keep the multi-line block form.
 - Add identity-binding sugar on the existing semantic-binding surfaces:
   - `review fields:`
   - `review override fields:`
@@ -204,21 +334,23 @@ existing prompt file needs to change to keep compiling.
   - `CHANGELOG.md`
 - Add explicit fail-loud diagnostics with named codes where the new surface
   needs one sharp story (provisional codes; finalize in each phase):
-  - `E291` duplicate module alias in one module
-  - `E292` duplicate imported symbol in one module
-  - `E293` ambiguous imported symbol ownership at use site
-  - `E294` malformed grouped `inherit` (unknown key, duplicate key, empty
+  - `E306` duplicate module alias in one module
+  - `E307` duplicate imported symbol in one module
+  - `E308` ambiguous imported symbol ownership at use site
+  - `E309` malformed grouped `inherit` (unknown key, duplicate key, empty
     group, wrong shape)
-  - `E295` malformed grouped bare-ref `override` (same failure modes)
-  - `E296` malformed IO wrapper shorthand — teach the upgrade path to a
+  - `E310` reserved for the deferred grouped-override investigation so later
+    code bands stay stable
+  - `E311` malformed IO wrapper shorthand — teach the upgrade path to a
     multi-line wrapper in the error text
-  - `E297` malformed `self:` usage where no declaration-root addressable
+  - `E312` malformed `self:` usage where no declaration-root addressable
     context exists
   - `E236` / `E237` stay as the retired `output schema` nullability errors
 
 ## 0.3 Out of scope
 
 - `inherit *` or any keep-the-rest merge-by-omission story
+- grouped bare-ref `override { ... }` across the inherited keyed-item family
 - route-only owner alias surfaces such as `owner scope:`
 - output-side semantic tagging or `fields from output`
 - compact IO heads like `file(...) -> MarkdownDocument required`
@@ -242,13 +374,11 @@ existing prompt file needs to change to keep compiling.
   uses, not only on one favored surface.
 - Grouped explicit `inherit` lands across the inherited keyed-item families
   that currently repeat singular `inherit` lines.
-- Grouped bare-ref `override` lands on the same families for the
-  no-new-body case; entries that carry a body keep the multi-line block form.
 - Review-field shorthand works on all three review binding surfaces, keeps
   one binding truth after lowering, and allows mixing bare semantic names
   with explicit `semantic: path` entries in the same block.
 - First-class IO wrappers can express one-ref buckets in one line on `inputs`
-  and `outputs`, with a fail-loud `E296` error that teaches the multi-line
+  and `outputs`, with a fail-loud `E311` error that teaches the multi-line
   upgrade path when the ref resolves to more than one child.
 - `self:` works anywhere Doctrine already accepts an `AddressableRef` and is
   carried by one extended `AddressableRef` variant, not a sentinel value.
@@ -323,11 +453,10 @@ existing prompt file needs to change to keep compiling.
 - Rooted paths and macro-like ref sets stay deferred as out-of-scope
   naming systems, not sequencing defers.
 - Grouped `inherit` lands broad across the full inherited keyed-item family.
-  Grouped `override` lands on the same families only for the bare-ref case
-  (override an inherited entry with no new body); entries that carry a body
-  keep the multi-line block form. This keeps `inherit`/`override` authoring
-  symmetric without forcing override bodies into a grouped form that would
-  hurt readability.
+  Grouped bare-ref `override` is deferred out of this wave because the
+  current override carriers would need new resolver-side parent-kind lookup
+  or a new authored owner. Singular and body-carrying override forms stay
+  as-is.
 - Review identity shorthand allows bare semantic names and explicit
   `semantic: path` entries to mix in the same block. Forcing authors to pick
   one or the other would turn every non-identity bind into a ceremony tax.
@@ -595,17 +724,18 @@ to the same internal shapes.
 ## 3.3 Decision gaps that must be resolved before implementation
 
 - None at the planning-scope level. Locked decisions for this wave:
-  - compatibility posture is fully additive across all six wins
+  - compatibility posture is fully additive across the remaining wave surface
   - `self:` lowers as an extended `AddressableRef` variant, not a sentinel
     value outside the carrier
-  - grouped `override` lands for the bare-ref case on the same families as
-    grouped `inherit`; bodies stay multi-line
+  - grouped bare-ref `override` is deferred out of this wave; singular and
+    body-carrying override forms stay on the current paths
   - review identity shorthand permits mixing bare semantic names with
     explicit `semantic: path` entries in the same block
   - grouped `inherit { ... }` keys resolve only against inherited-parent
     names, never against the import scope
-  - named diagnostic codes (provisional: `E291`..`E297`) are assigned upfront
-    and finalized in each feature phase
+  - named diagnostic codes keep the `E306`..`E312` band, with `E310`
+    reserved and the shipped phase-owned codes finalized in each feature
+    phase
 - Later stages should treat these as locked unless new repo evidence reveals
   a direct contradiction.
 <!-- arch_skill:block:research_grounding:end -->
@@ -823,10 +953,10 @@ Not applicable. This is language, compiler, docs, and corpus work.
 - One inheritance story:
   - all grouped authored forms lower to the same `InheritItem` stream the
     resolvers already understand
-  - grouped `override { ... }` is bare-ref only; entries with a body keep
-    the multi-line block form and lower through the existing override path
-  - grouped `inherit` / `override` keys resolve only against inherited-parent
-    names and never participate in import-scope lookup
+  - grouped bare-ref `override` is deferred out of this wave; singular and
+    body-carrying override forms stay on the existing owner paths
+  - grouped `inherit` keys resolve only against inherited-parent names and
+    never participate in import-scope lookup
   - no `inherit *`
   - no merge-by-omission
 - One review-binding story:
@@ -844,7 +974,7 @@ Not applicable. This is language, compiler, docs, and corpus work.
   - base and override wrappers move together
   - the current `ValidateContractsMixin` -> `ResolveIoContractsMixin` ->
     `ResolveOutputsMixin` owner split stays the only lowering path
-  - fail-loud `E296` fires when the shorthand ref does not lower to exactly
+  - fail-loud `E311` fires when the shorthand ref does not lower to exactly
     one child, and the error text teaches the author the multi-line wrapper
     upgrade path
   - `input source` and `output target` stay out of this wave
@@ -878,13 +1008,14 @@ Not applicable. This is language, compiler, docs, and corpus work.
 - Sharp fail-loud diagnostics are part of the public design, with named
   provisional codes:
   - legacy output-schema words stay targeted hard errors (`E236`, `E237`)
-  - alias and imported-symbol collisions fail loud (`E291`, `E292`)
-  - ambiguous imported ownership at the use site fails loud (`E293`)
-  - malformed grouped `inherit` (`E294`) and malformed grouped bare-ref
-    `override` (`E295`) fail loud at the parser or compile boundary
-  - malformed IO wrapper shorthand fails loud (`E296`) and the message
+  - alias and imported-symbol collisions fail loud (`E306`, `E307`)
+  - ambiguous imported ownership at the use site fails loud (`E308`)
+  - malformed grouped `inherit` (`E309`) fails loud at the parser or compile
+    boundary
+  - `E310` stays reserved for the deferred grouped-override investigation
+  - malformed IO wrapper shorthand fails loud (`E311`) and the message
     teaches the multi-line wrapper upgrade path
-  - malformed `self:` usage fails loud (`E297`) where no declaration-root
+  - malformed `self:` usage fails loud (`E312`) where no declaration-root
     addressable context exists
 
 ## 5.5 UI surfaces (ASCII mockups, if UI work)
@@ -901,16 +1032,16 @@ Not applicable.
 | ---- | ---- | ------------------ | ---------------- | --------------- | --- | ------------------ | -------------- |
 | Import surface grammar | `doctrine/grammars/doctrine.lark` | `import_decl`, `import_path` | Supports only `import path` with no alias or symbol import form | Add module alias and symbol-import productions; keep wildcard imports out | This is the highest-value repetition cut and must start at the public surface | `import pkg.mod as alias`; `from pkg.mod import Name`; `from pkg.mod import Name as Alias` | new parser tests; `examples/03_imports`; `make verify-examples` |
 | Import parse and model | `doctrine/parser.py`, `doctrine/_model/core.py` | `import_decl`, `ImportDecl` | Lowers only an `ImportPath` | Enrich `ImportDecl` to carry alias-aware import data without changing `NameRef` | Keep one named-ref story and one import carrier | alias-aware import declarations only; `NameRef` stays the ref carrier | import-loading and parser tests |
-| Import indexing and resolution | `doctrine/_compiler/session.py`, `doctrine/_compiler/indexing.py`, `doctrine/_compiler/resolve/refs.py`, `doctrine/_compiler/reference_diagnostics.py` | session-scoped module graph, `_resolve_import_path`, `IndexedUnit.imported_units`, named-ref lookup | Loads imported modules through the current session-scoped graph, but no local alias scope or imported-symbol scope exists yet | Add one local import-scope map and teach named-ref resolution to use it; emit `E291` duplicate alias, `E292` duplicate imported symbol, `E293` ambiguous imported ownership | Avoid a second alias resolver and keep fail-loud ambiguity in the compiler | module aliases and imported symbols resolve through the existing lookup path | `tests/test_import_loading.py`; `tests/test_compiler_boundary.py`; `tests/test_emit_flow.py`; `tests/test_review_imported_outputs.py`; `examples/03_imports`; `examples/86_imported_review_comment_local_routes`; `examples/109_imported_review_handoff_output_inheritance` |
-| Grouped inherit/override grammar | `doctrine/grammars/doctrine.lark` | `agent_slot_inherit`, `workflow_inherit`, `law_inherit`, `analysis_inherit`, `schema_inherit`, `document_inherit`, `review_inherit`, `skills_inherit`, `io_inherit`, `output_inherit`, `output_schema_inherit`, and the matching `*_override` rules | Every inherited family spells singular `inherit key` / `override key` lines only | Add grouped explicit `inherit { ... }` using each family's existing key token; add grouped bare-ref `override { ... }` on the same families (bodies keep the multi-line form) | The repeated accounting rule is shared; the sugar should follow the whole carrier family for both `inherit` and `override` | grouped explicit `inherit` and grouped bare-ref `override`; no `inherit *`; no body-grouping for overrides | new parser coverage; inherited and override family tests |
-| Grouped inherit/override parse lowering | `doctrine/_parser/workflows.py`, `doctrine/_parser/analysis_decisions.py`, `doctrine/_parser/transformer.py`, `doctrine/_parser/reviews.py`, `doctrine/_parser/skills.py`, `doctrine/_parser/io.py` | family-specific `*_inherit` and `*_override` methods | Lower only one `InheritItem` / override item at a time | Expand grouped authored forms into repeated `InheritItem`s (and the matching per-family override items) before resolve; emit `E294` / `E295` for malformed groups | Keep resolver semantics unchanged and fail loud | parser-level sugar only; no resolver-side merge semantics; grouped keys resolve only against inherited-parent names | inherited and override family tests; `examples/24`; `examples/107`; `examples/108` |
+| Import indexing and resolution | `doctrine/_compiler/session.py`, `doctrine/_compiler/indexing.py`, `doctrine/_compiler/resolve/refs.py`, `doctrine/_compiler/reference_diagnostics.py` | session-scoped module graph, `_resolve_import_path`, `IndexedUnit.imported_units`, named-ref lookup | Loads imported modules through the current session-scoped graph, but no local alias scope or imported-symbol scope exists yet | Add one local import-scope map and teach named-ref resolution to use it; emit `E306` duplicate alias, `E307` duplicate imported symbol, `E308` ambiguous imported ownership | Avoid a second alias resolver and keep fail-loud ambiguity in the compiler | module aliases and imported symbols resolve through the existing lookup path | `tests/test_import_loading.py`; `tests/test_compiler_boundary.py`; `tests/test_emit_flow.py`; `tests/test_review_imported_outputs.py`; `examples/03_imports`; `examples/86_imported_review_comment_local_routes`; `examples/109_imported_review_handoff_output_inheritance` |
+| Grouped inherit grammar | `doctrine/grammars/doctrine.lark` | `agent_slot_inherit`, `workflow_inherit`, `law_inherit`, `analysis_inherit`, `schema_inherit`, `document_inherit`, `review_inherit`, `skills_inherit`, `io_inherit`, `output_inherit`, `output_schema_inherit` | Every inherited family spells singular `inherit key` lines only | Add grouped explicit `inherit { ... }` using each family's existing key token | The repeated accounting rule is shared across the inherited carriers | grouped explicit `inherit`; no `inherit *` | new parser coverage; inherited-family tests |
+| Grouped inherit parse lowering | `doctrine/_parser/workflows.py`, `doctrine/_parser/analysis_decisions.py`, `doctrine/_parser/transformer.py`, `doctrine/_parser/reviews.py`, `doctrine/_parser/skills.py`, `doctrine/_parser/io.py` | family-specific `*_inherit` methods | Lower only one `InheritItem` at a time | Expand grouped authored forms into repeated `InheritItem`s before resolve; emit `E309` for malformed groups | Keep resolver semantics unchanged and fail loud | parser-level sugar only; no resolver-side merge semantics; grouped keys resolve only against inherited-parent names | inherited-family tests; `examples/24`; `examples/107`; `examples/108` |
 | Inherited family resolvers | `doctrine/_compiler/resolve/agent_slots.py`, `doctrine/_compiler/resolve/workflows.py`, `doctrine/_compiler/resolve/analysis.py`, `doctrine/_compiler/resolve/documents.py`, `doctrine/_compiler/resolve/skills.py`, `doctrine/_compiler/resolve/addressable_skills.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/reviews.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/_compiler/resolve/output_schemas.py` | missing-entry and undefined-key checks | Already enforce explicit inherited accounting with fail-loud errors | Reuse the same semantics unchanged; only sharpen diagnostics if grouped syntax needs clearer blame | This wave is sugar, not an inheritance redesign | same inherited semantics with grouped authoring | `tests/test_output_inheritance.py`; existing family tests |
 | Review binding grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/reviews.py`, `doctrine/_parser/agents.py` | `semantic_field_binding`, `fields_stmt`, `final_output_review_fields_stmt`, review override fields | Requires `semantic: field_path` even for identity cases; all three surfaces repeat the same full form | Add bare semantic-name entries that lower to the same binding tuple on all three surfaces (`review.fields`, `review override fields`, `final_output.review_fields`); allow bare and explicit entries to mix in the same block | Remove pure ceremony without adding a second binding surface; keep one identity-binding rule across all three review surfaces | all three surfaces accept bare semantic names for identity binds, explicit `semantic: path` entries stay legal, and mixing both forms in the same block is legal | review and final-output tests; `tests/test_review_imported_outputs.py`; `examples/85`; `examples/86`; `examples/90`; `examples/104`; `examples/105`; `examples/106` |
 | Review compile validation | `doctrine/_compiler/compile/review_contract.py`, `doctrine/_compiler/compile/final_output.py` | final-response binding validation and payload preview wiring | Consumes explicit bindings only | Accept parser-lowered identity bindings with no semantic change | Keep one semantic-binding truth through compile and emit | no new contract fields; only shorter authoring | `tests/test_final_output.py`; `tests/test_emit_docs.py` |
-| IO wrapper grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_model/io.py` | `io_section`, `io_override_section`, `IoSection`, `OverrideIoSection` | Keyed `inputs` / `outputs` wrappers require multiline bodies, even for one child ref | Add `key: NameRef` and `override key: NameRef` sugar that lowers to one-child wrapper sections through the existing omitted-title rule; emit `E296` with the multi-line upgrade path in the message when the ref resolves to more than one child | This is the cleanest IO-side repetition cut and stays inside one family | one-line keyed IO wrapper refs on `inputs` and `outputs` only | IO parser tests; `examples/24`; `examples/117` |
+| IO wrapper grammar and parse | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_model/io.py` | `io_section`, `io_override_section`, `IoSection`, `OverrideIoSection` | Keyed `inputs` / `outputs` wrappers require multiline bodies, even for one child ref | Add `key: NameRef` and `override key: NameRef` sugar that lowers to one-child wrapper sections through the existing omitted-title rule; emit `E311` with the multi-line upgrade path in the message when the ref resolves to more than one child | This is the cleanest IO-side repetition cut and stays inside one family | one-line keyed IO wrapper refs on `inputs` and `outputs` only | IO parser tests; `examples/24`; `examples/117` |
 | IO resolve and validation | `doctrine/_compiler/validate/contracts.py`, `doctrine/_compiler/resolve/io_contracts.py`, `doctrine/_compiler/resolve/outputs.py`, `doctrine/emit_docs.py` | `_summarize_contract_field`, `_resolve_contract_bucket_ref_entry`, `_resolve_non_inherited_io_items`, `_resolve_io_section_item`, `_lower_omitted_io_section` | The live IO path already has a real owner split: contract summary in `validate/contracts.py`, bucket lowering in `resolve/io_contracts.py`, inherited IO-body and omitted-title lowering in `resolve/outputs.py`, and public contract emission in `emit_docs.py` | Add one-line keyed-wrapper behavior by extending those existing owners and reusing the current bucket and omitted-title path; keep `final_output.contract.json.io` byte-equal on rewritten manifests | Prevent a third IO lowering path and keep the runtime `io` contract stable | same resolved IO contract and emitted runtime payload; shorter authoring only | IO resolve tests; `tests/test_output_rendering.py`; `tests/test_emit_docs.py`; `examples/24`; `examples/117`; byte-equal manifest ref proof |
 | `self:` path surface | `doctrine/grammars/doctrine.lark`, `doctrine/parser.py`, `doctrine/_model/core.py` | `PATH_REF`, `path_ref`, `AddressableRef` | Every addressable path requires an explicit declaration root; `AddressableRef` always carries a declaration root | Add `self:` as an authored shorthand on existing `PATH_REF` surfaces and extend `AddressableRef` with a self-rooted variant (for example a nullable declaration root plus a `self` flag). Lower `self:` into that variant and keep the one addressable-ref carrier | Reduce repeated roots without creating a new addressable namespace or a sentinel value outside the carrier | `self:path.to.item` on existing addressable-ref surfaces only; one `AddressableRef` carrier with a self-rooted variant | addressable parser tests; `examples/28` |
-| `self:` resolution and validation | `doctrine/_compiler/resolve/addressables.py`, `doctrine/_compiler/validate/addressable_children.py`, `doctrine/_compiler/validate/addressable_display.py` | `_resolve_addressable_ref_value`, `_resolve_addressable_root_decl`, child walking and display | Resolve only explicit roots today | Bind the self-rooted variant to the current owning declaration before normal path descent and display; emit `E297` where no declaration-root context exists | Keep one addressable-resolution story and one error path | same resolved addressable targets with shorter authoring | addressable tests; route and review path-read tests where affected; interpolation coverage for `self:` on `PATH_REF` surfaces |
+| `self:` resolution and validation | `doctrine/_compiler/resolve/addressables.py`, `doctrine/_compiler/validate/addressable_children.py`, `doctrine/_compiler/validate/addressable_display.py` | `_resolve_addressable_ref_value`, `_resolve_addressable_root_decl`, child walking and display | Resolve only explicit roots today | Bind the self-rooted variant to the current owning declaration before normal path descent and display; emit `E312` where no declaration-root context exists | Keep one addressable-resolution story and one error path | same resolved addressable targets with shorter authoring | addressable tests; route and review path-read tests where affected; interpolation coverage for `self:` on `PATH_REF` surfaces |
 | Output-schema baseline guard | `doctrine/grammars/doctrine.lark`, `doctrine/_parser/io.py`, `doctrine/_compiler/resolve/output_schemas.py`, `doctrine/_compiler/output_schema_validation.py`, `doctrine/_compiler/output_schema_diagnostics.py`, `doctrine/_model/io.py` | `output_schema_nullable_stmt`, `output_schema_required_stmt`, `output_schema_optional_stmt`, `OutputSchemaFlag`, `E236`, `E237`, lowered-schema validator | Already shipped: grammar, parser, resolver, live docs, examples, and diagnostics all teach `nullable`; retired words stay only as targeted hard errors | Locked regression guard; each feature phase must keep the baseline green and make no authored-language or emitted-wire-shape change to this surface | The additive wave must not reopen a settled baseline | `nullable` is the live word; `required` / `optional` stay targeted hard errors; lowered-schema validation stays on the current path | output-schema, route-output, final-output, emit-docs, and diagnostics tests must stay green through every phase |
 | Live docs per phase | `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`, `docs/REVIEW_SPEC.md`, `docs/COMPILER_ERRORS.md`, `examples/README.md` | public teaching of the surface touched in each phase | Live docs teach the `nullable` baseline but not the new sugar | Each feature phase updates only the live-doc sections for the surface it ships | Prevent mid-wave drift between grammar and teaching | per-phase doc parity with shipped grammar | docs emit and example verification in each phase |
 | Release truth (wave-level) | `docs/VERSIONING.md`, `CHANGELOG.md`, `docs/README.md` | versioning posture and release notes | Not yet updated for this wave | Final phase records the additive wave as one coherent release entry and confirms no breaking change | Keep versioning honest and avoid per-phase changelog churn | one additive release entry for the wave | release-truth review in the final phase |
@@ -931,8 +1062,8 @@ Not applicable.
 * Delete list (what must be removed; include superseded shims/parallel paths if any):
   - any temporary example or doc wording that suggests a second alias,
     binding, path-root, or addressable-ref system
-  - any mid-wave draft that still teaches grouped-only `inherit` without the
-    matching grouped bare-ref `override` surface
+  - any mid-wave draft that still teaches grouped bare-ref `override` as part
+    of this shipped wave
 * Adjacent surfaces tied to the same contract family:
   - `examples/03`, `24`, `28`, `79`, `85`, `86`, `90`, `104`, `105`, `106`, `107`, `108`, `109`, `117`, and `121`
   - `tests/test_import_loading.py`
@@ -951,9 +1082,9 @@ Not applicable.
   - `tests/test_output_rendering.py`
   - `editors/vscode/` if grammar changes affect public syntax support
 * Compatibility posture / cutover plan:
-  - fully additive across all six wins: import aliasing, grouped
-    `inherit` / bare-ref `override`, review-binding shorthand, IO wrapper
-    shorthand, `self:` addressable variant, and per-phase docs+syntax
+  - fully additive across the remaining wave surface: import aliasing,
+    grouped `inherit`, review-binding shorthand, IO wrapper shorthand,
+    `self:` addressable variant, and per-phase docs+syntax
   - the shipped `output schema` `nullable` baseline stays as-is
   - no bridge and no runtime shim
 * Capability-replacing harnesses to delete or justify:
@@ -980,7 +1111,7 @@ Not applicable.
 | ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
 | Import naming | `doctrine/parser.py`, `doctrine/_compiler/indexing.py`, `doctrine/_compiler/resolve/refs.py`, all `NameRef` surfaces | one alias-aware import scope | Prevents a route-only or review-only alias story | include |
 | Inherited keyed items | all current `*_inherit` grammar and inherited resolvers | grouped explicit `inherit { ... }` lowering to `InheritItem` | Prevents outputs from becoming the only concise inheritance surface | include |
-| Override keyed items (bare ref) | all current `*_override` grammar on the same inherited families | grouped bare-ref `override { ... }` lowering to ordinary per-family override items | Prevents `inherit`/`override` asymmetry that forces authors to learn two grouping rules | include |
+| Override keyed items (bare ref) | all current `*_override` grammar on the same inherited families | grouped bare-ref `override { ... }` lowering to ordinary per-family override items | Still attractive, but the shipped override carriers need broader semantic work than this wave allows | defer |
 | Review semantic binding | `review.fields`, `review override fields`, `final_output.review_fields` | identity binding sugar over one `ReviewFieldBinding` carrier | Prevents two different review-binding stories | include |
 | First-class IO wrappers | `inputs`, `outputs`, base and override keyed wrappers | one-line keyed wrapper refs | Prevents the same wrapper shorthand from landing on only one half of the IO family | include |
 | Addressable refs | all existing `PATH_REF` surfaces | `self:` shorthand over one addressable resolver | Prevents a special workflow-only or review-only path story | include |
@@ -999,7 +1130,7 @@ Not applicable.
 
 Status
 
-- Status: COMPLETE and locked for this wave.
+- Status: COMPLETE - regression proof repaired and green on the current tree
 - The `output schema` `nullable` baseline already ships in grammar, parser,
   resolver, live docs, examples, and diagnostics. Legacy `required` /
   `optional` remain targeted hard errors via `E236` / `E237`.
@@ -1035,7 +1166,18 @@ Rollback
 
 Status
 
-- Status: IN PROGRESS
+- Status: REOPENED (audit found missing code work)
+
+Missing (code):
+
+- Fresh audit reran `make verify-diagnostics`; it passed.
+- Fresh audit reran `make verify-examples`, and the current tree still fails on
+  route/readback examples in `30`, `32`, `70`, `72`, `87`, `89`, `91`, `94`,
+  `111`, and `119`.
+- The current drift is not limited to one example. Workflow-law active guards
+  now render `This pass runs only when ...`, and guarded output/readback items
+  now expand into section-style blocks where the shipped corpus still expects
+  `Use this pass only when ...` and inline guarded bullets.
 
 Goal
 
@@ -1046,6 +1188,30 @@ Work
 
 - Extend the existing import, indexing, and named-ref path so module aliases
   and imported symbols resolve through one compiler-owned scope.
+
+Completed work
+
+- Added `import ... as ...`, `from ... import Name`, and
+  `from ... import Name as Alias` to the grammar, parser lowering, and
+  `ImportDecl` model.
+- Added one import-scope story in `doctrine/_compiler/indexing.py` and the
+  named-ref, addressable, law-path, output, review, and validation paths so
+  module aliases and imported symbols resolve through the existing compiler
+  surfaces instead of a sidecar resolver.
+- Finalized the import diagnostics for this phase as `E306` duplicate module
+  alias, `E307` duplicate imported symbol, and `E308` ambiguous imported
+  symbol ownership.
+- Updated `examples/03_imports`,
+  `examples/86_imported_review_comment_local_routes`, and
+  `examples/109_imported_review_handoff_output_inheritance` to teach and
+  prove the new import forms.
+- Updated `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`,
+  `docs/COMPILER_ERRORS.md`, and
+  `editors/vscode/syntaxes/doctrine.tmLanguage.json`.
+- Added focused proof in `tests/test_parser_source_spans.py`,
+  `tests/test_import_loading.py`, `tests/test_compiler_boundary.py`,
+  `tests/test_emit_flow.py`, `tests/test_review_imported_outputs.py`, and
+  `tests/test_compile_diagnostics.py`.
 
 Checklist (must all be done)
 
@@ -1058,9 +1224,9 @@ Checklist (must all be done)
   `doctrine/_compiler/resolve/refs.py` one local import-scope story for
   module aliases and imported symbols.
 - Add fail-loud diagnostics with named codes:
-  `E291` duplicate module alias in one module,
-  `E292` duplicate imported symbol in one module,
-  `E293` ambiguous imported symbol ownership at the use site. Finalize the
+  `E306` duplicate module alias in one module,
+  `E307` duplicate imported symbol in one module,
+  `E308` ambiguous imported symbol ownership at the use site. Finalize the
   exact code numbers against `docs/COMPILER_ERRORS.md` and update that file
   in the same phase.
 - Preserve current absolute-import, relative-import, and imported runtime
@@ -1074,7 +1240,7 @@ Checklist (must all be done)
   imported-review/output proof for the new import path.
 - Update the live docs that teach imports in this phase:
   `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`,
-  `docs/COMPILER_ERRORS.md` (for `E291`..`E293`).
+  `docs/COMPILER_ERRORS.md` (for `E306`..`E308`).
 - Update `editors/vscode/` TextMate grammar for the new import forms and
   run `cd editors/vscode && make`.
 - Keep the Phase 1 baseline guard green by rerunning the regression proof
@@ -1097,6 +1263,15 @@ Docs/comments (propagation; this phase)
 - Phase 2 owns its live-doc updates for imports; there is no deferred wave
   sweep for this surface.
 
+Proof closure
+
+- Fresh audit reran `make verify-diagnostics`; it passed.
+- Fresh audit reran `make verify-examples`, and the current tree is still red
+  on route/readback examples in `30`, `32`, `70`, `72`, `87`, `89`, `91`,
+  `94`, `111`, and `119`.
+- Phase 2 stays reopened until the full verification list is green again on
+  the current tree.
+
 Exit criteria (all required)
 
 - Module aliases and imported symbols resolve through the existing import
@@ -1105,7 +1280,7 @@ Exit criteria (all required)
 - Imported review/output behavior still passes existing proof.
 - `examples/03_imports` teaches the new public forms, and checked-in refs
   are refreshed.
-- `E291`, `E292`, `E293` are named in `docs/COMPILER_ERRORS.md` and exercised
+- `E306`, `E307`, `E308` are named in `docs/COMPILER_ERRORS.md` and exercised
   in diagnostics proof.
 - Editor syntax support for the new import forms ships in
   `editors/vscode/`.
@@ -1117,24 +1292,22 @@ Rollback
 - Remove alias grammar, import-scope state, new tests, doc updates, and
   editor syntax updates together.
 
-## Phase 3 - Add grouped explicit `inherit` and grouped bare-ref `override`
+## Phase 3 - Add grouped explicit `inherit`
 
 Status
 
-- Planned.
+- Repaired after plan audit. Implementation not started.
 
 Goal
 
-- Cut repeated inheritance and override bookkeeping while keeping the
-  current fail-loud accounting model unchanged and `inherit`/`override`
-  authoring symmetric.
+- Cut repeated inheritance bookkeeping while keeping the current fail-loud
+  accounting model unchanged.
 
 Work
 
 - Add grouped authored `inherit { ... }` forms that lower to the same
   `InheritItem` stream the current inherited-family resolvers already
-  consume, and grouped bare-ref `override { ... }` forms that lower to the
-  ordinary per-family override items.
+  consume.
 
 Checklist (must all be done)
 
@@ -1143,35 +1316,26 @@ Checklist (must all be done)
   agent authored slots, workflow items, workflow law sections, skills,
   inputs, outputs, analyses, schemas, documents, reviews, output shapes, and
   output schemas.
-- Add grouped bare-ref `override { ... }` grammar on the same families for
-  the common case where the override is a bare reference to an inherited
-  entry with no new body. Entries that carry a body keep the multi-line
-  block form.
-- Expand grouped authored forms into repeated `InheritItem`s (and the
-  matching per-family override items) in the relevant parser mixins
-  instead of changing resolver semantics.
-- Enforce that keys inside `inherit { ... }` and `override { ... }` resolve
+- Expand grouped authored forms into repeated `InheritItem`s in the relevant
+  parser mixins instead of changing resolver semantics.
+- Enforce that keys inside `inherit { ... }` resolve
   only against inherited-parent names, never against the import scope.
 - Preserve the current fail-loud behavior for missing inherited entries,
   undefined inherited keys, wrong inherited shapes, and inherited-parent
   requirements across the affected families.
-- Add fail-loud diagnostics with named codes:
-  `E294` malformed grouped `inherit` (unknown key, duplicate key, empty
-  group, wrong shape), `E295` malformed grouped bare-ref `override` (same
-  failure modes, plus a grouped-override entry that would require a body).
-  Finalize the exact code numbers in `docs/COMPILER_ERRORS.md` in the
-  same phase.
-- Add targeted parser and resolver proof across the inherited and override
-  families, not only output inheritance.
+- Add fail-loud diagnostic `E309` for malformed grouped `inherit`
+  (unknown key, duplicate key, empty group, wrong shape). Finalize the exact
+  code number in `docs/COMPILER_ERRORS.md` in the same phase.
+- Add targeted parser and resolver proof across the inherited families, not
+  only output inheritance.
 - Update `examples/24_io_block_inheritance`,
   `examples/107_output_inheritance_basic`, and
-  `examples/108_output_inheritance_attachments` to teach the grouped
-  `inherit` and grouped bare-ref `override` forms where each improves the
-  example.
-- Update the live docs that teach inheritance and overrides in this phase:
+  `examples/108_output_inheritance_attachments` to teach grouped `inherit`
+  where it improves the example.
+- Update the live docs that teach inheritance in this phase:
   `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`,
-  `docs/COMPILER_ERRORS.md` (for `E294`, `E295`).
-- Update `editors/vscode/` TextMate grammar for the grouped forms and run
+  `docs/COMPILER_ERRORS.md` (for `E309`).
+- Update `editors/vscode/` TextMate grammar for grouped `inherit` and run
   `cd editors/vscode && make`.
 - Keep the Phase 1 baseline guard green by rerunning its regression proof.
 
@@ -1179,8 +1343,8 @@ Verification (required proof)
 
 - Run:
   - `uv run --locked python -m unittest tests.test_output_inheritance`
-  - focused parser and resolver tests for grouped `inherit` and grouped
-    bare-ref `override` across the other affected families
+  - focused parser and resolver tests for grouped `inherit` across the other
+    affected families
   - `make verify-diagnostics`
   - `make verify-examples`
   - Phase 1 regression proof
@@ -1189,26 +1353,24 @@ Verification (required proof)
 Docs/comments (propagation; this phase)
 
 - Add one short comment only where grouped authored forms lower into repeated
-  `InheritItem`s or per-family override items and the ownership split would
-  otherwise be easy to miss.
-- Phase 3 owns its live-doc updates for inheritance and overrides.
+  `InheritItem`s and the ownership split would otherwise be easy to miss.
+- Phase 3 owns its live-doc updates for inheritance.
 
 Exit criteria (all required)
 
 - Grouped `inherit` works across the full intended family, not just outputs.
-- Grouped bare-ref `override` works on the same families.
 - Resolver semantics are unchanged apart from clearer syntax coverage.
-- No hidden merge semantics, no `inherit *`, no grouped form that accepts
-  bodies for overrides, and no import-scope lookup inside grouped keys.
-- `E294` and `E295` are named in `docs/COMPILER_ERRORS.md` and exercised in
-  diagnostics proof.
-- Editor syntax support for the grouped forms ships in `editors/vscode/`.
+- No hidden merge semantics, no `inherit *`, and no import-scope lookup
+  inside grouped keys.
+- `E309` is named in `docs/COMPILER_ERRORS.md` and exercised in diagnostics
+  proof.
+- Editor syntax support for grouped `inherit` ships in `editors/vscode/`.
 - The Phase 1 regression proof still passes.
 
 Rollback
 
-- Remove grouped grammar, parser expansion, doc updates, and editor syntax
-  updates together. Keep singular explicit forms only.
+- Remove grouped-`inherit` grammar, parser expansion, doc updates, and editor
+  syntax updates together. Keep singular explicit forms only.
 
 ## Phase 4 - Add identity shorthand on the two review-binding surfaces
 
@@ -1315,7 +1477,7 @@ Checklist (must all be done)
   `_resolve_io_section_item()` / `_lower_omitted_io_section()` for inherited
   IO bodies and omitted-title lowering.
 - Do not add a third IO helper or duplicate lowering path for this feature.
-- Add fail-loud diagnostic `E296` when the shorthand ref does not lower to
+- Add fail-loud diagnostic `E311` when the shorthand ref does not lower to
   exactly one child (multi-child record, record with a required title
   override, or any shape that breaks the omitted-title rule). The message
   must teach the multi-line wrapper upgrade path with a concrete snippet.
@@ -1328,10 +1490,10 @@ Checklist (must all be done)
   `examples/117_io_omitted_wrapper_titles` to teach the shorthand, and
   rewrite manifest-backed refs only if the emit is provably byte-equal.
 - Add targeted parser, resolve, emitted-contract, and output-rendering proof
-  for the new IO path, including an `E296` diagnostics case.
+  for the new IO path, including an `E311` diagnostics case.
 - Update the live docs that teach first-class IO in this phase:
   `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/LANGUAGE_REFERENCE.md`,
-  `docs/AUTHORING_PATTERNS.md`, `docs/COMPILER_ERRORS.md` (for `E296`).
+  `docs/AUTHORING_PATTERNS.md`, `docs/COMPILER_ERRORS.md` (for `E311`).
 - Update `editors/vscode/` TextMate grammar for the IO shorthand and run
   `cd editors/vscode && make`.
 - Keep the Phase 1 baseline guard green by rerunning its regression proof.
@@ -1360,7 +1522,7 @@ Exit criteria (all required)
   path for this surface.
 - `final_output.contract.json.io` is byte-equal on rewritten `24` and `117`
   manifests.
-- `E296` is named in `docs/COMPILER_ERRORS.md`, fires on multi-child refs,
+- `E311` is named in `docs/COMPILER_ERRORS.md`, fires on multi-child refs,
   and the message teaches the multi-line wrapper upgrade path.
 - No broad title-defaulting expansion leaks outside the `inputs` / `outputs`
   wrapper family.
@@ -1404,7 +1566,7 @@ Checklist (must all be done)
   `doctrine/_compiler/resolve/addressables.py` before normal path descent
   and display. Reuse `_resolve_addressable_ref_value` /
   `_resolve_addressable_root_decl` unchanged on the resolved root.
-- Add fail-loud diagnostic `E297` when `self:` appears where no
+- Add fail-loud diagnostic `E312` when `self:` appears where no
   declaration-root addressable context exists. Finalize the exact code
   number in `docs/COMPILER_ERRORS.md` in the same phase.
 - Update `examples/28_addressable_workflow_paths` to teach the shorthand on
@@ -1414,7 +1576,7 @@ Checklist (must all be done)
   above, not only workflow paths.
 - Update the live docs that teach addressable refs in this phase:
   `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`,
-  `docs/COMPILER_ERRORS.md` (for `E297`).
+  `docs/COMPILER_ERRORS.md` (for `E312`).
 - Update `editors/vscode/` TextMate grammar for the `self:` token and run
   `cd editors/vscode && make`.
 - Keep the Phase 1 baseline guard green by rerunning its regression proof.
@@ -1446,7 +1608,7 @@ Exit criteria (all required)
 - Every `PATH_REF` surface in scope (including interpolation) has proof.
 - The existing `28` example becomes the canonical teaching example for this
   surface.
-- `E297` is named in `docs/COMPILER_ERRORS.md` and exercised in diagnostics
+- `E312` is named in `docs/COMPILER_ERRORS.md` and exercised in diagnostics
   proof.
 - Editor syntax support for `self:` ships in `editors/vscode/`.
 - The Phase 1 regression proof still passes.
@@ -1477,8 +1639,8 @@ Checklist (must all be done)
 
 - Update `docs/VERSIONING.md` to record this wave as a fully additive release
   with no breaking authored-language change.
-- Update `CHANGELOG.md` with one release entry that lists the six additive
-  wins and the named diagnostic codes (`E291`..`E297`).
+- Update `CHANGELOG.md` with one release entry that lists the additive wins
+  and the shipped diagnostic codes, while noting that `E310` stays reserved.
 - Update `docs/README.md` and `examples/README.md` only if their index
   surfaces still point at deprecated teaching tracks.
 - Confirm that every touched example family teaches the preferred syntax and
@@ -1569,14 +1731,14 @@ Rollback
 
 - keep `E236` / `E237` exact and user-facing (baseline guard)
 - add exact diagnostics with named codes for every new fail-loud boundary:
-  - `E291` duplicate module alias
-  - `E292` duplicate imported symbol
-  - `E293` ambiguous imported symbol ownership
-  - `E294` malformed grouped `inherit`
-  - `E295` malformed grouped bare-ref `override`
-  - `E296` malformed IO wrapper shorthand (error text must teach the
+  - `E306` duplicate module alias
+  - `E307` duplicate imported symbol
+  - `E308` ambiguous imported symbol ownership
+  - `E309` malformed grouped `inherit`
+  - `E310` reserved for the deferred grouped-override investigation
+  - `E311` malformed IO wrapper shorthand (error text must teach the
     multi-line wrapper upgrade path)
-  - `E297` malformed `self:` usage (no declaration-root context)
+  - `E312` malformed `self:` usage (no declaration-root context)
 - finalize the exact code numbers against `docs/COMPILER_ERRORS.md` in the
   phase that ships each code
 - run `make verify-diagnostics` in every feature phase and at wave end
@@ -1606,8 +1768,8 @@ Rollback
   `docs/COMPILER_ERRORS.md` entries for its named codes, editor syntax
   support, and example refs
 - wave-level (Phase 7): update `docs/VERSIONING.md` and `CHANGELOG.md` with
-  one additive release entry that lists the six wins and the named
-  diagnostic codes `E291`..`E297`
+  one additive release entry that lists the additive wins and the shipped
+  diagnostic codes, while noting that `E310` stays reserved
 - no breaking authored-language cut is recorded in release truth for this
   wave
 
@@ -1633,8 +1795,8 @@ Not applicable beyond compile-time proof and emitted artifact verification.
     shipped repo
   - the `self:` carrier decision was left open ("sentinel if needed"), which
     violates one-addressable-ref-story
-  - grouped `override` was punted with "may stay narrower," which would
-    force authors to learn asymmetric grouping rules
+  - later evidence showed grouped bare-ref `override` would need broader
+    semantic work than this wave allows
   - named diagnostic codes were present only for the retired nullability
     words; the six new fail-loud boundaries used the phrase "fail loud"
     without codes
@@ -1647,20 +1809,22 @@ Not applicable beyond compile-time proof and emitted artifact verification.
   - IO shorthand exit criterion allowed "apart from the shorter authoring
     surface that feeds it," leaving room for emit drift
 - Integrated repairs:
-  - reframed Phase 1 as a locked regression guard; the wave is six fully
-    additive wins; restated TL;DR, §0.2, §0.4, §0.5, §1.1, §1.2, §1.4, §9.1
+  - reframed Phase 1 as a locked regression guard and folded the repaired
+    five-win wave story through TL;DR, scope, acceptance, tradeoffs,
+    compatibility, and release truth
   - locked the `self:` carrier as an extended `AddressableRef` variant;
     sentinel values and second carriers rejected in §0.5, §3.3, §5.1, §5.3,
     §5.4, §6.1, Phase 6
-  - included grouped bare-ref `override { ... }` on the same families as
-    grouped `inherit` in §0.2, §1.4, §5.3, §6.1, Phase 3
-  - assigned named provisional diagnostic codes `E291`..`E297` across §0.2,
-    §5.4, §6.1, §8.3, and each feature phase
+  - deferred grouped bare-ref `override` out of this wave and folded that
+    decision through scope, target architecture, call-site audit, rollout,
+    and the phase plan
+  - assigned named provisional diagnostic codes `E306`..`E312` across §0.2,
+    §5.4, §6.1, §8.3, and each feature phase, with `E310` kept reserved
   - moved per-phase live-doc and editor syntax updates into each feature
     phase; shrank Phase 7 to release truth, changelog, and full-wave proof
   - added explicit mixing legality and mixed-entry proof to Phase 4
-  - stated inherited-parent-names-only scoping for grouped keys in §0.5,
-    §5.3, Phase 3
+  - stated inherited-parent-names-only scoping for grouped `inherit` keys in
+    §0.5, §3.3, §5.3, and Phase 3
   - strengthened Phase 5 exit criterion to byte-equal
     `final_output.contract.json.io` on rewritten `24` / `117` manifests
 - Remaining inconsistencies:
@@ -1705,23 +1869,24 @@ Not applicable beyond compile-time proof and emitted artifact verification.
 - 2026-04-16: Adjustments from the north-star alignment pass (additive
   authorship value):
   - Phase 1 (`nullable` baseline) is reframed as a locked regression guard,
-    not a wave member. The wave is six fully additive wins.
+    not a wave member. The repaired wave now carries five additive authoring
+    wins.
   - `self:` lowers as an extended `AddressableRef` variant. Sentinel values
     and any second `AddressableRef`-like carrier are rejected up front.
-  - Grouped bare-ref `override { ... }` lands on the same families as
-    grouped `inherit`. Overrides that carry a body keep the multi-line
-    block form.
+  - Grouped bare-ref `override { ... }` is deferred out of this wave.
+    Singular and body-carrying override forms stay on the current paths
+    unless a later approved plan widens the semantic owner story.
   - Review identity shorthand explicitly allows mixing bare semantic names
     with explicit `semantic: path` entries in the same block, on all three
     surfaces.
-  - Grouped `inherit` / `override` keys resolve only against inherited-parent
-    names, never against the import scope.
-  - Named provisional diagnostic codes assigned upfront: `E291` duplicate
-    module alias, `E292` duplicate imported symbol, `E293` ambiguous
-    imported ownership, `E294` malformed grouped `inherit`, `E295` malformed
-    grouped bare-ref `override`, `E296` malformed IO wrapper shorthand
-    (message teaches multi-line upgrade path), `E297` malformed `self:`
-    usage. `E236` / `E237` stay as the baseline guard.
+  - Grouped `inherit` keys resolve only against inherited-parent names,
+    never against the import scope.
+  - Named provisional diagnostic codes assigned upfront: `E306` duplicate
+    module alias, `E307` duplicate imported symbol, `E308` ambiguous
+    imported ownership, `E309` malformed grouped `inherit`, `E310` reserved
+    for the deferred grouped-override investigation, `E311` malformed IO
+    wrapper shorthand (message teaches multi-line upgrade path), `E312`
+    malformed `self:` usage. `E236` / `E237` stay as the baseline guard.
   - Live-doc and editor syntax updates move into each feature phase, not
     Phase 7. Phase 7 shrinks to `docs/VERSIONING.md`, `CHANGELOG.md`,
     wave-level index surfaces, full-wave proof, and final editor sync.

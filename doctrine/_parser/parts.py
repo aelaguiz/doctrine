@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from typing import Callable
 
 from doctrine import model
+from doctrine.diagnostics import TransformParseFailure
 
 
 @dataclass(slots=True, frozen=True)
@@ -55,6 +57,10 @@ class OutputBodyParts:
     structure_mode: str | None = None
     render_profile_mode: str | None = None
     trust_surface_mode: str | None = None
+    schema_source_span: model.SourceSpan | None = None
+    structure_source_span: model.SourceSpan | None = None
+    render_profile_source_span: model.SourceSpan | None = None
+    trust_surface_source_span: model.SourceSpan | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -354,6 +360,68 @@ def _schema_item_value(item: object) -> model.SchemaItem:
     if isinstance(item, SchemaItemPart):
         return item.item
     return item
+
+
+def _flatten_grouped_items(items: tuple[object, ...] | list[object]) -> tuple[object, ...]:
+    flattened: list[object] = []
+    for item in items:
+        if isinstance(item, list):
+            flattened.extend(item)
+            continue
+        flattened.append(item)
+    return tuple(flattened)
+
+
+# Grouped authored inherit stays parser sugar. Lower it to repeated inherit
+# items here so the family-specific resolvers can keep their current semantics.
+def _expand_grouped_inherit(
+    meta: object,
+    keys: tuple[str, ...] | list[str],
+    item_factory: Callable[[str], object],
+    *,
+    allowed_keys: tuple[str, ...] | None = None,
+) -> list[object]:
+    line, column = _meta_line_column(meta)
+    normalized_keys = tuple(keys)
+    if not normalized_keys:
+        raise TransformParseFailure(
+            "Grouped `inherit` must list at least one key.",
+            code="E309",
+            summary="Malformed grouped `inherit`",
+            hints=("Add one or more inherited keys inside `inherit { ... }`.",),
+            line=line,
+            column=column,
+        )
+    if allowed_keys is not None:
+        allowed = set(allowed_keys)
+        for key in normalized_keys:
+            if key in allowed:
+                continue
+            allowed_text = ", ".join(f"`{item}`" for item in allowed_keys)
+            raise TransformParseFailure(
+                f"Grouped `inherit` uses unknown key `{key}`.",
+                code="E309",
+                summary="Malformed grouped `inherit`",
+                hints=(f"Use only these keys here: {allowed_text}.",),
+                line=line,
+                column=column,
+            )
+
+    seen: set[str] = set()
+    lowered: list[object] = []
+    for key in normalized_keys:
+        if key in seen:
+            raise TransformParseFailure(
+                f"Grouped `inherit` may list key `{key}` only once.",
+                code="E309",
+                summary="Malformed grouped `inherit`",
+                hints=("Remove the duplicate key from this grouped `inherit` entry.",),
+                line=line,
+                column=column,
+            )
+        seen.add(key)
+        lowered.append(_with_source_span(item_factory(key), meta))
+    return lowered
 
 
 def _schema_item_location(item: object) -> tuple[int | None, int | None]:

@@ -292,15 +292,42 @@
       }
     },
     "import": {
-      "match": "^(\\s*)(import)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
-      "captures": {
-        "2": {
-          "name": "keyword.declaration.doctrine"
+      "patterns": [
+        {
+          "match": "^(\\s*)(import)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(\\s+)(as)(\\s+)([A-Za-z_][A-Za-z0-9_]*))?\\s*$",
+          "captures": {
+            "2": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "4": {
+              "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+            },
+            "6": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "8": {
+              "name": "entity.name.type.doctrine"
+            }
+          }
         },
-        "4": {
-          "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+        {
+          "match": "^(\\s*)(from)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\s+)(import)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?(?:\\s*,\\s*[A-Za-z_][A-Za-z0-9_]*(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?)*)\\s*$",
+          "captures": {
+            "2": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "4": {
+              "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+            },
+            "7": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "9": {
+              "name": "entity.name.type.doctrine support.type.reference.doctrine"
+            }
+          }
         }
-      }
+      ]
     },
     "analysisDeclaration": {
       "match": "^(\\s*)(analysis)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
@@ -1117,7 +1144,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items)\\b"
+      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|nullable|values|delivery_skill|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items)\\b"
     },
     "routeSemanticRef": {
       "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",
@@ -1190,13 +1217,22 @@
       }
     },
     "inherit": {
-      "match": "^(\\s*)(inherit)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
+      "match": "^(\\s*)(inherit)(\\s+)(?:([A-Za-z_][A-Za-z0-9_]*)(\\s*)|(\\{)(\\s*[^}]+\\s*)(\\}))\\s*$",
       "captures": {
         "2": {
           "name": "keyword.control.doctrine"
         },
         "4": {
           "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
+        },
+        "6": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "7": {
+          "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
+        },
+        "8": {
+          "name": "punctuation.section.inheritance.end.doctrine"
         }
       }
     },

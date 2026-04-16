@@ -137,3 +137,42 @@ message_contains = [
   "Cyclic import module",
   "cyclic_siblings.alpha",
 ]
+
+[[cases]]
+name = "duplicate visible import module name fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_MODULE_ALIAS.prompt"
+agent = "DuplicateModuleAliasDemo"
+exception_type = "CompileError"
+error_code = "E306"
+message_contains = [
+  "Duplicate module alias",
+  "shared",
+]
+
+[[cases]]
+name = "duplicate imported symbol name fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_DUPLICATE_IMPORTED_SYMBOL.prompt"
+agent = "DuplicateImportedSymbolDemo"
+exception_type = "CompileError"
+error_code = "E307"
+message_contains = [
+  "Duplicate imported symbol",
+  "Greeting",
+]
+
+[[cases]]
+name = "local and imported symbol ownership conflict fails loud at use site"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_AMBIGUOUS_IMPORTED_SYMBOL.prompt"
+agent = "AmbiguousImportedSymbolDemo"
+exception_type = "CompileError"
+error_code = "E308"
+message_contains = [
+  "Ambiguous imported symbol ownership",
+  "Greeting",
+]

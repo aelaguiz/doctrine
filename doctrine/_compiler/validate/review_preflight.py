@@ -4,6 +4,7 @@ from doctrine import model
 from dataclasses import replace
 
 from doctrine._compiler.constants import _REVIEW_REQUIRED_FIELD_NAMES
+from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.resolved_types import (
     AgentContract,
     CompileError,
@@ -26,6 +27,7 @@ class ValidateReviewPreflightMixin:
         self,
         fields: model.ReviewFieldsConfig,
         *,
+        field_binding_unit: IndexedUnit,
         output_decl: model.OutputDecl,
         output_unit: IndexedUnit,
         owner_label: str,
@@ -35,10 +37,30 @@ class ValidateReviewPreflightMixin:
         require_trigger_reason: bool,
     ) -> dict[str, tuple[str, ...]]:
         bindings: dict[str, tuple[str, ...]] = {}
+        authored_bindings: dict[str, model.ReviewFieldBinding] = {}
         for binding in fields.bindings:
-            if binding.semantic_field in bindings:
-                raise CompileError(
-                    f"Duplicate review field binding in {owner_label}: {binding.semantic_field}"
+            first_binding = authored_bindings.get(binding.semantic_field)
+            if first_binding is not None:
+                raise review_compile_error(
+                    code="E473",
+                    summary="Review fields are incomplete",
+                    detail=(
+                        f"Review fields are incomplete in {owner_label}: duplicate binding "
+                        f"for `{binding.semantic_field}`."
+                    ),
+                    unit=field_binding_unit,
+                    source_span=binding.source_span or fields.source_span,
+                    related=(
+                        ()
+                        if first_binding.source_span is None
+                        else (
+                            review_related_site(
+                                label=f"first `{binding.semantic_field}` binding",
+                                unit=field_binding_unit,
+                                source_span=first_binding.source_span,
+                            ),
+                        )
+                    ),
                 )
             self._resolve_output_field_node(
                 output_decl,
@@ -48,6 +70,7 @@ class ValidateReviewPreflightMixin:
                 surface_label="review field binding",
             )
             bindings[binding.semantic_field] = binding.field_path
+            authored_bindings[binding.semantic_field] = binding
 
         required = set(_REVIEW_REQUIRED_FIELD_NAMES) if require_core_fields else set()
         if require_blocked_gate:
@@ -58,8 +81,12 @@ class ValidateReviewPreflightMixin:
             required.add("trigger_reason")
         missing = sorted(required - set(bindings))
         if missing:
-            raise CompileError(
-                f"Review fields are incomplete in {owner_label}: {', '.join(missing)}"
+            raise review_compile_error(
+                code="E473",
+                summary="Review fields are incomplete",
+                detail=f"Review fields are incomplete in {owner_label}: {', '.join(missing)}.",
+                unit=field_binding_unit,
+                source_span=fields.source_span,
             )
         return bindings
 
@@ -138,6 +165,7 @@ class ValidateReviewPreflightMixin:
                     item.cases,
                     unit=unit,
                     owner_label=owner_label,
+                    match_source_span=item.source_span,
                 )
                 for case in item.cases:
                     self._validate_review_pre_outcome_items(
@@ -152,6 +180,7 @@ class ValidateReviewPreflightMixin:
             if isinstance(item, (model.ReviewBlockStmt, model.ReviewRejectStmt, model.ReviewAcceptStmt)):
                 self._validate_review_gate_label(
                     item.gate,
+                    unit=unit,
                     contract_spec=contract_spec,
                     section_titles=section_titles,
                     owner_label=owner_label,
@@ -191,18 +220,32 @@ class ValidateReviewPreflightMixin:
         self,
         gate: model.ReviewGateLabel,
         *,
+        unit: IndexedUnit,
         contract_spec: ReviewContractSpec,
         section_titles: dict[str, str],
         owner_label: str,
     ) -> None:
         if isinstance(gate, model.ContractGateRef):
             if gate.key not in {item.key for item in contract_spec.gates}:
-                raise CompileError(
-                    f"Unknown review contract gate in {owner_label}: contract.{gate.key}"
+                raise review_compile_error(
+                    code="E477",
+                    summary="Unknown review contract gate",
+                    detail=(
+                        f"Unknown review contract gate `contract.{gate.key}` in "
+                        f"{owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=gate.source_span,
                 )
             return
         if isinstance(gate, model.SectionGateRef) and gate.key not in section_titles:
-            raise CompileError(f"Unknown review section gate in {owner_label}: {gate.key}")
+            raise review_compile_error(
+                code="E477",
+                summary="Invalid review gate ref",
+                detail=f"Unknown review section gate `{gate.key}` in {owner_label}.",
+                unit=unit,
+                source_span=gate.source_span,
+            )
 
     def _collect_review_pre_section_branches(
         self,

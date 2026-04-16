@@ -69,30 +69,43 @@ class ResolveAddressablesMixin:
         missing_local_label: str,
         review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[IndexedUnit, ReadableDecl]:
-        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-        matches = self._find_readable_decl_matches(
-            ref.declaration_name,
-            unit=target_unit,
-        )
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
+        match_sets: list[tuple[object, tuple[tuple[str, ReadableDecl], ...]]] = []
+        workflow_target = None
+        for lookup_target in self._decl_lookup_targets(ref, unit=unit):
+            matches = self._find_readable_decl_matches(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if matches:
+                match_sets.append((lookup_target, matches))
+                continue
+            if (
+                workflow_target is None
+                and lookup_target.unit.workflows_by_name.get(lookup_target.declaration_name)
+                is not None
+            ):
+                workflow_target = lookup_target
 
-        if len(matches) == 1:
-            decl = matches[0][1]
-            if isinstance(decl, model.Agent) and decl.abstract:
-                raise reference_compile_error(
-                    code="E272",
-                    summary="Abstract agent ref is not allowed here",
-                    detail=(
-                        f"Abstract agent refs are not allowed in {surface_label}; "
-                        f"mention a concrete agent instead: {dotted_name}"
-                    ),
-                    unit=unit,
-                    source_span=ref.source_span,
-                    hints=("Mention a concrete agent instead of an abstract base agent.",),
-                )
-            return target_unit, decl
+        if len(match_sets) == 1:
+            lookup_target, matches = match_sets[0]
+            target_unit = lookup_target.unit
+            if len(matches) == 1:
+                decl = matches[0][1]
+                if isinstance(decl, model.Agent) and decl.abstract:
+                    raise reference_compile_error(
+                        code="E272",
+                        summary="Abstract agent ref is not allowed here",
+                        detail=(
+                            f"Abstract agent refs are not allowed in {surface_label}; "
+                            f"mention a concrete agent instead: {dotted_name}"
+                        ),
+                        unit=unit,
+                        source_span=ref.source_span,
+                        hints=("Mention a concrete agent instead of an abstract base agent.",),
+                    )
+                return target_unit, decl
 
-        if len(matches) > 1:
             labels = ", ".join(label for label, _decl in matches)
             raise reference_compile_error(
                 code="E270",
@@ -105,7 +118,36 @@ class ResolveAddressablesMixin:
                 source_span=ref.source_span,
             )
 
-        if target_unit.workflows_by_name.get(ref.declaration_name) is not None:
+        if len(match_sets) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _matches in match_sets
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        matches[0][1]
+                        for lookup_target, matches in match_sets
+                        if lookup_target.imported_symbol is None and matches
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Readable ref `{ref.declaration_name}` in {surface_label} "
+                        f"of {owner_label} matches both local and imported declarations."
+                    ),
+                    local_decl=local_decl,
+                )
+
+        if workflow_target is not None:
             raise reference_compile_error(
                 code="E271",
                 summary="Workflow ref is not allowed here",
@@ -277,30 +319,35 @@ class ResolveAddressablesMixin:
         if semantic_root is not None and review_semantics is not None:
             output_unit, _output_decl = self._resolve_review_semantic_output_decl(review_semantics)
             return output_unit, semantic_root
-        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-        matches = self._find_addressable_root_matches(
-            ref.declaration_name,
-            unit=target_unit,
-        )
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
+        match_sets: list[tuple[object, tuple[tuple[str, AddressableRootDecl], ...]]] = []
+        for lookup_target in self._decl_lookup_targets(ref, unit=unit):
+            matches = self._find_addressable_root_matches(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if matches:
+                match_sets.append((lookup_target, matches))
 
-        if len(matches) == 1:
-            decl = matches[0][1]
-            if isinstance(decl, model.Agent) and decl.abstract:
-                raise reference_compile_error(
-                    code="E272",
-                    summary="Abstract agent ref is not allowed here",
-                    detail=(
-                        "Abstract agent refs are not allowed in addressable paths; "
-                        f"mention a concrete agent instead: {dotted_name}"
-                    ),
-                    unit=unit,
-                    source_span=ref.source_span,
-                    hints=("Mention a concrete agent instead of an abstract base agent.",),
-                )
-            return target_unit, decl
+        if len(match_sets) == 1:
+            lookup_target, matches = match_sets[0]
+            target_unit = lookup_target.unit
+            if len(matches) == 1:
+                decl = matches[0][1]
+                if isinstance(decl, model.Agent) and decl.abstract:
+                    raise reference_compile_error(
+                        code="E272",
+                        summary="Abstract agent ref is not allowed here",
+                        detail=(
+                            "Abstract agent refs are not allowed in addressable paths; "
+                            f"mention a concrete agent instead: {dotted_name}"
+                        ),
+                        unit=unit,
+                        source_span=ref.source_span,
+                        hints=("Mention a concrete agent instead of an abstract base agent.",),
+                    )
+                return target_unit, decl
 
-        if len(matches) > 1:
             labels = ", ".join(label for label, _decl in matches)
             raise reference_compile_error(
                 code="E270",
@@ -312,6 +359,35 @@ class ResolveAddressablesMixin:
                 unit=unit,
                 source_span=ref.source_span,
             )
+
+        if len(match_sets) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _matches in match_sets
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        matches[0][1]
+                        for lookup_target, matches in match_sets
+                        if lookup_target.imported_symbol is None and matches
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Addressable ref `{ref.declaration_name}` in {owner_label} matches "
+                        "both local and imported roots."
+                    ),
+                    local_decl=local_decl,
+                )
 
         fallback_unit = self._review_semantic_fallback_lookup_unit(
             ref,
@@ -502,14 +578,4 @@ class ResolveAddressablesMixin:
     ) -> IndexedUnit:
         if not ref.module_parts or ref.module_parts == unit.module_parts:
             return unit
-
-        target_unit = unit.imported_units.get(ref.module_parts)
-        if target_unit is None:
-            raise reference_compile_error(
-                code="E280",
-                summary="Missing import module",
-                detail=f"Missing import module: {'.'.join(ref.module_parts)}",
-                unit=unit,
-                source_span=ref.source_span,
-            )
-        return target_unit
+        return self._resolve_visible_imported_unit(ref, unit=unit)

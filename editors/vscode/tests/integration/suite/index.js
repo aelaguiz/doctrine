@@ -37,21 +37,24 @@ async function testImportLinks() {
 
   assert.ok(Array.isArray(links), "Document link provider should return an array.");
 
-  assertLinkTarget(
+  assertLinkTargetOnLine(
     links,
     document,
+    "from simple.greeting import Greeting as GreetingStep",
     "simple.greeting",
     "examples/03_imports/prompts/simple/greeting.prompt",
   );
-  assertLinkTarget(
+  assertLinkTargetOnLine(
     links,
     document,
+    "from chains.relative.entry import RelativeChain as RelativeChainStep",
     "chains.relative.entry",
     "examples/03_imports/prompts/chains/relative/entry.prompt",
   );
-  assertLinkTarget(
+  assertLinkTargetOnLine(
     links,
     document,
+    "import chains.deep.levels.one.two.entry as deep_chain",
     "chains.deep.levels.one.two.entry",
     "examples/03_imports/prompts/chains/deep/levels/one/two/entry.prompt",
   );
@@ -61,7 +64,8 @@ async function testImportLinks() {
     expectedRelativeTargetPath:
       "examples/03_imports/prompts/chains/relative/entry.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
-    sourceLineFragment: "import chains.relative.entry",
+    sourceLineFragment:
+      "from chains.relative.entry import RelativeChain as RelativeChainStep",
     sourceText: "chains.relative.entry",
   });
 }
@@ -94,12 +98,30 @@ async function testSkillPackageImportLinks() {
 
 async function testDefinitionProvider() {
   await assertDefinitionTarget({
-    declarationSnippet: "workflow RelativeChain",
+    declarationSnippet: 'workflow Greeting: "Greeting"',
+    expectedRelativeTargetPath:
+      "examples/03_imports/prompts/simple/greeting.prompt",
+    relativePath: "examples/03_imports/prompts/AGENTS.prompt",
+    sourceLineFragment: "use greeting: GreetingStep",
+    sourceText: "GreetingStep",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'workflow PoliteGreeting: "Polite Greeting"',
+    expectedRelativeTargetPath:
+      "examples/03_imports/prompts/simple/nested/polite.prompt",
+    relativePath: "examples/03_imports/prompts/AGENTS.prompt",
+    sourceLineFragment: "use polite_greeting: polite.PoliteGreeting",
+    sourceText: "polite.PoliteGreeting",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'workflow RelativeChain: "Relative Chain"',
     expectedRelativeTargetPath:
       "examples/03_imports/prompts/chains/relative/entry.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
-    sourceLineFragment: "use relative_chain: chains.relative.entry.RelativeChain",
-    sourceText: "chains.relative.entry.RelativeChain",
+    sourceLineFragment: "use relative_chain: RelativeChainStep",
+    sourceText: "RelativeChainStep",
   });
 
   await assertDefinitionTarget({
@@ -1145,6 +1167,30 @@ async function openPrompt(relativePath) {
 
 function assertLinkTarget(links, document, linkText, expectedRelativeTargetPath) {
   const position = positionForText(document, linkText);
+  const link = links.find((candidate) => rangeContains(candidate.range, position));
+  assert.ok(link, `Expected a link for ${linkText}.`);
+
+  const linkTarget = link.url || link.target;
+  const linkTargetPath =
+    typeof linkTarget === "string"
+      ? vscode.Uri.parse(linkTarget).fsPath
+      : linkTarget.fsPath;
+
+  assert.equal(
+    linkTargetPath,
+    path.join(REPO_ROOT, expectedRelativeTargetPath),
+    `Expected ${linkText} to resolve to ${expectedRelativeTargetPath}.`,
+  );
+}
+
+function assertLinkTargetOnLine(
+  links,
+  document,
+  lineFragment,
+  linkText,
+  expectedRelativeTargetPath,
+) {
+  const position = positionForLineText(document, lineFragment, linkText);
   const link = links.find((candidate) => rangeContains(candidate.range, position));
   assert.ok(link, `Expected a link for ${linkText}.`);
 

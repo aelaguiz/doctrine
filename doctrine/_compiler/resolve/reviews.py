@@ -99,14 +99,50 @@ class ResolveReviewsMixin:
         resolved: list[tuple[IndexedUnit, model.InputDecl | model.OutputDecl]] = []
         seen: set[tuple[tuple[str, ...], str]] = set()
         for ref in subject.subjects:
-            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-            input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
-            output_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
-            if input_decl is not None and output_decl is not None:
-                raise CompileError(
-                    f"Ambiguous review subject in {owner_label}: {_dotted_ref_name(ref)}"
+            lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+            matches: list[tuple[object, IndexedUnit, model.InputDecl | model.OutputDecl]] = []
+            for lookup_target in lookup_targets:
+                input_decl = lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)
+                output_decl = self._resolve_local_output_decl(
+                    lookup_target.declaration_name,
+                    unit=lookup_target.unit,
                 )
-            if input_decl is None and output_decl is None:
+                if input_decl is not None and output_decl is not None:
+                    raise CompileError(
+                        f"Ambiguous review subject in {owner_label}: {_dotted_ref_name(ref)}"
+                    )
+                decl = input_decl if input_decl is not None else output_decl
+                if decl is not None:
+                    matches.append((lookup_target, lookup_target.unit, decl))
+            if len(matches) > 1:
+                imported_target = next(
+                    (
+                        lookup_target
+                        for lookup_target, _target_unit, _decl in matches
+                        if lookup_target.imported_symbol is not None
+                    ),
+                    None,
+                )
+                if imported_target is not None:
+                    local_decl = next(
+                        (
+                            decl
+                            for lookup_target, _target_unit, decl in matches
+                            if lookup_target.imported_symbol is None
+                        ),
+                        None,
+                    )
+                    self._raise_imported_symbol_ambiguity(
+                        ref,
+                        unit=unit,
+                        binding=imported_target.imported_symbol,
+                        detail=(
+                            f"Review subject `{ref.declaration_name}` in {owner_label} "
+                            "matches both local and imported declarations."
+                        ),
+                        local_decl=local_decl,
+                    )
+            if not matches:
                 raise review_compile_error(
                     code="E475",
                     summary="Review subject has the wrong kind",
@@ -117,7 +153,8 @@ class ResolveReviewsMixin:
                     unit=unit,
                     source_span=ref.source_span or subject.source_span,
                 )
-            decl = input_decl if input_decl is not None else output_decl
+            lookup_target, target_unit, decl = matches[0]
+            _ = lookup_target
             key = (target_unit.module_parts, decl.name)
             if key in seen:
                 raise CompileError(
@@ -137,11 +174,13 @@ class ResolveReviewsMixin:
             return None
         enum_ref = _name_ref_from_dotted_name(".".join(expr.parts[:-1]))
         try:
-            lookup_unit = self._resolve_readable_decl_lookup_unit(enum_ref, unit=unit)
+            lookup_unit, enum_decl = self._resolve_decl_ref(
+                enum_ref,
+                unit=unit,
+                registry_name="enums_by_name",
+                missing_label="enum declaration",
+            )
         except CompileError:
-            return None
-        enum_decl = lookup_unit.enums_by_name.get(enum_ref.declaration_name)
-        if enum_decl is None:
             return None
         member = next((member for member in enum_decl.members if member.key == expr.parts[-1]), None)
         if member is None:
@@ -155,18 +194,60 @@ class ResolveReviewsMixin:
         unit: IndexedUnit,
         owner_label: str,
     ) -> ReviewContractSpec:
-        contract_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-        workflow_decl = contract_unit.workflows_by_name.get(ref.declaration_name)
-        schema_decl = contract_unit.schemas_by_name.get(ref.declaration_name)
         dotted_name = _dotted_ref_name(ref)
-
-        if workflow_decl is not None and schema_decl is not None:
-            raise CompileError(f"Ambiguous review contract in {owner_label}: {dotted_name}")
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        matches: list[tuple[object, IndexedUnit, model.WorkflowDecl | model.SchemaDecl]] = []
+        for lookup_target in lookup_targets:
+            workflow_decl = lookup_target.unit.workflows_by_name.get(lookup_target.declaration_name)
+            schema_decl = lookup_target.unit.schemas_by_name.get(lookup_target.declaration_name)
+            if workflow_decl is not None and schema_decl is not None:
+                raise CompileError(f"Ambiguous review contract in {owner_label}: {dotted_name}")
+            decl = workflow_decl if workflow_decl is not None else schema_decl
+            if decl is not None:
+                matches.append((lookup_target, lookup_target.unit, decl))
+        if len(matches) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _contract_unit, _decl in matches
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, _contract_unit, decl in matches
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Review contract `{ref.declaration_name}` in {owner_label} "
+                        "matches both local and imported declarations."
+                    ),
+                    local_decl=local_decl,
+                )
+        if matches:
+            lookup_target, contract_unit, decl = matches[0]
+            _ = lookup_target
+            workflow_decl = decl if isinstance(decl, model.WorkflowDecl) else None
+            schema_decl = decl if isinstance(decl, model.SchemaDecl) else None
+        else:
+            workflow_decl = None
+            schema_decl = None
+            contract_unit = unit
 
         if workflow_decl is not None:
             workflow_body = self._resolve_workflow_decl(workflow_decl, unit=contract_unit)
             gates = self._collect_review_contract_gates(
                 workflow_body,
+                unit=contract_unit,
                 owner_label=(
                     f"{owner_label} contract "
                     f"{_dotted_decl_name(contract_unit.module_parts, workflow_decl.name)}"
@@ -193,6 +274,7 @@ class ResolveReviewsMixin:
             schema_body = self._resolve_schema_decl(schema_decl, unit=contract_unit)
             gates = self._collect_schema_review_contract_gates(
                 schema_body,
+                unit=contract_unit,
                 owner_label=(
                     f"{owner_label} contract "
                     f"{_dotted_decl_name(contract_unit.module_parts, schema_decl.name)}"
@@ -1150,6 +1232,7 @@ class ResolveReviewsMixin:
                             unit=unit,
                             owner_label=owner_label,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -1165,9 +1248,11 @@ class ResolveReviewsMixin:
                                     unit=unit,
                                     owner_label=owner_label,
                                 ),
+                                source_span=case.source_span,
                             )
                             for case in item.cases
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -1195,6 +1280,7 @@ class ResolveReviewsMixin:
                             unit=unit,
                             owner_label=owner_label,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -1210,9 +1296,11 @@ class ResolveReviewsMixin:
                                     unit=unit,
                                     owner_label=owner_label,
                                 ),
+                                source_span=case.source_span,
                             )
                             for case in item.cases
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue

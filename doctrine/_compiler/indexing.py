@@ -69,6 +69,13 @@ class ResolvedModuleSource:
 
 
 @dataclass(slots=True, frozen=True)
+class ImportedSymbolBinding:
+    target_name: str
+    target_unit: "IndexedUnit"
+    import_decl: model.ImportDecl
+
+
+@dataclass(slots=True, frozen=True)
 class IndexedUnit:
     prompt_root: Path
     module_parts: tuple[str, ...]
@@ -100,6 +107,15 @@ class IndexedUnit:
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
     imported_units: dict[tuple[str, ...], "IndexedUnit"]
+    visible_imported_units: dict[tuple[str, ...], "IndexedUnit"]
+    imported_symbols_by_name: dict[str, ImportedSymbolBinding]
+
+
+@dataclass(slots=True, frozen=True)
+class LoadedImports:
+    imported_units: dict[tuple[str, ...], IndexedUnit]
+    visible_imported_units: dict[tuple[str, ...], IndexedUnit]
+    imported_symbols_by_name: dict[str, ImportedSymbolBinding]
 
 
 def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:
@@ -632,9 +648,19 @@ def index_unit(
             )
             agents_by_name[declaration.name] = declaration
             continue
-        raise CompileError(f"Unsupported declaration type: {type(declaration).__name__}")
+        raise compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=(
+                "Internal compiler error: unsupported declaration type: "
+                f"{type(declaration).__name__}"
+            ),
+            path=prompt_file.source_path,
+            source_span=getattr(declaration, "source_span", None),
+            hints=("This is a compiler bug, not a prompt authoring error.",),
+        )
 
-    imported_units = load_imports(
+    loaded_imports = load_imports(
         session,
         imports,
         prompt_root=prompt_root,
@@ -674,8 +700,38 @@ def index_unit(
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
-        imported_units=imported_units,
+        imported_units=loaded_imports.imported_units,
+        visible_imported_units=loaded_imports.visible_imported_units,
+        imported_symbols_by_name=loaded_imports.imported_symbols_by_name,
     )
+
+
+def _visible_imported_module_parts(
+    import_decl: model.ImportDecl,
+    *,
+    resolved_module_parts: tuple[str, ...],
+) -> tuple[str, ...] | None:
+    if import_decl.imported_name is not None:
+        return None
+    if import_decl.alias is not None:
+        return (import_decl.alias,)
+    return resolved_module_parts
+
+
+def _import_display_name(
+    import_decl: model.ImportDecl,
+    *,
+    resolved_module_parts: tuple[str, ...],
+) -> str:
+    if import_decl.imported_name is not None:
+        visible_name = import_decl.alias or import_decl.imported_name
+        return visible_name
+    visible_module_parts = _visible_imported_module_parts(
+        import_decl,
+        resolved_module_parts=resolved_module_parts,
+    )
+    assert visible_module_parts is not None
+    return ".".join(visible_module_parts)
 
 
 def load_imports(
@@ -687,10 +743,17 @@ def load_imports(
     importer_path: Path | None,
     ancestry: tuple[ModuleLoadKey, ...],
     allow_parallel_imports: bool,
-) -> dict[tuple[str, ...], IndexedUnit]:
+) -> LoadedImports:
     imported_units: dict[tuple[str, ...], IndexedUnit] = {}
+    visible_imported_units: dict[tuple[str, ...], IndexedUnit] = {}
+    module_binding_decls: dict[tuple[str, ...], model.ImportDecl] = {}
+    imported_symbols_by_name: dict[str, ImportedSymbolBinding] = {}
     if not imports:
-        return imported_units
+        return LoadedImports(
+            imported_units=imported_units,
+            visible_imported_units=visible_imported_units,
+            imported_symbols_by_name=imported_symbols_by_name,
+        )
 
     resolved_imports = [
         (
@@ -710,7 +773,7 @@ def load_imports(
 
     for resolved_module_parts, import_decl in resolved_imports:
         try:
-            imported_units[resolved_module_parts] = load_module(
+            target_unit = load_module(
                 session,
                 resolved_module_parts,
                 prompt_root=prompt_root if import_decl.path.level > 0 else None,
@@ -718,12 +781,89 @@ def load_imports(
                 importer_path=importer_path,
                 import_decl=import_decl,
             )
+            imported_units[resolved_module_parts] = target_unit
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"resolve import `{'.'.join(resolved_module_parts)}`",
                 location=path_location(importer_path),
             )
-    return imported_units
+        visible_module_parts = _visible_imported_module_parts(
+            import_decl,
+            resolved_module_parts=resolved_module_parts,
+        )
+        if visible_module_parts is not None:
+            existing_decl = module_binding_decls.get(visible_module_parts)
+            if existing_decl is not None:
+                existing_unit = visible_imported_units[visible_module_parts]
+                same_visible_target = (
+                    existing_unit.prompt_root == target_unit.prompt_root
+                    and existing_unit.module_parts == target_unit.module_parts
+                    and existing_decl.alias is None
+                    and import_decl.alias is None
+                )
+                if not same_visible_target:
+                    visible_name = ".".join(visible_module_parts)
+                    raise compile_error(
+                        code="E306",
+                        summary="Duplicate module alias",
+                        detail=(
+                            f"Visible import module `{visible_name}` is defined more than once "
+                            "in the same prompt file."
+                        ),
+                        path=importer_path,
+                        source_span=import_decl.source_span,
+                        related=(
+                            related_prompt_site(
+                                label="first import",
+                                path=importer_path,
+                                source_span=existing_decl.source_span,
+                            ),
+                        ),
+                        hints=(
+                            "Keep each visible import module name only once per prompt file.",
+                            "Rename one import with `as` when both modules must stay visible.",
+                        ),
+                    )
+            else:
+                visible_imported_units[visible_module_parts] = target_unit
+                module_binding_decls[visible_module_parts] = import_decl
+            continue
+
+        assert import_decl.imported_name is not None
+        visible_name = import_decl.alias or import_decl.imported_name
+        existing_binding = imported_symbols_by_name.get(visible_name)
+        if existing_binding is not None:
+            raise compile_error(
+                code="E307",
+                summary="Duplicate imported symbol",
+                detail=(
+                    f"Imported symbol `{visible_name}` is defined more than once in the "
+                    "same prompt file."
+                ),
+                path=importer_path,
+                source_span=import_decl.source_span,
+                related=(
+                    related_prompt_site(
+                        label="first import",
+                        path=importer_path,
+                        source_span=existing_binding.import_decl.source_span,
+                    ),
+                ),
+                hints=(
+                    "Keep each imported symbol visible only once per prompt file.",
+                    "Rename one symbol with `as` when both imports must stay visible.",
+                ),
+            )
+        imported_symbols_by_name[visible_name] = ImportedSymbolBinding(
+            target_name=import_decl.imported_name,
+            target_unit=target_unit,
+            import_decl=import_decl,
+        )
+    return LoadedImports(
+        imported_units=imported_units,
+        visible_imported_units=visible_imported_units,
+        imported_symbols_by_name=imported_symbols_by_name,
+    )
 
 
 def load_module(
@@ -803,8 +943,16 @@ def load_module(
                 return cached
             cached_error = session._module_load_errors.get(module_key)
         if cached_error is None:
-            raise CompileError(
-                f"Internal compiler error: module load finished without a result: {'.'.join(module_parts)}"
+            raise compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=(
+                    "Internal compiler error: module load finished without a result: "
+                    f"{'.'.join(module_parts)}"
+                ),
+                path=importer_path if importer_path is not None else resolved_source.prompt_path,
+                source_span=None if import_decl is None else import_decl.source_span,
+                hints=("This is a compiler bug, not a prompt authoring error.",),
             )
         if isinstance(cached_error, DoctrineError):
             raise _clone_doctrine_error(cached_error)

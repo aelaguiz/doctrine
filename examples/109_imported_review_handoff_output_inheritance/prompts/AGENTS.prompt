@@ -1,9 +1,9 @@
 # This example shows imported handoff-output inheritance.
 
-import shared.review
+from shared.review import HandoffOutput as SharedHandoffOutput
 
 
-output LessonsLeadOutput[shared.review.HandoffOutput]: "Lessons Lead Output"
+output LessonsLeadOutput[SharedHandoffOutput]: "Lessons Lead Output"
     inherit target
     inherit shape
     inherit requirement

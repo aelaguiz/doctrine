@@ -7,6 +7,8 @@ from doctrine._parser.parts import (
     GroundingBodyParts,
     ReviewBodyParts,
     RouteOnlyBodyParts,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _source_span_from_meta,
     _with_source_span,
 )
@@ -76,7 +78,7 @@ class ReviewTransformerMixin:
         )
 
     def review_body(self, items):
-        return ReviewBodyParts(items=tuple(items))
+        return ReviewBodyParts(items=_flatten_grouped_items(items))
 
     def route_only_body(self, items):
         facts_ref: model.NameRef | None = None
@@ -415,6 +417,10 @@ class ReviewTransformerMixin:
     @v_args(meta=True, inline=True)
     def review_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def review_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
 
     @v_args(inline=True)
     def review_item_key(self, key):

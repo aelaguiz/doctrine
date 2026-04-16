@@ -238,6 +238,7 @@ class CompileReviewCasesMixin:
         }
         field_bindings = self._validate_review_field_bindings(
             resolved.fields,
+            field_binding_unit=unit,
             output_decl=comment_output_decl,
             output_unit=comment_output_unit,
             owner_label=owner_label,

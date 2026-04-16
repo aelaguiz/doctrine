@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledAgent,
@@ -32,6 +33,23 @@ if TYPE_CHECKING:
 
 # Thin compile-context boundary: task-local state and public entrypoints live
 # here, while the subsystem helper families are owned by the internal mixins.
+
+
+def _context_compile_error(
+    *,
+    path,
+    detail: str,
+    code: str = "E299",
+    summary: str = "Compile failure",
+    hints: tuple[str, ...] = (),
+) -> CompileError:
+    return compile_error(
+        code=code,
+        summary=summary,
+        detail=detail,
+        path=path,
+        hints=hints,
+    )
 
 class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, ResolveMixin):
     def __init__(
@@ -125,9 +143,20 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
     ) -> CompiledAgent:
         agent = unit.agents_by_name.get(agent_name)
         if agent is None:
-            raise CompileError(f"Missing target agent: {agent_name}")
+            raise _context_compile_error(
+                path=unit.prompt_file.source_path,
+                code="E201",
+                summary="Missing target agent",
+                detail=f"Target agent `{agent_name}` does not exist in the root prompt file.",
+            )
         if agent.abstract:
-            raise CompileError(f"Abstract agent does not render: {agent_name}")
+            raise _context_compile_error(
+                path=unit.prompt_file.source_path,
+                code="E202",
+                summary="Abstract agent does not render",
+                detail=f"Agent `{agent_name}` is marked abstract and cannot render output directly.",
+                hints=("Render a concrete child agent instead.",),
+            )
         return self._compile_agent_decl(agent, unit=unit)
 
     def compile_skill_package(
@@ -137,16 +166,23 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         if package_name is None:
             packages = tuple(self.root_unit.skill_packages_by_name.values())
             if not packages:
-                raise CompileError("Missing target skill package.")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail="Missing target skill package.",
+                )
             if len(packages) != 1:
-                raise CompileError(
-                    "Prompt file defines multiple skill packages; choose one explicitly."
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail="Prompt file defines multiple skill packages; choose one explicitly.",
                 )
             declaration = packages[0]
         else:
             declaration = self.root_unit.skill_packages_by_name.get(package_name)
             if declaration is None:
-                raise CompileError(f"Missing target skill package: {package_name}")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail=f"Missing target skill package: {package_name}",
+                )
         return self._compile_skill_package_decl(declaration, unit=self.root_unit)
 
     def compile_readable_declaration(
@@ -155,29 +191,47 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         if declaration_kind == "analysis":
             declaration = self.root_unit.analyses_by_name.get(declaration_name)
             if declaration is None:
-                raise CompileError(f"Missing target analysis declaration: {declaration_name}")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail=f"Missing target analysis declaration: {declaration_name}",
+                )
             return self._compile_analysis_decl(declaration, unit=self.root_unit)
         if declaration_kind == "decision":
             declaration = self.root_unit.decisions_by_name.get(declaration_name)
             if declaration is None:
-                raise CompileError(f"Missing target decision declaration: {declaration_name}")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail=f"Missing target decision declaration: {declaration_name}",
+                )
             return self._compile_decision_decl(declaration, unit=self.root_unit)
         if declaration_kind == "schema":
             declaration = self.root_unit.schemas_by_name.get(declaration_name)
             if declaration is None:
-                raise CompileError(f"Missing target schema declaration: {declaration_name}")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail=f"Missing target schema declaration: {declaration_name}",
+                )
             return self._compile_schema_decl(declaration, unit=self.root_unit)
         if declaration_kind == "table":
             declaration = self.root_unit.tables_by_name.get(declaration_name)
             if declaration is None:
-                raise CompileError(f"Missing target table declaration: {declaration_name}")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail=f"Missing target table declaration: {declaration_name}",
+                )
             return self._compile_table_decl(declaration, unit=self.root_unit)
         if declaration_kind == "document":
             declaration = self.root_unit.documents_by_name.get(declaration_name)
             if declaration is None:
-                raise CompileError(f"Missing target document declaration: {declaration_name}")
+                raise _context_compile_error(
+                    path=self.root_unit.prompt_file.source_path,
+                    detail=f"Missing target document declaration: {declaration_name}",
+                )
             return self._compile_document_decl(declaration, unit=self.root_unit)
-        raise CompileError(f"Unsupported readable declaration kind: {declaration_kind}")
+        raise _context_compile_error(
+            path=self.root_unit.prompt_file.source_path,
+            detail=f"Unsupported readable declaration kind: {declaration_kind}",
+        )
 
     def _load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
         return self.session.load_module(module_parts)

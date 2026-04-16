@@ -388,6 +388,133 @@ class EmitDocsTests(unittest.TestCase):
             for binding in contract_data["io"]["output_bindings"]:
                 self.assertIn(binding["declaration_key"], output_keys)
 
+    def test_emit_target_serializes_previous_turn_io_for_route_field_final_output_with_root_readables(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import rally.base_agent
+
+                    workflow RouteGuide: "Route Guide"
+                        sequence choose_route:
+                            "Pick the next owner."
+                            "Return the routed final output."
+
+                    workflow PreviousTurnGuide: "Previous Turn Guide"
+                        callout readback: "Readback"
+                            kind: note
+                            "Read the previous turn before you continue."
+
+                    output schema TurnResultSchema: "Turn Result Schema"
+                        route field next_route: "Next Route"
+                            send_to_worker_b: "Send to Worker B." -> WorkerB
+
+                        field kind: "Kind"
+                            type: string
+
+                        example:
+                            kind: "handoff"
+                            next_route: "send_to_worker_b"
+
+                    output shape TurnResultJson: "Turn Result JSON"
+                        kind: JsonObject
+                        schema: TurnResultSchema
+
+                    output TurnResult: "Turn Result"
+                        target: TurnResponse
+                        shape: TurnResultJson
+                        requirement: Required
+
+                    input PreviousTurnResult: "Previous Turn Result"
+                        source: rally.base_agent.RallyPreviousTurnOutput
+                        requirement: Advisory
+
+                    agent WorkerB:
+                        role: "Read the previous turn."
+                        workflow: PreviousTurnGuide
+                        inputs: "Inputs"
+                            PreviousTurnResult
+                        outputs: "Outputs"
+                            TurnResult
+                        final_output: TurnResult
+
+                    agent WorkerA:
+                        role: "Hand work to Worker B."
+                        workflow: RouteGuide
+                        outputs: "Outputs"
+                            TurnResult
+                        final_output:
+                            output: TurnResult
+                            route: next_route
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "worker_b" / "final_output.contract.json"
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                contract_data["io"]["previous_turn_inputs"],
+                [
+                    {
+                        "input_key": "PreviousTurnResult",
+                        "input_name": "PreviousTurnResult",
+                        "selector_kind": "default_final_output",
+                        "selector_text": "Exact previous final output",
+                        "resolved_declaration_key": "TurnResult",
+                        "resolved_declaration_name": "TurnResult",
+                        "derived_contract_mode": "structured_json",
+                        "requirement": "Advisory",
+                        "target": {
+                            "key": "TurnResponse",
+                            "title": "Turn Response",
+                            "config": {},
+                        },
+                        "shape": {
+                            "name": "TurnResultJson",
+                            "title": "Turn Result JSON",
+                        },
+                        "schema": {
+                            "name": "TurnResultSchema",
+                            "title": "Turn Result Schema",
+                            "profile": "OpenAIStructuredOutput",
+                        },
+                    }
+                ],
+            )
+
     def test_emit_target_serializes_io_block_for_imported_previous_output_binding(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -537,6 +664,176 @@ class EmitDocsTests(unittest.TestCase):
                     "declaration_key": "shared.outputs.SharedTurnResult",
                 },
                 contract_data["io"]["output_bindings"],
+            )
+
+    def test_emit_target_serializes_previous_turn_io_for_review_reject_route_selector(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "shared").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "shared" / "review.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output PoemReviewFinalResponse: "Poem Review Final Response"
+                        target: TurnResponse
+                        shape: Comment
+                        requirement: Required
+
+                        trust_surface:
+                            current_artifact
+
+                        verdict: "Verdict"
+                            "Say whether the poem passed review."
+
+                        reviewed_artifact: "Reviewed Artifact"
+                            "Name the poem under review."
+
+                        analysis_performed: "Analysis Performed"
+                            "Summarize the review analysis."
+
+                        output_contents_that_matter: "Output Contents That Matter"
+                            "Summarize the parts the next owner should read first."
+
+                        current_artifact: "Current Artifact"
+                            "Name the artifact that remains current after review."
+
+                        next_owner: "Next Owner"
+                            "Name {{Publisher}} when the poem passes and {{Muse}} when it needs revision."
+
+                        failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                            failing_gates: "Failing Gates"
+                                "List the failing review gates."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import rally.base_agent
+                    import shared.review
+
+                    input DraftPoem: "Draft Poem"
+                        source: File
+                            path: "unit_root/DRAFT_POEM.md"
+                        shape: MarkdownDocument
+                        requirement: Required
+                        needs_revision: "Needs Revision"
+
+                    input PreviousPoemReview: "Previous Poem Review"
+                        source: rally.base_agent.RallyPreviousTurnOutput
+                            output: shared.review.PoemReviewFinalResponse
+                        requirement: Advisory
+
+                    workflow PoemReviewContract: "Poem Review Contract"
+                        inspect_meter: "Inspect Meter"
+                            "Check whether the poem keeps its rhythm."
+
+                    output MuseReply: "Muse Reply"
+                        target: TurnResponse
+                        shape: Comment
+                        requirement: Required
+
+                    agent Publisher:
+                        role: "Take accepted poems to publishing."
+                        workflow: "Publish"
+                            "Prepare the accepted poem."
+
+                    agent Muse:
+                        role: "Revise rejected poems."
+                        workflow: "Revise"
+                            "Read the previous review before you revise."
+                        inputs: "Inputs"
+                            PreviousPoemReview
+                        outputs: "Outputs"
+                            MuseReply
+                        final_output: MuseReply
+
+                    review PoemReview: "Poem Review"
+                        subject: DraftPoem
+                        contract: PoemReviewContract
+                        comment_output: shared.review.PoemReviewFinalResponse
+
+                        fields:
+                            verdict: verdict
+                            reviewed_artifact: reviewed_artifact
+                            analysis: analysis_performed
+                            readback: output_contents_that_matter
+                            current_artifact: current_artifact
+                            failing_gates: failure_detail.failing_gates
+                            next_owner: next_owner
+
+                        contract_checks: "Contract Checks"
+                            reject contract.inspect_meter when DraftPoem.needs_revision
+                            accept "The poem review passes." when contract.passes
+
+                        on_accept: "If Accepted"
+                            current artifact DraftPoem via shared.review.PoemReviewFinalResponse.current_artifact
+                            route "Accepted poem goes to Publisher." -> Publisher
+
+                        on_reject: "If Rejected"
+                            current artifact DraftPoem via shared.review.PoemReviewFinalResponse.current_artifact
+                            route "Rejected poem returns to Muse." -> Muse
+
+                    agent Reviewer:
+                        role: "Review the poem and route the next owner."
+                        review: PoemReview
+                        inputs: "Inputs"
+                            DraftPoem
+                        outputs: "Outputs"
+                            shared.review.PoemReviewFinalResponse
+                        final_output: shared.review.PoemReviewFinalResponse
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "muse" / "final_output.contract.json"
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            previous_input = contract_data["io"]["previous_turn_inputs"][0]
+
+            self.assertEqual(previous_input["input_key"], "PreviousPoemReview")
+            self.assertEqual(previous_input["input_name"], "PreviousPoemReview")
+            self.assertEqual(previous_input["selector_kind"], "output_decl")
+            self.assertEqual(
+                previous_input["selector_text"],
+                "shared.review.PoemReviewFinalResponse",
+            )
+            self.assertEqual(
+                previous_input["resolved_declaration_key"],
+                "shared.review.PoemReviewFinalResponse",
+            )
+            self.assertEqual(
+                previous_input["resolved_declaration_name"],
+                "PoemReviewFinalResponse",
             )
 
     def test_emit_target_rejects_non_final_turn_response_previous_selector(self) -> None:

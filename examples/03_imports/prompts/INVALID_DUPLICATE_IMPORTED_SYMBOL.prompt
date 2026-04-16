@@ -1,0 +1,6 @@
+from simple.greeting import Greeting
+from simple.nested.polite import PoliteGreeting as Greeting
+
+
+agent DuplicateImportedSymbolDemo:
+    role: "Trigger the duplicate imported symbol error."

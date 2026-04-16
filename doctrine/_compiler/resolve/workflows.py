@@ -282,6 +282,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -306,6 +307,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -379,6 +381,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -430,6 +433,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -702,6 +706,7 @@ class ResolveWorkflowsMixin:
                             item.items,
                             unit=unit,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -726,6 +731,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -798,6 +804,7 @@ class ResolveWorkflowsMixin:
                             item.items,
                             unit=unit,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -849,6 +856,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -963,6 +971,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -987,6 +996,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -1048,6 +1058,7 @@ class ResolveWorkflowsMixin:
                             item.items,
                             unit=unit,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -1072,6 +1083,7 @@ class ResolveWorkflowsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue

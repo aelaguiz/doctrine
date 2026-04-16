@@ -44,6 +44,8 @@ class ImportPath:
 @_dataclass(slots=True, frozen=True)
 class ImportDecl:
     path: ImportPath
+    imported_name: str | None = None
+    alias: str | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

@@ -8,6 +8,8 @@ from doctrine._parser.parts import (
     WorkflowBodyParts,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _item_line_column,
     _positioned_body_prose,
     _positioned_workflow_law,
@@ -34,6 +36,10 @@ class WorkflowTransformerMixin:
     @v_args(meta=True, inline=True)
     def agent_slot_inherit(self, meta, key):
         return _with_source_span(model.AuthoredSlotInherit(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def agent_slot_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.AuthoredSlotInherit)
 
     @v_args(meta=True, inline=True)
     def agent_slot_override(self, meta, key, value, body=None):
@@ -89,6 +95,7 @@ class WorkflowTransformerMixin:
         preamble: list[model.ProseLine] = []
         workflow_items: list[model.WorkflowItem] = []
         law: model.LawBody | None = None
+        items = _flatten_grouped_items(items)
         for item in items:
             law_body = item.body if isinstance(item, WorkflowLawPart) else item if isinstance(item, model.LawBody) else None
             if law_body is not None:
@@ -173,6 +180,10 @@ class WorkflowTransformerMixin:
         return _with_source_span(model.InheritItem(key=key), meta)
 
     @v_args(meta=True, inline=True)
+    def workflow_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
     def workflow_skills_inline(self, meta, title, body):
         return _with_source_span(
             model.WorkflowSkillsItem(
@@ -234,7 +245,7 @@ class WorkflowTransformerMixin:
 
     @v_args(meta=True)
     def law_body(self, meta, items):
-        return _with_source_span(model.LawBody(items=tuple(items)), meta)
+        return _with_source_span(model.LawBody(items=_flatten_grouped_items(items)), meta)
 
     @v_args(meta=True)
     def law_section(self, meta, items):
@@ -246,6 +257,10 @@ class WorkflowTransformerMixin:
     @v_args(meta=True, inline=True)
     def law_inherit(self, meta, key):
         return _with_source_span(model.LawInherit(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def law_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.LawInherit)
 
     @v_args(meta=True)
     def law_override_section(self, meta, items):

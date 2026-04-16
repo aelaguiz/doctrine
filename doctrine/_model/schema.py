@@ -12,6 +12,7 @@ class SchemaSection:
     key: str
     title: str
     body: tuple[ProseLine, ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -19,6 +20,7 @@ class SchemaGate:
     key: str
     title: str
     body: tuple[ProseLine, ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -26,6 +28,7 @@ class SchemaArtifact:
     key: str
     title: str
     ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -33,46 +36,55 @@ class SchemaGroup:
     key: str
     title: str
     members: tuple[str, ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaSectionsBlock:
     items: tuple[SchemaSection, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaGatesBlock:
     items: tuple[SchemaGate, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaArtifactsBlock:
     items: tuple[SchemaArtifact, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaGroupsBlock:
     items: tuple[SchemaGroup, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaOverrideSectionsBlock:
     items: tuple[SchemaSection, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaOverrideGatesBlock:
     items: tuple[SchemaGate, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaOverrideArtifactsBlock:
     items: tuple[SchemaArtifact, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SchemaOverrideGroupsBlock:
     items: tuple[SchemaGroup, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 SchemaItem: _TypeAlias = (

@@ -107,6 +107,44 @@ class CompilerBoundaryTests(unittest.TestCase):
 
         self.assertEqual(compiled.name, "RuntimeHome")
 
+    def test_compile_agent_from_alias_imported_runtime_package_unit(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "runtime_home").mkdir(parents=True)
+            (prompts / "runtime_home" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent RuntimeHome:
+                        role: "Own the runtime package."
+                        workflow: "Reply"
+                            "Reply from the imported package."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            prompt_path = prompts / "AGENTS.prompt"
+            prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    import runtime_home as runtime_alias
+
+                    agent BuildHandle:
+                        role: "Own the build handle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session = CompilationSession(parse_file(prompt_path))
+            runtime_root = collect_runtime_emit_roots(session)[1]
+            compiled = session.compile_agent_from_unit(
+                runtime_root.unit,
+                runtime_root.agent_name,
+            )
+
+        self.assertEqual(compiled.name, "RuntimeHome")
+
 
 if __name__ == "__main__":
     unittest.main()

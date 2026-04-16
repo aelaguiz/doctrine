@@ -4,8 +4,15 @@ import json
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import (
+    authored_compile_error,
+    authored_related_site,
+)
 from doctrine._compiler.constants import _BUILTIN_INPUT_SOURCES, _BUILTIN_OUTPUT_TARGETS
-from doctrine._compiler.final_output_diagnostics import final_output_compile_error
+from doctrine._compiler.final_output_diagnostics import (
+    final_output_compile_error,
+    final_output_related_site,
+)
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
@@ -38,6 +45,19 @@ class ResolveOutputsMixin:
 
     def _authored_source_span(self, value: object | None) -> model.SourceSpan | None:
         return getattr(value, "source_span", None)
+
+    def _first_source_span(
+        self,
+        *values: object | model.SourceSpan | None,
+    ) -> model.SourceSpan | None:
+        for value in values:
+            if isinstance(value, model.SourceSpan):
+                span = value
+            else:
+                span = self._authored_source_span(value)
+            if span is not None:
+                return span
+        return None
 
     def _output_decl_item_by_key(
         self,
@@ -91,16 +111,28 @@ class ResolveOutputsMixin:
         related = []
         for key in missing_keys:
             parent_item = self._output_decl_item_by_key(parent_output, key)
-            if parent_item is None:
+            source_span = (
+                self._authored_source_span(parent_item)
+                if parent_item is not None
+                else self._output_decl_attachment_source_span(parent_output, key)
+            )
+            if source_span is None:
                 continue
             related.append(
                 output_related_site(
                     label=f"inherited `{key}` entry",
                     unit=parent_unit,
-                    source_span=self._authored_source_span(parent_item),
+                    source_span=source_span,
                 )
             )
         return tuple(related)
+
+    def _output_decl_attachment_source_span(
+        self,
+        output_decl: model.OutputDecl,
+        key: str,
+    ) -> model.SourceSpan | None:
+        return getattr(output_decl, f"{key}_source_span", None)
 
     def _resolve_output_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -211,7 +243,13 @@ class ResolveOutputsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._output_decl_resolution_stack, output_key]
             )
-            raise CompileError(f"Cyclic output inheritance: {cycle}")
+            raise output_compile_error(
+                code="E251",
+                summary="Cyclic output inheritance",
+                detail=f"Output inheritance cycle: {cycle}.",
+                unit=unit,
+                source_span=output_decl.source_span,
+            )
 
         self._output_decl_resolution_stack.append(output_key)
         try:
@@ -588,28 +626,36 @@ class ResolveOutputsMixin:
 
         resolved_schema, schema_accounted = self._resolve_output_attachment(
             output_decl,
+            unit=unit,
             parent_output=inherited_parent_output,
+            parent_unit=parent_unit,
             owner_label=owner_label,
             parent_label=parent_label,
             key="schema",
         )
         resolved_structure, structure_accounted = self._resolve_output_attachment(
             output_decl,
+            unit=unit,
             parent_output=inherited_parent_output,
+            parent_unit=parent_unit,
             owner_label=owner_label,
             parent_label=parent_label,
             key="structure",
         )
         resolved_render_profile, render_profile_accounted = self._resolve_output_attachment(
             output_decl,
+            unit=unit,
             parent_output=inherited_parent_output,
+            parent_unit=parent_unit,
             owner_label=owner_label,
             parent_label=parent_label,
             key="render_profile",
         )
         resolved_trust_surface, trust_surface_accounted = self._resolve_output_attachment(
             output_decl,
+            unit=unit,
             parent_output=inherited_parent_output,
+            parent_unit=parent_unit,
             owner_label=owner_label,
             parent_label=parent_label,
             key="trust_surface",
@@ -655,6 +701,28 @@ class ResolveOutputsMixin:
             structure_mode="set" if resolved_structure is not None else None,
             render_profile_mode="set" if resolved_render_profile is not None else None,
             trust_surface_mode="set" if resolved_trust_surface else None,
+            schema_source_span=(
+                self._output_decl_attachment_source_span(output_decl, "schema")
+                or self._output_decl_attachment_source_span(inherited_parent_output, "schema")
+            ),
+            structure_source_span=(
+                self._output_decl_attachment_source_span(output_decl, "structure")
+                or self._output_decl_attachment_source_span(inherited_parent_output, "structure")
+            ),
+            render_profile_source_span=(
+                self._output_decl_attachment_source_span(output_decl, "render_profile")
+                or self._output_decl_attachment_source_span(
+                    inherited_parent_output,
+                    "render_profile",
+                )
+            ),
+            trust_surface_source_span=(
+                self._output_decl_attachment_source_span(output_decl, "trust_surface")
+                or self._output_decl_attachment_source_span(
+                    inherited_parent_output,
+                    "trust_surface",
+                )
+            ),
             source_span=output_decl.source_span,
         )
 
@@ -1275,7 +1343,9 @@ class ResolveOutputsMixin:
         self,
         output_decl: model.OutputDecl,
         *,
+        unit: IndexedUnit,
         parent_output: model.OutputDecl,
+        parent_unit: IndexedUnit | None,
         owner_label: str,
         parent_label: str | None,
         key: str,
@@ -1283,22 +1353,52 @@ class ResolveOutputsMixin:
         parent_has = self._output_decl_has_attachment(parent_output, key)
         child_mode = getattr(output_decl, f"{key}_mode")
         child_value = self._output_decl_attachment_value(output_decl, key)
+        child_source_span = self._output_decl_attachment_source_span(output_decl, key)
+        parent_source_span = self._output_decl_attachment_source_span(parent_output, key)
+        parent_related = (
+            (
+                output_related_site(
+                    label=f"inherited `{key}` entry",
+                    unit=parent_unit,
+                    source_span=parent_source_span,
+                ),
+            )
+            if parent_unit is not None and parent_source_span is not None
+            else ()
+        )
 
         if child_mode == "inherit":
             if not parent_has:
-                raise CompileError(f"Cannot inherit undefined output entry in {parent_label}: {key}")
+                raise output_compile_error(
+                    code="E253",
+                    summary="Cannot inherit undefined output entry",
+                    detail=f"Output `{parent_label}` cannot inherit undefined key `{key}`.",
+                    unit=unit,
+                    source_span=child_source_span or output_decl.source_span,
+                )
             return self._output_decl_attachment_value(parent_output, key), True
 
         if child_mode == "override":
             if not parent_has:
-                raise CompileError(
-                    f"E001 Cannot override undefined output entry in {parent_label}: {key}"
+                raise output_compile_error(
+                    code="E001",
+                    summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined output entry in {parent_label}: {key}",
+                    unit=unit,
+                    source_span=child_source_span or output_decl.source_span,
                 )
             return child_value, True
 
         if child_mode == "set":
             if parent_has:
-                raise CompileError(f"Inherited output requires `override {key}` in {owner_label}")
+                raise output_compile_error(
+                    code="E255",
+                    summary="Invalid output inheritance patch",
+                    detail=f"Inherited output requires `override {key}` in {owner_label}",
+                    unit=unit,
+                    source_span=child_source_span or output_decl.source_span,
+                    related=parent_related,
+                )
             return child_value, False
 
         return (None if not parent_has else self._output_decl_attachment_value(parent_output, key), False)
@@ -1324,24 +1424,65 @@ class ResolveOutputsMixin:
         owner_label: str,
         source_span: model.SourceSpan | None = None,
     ) -> tuple[IndexedUnit, model.OutputDecl]:
-        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-        local_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
-        if local_decl is not None:
-            return target_unit, local_decl
-
-        other_kind = self._named_non_output_decl_kind(ref.declaration_name, unit=target_unit)
-        if other_kind is not None:
-            raise final_output_compile_error(
-                code="E211",
-                summary="Final output must point at output declaration",
-                detail=(
-                    f"`final_output` in {owner_label} points at `{_dotted_ref_name(ref)}`, "
-                    f"which resolves to {other_kind} instead of an `output` declaration."
-                ),
-                unit=unit,
-                source_span=source_span,
-                hints=("Point `final_output:` at a declared `output`.",),
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        output_matches: list[tuple[object, model.OutputDecl]] = []
+        for lookup_target in lookup_targets:
+            local_decl = self._resolve_local_output_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
             )
+            if local_decl is not None:
+                output_matches.append((lookup_target, local_decl))
+        if len(output_matches) == 1:
+            lookup_target, local_decl = output_matches[0]
+            return lookup_target.unit, local_decl
+        if len(output_matches) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _decl in output_matches
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, decl in output_matches
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"`final_output` in {owner_label} matches both a local output "
+                        "and an imported symbol."
+                    ),
+                    local_decl=local_decl,
+                    local_label="local output",
+                )
+
+        for lookup_target in lookup_targets:
+            other_kind = self._named_non_output_decl_kind(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if other_kind is not None:
+                raise final_output_compile_error(
+                    code="E211",
+                    summary="Final output must point at output declaration",
+                    detail=(
+                        f"`final_output` in {owner_label} points at `{_dotted_ref_name(ref)}`, "
+                        f"which resolves to {other_kind} instead of an `output` declaration."
+                    ),
+                    unit=unit,
+                    source_span=source_span,
+                    hints=("Point `final_output:` at a declared `output`.",),
+                )
         return self._resolve_output_decl(ref, unit=unit)
 
     def _resolve_final_output_json_shape_summary(
@@ -1405,7 +1546,9 @@ class ResolveOutputsMixin:
         if example_value is not None:
             example_instance = self._materialize_output_schema_example_value(
                 example_value,
+                unit=schema_unit,
                 owner_label=f"output schema {schema_decl.name}.example",
+                source_span=example_item.source_span if example_item is not None else schema_decl.source_span,
             )
             self._validate_final_output_example_instance(
                 example_instance,
@@ -1478,9 +1621,30 @@ class ResolveOutputsMixin:
             or not isinstance(target_item.value, model.NameRef)
             or not self._is_builtin_turn_response_target_ref(target_item.value)
         ):
-            raise CompileError(
-                "final_output.route requires one TurnResponse output in "
-                f"{owner_label}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            raise final_output_compile_error(
+                code="E213",
+                summary="Final output must designate one TurnResponse message",
+                detail=(
+                    "final_output.route requires one TurnResponse output in "
+                    f"{owner_label}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                related=(
+                    final_output_related_site(
+                        label="selected output",
+                        unit=output_unit,
+                        source_span=self._first_source_span(
+                            files_section,
+                            target_item,
+                            shape_item,
+                            output_decl,
+                        ),
+                    ),
+                )
+                if self._first_source_span(files_section, target_item, shape_item, output_decl)
+                is not None
+                else (),
             )
 
         json_summary = self._resolve_final_output_json_shape_summary(
@@ -1488,9 +1652,24 @@ class ResolveOutputsMixin:
             unit=output_unit,
         )
         if json_summary is None:
-            raise CompileError(
-                "final_output.route requires a structured final output with an output schema in "
-                f"{owner_label}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            raise final_output_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "final_output.route requires a structured final output with an output schema in "
+                    f"{owner_label}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                related=(
+                    final_output_related_site(
+                        label="selected output shape",
+                        unit=output_unit,
+                        source_span=self._first_source_span(shape_item, output_decl),
+                    ),
+                )
+                if self._first_source_span(shape_item, output_decl) is not None
+                else (),
             )
 
         route_node = self._resolve_output_schema_field_node(
@@ -1501,9 +1680,24 @@ class ResolveOutputsMixin:
             surface_label="output schema route fields",
         )
         if not isinstance(route_node.target, model.OutputSchemaRouteField):
-            raise CompileError(
-                "final_output.route must bind a `route field` in "
-                f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+            raise final_output_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "final_output.route must bind a `route field` in "
+                    f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                related=(
+                    final_output_related_site(
+                        label="selected schema field",
+                        unit=json_summary.schema_unit,
+                        source_span=self._first_source_span(route_node.target, json_summary.schema_decl),
+                    ),
+                )
+                if self._first_source_span(route_node.target, json_summary.schema_decl) is not None
+                else (),
             )
 
         route_parts = self._collect_output_schema_node_parts(
@@ -1514,9 +1708,24 @@ class ResolveOutputsMixin:
             ),
         )
         if not route_parts.route_choices:
-            raise CompileError(
-                "route field must declare at least one route choice in "
-                f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+            raise final_output_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "route field must declare at least one route choice in "
+                    f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                related=(
+                    final_output_related_site(
+                        label="selected `route field`",
+                        unit=json_summary.schema_unit,
+                        source_span=route_node.target.source_span,
+                    ),
+                )
+                if route_node.target.source_span is not None
+                else (),
             )
         return FinalOutputRouteBinding(
             output_key=output_key,
@@ -1541,15 +1750,52 @@ class ResolveOutputsMixin:
         explicit_render_profile: ResolvedRenderProfile | None = None
         if decl.render_profile_ref is not None:
             if files_section is not None:
-                raise CompileError(
-                    f"Output render_profile requires one markdown-bearing output artifact in {decl.name}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "Output render_profile requires one markdown-bearing output artifact "
+                        f"in {decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=(
+                        self._output_decl_attachment_source_span(decl, "render_profile")
+                        or decl.source_span
+                    ),
+                    related=(
+                        output_related_site(
+                            label="selected `files:` entry",
+                            unit=unit,
+                            source_span=files_section.source_span,
+                        ),
+                    )
+                    if files_section.source_span is not None
+                    else (),
                 )
             if shape_item is None or not (
                 self._is_markdown_shape_value(shape_item.value, unit=unit)
                 or self._is_comment_shape_value(shape_item.value, unit=unit)
             ):
-                raise CompileError(
-                    f"Output render_profile requires a markdown-bearing shape in output {decl.name}"
+                raise output_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Output render_profile requires a markdown-bearing shape in output {decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=(
+                        self._output_decl_attachment_source_span(decl, "render_profile")
+                        or decl.source_span
+                    ),
+                    related=(
+                        output_related_site(
+                            label="selected `shape:` entry",
+                            unit=unit,
+                            source_span=self._first_source_span(shape_item),
+                        ),
+                    )
+                    if self._first_source_span(shape_item) is not None
+                    else (),
                 )
             explicit_render_profile = self._resolve_render_profile_ref(
                 decl.render_profile_ref,
@@ -1581,9 +1827,15 @@ class ResolveOutputsMixin:
                 unit=unit,
                 registry_name="outputs_blocks_by_name",
             ):
-                raise CompileError(
-                    "Inputs fields must resolve to inputs blocks, not outputs blocks: "
-                    f"{_dotted_ref_name(ref)}"
+                raise authored_compile_error(
+                    code="E248",
+                    summary="IO field ref kind mismatch",
+                    detail=(
+                        "Inputs fields must resolve to inputs blocks, not outputs blocks: "
+                        f"{_dotted_ref_name(ref)}"
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
                 )
             target_unit, inputs_decl = self._resolve_inputs_block_ref(ref, unit=unit)
             return self._resolve_inputs_decl(inputs_decl, unit=target_unit)
@@ -1593,9 +1845,15 @@ class ResolveOutputsMixin:
             unit=unit,
             registry_name="inputs_blocks_by_name",
         ):
-            raise CompileError(
-                "Outputs fields must resolve to outputs blocks, not inputs blocks: "
-                f"{_dotted_ref_name(ref)}"
+            raise authored_compile_error(
+                code="E248",
+                summary="IO field ref kind mismatch",
+                detail=(
+                    "Outputs fields must resolve to outputs blocks, not inputs blocks: "
+                    f"{_dotted_ref_name(ref)}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
             )
         target_unit, outputs_decl = self._resolve_outputs_block_ref(ref, unit=unit)
         return self._resolve_outputs_decl(
@@ -1619,12 +1877,26 @@ class ResolveOutputsMixin:
     ) -> ResolvedIoBody:
         parent_ref = field.parent_ref
         if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: {field_kind} patch field is missing parent ref in {owner_label}"
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Internal compiler error: {field_kind} patch field is missing parent ref "
+                    f"in {owner_label}"
+                ),
+                unit=unit,
+                source_span=field.source_span,
             )
         if not isinstance(field.value, model.IoBody) or field.title is None:
-            raise CompileError(
-                f"Internal compiler error: {field_kind} patch field is missing body in {owner_label}"
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Internal compiler error: {field_kind} patch field is missing body "
+                    f"in {owner_label}"
+                ),
+                unit=unit,
+                source_span=field.source_span,
             )
 
         if field_kind == "inputs":
@@ -1633,9 +1905,15 @@ class ResolveOutputsMixin:
                 unit=unit,
                 registry_name="outputs_blocks_by_name",
             ):
-                raise CompileError(
-                    "Inputs patch fields must inherit from inputs blocks, not outputs blocks: "
-                    f"{_dotted_ref_name(parent_ref)}"
+                raise authored_compile_error(
+                    code="E249",
+                    summary="IO patch base kind mismatch",
+                    detail=(
+                        "Inputs patch fields must inherit from inputs blocks, not outputs "
+                        f"blocks: {_dotted_ref_name(parent_ref)}"
+                    ),
+                    unit=unit,
+                    source_span=parent_ref.source_span,
                 )
             parent_unit, parent_decl = self._resolve_inputs_block_ref(parent_ref, unit=unit)
             parent_body = self._resolve_inputs_decl(parent_decl, unit=parent_unit)
@@ -1646,9 +1924,15 @@ class ResolveOutputsMixin:
                 unit=unit,
                 registry_name="inputs_blocks_by_name",
             ):
-                raise CompileError(
-                    "Outputs patch fields must inherit from outputs blocks, not inputs blocks: "
-                    f"{_dotted_ref_name(parent_ref)}"
+                raise authored_compile_error(
+                    code="E249",
+                    summary="IO patch base kind mismatch",
+                    detail=(
+                        "Outputs patch fields must inherit from outputs blocks, not inputs "
+                        f"blocks: {_dotted_ref_name(parent_ref)}"
+                    ),
+                    unit=unit,
+                    source_span=parent_ref.source_span,
                 )
             parent_unit, parent_decl = self._resolve_outputs_block_ref(parent_ref, unit=unit)
             parent_body = self._resolve_outputs_decl(
@@ -1675,6 +1959,8 @@ class ResolveOutputsMixin:
             owner_label=owner_label,
             parent_io=parent_body,
             inheritance_parent_io=inheritance_parent_body,
+            parent_unit=parent_unit,
+            parent_ref_source_span=parent_ref.source_span,
             parent_label=f"{field_kind} {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}",
             review_output_contexts=review_output_contexts,
             route_output_contexts=route_output_contexts,
@@ -1747,37 +2033,36 @@ class ResolveOutputsMixin:
 
         shape_item = scalar_items.get("shape")
         if shape_item is not None:
-            raise CompileError(
-                f"Previous-turn input `{input_decl.name}` must not declare `shape:`; "
-                "the selected previous output owns that contract."
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=(shape_item.source_span or input_decl.source_span).line
-                if (shape_item.source_span or input_decl.source_span) is not None
-                else None,
-                column=(shape_item.source_span or input_decl.source_span).column
-                if (shape_item.source_span or input_decl.source_span) is not None
-                else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Previous-turn input `{input_decl.name}` must not declare `shape:`; "
+                    "the selected previous output owns that contract."
+                ),
+                unit=unit,
+                source_span=self._first_source_span(shape_item, input_decl),
             )
         if input_decl.structure_ref is not None:
-            source_span = input_decl.source_span
-            raise CompileError(
-                f"Previous-turn input `{input_decl.name}` must not declare `structure:`; "
-                "the selected previous output owns that contract."
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=source_span.line if source_span is not None else None,
-                column=source_span.column if source_span is not None else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Previous-turn input `{input_decl.name}` must not declare `structure:`; "
+                    "the selected previous output owns that contract."
+                ),
+                unit=unit,
+                source_span=self._first_source_span(input_decl.structure_ref, input_decl),
             )
 
         requirement_item = scalar_items.get("requirement")
         if requirement_item is None:
-            raise CompileError(
-                f"Input `{input_decl.name}` is missing a `requirement` field."
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=input_decl.source_span.line if input_decl.source_span is not None else None,
-                column=input_decl.source_span.column if input_decl.source_span is not None else None,
+            raise authored_compile_error(
+                code="E223",
+                summary="Input is missing requirement",
+                detail=f"Input `{input_decl.name}` is missing a `requirement` field.",
+                unit=unit,
+                source_span=input_decl.source_span,
             )
         requirement = self._display_symbol_value(
             requirement_item.value,
@@ -1790,59 +2075,60 @@ class ResolveOutputsMixin:
         seen_selector_keys: dict[str, model.RecordScalar] = {}
         for item in selector_items:
             if not isinstance(item, model.RecordScalar) or item.body is not None:
-                raise CompileError(
-                    f"Previous-turn input source config must stay scalar in input {input_decl.name}."
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=(getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span).line
-                    if (getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span) is not None
-                    else None,
-                    column=(getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span).column
-                    if (getattr(item, "source_span", None) or source_item.source_span or input_decl.source_span) is not None
-                    else None,
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Previous-turn input source config must stay scalar in input {input_decl.name}."
+                    ),
+                    unit=unit,
+                    source_span=self._first_source_span(item, source_item, input_decl),
                 )
             first_item = seen_selector_keys.get(item.key)
             if first_item is not None:
-                raise CompileError(
-                    f"Previous-turn input source repeats config key `{item.key}` in input {input_decl.name}."
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=(item.source_span or source_item.source_span or input_decl.source_span).line
-                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
-                    else None,
-                    column=(item.source_span or source_item.source_span or input_decl.source_span).column
-                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
-                    else None,
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Previous-turn input source repeats config key `{item.key}` in input {input_decl.name}."
+                    ),
+                    unit=unit,
+                    source_span=self._first_source_span(item, source_item, input_decl),
+                    related=(
+                        authored_related_site(
+                            label=f"first `{item.key}` config key",
+                            unit=unit,
+                            source_span=self._first_source_span(first_item, source_item, input_decl),
+                        ),
+                    )
+                    if self._first_source_span(first_item, source_item, input_decl) is not None
+                    else (),
                 )
             seen_selector_keys[item.key] = item
             if item.key != "output":
-                raise CompileError(
-                    f"Previous-turn input source uses unknown config key `{item.key}` in input {input_decl.name}."
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=(item.source_span or source_item.source_span or input_decl.source_span).line
-                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
-                    else None,
-                    column=(item.source_span or source_item.source_span or input_decl.source_span).column
-                    if (item.source_span or source_item.source_span or input_decl.source_span) is not None
-                    else None,
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Previous-turn input source uses unknown config key `{item.key}` in input {input_decl.name}."
+                    ),
+                    unit=unit,
+                    source_span=self._first_source_span(item, source_item, input_decl),
                 )
 
         output_selector = seen_selector_keys.get("output")
         if output_selector is None:
             previous_turn_context = self._previous_turn_agent_context(agent_key=agent_key)
             if previous_turn_context is None:
-                raise CompileError(
-                    f"Zero-config previous-turn input `{input_decl.name}` needs flow-owned predecessor facts; "
-                    "compile this surface through emit-time target roots."
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=(source_item.source_span or input_decl.source_span).line
-                    if (source_item.source_span or input_decl.source_span) is not None
-                    else None,
-                    column=(source_item.source_span or input_decl.source_span).column
-                    if (source_item.source_span or input_decl.source_span) is not None
-                    else None,
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Zero-config previous-turn input `{input_decl.name}` needs flow-owned predecessor facts; "
+                        "compile this surface through emit-time target roots."
+                    ),
+                    unit=unit,
+                    source_span=self._first_source_span(source_item, input_decl),
                 )
             if previous_turn_context.exact_final_output_key is None:
                 if previous_turn_context.predecessor_final_output_keys:
@@ -1850,28 +2136,24 @@ class ResolveOutputsMixin:
                         _dotted_decl_name(parts, name)
                         for parts, name in previous_turn_context.predecessor_final_output_keys
                     )
-                    raise CompileError(
-                        f"Zero-config previous-turn input `{input_decl.name}` is ambiguous; "
-                        f"reachable predecessors disagree on previous final output: {choices}"
-                    ).ensure_location(
-                        path=unit.prompt_file.source_path,
-                        line=(source_item.source_span or input_decl.source_span).line
-                        if (source_item.source_span or input_decl.source_span) is not None
-                        else None,
-                        column=(source_item.source_span or input_decl.source_span).column
-                        if (source_item.source_span or input_decl.source_span) is not None
-                        else None,
+                    raise authored_compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            f"Zero-config previous-turn input `{input_decl.name}` is ambiguous; "
+                            f"reachable predecessors disagree on previous final output: {choices}"
+                        ),
+                        unit=unit,
+                        source_span=self._first_source_span(source_item, input_decl),
                     )
-                raise CompileError(
-                    f"Zero-config previous-turn input `{input_decl.name}` has no reachable predecessor final output."
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=(source_item.source_span or input_decl.source_span).line
-                    if (source_item.source_span or input_decl.source_span) is not None
-                    else None,
-                    column=(source_item.source_span or input_decl.source_span).column
-                    if (source_item.source_span or input_decl.source_span) is not None
-                    else None,
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Zero-config previous-turn input `{input_decl.name}` has no reachable predecessor final output."
+                    ),
+                    unit=unit,
+                    source_span=self._first_source_span(source_item, input_decl),
                 )
             output_key = previous_turn_context.exact_final_output_key
             output_unit = self._load_module(output_key[0]) if output_key[0] else self.root_unit
@@ -1888,6 +2170,7 @@ class ResolveOutputsMixin:
                     selector=output_selector.value,
                     unit=unit,
                     owner_label=f"input {input_decl.name}",
+                    source_span=self._first_source_span(output_selector, source_item, input_decl),
                 )
             )
             self._validate_previous_turn_explicit_selector_against_predecessors(
@@ -1942,14 +2225,17 @@ class ResolveOutputsMixin:
         selector: model.RecordScalarValue,
         unit: IndexedUnit,
         owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> tuple[OutputDeclKey, IndexedUnit, model.OutputDecl, str, str, tuple[str, ...] | None]:
         if isinstance(selector, str):
-            raise CompileError(
-                f"Previous-turn selector must stay typed in {owner_label}; string selector values are not allowed."
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=None,
-                column=None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Previous-turn selector must stay typed in {owner_label}; string selector values are not allowed."
+                ),
+                unit=unit,
+                source_span=source_span,
             )
         if isinstance(selector, model.NameRef):
             output_unit, output_decl = self._resolve_output_decl(selector, unit=unit)
@@ -1965,28 +2251,38 @@ class ResolveOutputsMixin:
         outputs_unit, outputs_decl = self._resolve_outputs_block_ref(selector.root, unit=unit)
         resolved_outputs = self._resolve_outputs_decl(outputs_decl, unit=outputs_unit)
         if not selector.path:
-            raise CompileError(
-                f"Previous-turn output binding selector must include a bound output path in {owner_label}: "
-                f"{_dotted_ref_name(selector.root)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=selector.root.source_span.line if selector.root.source_span is not None else None,
-                column=selector.root.source_span.column if selector.root.source_span is not None else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Previous-turn output binding selector must include a bound output path in {owner_label}: "
+                    f"{_dotted_ref_name(selector.root)}"
+                ),
+                unit=unit,
+                source_span=self._first_source_span(selector.root, source_span),
             )
         binding = next((item for item in resolved_outputs.bindings if item.binding_path == selector.path), None)
         if binding is None:
-            raise CompileError(
-                f"Unknown previous-turn output binding in {owner_label}: "
-                f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=selector.root.source_span.line if selector.root.source_span is not None else None,
-                column=selector.root.source_span.column if selector.root.source_span is not None else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Unknown previous-turn output binding in {owner_label}: "
+                    f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}"
+                ),
+                unit=unit,
+                source_span=self._first_source_span(selector.root, source_span),
             )
         if not isinstance(binding.artifact.decl, model.OutputDecl):
-            raise CompileError(
-                f"Previous-turn output binding must resolve to an output declaration in {owner_label}: "
-                f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}"
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Previous-turn output binding must resolve to an output declaration in {owner_label}: "
+                    f"{_dotted_ref_name(selector.root)}:{'.'.join(selector.path)}"
+                ),
+                unit=unit,
+                source_span=self._first_source_span(selector.root, source_span),
             )
         output_decl = self._resolve_output_decl_body(binding.artifact.decl, unit=binding.artifact.unit)
         return (
@@ -2012,20 +2308,26 @@ class ResolveOutputsMixin:
         if previous_turn_context is None:
             return
         if not previous_turn_context.predecessor_agent_keys:
-            raise CompileError(
-                f"Previous-turn selector in {owner_label} has no reachable predecessor agent."
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=source_span.line if source_span is not None else None,
-                column=source_span.column if source_span is not None else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"Previous-turn selector in {owner_label} has no reachable predecessor agent.",
+                unit=unit,
+                source_span=source_span,
             )
         for predecessor_key in previous_turn_context.predecessor_agent_keys:
             predecessor_unit = self._load_module(predecessor_key[0]) if predecessor_key[0] else self.root_unit
             predecessor_agent = predecessor_unit.agents_by_name.get(predecessor_key[1])
             if predecessor_agent is None:
-                raise CompileError(
-                    f"Missing predecessor agent during previous-turn validation in {owner_label}: "
-                    f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}"
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Missing predecessor agent during previous-turn validation in {owner_label}: "
+                        f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}"
+                    ),
+                    unit=unit,
+                    source_span=source_span,
                 )
             predecessor_contract = self._resolve_agent_contract(predecessor_agent, unit=predecessor_unit)
             predecessor_final_output_key: OutputDeclKey | None = None
@@ -2045,32 +2347,38 @@ class ResolveOutputsMixin:
             if selected_binding_path is not None:
                 binding = predecessor_contract.output_bindings_by_path.get(selected_binding_path)
                 if binding is None:
-                    raise CompileError(
-                        f"Previous-turn binding selector in {owner_label} is not emitted by predecessor "
-                        f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}: "
-                        f"{'.'.join(selected_binding_path)}"
-                    ).ensure_location(
-                        path=unit.prompt_file.source_path,
-                        line=source_span.line if source_span is not None else None,
-                        column=source_span.column if source_span is not None else None,
+                    raise authored_compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            f"Previous-turn binding selector in {owner_label} is not emitted by predecessor "
+                            f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}: "
+                            f"{'.'.join(selected_binding_path)}"
+                        ),
+                        unit=unit,
+                        source_span=source_span,
                     )
                 if (binding.artifact.unit.module_parts, binding.artifact.decl.name) != selected_output_key:
-                    raise CompileError(
-                        f"Previous-turn binding selector in {owner_label} does not stay stable across predecessors."
-                    ).ensure_location(
-                        path=unit.prompt_file.source_path,
-                        line=source_span.line if source_span is not None else None,
-                        column=source_span.column if source_span is not None else None,
+                    raise authored_compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            f"Previous-turn binding selector in {owner_label} does not stay stable across predecessors."
+                        ),
+                        unit=unit,
+                        source_span=source_span,
                     )
             elif selected_output_key not in predecessor_contract.outputs:
-                raise CompileError(
-                    f"Previous-turn output selector in {owner_label} is not emitted by predecessor "
-                    f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}: "
-                    f"{_dotted_decl_name(selected_output_key[0], selected_output_key[1])}"
-                ).ensure_location(
-                    path=unit.prompt_file.source_path,
-                    line=source_span.line if source_span is not None else None,
-                    column=source_span.column if source_span is not None else None,
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Previous-turn output selector in {owner_label} is not emitted by predecessor "
+                        f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}: "
+                        f"{_dotted_decl_name(selected_output_key[0], selected_output_key[1])}"
+                    ),
+                    unit=unit,
+                    source_span=source_span,
                 )
 
             scalar_items, section_items, _extras = self._split_record_items(
@@ -2084,13 +2392,15 @@ class ResolveOutputsMixin:
             if files_section is None and target_item is not None and isinstance(target_item.value, model.NameRef):
                 if self._is_builtin_turn_response_target_ref(target_item.value):
                     if predecessor_final_output_key != selected_output_key:
-                        raise CompileError(
-                            f"Previous-turn selector in {owner_label} points at a non-final `TurnResponse`; "
-                            "only the actual previous `final_output` can be reopened from a prior turn."
-                        ).ensure_location(
-                            path=unit.prompt_file.source_path,
-                            line=source_span.line if source_span is not None else None,
-                            column=source_span.column if source_span is not None else None,
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=(
+                                f"Previous-turn selector in {owner_label} points at a non-final `TurnResponse`; "
+                                "only the actual previous `final_output` can be reopened from a prior turn."
+                            ),
+                            unit=unit,
+                            source_span=source_span,
                         )
 
     def _resolve_previous_turn_output_contract(
@@ -2118,24 +2428,28 @@ class ResolveOutputsMixin:
         )
         files_section = section_items.get("files")
         if files_section is not None:
-            raise CompileError(
-                f"Previous-turn selectors must resolve to one concrete output artifact, not a `files:` output bundle: "
-                f"{_dotted_decl_name(unit.module_parts, output_decl.name)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=files_section.source_span.line if files_section.source_span is not None else None,
-                column=files_section.source_span.column if files_section.source_span is not None else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "Previous-turn selectors must resolve to one concrete output artifact, not a "
+                    f"`files:` output bundle: {_dotted_decl_name(unit.module_parts, output_decl.name)}"
+                ),
+                unit=unit,
+                source_span=files_section.source_span,
             )
         target_item = scalar_items.get("target")
         shape_item = scalar_items.get("shape")
         if target_item is None or shape_item is None or not isinstance(target_item.value, model.NameRef):
-            raise CompileError(
-                f"Previous-turn selector must resolve to a typed one-artifact output: "
-                f"{_dotted_decl_name(unit.module_parts, output_decl.name)}"
-            ).ensure_location(
-                path=unit.prompt_file.source_path,
-                line=output_decl.source_span.line if output_decl.source_span is not None else None,
-                column=output_decl.source_span.column if output_decl.source_span is not None else None,
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Previous-turn selector must resolve to a typed one-artifact output: "
+                    f"{_dotted_decl_name(unit.module_parts, output_decl.name)}"
+                ),
+                unit=unit,
+                source_span=self._first_source_span(output_decl),
             )
         target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
         target_key = (
@@ -2256,7 +2570,13 @@ class ResolveOutputsMixin:
                     outputs_key,
                 ]
             )
-            raise CompileError(f"Cyclic outputs inheritance: {cycle}")
+            raise authored_compile_error(
+                code="E244",
+                summary="Cyclic IO block inheritance",
+                detail=f"Outputs inheritance cycle: {cycle}.",
+                unit=unit,
+                source_span=outputs_decl.source_span,
+            )
 
         self._outputs_resolution_stack.append(outputs_key)
         try:
@@ -2293,6 +2613,10 @@ class ResolveOutputsMixin:
                 owner_label=_dotted_decl_name(unit.module_parts, outputs_decl.name),
                 parent_io=parent_io,
                 inheritance_parent_io=inheritance_parent_io,
+                parent_unit=parent_unit if outputs_decl.parent_ref is not None else None,
+                parent_ref_source_span=(
+                    outputs_decl.parent_ref.source_span if outputs_decl.parent_ref is not None else None
+                ),
                 parent_label=parent_label,
                 review_output_contexts=review_output_contexts,
                 route_output_contexts=route_output_contexts,
@@ -2312,6 +2636,8 @@ class ResolveOutputsMixin:
         owner_label: str,
         parent_io: ResolvedIoBody | None = None,
         inheritance_parent_io: ResolvedIoBody | None = None,
+        parent_unit: IndexedUnit | None = None,
+        parent_ref_source_span: model.SourceSpan | None = None,
         parent_label: str | None = None,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]] = frozenset(),
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
@@ -2346,13 +2672,32 @@ class ResolveOutputsMixin:
             )
 
         inherited_parent_io = inheritance_parent_io if inheritance_parent_io is not None else parent_io
-        unkeyed_parent_titles = [
-            item.section.title for item in inherited_parent_io.items if isinstance(item, ResolvedIoRef)
-        ]
-        if unkeyed_parent_titles:
-            details = ", ".join(unkeyed_parent_titles)
-            raise CompileError(
-                f"Cannot inherit {field_kind} block with unkeyed top-level refs in {parent_label}: {details}"
+        unkeyed_parent_refs = tuple(
+            item for item in inherited_parent_io.items if isinstance(item, ResolvedIoRef)
+        )
+        if unkeyed_parent_refs:
+            details = ", ".join(item.section.title for item in unkeyed_parent_refs)
+            raise authored_compile_error(
+                code="E247",
+                summary="Inherited IO block needs keyed top-level entries",
+                detail=(
+                    f"{field_kind.title()} block `{parent_label}` contains unkeyed top-level refs: "
+                    f"{details}."
+                ),
+                unit=unit,
+                source_span=parent_ref_source_span,
+                related=tuple(
+                    authored_related_site(
+                        label=f"unkeyed top-level `{item.section.title}` ref",
+                        unit=item.artifact.unit,
+                        source_span=item.artifact.source_span,
+                    )
+                    for item in unkeyed_parent_refs
+                    if item.artifact.source_span is not None
+                ),
+                hints=(
+                    "Give inherited inputs and outputs blocks stable keyed sections before patching them.",
+                ),
             )
 
         parent_items_by_key = {
@@ -2362,7 +2707,10 @@ class ResolveOutputsMixin:
             item.key: item for item in parent_io.items if isinstance(item, ResolvedIoSection)
         }
         resolved_items: list[ResolvedIoItem] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[
+            str,
+            model.IoSection | model.InheritItem | model.OverrideIoSection,
+        ] = {}
         accounted_keys: set[str] = set()
 
         for item in io_body.items:
@@ -2381,9 +2729,25 @@ class ResolveOutputsMixin:
                 continue
 
             key = item.key
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            first_item = emitted_items.get(key)
+            if first_item is not None:
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"Duplicate {field_kind} item key in {owner_label}: {key}",
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
+                    related=(
+                        authored_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=self._authored_source_span(first_item),
+                        ),
+                    )
+                    if self._authored_source_span(first_item) is not None
+                    else (),
+                )
+            emitted_items[key] = item
 
             if isinstance(item, model.IoSection):
                 resolved_item = self._resolve_io_section_item(
@@ -2402,8 +2766,15 @@ class ResolveOutputsMixin:
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined {field_kind} entry in {parent_label}: {key}"
+                    raise authored_compile_error(
+                        code="E245",
+                        summary="Cannot inherit undefined IO block entry",
+                        detail=(
+                            f"{field_kind.title()} block `{parent_label}` cannot inherit undefined "
+                            f"key `{key}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
                     )
                 accounted_keys.add(key)
                 visible_parent_item = visible_parent_items_by_key.get(key)
@@ -2412,14 +2783,25 @@ class ResolveOutputsMixin:
                 continue
 
             if parent_item is None:
-                raise CompileError(
-                    f"E001 Cannot override undefined {field_kind} entry in {parent_label}: {key}"
+                raise authored_compile_error(
+                    code="E001",
+                    summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined {field_kind} entry in {parent_label}: {key}",
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
                 )
 
             accounted_keys.add(key)
             if not isinstance(item, model.OverrideIoSection):
-                raise CompileError(
-                    f"Internal compiler error: unsupported {field_kind} override in {owner_label}: {type(item).__name__}"
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Internal compiler error: unsupported {field_kind} override in "
+                        f"{owner_label}: {type(item).__name__}"
+                    ),
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
                 )
             resolved_bucket = self._resolve_contract_bucket_items(
                 item.items,
@@ -2451,6 +2833,7 @@ class ResolveOutputsMixin:
                         ),
                         artifacts=resolved_bucket.artifacts,
                         bindings=tuple(bindings),
+                        source_span=item.source_span,
                     )
                 )
 
@@ -2461,8 +2844,21 @@ class ResolveOutputsMixin:
         ]
         if missing_keys:
             missing = ", ".join(missing_keys)
-            raise CompileError(
-                f"E003 Missing inherited {field_kind} entry in {owner_label}: {missing}"
+            raise authored_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=f"Missing inherited {field_kind} entry in {owner_label}: {missing}",
+                unit=unit,
+                source_span=io_body.source_span,
+                related=tuple(
+                    authored_related_site(
+                        label=f"inherited `{key}` entry",
+                        unit=parent_unit,
+                        source_span=parent_items_by_key[key].source_span,
+                    )
+                    for key in missing_keys
+                    if parent_unit is not None and parent_items_by_key[key].source_span is not None
+                ),
             )
 
         return ResolvedIoBody(
@@ -2506,6 +2902,7 @@ class ResolveOutputsMixin:
             return None
         section = self._lower_io_section(
             item,
+            unit=unit,
             field_kind=field_kind,
             resolved_bucket=resolved_bucket,
         )
@@ -2514,18 +2911,21 @@ class ResolveOutputsMixin:
             section=section,
             artifacts=resolved_bucket.artifacts,
             bindings=tuple(bindings),
+            source_span=item.source_span,
         )
 
     def _lower_io_section(
         self,
         item: model.IoSection,
         *,
+        unit: IndexedUnit,
         field_kind: str,
         resolved_bucket: ResolvedContractBucket,
     ) -> CompiledSection:
         if item.title is None:
             return self._lower_omitted_io_section(
                 item,
+                unit=unit,
                 field_kind=field_kind,
                 resolved_bucket=resolved_bucket,
             )
@@ -2568,6 +2968,7 @@ class ResolveOutputsMixin:
         self,
         item: model.IoSection,
         *,
+        unit: IndexedUnit,
         field_kind: str,
         resolved_bucket: ResolvedContractBucket,
     ) -> str:
@@ -2578,8 +2979,25 @@ class ResolveOutputsMixin:
             or len(resolved_bucket.direct_artifacts) != 1
             or len(resolved_bucket.direct_sections) != 1
         ):
-            raise CompileError(
-                f"Omitted title in {field_kind} section `{item.key}` requires exactly one lowerable direct declaration"
+            related = tuple(
+                authored_related_site(
+                    label=f"direct `{artifact.decl.title}` declaration",
+                    unit=artifact.unit,
+                    source_span=artifact.source_span,
+                )
+                for artifact in resolved_bucket.direct_artifacts
+                if artifact.source_span is not None
+            )
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Omitted title in {field_kind} section `{item.key}` requires "
+                    "exactly one lowerable direct declaration"
+                ),
+                unit=unit,
+                source_span=item.source_span,
+                related=related,
             )
         return resolved_bucket.direct_sections[0][1].title
 
@@ -2587,11 +3005,13 @@ class ResolveOutputsMixin:
         self,
         item: model.IoSection,
         *,
+        unit: IndexedUnit,
         field_kind: str,
         resolved_bucket: ResolvedContractBucket,
     ) -> CompiledSection:
         section_title = self._resolve_io_section_title(
             item,
+            unit=unit,
             field_kind=field_kind,
             resolved_bucket=resolved_bucket,
         )
@@ -2713,11 +3133,13 @@ class ResolveOutputsMixin:
             declaration_name=expr.parts[-3],
         )
         try:
-            lookup_unit = self._resolve_readable_decl_lookup_unit(schema_ref, unit=unit)
+            lookup_unit, schema_decl = self._resolve_decl_ref(
+                schema_ref,
+                unit=unit,
+                registry_name="output_schemas_by_name",
+                missing_label="output schema declaration",
+            )
         except CompileError:
-            return None
-        schema_decl = lookup_unit.output_schemas_by_name.get(schema_ref.declaration_name)
-        if schema_decl is None:
             return None
         resolved_decl = self._resolve_output_schema_decl_body(schema_decl, unit=lookup_unit)
         field = next(

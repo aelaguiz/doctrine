@@ -82,10 +82,8 @@ agent Writer:
 #                        ^ punctuation.section.inheritance.end.doctrine
 #                         ^ punctuation.separator.key-value.doctrine
 
-        inherit durable_section_truth
+        inherit {durable_section_truth, scoped_catalog_truth}
 #       ^^^^^^^ keyword.control.doctrine
-#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
-
-        inherit scoped_catalog_truth
-#       ^^^^^^^ keyword.control.doctrine
-#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
+#               ^ punctuation.section.inheritance.begin.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
+#                                                           ^ punctuation.section.inheritance.end.doctrine

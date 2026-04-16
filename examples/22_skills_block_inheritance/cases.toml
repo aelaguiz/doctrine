@@ -52,6 +52,6 @@ agent = "InvalidSkillsCycleDemo"
 exception_type = "CompileError"
 error_code = "E250"
 message_contains = [
-  "Skills inheritance cycle",
+  "Cyclic skills inheritance",
   "CycleA -> CycleB -> CycleA",
 ]

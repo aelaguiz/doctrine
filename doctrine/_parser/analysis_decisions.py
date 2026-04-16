@@ -10,6 +10,8 @@ from doctrine._parser.parts import (
     RenderProfilePart,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _item_line_column,
     _meta_line_column,
     _positioned_body_prose,
@@ -85,6 +87,7 @@ class AnalysisDecisionTransformerMixin:
         preamble: list[model.ProseLine] = []
         analysis_items: list[model.AnalysisItem] = []
         render_profile_ref: model.NameRef | None = None
+        items = _flatten_grouped_items(items)
         for item in items:
             if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
@@ -120,58 +123,74 @@ class AnalysisDecisionTransformerMixin:
     def analysis_section_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def analysis_section(self, key, title, items):
-        return model.AnalysisSection(key=key, title=title, items=tuple(items))
+    @v_args(meta=True, inline=True)
+    def analysis_section(self, meta, key, title, items):
+        return _with_source_span(
+            model.AnalysisSection(key=key, title=title, items=tuple(items)),
+            meta,
+        )
 
     @v_args(meta=True, inline=True)
     def analysis_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def analysis_override_section(self, key, title_or_items, items=None):
+    @v_args(meta=True, inline=True)
+    def analysis_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def analysis_override_section(self, meta, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
         if items is not None:
             title = title_or_items
             section_items = items
-        return model.AnalysisOverrideSection(
-            key=key,
-            title=title,
-            items=tuple(section_items),
+        return _with_source_span(
+            model.AnalysisOverrideSection(
+                key=key,
+                title=title,
+                items=tuple(section_items),
+            ),
+            meta,
         )
 
     @v_args(inline=True)
     def analysis_section_item(self, value):
         return value
 
-    @v_args(inline=True)
-    def prove_stmt(self, target_title, basis):
-        return model.ProveStmt(target_title=target_title, basis=basis)
+    @v_args(meta=True, inline=True)
+    def prove_stmt(self, meta, target_title, basis):
+        return _with_source_span(model.ProveStmt(target_title=target_title, basis=basis), meta)
 
-    @v_args(inline=True)
-    def derive_stmt(self, target_title, basis):
-        return model.DeriveStmt(target_title=target_title, basis=basis)
+    @v_args(meta=True, inline=True)
+    def derive_stmt(self, meta, target_title, basis):
+        return _with_source_span(model.DeriveStmt(target_title=target_title, basis=basis), meta)
 
-    @v_args(inline=True)
-    def classify_stmt(self, target_title, enum_ref):
-        return model.ClassifyStmt(target_title=target_title, enum_ref=enum_ref)
+    @v_args(meta=True, inline=True)
+    def classify_stmt(self, meta, target_title, enum_ref):
+        return _with_source_span(
+            model.ClassifyStmt(target_title=target_title, enum_ref=enum_ref),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def compare_stmt(self, target_title, basis, using_expr=None):
-        return model.CompareStmt(
-            target_title=target_title,
-            basis=basis,
-            using_expr=using_expr,
+    @v_args(meta=True, inline=True)
+    def compare_stmt(self, meta, target_title, basis, using_expr=None):
+        return _with_source_span(
+            model.CompareStmt(
+                target_title=target_title,
+                basis=basis,
+                using_expr=using_expr,
+            ),
+            meta,
         )
 
     @v_args(inline=True)
     def compare_using_clause(self, using_expr):
         return using_expr
 
-    @v_args(inline=True)
-    def defend_stmt(self, target_title, basis):
-        return model.DefendStmt(target_title=target_title, basis=basis)
+    @v_args(meta=True, inline=True)
+    def defend_stmt(self, meta, target_title, basis):
+        return _with_source_span(model.DefendStmt(target_title=target_title, basis=basis), meta)
 
     @v_args(meta=True, inline=True)
     def decision_render_profile_stmt(self, meta, ref):

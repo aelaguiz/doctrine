@@ -11,7 +11,6 @@ from doctrine._compiler.readable_diagnostics import (
     readable_source_span,
 )
 from doctrine._compiler.resolved_types import (
-    CompileError,
     IndexedUnit,
     ResolvedDocumentBody,
 )
@@ -64,7 +63,13 @@ class ResolveDocumentsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._document_resolution_stack, document_key]
             )
-            raise CompileError(f"Cyclic document inheritance: {cycle}")
+            raise readable_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"Cyclic document inheritance: {cycle}",
+                unit=unit,
+                source_span=document_decl.source_span,
+            )
 
         self._document_resolution_stack.append(document_key)
         try:

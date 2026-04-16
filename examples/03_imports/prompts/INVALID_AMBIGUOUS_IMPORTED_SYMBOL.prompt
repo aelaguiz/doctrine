@@ -1,0 +1,12 @@
+from simple.greeting import Greeting
+
+
+workflow Greeting: "Local Greeting"
+    "The local workflow conflicts with the imported symbol."
+
+
+agent AmbiguousImportedSymbolDemo:
+    role: "Trigger the imported symbol ownership ambiguity."
+
+    workflow: "Imported Steps"
+        use greeting: Greeting

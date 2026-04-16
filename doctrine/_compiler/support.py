@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from doctrine._compiler.diagnostics import compile_error, file_scoped_related
 from doctrine.diagnostics import CompileError, DiagnosticLocation
 
 if TYPE_CHECKING:
@@ -19,14 +20,23 @@ def default_worker_count(task_count: int) -> int:
 
 def resolve_prompt_root(source_path: Path | None) -> Path:
     if source_path is None:
-        raise CompileError("Prompt source path is required for compilation.")
+        raise compile_error(
+            code="E291",
+            summary="Prompt source path is required for compilation",
+            detail="Prompt source path is required for compilation.",
+        )
 
     resolved = source_path.resolve()
     for candidate in [resolved.parent, *resolved.parents]:
         if candidate.name == "prompts":
             return candidate
 
-    raise CompileError(f"Could not resolve prompts/ root for {resolved}.")
+    raise compile_error(
+        code="E292",
+        summary="Could not resolve prompts root",
+        detail=f"Could not resolve prompts/ root for {resolved}.",
+        path=resolved,
+    )
 
 
 def resolve_import_roots(
@@ -38,9 +48,22 @@ def resolve_import_roots(
     seen_roots = {prompt_root: "entrypoint prompts root"}
     for additional_root in additional_prompt_roots:
         if additional_root in seen_roots:
-            raise CompileError(
-                "Duplicate active prompts root: "
-                f"{additional_root} ({seen_roots[additional_root]} and configured prompts root)"
+            resolved_root = additional_root.resolve()
+            raise compile_error(
+                code="E286",
+                summary="Duplicate active prompts root",
+                detail=(
+                    "Duplicate active prompts root: "
+                    f"{resolved_root} ({seen_roots[additional_root]} and configured prompts root)"
+                ),
+                path=resolved_root,
+                related=(
+                    file_scoped_related(
+                        label=seen_roots[additional_root],
+                        path=resolved_root,
+                    ),
+                ),
+                hints=("Keep each active prompts root on one unique `prompts/` directory.",),
             )
         seen_roots[additional_root] = "configured prompts root"
         import_roots.append(additional_root)
@@ -48,9 +71,21 @@ def resolve_import_roots(
         provided_path = Path(provided_root.path).resolve()
         owner_label = f"provided prompts root `{provided_root.name}`"
         if provided_path in seen_roots:
-            raise CompileError(
-                "Duplicate active prompts root: "
-                f"{provided_path} ({seen_roots[provided_path]} and {owner_label})"
+            raise compile_error(
+                code="E286",
+                summary="Duplicate active prompts root",
+                detail=(
+                    "Duplicate active prompts root: "
+                    f"{provided_path} ({seen_roots[provided_path]} and {owner_label})"
+                ),
+                path=provided_path,
+                related=(
+                    file_scoped_related(
+                        label=seen_roots[provided_path],
+                        path=provided_path,
+                    ),
+                ),
+                hints=("Keep each active prompts root on one unique `prompts/` directory.",),
             )
         seen_roots[provided_path] = owner_label
         import_roots.append(provided_path)

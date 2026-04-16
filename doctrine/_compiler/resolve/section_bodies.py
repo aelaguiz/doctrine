@@ -56,6 +56,7 @@ class ResolveSectionBodiesMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{item.key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -104,6 +105,7 @@ class ResolveSectionBodiesMixin:
                         item.items,
                         unit=unit,
                     ),
+                    source_span=item.source_span,
                 )
             )
         return tuple(resolved)

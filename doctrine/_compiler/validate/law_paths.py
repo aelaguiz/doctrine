@@ -385,11 +385,13 @@ class ValidateLawPathsMixin:
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.RouteOnlyDecl] | None:
         try:
-            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            target_unit, decl = self._resolve_decl_ref(
+                ref,
+                unit=unit,
+                registry_name="route_onlys_by_name",
+                missing_label="route_only declaration",
+            )
         except CompileError:
-            return None
-        decl = target_unit.route_onlys_by_name.get(ref.declaration_name)
-        if decl is None:
             return None
         return target_unit, decl
 
@@ -400,11 +402,13 @@ class ValidateLawPathsMixin:
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.GroundingDecl] | None:
         try:
-            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            target_unit, decl = self._resolve_decl_ref(
+                ref,
+                unit=unit,
+                registry_name="groundings_by_name",
+                missing_label="grounding declaration",
+            )
         except CompileError:
-            return None
-        decl = target_unit.groundings_by_name.get(ref.declaration_name)
-        if decl is None:
             return None
         return target_unit, decl
 
@@ -415,13 +419,12 @@ class ValidateLawPathsMixin:
         unit: IndexedUnit,
         registry_name: str,
     ) -> bool:
-        if not ref.module_parts or ref.module_parts == unit.module_parts:
-            registry = getattr(unit, registry_name)
-            return registry.get(ref.declaration_name) is not None
-
-        target_unit = unit.imported_units.get(ref.module_parts)
-        if target_unit is None:
+        try:
+            lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        except CompileError:
             return False
-
-        registry = getattr(target_unit, registry_name)
-        return registry.get(ref.declaration_name) is not None
+        for lookup_target in lookup_targets:
+            registry = getattr(lookup_target.unit, registry_name)
+            if registry.get(lookup_target.declaration_name) is not None:
+                return True
+        return False

@@ -10,10 +10,7 @@ output BaseReply: "Base Reply"
 
 
 output LessonsLeadOutput[BaseReply]: "Lessons Lead Output"
-    inherit target
-    inherit shape
-    inherit requirement
-    inherit summary
+    inherit {target, shape, requirement, summary}
 
     hit: "Test"
         "blah blah blah"

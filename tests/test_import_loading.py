@@ -8,14 +8,44 @@ import unittest
 from pathlib import Path
 
 from doctrine.compiler import CompilationSession, ProvidedPromptRoot
-from doctrine.diagnostics import DoctrineError
+from doctrine._compiler.support import resolve_prompt_root
+from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
+from doctrine.renderer import render_markdown
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ImportLoadingTests(unittest.TestCase):
+    def test_resolve_prompt_root_requires_source_path(self) -> None:
+        with self.assertRaises(CompileError) as ctx:
+            resolve_prompt_root(None)
+
+        self.assertEqual(ctx.exception.code, "E291")
+        self.assertIn("Prompt source path is required for compilation", str(ctx.exception))
+
+    def test_prompt_file_outside_prompts_root_fails_with_file_location(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompt_path = root / "AGENTS.prompt"
+            prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    agent Demo:
+                        role: "Own the build handle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(DoctrineError) as ctx:
+                CompilationSession(parse_file(prompt_path))
+
+        self.assertEqual(ctx.exception.code, "E292")
+        self.assertEqual(ctx.exception.location.path, prompt_path.resolve())
+        self.assertIn("Could not resolve prompts/ root", str(ctx.exception))
+
     def _write_runtime_package(
         self,
         package_root: Path,
@@ -208,6 +238,61 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertEqual(loaded.prompt_file.source_path, prompts / "runtime_home" / "AGENTS.prompt")
         self.assertIn(("runtime_home",), session.root_unit.imported_units)
 
+    def test_module_alias_and_symbol_imports_resolve_through_existing_name_ref_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "shared").mkdir(parents=True, exist_ok=True)
+            (prompts / "shared" / "greeting.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow Greeting: "Greeting"
+                        "Say hello."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "shared" / "review.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output DraftReviewComment: "Draft Review Comment"
+                        target: TurnResponse
+                        shape: Comment
+                        requirement: Required
+
+                        current_artifact: "Current Artifact"
+                            "Keep the current artifact visible."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import shared.greeting as shared_steps
+                    from shared.review import DraftReviewComment as ImportedComment
+
+                    agent Demo:
+                        role: "Use alias-aware imports across workflow and outputs."
+                        workflow: "Imported Steps"
+                            use greeting: shared_steps.Greeting
+                        outputs: "Outputs"
+                            ImportedComment
+                        final_output: ImportedComment
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session = CompilationSession(parse_file(prompts / "AGENTS.prompt"))
+            compiled = session.compile_agent("Demo")
+
+        rendered = render_markdown(compiled)
+        self.assertIn(("shared_steps",), session.root_unit.visible_imported_units)
+        self.assertIn("ImportedComment", session.root_unit.imported_symbols_by_name)
+        self.assertIn("### Greeting", rendered)
+        self.assertIn("### Draft Review Comment", rendered)
+
     def test_file_and_directory_module_collision_fails_loud(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -357,6 +442,13 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "E286")
         self.assertIn("Duplicate active prompts root", str(ctx.exception))
         self.assertIn("provided prompts root `framework_stdlib`", str(ctx.exception))
+        self.assertEqual(ctx.exception.location.path, prompts.resolve())
+        self.assertEqual(len(ctx.exception.diagnostic.related), 1)
+        self.assertEqual(
+            ctx.exception.diagnostic.related[0].location.path,
+            prompts.resolve(),
+        )
+        self.assertIn("entrypoint prompts root", ctx.exception.diagnostic.related[0].label)
 
     def test_ambiguous_module_across_configured_and_provider_roots_fails_loud(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

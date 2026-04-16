@@ -14,6 +14,8 @@ from doctrine._parser.parts import (
     WorkflowBodyParts,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _positioned_body_prose,
     _positioned_render_profile,
     _positioned_schema_item,
@@ -164,10 +166,11 @@ class DeclarationTransformerMixin:
         if not abstract and len(items) > fields_start and isinstance(items[fields_start], str):
             title = items[fields_start]
             fields_start += 1
+        fields = _flatten_grouped_items(items[fields_start:])
         return model.Agent(
             name=name,
             title=title,
-            fields=tuple(items[fields_start:]),
+            fields=fields,
             abstract=abstract,
             parent_ref=parent_ref,
             source_span=source_span,
@@ -273,6 +276,7 @@ class SchemaDocumentTransformerMixin:
         preamble: list[model.ProseLine] = []
         schema_items: list[model.SchemaItem] = []
         render_profile_ref: model.NameRef | None = None
+        items = _flatten_grouped_items(items)
         block_hints = {
             "sections": "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
             "gates": "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
@@ -338,43 +342,64 @@ class SchemaDocumentTransformerMixin:
 
     @v_args(meta=True)
     def schema_sections_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaSectionsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaSectionsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_gates_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaGatesBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaGatesBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_artifacts_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaArtifactsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaArtifactsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_groups_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaGroupsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaGroupsBlock(items=tuple(items)), meta),
+        )
 
-    @v_args(inline=True)
-    def schema_section_item(self, key, title, body=None):
-        return model.SchemaSection(key=key, title=title, body=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def schema_section_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.SchemaSection(key=key, title=title, body=tuple(body or ())),
+            meta,
+        )
 
     def schema_section_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def schema_gate_item(self, key, title, body=None):
-        return model.SchemaGate(key=key, title=title, body=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def schema_gate_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.SchemaGate(key=key, title=title, body=tuple(body or ())),
+            meta,
+        )
 
     def schema_gate_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def schema_artifact_item(self, key, title, body=None):
+    @v_args(meta=True, inline=True)
+    def schema_artifact_item(self, meta, key, title, body=None):
         refs = tuple(body or ())
         if len(refs) != 1:
             raise TransformParseFailure(
                 f"Schema artifact `{key}` must define exactly one `ref:` entry.",
                 hints=("Define one `ref:` line inside each schema artifact entry.",),
             )
-        return model.SchemaArtifact(key=key, title=title, ref=refs[0])
+        return _with_source_span(
+            model.SchemaArtifact(key=key, title=title, ref=refs[0]),
+            meta,
+        )
 
     def schema_artifact_body(self, items):
         return tuple(items)
@@ -382,9 +407,12 @@ class SchemaDocumentTransformerMixin:
     def schema_artifact_ref(self, items):
         return items[0]
 
-    @v_args(inline=True)
-    def schema_group_item(self, key, title, body=None):
-        return model.SchemaGroup(key=key, title=title, members=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def schema_group_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.SchemaGroup(key=key, title=title, members=tuple(body or ())),
+            meta,
+        )
 
     def schema_group_body(self, items):
         return tuple(items)
@@ -397,21 +425,45 @@ class SchemaDocumentTransformerMixin:
     def schema_inherit(self, meta, key):
         return _positioned_schema_item(meta, _with_source_span(model.InheritItem(key=key), meta))
 
+    @v_args(meta=True, inline=True)
+    def schema_inherit_group(self, meta, keys=()):
+        return [
+            _positioned_schema_item(meta, item)
+            for item in _expand_grouped_inherit(
+                meta,
+                keys,
+                model.InheritItem,
+                allowed_keys=("sections", "gates", "artifacts", "groups"),
+            )
+        ]
+
     @v_args(meta=True)
     def schema_override_sections(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideSectionsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideSectionsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_override_gates(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideGatesBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideGatesBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_override_artifacts(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideArtifactsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideArtifactsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_override_groups(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideGroupsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideGroupsBlock(items=tuple(items)), meta),
+        )
 
     def schema_block_key_sections(self, _items):
         return "sections"
@@ -464,6 +516,7 @@ class SchemaDocumentTransformerMixin:
         preamble: list[model.ProseLine] = []
         document_items: list[model.DocumentItem] = []
         render_profile_ref: model.NameRef | None = None
+        items = _flatten_grouped_items(items)
         for item in items:
             if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
@@ -540,6 +593,10 @@ class SchemaDocumentTransformerMixin:
     @v_args(meta=True, inline=True)
     def document_inherit(self, meta, key):
         return _with_source_span(model.InheritItem(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def document_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
 
     @v_args(meta=True, inline=True)
     def document_override_section_block(self, meta, key, *parts):

@@ -45,6 +45,151 @@ class EmitFlowCliTests(unittest.TestCase):
                 tuple((root.unit, root.agent_name) for root in runtime_roots)
             )
 
+    def test_extract_graph_adds_route_edges_for_final_output_route(self) -> None:
+        graph = self._extract_graph(
+            """
+            output schema TurnResultSchema: "Turn Result Schema"
+                route field next_route: "Next Route"
+                    send_to_worker_b: "Send to Worker B." -> WorkerB
+
+                field summary: "Summary"
+                    type: string
+
+                example:
+                    next_route: "send_to_worker_b"
+                    summary: "Hand work to WorkerB."
+
+            output shape TurnResultJson: "Turn Result JSON"
+                kind: JsonObject
+                schema: TurnResultSchema
+
+            output TurnResult: "Turn Result"
+                target: TurnResponse
+                shape: TurnResultJson
+                requirement: Required
+
+            agent WorkerB:
+                role: "Take the routed handoff."
+                workflow: "Act"
+                    "Continue the turn."
+
+            agent WorkerA:
+                role: "Pick the next owner from the final output."
+                workflow: "Route"
+                    "Choose the next owner."
+                outputs: "Outputs"
+                    TurnResult
+                final_output:
+                    output: TurnResult
+                    route: next_route
+            """
+        )
+        edges = {(edge.kind, edge.source_name, edge.target_name, edge.label) for edge in graph.edges}
+        self.assertIn(
+            ("authored_route", "WorkerA", "WorkerB", "Send to Worker B."),
+            edges,
+        )
+
+    def test_extract_graph_adds_route_edges_for_review_outcomes(self) -> None:
+        graph = self._extract_graph(
+            """
+            input DraftPoem: "Draft Poem"
+                source: File
+                    path: "unit_root/DRAFT_POEM.md"
+                shape: MarkdownDocument
+                requirement: Required
+                needs_revision: "Needs Revision"
+
+            workflow PoemReviewContract: "Poem Review Contract"
+                rhythm: "Rhythm"
+                    "Confirm the poem keeps its rhythm."
+
+            agent Publisher:
+                role: "Take accepted poems to publishing."
+                workflow: "Publish"
+                    "Prepare the accepted poem."
+
+            agent Muse:
+                role: "Revise rejected poems."
+                workflow: "Revise"
+                    "Revise the poem before another review."
+
+            output PoemReviewFinalResponse: "Poem Review Final Response"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                trust_surface:
+                    current_artifact
+
+                verdict: "Verdict"
+                    "Say whether the poem passed review."
+
+                reviewed_artifact: "Reviewed Artifact"
+                    "Name the poem under review."
+
+                analysis_performed: "Analysis Performed"
+                    "Summarize the review analysis."
+
+                output_contents_that_matter: "Output Contents That Matter"
+                    "Summarize the parts the next owner should read first."
+
+                current_artifact: "Current Artifact"
+                    "Name the artifact that remains current after review."
+
+                next_owner: "Next Owner"
+                    "Name {{Publisher}} when the poem passes and {{Muse}} when it needs revision."
+
+                failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                    failing_gates: "Failing Gates"
+                        "List the failing review gates."
+
+            review PoemReview: "Poem Review"
+                subject: DraftPoem
+                contract: PoemReviewContract
+                comment_output: PoemReviewFinalResponse
+
+                fields:
+                    verdict: verdict
+                    reviewed_artifact: reviewed_artifact
+                    analysis: analysis_performed
+                    readback: output_contents_that_matter
+                    current_artifact: current_artifact
+                    failing_gates: failure_detail.failing_gates
+                    next_owner: next_owner
+
+                contract_checks: "Contract Checks"
+                    reject contract.rhythm when DraftPoem.needs_revision
+                    accept "The poem review passes." when contract.passes
+
+                on_accept: "If Accepted"
+                    current artifact DraftPoem via PoemReviewFinalResponse.current_artifact
+                    route "Accepted poem goes to Publisher." -> Publisher
+
+                on_reject: "If Rejected"
+                    current artifact DraftPoem via PoemReviewFinalResponse.current_artifact
+                    route "Rejected poem returns to Muse." -> Muse
+
+            agent Reviewer:
+                role: "Review the poem and route the next owner."
+                review: PoemReview
+                inputs: "Inputs"
+                    DraftPoem
+                outputs: "Outputs"
+                    PoemReviewFinalResponse
+                final_output: PoemReviewFinalResponse
+            """
+        )
+        edges = {(edge.kind, edge.source_name, edge.target_name, edge.label) for edge in graph.edges}
+        self.assertIn(
+            ("authored_route", "Reviewer", "Publisher", "Accepted poem goes to Publisher."),
+            edges,
+        )
+        self.assertIn(
+            ("authored_route", "Reviewer", "Muse", "Rejected poem returns to Muse."),
+            edges,
+        )
+
     def test_missing_node_reports_dependency_error(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

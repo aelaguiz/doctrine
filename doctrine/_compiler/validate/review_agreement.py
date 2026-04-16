@@ -333,18 +333,28 @@ class ValidateReviewAgreementMixin:
         unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[tuple[str, ...], str] | None:
+        matches: list[tuple[IndexedUnit, model.InputDecl | model.OutputDecl]] = []
         try:
-            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         except CompileError:
             return None
-        input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
-        output_decl = self._resolve_local_output_decl(ref.declaration_name, unit=target_unit)
-        if input_decl is None and output_decl is None:
+        for lookup_target in lookup_targets:
+            input_decl = lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)
+            output_decl = self._resolve_local_output_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if input_decl is None and output_decl is None:
+                continue
+            if input_decl is not None and output_decl is not None:
+                _ = owner_label
+                return None
+            decl = input_decl if input_decl is not None else output_decl
+            assert decl is not None
+            matches.append((lookup_target.unit, decl))
+        if len(matches) != 1:
             return None
-        if input_decl is not None and output_decl is not None:
-            _ = owner_label
-            return None
-        decl = input_decl if input_decl is not None else output_decl
+        target_unit, decl = matches[0]
         return (target_unit.module_parts, decl.name)
 
     def _review_subject_key_from_addressable_ref(
@@ -453,6 +463,8 @@ class ValidateReviewAgreementMixin:
             self._validate_review_next_owner_binding(
                 route,
                 review_unit=unit,
+                field_location_unit=next_owner_location_unit,
+                field_source_span=next_owner_source_span,
                 output_decl=output_decl,
                 output_unit=output_unit,
                 field_path=next_owner_field_path,
@@ -836,6 +848,8 @@ class ValidateReviewAgreementMixin:
                     self._validate_review_next_owner_binding(
                         route,
                         review_unit=review_unit,
+                        field_location_unit=field_location_unit,
+                        field_source_span=field_source_span,
                         output_decl=output_decl,
                         output_unit=output_unit,
                         field_path=bound_path,
