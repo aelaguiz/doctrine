@@ -161,7 +161,7 @@ Important rules:
 - In authored output guards, `route.exists` means a routed owner exists on
   that live branch. In emitted `final_output.contract.json`, `route.exists`
   means the final response carries route semantics at all, even when an
-  optional route field selected no handoff.
+  nullable route field selected no handoff.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
@@ -486,7 +486,7 @@ Use the numbered corpus when you want the model in proof-sized pieces:
   `final_output:`
 - `94`: `route.choice` guards narrowing branch-specific route detail
 - `120`: structured `final_output:` routing owned by one `route field`
-- `121`: optional `route field` routing where `null` means no handoff
+- `121`: nullable `route field` routing where `null` means no handoff
 - `107`: the smallest direct `output[...]` inheritance proof
 - `108`: inherited top-level output attachments such as `render_profile:`,
   `trust_surface`, and `standalone_read`

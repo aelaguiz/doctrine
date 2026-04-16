@@ -148,7 +148,7 @@ final_output:
   owner strings in the payload.
 - In authored guards, `route.exists` means a routed owner exists on that live
   branch. In emitted `final_output.contract.json`, `route.exists` means the
-  final response carries route semantics at all, even when an optional route
+  final response carries route semantics at all, even when a nullable route
   field selected no handoff.
 - Name each `route_from` enum member once. Use `else` at most once.
 - Unguarded `route.*` reads fail loudly when some active branches may not
@@ -824,7 +824,7 @@ output schema WriterDecisionSchema: "Writer Decision Schema"
     route field next_route: "Next Route"
         seek_muse: "Send to Muse." -> Muse
         ready_for_critic: "Send to Critic." -> Critic
-        optional
+        nullable
 
     field summary: "Summary"
         type: string

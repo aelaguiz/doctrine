@@ -95,7 +95,7 @@ Some call out landmark examples inside those ranges.
   readable blocks, directory-backed runtime package emit, first-class named
   table declarations, omitted IO wrapper titles, delivery-skill targets, and
   route-only final-output contract metadata, plus first-class routed final
-  outputs with required and optional route fields
+  outputs with required and nullable route fields
 - `117`: omitted first-class IO wrapper titles lower one direct declaration
   and fail loud on ambiguous shapes
 - `118`: output targets may bind a delivery skill
@@ -103,7 +103,7 @@ Some call out landmark examples inside those ranges.
   `final_output.contract.json`
 - `120`: a structured final output may own routed handoff truth with one
   `route field` plus `final_output.route:`
-- `121`: an optional `route field` may mean "no handoff on this turn"
+- `121`: a nullable `route field` may mean "no handoff on this turn"
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -240,7 +240,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `118_output_target_delivery_skill_binding` | Imported output targets may bind a delivery skill and render one clean `Delivered Via` contract row. |
 | `119_route_only_final_output_contract` | A dedicated `route_only` final response emits canonical route metadata in `final_output.contract.json`. |
 | `120_route_field_final_output_contract` | A structured final output may own routed handoff truth with one `route field` plus `final_output.route:`. |
-| `121_optional_route_field_final_output_contract` | An optional `route field` may mean "no handoff on this turn" while emitted route metadata stays canonical. |
+| `121_nullable_route_field_final_output_contract` | A nullable `route field` may mean "no handoff on this turn" while emitted route metadata stays canonical. |
 
 ## Useful Commands
 

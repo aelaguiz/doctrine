@@ -508,8 +508,10 @@ class ResolveWorkflowsMixin:
         self,
         law_body: model.LawBody | None,
         *,
+        unit: IndexedUnit,
         owner_label: str,
         parent_law: model.LawBody | None = None,
+        parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> model.LawBody | None:
         if law_body is None:
@@ -530,14 +532,24 @@ class ResolveWorkflowsMixin:
         )
 
         if not parent_has_sections or not child_has_named_items:
-            raise CompileError(
-                f"Inherited law blocks must use named sections only in {owner_label}"
+            first_non_named_item = self._first_non_named_law_item(law_body.items)
+            raise workflow_compile_error(
+                code="E381",
+                summary="Inherited law requires named sections",
+                detail=f"Inherited law blocks must use named sections only in {owner_label}.",
+                unit=unit,
+                source_span=(
+                    getattr(first_non_named_item, "source_span", None)
+                    if first_non_named_item is not None
+                    else law_body.source_span
+                ),
             )
 
         parent_items_by_key = {
             item.key: item for item in parent_items if isinstance(item, model.LawSection)
         }
         resolved_items: list[model.LawTopLevelItem] = []
+        accounted_items: dict[str, model.LawInherit | model.LawOverrideSection] = {}
         accounted_keys: set[str] = set()
 
         for item in law_body.items:
@@ -551,27 +563,82 @@ class ResolveWorkflowsMixin:
 
             parent_item = parent_items_by_key.get(item.key)
             if parent_item is None:
-                raise CompileError(
-                    f"Cannot override undefined law section in {parent_label}: {item.key}"
+                raise workflow_compile_error(
+                    code="E384",
+                    summary="Cannot override undefined law subsection",
+                    detail=(
+                        f"Cannot override undefined law subsection `{item.key}` in "
+                        f"{parent_label}."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or law_body.source_span,
                 )
             if item.key in accounted_keys:
-                raise CompileError(
-                    f"Inherited law block accounts for the same parent subsection more than once in {owner_label}: {item.key}"
+                raise workflow_compile_error(
+                    code="E382",
+                    summary="Duplicate inherited law subsection",
+                    detail=(
+                        f"Inherited law block accounts for subsection `{item.key}` more than once "
+                        f"in {owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or law_body.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"first `{item.key}` subsection",
+                            unit=unit,
+                            source_span=accounted_items[item.key].source_span,
+                        ),
+                    ),
                 )
             accounted_keys.add(item.key)
+            accounted_items[item.key] = item
 
             if isinstance(item, model.LawInherit):
                 resolved_items.append(parent_item)
             else:
-                resolved_items.append(model.LawSection(key=item.key, items=item.items))
+                resolved_items.append(
+                    model.LawSection(
+                        key=item.key,
+                        items=item.items,
+                        source_span=item.source_span,
+                    )
+                )
 
         missing_keys = sorted(set(parent_items_by_key) - accounted_keys)
         if missing_keys:
-            raise CompileError(
-                f"Inherited law block omits parent subsection(s) in {owner_label}: {', '.join(missing_keys)}"
+            raise workflow_compile_error(
+                code="E383",
+                summary="Missing inherited law subsection",
+                detail=(
+                    f"Inherited law block omits parent subsection(s) `{', '.join(missing_keys)}` in "
+                    f"{owner_label}."
+                ),
+                unit=unit,
+                source_span=law_body.source_span,
+                related=(
+                    ()
+                    if parent_unit is None
+                    else tuple(
+                        workflow_related_site(
+                            label=f"inherited `{key}` subsection",
+                            unit=parent_unit,
+                            source_span=(
+                                None
+                                if parent_law is None
+                                else getattr(
+                                    self._law_item_by_key(parent_law.items, key),
+                                    "source_span",
+                                    None,
+                                )
+                            ),
+                        )
+                        for key in missing_keys
+                    )
+                ),
             )
 
-        return model.LawBody(items=tuple(resolved_items))
+        return model.LawBody(items=tuple(resolved_items), source_span=law_body.source_span)
 
     def _resolve_workflow_addressable_body(
         self,
@@ -579,7 +646,10 @@ class ResolveWorkflowsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None,
         parent_workflow: ResolvedWorkflowBody | None = None,
+        parent_body: model.WorkflowBody | None = None,
+        parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
         if parent_workflow is None:
@@ -590,23 +660,38 @@ class ResolveWorkflowsMixin:
                     workflow_body.items,
                     unit=unit,
                     owner_label=owner_label,
+                    owner_source_span=owner_source_span,
                 ),
                 law=self._resolve_law_body(
                     workflow_body.law,
+                    unit=unit,
                     owner_label=owner_label,
                 ),
             )
 
         parent_items_by_key = {item.key: item for item in parent_workflow.items}
         resolved_items: list[ResolvedWorkflowItem] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, model.WorkflowItem] = {}
         accounted_keys: set[str] = set()
 
         for item in workflow_body.items:
             key = item.key
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            if key in emitted_items:
+                raise workflow_compile_error(
+                    code="E261",
+                    summary="Duplicate workflow item key",
+                    detail=f"Workflow owner `{owner_label}` repeats key `{key}`.",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=emitted_items[key].source_span,
+                        ),
+                    ),
+                )
+            emitted_items[key] = item
 
             if isinstance(item, model.LocalSection):
                 resolved_items.append(
@@ -656,23 +741,54 @@ class ResolveWorkflowsMixin:
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined workflow entry in {parent_label}: {key}"
+                    raise workflow_compile_error(
+                        code="E241",
+                        summary="Cannot inherit undefined workflow entry",
+                        detail=(
+                            f"Workflow owner `{owner_label}` cannot inherit undefined key `{key}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
                 continue
 
             if parent_item is None:
-                raise CompileError(
-                    f"E001 Cannot override undefined workflow entry in {parent_label}: {key}"
+                raise workflow_compile_error(
+                    code="E001",
+                    summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined workflow entry in {parent_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span or owner_source_span,
                 )
 
             accounted_keys.add(key)
             if isinstance(item, model.OverrideSection):
                 if not isinstance(parent_item, ResolvedSectionItem):
-                    raise CompileError(
-                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    raise workflow_compile_error(
+                        code="E242",
+                        summary="Override kind mismatch",
+                        detail=(
+                            f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=(
+                                    None
+                                    if parent_body is None
+                                    else getattr(
+                                        self._workflow_item_by_key(parent_body.items, key),
+                                        "source_span",
+                                        None,
+                                    )
+                                ),
+                            ),
+                        ),
                     )
                 resolved_items.append(
                     ResolvedSectionItem(
@@ -690,7 +806,10 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     self._merge_workflow_root_readable_override(
                         item,
+                        unit=unit,
                         parent_item=parent_item,
+                        parent_body=parent_body,
+                        parent_unit=parent_unit or unit,
                         owner_label=owner_label,
                     )
                 )
@@ -698,8 +817,29 @@ class ResolveWorkflowsMixin:
 
             if isinstance(item, model.OverrideWorkflowSkillsItem):
                 if not isinstance(parent_item, ResolvedWorkflowSkillsItem):
-                    raise CompileError(
-                        f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                    raise workflow_compile_error(
+                        code="E242",
+                        summary="Override kind mismatch",
+                        detail=(
+                            f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            workflow_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=(
+                                    None
+                                    if parent_body is None
+                                    else getattr(
+                                        self._workflow_item_by_key(parent_body.items, key),
+                                        "source_span",
+                                        None,
+                                    )
+                                ),
+                            ),
+                        ),
                     )
                 resolved_items.append(
                     ResolvedWorkflowSkillsItem(
@@ -714,8 +854,29 @@ class ResolveWorkflowsMixin:
                 continue
 
             if not isinstance(parent_item, ResolvedUseItem):
-                raise CompileError(
-                    f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+                raise workflow_compile_error(
+                    code="E242",
+                    summary="Override kind mismatch",
+                    detail=(
+                        f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit or unit,
+                            source_span=(
+                                None
+                                if parent_body is None
+                                else getattr(
+                                    self._workflow_item_by_key(parent_body.items, key),
+                                    "source_span",
+                                    None,
+                                )
+                            ),
+                        ),
+                    ),
                 )
             target_unit, workflow_decl = self._resolve_workflow_ref(item.target, unit=unit)
             resolved_items.append(
@@ -726,15 +887,26 @@ class ResolveWorkflowsMixin:
                 )
             )
 
-        missing_keys = [
+        missing_keys = tuple(
             parent_item.key
             for parent_item in parent_workflow.items
             if parent_item.key not in accounted_keys
-        ]
+        )
         if missing_keys:
-            missing = ", ".join(missing_keys)
-            raise CompileError(
-                f"E003 Missing inherited workflow entry in {owner_label}: {missing}"
+            raise workflow_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=(
+                    f"Missing inherited workflow entry in {owner_label}: "
+                    f"{', '.join(missing_keys)}"
+                ),
+                unit=unit,
+                source_span=owner_source_span,
+                related=self._workflow_missing_related_sites(
+                    parent_unit=parent_unit,
+                    parent_body=parent_body,
+                    missing_keys=missing_keys,
+                ),
             )
 
         return ResolvedWorkflowBody(
@@ -743,8 +915,10 @@ class ResolveWorkflowsMixin:
             items=tuple(resolved_items),
             law=self._resolve_law_body(
                 workflow_body.law,
+                unit=unit,
                 owner_label=owner_label,
                 parent_law=parent_workflow.law,
+                parent_unit=parent_unit,
                 parent_label=parent_label,
             ),
         )
@@ -755,15 +929,29 @@ class ResolveWorkflowsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None,
     ) -> tuple[ResolvedWorkflowItem, ...]:
         resolved_items: list[ResolvedWorkflowItem] = []
-        seen_keys: set[str] = set()
+        seen_items: dict[str, model.WorkflowItem] = {}
 
         for item in workflow_items:
             key = item.key
-            if key in seen_keys:
-                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
-            seen_keys.add(key)
+            if key in seen_items:
+                raise workflow_compile_error(
+                    code="E261",
+                    summary="Duplicate workflow item key",
+                    detail=f"Workflow owner `{owner_label}` repeats key `{key}`.",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=seen_items[key].source_span,
+                        ),
+                    ),
+                )
+            seen_items[key] = item
 
             if isinstance(item, model.LocalSection):
                 resolved_items.append(
@@ -808,8 +996,15 @@ class ResolveWorkflowsMixin:
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
-            raise CompileError(
-                f"{item_label} requires an inherited workflow in {owner_label}: {key}"
+            raise workflow_compile_error(
+                code="E243",
+                summary="Workflow patch requires an inherited workflow",
+                detail=(
+                    f"`{item_label}` for key `{key}` requires an inherited workflow in "
+                    f"`{owner_label}`."
+                ),
+                unit=unit,
+                source_span=item.source_span or owner_source_span,
             )
 
         return tuple(resolved_items)
@@ -820,15 +1015,29 @@ class ResolveWorkflowsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None,
     ) -> tuple[ResolvedWorkflowItem, ...]:
         resolved_items: list[ResolvedWorkflowItem] = []
-        seen_keys: set[str] = set()
+        seen_items: dict[str, model.WorkflowItem] = {}
 
         for item in workflow_items:
             key = item.key
-            if key in seen_keys:
-                raise CompileError(f"Duplicate workflow item key in {owner_label}: {key}")
-            seen_keys.add(key)
+            if key in seen_items:
+                raise workflow_compile_error(
+                    code="E261",
+                    summary="Duplicate workflow item key",
+                    detail=f"Workflow owner `{owner_label}` repeats key `{key}`.",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        workflow_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=seen_items[key].source_span,
+                        ),
+                    ),
+                )
+            seen_items[key] = item
 
             if isinstance(item, model.LocalSection):
                 resolved_items.append(
@@ -872,8 +1081,15 @@ class ResolveWorkflowsMixin:
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
-            raise CompileError(
-                f"{item_label} requires an inherited workflow in {owner_label}: {key}"
+            raise workflow_compile_error(
+                code="E243",
+                summary="Workflow patch requires an inherited workflow",
+                detail=(
+                    f"`{item_label}` for key `{key}` requires an inherited workflow in "
+                    f"`{owner_label}`."
+                ),
+                unit=unit,
+                source_span=item.source_span or owner_source_span,
             )
 
         return tuple(resolved_items)
@@ -882,17 +1098,58 @@ class ResolveWorkflowsMixin:
         self,
         item: model.ReadableOverrideBlock,
         *,
+        unit: IndexedUnit,
         parent_item: ResolvedWorkflowItem | None,
+        parent_body: model.WorkflowBody | None,
+        parent_unit: IndexedUnit,
         owner_label: str,
     ) -> model.ReadableBlock:
         key = item.key
         if not isinstance(parent_item, model.ReadableBlock):
-            raise CompileError(
-                f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+            raise workflow_compile_error(
+                code="E242",
+                summary="Override kind mismatch",
+                detail=f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind.",
+                unit=unit,
+                source_span=item.source_span,
+                related=(
+                    workflow_related_site(
+                        label=f"inherited `{key}` entry",
+                        unit=parent_unit,
+                        source_span=(
+                            None
+                            if parent_body is None
+                            else getattr(
+                                self._workflow_item_by_key(parent_body.items, key),
+                                "source_span",
+                                None,
+                            )
+                        ),
+                    ),
+                ),
             )
         if item.kind != parent_item.kind:
-            raise CompileError(
-                f"Override kind mismatch for workflow entry in {owner_label}: {key}"
+            raise workflow_compile_error(
+                code="E242",
+                summary="Override kind mismatch",
+                detail=f"Workflow owner `{owner_label}` overrides `{key}` with the wrong kind.",
+                unit=unit,
+                source_span=item.source_span,
+                related=(
+                    workflow_related_site(
+                        label=f"inherited `{key}` entry",
+                        unit=parent_unit,
+                        source_span=(
+                            None
+                            if parent_body is None
+                            else getattr(
+                                self._workflow_item_by_key(parent_body.items, key),
+                                "source_span",
+                                None,
+                            )
+                        ),
+                    ),
+                ),
             )
         return model.ReadableBlock(
             kind=item.kind,
@@ -909,6 +1166,7 @@ class ResolveWorkflowsMixin:
             row_schema=item.row_schema if item.row_schema is not None else parent_item.row_schema,
             anonymous=parent_item.anonymous,
             legacy_section=parent_item.legacy_section,
+            source_span=item.source_span,
         )
 
     def _workflow_root_readable_override_title(

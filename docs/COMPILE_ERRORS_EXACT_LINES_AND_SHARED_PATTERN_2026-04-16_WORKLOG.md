@@ -157,3 +157,39 @@ Plan doc: docs/COMPILE_ERRORS_EXACT_LINES_AND_SHARED_PATTERN_2026-04-16.md
 - Current next step: keep Phase 4 moving on the next compile family with
   targeted proof, while calling out the separate output-schema proof drift
   until that front is reconciled.
+
+## 2026-04-16 - Implement pass 6
+- Advanced Phase 4 through the next workflow slice in
+  `doctrine/_compiler/resolve/workflows.py`.
+- Added a shared workflow diagnostic helper in
+  `doctrine/_compiler/workflow_diagnostics.py`.
+- Landed exact-line workflow diagnostics for cyclic workflow inheritance,
+  duplicate workflow item keys, patch-without-parent workflow items, missing
+  inherited workflow entries, and wrong-kind workflow overrides.
+- Landed exact-line inherited-law diagnostics for missing inherited law
+  subsections, duplicate subsection accounting, overriding unknown law
+  subsections, and inherited law blocks that mix named patch entries with bare
+  law statements.
+- Added focused proof in `tests/test_compile_diagnostics.py` for workflow
+  duplicate keys, workflow patch-without-parent failures, missing inherited
+  workflow entries, workflow override kind mismatches, duplicate inherited law
+  subsections, and missing inherited law subsections.
+- Kept agent-slot workflow-body resolution aligned with the new resolver
+  signature in `doctrine/_compiler/resolve/agent_slots.py`.
+- No manifest edits were needed in this pass because the existing
+  `message_contains` assertions for the shipped workflow and law examples
+  already covered the migrated wording.
+- Ran:
+  - `python -m py_compile doctrine/_compiler/workflow_diagnostics.py doctrine/_compiler/resolve/workflows.py doctrine/_compiler/resolve/agent_slots.py tests/test_compile_diagnostics.py`
+  - `uv run --locked python -m unittest tests.test_compile_diagnostics`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/02_sections/cases.toml`
+  - `uv run --locked python -m doctrine.verify_corpus --manifest examples/37_law_reuse_and_patching/cases.toml`
+  - `make verify-diagnostics`
+  - `make verify-examples`
+- Result:
+  - The focused workflow proof passed.
+  - The shipped workflow and inherited-law examples passed.
+  - `make verify-diagnostics` passed.
+  - `make verify-examples` passed.
+- Current next step: continue Phase 4 on the next unresolved resolver,
+  compiler, or validator family now that branch-wide proof is clean again.

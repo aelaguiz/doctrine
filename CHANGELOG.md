@@ -76,10 +76,10 @@ payload text and breaking releases with no real upgrade steps.
 
 ### Changed
 - Changed `output schema` authoring for the next language-major line. Use
-  `nullable` when a field or route field may be `null`. Object properties
-  still stay present on the wire on the current structured-output profile, so
-  this change keeps the emitted wire shape the same while fixing the authored
-  language.
+  `nullable` when an output-schema field or route field may be `null`.
+  Object properties still stay present on the wire on the current
+  structured-output profile, so this change keeps the emitted wire shape the
+  same while fixing the authored language.
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and
   diagnostic smoke checks to share one runtime frontier instead of assuming
   root-only runtime emit.
@@ -97,7 +97,7 @@ payload text and breaking releases with no real upgrade steps.
 - Changed emitted final-output companion contracts to include
   `route.exists: false` for unrouted final responses, so harnesses can consume
   one route contract shape for routed and unrouted turns. When a final output
-  carries route semantics through an optional `route field`, `route.exists`
+  carries route semantics through a nullable `route field`, `route.exists`
   now stays `true` and `route.selector.null_behavior` says whether `null`
   means no handoff.
 - Renamed the shipped structured final-output examples from `_json_schema` to

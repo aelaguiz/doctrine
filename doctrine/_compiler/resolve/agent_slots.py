@@ -61,7 +61,10 @@ class ResolveAgentSlotsMixin:
                                 field.value,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot workflow",
+                                owner_source_span=field.source_span,
                                 parent_workflow=parent_slot.body,
+                                parent_body=None,
+                                parent_unit=parent_unit,
                                 parent_label=f"{parent_label} slot workflow",
                             )
                             accounted_parent_concrete_keys.add(field.key)
@@ -199,6 +202,7 @@ class ResolveAgentSlotsMixin:
                 value,
                 unit=unit,
                 owner_label=owner_label,
+                owner_source_span=None,
             )
         try:
             target_unit, workflow_decl = self._resolve_workflow_ref(value, unit=unit)

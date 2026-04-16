@@ -168,7 +168,7 @@ metadata and no-route behavior, for runtime consumers.
 - Add focused proof in grammar, parser, model, validation, route semantics,
   route-choice narrowing, final-output compile, and emit-contract paths.
 - Add or update manifest-backed examples that teach the common route-field
-  final-output path, including the optional no-route case.
+  final-output path, including the nullable no-route case.
 - Update the main shipped docs that explain workflow law, route semantics,
   final output, and emitted route contracts.
 - Update editor-facing syntax proof if the new public surface changes VS Code
@@ -206,7 +206,7 @@ metadata and no-route behavior, for runtime consumers.
   semantics," not "this payload selected a routed branch."
 - Structured final outputs carry the selected route choice in the bound route
   field on the payload.
-- Optional route fields compile and emit an explicit "no route selected"
+- Nullable route fields compile and emit an explicit "no route selected"
   contract story without fake terminal targets.
 - The emitted selector object is explicitly generic-by-contract, with v1 using
   final-output field metadata and later sources allowed to add source-specific
@@ -217,7 +217,7 @@ metadata and no-route behavior, for runtime consumers.
 - Unit tests cover parser, validation, route-choice narrowing, route
   semantics, final-output compile, and emit-contract behavior.
 - Manifest-backed examples cover at least one ordinary route-field final
-  output, one optional no-route route-field final output, and any touched
+  output, one nullable no-route route-field final output, and any touched
   adjacent routed examples.
 - Shipped docs teach the new common path and keep the old primitive positioned
   as the lower-level tool.
@@ -232,14 +232,14 @@ metadata and no-route behavior, for runtime consumers.
 - One runtime selector story: if the chosen route comes from payload data, the
   emitted `route` block must say where that selector lives.
 - `route.exists` must keep one meaning across the feature: route semantics are
-  present on this final response, even when an optional route field selected
+  present on this final response, even when an nullable route field selected
   no branch.
 - No silent behavior drift in route selection, `route.choice.*` reads, or
   emitted route metadata.
 - No second source of truth for mapping route choices to named agents.
 - `route.selector` must stay one generic contract surface, not a
   final-output-only one-off that blocks future routed owners.
-- `null` on an optional route field means "no route selected," not a fake
+- `null` on an nullable route field means "no route selected," not a fake
   terminal branch.
 - Fail loud when the bound route field is malformed, ambiguous, or bound to
   an invalid final output.
@@ -695,7 +695,7 @@ Validation will:
    addressable output-field path resolver
 4. require the resolved target to be a first-class `route field` with a
    non-empty choice list
-5. let route fields keep shared non-shape metadata such as `optional` and
+5. let route fields keep shared non-shape metadata such as `nullable` and
    author notes, but reject route fields that try to declare conflicting shape
    owners such as `type:`, `values:`, legacy `enum:`, `ref:`, `items:`, or
    `any_of:`
@@ -800,9 +800,9 @@ The target rules are:
   - `surface: "final_output"`
   - `field_path: [...]`
   - `null_behavior: "invalid"` for required route fields
-  - `null_behavior: "no_route"` for optional route fields
+  - `null_behavior: "no_route"` for nullable route fields
 - `choice_members` remain the runtime mapping from wire choice to named target.
-- For optional route fields, the emitted contract must show:
+- For nullable route fields, the emitted contract must show:
   - `behavior: "conditional"`
   - `has_unrouted_branch: true`
 - At runtime, if `route.selector` resolves to `null`, there is no selected
@@ -847,7 +847,7 @@ Explicit v1 exclusions:
 - no reusable top-level route-choice declaration
 - no payload-only route reconstruction outside Doctrine
 - no `type: route` / `selected_route:` public syntax alias
-- no fake terminal route targets for optional route fields
+- no fake terminal route targets for nullable route fields
 
 If an agent tries to combine `final_output.route` with another live
 route-bearing control surface, v1 should fail loud instead of choosing between
@@ -864,19 +864,19 @@ two owners.
 | Grammar | `doctrine/grammars/doctrine.lark` | `final_output_body`, `output_schema_body_line`, route-choice entry grammar | `final_output` accepts only `output:` and `review_fields:`. Output schema has `field` only, with no routed field form. | Add `route:` in `final_output` blocks. Add a dedicated `route field` form plus route-choice entry grammar under output schema. | The public syntax must read as first-class Doctrine, not as generic type glue. | `final_output.route: <field_path>` and `route field ...` with inline `choice -> Agent` entries. | `tests/test_output_schema_surface.py`, `tests/test_final_output.py` |
 | Parser parts | `doctrine/_parser/parts.py` | `FinalOutputBodyParts` | Stores only `output_ref` and `review_fields`. | Add bound route field-path storage. | The parser needs one structured binding target. | `FinalOutputBodyParts(route_path=...)`. | `tests/test_final_output.py` |
 | Agent parser/model | `doctrine/_parser/agents.py`, `doctrine/_model/agent.py` | `final_output_body()`, `FinalOutputField` | Final output model stores only output ref and review fields. | Parse and store `route` beside `output` and `review_fields`. | Final-output compile needs one owned route-field binding. | `FinalOutputField(..., route_path=tuple[str, ...] | None)`. | `tests/test_final_output.py` |
-| Output-schema parser/model | `doctrine/_parser/io.py`, `doctrine/_model/io.py` | output-schema authored item types | Output schema supports generic settings, flags, enum/value blocks, and nested fields only. | Add authored nodes for `route field` and route-choice entries. Preserve shared field metadata such as `optional` and notes where valid. | Route labels, wire values, and named targets need a first-class owner. | `OutputSchemaRouteField` plus `OutputSchemaRouteChoice` dedicated model types. | `tests/test_output_schema_surface.py` |
-| Output-schema lowering | `doctrine/_compiler/resolve/output_schemas.py` | `_collect_output_schema_node_parts()`, `_lower_output_schema_node()` | Lowerer knows normal field shapes only and route semantics never enter here. | Lower `route field` onto the existing string-enum wire path. Reject conflicting shape owners such as `type:`, `values:`, `enum:`, `ref:`, `items:`, and `any_of:`. | Wire JSON shape must stay simple and OpenAI-compatible. | Lowered wire schema becomes string enum of route keys, nullable through existing optional path. | `tests/test_output_schema_lowering.py`, `tests/test_validate_output_schema.py`, `tests/test_prove_output_schema_openai.py` |
+| Output-schema parser/model | `doctrine/_parser/io.py`, `doctrine/_model/io.py` | output-schema authored item types | Output schema supports generic settings, flags, enum/value blocks, and nested fields only. | Add authored nodes for `route field` and route-choice entries. Preserve shared field metadata such as `nullable` and notes where valid. | Route labels, wire values, and named targets need a first-class owner. | `OutputSchemaRouteField` plus `OutputSchemaRouteChoice` dedicated model types. | `tests/test_output_schema_surface.py` |
+| Output-schema lowering | `doctrine/_compiler/resolve/output_schemas.py` | `_collect_output_schema_node_parts()`, `_lower_output_schema_node()` | Lowerer knows normal field shapes only and route semantics never enter here. | Lower `route field` onto the existing string-enum wire path. Reject conflicting shape owners such as `type:`, `values:`, `enum:`, `ref:`, `items:`, and `any_of:`. | Wire JSON shape must stay simple and OpenAI-compatible. | Lowered wire schema becomes string enum of route keys, nullable through the existing nullable path. | `tests/test_output_schema_lowering.py`, `tests/test_validate_output_schema.py`, `tests/test_prove_output_schema_openai.py` |
 | Output-field resolution | `doctrine/_compiler/resolve/outputs.py` | `_resolve_final_output_decl()`, `_resolve_output_field_node()` and new helper near final-output JSON summary | Final-output compile resolves the output but has no route-field binding. | Reuse addressable output-field resolution for `final_output.route` and add a helper that validates the bound field is a route field on a structured final output. | This is the clean existing path for field-path binding and fail-loud unknown-field errors. | `route` binds by field path on the bound final-output output. | `tests/test_final_output.py` |
 | Route-source validation | `doctrine/_compiler/validate/agents.py` | `_route_semantic_sources_for_agent()`, `_route_output_contexts_for_agent()` | One route-bearing source is collected for the whole agent and fanned to every emitted output. | Split agent-wide route sources from route-field-owned final-output sources. Build one output-key map that can carry existing fan-out plus final-output-key-only route semantics. Reject conflicting owners. | Route-field truth belongs to the final-output key, not every emitted output. | Output-key-scoped route semantics map with fail-loud owner conflicts. | `tests/test_route_output_semantics.py`, `tests/test_final_output.py`, `tests/test_emit_docs.py` |
 | Route-choice model | `doctrine/_compiler/resolved_types.py`, `doctrine/_compiler/types.py`, `doctrine/_compiler/validate/route_semantics_context.py`, `doctrine/_compiler/validate/route_semantics_reads.py` | `RouteChoiceMember`, `CompiledRouteChoiceMemberSpec`, choice-member builders | Choice members assume `route_from` enum provenance. | Generalize choice members so enum metadata is optional and route fields can still produce `key/title/wire`. Keep legacy enum data when present. | `route.choice.*` and emitted contracts must work for both source kinds without fake enums. | `choice_members[*]` always carries `member_key`, `member_title`, `member_wire`; enum metadata is legacy-only when present. | `tests/test_route_output_semantics.py`, `tests/test_emit_docs.py` |
 | Route-choice compare resolution | `doctrine/_compiler/validate/route_semantics_context.py`, `doctrine/_compiler/resolve/route_semantics.py`, expression-resolution helpers | `route.choice` narrowing expects enum-backed compare values today. | Teach route-choice compare resolution to accept field-scoped route-choice refs from route fields as constant choice identities. | The new public compare path must stay typed and compiler-owned. | `when route.choice == WriterDecisionSchema.next_route.seek_muse` narrows route semantics the same way enum members do today. | `tests/test_route_output_semantics.py` |
 | Final-output compile and emit | `doctrine/_compiler/compile/final_output.py`, `doctrine/_compiler/compile/agent.py`, `doctrine/_compiler/flow.py`, `doctrine/emit_docs.py` | final-output compile, route-contract compile, flow consumers, route serialization | Final output can consume only existing route-output contexts, and emitted route contract has no selector metadata. | Compile route-field semantics for the final-output key, feed them through the same final route-contract path, emit generic `route.selector`, keep `route.exists` tied to route semantics rather than branch selection, and serialize route-field choice members without fake enum owner fields. | One canonical runtime route contract must survive and stay complete for payload-owned route selectors. | Top-level `route` block stays canonical; it now carries additive `selector` metadata, stable `route.exists` semantics, and route-field-backed `choice_members`. | `tests/test_final_output.py`, `tests/test_emit_docs.py`, route-contract example manifests |
-| Optional no-route semantics | `doctrine/_compiler/compile/agent.py`, `doctrine/_compiler/validate/route_semantics_reads.py`, final-output route-contract helpers | Optional route meaning is not defined for payload-owned selectors today. | Define required route fields as `null_behavior: invalid` and optional route fields as `null_behavior: no_route`. Emit `has_unrouted_branch: true` for optional route fields while keeping `route.exists: true` because route semantics are still present. | The common "handoff or finish" turn must be first-class, not undefined. | Optional route fields compile to a real no-route contract with no fake target branch and stable `route.exists` meaning. | `tests/test_final_output.py`, `tests/test_emit_docs.py`, `tests/test_route_output_semantics.py` |
+| Nullable no-route semantics | `doctrine/_compiler/compile/agent.py`, `doctrine/_compiler/validate/route_semantics_reads.py`, final-output route-contract helpers | Optional route meaning is not defined for payload-owned selectors today. | Define required route fields as `null_behavior: invalid` and nullable route fields as `null_behavior: no_route`. Emit `has_unrouted_branch: true` for nullable route fields while keeping `route.exists: true` because route semantics are still present. | The common "handoff or finish" turn must be first-class, not undefined. | Optional route fields compile to a real no-route contract with no fake target branch and stable `route.exists` meaning. | `tests/test_final_output.py`, `tests/test_emit_docs.py`, `tests/test_route_output_semantics.py` |
 | Route contract forward shape | route-contract types near `doctrine/_compiler/types.py`, `doctrine/_compiler/resolved_types.py`, `doctrine/emit_docs.py` | emitted selector object shape | No explicit contract note says selector metadata is generic beyond the current final-output source. | Model `route.selector` as a generic contract surface that can grow source-specific fields later without a second top-level route object. | The generic claim must be real architecture, not just a prose note. | One selector object family under top-level `route`, with v1 final-output fields and room for later source-specific fields. | `tests/test_emit_docs.py`, docs updates |
 | Diagnostics and smoke | `doctrine/_diagnostic_smoke/flow_route_checks.py`, `doctrine/_diagnostic_smoke/fixtures_final_output.py`, `docs/COMPILER_ERRORS.md` | route/final-output smoke fixtures and public error catalog | No proof for route-field final-output routing exists. Public error catalog has no route-field or selector errors. | Add smoke fixtures and public compile-error coverage for invalid `final_output.route`, invalid route field authoring, invalid selector metadata expectations, and owner conflicts. | The feature must fail loud and stay documented. | New route-field diagnostics and smoke proof. | `make verify-diagnostics` plus focused unit tests |
 | Unit proof | `tests/test_final_output.py`, `tests/test_route_output_semantics.py`, `tests/test_output_schema_surface.py`, `tests/test_output_schema_lowering.py`, `tests/test_validate_output_schema.py`, `tests/test_prove_output_schema_openai.py`, `tests/test_emit_docs.py` | public tests | Current proof covers final output, output-schema lowering, route semantics, and emitted route contracts, but not this new owner path. | Add success and fail-loud tests for syntax, lowering, no-route semantics, stable `route.exists` meaning, owner conflicts, final-output binding, route-choice reads, typed compares, emitted route selector metadata, and OpenAI subset proof. | The feature crosses syntax, schema, route semantics, compare narrowing, and emit. | New public proof ladder for route-field final outputs. | all listed suites |
-| Example proof | `examples/93_handoff_routing_route_from_final_output/**`, new route-field example directories, `examples/README.md` | manifest-backed ordinary routed final-output story | The closest example still needs a split payload field plus `route_from`. | Keep `93` as the low-level route-from story. Add one manifest-backed example for always-route `route field` finals and one for optional no-route finals. Update example index text. | Authors need both the common path and the low-level primitive, and the no-route case needs real proof. | New always-route example, new optional no-route example, plus preserved low-level example. | `make verify-examples`, targeted `doctrine.verify_corpus` runs |
-| Public docs and release truth | `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`, `docs/WORKFLOW_LAW.md`, `docs/EMIT_GUIDE.md`, `docs/VERSIONING.md`, `CHANGELOG.md`, `docs/README.md`, `editors/vscode/**` | public language, patterns, emit contract, release notes, editor support | Docs teach `route_from` as the typed selected-choice path and choice-member emit detail as route-from-only. | Teach the new common path, keep `route_from` as the lower-level primitive, document `route.selector`, optional no-route semantics, and typed route-choice refs, update versioning/changelog truth, and update editor syntax support if shipped. | Public language, examples, and release policy must stay aligned. | New docs for `route field`, `final_output.route`, `route.selector`, and additive release note. | doc verification by corpus and `cd editors/vscode && make` if touched |
+| Example proof | `examples/93_handoff_routing_route_from_final_output/**`, new route-field example directories, `examples/README.md` | manifest-backed ordinary routed final-output story | The closest example still needs a split payload field plus `route_from`. | Keep `93` as the low-level route-from story. Add one manifest-backed example for always-route `route field` finals and one for nullable no-route finals. Update example index text. | Authors need both the common path and the low-level primitive, and the no-route case needs real proof. | New always-route example, new nullable no-route example, plus preserved low-level example. | `make verify-examples`, targeted `doctrine.verify_corpus` runs |
+| Public docs and release truth | `docs/LANGUAGE_REFERENCE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`, `docs/WORKFLOW_LAW.md`, `docs/EMIT_GUIDE.md`, `docs/VERSIONING.md`, `CHANGELOG.md`, `docs/README.md`, `editors/vscode/**` | public language, patterns, emit contract, release notes, editor support | Docs teach `route_from` as the typed selected-choice path and choice-member emit detail as route-from-only. | Teach the new common path, keep `route_from` as the lower-level primitive, document `route.selector`, nullable no-route semantics, and typed route-choice refs, update versioning/changelog truth, and update editor syntax support if shipped. | Public language, examples, and release policy must stay aligned. | New docs for `route field`, `final_output.route`, `route.selector`, and additive release note. | doc verification by corpus and `cd editors/vscode && make` if touched |
 
 ## Migration notes
 
@@ -909,7 +909,7 @@ two owners.
   owner. Update emitted-contract docs that describe `choice_members` as
   enum-only, misread `route.exists` as branch selection, or do not mention
   `route.selector`. Update example index text so the new common path, the
-  optional no-route path, and the old primitive are all clear.
+  nullable no-route path, and the old primitive are all clear.
 * Behavior-preservation signals for refactors:
   `tests.test_output_schema_surface`, `tests.test_output_schema_lowering`,
   `tests.test_validate_output_schema`, `tests.test_prove_output_schema_openai`,
@@ -922,9 +922,9 @@ two owners.
 | Area | File / Symbol | Pattern to adopt | Why (drift prevented) | Proposed scope (include/defer/exclude/blocker question) |
 | ---- | ------------- | ---------------- | ---------------------- | ------------------------------------- |
 | Output-key route context | `doctrine/_compiler/validate/agents.py`, `doctrine/_compiler/flow.py` | output-key-specific route context map | Prevent route-field truth from leaking to unrelated outputs while preserving current route fan-out behavior elsewhere. | include |
-| Final-output routing proof | `examples/93_handoff_routing_route_from_final_output/**` plus new route-field examples | keep common path, optional no-route path, and low-level path side by side | Prevent docs and manifests from implying one path replaced the other or that the no-route case is informal. | include |
+| Final-output routing proof | `examples/93_handoff_routing_route_from_final_output/**` plus new route-field examples | keep common path, nullable no-route path, and low-level path side by side | Prevent docs and manifests from implying one path replaced the other or that the no-route case is informal. | include |
 | Emitted route contract docs | `docs/EMIT_GUIDE.md`, `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/LANGUAGE_REFERENCE.md` | `choice_members` are source-agnostic and `route.selector` is the selector bridge | Prevent stale public truth about emitted routing metadata. | include |
-| Optional no-route semantics | route-field example refs, route-contract emit, route-read docs | `optional` route field means `null => no route selected` | Prevent fake terminal routes or undefined `null` behavior from sneaking in later. | include |
+| Nullable no-route semantics | route-field example refs, route-contract emit, route-read docs | `optional` route field means `null => no route selected` | Prevent fake terminal routes or undefined `null` behavior from sneaking in later. | include |
 | Typed route-choice refs | route-choice narrowing helpers, docs, and examples | field-scoped choice refs as the primary compare path | Prevent the new surface from drifting back into raw strings or second enums. | include |
 | Review-driven routed finals | `examples/104_*`, `examples/105_*`, `examples/106_*`, review compile paths | route-field final outputs on review carriers or split review finals | Same contract family, but deeper scope than this request. | defer |
 | Low-level route law docs | `docs/WORKFLOW_LAW.md`, `examples/92_route_from_basic/**`, `examples/94_route_choice_guard_narrowing/**` | keep `route_from` documented as the explicit lower-level primitive | Prevent the new feature from looking like a route-law replacement. | include |
@@ -1055,7 +1055,7 @@ two owners.
     source-specific fields later without creating a second route contract.
   - Define required route fields as `null_behavior: invalid` and optional route
     fields as `null_behavior: no_route`.
-  - Emit `has_unrouted_branch: true` for optional route fields and keep `null`
+  - Emit `has_unrouted_branch: true` for nullable route fields and keep `null`
     out of `choice_members`.
   - Keep `route.exists` tied to route semantics, not selected-branch presence,
     including optional no-route turns.
@@ -1078,9 +1078,9 @@ two owners.
     route-field-owned finals.
   - The emitted selector object is generic-by-contract, with v1 final-output
     fields and room for later source-specific fields.
-  - Optional route fields emit a real no-route contract with no fake target
+  - Nullable route fields emit a real no-route contract with no fake target
     branch.
-  - `route.exists` stays `true` for optional no-route turns because route
+  - `route.exists` stays `true` for nullable no-route turns because route
     semantics are present even when no branch was selected.
   - Field-scoped route-choice refs narrow route semantics the same way current
     enum-backed compares do.
@@ -1109,7 +1109,7 @@ two owners.
   - Add one new manifest-backed example for always-route route-field final
     outputs, including expected emitted schema and
     `final_output.contract.json` proof.
-  - Add one new manifest-backed example for optional no-route route-field
+  - Add one new manifest-backed example for nullable no-route route-field
     finals, including `route.selector`, `route.exists`, and
     `has_unrouted_branch` proof.
   - Keep `examples/92_route_from_basic` and
@@ -1135,7 +1135,7 @@ two owners.
   - The new always-route example proves end-to-end route-field final-output
     behavior, including emitted route contract truth.
   - The new optional no-route example proves end-to-end no-route behavior for
-    optional route fields.
+    nullable route fields.
   - Example proof makes `route.exists` meaning explicit enough that a harness
     cannot mistake it for "selected branch present."
   - The preserved `route_from` examples still prove the lower-level path.
@@ -1160,7 +1160,7 @@ two owners.
   - Update `docs/AGENT_IO_DESIGN_NOTES.md`, `docs/AUTHORING_PATTERNS.md`,
     `docs/WORKFLOW_LAW.md`, and `docs/EMIT_GUIDE.md` so they show the new
     common path, keep `route_from` as the lower-level primitive, document
-    `route.selector`, explain optional no-route behavior, state that
+    `route.selector`, explain nullable no-route behavior, state that
     `route.exists` means route semantics are present rather than "branch
     selected," explain that `route.selector` is generic-by-contract, and stop
     describing `choice_members` as route-from-only.
@@ -1183,7 +1183,7 @@ two owners.
     release truth.
 * Exit criteria (all required):
   - Public docs teach one clear common-path syntax, one clear lower-level
-    fallback path, one clear optional no-route story, and one clear emitted
+    fallback path, one clear nullable no-route story, and one clear emitted
     route-contract story.
   - Public docs teach `route.exists` and `route.selector` in a way that
     prevents harness authors from reconstructing hidden local meanings.
@@ -1218,7 +1218,7 @@ two owners.
   - `examples/106_review_split_final_output_output_schema_partial/cases.toml`
   - `examples/119_route_only_final_output_contract/cases.toml`
   - the new always-route route-field final-output example manifest
-  - the new optional no-route route-field final-output example manifest
+  - the new nullable no-route route-field final-output example manifest
 - Run `make verify-examples` before the change is done.
 - If the syntax change touches `editors/vscode/`, run `cd editors/vscode &&
   make`.
@@ -1233,7 +1233,7 @@ two owners.
   compiler, proof, and docs change.
 - The main rollout surface is public authoring guidance:
   - teach `route field` plus `final_output.route:` as the common path
-  - teach `optional` route fields as the common no-route path
+  - teach `nullable` route fields as the common no-route path
   - keep `route_from` documented as the lower-level primitive
 - The change must update `docs/VERSIONING.md` and `CHANGELOG.md` in the same
   pass so the public compatibility story stays honest.
@@ -1268,7 +1268,7 @@ two owners.
 - 2026-04-16: The plan was then upgraded to the more Doctrine-native public
   surface: `route field` plus `final_output.route:`.
 - 2026-04-16: The plan now also requires additive emitted `route.selector`
-  metadata, `optional` route fields meaning `null => no route selected`, and
+  metadata, `nullable` route fields meaning `null => no route selected`, and
   field-scoped typed route-choice refs.
 - 2026-04-16: Output-key-scoped route contexts remain the chosen route owner
   path for this feature instead of reusing the current agent-wide route
@@ -1276,5 +1276,5 @@ two owners.
 - 2026-04-16: Review-driven route-field finals remain deferred in v1.
 - 2026-04-16: Phase planning remains five phases, but Phase 3 now explicitly
   owns selector metadata, no-route semantics, and typed route-choice
-  narrowing, while Phase 4 proves both the always-route and optional no-route
+  narrowing, while Phase 4 proves both the always-route and nullable no-route
   example paths.

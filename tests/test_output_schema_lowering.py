@@ -344,6 +344,26 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             },
         )
 
+    def test_route_field_defaults_to_non_null_wire_shape(self) -> None:
+        _decl, lowered = self._lower_output_schema(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+            """,
+            schema_name="WriterDecisionSchema",
+        )
+
+        self.assertEqual(
+            lowered["properties"]["next_route"],
+            {
+                "title": "Next Route",
+                "type": "string",
+                "enum": ["seek_muse", "ready_for_critic"],
+            },
+        )
+
     def test_route_field_rejects_mixed_primary_shape_owners(self) -> None:
         error = self._lower_output_schema_error(
             """
@@ -357,6 +377,20 @@ class OutputSchemaLoweringTests(unittest.TestCase):
         )
 
         self.assertIn("Route field cannot be combined with another primary shape", str(error))
+
+    def test_route_field_rejects_retired_optional_flag(self) -> None:
+        error = self._lower_output_schema_error(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    optional
+            """,
+            schema_name="WriterDecisionSchema",
+        )
+
+        self.assertEqual(error.code, "E237")
+        self.assertIn("Use `nullable`", str(error))
 
     def test_imported_parent_keeps_local_def_refs_local_after_rebind(self) -> None:
         decl, lowered = self._lower_output_schema(

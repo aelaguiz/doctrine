@@ -196,7 +196,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                     note: "Selected next step."
                     seek_muse: "Send to Muse." -> Muse
                     ready_for_critic: "Send to Critic." -> Critic
-                    nullable
+                    optional
 
             output schema ChildWriterDecisionSchema[WriterDecisionSchema]: "Child Writer Decision Schema"
                 inherit next_route
@@ -205,7 +205,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                     note: "Override the labels."
                     seek_muse: "Send to Fresh Muse." -> FreshMuse
                     ready_for_critic: "Send to Strict Critic." -> StrictCritic
-                    nullable
+                    required
                 """
             )
         )
@@ -234,7 +234,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 target_ref=model.NameRef(module_parts=(), declaration_name="Critic"),
             ),
         )
-        self.assertEqual(route_field.items[3], model.OutputSchemaFlag(key="nullable"))
+        self.assertEqual(route_field.items[3], model.OutputSchemaFlag(key="optional"))
 
         child_decl = prompt.declarations[1]
         self.assertIsInstance(child_decl, model.OutputSchemaDecl)
@@ -250,7 +250,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 target_ref=model.NameRef(module_parts=(), declaration_name="FreshMuse"),
             ),
         )
-        self.assertEqual(override_field.items[3], model.OutputSchemaFlag(key="nullable"))
+        self.assertEqual(override_field.items[3], model.OutputSchemaFlag(key="required"))
 
     def test_local_inherited_output_shape_keeps_inherited_items_and_points_schema_at_output_schema(self) -> None:
         agent = self._compile_agent(

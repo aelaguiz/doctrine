@@ -264,7 +264,7 @@ Best anchors:
 - [94_route_choice_guard_narrowing](../examples/94_route_choice_guard_narrowing/prompts/AGENTS.prompt)
 - [119_route_only_final_output_contract](../examples/119_route_only_final_output_contract/prompts/AGENTS.prompt)
 - [120_route_field_final_output_contract](../examples/120_route_field_final_output_contract/prompts/AGENTS.prompt)
-- [121_optional_route_field_final_output_contract](../examples/121_optional_route_field_final_output_contract/prompts/AGENTS.prompt)
+- [121_nullable_route_field_final_output_contract](../examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt)
 
 ### Use `route field` on structured final output when the payload chooses the next owner
 
@@ -283,7 +283,7 @@ Do not do this:
 
 Best anchors:
 - [120_route_field_final_output_contract](../examples/120_route_field_final_output_contract/prompts/AGENTS.prompt)
-- [121_optional_route_field_final_output_contract](../examples/121_optional_route_field_final_output_contract/prompts/AGENTS.prompt)
+- [121_nullable_route_field_final_output_contract](../examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt)
 - [92_route_from_basic](../examples/92_route_from_basic/prompts/AGENTS.prompt)
 
 ### Use `final_output:` only for the turn-ending answer

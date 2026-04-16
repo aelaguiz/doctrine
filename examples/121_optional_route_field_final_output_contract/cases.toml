@@ -1,8 +1,0 @@
-schema_version = 1
-default_prompt = "prompts/AGENTS.prompt"
-
-[[cases]]
-name = "optional route field final_output emits no-route selector metadata"
-status = "active"
-kind = "build_contract"
-build_target = "example_121_optional_route_field_final_output_contract"

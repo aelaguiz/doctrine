@@ -1064,6 +1064,231 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("overrides entry `must_include` with the wrong kind", str(error))
         self.assertIn("Related:", str(error))
 
+    def test_duplicate_workflow_item_key_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow DuplicateWorkflow: "Duplicate Workflow"
+                    step_one: "Step One"
+                        "Say hello."
+                    step_one: "Step One Again"
+                        "Say world."
+
+                agent Demo:
+                    role: "Reject duplicate workflow section keys."
+                    workflow: DuplicateWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E261")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('    step_one: "Step One Again"') + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    step_one: "Step One"') + 1,
+        )
+        self.assertIn("repeats key `step_one`", str(error))
+        self.assertIn("first `step_one` entry", str(error))
+
+    def test_workflow_patch_without_parent_points_at_inherit_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow ChildWorkflow: "Child Workflow"
+                    inherit greeting
+
+                agent Demo:
+                    role: "Fail loud when workflow patch syntax appears without a parent."
+                    workflow: ChildWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E243")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    inherit greeting") + 1,
+        )
+        self.assertIn("requires an inherited workflow", str(error))
+
+    def test_missing_inherited_workflow_entry_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow BaseWorkflow: "Base Workflow"
+                    greeting: "Greeting"
+                        "Say hello."
+                    closing: "Closing"
+                        "Say goodbye."
+
+                workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"
+                    inherit greeting
+
+                agent Demo:
+                    role: "Keep inherited workflows explicit."
+                    workflow: ChildWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E003")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index('workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"')
+            + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    closing: "Closing"') + 1,
+        )
+        self.assertIn("Missing inherited workflow entry in ChildWorkflow: closing", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_workflow_override_kind_mismatch_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow HelperWorkflow: "Helper Workflow"
+                    helper_step: "Helper Step"
+                        "Do helper work."
+
+                workflow BaseWorkflow: "Base Workflow"
+                    shared_step: "Shared Step"
+                        "Do the base work."
+
+                workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"
+                    override shared_step: HelperWorkflow
+
+                agent Demo:
+                    role: "Reject workflow override kind mismatches."
+                    workflow: ChildWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E242")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(
+            error.diagnostic.location.line,
+            rendered.splitlines().index("    override shared_step: HelperWorkflow") + 1,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index('    shared_step: "Shared Step"') + 1,
+        )
+        self.assertIn("overrides `shared_step` with the wrong kind", str(error))
+        self.assertIn("Related:", str(error))
+
+    def test_duplicate_inherited_law_subsection_reports_related_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow BaseWorkflow: "Base Workflow"
+                    law:
+                        currentness:
+                            current none
+
+                workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"
+                    law:
+                        inherit currentness
+                        inherit currentness
+
+                agent Demo:
+                    role: "Reject duplicate inherited law subsections."
+                    workflow: ChildWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E382")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        inherit_lines = [
+            line_number
+            for line_number, line in enumerate(rendered.splitlines(), start=1)
+            if line == "        inherit currentness"
+        ]
+        self.assertEqual(error.diagnostic.location.line, inherit_lines[1])
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(error.diagnostic.related[0].location.line, inherit_lines[0])
+        self.assertIn("accounts for subsection `currentness` more than once", str(error))
+        self.assertIn("first `currentness` subsection", str(error))
+
+    def test_missing_inherited_law_subsection_reports_related_parent_line(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = """\
+                workflow BaseWorkflow: "Base Workflow"
+                    law:
+                        currentness:
+                            current none
+                        stop_lines:
+                            stop "Stop here."
+
+                workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"
+                    law:
+                        inherit stop_lines
+
+                agent Demo:
+                    role: "Keep inherited law sections explicit."
+                    workflow: ChildWorkflow
+                """
+            rendered = textwrap.dedent(source)
+            prompt_path = self._write_prompt(root, source)
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E383")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        inherit_line = rendered.splitlines().index("        inherit stop_lines") + 1
+        self.assertEqual(
+            error.diagnostic.location.line,
+            inherit_line,
+        )
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.line,
+            rendered.splitlines().index("        currentness:") + 1,
+        )
+        self.assertIn("omits parent subsection(s) `currentness`", str(error))
+        self.assertIn("Related:", str(error))
+
 
 if __name__ == "__main__":
     unittest.main()

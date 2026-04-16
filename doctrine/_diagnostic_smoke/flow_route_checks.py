@@ -287,7 +287,7 @@ agent RevisionPartner:
     workflow: "Revise"
         "Revise the draft."
 
-agent WriterOptionalRouteFieldDemo:
+agent WriterNullableRouteFieldDemo:
     role: "Either hand off or finish from one final output."
     outputs: "Outputs"
         WriterTurnResult
@@ -298,7 +298,7 @@ agent WriterOptionalRouteFieldDemo:
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
         prompt = parse_file(prompt_path)
-        rendered = render_markdown(compile_prompt(prompt, "WriterOptionalRouteFieldDemo"))
+        rendered = render_markdown(compile_prompt(prompt, "WriterNullableRouteFieldDemo"))
         _expect("Show this only when a routed owner exists." in rendered, rendered)
         _expect("Show this only when not (a routed owner exists)." in rendered, rendered)
         _expect("There is no handoff on this turn." in rendered, rendered)

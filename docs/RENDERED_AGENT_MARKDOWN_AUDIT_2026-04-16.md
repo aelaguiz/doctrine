@@ -23,20 +23,20 @@ related:
 # TL;DR
 
 This audit is now Doctrine-only.
+It is also formatting-only in intent.
 It covers rendered markdown problems that come from Doctrine compile, emit, or
-render behavior. It does not cover repo-local cleanup in sibling repos.
+render presentation. It does not cover repo-local cleanup in sibling repos.
 
 The main Doctrine-owned problems are:
 
 - split review and final-output surfaces restate the same contract
-- some final-output renders describe more than the payload actually carries
 - single-child wrapper headings and binding shells create heading ladders
 - artifact-structure emission is still too eager to explain every child
 - raw guard, mode, and route syntax leaks into human markdown
 - small scalar contracts still default to table-heavy rendering too often
 
-Most of these are not simple formatter tweaks. They are emit-policy or compile
-lowering problems.
+This version does not propose new Doctrine syntax.
+It stays focused on markdown formatting, lowering, and emit presentation.
 
 # Scope
 
@@ -46,6 +46,14 @@ lowering problems.
 - I did not include `../psflows` or `../rally` cleanup work in this version.
 - I did not run verify commands for this doc-only pass.
 
+# Out Of Scope
+
+- new Doctrine syntax
+- new declarations or authored semantic features
+- changing wire payload shape
+- changing review or route semantics themselves
+- repo-local prompt cleanup outside this repo
+
 # Review Bar
 
 This is the bar I used for "markdown first" render quality.
@@ -54,14 +62,14 @@ This is the bar I used for "markdown first" render quality.
 2. Wrapper headings should earn their space.
 3. Tables should be for real comparison, schema, or columns.
 4. Guard and route logic should read like human instructions, not compiler IR.
-5. The rendered markdown should not imply wire fields or behavior that the
-   payload does not actually carry.
+5. The rendered markdown should favor readability over mechanical structure
+   dumps.
 
 # Findings
 
 ## P1. Split review and final-output sections restate the same contract
 
-This is the biggest Doctrine-owned bloat front.
+This is the biggest Doctrine-owned presentation bloat front.
 
 Today, split review examples often render:
 
@@ -157,58 +165,6 @@ Likely owner paths:
 - `doctrine/_compiler/compile/final_output.py:192-319`
 - `doctrine/_compiler/compile/final_output.py:335-382`
 
-## P1. Some final-output renders describe more than the payload carries
-
-This is smaller than the duplication problem, but more dangerous. It can make
-the render misleading.
-
-Source:
-`examples/83_review_final_output_output_schema/ref/acceptance_review_json_demo/AGENTS.md`
-
-Today:
-
-```md
-#### Payload Fields
-
-| Field | Type | Required On Wire | Null Allowed | Meaning |
-| --- | --- | --- | --- | --- |
-| `verdict` | string | Yes | No | Review verdict. |
-| `reviewed_artifact` | string | Yes | No | Reviewed artifact name. |
-| `current_artifact` | string | Yes | No | Current artifact after review. |
-| `next_owner` | string | Yes | No | Next owner after review. |
-
-#### Analysis Performed
-
-Summarize the review analysis.
-
-#### Output Contents That Matter
-
-State what the next owner should read first.
-```
-
-The payload table names four fields. The extra sections below make it sound like
-analysis and readback are also part of the final JSON.
-
-Best case:
-
-```md
-#### Payload Fields
-
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `verdict` | string | Review verdict |
-| `reviewed_artifact` | string | Reviewed artifact |
-| `current_artifact` | string | Current artifact after review |
-| `next_owner` | string | Next owner after review |
-
-If the final JSON does not carry analysis or readback, do not render extra
-analysis or readback sections here.
-```
-
-Main owner path:
-
-- `doctrine/_compiler/compile/final_output.py:204-319`
-
 ## P1. Single-child wrapper headings and binding shells create heading ladders
 
 Doctrine still emits a lot of wrapper structure that does not add meaning.
@@ -276,8 +232,8 @@ Best case:
 - Requirement: Required
 ```
 
-This is not just styling. The better fix is usually earlier lowering, not just
-painting over the result at the end.
+The clean fix is usually earlier lowering, not just changing punctuation at the
+end.
 
 Main owner areas:
 
@@ -286,8 +242,8 @@ Main owner areas:
 
 ## P1. Artifact-structure emission is still too eager
 
-This is a real compile policy problem, even though the smallest in-repo proof is
-still modest.
+This is still a formatting and emit-presentation problem, even though the owner
+path sits in compile code.
 
 Source:
 `examples/56_document_structure_attachments/ref/lesson_plan_structure_demo/AGENTS.md`
@@ -514,17 +470,16 @@ render system.
 1. Fix split review and final-output duplication first.
    This is the highest-value change because it affects many rendered surfaces at
    once.
-2. Tighten final-output payload rendering so the markdown never implies fields
-   that are not on the wire.
-3. Extend wrapper lowering beyond the current omitted-title work.
+2. Extend wrapper lowering beyond the current omitted-title work.
    Target single-child bindings and simple shell sections.
-4. Add a compact artifact-structure mode.
+3. Add a compact artifact-structure mode.
    Start with summary-only output for simple documents.
-5. Add broader human-facing lowering for guard, route, and mode text.
-6. Use bullets more often for tiny scalar contracts.
+4. Add broader human-facing lowering for guard, route, and mode text.
+5. Use bullets more often for tiny scalar contracts.
 
 # Bottom Line
 
 The core problem is still the same: Doctrine is rendering too much of the typed
-source tree directly into markdown. The next win is better lowering, not just
-different punctuation or table borders.
+source tree directly into markdown. This doc treats that as a formatting and
+presentation problem, not a language-design project. The next win is better
+lowering, simpler structure, and cleaner markdown.
