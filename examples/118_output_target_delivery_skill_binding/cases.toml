@@ -1,0 +1,47 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "imported output target may bind a delivery skill"
+status = "active"
+kind = "render_contract"
+agent = "LedgerWriter"
+assertion = "exact_lines"
+expected_lines = [
+  "Write a ledger note.",
+  "",
+  "## Outputs",
+  "",
+  "### Ledger Note",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | Ledger Note Append |",
+  "| Delivered Via | `ledger-note-delivery` |",
+  "| Ledger ID | `current-ledger` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Advisory |",
+  "| Structure | Ledger Note |",
+  "",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Ledger Note` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Summary** | Section | Say what changed. |",
+  "| **Changes** | Table | Use the columns `Item` and `Change`. |",
+  "",
+  "##### Changes Contract",
+  "",
+  "_table_",
+  "",
+  "| Column | Meaning |",
+  "| --- | --- |",
+  "| Item | Name the item. |",
+  "| Change | Say what changed. |",
+  "",
+  "#### Standalone Read",
+  "",
+  "This note should stand on its own.",
+]
