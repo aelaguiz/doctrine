@@ -11,6 +11,7 @@ from doctrine._diagnostic_smoke.fixtures import (
     _expect,
     _final_output_file_target_source,
     _final_output_json_source,
+    _final_output_missing_local_shape_source,
     _final_output_missing_emission_source,
     _final_output_non_output_ref_source,
     _final_output_prose_source,
@@ -35,6 +36,7 @@ def run_compile_checks() -> None:
     _check_final_output_invalid_example_json_has_specific_code()
     _check_final_output_missing_example_is_allowed()
     _check_final_output_non_output_ref_has_specific_code()
+    _check_final_output_missing_local_shape_has_specific_code()
     _check_final_output_missing_emission_has_specific_code()
     _check_final_output_file_target_has_specific_code()
     _check_reserved_analysis_slot_key_is_rejected()
@@ -241,6 +243,25 @@ def _check_final_output_missing_emission_has_specific_code() -> None:
             _expect("not emitted by the concrete turn" in str(exc), str(exc))
             return
         raise SmokeFailure("expected compile failure for non-emitted final_output, but compilation succeeded")
+
+
+def _check_final_output_missing_local_shape_has_specific_code() -> None:
+    source = _final_output_missing_local_shape_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidFinalOutputAgent")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E276", f"expected E276, got {getattr(exc, 'code', None)}")
+            _expect(
+                "Output shape declaration `MissingShape` does not exist in the current module."
+                in str(exc),
+                str(exc),
+            )
+            return
+        raise SmokeFailure("expected compile failure for missing local final_output shape, but compilation succeeded")
 
 
 def _check_final_output_file_target_has_specific_code() -> None:

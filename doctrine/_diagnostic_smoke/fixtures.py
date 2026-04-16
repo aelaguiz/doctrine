@@ -19,6 +19,7 @@ from doctrine._diagnostic_smoke.fixtures_common import (
 from doctrine._diagnostic_smoke.fixtures_final_output import (
     _final_output_file_target_source,
     _final_output_json_source,
+    _final_output_missing_local_shape_source,
     _final_output_missing_emission_source,
     _final_output_non_output_ref_source,
     _final_output_prose_source,

@@ -92,6 +92,15 @@ _REFERENCE_MESSAGE_BUILDERS: tuple[_PatternBuilder, ...] = (
         (),
     ),
     (
+        re.compile(r"^Missing local output shape declaration: (?P<name>.+)$"),
+        "E276",
+        "Missing local declaration reference",
+        lambda match: (
+            f"Output shape declaration `{match.group('name')}` does not exist in the current module."
+        ),
+        (),
+    ),
+    (
         re.compile(r"^Doctrine compile config must be a TOML table\.$"),
         "E285",
         "Invalid compile config",

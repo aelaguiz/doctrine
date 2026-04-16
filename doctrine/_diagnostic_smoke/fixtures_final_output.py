@@ -119,6 +119,22 @@ agent InvalidFinalOutputAgent:
 """
 
 
+def _final_output_missing_local_shape_source() -> str:
+    return """output FinalReply: "Final Reply"
+    target: TurnResponse
+    shape: MissingShape
+    requirement: Required
+
+agent InvalidFinalOutputAgent:
+    role: "Use a missing local output shape."
+    workflow: "Reply"
+        "Reply and stop."
+    outputs: "Outputs"
+        FinalReply
+    final_output: FinalReply
+"""
+
+
 def _final_output_file_target_source() -> str:
     return """output ReleaseNotesFile: "Release Notes File"
     target: File

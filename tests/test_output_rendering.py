@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from doctrine.compiler import CompilationSession
+from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -108,6 +109,30 @@ class OutputRenderingTests(unittest.TestCase):
         self.assertIn(
             "| Validation File | `lesson_root/MANIFEST_VALIDATION.md` | Markdown Document |",
             rendered,
+        )
+
+    def test_missing_local_output_shape_ref_fails_loud(self) -> None:
+        with self.assertRaises(CompileError) as caught:
+            self._compile_agent(
+                """
+                output DemoOutput: "Demo Output"
+                    target: TurnResponse
+                    shape: MissingShape
+                    requirement: Required
+
+                agent Demo:
+                    role: "Ship the reply."
+                    outputs: "Outputs"
+                        DemoOutput
+                """,
+                agent_name="Demo",
+            )
+
+        self.assertEqual(caught.exception.code, "E276")
+        self.assertIn("Missing local declaration reference", str(caught.exception))
+        self.assertIn(
+            "Output shape declaration `MissingShape` does not exist in the current module.",
+            str(caught.exception),
         )
 
     def test_current_truth_and_trust_surface_render_as_grouped_contract_sections(self) -> None:

@@ -12,9 +12,37 @@ from doctrine._compiler.resolved_types import (
     RouteSemanticContext,
 )
 
+_BUILTIN_OUTPUT_SHAPE_NAMES = frozenset(
+    {
+        "MarkdownDocument",
+        "AgentOutputDocument",
+        "Comment",
+        "CommentText",
+        "JsonObject",
+        "PlainText",
+    }
+)
+
 
 class ValidateDisplayMixin:
     """Display and scalar rendering helpers for ValidateMixin."""
+
+    def _try_resolve_output_shape_decl(
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputShapeDecl] | None:
+        if isinstance(value, (str, model.AddressableRef)):
+            return None
+        if value.module_parts:
+            return self._resolve_output_shape_decl(value, unit=unit)
+        local_decl = unit.output_shapes_by_name.get(value.declaration_name)
+        if local_decl is not None:
+            return unit, self._resolve_output_shape_decl_body(local_decl, unit=unit)
+        if value.declaration_name in _BUILTIN_OUTPUT_SHAPE_NAMES:
+            return None
+        raise CompileError(f"Missing local output shape declaration: {value.declaration_name}")
 
     def _expr_ref_matches_route_semantic_ref(
         self,
@@ -133,12 +161,10 @@ class ValidateDisplayMixin:
             raise CompileError(
                 f"Output shape must stay typed: {owner_label or surface_label or 'output'}"
             )
-        if value.module_parts:
-            _target_unit, decl = self._resolve_output_shape_decl(value, unit=unit)
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is not None:
+            _target_unit, decl = resolved_shape
             return decl.title
-        local_decl = unit.output_shapes_by_name.get(value.declaration_name)
-        if local_decl is not None:
-            return local_decl.title
         return _humanize_key(value.declaration_name)
 
     def _is_markdown_shape_value(
@@ -152,8 +178,9 @@ class ValidateDisplayMixin:
             return False
         if isinstance(value, str):
             return value in markdown_shape_names
-        if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
-            shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is not None:
+            shape_unit, shape_decl = resolved_shape
             kind_item = next(
                 (
                     item
@@ -180,8 +207,9 @@ class ValidateDisplayMixin:
             return False
         if isinstance(value, str):
             return value in comment_shape_names
-        if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
-            shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is not None:
+            shape_unit, shape_decl = resolved_shape
             kind_item = next(
                 (
                     item

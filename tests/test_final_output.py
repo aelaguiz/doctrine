@@ -1541,6 +1541,32 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("final_output", str(error))
         self.assertIn("schema declaration", str(error))
 
+    def test_final_output_missing_local_shape_ref_fails_loud(self) -> None:
+        error = self._compile_error(
+            """
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: MissingShape
+                requirement: Required
+
+            agent HelloAgent:
+                role: "Answer plainly and end the turn."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="HelloAgent",
+        )
+
+        self.assertEqual(error.code, "E276")
+        self.assertIn("Missing local declaration reference", str(error))
+        self.assertIn(
+            "Output shape declaration `MissingShape` does not exist in the current module.",
+            str(error),
+        )
+
     def test_final_output_must_be_emitted_by_outputs_contract(self) -> None:
         error = self._compile_error(
             """

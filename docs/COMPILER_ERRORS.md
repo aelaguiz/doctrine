@@ -105,7 +105,7 @@ Stability rules:
 | `E273` | Unknown addressable path | An interpolation or addressable ref asked for a nested path that does not exist on that surface. |
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
-| `E276` | Missing local declaration reference | A local readable, analysis, named-table, or addressable ref points at a declaration that does not exist. |
+| `E276` | Missing local declaration reference | A local readable, analysis, named-table, output `shape:` ref, or addressable ref points at a declaration that does not exist. |
 | `E280` | Missing import module | An imported module could not be found in the active import-root registry. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |

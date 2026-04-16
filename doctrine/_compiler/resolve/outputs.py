@@ -1016,10 +1016,11 @@ class ResolveOutputsMixin:
     ) -> FinalOutputJsonShapeSummary | None:
         if isinstance(value, (str, model.AddressableRef)):
             return None
-        if not self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is None:
             return None
 
-        shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+        shape_unit, shape_decl = resolved_shape
         shape_scalars, _shape_sections, shape_extras = self._split_record_items(
             shape_decl.items,
             scalar_keys={"schema", "example_file"},
