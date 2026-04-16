@@ -5,10 +5,12 @@ from dataclasses import replace
 
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
 from doctrine._compiler.resolved_types import (
+    FinalOutputRouteBinding,
     IndexedUnit,
     RouteChoiceMember,
     RouteSemanticBranch,
     RouteSemanticContext,
+    RouteSelector,
 )
 
 
@@ -120,6 +122,8 @@ class ValidateRouteSemanticsContextMixin:
         *,
         has_unrouted_branch: bool,
         unrouted_review_verdicts: frozenset[str] = frozenset(),
+        route_required: bool = False,
+        selector: RouteSelector | None = None,
     ) -> RouteSemanticContext | None:
         if not branches and not has_unrouted_branch:
             return None
@@ -148,8 +152,53 @@ class ValidateRouteSemanticsContextMixin:
         return RouteSemanticContext(
             branches=tuple(deduped),
             has_unrouted_branch=has_unrouted_branch,
+            route_required=route_required,
             unrouted_review_verdicts=unrouted_review_verdicts,
+            selector=selector,
         )
+
+    def _route_semantic_context_from_final_output_route_binding(
+        self,
+        binding: FinalOutputRouteBinding,
+        *,
+        owner_label: str,
+    ) -> RouteSemanticContext:
+        branches: list[RouteSemanticBranch] = []
+        for choice in binding.choices:
+            route_unit, route_agent = self._resolve_agent_ref(
+                choice.target_ref,
+                unit=binding.schema_unit,
+            )
+            branches.append(
+                RouteSemanticBranch(
+                    target_module_parts=route_unit.module_parts,
+                    target_name=route_agent.name,
+                    target_title=route_agent.title,
+                    label=choice.title,
+                    choice_members=(
+                        RouteChoiceMember(
+                            member_key=choice.key,
+                            member_title=choice.title,
+                            member_wire=choice.key,
+                        ),
+                    ),
+                )
+            )
+        context = self._build_route_semantic_context(
+            branches,
+            has_unrouted_branch=binding.null_behavior == "no_route",
+            route_required=binding.null_behavior == "invalid",
+            selector=RouteSelector(
+                surface="final_output",
+                field_path=binding.field_path,
+                null_behavior=binding.null_behavior,
+            ),
+        )
+        if context is None:
+            raise CompileError(
+                f"Route field must declare at least one live route branch in {owner_label}"
+            )
+        return context
 
     def _narrow_route_semantics(
         self,
@@ -330,6 +379,9 @@ class ValidateRouteSemanticsContextMixin:
         if not parts or parts[0] != "route" or parts[1] != "choice":
             return None
         if len(parts) == 2:
+            route_choice = self._resolve_output_schema_route_choice_identity(expr, unit=unit)
+            if route_choice is not None:
+                return route_choice[3].key
             return self._resolve_constant_enum_member(expr, unit=unit)
         if len(parts) != 3:
             return None
@@ -337,14 +389,27 @@ class ValidateRouteSemanticsContextMixin:
             if isinstance(expr, str):
                 return expr
             if isinstance(expr, model.ExprRef):
+                route_choice = self._resolve_output_schema_route_choice_identity(expr, unit=unit)
+                if route_choice is not None:
+                    return route_choice[3].key
                 identity = self._resolve_enum_member_identity(expr, unit=unit)
                 if identity is not None:
                     return identity[2]
             return None
         if parts[2] == "wire":
+            if isinstance(expr, model.ExprRef):
+                route_choice = self._resolve_output_schema_route_choice_identity(expr, unit=unit)
+                if route_choice is not None:
+                    return route_choice[3].key
             return self._resolve_constant_enum_member(expr, unit=unit)
         if parts[2] == "title":
-            return expr if isinstance(expr, str) else None
+            if isinstance(expr, str):
+                return expr
+            if isinstance(expr, model.ExprRef):
+                route_choice = self._resolve_output_schema_route_choice_identity(expr, unit=unit)
+                if route_choice is not None:
+                    return route_choice[3].title
+            return None
         return None
 
     def _narrow_route_semantics_for_choice(

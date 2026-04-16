@@ -79,6 +79,7 @@ class ReviewField:
 @_dataclass(slots=True, frozen=True)
 class FinalOutputField:
     value: NameRef
+    route_path: tuple[str, ...] | None = None
     review_fields: ReviewFieldsConfig | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 

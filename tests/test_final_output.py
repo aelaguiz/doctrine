@@ -5,9 +5,10 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
-from doctrine.parser import parse_file
+from doctrine.parser import parse_file, parse_text
 from doctrine.renderer import render_markdown
 
 
@@ -67,6 +68,68 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIsNone(agent.final_output)
         self.assertNotIn("## Final Output", render_markdown(agent))
 
+    def test_parser_builds_final_output_route_binding(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """
+            )
+        )
+
+        agent_decl = prompt.declarations[-1]
+        self.assertIsInstance(agent_decl, model.Agent)
+        final_output = next(
+            field for field in agent_decl.fields if isinstance(field, model.FinalOutputField)
+        )
+        self.assertEqual(final_output.value.declaration_name, "WriterDecision")
+        self.assertEqual(final_output.route_path, ("next_route",))
+
+    def test_parser_rejects_duplicate_final_output_route_binding(self) -> None:
+        with self.assertRaisesRegex(
+            Exception,
+            "final_output block may define `route:` only once",
+        ):
+            parse_text(
+                textwrap.dedent(
+                    """
+                output FinalReply: "Final Reply"
+                    target: TurnResponse
+                    shape: CommentText
+                    requirement: Required
+
+                agent Writer:
+                    role: "Write the next turn."
+                    outputs: "Outputs"
+                        FinalReply
+                    final_output:
+                        output: FinalReply
+                        route: next_route
+                        route: retry_route
+                """
+                    )
+            )
+
     def test_prose_final_output_renders_dedicated_section_and_metadata(self) -> None:
         agent = self._compile_agent(
             """
@@ -105,6 +168,146 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Expected Structure", rendered)
         self.assertIn("#### Read on Its Own", rendered)
         self.assertNotIn("## Outputs", rendered)
+
+    def test_route_field_final_output_emits_selector_metadata_and_keeps_route_semantics_local(self) -> None:
+        agent = self._compile_agent(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    optional
+
+                field summary: "Summary"
+                    type: string
+                    required
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+                muse_route: "Muse Route" when route.choice == WriterDecisionSchema.next_route.seek_muse:
+                    "{{route.summary}}"
+
+                critic_route: "Critic Route" when route.choice == WriterDecisionSchema.next_route.ready_for_critic:
+                    "{{route.next_owner}}"
+
+            output OtherReply: "Other Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            agent Muse:
+                role: "Help the writer."
+                workflow: "Muse"
+                    "Offer fresh direction."
+
+            agent Critic:
+                role: "Judge the draft."
+                workflow: "Critic"
+                    "Judge the draft."
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                    OtherReply
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIsNotNone(agent.route)
+        self.assertTrue(agent.route.exists)
+        self.assertEqual(agent.route.behavior, "conditional")
+        self.assertTrue(agent.route.has_unrouted_branch)
+        self.assertIsNotNone(agent.route.selector)
+        self.assertEqual(agent.route.selector.surface, "final_output")
+        self.assertEqual(agent.route.selector.field_path, ("next_route",))
+        self.assertEqual(agent.route.selector.null_behavior, "no_route")
+        self.assertEqual(
+            [member.member_key for member in agent.route.branches[0].choice_members],
+            ["seek_muse"],
+        )
+        self.assertIsNone(agent.route.branches[0].choice_members[0].enum_name)
+
+        rendered = render_markdown(agent)
+        final_output_block = rendered.split("## Final Output", 1)[1]
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        self.assertIn(
+            "Show this only when route.choice is WriterDecisionSchema.next_route.seek_muse.",
+            final_output_block,
+        )
+        self.assertIn(
+            "Show this only when route.choice is WriterDecisionSchema.next_route.ready_for_critic.",
+            final_output_block,
+        )
+        self.assertNotIn("### Writer Decision", outputs_block)
+        self.assertIn("### Other Reply", outputs_block)
+
+    def test_final_output_route_requires_structured_output_schema(self) -> None:
+        error = self._compile_error(
+            """
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    output: FinalReply
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIn("final_output.route requires a structured final output", str(error))
+
+    def test_final_output_route_requires_route_field_binding(self) -> None:
+        error = self._compile_error(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                field next_route: "Next Route"
+                    type: string
+                    required
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIn("final_output.route must bind a `route field`", str(error))
 
     def test_inherited_prose_final_output_renders_dedicated_section_and_metadata(self) -> None:
         agent = self._compile_agent(

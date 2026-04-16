@@ -267,6 +267,131 @@ class EmitDocsTests(unittest.TestCase):
                 },
             )
 
+    def test_emit_target_writes_selector_metadata_for_route_field_final_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompts.mkdir(parents=True)
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output schema WriterDecisionSchema: "Writer Decision Schema"
+                        route field next_route: "Next Route"
+                            seek_muse: "Send to Muse." -> Muse
+                            ready_for_critic: "Send to Critic." -> Critic
+                            optional
+
+                        field summary: "Summary"
+                            type: string
+                            required
+
+                        example:
+                            next_route: "seek_muse"
+                            summary: "Need fresher images."
+
+                    output shape WriterDecisionJson: "Writer Decision JSON"
+                        kind: JsonObject
+                        schema: WriterDecisionSchema
+
+                    output WriterDecision: "Writer Decision"
+                        target: TurnResponse
+                        shape: WriterDecisionJson
+                        requirement: Required
+
+                    agent Muse:
+                        role: "Help the writer."
+                        workflow: "Muse"
+                            "Offer fresh direction."
+
+                    agent Critic:
+                        role: "Judge the draft."
+                        workflow: "Critic"
+                            "Judge the draft."
+
+                    agent Writer:
+                        role: "Write the next turn."
+                        workflow: "Write"
+                            "Write the next turn."
+                        outputs: "Outputs"
+                            WriterDecision
+                        final_output:
+                            output: WriterDecision
+                            route: next_route
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "writer" / "final_output.contract.json"
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                contract_data["route"],
+                {
+                    "exists": True,
+                    "behavior": "conditional",
+                    "has_unrouted_branch": True,
+                    "unrouted_review_verdicts": [],
+                    "selector": {
+                        "surface": "final_output",
+                        "field_path": ["next_route"],
+                        "null_behavior": "no_route",
+                    },
+                    "branches": [
+                        {
+                            "target": {
+                                "key": "Muse",
+                                "module_parts": [],
+                                "name": "Muse",
+                                "title": "Muse",
+                            },
+                            "label": "Send to Muse.",
+                            "summary": "Send to Muse. Next owner: Muse.",
+                            "choice_members": [
+                                {
+                                    "member_key": "seek_muse",
+                                    "member_title": "Send to Muse.",
+                                    "member_wire": "seek_muse",
+                                }
+                            ],
+                        },
+                        {
+                            "target": {
+                                "key": "Critic",
+                                "module_parts": [],
+                                "name": "Critic",
+                                "title": "Critic",
+                            },
+                            "label": "Send to Critic.",
+                            "summary": "Send to Critic. Next owner: Critic.",
+                            "choice_members": [
+                                {
+                                    "member_key": "ready_for_critic",
+                                    "member_title": "Send to Critic.",
+                                    "member_wire": "ready_for_critic",
+                                }
+                            ],
+                        },
+                    ],
+                },
+            )
+
     def test_emit_target_omits_example_section_when_schema_has_no_example(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

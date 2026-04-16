@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _REVIEW_VERDICT_TEXT
+from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.naming import (
     _dotted_ref_name,
     _law_path_from_name_ref,
@@ -107,9 +108,15 @@ class ResolveReviewsMixin:
                     f"Ambiguous review subject in {owner_label}: {_dotted_ref_name(ref)}"
                 )
             if input_decl is None and output_decl is None:
-                raise CompileError(
-                    f"Review subject must resolve to an input or output declaration in {owner_label}: "
-                    f"{_dotted_ref_name(ref)}"
+                raise review_compile_error(
+                    code="E475",
+                    summary="Review subject has the wrong kind",
+                    detail=(
+                        f"Review subject `{_dotted_ref_name(ref)}` must resolve to an input "
+                        f"or output declaration in `{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span or subject.source_span,
                 )
             decl = input_decl if input_decl is not None else output_decl
             key = (target_unit.module_parts, decl.name)
@@ -167,8 +174,15 @@ class ResolveReviewsMixin:
                 ),
             )
             if not gates:
-                raise CompileError(
-                    f"Review contract must export at least one gate in {owner_label}: {workflow_decl.name}"
+                raise review_compile_error(
+                    code="E477",
+                    summary="Invalid review contract target",
+                    detail=(
+                        f"Review contract `{workflow_decl.name}` in `{owner_label}` must export "
+                        "at least one gate."
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
                 )
             return ReviewContractSpec(
                 kind="workflow",
@@ -186,8 +200,15 @@ class ResolveReviewsMixin:
                 ),
             )
             if not gates:
-                raise CompileError(
-                    f"Review contract must export at least one gate in {owner_label}: {schema_decl.name}"
+                raise review_compile_error(
+                    code="E477",
+                    summary="Invalid review contract target",
+                    detail=(
+                        f"Review contract `{schema_decl.name}` in `{owner_label}` must export "
+                        "at least one gate."
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
                 )
             return ReviewContractSpec(
                 kind="schema",
@@ -709,7 +730,20 @@ class ResolveReviewsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._review_resolution_stack, review_key]
             )
-            raise CompileError(f"Cyclic review inheritance: {cycle}")
+            raise review_compile_error(
+                code="E470",
+                summary="Invalid review declaration shape",
+                detail=(
+                    "Review declaration shape is invalid because inheritance is cyclic: "
+                    f"{cycle}."
+                ),
+                unit=unit,
+                source_span=(
+                    review_decl.parent_ref.source_span
+                    if review_decl.parent_ref is not None
+                    else review_decl.source_span
+                ),
+            )
 
         self._review_resolution_stack.append(review_key)
         try:
@@ -731,6 +765,7 @@ class ResolveReviewsMixin:
                 owner_label=_dotted_decl_name(unit.module_parts, review_decl.name),
                 parent_review=parent_review,
                 parent_label=parent_label,
+                review_source_span=review_decl.source_span,
             )
             self._resolved_review_cache[review_key] = resolved
             return resolved
@@ -745,6 +780,7 @@ class ResolveReviewsMixin:
         owner_label: str,
         parent_review: ResolvedReviewBody | None = None,
         parent_label: str | None = None,
+        review_source_span: model.SourceSpan | None = None,
     ) -> ResolvedReviewBody:
         subject = parent_review.subject if parent_review is not None else None
         subject_map = parent_review.subject_map if parent_review is not None else None
@@ -762,7 +798,7 @@ class ResolveReviewsMixin:
             parent_items_by_key = {item.key: item for item in parent_review.items}
 
         resolved_items: list[model.ReviewSection | model.ReviewOutcomeSection] = []
-        emitted_keys: set[str] = set()
+        emitted_items: dict[str, model.ReviewSection | model.ReviewOutcomeSection | model.InheritItem | model.ReviewOverrideSection | model.ReviewOverrideOutcomeSection] = {}
         accounted_keys: set[str] = set()
 
         for item in review_body.items:
@@ -818,6 +854,7 @@ class ResolveReviewsMixin:
                                 unit=unit,
                                 owner_label=f"{owner_label}.cases.{case.key}.on_accept",
                             ),
+                            source_span=case.on_accept.source_span,
                         ),
                         on_reject=model.ReviewOutcomeSection(
                             key="on_reject",
@@ -827,7 +864,9 @@ class ResolveReviewsMixin:
                                 unit=unit,
                                 owner_label=f"{owner_label}.cases.{case.key}.on_reject",
                             ),
+                            source_span=case.on_reject.source_span,
                         ),
+                        source_span=case.source_span,
                     )
                     for case in item.cases
                 )
@@ -844,17 +883,38 @@ class ResolveReviewsMixin:
 
             if isinstance(item, model.ReviewOverrideFields):
                 if parent_review is None or parent_review.fields is None:
-                    raise CompileError(
-                        f"`override` requires an inherited review in {owner_label}: fields"
+                    raise review_compile_error(
+                        code="E492",
+                        summary="Review override requires an inherited review",
+                        detail=(
+                            f"Review override for `fields` requires an inherited review in "
+                            f"`{owner_label}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
                     )
-                fields = model.ReviewFieldsConfig(bindings=item.bindings)
+                fields = model.ReviewFieldsConfig(bindings=item.bindings, source_span=item.source_span)
                 fields_accounted = True
                 continue
 
             key = item.key
-            if key in emitted_keys:
-                raise CompileError(f"Duplicate review item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+            first_item = emitted_items.get(key)
+            if first_item is not None:
+                raise review_compile_error(
+                    code="E491",
+                    summary="Duplicate review item key",
+                    detail=f"Review `{owner_label}` repeats review item key `{key}`.",
+                    unit=unit,
+                    source_span=getattr(item, "source_span", None),
+                    related=(
+                        review_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=getattr(first_item, "source_span", None),
+                        ),
+                    ),
+                )
+            emitted_items[key] = item
 
             if isinstance(item, model.ReviewSection):
                 resolved_items.append(
@@ -866,6 +926,7 @@ class ResolveReviewsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -880,6 +941,7 @@ class ResolveReviewsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -895,15 +957,36 @@ class ResolveReviewsMixin:
                 continue
 
             if parent_item is None:
-                raise CompileError(
-                    f"`override` requires an inherited review in {owner_label}: {key}"
+                raise review_compile_error(
+                    code="E492",
+                    summary="Review override requires an inherited review",
+                    detail=(
+                        f"Review override for `{key}` requires an inherited review in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=getattr(item, "source_span", None),
                 )
 
             accounted_keys.add(key)
             if isinstance(item, model.ReviewOverrideSection):
                 if not isinstance(parent_item, model.ReviewSection):
-                    raise CompileError(
-                        f"Override kind mismatch for review entry in {owner_label}: {key}"
+                    raise review_compile_error(
+                        code="E470",
+                        summary="Invalid review declaration shape",
+                        detail=(
+                            f"Review `{owner_label}` uses the wrong inherited entry shape for "
+                            f"`{key}`."
+                        ),
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            review_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=unit,
+                                source_span=parent_item.source_span,
+                            ),
+                        ),
                     )
                 resolved_items.append(
                     model.ReviewSection(
@@ -914,13 +997,28 @@ class ResolveReviewsMixin:
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
 
             if not isinstance(parent_item, model.ReviewOutcomeSection):
-                raise CompileError(
-                    f"Override kind mismatch for review entry in {owner_label}: {key}"
+                raise review_compile_error(
+                    code="E470",
+                    summary="Invalid review declaration shape",
+                    detail=(
+                        f"Review `{owner_label}` uses the wrong inherited entry shape for "
+                        f"`{key}`."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        review_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=unit,
+                            source_span=parent_item.source_span,
+                        ),
+                    ),
                 )
             resolved_items.append(
                 model.ReviewOutcomeSection(
@@ -931,6 +1029,7 @@ class ResolveReviewsMixin:
                         unit=unit,
                         owner_label=f"{owner_label}.{key}",
                     ),
+                    source_span=item.source_span,
                 )
             )
 
@@ -941,12 +1040,39 @@ class ResolveReviewsMixin:
                 if parent_item.key not in accounted_keys
             ]
             if missing_keys:
-                raise CompileError(
-                    f"Missing inherited review entry in {owner_label}: {', '.join(missing_keys)}"
+                first_missing_key = missing_keys[0]
+                parent_item = parent_items_by_key[first_missing_key]
+                raise review_compile_error(
+                    code="E490",
+                    summary="Missing inherited review entry",
+                    detail=(
+                        f"Review `{owner_label}` is missing inherited review entry "
+                        f"`{', '.join(missing_keys)}`."
+                    ),
+                    unit=unit,
+                    source_span=review_source_span,
+                    related=(
+                        review_related_site(
+                            label=f"inherited `{first_missing_key}` entry",
+                            unit=unit,
+                            source_span=parent_item.source_span,
+                        ),
+                    ),
                 )
             if parent_review.fields is not None and not fields_accounted:
-                raise CompileError(
-                    f"Missing inherited review entry in {owner_label}: fields"
+                raise review_compile_error(
+                    code="E490",
+                    summary="Missing inherited review entry",
+                    detail=f"Review `{owner_label}` is missing inherited review entry `fields`.",
+                    unit=unit,
+                    source_span=review_source_span,
+                    related=(
+                        review_related_site(
+                            label="inherited `fields` entry",
+                            unit=unit,
+                            source_span=parent_review.fields.source_span,
+                        ),
+                    ),
                 )
 
         return ResolvedReviewBody(

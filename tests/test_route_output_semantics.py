@@ -746,6 +746,65 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertEqual(error.code, "E344")
         self.assertIn("unsupported statement `current none`", str(error))
 
+    def test_final_output_route_semantics_do_not_leak_to_other_outputs(self) -> None:
+        agent = self._compile_agent(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    optional
+
+                field summary: "Summary"
+                    type: string
+                    required
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+            output OtherReply: "Other Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner
+
+            agent Muse:
+                role: "Help the writer."
+                workflow: "Muse"
+                    "Offer fresh direction."
+
+            agent Critic:
+                role: "Judge the draft."
+                workflow: "Critic"
+                    "Judge the draft."
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                    OtherReply
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        rendered = render_markdown(agent)
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        self.assertIn("- Next Owner: route.next_owner", outputs_block)
+        self.assertNotIn("Next owner: Muse.", outputs_block)
+        self.assertNotIn("Next owner: Critic.", outputs_block)
+
 
 if __name__ == "__main__":
     unittest.main()

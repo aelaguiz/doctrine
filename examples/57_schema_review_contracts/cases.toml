@@ -96,6 +96,6 @@ agent = "InvalidGateLessReviewDemo"
 exception_type = "CompileError"
 error_code = "E477"
 message_contains = [
-  "Review contract must export at least one gate",
-  "GateLessContract",
+  "Review contract `GateLessContract`",
+  "must export at least one gate",
 ]

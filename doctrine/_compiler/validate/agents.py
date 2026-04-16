@@ -241,9 +241,52 @@ class ValidateAgentsMixin:
             resolved_slots=resolved_slots,
             agent_contract=agent_contract,
         )
-        if context is None:
-            return frozenset()
-        return frozenset((output_key, context) for output_key in emitted_output_keys)
+        output_contexts: set[tuple[OutputDeclKey, RouteSemanticContext]] = set()
+        if context is not None:
+            output_contexts.update((output_key, context) for output_key in emitted_output_keys)
+
+        final_output_field = next(
+            (field for field in agent.fields if isinstance(field, model.FinalOutputField)),
+            None,
+        )
+        if final_output_field is None or final_output_field.route_path is None:
+            return frozenset(output_contexts)
+
+        if any(isinstance(field, model.ReviewField) for field in agent.fields):
+            raise CompileError(
+                f"final_output.route is not supported on review-driven agents in v1: {agent.name}"
+            )
+
+        sources = self._route_semantic_sources_for_agent(
+            agent,
+            unit=unit,
+            resolved_slots=resolved_slots,
+            agent_contract=agent_contract,
+        )
+        if sources:
+            labels = ", ".join((*[source for source, _context in sources], "final_output.route"))
+            raise CompileError(
+                f"Multiple route-bearing control surfaces are live in agent {agent.name}: {labels}"
+            )
+
+        binding = self._resolve_final_output_route_binding(
+            agent_name=agent.name,
+            field=final_output_field,
+            unit=unit,
+            agent_contract=agent_contract,
+        )
+        if binding is None:
+            return frozenset(output_contexts)
+        output_contexts.add(
+            (
+                binding.output_key,
+                self._route_semantic_context_from_final_output_route_binding(
+                    binding,
+                    owner_label=f"agent {agent.name} final_output.route",
+                ),
+            )
+        )
+        return frozenset(output_contexts)
 
     def _route_output_context_for_key(
         self,

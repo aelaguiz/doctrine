@@ -130,8 +130,16 @@ class FinalOutputReviewFieldsPart:
 
 
 @dataclass(slots=True, frozen=True)
+class FinalOutputRoutePart:
+    path: tuple[str, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class FinalOutputBodyParts:
     output_ref: model.NameRef
+    route_path: tuple[str, ...] | None = None
     review_fields: model.ReviewFieldsConfig | None = None
 
 

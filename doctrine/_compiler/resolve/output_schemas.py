@@ -43,8 +43,9 @@ class _OutputSchemaNodeParts:
     legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
     any_of: tuple[model.OutputSchemaVariant, ...] = ()
-    fields: tuple[model.OutputSchemaField, ...] = ()
+    fields: tuple[model.OutputSchemaField | model.OutputSchemaRouteField, ...] = ()
     defs: tuple[model.OutputSchemaDef, ...] = ()
+    route_choices: tuple[model.OutputSchemaRouteChoice, ...] = ()
     constraints: tuple[tuple[str, int | float], ...] = ()
     const_value: model.OutputSchemaLiteralValue | None = None
     has_const: bool = False
@@ -164,6 +165,7 @@ class ResolveOutputSchemasMixin:
                 item,
                 (
                     model.OutputSchemaField,
+                    model.OutputSchemaRouteField,
                     model.OutputSchemaDef,
                     model.OutputSchemaExample,
                 ),
@@ -223,6 +225,7 @@ class ResolveOutputSchemasMixin:
                 item,
                 (
                     model.OutputSchemaField,
+                    model.OutputSchemaRouteField,
                     model.OutputSchemaDef,
                     model.OutputSchemaExample,
                 ),
@@ -265,10 +268,12 @@ class ResolveOutputSchemasMixin:
             item,
             (
                 model.OutputSchemaField,
+                model.OutputSchemaRouteField,
                 model.OutputSchemaDef,
                 model.OutputSchemaExample,
                 model.InheritItem,
                 model.OutputSchemaOverrideField,
+                model.OutputSchemaOverrideRouteField,
                 model.OutputSchemaOverrideDef,
                 model.OutputSchemaOverrideExample,
             ),
@@ -281,6 +286,7 @@ class ResolveOutputSchemasMixin:
             item,
             (
                 model.OutputSchemaOverrideField,
+                model.OutputSchemaOverrideRouteField,
                 model.OutputSchemaOverrideDef,
                 model.OutputSchemaOverrideExample,
             ),
@@ -290,13 +296,24 @@ class ResolveOutputSchemasMixin:
         self,
         item: (
             model.OutputSchemaOverrideField
+            | model.OutputSchemaOverrideRouteField
             | model.OutputSchemaOverrideDef
             | model.OutputSchemaOverrideExample
         ),
         *,
-        parent_item: model.OutputSchemaField | model.OutputSchemaDef | model.OutputSchemaExample,
+        parent_item: (
+            model.OutputSchemaField
+            | model.OutputSchemaRouteField
+            | model.OutputSchemaDef
+            | model.OutputSchemaExample
+        ),
         owner_label: str,
-    ) -> model.OutputSchemaField | model.OutputSchemaDef | model.OutputSchemaExample:
+    ) -> (
+        model.OutputSchemaField
+        | model.OutputSchemaRouteField
+        | model.OutputSchemaDef
+        | model.OutputSchemaExample
+    ):
         key = item.key
         if isinstance(item, model.OutputSchemaOverrideField):
             if not isinstance(parent_item, model.OutputSchemaField):
@@ -304,6 +321,16 @@ class ResolveOutputSchemasMixin:
                     f"Override kind mismatch for output schema entry in {owner_label}: {key}"
                 )
             return model.OutputSchemaField(
+                key=key,
+                title=item.title if item.title is not None else parent_item.title,
+                items=item.items,
+            )
+        if isinstance(item, model.OutputSchemaOverrideRouteField):
+            if not isinstance(parent_item, model.OutputSchemaRouteField):
+                raise CompileError(
+                    f"Override kind mismatch for output schema entry in {owner_label}: {key}"
+                )
+            return model.OutputSchemaRouteField(
                 key=key,
                 title=item.title if item.title is not None else parent_item.title,
                 items=item.items,
@@ -391,6 +418,16 @@ class ResolveOutputSchemasMixin:
                     local_def_scopes=local_def_scopes,
                 ),
             )
+        if isinstance(item, model.OutputSchemaRouteField):
+            return model.OutputSchemaRouteField(
+                key=item.key,
+                title=item.title,
+                items=self._rebind_output_schema_route_items(
+                    item.items,
+                    parent_unit=parent_unit,
+                    local_def_scopes=local_def_scopes,
+                ),
+            )
         if isinstance(item, model.OutputSchemaDef):
             return model.OutputSchemaDef(
                 key=item.key,
@@ -406,6 +443,16 @@ class ResolveOutputSchemasMixin:
                 key=item.key,
                 title=item.title,
                 items=self._rebind_output_schema_node_items(
+                    item.items,
+                    parent_unit=parent_unit,
+                    local_def_scopes=local_def_scopes,
+                ),
+            )
+        if isinstance(item, model.OutputSchemaOverrideRouteField):
+            return model.OutputSchemaOverrideRouteField(
+                key=item.key,
+                title=item.title,
+                items=self._rebind_output_schema_route_items(
                     item.items,
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
@@ -442,6 +489,37 @@ class ResolveOutputSchemasMixin:
             )
             for item in items
         )
+
+    def _rebind_output_schema_route_items(
+        self,
+        items: tuple[model.OutputSchemaRouteBodyItem, ...],
+        *,
+        parent_unit: IndexedUnit,
+        local_def_scopes: tuple[frozenset[str], ...],
+    ) -> tuple[model.OutputSchemaRouteBodyItem, ...]:
+        rebound: list[model.OutputSchemaRouteBodyItem] = []
+        for item in items:
+            if isinstance(item, model.OutputSchemaRouteChoice):
+                rebound.append(
+                    model.OutputSchemaRouteChoice(
+                        key=item.key,
+                        title=item.title,
+                        target_ref=self._rebind_output_schema_ref(
+                            item.target_ref,
+                            parent_unit=parent_unit,
+                            local_def_scopes=local_def_scopes,
+                        ),
+                    )
+                )
+                continue
+            rebound.append(
+                self._rebind_output_schema_body_item(
+                    item,
+                    parent_unit=parent_unit,
+                    local_def_scopes=local_def_scopes,
+                )
+            )
+        return tuple(rebound)
 
     def _rebind_output_schema_body_item(
         self,
@@ -498,6 +576,16 @@ class ResolveOutputSchemasMixin:
                 key=item.key,
                 title=item.title,
                 items=self._rebind_output_schema_node_items(
+                    item.items,
+                    parent_unit=parent_unit,
+                    local_def_scopes=local_def_scopes,
+                ),
+            )
+        if isinstance(item, model.OutputSchemaRouteField):
+            return model.OutputSchemaRouteField(
+                key=item.key,
+                title=item.title,
+                items=self._rebind_output_schema_route_items(
                     item.items,
                     parent_unit=parent_unit,
                     local_def_scopes=local_def_scopes,
@@ -583,7 +671,11 @@ class ResolveOutputSchemasMixin:
 
     def _lower_output_schema_node(
         self,
-        items: tuple[model.OutputSchemaBodyItem, ...] | tuple[model.OutputSchemaAuthoredItem, ...],
+        items: (
+            tuple[model.OutputSchemaBodyItem, ...]
+            | tuple[model.OutputSchemaRouteBodyItem, ...]
+            | tuple[model.OutputSchemaAuthoredItem, ...]
+        ),
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -615,6 +707,31 @@ class ResolveOutputSchemasMixin:
             schema["title"] = title
         if parts.note is not None:
             schema["description"] = parts.note
+
+        if parts.route_choices:
+            if (
+                parts.type_name is not None
+                or parts.ref is not None
+                or parts.items_value is not None
+                or parts.enum_values
+                or parts.legacy_enum_values
+                or parts.inline_enum_values
+                or parts.any_of
+                or parts.fields
+                or parts.defs
+                or parts.has_const
+                or parts.format_name is not None
+                or parts.pattern is not None
+                or parts.constraints
+            ):
+                raise CompileError(
+                    f"Route field cannot be combined with another primary shape in {owner_label}"
+                )
+            schema["type"] = "string"
+            schema["enum"] = [choice.key for choice in parts.route_choices]
+            if parts.optional:
+                return self._wrap_nullable_output_schema(schema)
+            return schema
 
         if parts.any_of:
             if (
@@ -798,7 +915,7 @@ class ResolveOutputSchemasMixin:
 
     def _lower_output_schema_field(
         self,
-        field: model.OutputSchemaField,
+        field: model.OutputSchemaField | model.OutputSchemaRouteField,
         *,
         unit: IndexedUnit,
         owner_label: str,
@@ -870,13 +987,18 @@ class ResolveOutputSchemasMixin:
 
     def _collect_output_schema_node_parts(
         self,
-        items: tuple[model.OutputSchemaBodyItem, ...] | tuple[model.OutputSchemaAuthoredItem, ...],
+        items: (
+            tuple[model.OutputSchemaBodyItem, ...]
+            | tuple[model.OutputSchemaRouteBodyItem, ...]
+            | tuple[model.OutputSchemaAuthoredItem, ...]
+        ),
         *,
         owner_label: str,
     ) -> _OutputSchemaNodeParts:
         parts = _OutputSchemaNodeParts()
-        fields: list[model.OutputSchemaField] = []
+        fields: list[model.OutputSchemaField | model.OutputSchemaRouteField] = []
         defs: list[model.OutputSchemaDef] = []
+        route_choices: list[model.OutputSchemaRouteChoice] = []
         legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
         inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
         variants: tuple[model.OutputSchemaVariant, ...] = ()
@@ -985,6 +1107,14 @@ class ResolveOutputSchemasMixin:
                 seen_child_keys.add(item.key)
                 fields.append(item)
                 continue
+            if isinstance(item, model.OutputSchemaRouteField):
+                if item.key in seen_child_keys:
+                    raise CompileError(
+                        f"Duplicate output schema child key in {owner_label}: {item.key}"
+                    )
+                seen_child_keys.add(item.key)
+                fields.append(item)
+                continue
             if isinstance(item, model.OutputSchemaDef):
                 if item.key in seen_child_keys:
                     raise CompileError(
@@ -993,6 +1123,14 @@ class ResolveOutputSchemasMixin:
                 seen_child_keys.add(item.key)
                 defs.append(item)
                 continue
+            if isinstance(item, model.OutputSchemaRouteChoice):
+                if item.key in seen_child_keys:
+                    raise CompileError(
+                        f"Duplicate output schema child key in {owner_label}: {item.key}"
+                    )
+                seen_child_keys.add(item.key)
+                route_choices.append(item)
+                continue
             raise CompileError(
                 f"Internal compiler error: unsupported output schema node item in {owner_label}: "
                 f"{type(item).__name__}"
@@ -1000,6 +1138,7 @@ class ResolveOutputSchemasMixin:
 
         parts.fields = tuple(fields)
         parts.defs = tuple(defs)
+        parts.route_choices = tuple(route_choices)
         parts.legacy_enum_values = legacy_enum_values
         parts.inline_enum_values = inline_enum_values
         parts.any_of = variants

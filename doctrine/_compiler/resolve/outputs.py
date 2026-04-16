@@ -12,6 +12,7 @@ from doctrine._compiler.resolved_types import (
     CompiledSection,
     ConfigSpec,
     ContractBinding,
+    FinalOutputRouteBinding,
     FinalOutputJsonShapeSummary,
     IndexedUnit,
     OutputDeclKey,
@@ -1076,6 +1077,102 @@ class ResolveOutputsMixin:
             extra_items=shape_extras,
         )
 
+    def _resolve_final_output_route_binding(
+        self,
+        *,
+        agent_name: str,
+        field: model.FinalOutputField,
+        unit: IndexedUnit,
+        agent_contract,
+    ) -> FinalOutputRouteBinding | None:
+        if field.route_path is None:
+            return None
+
+        owner_label = f"agent {agent_name} final_output.route"
+        output_unit, output_decl = self._resolve_final_output_decl(
+            field.value,
+            unit=unit,
+            owner_label=f"agent {agent_name} final_output",
+        )
+        output_key = (output_unit.module_parts, output_decl.name)
+        if output_key not in agent_contract.outputs:
+            raise CompileError(
+                "E212 final_output output is not emitted by the concrete turn in "
+                f"agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            )
+
+        scalar_items, section_items, _extras = self._split_record_items(
+            output_decl.items,
+            scalar_keys={"target", "shape", "requirement"},
+            section_keys={"files"},
+            owner_label=f"output {output_decl.name}",
+        )
+        target_item = scalar_items.get("target")
+        shape_item = scalar_items.get("shape")
+        files_section = section_items.get("files")
+        if (
+            files_section is not None
+            or target_item is None
+            or shape_item is None
+            or not isinstance(target_item.value, model.NameRef)
+            or not self._is_builtin_turn_response_target_ref(target_item.value)
+        ):
+            raise CompileError(
+                "final_output.route requires one TurnResponse output in "
+                f"{owner_label}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            )
+
+        json_summary = self._resolve_final_output_json_shape_summary(
+            shape_item.value,
+            unit=output_unit,
+        )
+        if json_summary is None:
+            raise CompileError(
+                "final_output.route requires a structured final output with an output schema in "
+                f"{owner_label}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            )
+
+        route_node = self._resolve_output_schema_field_node(
+            json_summary.schema_decl,
+            path=field.route_path,
+            unit=json_summary.schema_unit,
+            owner_label=owner_label,
+            surface_label="output schema route fields",
+        )
+        if not isinstance(route_node.target, model.OutputSchemaRouteField):
+            raise CompileError(
+                "final_output.route must bind a `route field` in "
+                f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+            )
+
+        route_parts = self._collect_output_schema_node_parts(
+            route_node.target.items,
+            owner_label=(
+                f"output schema {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+            ),
+        )
+        if not route_parts.route_choices:
+            raise CompileError(
+                "route field must declare at least one route choice in "
+                f"{owner_label}: {json_summary.schema_decl.name}.{'.'.join(field.route_path)}"
+            )
+        if route_parts.required_explicit and route_parts.optional:
+            raise CompileError(
+                f"Output schema entry cannot be both required and optional in {owner_label}"
+            )
+
+        return FinalOutputRouteBinding(
+            output_key=output_key,
+            output_unit=output_unit,
+            output_decl=output_decl,
+            schema_unit=json_summary.schema_unit,
+            schema_decl=json_summary.schema_decl,
+            field_path=field.route_path,
+            route_field=route_node.target,
+            null_behavior="no_route" if route_parts.optional else "invalid",
+            choices=route_parts.route_choices,
+        )
+
     def _resolve_output_render_profiles(
         self,
         decl: model.OutputDecl,
@@ -1701,3 +1798,65 @@ class ResolveOutputsMixin:
             f"Unknown output field on {surface_label} in {owner_label}: "
             f"{decl.name}.{'.'.join(path)}"
         )
+
+    def _resolve_output_schema_field_node(
+        self,
+        decl: model.OutputSchemaDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> AddressableNode:
+        current_node = AddressableNode(unit=unit, root_decl=decl, target=decl)
+        for segment in path:
+            children = self._get_addressable_children(current_node)
+            if children is None or segment not in children:
+                raise CompileError(
+                    f"Unknown output schema field on {surface_label} in {owner_label}: "
+                    f"{decl.name}.{'.'.join(path)}"
+                )
+            current_node = children[segment]
+        return current_node
+
+    def _resolve_output_schema_route_choice_identity(
+        self,
+        expr: model.Expr,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[tuple[str, ...], str, str, model.OutputSchemaRouteChoice] | None:
+        if not isinstance(expr, model.ExprRef) or len(expr.parts) < 3:
+            return None
+        schema_ref = model.NameRef(
+            module_parts=tuple(expr.parts[:-3]),
+            declaration_name=expr.parts[-3],
+        )
+        try:
+            lookup_unit = self._resolve_readable_decl_lookup_unit(schema_ref, unit=unit)
+        except CompileError:
+            return None
+        schema_decl = lookup_unit.output_schemas_by_name.get(schema_ref.declaration_name)
+        if schema_decl is None:
+            return None
+        resolved_decl = self._resolve_output_schema_decl_body(schema_decl, unit=lookup_unit)
+        field = next(
+            (
+                item
+                for item in resolved_decl.items
+                if isinstance(item, model.OutputSchemaRouteField) and item.key == expr.parts[-2]
+            ),
+            None,
+        )
+        if field is None:
+            return None
+        choice = next(
+            (
+                item
+                for item in field.items
+                if isinstance(item, model.OutputSchemaRouteChoice) and item.key == expr.parts[-1]
+            ),
+            None,
+        )
+        if choice is None:
+            return None
+        return (lookup_unit.module_parts, resolved_decl.name, field.key, choice)

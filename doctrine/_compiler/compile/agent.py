@@ -20,6 +20,7 @@ from doctrine._compiler.resolved_types import (
     CompiledRouteBranchSpec,
     CompiledRouteChoiceMemberSpec,
     CompiledRouteContractSpec,
+    CompiledRouteSelectorSpec,
     CompiledRouteTargetSpec,
     CompiledSection,
     IndexedUnit,
@@ -293,11 +294,11 @@ class CompileAgentMixin:
                 review_verdict=branch.review_verdict,
                 choice_members=tuple(
                     CompiledRouteChoiceMemberSpec(
-                        enum_module_parts=member.enum_module_parts,
-                        enum_name=member.enum_name,
                         member_key=member.member_key,
                         member_title=member.member_title,
                         member_wire=member.member_wire,
+                        enum_module_parts=member.enum_module_parts,
+                        enum_name=member.enum_name,
                     )
                     for member in branch.choice_members
                 ),
@@ -305,11 +306,20 @@ class CompileAgentMixin:
             for branch in route_semantics.branches
         )
         return CompiledRouteContractSpec(
-            exists=bool(branches),
+            exists=True,
             behavior=self._route_contract_behavior(route_semantics),
             has_unrouted_branch=route_semantics.has_unrouted_branch,
             unrouted_review_verdicts=tuple(sorted(route_semantics.unrouted_review_verdicts)),
             branches=branches,
+            selector=(
+                None
+                if route_semantics.selector is None
+                else CompiledRouteSelectorSpec(
+                    surface=route_semantics.selector.surface,
+                    field_path=route_semantics.selector.field_path,
+                    null_behavior=route_semantics.selector.null_behavior,
+                )
+            ),
         )
 
     def _final_response_contract_output_key(
@@ -335,6 +345,7 @@ class CompileAgentMixin:
             has_unrouted_branch=False,
             unrouted_review_verdicts=(),
             branches=(),
+            selector=None,
         )
 
     def _route_contract_behavior(

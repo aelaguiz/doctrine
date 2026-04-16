@@ -192,6 +192,71 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
         )
         self.assertEqual(legacy_status.items[2], model.OutputSchemaFlag(key="required"))
 
+    def test_parser_builds_route_field_nodes_and_route_choices(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    note: "Selected next step."
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    optional
+
+            output schema ChildWriterDecisionSchema[WriterDecisionSchema]: "Child Writer Decision Schema"
+                inherit next_route
+
+                override route field next_route: "Next Route"
+                    note: "Override the labels."
+                    seek_muse: "Send to Fresh Muse." -> FreshMuse
+                    ready_for_critic: "Send to Strict Critic." -> StrictCritic
+                    required
+                """
+            )
+        )
+
+        self.assertEqual(len(prompt.declarations), 2)
+
+        base_decl = prompt.declarations[0]
+        self.assertIsInstance(base_decl, model.OutputSchemaDecl)
+        route_field = base_decl.items[0]
+        self.assertIsInstance(route_field, model.OutputSchemaRouteField)
+        self.assertEqual(route_field.key, "next_route")
+        self.assertEqual(route_field.items[0], model.OutputSchemaSetting(key="note", value="Selected next step."))
+        self.assertEqual(
+            route_field.items[1],
+            model.OutputSchemaRouteChoice(
+                key="seek_muse",
+                title="Send to Muse.",
+                target_ref=model.NameRef(module_parts=(), declaration_name="Muse"),
+            ),
+        )
+        self.assertEqual(
+            route_field.items[2],
+            model.OutputSchemaRouteChoice(
+                key="ready_for_critic",
+                title="Send to Critic.",
+                target_ref=model.NameRef(module_parts=(), declaration_name="Critic"),
+            ),
+        )
+        self.assertEqual(route_field.items[3], model.OutputSchemaFlag(key="optional"))
+
+        child_decl = prompt.declarations[1]
+        self.assertIsInstance(child_decl, model.OutputSchemaDecl)
+        self.assertIsInstance(child_decl.items[0], model.InheritItem)
+        override_field = child_decl.items[1]
+        self.assertIsInstance(override_field, model.OutputSchemaOverrideRouteField)
+        self.assertEqual(override_field.key, "next_route")
+        self.assertEqual(
+            override_field.items[1],
+            model.OutputSchemaRouteChoice(
+                key="seek_muse",
+                title="Send to Fresh Muse.",
+                target_ref=model.NameRef(module_parts=(), declaration_name="FreshMuse"),
+            ),
+        )
+        self.assertEqual(override_field.items[3], model.OutputSchemaFlag(key="required"))
+
     def test_local_inherited_output_shape_keeps_inherited_items_and_points_schema_at_output_schema(self) -> None:
         agent = self._compile_agent(
             """

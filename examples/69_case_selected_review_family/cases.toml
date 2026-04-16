@@ -148,9 +148,8 @@ agent = "InvalidCaseOverlapDemo"
 exception_type = "CompileError"
 error_code = "E470"
 message_contains = [
-  "Review cases overlap",
-  "draft_path",
-  "duplicate_draft_path",
+  "overlapping cases for selector value `draft-rewrite`",
+  "first case for `draft-rewrite`",
 ]
 
 [[cases]]
@@ -301,5 +300,5 @@ agent = "InvalidCaseNonTotalDemo"
 exception_type = "CompileError"
 error_code = "E470"
 message_contains = [
-  "Review cases must be exhaustive",
+  "missing cases for selector values: metadata-refresh",
 ]

@@ -328,6 +328,48 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 self.assertEqual(error.code, expected_code)
                 self.assertIn(expected_text, str(error))
 
+    def test_route_field_lowers_to_string_enum_wire_shape(self) -> None:
+        _decl, lowered = self._lower_output_schema(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    optional
+                    note: "Selected next step."
+
+                field summary: "Summary"
+                    type: string
+                    required
+            """,
+            schema_name="WriterDecisionSchema",
+        )
+
+        self.assertEqual(
+            lowered["properties"]["next_route"],
+            {
+                "title": "Next Route",
+                "description": "Selected next step.",
+                "type": ["string", "null"],
+                "enum": ["seek_muse", "ready_for_critic", None],
+            },
+        )
+
+    def test_route_field_rejects_mixed_primary_shape_owners(self) -> None:
+        error = self._lower_output_schema_error(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    type: string
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    required
+            """,
+            schema_name="WriterDecisionSchema",
+        )
+
+        self.assertIn("Route field cannot be combined with another primary shape", str(error))
+
     def test_imported_parent_keeps_local_def_refs_local_after_rebind(self) -> None:
         decl, lowered = self._lower_output_schema(
             """

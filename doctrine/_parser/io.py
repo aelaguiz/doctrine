@@ -585,6 +585,9 @@ class IoTransformerMixin:
     def output_schema_item_body(self, items):
         return tuple(items)
 
+    def output_schema_route_field_body(self, items):
+        return tuple(items)
+
     @v_args(meta=True, inline=True)
     def output_schema_type_stmt(self, meta, type_name):
         return _with_source_span(model.OutputSchemaSetting(key="type", value=type_name), meta)
@@ -723,6 +726,17 @@ class IoTransformerMixin:
         )
 
     @v_args(meta=True, inline=True)
+    def output_schema_route_field(self, meta, key, title, items=None):
+        return _with_source_span(
+            model.OutputSchemaRouteField(
+                key=key,
+                title=title,
+                items=tuple(items) if items is not None else (),
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
     def output_schema_def(self, meta, key, title, items=None):
         return _with_source_span(
             model.OutputSchemaDef(
@@ -763,6 +777,27 @@ class IoTransformerMixin:
         )
 
     @v_args(meta=True, inline=True)
+    def output_schema_override_route_field(self, meta, key, title_or_items=None, items=None):
+        title: str | None = None
+        body_items = title_or_items
+        if items is not None:
+            title = title_or_items
+            body_items = items
+        elif isinstance(title_or_items, str):
+            title = title_or_items
+            body_items = ()
+        if body_items is None:
+            body_items = ()
+        return _with_source_span(
+            model.OutputSchemaOverrideRouteField(
+                key=key,
+                title=title,
+                items=tuple(body_items),
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
     def output_schema_override_def(self, meta, key, title_or_items=None, items=None):
         title: str | None = None
         body_items = title_or_items
@@ -787,6 +822,17 @@ class IoTransformerMixin:
     def output_schema_override_example(self, meta, value):
         return _with_source_span(
             model.OutputSchemaOverrideExample(key="example", value=value),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_schema_route_choice(self, meta, key, title, target_ref):
+        return _with_source_span(
+            model.OutputSchemaRouteChoice(
+                key=key,
+                title=title,
+                target_ref=target_ref,
+            ),
             meta,
         )
 

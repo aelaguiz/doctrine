@@ -28,6 +28,7 @@ from doctrine._compiler.types import (
     CompiledRouteBranchSpec,
     CompiledRouteChoiceMemberSpec,
     CompiledRouteContractSpec,
+    CompiledRouteSelectorSpec,
     CompiledRouteTargetSpec,
     CompiledRuleBlock,
     CompiledSection,
@@ -369,6 +370,19 @@ class FinalOutputJsonShapeSummary:
 
 
 @dataclass(slots=True, frozen=True)
+class FinalOutputRouteBinding:
+    output_key: "OutputDeclKey"
+    output_unit: IndexedUnit
+    output_decl: model.OutputDecl
+    schema_unit: IndexedUnit
+    schema_decl: model.OutputSchemaDecl
+    field_path: tuple[str, ...]
+    route_field: model.OutputSchemaRouteField
+    null_behavior: str
+    choices: tuple[model.OutputSchemaRouteChoice, ...]
+
+
+@dataclass(slots=True, frozen=True)
 class LawBranch:
     activation_exprs: tuple[model.Expr, ...] = ()
     mode_bindings: tuple[model.ModeStmt, ...] = ()
@@ -445,20 +459,28 @@ class RouteSemanticBranch:
 
 
 @dataclass(slots=True, frozen=True)
+class RouteSelector:
+    surface: str
+    field_path: tuple[str, ...] | None = None
+    null_behavior: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class RouteSemanticContext:
     branches: tuple[RouteSemanticBranch, ...] = ()
     has_unrouted_branch: bool = False
     route_required: bool = False
     unrouted_review_verdicts: frozenset[str] = frozenset()
+    selector: RouteSelector | None = None
 
 
 @dataclass(slots=True, frozen=True)
 class RouteChoiceMember:
-    enum_module_parts: tuple[str, ...]
-    enum_name: str
     member_key: str
     member_title: str
     member_wire: str
+    enum_module_parts: tuple[str, ...] = ()
+    enum_name: str | None = None
 
 
 @dataclass(slots=True, frozen=True)

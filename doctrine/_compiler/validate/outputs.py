@@ -254,6 +254,7 @@ class ValidateOutputsMixin:
         return (
             self._expr_ref_matches_input_decl(ref, unit=unit)
             or self._expr_ref_matches_enum_member(ref, unit=unit)
+            or self._resolve_output_schema_route_choice_identity(ref, unit=unit) is not None
             or (
                 allow_route_semantics
                 and self._expr_ref_matches_route_semantic_ref(

@@ -252,6 +252,22 @@ class OutputSchemaDef:
 
 
 @_dataclass(slots=True, frozen=True)
+class OutputSchemaRouteChoice:
+    key: str
+    title: str
+    target_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaRouteField:
+    key: str
+    title: str
+    items: tuple["OutputSchemaRouteBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class OutputSchemaOverrideField:
     key: str
     title: str | None
@@ -264,6 +280,14 @@ class OutputSchemaOverrideDef:
     key: str
     title: str | None
     items: tuple["OutputSchemaBodyItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputSchemaOverrideRouteField:
+    key: str
+    title: str | None
+    items: tuple["OutputSchemaRouteBodyItem", ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -358,13 +382,17 @@ OutputSchemaBodyItem: _TypeAlias = (
     | OutputSchemaAnyOf
     | OutputSchemaField
     | OutputSchemaDef
+    | OutputSchemaRouteField
 )
+OutputSchemaRouteBodyItem: _TypeAlias = OutputSchemaBodyItem | OutputSchemaRouteChoice
 OutputSchemaAuthoredItem: _TypeAlias = (
     OutputSchemaField
+    | OutputSchemaRouteField
     | OutputSchemaDef
     | OutputSchemaExample
     | InheritItem
     | OutputSchemaOverrideField
+    | OutputSchemaOverrideRouteField
     | OutputSchemaOverrideDef
     | OutputSchemaOverrideExample
 )

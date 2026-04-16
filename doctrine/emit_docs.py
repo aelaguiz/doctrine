@@ -292,6 +292,25 @@ def _serialize_route_contract(route) -> dict[str, object]:
         "behavior": route.behavior,
         "has_unrouted_branch": route.has_unrouted_branch,
         "unrouted_review_verdicts": list(route.unrouted_review_verdicts),
+        **(
+            {
+                "selector": {
+                    "surface": route.selector.surface,
+                    **(
+                        {"field_path": list(route.selector.field_path)}
+                        if route.selector.field_path is not None
+                        else {}
+                    ),
+                    **(
+                        {"null_behavior": route.selector.null_behavior}
+                        if route.selector.null_behavior is not None
+                        else {}
+                    ),
+                }
+            }
+            if route.selector is not None
+            else {}
+        ),
         "branches": [
             {
                 "target": {
@@ -309,11 +328,19 @@ def _serialize_route_contract(route) -> dict[str, object]:
                 ),
                 "choice_members": [
                     {
-                        "enum_module_parts": list(member.enum_module_parts),
-                        "enum_name": member.enum_name,
                         "member_key": member.member_key,
                         "member_title": member.member_title,
                         "member_wire": member.member_wire,
+                        **(
+                            {"enum_module_parts": list(member.enum_module_parts)}
+                            if member.enum_module_parts
+                            else {}
+                        ),
+                        **(
+                            {"enum_name": member.enum_name}
+                            if member.enum_name is not None
+                            else {}
+                        ),
                     }
                     for member in branch.choice_members
                 ],

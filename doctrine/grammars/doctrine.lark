@@ -113,8 +113,10 @@ final_output_field: "final_output" ":" name_ref _NL?
                   | "final_output" ":" _NL _INDENT final_output_body _DEDENT
 final_output_body: final_output_body_item+
 ?final_output_body_item: final_output_output_stmt
+                       | final_output_route_stmt
                        | final_output_review_fields_stmt
 final_output_output_stmt: "output" ":" name_ref _NL?
+final_output_route_stmt: "route" ":" field_path _NL?
 final_output_review_fields_stmt: "review_fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
@@ -687,21 +689,26 @@ output_shape_override_schema_item: "override" "schema" ":" name_ref _NL?
 
 output_schema_body: output_schema_body_line+
 ?output_schema_body_line: output_schema_field
+                       | output_schema_route_field
                        | output_schema_def
                        | output_schema_example
                        | output_schema_inherit
                        | output_schema_override_field
+                       | output_schema_override_route_field
                        | output_schema_override_def
                        | output_schema_override_example
 
 output_schema_field: "field" CNAME ":" string _NL output_schema_item_body?
+output_schema_route_field: "route" "field" CNAME ":" string _NL output_schema_route_field_body?
 output_schema_def: "def" CNAME ":" string _NL output_schema_item_body?
 output_schema_example: "example" ":" _NL _INDENT output_schema_example_object _DEDENT
 output_schema_inherit: "inherit" CNAME _NL?
 output_schema_override_field: "override" "field" CNAME ":" string? _NL output_schema_item_body?
+output_schema_override_route_field: "override" "route" "field" CNAME ":" string? _NL output_schema_route_field_body?
 output_schema_override_def: "override" "def" CNAME ":" string? _NL output_schema_item_body?
 output_schema_override_example: "override" "example" ":" _NL _INDENT output_schema_example_object _DEDENT
 output_schema_item_body: _INDENT output_schema_item_line+ _DEDENT
+output_schema_route_field_body: _INDENT output_schema_route_field_line+ _DEDENT
 ?output_schema_item_line: output_schema_type_stmt
                        | output_schema_note_stmt
                        | output_schema_format_stmt
@@ -725,7 +732,10 @@ output_schema_item_body: _INDENT output_schema_item_line+ _DEDENT
                        | output_schema_min_items_stmt
                        | output_schema_max_items_stmt
                        | output_schema_field
+                       | output_schema_route_field
                        | output_schema_def
+?output_schema_route_field_line: output_schema_item_line
+                              | output_schema_route_choice
 output_schema_type_stmt: "type" ":" CNAME _NL?
 output_schema_note_stmt: "note" ":" string _NL?
 output_schema_format_stmt: "format" ":" CNAME _NL?
@@ -739,6 +749,7 @@ output_schema_optional_stmt: "optional" _NL?
 output_schema_enum_block: "enum" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
 output_schema_values_block: "values" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
 output_schema_enum_value: output_schema_literal _NL?
+output_schema_route_choice: CNAME ":" string "->" name_ref _NL?
 output_schema_any_of_block: "any_of" ":" _NL _INDENT output_schema_variant+ _DEDENT
 output_schema_variant: "variant" CNAME? ":" _NL _INDENT output_schema_item_line+ _DEDENT
 output_schema_min_length_stmt: "min_length" ":" SIGNED_NUMBER _NL?

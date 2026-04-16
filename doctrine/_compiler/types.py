@@ -225,11 +225,18 @@ class CompiledRouteTargetSpec:
 
 @dataclass(slots=True, frozen=True)
 class CompiledRouteChoiceMemberSpec:
-    enum_module_parts: tuple[str, ...]
-    enum_name: str
     member_key: str
     member_title: str
     member_wire: str
+    enum_module_parts: tuple[str, ...] = ()
+    enum_name: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteSelectorSpec:
+    surface: str
+    field_path: tuple[str, ...] | None = None
+    null_behavior: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -248,6 +255,7 @@ class CompiledRouteContractSpec:
     has_unrouted_branch: bool
     unrouted_review_verdicts: tuple[str, ...]
     branches: tuple[CompiledRouteBranchSpec, ...]
+    selector: CompiledRouteSelectorSpec | None = None
 
 
 @dataclass(slots=True, frozen=True)
