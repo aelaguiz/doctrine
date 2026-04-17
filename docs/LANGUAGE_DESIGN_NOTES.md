@@ -40,6 +40,16 @@ table hidden inside another document. The compiler lowers named table use back
 to the ordinary document table path, so rendering and inheritance stay the
 same.
 
+## String Literals
+
+Single-line strings use `"..."` with standard Python escapes (`\"`, `\\`,
+`\n`, `\t`, `\xHH`, `\uHHHH`). Multiline prose uses `"""..."""`. The body of
+a triple-quoted string may contain up to two consecutive quotes on its own.
+To embed a literal `"""` sequence, escape the first quote as `\"""`. This
+keeps docstring-style teaching examples and prompt-within-prompt prose
+expressible without a new delimiter. All escape semantics match Python so
+authors can reuse what they already know.
+
 ## Output Inheritance Design
 
 `output X[Parent]` reuses the same explicit-inherit, explicit-override shape

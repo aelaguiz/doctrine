@@ -1,0 +1,27 @@
+# Code block languages accept hyphens so informal fences like
+# `prompt-fragment`, `shell-session`, or `js-jsx` survive through the renderer
+# without renaming the fence.
+
+document HyphenatedCodeDemo: "Hyphenated Code Demo"
+    code sample: "Sample"
+        language: prompt-fragment
+        text: """
+agent HelloWriter:
+    role: "Write one short greeting."
+"""
+
+
+output HyphenatedCodeDemoFile: "Hyphenated Code Demo File"
+    target: File
+        path: "release_root/HYPHENATED_CODE_DEMO.md"
+    shape: MarkdownDocument
+    structure: HyphenatedCodeDemo
+    requirement: Required
+
+
+agent HyphenatedCodeDemoAgent:
+    role: "Ship {{HyphenatedCodeDemo:title}} so the fence language keeps its hyphen."
+    workflow: "Write"
+        "Keep the `prompt-fragment` fence intact through emit."
+    outputs: "Outputs"
+        HyphenatedCodeDemoFile

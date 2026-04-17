@@ -490,11 +490,12 @@ class CompileReadableBlocksMixin:
                     hints=("Use a multiline string for readable code block text.",),
                 )
             return CompiledCodeBlock(
-                title=title or _humanize_key(block.key),
+                title=None if block.anonymous else (title or _humanize_key(block.key)),
                 text=block.payload.text,
                 language=block.payload.language,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind in {"markdown", "html"}:
             if not isinstance(block.payload, model.ReadableRawTextData):
@@ -527,11 +528,12 @@ class CompileReadableBlocksMixin:
                     hints=("Use a multiline string for raw markdown or html readable blocks.",),
                 )
             return CompiledRawTextBlock(
-                title=title or _humanize_key(block.key),
+                title=None if block.anonymous else (title or _humanize_key(block.key)),
                 text=text,
                 kind=block.kind,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "footnotes":
             footnotes = self._resolve_readable_footnotes_payload(

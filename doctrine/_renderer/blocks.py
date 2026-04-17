@@ -313,13 +313,15 @@ def _render_property_entries(
 
 
 def _render_code_block(block: CompiledCodeBlock, *, depth: int) -> str:
+    fence = f"```{block.language or ''}".rstrip()
+    if block.anonymous and block.title is None:
+        return "\n".join([fence, *block.text.splitlines(), "```"]).rstrip()
     metadata = _render_metadata_line(
         requirement=block.requirement,
         kind_label="code",
         when_text=block.when_text,
         extra=block.language,
     )
-    fence = f"```{block.language or ''}".rstrip()
     lines = [f"{'#' * depth} {block.title}", ""]
     if metadata is not None:
         lines.extend([metadata, ""])
@@ -328,6 +330,8 @@ def _render_code_block(block: CompiledCodeBlock, *, depth: int) -> str:
 
 
 def _render_raw_text_block(block: CompiledRawTextBlock, *, depth: int) -> str:
+    if block.anonymous and block.title is None:
+        return "\n".join(block.text.splitlines()).rstrip()
     metadata = _render_metadata_line(
         requirement=block.requirement,
         kind_label=block.kind,

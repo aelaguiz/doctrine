@@ -22,6 +22,24 @@ or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
 ### Added
+- Added the manifest-backed `125_multiline_escape_triple_quote` example and
+  a diagnostic smoke check so triple-quoted literals may embed a literal
+  `"""` sequence by escaping the first quote as `\"""`. All existing
+  literals parse unchanged.
+- Added the manifest-backed `126_hyphenated_code_language` example so
+  readable `code` block `language:` values accept hyphens. Informal fence
+  names like `prompt-fragment`, `shell-session`, or `js-jsx` now survive
+  through the renderer without renaming the fence.
+- Added the manifest-backed `127_inline_anonymous_readable_blocks` example
+  so anonymous inline `code:`, `markdown:`, and `html:` blocks render bare
+  inside document sections without requiring an authored key. Named blocks
+  continue to parse unchanged.
+- Refactored the two first-party skill packages (`skills/agent-linter/` and
+  `skills/doctrine-learn/`) to author their reference bundles as Doctrine
+  `document` declarations under `prompts/refs/*.prompt`, emitted to
+  `references/<slug>.md` through the `skill package` `emit:` block. The
+  public install trees under `skills/.curated/<name>/` are byte-identical
+  to the previous raw-`.md` shape, so consumers see no change.
 - Added a first-party `skills/doctrine-learn/` skill package, its
   `doctrine_learn_skill` and `doctrine_learn_public_skill` emit targets, and
   live docs at `docs/DOCTRINE_LEARN.md`. The skill is prompt-only and teaches

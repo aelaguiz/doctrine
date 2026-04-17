@@ -89,9 +89,11 @@ If you want repo-wide coverage, say that clearly and it should stay broad.
 The live package source is `skills/agent-linter/prompts/`.
 That is the one place the skill is authored.
 `SKILL.prompt` is the lean entry point.
-Depth lives under `prompts/references/` (`audit-method.md`,
+Depth lives under `prompts/refs/` as Doctrine `document` declarations that
+the `emit:` block compiles into `references/<slug>.md` (`audit-method.md`,
 `product-boundary.md`, `finding-catalog.md`, `report-contract.md`,
-`error-handling.md`, `examples.md`, `install.md`).
+`error-handling.md`, `examples.md`, `install.md`). The emitted `.md`
+bundle is verifier-owned proof; the authored truth is the `.prompt` sources.
 
 The repo proof bundle target is:
 

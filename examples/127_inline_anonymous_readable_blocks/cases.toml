@@ -1,0 +1,44 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "inline anonymous code and markdown blocks render bare through the structure"
+status = "active"
+kind = "render_contract"
+agent = "InlineBlocksAgent"
+assertion = "exact_lines"
+expected_lines = [
+  "Ship Inline Blocks Demo with bare fences and raw markdown.",
+  "",
+  "## Write",
+  "",
+  "Keep the inline blocks bare.",
+  "",
+  "## Outputs",
+  "",
+  "### Inline Blocks File",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `release_root/INLINE_BLOCKS_DEMO.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Inline Blocks Demo |",
+  "",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Inline Blocks Demo` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Code** | Code Block | See the detail below. |",
+  "| **Markdown** | Markdown Block | See the detail below. |",
+  "",
+  "```bash",
+  "npx skills add .",
+  "```",
+  "",
+  "Raw passthrough line.",
+  "Inline `backticks` survive.",
+]

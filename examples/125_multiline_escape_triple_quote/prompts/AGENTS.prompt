@@ -1,0 +1,29 @@
+# Triple-quoted strings accept `\"""` so a markdown or html body can embed
+# a triple-quote sequence without ending the literal early. Common when an
+# agent shows Python docstrings or another agent prompt inside its own prose.
+
+document EscapeDemo: "Triple Quote Escape Demo"
+    markdown python_snippet: "Python Snippet" advisory
+        text: """
+Python docstring example:
+
+\"\"\"
+Return the shipped proof link.
+\"\"\"
+"""
+
+
+output EscapeDemoFile: "Escape Demo File"
+    target: File
+        path: "release_root/ESCAPE_DEMO.md"
+    shape: MarkdownDocument
+    structure: EscapeDemo
+    requirement: Required
+
+
+agent EscapeDemoAgent:
+    role: "Ship {{EscapeDemo:title}} without mangled triple quotes."
+    workflow: "Write"
+        "Keep the escaped triple-quote sequence intact."
+    outputs: "Outputs"
+        EscapeDemoFile

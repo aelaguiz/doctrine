@@ -93,7 +93,10 @@ real example, and shows the smallest working snippet.
 
 The live package source is `skills/doctrine-learn/prompts/`.
 `SKILL.prompt` is the lean entry point.
-Depth lives under `prompts/references/`.
+Depth lives under `prompts/refs/` as Doctrine `document` declarations that
+the `emit:` block compiles into `references/<slug>.md`. The emitted
+`.md` bundle is verifier-owned proof; the authored truth is the `.prompt`
+sources.
 
 The repo proof bundle target is:
 

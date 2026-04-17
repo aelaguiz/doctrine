@@ -121,20 +121,22 @@ class CompiledCalloutBlock:
 
 @dataclass(slots=True, frozen=True)
 class CompiledCodeBlock:
-    title: str
+    title: str | None
     text: str
     language: str | None = None
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledRawTextBlock:
-    title: str
+    title: str | None
     text: str
     kind: str
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)

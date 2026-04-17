@@ -127,6 +127,19 @@ class ReadableNodeTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True)
+    def readable_inline_code_block(self, meta, items):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="code",
+                key="code",
+                title=None,
+                payload=items[0],
+                anonymous=True,
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def readable_markdown_block(self, meta, key, title, *parts):
         return _with_source_span(
@@ -134,10 +147,36 @@ class ReadableNodeTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True)
+    def readable_inline_markdown_block(self, meta, items):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="markdown",
+                key="markdown",
+                title=None,
+                payload=items[0],
+                anonymous=True,
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def readable_html_block(self, meta, key, title, *parts):
         return _with_source_span(
             self._readable_block("html", key, title, parts),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def readable_inline_html_block(self, meta, items):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="html",
+                key="html",
+                title=None,
+                payload=items[0],
+                anonymous=True,
+            ),
             meta,
         )
 

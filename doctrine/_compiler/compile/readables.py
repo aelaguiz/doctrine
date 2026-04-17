@@ -433,11 +433,12 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledCodeBlock(
-                title=title or _humanize_key(block.key),
+                title=None if block.anonymous else (title or _humanize_key(block.key)),
                 text=payload.text,
                 language=payload.language,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind in {"markdown", "html"}:
             payload = self._compile_readable_raw_text_payload(
@@ -447,11 +448,12 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledRawTextBlock(
-                title=title or _humanize_key(block.key),
+                title=None if block.anonymous else (title or _humanize_key(block.key)),
                 text=payload.text,
                 kind=block.kind,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "footnotes":
             payload = self._compile_readable_footnotes_payload(

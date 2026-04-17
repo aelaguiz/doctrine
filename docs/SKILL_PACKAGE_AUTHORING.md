@@ -197,6 +197,14 @@ Important rules:
 - `emit:` paths may not collide with `SKILL.md`, raw bundled files, or
   compiled bundled-agent markdown.
 
+The two first-party skills in this repo use this pattern end to end as
+working exemplars. `skills/agent-linter/prompts/SKILL.prompt` and
+`skills/doctrine-learn/prompts/SKILL.prompt` each import many `.prompt`
+modules under `prompts/refs/` and emit the whole reference bundle through
+one `emit:` block. The checked-in install trees under
+`skills/.curated/<name>/references/` are verifier-owned proof; the authored
+truth lives in `prompts/refs/*.prompt`.
+
 ## Bundled Files
 
 Doctrine currently owns three package output behaviors:
@@ -473,6 +481,29 @@ If you changed emit diagnostics:
 ```bash
 make verify-diagnostics
 ```
+
+If you changed bundled Markdown inside a skill package, parse every fenced
+Doctrine example through the shipped parser:
+
+```bash
+make verify-skill-examples
+```
+
+### Fenced Example Convention
+
+Bundled skill Markdown files are pass-through content — the compiler copies
+them byte for byte. Readers still expect the Doctrine examples inside to be
+correct. Two fence tags make the contract explicit:
+
+- ```prompt` — the block is a complete prompt file. `make verify-skill-examples`
+  parses it and fails loud on drift.
+- ```prompt-fragment` — the block is a partial teaching snippet (one
+  declaration, one clause, or a comparison pair) and must not stand alone.
+  The verifier skips it.
+
+Prefer a complete `prompt` block when it is short enough. Reach for
+`prompt-fragment` only when the fragment is genuinely illustrative and a
+full prompt would dilute the lesson.
 
 `build_ref/` remains the checked-in expected emitted tree for corpus
 verification. It is not an authoring requirement and should not shape package

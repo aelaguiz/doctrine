@@ -256,6 +256,10 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `121_nullable_route_field_final_output_contract` | A nullable `route field` may mean "no handoff on this turn" while emitted route metadata stays canonical. |
 | `122_skill_package_emit_documents` | `skill package emit:` compiles many prompt-authored `document` declarations into separate bundled `.md` files. |
 | `123_skill_package_emit_documents_mixed_bundle` | `skill package emit:` may live beside bundled agent markdown, runtime metadata, and raw helper files in one package tree. |
+| `124_skill_package_host_binding` | Skill packages may declare a typed host contract, the calling agent binds it once, and emitted documents and bundled agents read host facts through `host:` refs. |
+| `125_multiline_escape_triple_quote` | Triple-quoted literals may embed a literal `"""` sequence by escaping the first quote as `\"""`. |
+| `126_hyphenated_code_language` | Code block `language:` values accept hyphens so informal fences like `prompt-fragment` survive through the renderer. |
+| `127_inline_anonymous_readable_blocks` | Anonymous inline `code:`, `markdown:`, and `html:` blocks render bare inside document sections without requiring an authored key. |
 
 ## Useful Commands
 

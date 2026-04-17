@@ -83,10 +83,82 @@ class EmitSkillTests(unittest.TestCase):
                     relative_path.as_posix(),
                 )
 
-    def test_pinned_skills_cli_lists_only_public_agent_linter(self) -> None:
+    def test_emit_skill_emits_doctrine_learn_bundle_without_scripts(self) -> None:
+        # This protects the first-party teaching bundle shape. The emitted
+        # tree must stay complete and script-free across all twelve
+        # references.
+        repo_root = Path(__file__).resolve().parents[1]
+        target = load_emit_targets(repo_root / "pyproject.toml")["doctrine_learn_skill"]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir).resolve()
+            emitted = emit_target_skill(target, output_dir_override=output_dir)
+
+            expected_paths = (
+                output_dir / "SKILL.md",
+                output_dir / "agents" / "openai.yaml",
+                output_dir / "references" / "agents-and-workflows.md",
+                output_dir / "references" / "authoring-patterns.md",
+                output_dir / "references" / "documents-and-tables.md",
+                output_dir / "references" / "emit-targets.md",
+                output_dir / "references" / "examples-ladder.md",
+                output_dir / "references" / "imports-and-refs.md",
+                output_dir / "references" / "language-overview.md",
+                output_dir / "references" / "outputs-and-schemas.md",
+                output_dir / "references" / "principles.md",
+                output_dir / "references" / "reviews.md",
+                output_dir / "references" / "skills-and-packages.md",
+                output_dir / "references" / "verify-and-ship.md",
+            )
+
+            self.assertCountEqual(emitted, expected_paths)
+            for expected_path in expected_paths:
+                self.assertTrue(expected_path.is_file(), expected_path)
+
+            skill_markdown = (output_dir / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("# Doctrine Learn", skill_markdown)
+            self.assertIn("Teach Doctrine authoring end-to-end.", skill_markdown)
+            self.assertFalse((output_dir / "scripts").exists())
+            self.assertFalse((output_dir / "schemas").exists())
+
+    def test_public_curated_tree_matches_doctrine_learn_public_emit_target(self) -> None:
+        # This protects the checked-in `npx skills` install surface for the
+        # Doctrine Learn teaching skill. The public curated tree must match
+        # fresh Doctrine emit output exactly.
+        repo_root = Path(__file__).resolve().parents[1]
+        target = load_emit_targets(repo_root / "pyproject.toml")[
+            "doctrine_learn_public_skill"
+        ]
+        expected_root = repo_root / "skills" / ".curated" / "doctrine-learn"
+        self.assertTrue(expected_root.is_dir(), expected_root)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir).resolve()
+            emit_target_skill(target, output_dir_override=output_dir)
+
+            expected_files = sorted(
+                path.relative_to(expected_root)
+                for path in expected_root.rglob("*")
+                if path.is_file()
+            )
+            emitted_files = sorted(
+                path.relative_to(output_dir)
+                for path in output_dir.rglob("*")
+                if path.is_file()
+            )
+
+            self.assertEqual(emitted_files, expected_files)
+            for relative_path in expected_files:
+                self.assertEqual(
+                    (output_dir / relative_path).read_bytes(),
+                    (expected_root / relative_path).read_bytes(),
+                    relative_path.as_posix(),
+                )
+
+    def test_pinned_skills_cli_lists_only_public_first_party_skills(self) -> None:
         # This protects the repo-root discovery story behind
-        # `npx skills add .`. Users should see one real skill, not the
-        # example build refs.
+        # `npx skills add .`. Users should see the real first-party skills,
+        # not the example build refs.
         repo_root = Path(__file__).resolve().parents[1]
         skills_cli = self._skills_cli(repo_root)
         result = subprocess.run(
@@ -101,6 +173,7 @@ class EmitSkillTests(unittest.TestCase):
         output = self._strip_ansi(result.stdout + result.stderr)
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("agent-linter", output)
+        self.assertIn("doctrine-learn", output)
         self.assertNotIn("bundled-agents-package", output)
         self.assertNotIn("release-compendium", output)
         self.assertNotIn("plugin-metadata-package", output)
