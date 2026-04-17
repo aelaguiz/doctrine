@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 2.2
+Current Doctrine language version: 3.0
 
 ## The Version Lines
 
