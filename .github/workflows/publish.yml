@@ -45,14 +45,15 @@ jobs:
           persist-credentials: false
           ref: ${{ env.CHECKOUT_REF }}
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.14"
+      - name: Set up Python toolchain
+        uses: ./.github/actions/setup-python-uv
+
+      - name: Sync Python dependencies
+        run: uv sync
 
       - name: Load package release metadata
         id: metadata
-        run: python -m doctrine._package_release metadata --format github-output --output "$GITHUB_OUTPUT"
+        run: uv run python -m doctrine._package_release metadata --format github-output --output "$GITHUB_OUTPUT"
 
   build:
     name: build
