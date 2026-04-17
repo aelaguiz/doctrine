@@ -22,7 +22,6 @@ related:
   - docs/LANGUAGE_REFERENCE.md
   - docs/EMIT_GUIDE.md
   - docs/VERSIONING.md
-  - docs/EMIT_ROUTING_CONTRACT_FOR_FINAL_OUTPUTS_AND_REVIEWS_2026-04-15.md
   - CHANGELOG.md
 ---
 
@@ -447,7 +446,7 @@ WORKLOG_PATH: docs/PREVIOUS_TURN_OUTPUT_INPUT_SOURCE_REFERENCES_2026-04-16_WORKL
 - Repo versioning truth already says to extend that file rather than invent a
   second public contract file:
   - [VERSIONING.md](/Users/aelaguiz/workspace/doctrine/docs/VERSIONING.md:65)
-  - [EMIT_ROUTING_CONTRACT_FOR_FINAL_OUTPUTS_AND_REVIEWS_2026-04-15.md](/Users/aelaguiz/workspace/doctrine/docs/EMIT_ROUTING_CONTRACT_FOR_FINAL_OUTPUTS_AND_REVIEWS_2026-04-15.md:105)
+  - [EMIT_GUIDE.md](/Users/aelaguiz/workspace/doctrine/docs/EMIT_GUIDE.md:618)
 - Rally currently loads only that one contract file:
   - [flow_loader.py](/Users/aelaguiz/workspace/rally/src/rally/services/flow_loader.py:171)
 - Rally currently injects only static `AGENTS.md`:
