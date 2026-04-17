@@ -1,9 +1,35 @@
+from refs.principles import Principles
+from refs.language_overview import LanguageOverview
+from refs.examples_ladder import ExamplesLadder
+from refs.authoring_patterns import AuthoringPatterns
+from refs.verify_and_ship import VerifyAndShip
+from refs.imports_and_refs import ImportsAndRefs
+from refs.emit_targets import EmitTargets
+from refs.reviews import Reviews
+from refs.agents_and_workflows import AgentsAndWorkflows
+from refs.documents_and_tables import DocumentsAndTables
+from refs.skills_and_packages import SkillsAndPackages
+from refs.outputs_and_schemas import OutputsAndSchemas
+
 skill package DoctrineLearn: "Doctrine Learn"
     metadata:
         name: "doctrine-learn"
         description: "Teach an agent how to author Doctrine end-to-end: the principles that guide every choice, the full shipped language surface, how to package and emit reusable skills, how to verify and ship, and which example in the numbered corpus to copy next. Use when a user asks how to write a Doctrine agent, workflow, review, output schema, or skill package; how to port an existing agent into Doctrine; how to onboard into the repo; or how to review a Doctrine change with the right mental model. Not for running an audit on existing code (that is the agent-linter skill), not for resolving a compiler error (that is docs/COMPILER_ERRORS.md), and not for harness, runtime, or tool-orchestration work."
         version: "1.0.0"
         license: "MIT"
+    emit:
+        "references/principles.md": Principles
+        "references/language-overview.md": LanguageOverview
+        "references/examples-ladder.md": ExamplesLadder
+        "references/authoring-patterns.md": AuthoringPatterns
+        "references/verify-and-ship.md": VerifyAndShip
+        "references/imports-and-refs.md": ImportsAndRefs
+        "references/emit-targets.md": EmitTargets
+        "references/reviews.md": Reviews
+        "references/agents-and-workflows.md": AgentsAndWorkflows
+        "references/documents-and-tables.md": DocumentsAndTables
+        "references/skills-and-packages.md": SkillsAndPackages
+        "references/outputs-and-schemas.md": OutputsAndSchemas
     "Teach Doctrine authoring end-to-end. Start with the principles, pick the one surface the author is about to write, load the matching reference, cite a real example from the shipped corpus, then guide a minimal working version. Always keep the thin-harness rule, the typed-truth-over-prose rule, and the always-on-context-is-a-budget rule in front of every recommendation."
     when_to_use: "When to use"
         "Teach someone how to write a fresh Doctrine agent, workflow, review, output schema, document, or skill package from scratch."

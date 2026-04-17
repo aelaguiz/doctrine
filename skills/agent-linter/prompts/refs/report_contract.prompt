@@ -1,0 +1,131 @@
+document ReportContract: "Report Contract"
+    """This skill returns a layered markdown report for humans.
+It is for human review."""
+
+    section default_markdown_shape: "Default Markdown Shape"
+        "Use this order:"
+        sequence order:
+            "verdict and scope summary"
+            "what was checked"
+            "top fixes first"
+            "scorecard"
+            "grouped findings"
+            "coverage gaps"
+            "next moves"
+
+        "Helpful defaults:"
+        bullets defaults:
+            "highest-value findings first"
+            "severity grouping"
+            "exact evidence on every finding"
+            "rewrite help for wording and readability issues"
+            "one normalized duplicate excerpt plus affected targets"
+            "say what good looks like when the fix would otherwise feel vague"
+            "coverage gaps printed clearly when exact evidence is missing"
+            "plain boundary calls when the real fix is to move behavior back into the harness"
+            """enough context that a tired human can fix the issue without re-reading the
+  whole package"""
+
+    section human_finding_shape: "Human Finding Shape"
+        "Every finding should carry:"
+        bullets fields:
+            "`AL###` code and title"
+            "severity and confidence"
+            "scope and affected targets"
+            "principle or rule"
+            "short summary"
+            "exact evidence"
+            "why it matters"
+            "the smallest credible fix"
+            "concrete fix steps"
+            "suggested rewrite when useful"
+            "good example and bad example when they help"
+            "shared owner suggestion"
+
+        "If there is no exact evidence, there is no finding."
+
+    section shared_owner_suggestion: "Shared Owner Suggestion"
+        """Every finding should say whether a shared owner is needed.
+This is one of the most valuable parts of the report.
+
+For reuse-law findings, almost always name a concrete owner.
+This is especially true for:"""
+        bullets rules:
+            "`AL200`"
+            "`AL210`"
+            "`AL220`"
+            "`AL230`"
+            "`AL910`"
+
+        "When a shared owner is needed, name:"
+        bullets fields:
+            "`kind`: `skill`, `module`, `contract`, or `other`"
+            "`name`"
+            "`rationale`"
+
+        "When no shared owner is right, say `Shared owner: none.` plainly."
+
+    section verdict: "Verdict"
+        "Lead with one honest verdict:"
+        bullets verdicts:
+            "`pass` when no material findings remain"
+            "`fail` when one or more material findings matter"
+            "`incomplete audit` when missing surface makes the requested call fake"
+
+        "Do not invent findings just to avoid an incomplete audit."
+
+    section coverage_gaps: "Coverage Gaps"
+        """Call out missing evidence plainly.
+Do not guess over gaps.
+
+Typical gap cases:"""
+        bullets cases:
+            "emitted Markdown is missing for a requested authored-versus-emitted audit"
+            "declared constraints are missing for a constraints audit"
+            "broad repo coverage was requested, but only one local slice was inspected"
+            "one target in a duplication comparison is missing the needed surface"
+
+    section scorecard: "Scorecard"
+        """Keep the scorecard short and human-readable.
+Useful sections include:"""
+        bullets sections:
+            "resolver fit"
+            "thin-harness fit"
+            "leverage fit"
+            "reusable-method fit"
+            "harness-boundary fit"
+            "deterministic split"
+            "evidence quality"
+            "actionability"
+
+        """Use scorecards for triage, not fake precision.
+Do not let the scorecard distract from the top fixes."""
+
+    section quality_bar: "Quality Bar"
+        """Great output feels like a strong linter, not a vague reviewer.
+It should feel like a sharp teammate stepping in with a clear read and a fix
+path.
+
+Great output:"""
+        bullets great:
+            "names the strongest issue first"
+            "proves it with exact evidence"
+            "uses the right code"
+            "gives a fix the developer can act on now"
+            "pushes for the smallest credible fix first"
+            "names the shared owner when reuse is the real problem"
+            "makes it clear when a runtime or safety rule belongs back in the harness"
+            "gives a rewrite only when it is clearly useful"
+            "feels like a sharp review from a strong teammate, not a compliance dump"
+            "clears the fog fast and tells the reader where to start"
+
+        "Weak output:"
+        bullets weak:
+            "sounds plausible but cannot prove the claim"
+            "reports local policy as if it were Doctrine law"
+            "emits five overlapping findings where one would do"
+            "skips the shared owner on a reuse finding"
+            "repeats the bad text without a fix"
+            "gives a rewrite that changes meaning"
+            "reads like a drained checklist instead of a useful review"
+            "leaves the reader with more fog than they started with"

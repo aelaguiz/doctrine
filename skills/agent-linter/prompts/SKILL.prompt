@@ -1,9 +1,25 @@
+from refs.install import Install
+from refs.error_handling import IncompleteAuditHandling
+from refs.product_boundary import ProductBoundary
+from refs.report_contract import ReportContract
+from refs.audit_method import AuditMethod
+from refs.examples import ExamplesAndOutput
+from refs.finding_catalog import FindingCatalog
+
 skill package DoctrineAgentLinter: "Doctrine Agent Linter"
     metadata:
         name: "agent-linter"
         description: "Audit Doctrine-authored prompts, skill packages, flows, and repo agent surfaces with a findings-first report that explains the highest-value authoring problems, why they matter, and what to fix next. Use when a user asks to audit, lint, review, score, or critique a prompt, a full skill package, a full flow, or a repo's instruction-bearing surfaces for thin-context fit, resolver quality, prompt bulk that did not earn reusable leverage, duplication, runtime-boundary leaks, deterministic-vs-judgment split mistakes, or authored-versus-emitted drift. Not for compiler errors, product truth, or generic code review."
         version: "1.0.0"
         license: "MIT"
+    emit:
+        "references/install.md": Install
+        "references/error-handling.md": IncompleteAuditHandling
+        "references/product-boundary.md": ProductBoundary
+        "references/report-contract.md": ReportContract
+        "references/audit-method.md": AuditMethod
+        "references/examples.md": ExamplesAndOutput
+        "references/finding-catalog.md": FindingCatalog
     "Audit Doctrine agent authoring thoughtfully. Use model judgment plus exact evidence from the inspected surfaces. Help authors keep always-on context small, shared doctrine shared, exact truth typed, and harness-owned behavior out of prompts. Keep the default report human-first, easy to skim, vivid, and easy to act on."
     when_to_use: "When to use"
         "Audit one `AGENTS.prompt`, `SOUL.prompt`, or `SKILL.prompt`."
