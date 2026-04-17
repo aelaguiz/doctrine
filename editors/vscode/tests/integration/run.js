@@ -187,6 +187,7 @@ function installPackagedVsix(vscodeExecutablePath, vsixPath, launchContext) {
     "--force",
     `--extensions-dir=${launchContext.extensionsDir}`,
     `--user-data-dir=${launchContext.userDataDir}`,
+    "--no-sandbox",
     "--disable-gpu",
     "--use-mock-keychain",
   ]);
