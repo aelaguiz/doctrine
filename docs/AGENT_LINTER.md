@@ -87,6 +87,11 @@ If you want repo-wide coverage, say that clearly and it should stay broad.
 ## Maintainer Source Of Truth
 
 The live package source is `skills/agent-linter/prompts/`.
+That is the one place the skill is authored.
+`SKILL.prompt` is the lean entry point.
+Depth lives under `prompts/references/` (`audit-method.md`,
+`product-boundary.md`, `finding-catalog.md`, `report-contract.md`,
+`error-handling.md`, `examples.md`, `install.md`).
 
 The repo proof bundle target is:
 
@@ -104,11 +109,95 @@ uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_pub
 
 That writes the install tree to `skills/.curated/agent-linter/`.
 
-The current structured-output proof inputs and outputs live under the dated
-`docs/AGENT_LINTER_*` proof files.
-Use
-`docs/AGENT_LINTER_CODEX_CLI_PROOF_2026-04-16.md`
-for the current proof command, fixture, schema, and saved output.
+## What This Is Not
+
+The linter is judgment-first.
+It will not replace surfaces the compiler already owns.
+
+- Parse, type, route, and emit failures belong to the compiler.
+  See [COMPILER_ERRORS.md](COMPILER_ERRORS.md).
+- Easy author mistakes the compiler still accepts belong to the fail-loud
+  roadmap.
+  See [FAIL_LOUD_GAPS.md](FAIL_LOUD_GAPS.md).
+- Product truth and domain correctness are out of scope.
+- Plain code review is out of scope.
+
+## Structured Output Proof
+
+The skill returns a strict JSON report when driven through
+`codex exec --output-schema`.
+The evergreen proof inputs and outputs live under
+`skills/agent-linter/build_ref/`:
+
+- `output_schema.json`: the plain JSON Schema `codex exec --output-schema`
+  accepts.
+- `proof_fixture.json`: a real review packet the skill can audit.
+- `codex_cli_output.json`: the captured last message from a recent proof
+  run.
+
+For an OpenAI-compatible `response_format`, wrap the schema like this:
+
+```json
+{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "doctrine_agent_linter_report",
+    "strict": true,
+    "schema": "<contents of skills/agent-linter/build_ref/output_schema.json>"
+  }
+}
+```
+
+### Reproduce The Proof Run
+
+```bash
+tmp_input=$(mktemp)
+{
+  cat skills/agent-linter/build/SKILL.md
+  printf '\n\n## Review Packet\n\n```json\n'
+  cat skills/agent-linter/build_ref/proof_fixture.json
+  printf '\n```\n'
+} > "$tmp_input"
+
+codex exec \
+  --ephemeral \
+  --sandbox read-only \
+  --color never \
+  -m gpt-5.4-mini \
+  -c 'model_reasoning_effort="low"' \
+  --output-schema skills/agent-linter/build_ref/output_schema.json \
+  --output-last-message skills/agent-linter/build_ref/codex_cli_output.json \
+  - < "$tmp_input"
+
+rm -f "$tmp_input"
+```
+
+### Validate The Saved Output
+
+```bash
+python -m json.tool skills/agent-linter/build_ref/codex_cli_output.json >/dev/null
+
+uv run --with jsonschema python - <<'PY'
+import json
+from jsonschema import Draft202012Validator
+
+with open('skills/agent-linter/build_ref/output_schema.json') as f:
+    schema = json.load(f)
+with open('skills/agent-linter/build_ref/codex_cli_output.json') as f:
+    data = json.load(f)
+
+Draft202012Validator.check_schema(schema)
+validator = Draft202012Validator(schema)
+errors = sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path))
+if errors:
+    for err in errors:
+        print('ERROR', list(err.absolute_path), err.message)
+    raise SystemExit(1)
+print('SCHEMA_VALID')
+PY
+```
+
+A successful run prints `SCHEMA_VALID` and the saved output parses as JSON.
 
 ## Maintainer Refresh
 
