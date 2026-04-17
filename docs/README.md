@@ -28,8 +28,8 @@ for repo setup and proof commands.
   runtime packages, top-level `output[...]` inheritance, markdown emission,
   and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
-  `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
-  example gallery
+  `SKILL.prompt`, explicit `emit:` document companions, source-root package
+  bundles, `emit_skill`, and the package example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
   Markdown, emit structured-output schema files, emit final-output, review,
   and route metadata, generate runtime-package and skill-package trees,
@@ -56,6 +56,9 @@ for repo setup and proof commands.
   error codes
 - [FAIL_LOUD_GAPS.md](FAIL_LOUD_GAPS.md): easy author mistakes the compiler
   still accepts today and should turn into clear compile errors
+- [WARNINGS.md](WARNINGS.md): evergreen plan for a first-class compiler
+  warning layer, including goals, non-goals, candidate families, and
+  guardrails
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
@@ -85,6 +88,9 @@ you need the old context.
 - Absolute imports may also span explicitly configured shared `prompts/`
   roots through `[tool.doctrine.compile].additional_prompt_roots`, while
   relative imports stay rooted in the importing module's own `prompts/` tree.
+- Inside `SKILL.prompt` packages, prompt files may also import from the local
+  package source root. If a local module path collides with a repo-wide one,
+  Doctrine fails loud.
 - Emit and verification surfaces reuse shared compile sessions and preserve
   authored ordering even when batch compilation fans out across threads.
 - `build_ref/` is verifier-owned checked-in proof, not part of the public
