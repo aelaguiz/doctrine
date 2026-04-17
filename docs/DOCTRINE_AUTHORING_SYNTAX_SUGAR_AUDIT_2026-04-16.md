@@ -30,8 +30,6 @@ related:
   - examples/107_output_inheritance_basic/prompts/AGENTS.prompt
   - examples/108_output_inheritance_attachments/prompts/AGENTS.prompt
   - examples/117_io_omitted_wrapper_titles/prompts/AGENTS.prompt
-  - docs/OMITTED_SUBITEM_TITLES_LOWER_SINGLE_CHILD_SURFACES_2026-04-15.md
-  - docs/OMITTED_SUBITEM_TITLES_REUSE_PARENT_TITLES_2026-04-15.md
   - docs/DOCTRINE_LANGUAGE_AUDIT_2026-04-16.md
   - ../rally/src/rally/domain/rooted_path.py
   - ../psflows/flows/prd_factory/prompts/agents/prd_architect/AGENTS.prompt
