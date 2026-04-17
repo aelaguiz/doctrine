@@ -11,7 +11,7 @@ related:
   - docs/LANGUAGE_DESIGN_NOTES.md
   - docs/EMIT_GUIDE.md
   - docs/DOCTRINE_AUTHORING_SYNTAX_SUGAR_AUDIT_2026-04-16.md
-  - docs/DOCTRINE_HIGH_VALUE_AUTHORING_ELEGANCE_WINS_2026-04-16.md
+  - docs/AUTHORING_PATTERNS.md
   - examples/05_workflow_merge/prompts/AGENTS.prompt
   - examples/24_io_block_inheritance/prompts/AGENTS.prompt
   - examples/68_review_family_shared_scaffold/prompts/AGENTS.prompt
@@ -19,6 +19,7 @@ related:
   - examples/108_output_inheritance_attachments/prompts/AGENTS.prompt
   - examples/117_io_omitted_wrapper_titles/prompts/AGENTS.prompt
   - examples/120_route_field_final_output_contract/prompts/AGENTS.prompt
+  - examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt
   - ../psflows/flows/lessons/flow.yaml
   - ../psflows/flows/lessons/prompts/AGENTS.prompt
   - ../psflows/flows/lessons/prompts/shared/contracts.prompt
