@@ -20,5 +20,3 @@ __pycache__/
 /repomix.config.json
 repomix*
 build
-/skills/.curated/agent-linter/
-.curated

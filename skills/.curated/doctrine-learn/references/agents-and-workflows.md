@@ -1,0 +1,339 @@
+# Agents And Workflows
+
+This reference teaches the two surfaces that own a turn: `agent` and
+`workflow`. Agents are the runtime owners of a turn. Workflows are the reusable
+instruction surface that tell a turn how to do its job. Route-only turns,
+`handoff_routing`, `grounding`, and `route_from` hang off that same surface.
+
+Keep agent homes thin. Put the one-sentence job on the agent and push reusable
+body into a named `workflow`, `review`, or `skill` that loads only when needed.
+
+Read the source of truth in this order before you ship code:
+
+- `doctrine/grammars/doctrine.lark` (the only grammar that ships)
+- `docs/LANGUAGE_REFERENCE.md` (agent and workflow sections)
+- `docs/WORKFLOW_LAW.md` (currentness, preservation, invalidation, route-only)
+- `docs/AGENT_IO_DESIGN_NOTES.md` (I/O, carriers, bindings)
+
+## Agent Declarations
+
+An `agent` is the concrete runtime owner of a turn. A concrete agent has a key
+and may carry a title.
+
+```prompt-fragment
+agent ProjectLead[SameIssueRole]:
+    role: "Core job: start the work and route the first owner change."
+    your_job: ProjectLeadJob
+    override read_first: ProjectLeadReadFirst
+    workflow_core: ProjectLeadWorkflowCore
+```
+
+Important rules:
+
+- `agent` is concrete. `abstract agent` is inheritance-only and does not render
+  on its own.
+- Every concrete agent needs a `role`. Scalar `role: "..."` opens the doc.
+  Titled `role: "Title"` with a body emits a headed section.
+- A concrete agent may declare a title after the key: `agent Writer: "Writer"`.
+  Bare readable refs default to that title. The long form `Ref:key` inside an
+  interpolation keeps the structural name.
+- Reserved typed agent fields are `inputs`, `outputs`, `analysis`, `decision`,
+  `skills`, `review`, and `final_output`.
+- Any other keyed field is an authored workflow slot. A slot may point at a
+  named workflow or define an inline workflow body.
+- A concrete agent may not define both `workflow:` and `review:`. Review turns
+  use `review:` as the main body.
+
+Inheritance uses explicit accounting:
+
+- `inherit read_first` keeps an inherited slot unchanged.
+- `inherit {read_first, workflow_core}` keeps several inherited slots in the
+  same authored order.
+- `override read_first: NewWorkflow` replaces an inherited slot in place.
+- `abstract <slot_key>` marks a slot a concrete child must define directly.
+
+See `examples/07_handoffs` for a concrete-agent-with-inheritance example.
+
+### Concrete Agent Heads And Title Projections
+
+A concrete agent may carry a head title. That title becomes the default human
+surface for bare refs. Use `AgentRef:key` or `AgentRef:name` inside an
+interpolation when you need the structural name instead.
+
+- a bare `AgentRef` inside an interpolation defaults to the title when one
+  exists.
+- `AgentRef:title` inside an interpolation resolves the visible title
+  explicitly.
+- `AgentRef:key` inside an interpolation resolves the declaration key.
+
+## Workflow Declarations
+
+A `workflow` is the reusable instruction surface. Workflows are composed, not
+dumped in one file.
+
+```prompt
+workflow SharedTurn: "How To Take A Turn"
+    sequence read_first:
+        "Read `home:issue.md` first."
+        "Then read this role's local rules."
+
+    next_step: "Next Step"
+        route "Return to ReviewLead when ready." -> ReviewLead
+```
+
+A workflow body may contain:
+
+- prose lines
+- local keyed titled sections
+- non-section readable blocks at the root (`sequence`, `bullets`, `checklist`,
+  `definitions`, `table`, `callout`, `code`, `rule`)
+- `use <local_key>: WorkflowRef` composition
+- readable declaration refs inside titled sections
+- inline or referenced `skills:` blocks
+- a `law:` block for compiler-owned workflow-law semantics
+
+See `examples/114_workflow_root_readable_blocks` for workflow root readable
+blocks. Bare workflow roots compose through `use`; they do not render as
+readable refs inside ordinary workflow section bodies.
+
+### Titled Optional Lists
+
+`sequence`, `bullets`, and `checklist` keep the authored key, but the title
+string is optional. Without a title the list renders inline in the parent
+section. With a title the list renders as a nested heading. The same rule
+applies to `override sequence`, `override bullets`, and `override checklist`.
+
+### Workflow Inheritance
+
+Inherited workflows patch with the same explicit model agents use:
+
+- `inherit key` keeps an inherited keyed item in place.
+- `inherit {first_key, second_key}` keeps several in authored order.
+- `override key:` replaces an inherited keyed item.
+- `override key: "New Title"` replaces the rendered title too.
+- `key: "Title"` introduces a new keyed item.
+
+Children must account for every inherited keyed item exactly once. Doctrine
+never merges by omission.
+
+## Turns And How They Fit
+
+A turn is one concrete agent doing one job. The turn reads what `inputs:` or
+bound input roots allow. It emits what `outputs:` or `final_output:` declare.
+Workflow law or review decides the current-truth, carried state, verdict, and
+route for that branch.
+
+- A workflow slot (`workflow:` or any authored slot) explains the job in human
+  prose.
+- A `law:` block on that workflow owns compiler-checked truth like currentness
+  and preservation.
+- An `output` still owns the emitted contract.
+- A routed owner comes from `route "..." -> Agent`, `route_from`, or a bound
+  structured final-output `route field`.
+
+## Route-Only Turns
+
+`route_only` is the dedicated declaration for routing-only turns. It lowers
+through the same route-only validation path a plain `law:` `current none` turn
+already used.
+
+```prompt-fragment
+route_only StructureReroute: "Structure Reroute"
+    facts: RouteFacts
+    when: RouteFacts.structure_moved
+    current none
+    handoff_output: StructureRerouteHandoff
+    routes:
+        route "Rebuild downstream structure." -> RouteOwner
+```
+
+Use `route_only` when the turn has no durable artifact and only picks an
+owner. Guarded `route_only` keys must line up with guarded top-level output
+sections on the declared `handoff_output`.
+
+## handoff_routing
+
+`handoff_routing:` is an agent slot that may carry a route-only `law:` block.
+Use it when the turn needs compiler-owned `route.*` truth on `output` or
+`final_output:`, but does not need the workflow-law currentness, preservation,
+or invalidation surface.
+
+```prompt-fragment
+agent ProofAgent:
+    role: "Route based on a typed proof result."
+    handoff_routing: "Handoff Routing"
+        "Pick the next owner from the proof result."
+        law:
+            route_from ProofResult.route_choice as ProofRoute:
+                ProofRoute.accept:
+                    route "Send to AcceptanceCritic." -> AcceptanceCritic
+                ProofRoute.change:
+                    route "Send to ChangeEngineer." -> ChangeEngineer
+```
+
+Only the slot's `law:` block makes `route.*` live. Prose route lines inside
+`handoff_routing` stay readable text only. See
+`examples/91_handoff_routing_route_output_binding` and
+`examples/93_handoff_routing_route_from_final_output`.
+
+## grounding
+
+`grounding` declares an explicit grounding protocol with `source:`, `target:`,
+and `policy:`. The shipped policy items are `start_from`, `forbid`, `allow`,
+and `if ... -> route ...`. Grounding lowers through ordinary workflow-style
+readable output. Routes still target ordinary concrete agents. Grounding owns
+protocol shape, not domain truth.
+
+## route_from
+
+`route_from` picks one route from a typed selector. Use it when the turn
+already receives or emits a typed route fact and you want Doctrine to own the
+selected route truth.
+
+- The selector must be one direct ref.
+- It may point at a declared input field, an emitted output field on the
+  concrete turn, or an enum member.
+- Name each enum member at most once. Use `else` at most once.
+- `route.choice.*` is live only when every live routed branch comes from
+  `route_from`, or when `final_output.route:` binds a `route field`.
+
+See `examples/93_handoff_routing_route_from_final_output` for a typed
+selector feeding `final_output:`.
+
+## Workflow Law Summary
+
+Workflow law adds compiler-owned semantics to a workflow while keeping the
+emitted contract on `output`. For the full spec, read
+`docs/WORKFLOW_LAW.md`. The short map:
+
+- Activation and branching: `active when`, `mode`, `when`, `match`,
+  `route_from`, `must`.
+- Currentness: `current artifact ... via Output.field` or `current none`. The
+  carrier field must be listed in the output's `trust_surface`.
+- Scope: `own only`, `preserve exact`, `preserve structure`,
+  `preserve decisions`, `preserve mapping`, `preserve vocabulary`, `forbid`.
+- Evidence roles: `support_only ... for comparison`,
+  `ignore ... for truth | comparison | rewrite_evidence`.
+- Invalidation: `invalidate <root> via Output.field`, followed by `stop` or
+  `route "..." -> Agent`.
+- Reuse: split inherited law into named subsections and patch with
+  `inherit <sub>` or `override <sub>:`.
+
+Route-only turns use `current none` and one `handoff_output`. See
+`examples/36_invalidation_and_rebuild` for invalidation plus rebuild routing.
+
+## final_output And Route Fields
+
+`final_output:` on an agent marks one emitted `TurnResponse` output as the
+turn-ending assistant message. Short form:
+
+```prompt-fragment
+final_output: WriterDecision
+```
+
+A structured final output may bind a routed owner directly on one of its
+`route field`s:
+
+```prompt-fragment
+final_output:
+    output: WriterDecision
+    route: next_route
+```
+
+That gives the turn one authored route owner without a second `route_from`
+table. When the bound route field is `nullable`, `null` means no handoff on
+that turn. For the full rules and schema side, read
+`references/outputs-and-schemas.md`.
+
+## Concrete-Turn Bindings And Bound Roots
+
+Concrete turns can bind inputs and outputs under local keys. Workflow law and
+review carriers can root paths through those bindings.
+
+```prompt-fragment
+inputs SharedInputs: "Inputs"
+    approved_plan: ApprovedPlan
+
+outputs SharedOutputs: "Outputs"
+    coordination_handoff: CoordinationHandoff
+
+workflow CarryBoundCurrentTruth: "Carry Bound Current Truth"
+    law:
+        current artifact approved_plan via coordination_handoff.current_artifact
+```
+
+Bound roots normalize to the underlying declared input or output. They are
+not string aliases. Inherited `inputs` and `outputs` blocks keep their bound
+keys visible.
+
+## Runtime Agent Packages
+
+A directory-backed import such as `import editor_home` treats
+`editor_home/AGENTS.prompt` as a runtime package root. Those roots are where
+`emit_docs` writes a real runtime home for that agent. A sibling
+`SOUL.prompt` is optional runtime emit input. See
+`examples/115_runtime_agent_packages` for the shipped proof.
+
+## Workflow Root Readable Blocks
+
+Workflow roots may own non-section readable blocks directly. That keeps short
+guides compact.
+
+```prompt
+workflow RootReadableGuide: "Guide"
+    sequence read_first:
+        "Read `home:issue.md` first."
+        "Then read this role's local rules."
+
+    callout evidence_note: "Evidence Note"
+        kind: note
+        "Ground the current claim before you summarize."
+```
+
+Inherited workflow-root readable blocks use the same explicit patch model as
+any other keyed workflow item. See `examples/114_workflow_root_readable_blocks`.
+
+## Common Patterns
+
+- Give each concrete agent a one-sentence `role`. Push the real body into a
+  named workflow.
+- Use `abstract agent` when three or more concrete agents share the same
+  read-first slot.
+- Use `workflow:` for producer turns. Use `review:` for reviewer or critic
+  turns. Never both.
+- Use `route_only` when the turn has no durable artifact and only picks an
+  owner. Use plain `workflow` + `law:` when the turn has both a current
+  artifact and a route.
+- Use `handoff_routing:` when you want compiler-checked `route.*` truth on an
+  otherwise plain agent, without the rest of workflow law.
+- Prefer `final_output.route: <route_field>` when the final JSON itself should
+  own the route choice. Prefer `route_from` when the selector comes from a
+  typed input or emitted output field.
+
+## Pitfalls
+
+- Do not declare both `workflow:` and `review:` on the same concrete agent.
+  The compiler rejects this.
+- Do not read `route.*` without a guard when some active branches may not
+  route. Unguarded `route.*` reads fail loud. Use `when route.exists:` on the
+  output side.
+- Do not merge inherited workflow items by omission. Children must account for
+  every inherited key with `inherit`, `override`, or a new key.
+- Do not put route packets on outputs. Output fields that show a next owner
+  are content, not the route contract. The route contract lives in
+  `final_output.contract.json` (when emitted) or the in-memory `route.*`
+  surface.
+- Prose route lines inside `handoff_routing:` do not activate `route.*`. Only
+  the `law:` block does.
+
+## Related References
+
+- `references/reviews.md` — for `review:` turns, verdict coupling, and
+  review-driven `final_output`.
+- `references/outputs-and-schemas.md` — for `output`, `output schema`,
+  `route field`, `final_output:` forms, and output inheritance.
+- `references/imports-and-refs.md` — for `self:`, addressable paths, and
+  import rules across `prompts/` roots.
+
+**Load when:** the author is wiring turn flow, routing, handoffs, or agent
+composition.

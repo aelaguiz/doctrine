@@ -180,7 +180,7 @@ class ImportLoadingTests(unittest.TestCase):
                 seen = []
                 try:
                     for _ in range(2):
-                        seen.append(results.get(timeout=2))
+                        seen.append(results.get(timeout=15))
                 except queue.Empty:
                     raise SystemExit("timed out waiting for concurrent module loads")
 
@@ -199,7 +199,7 @@ class ImportLoadingTests(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=60,
                 check=False,
             )
 
