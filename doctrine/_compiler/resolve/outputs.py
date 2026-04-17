@@ -337,6 +337,9 @@ class ResolveOutputsMixin:
             else self._rebind_inherited_output_shape_decl(
                 parent_output_shape,
                 parent_unit=parent_unit,
+                rebound_imported=(
+                    parent_unit.module_parts not in unit.visible_imported_units
+                ),
             )
         )
 
@@ -525,7 +528,13 @@ class ResolveOutputsMixin:
         inherited_parent_output = (
             parent_output
             if parent_unit is None
-            else self._rebind_inherited_output_decl(parent_output, parent_unit=parent_unit)
+            else self._rebind_inherited_output_decl(
+                parent_output,
+                parent_unit=parent_unit,
+                rebound_imported=(
+                    parent_unit.module_parts not in unit.visible_imported_units
+                ),
+            )
         )
 
         unkeyed_parent_items = self._output_unkeyed_parent_labels(inherited_parent_output)
@@ -995,11 +1004,16 @@ class ResolveOutputsMixin:
         output_decl: model.OutputDecl,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.OutputDecl:
         return replace(
             output_decl,
             items=tuple(
-                self._rebind_inherited_output_item(item, parent_unit=parent_unit)
+                self._rebind_inherited_output_item(
+                    item,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                )
                 for item in output_decl.items
             ),
             schema=(
@@ -1009,6 +1023,7 @@ class ResolveOutputsMixin:
                     schema_ref=self._rebind_inherited_output_name_ref(
                         output_decl.schema.schema_ref,
                         parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
                     )
                 )
             ),
@@ -1019,6 +1034,7 @@ class ResolveOutputsMixin:
                     structure_ref=self._rebind_inherited_output_name_ref(
                         output_decl.structure.structure_ref,
                         parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
                     )
                 )
             ),
@@ -1028,10 +1044,15 @@ class ResolveOutputsMixin:
                 else self._rebind_inherited_output_name_ref(
                     output_decl.render_profile_ref,
                     parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
                 )
             ),
             trust_surface=tuple(
-                self._rebind_inherited_trust_surface_item(item, parent_unit=parent_unit)
+                self._rebind_inherited_trust_surface_item(
+                    item,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                )
                 for item in output_decl.trust_surface
             ),
         )
@@ -1041,11 +1062,16 @@ class ResolveOutputsMixin:
         output_shape_decl: model.OutputShapeDecl,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.OutputShapeDecl:
         return replace(
             output_shape_decl,
             items=tuple(
-                self._rebind_inherited_output_item(item, parent_unit=parent_unit)
+                self._rebind_inherited_output_item(
+                    item,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                )
                 for item in output_shape_decl.items
             ),
             parent_ref=None,
@@ -1056,6 +1082,7 @@ class ResolveOutputsMixin:
         item: model.OutputRecordItem,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.OutputRecordItem:
         if isinstance(item, (str, model.EmphasizedLine)):
             return item
@@ -1065,12 +1092,17 @@ class ResolveOutputsMixin:
                 value=self._rebind_inherited_output_scalar_value(
                     item.value,
                     parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
                 ),
                 body=(
                     None
                     if item.body is None
                     else tuple(
-                        self._rebind_inherited_output_item(child, parent_unit=parent_unit)
+                        self._rebind_inherited_output_item(
+                            child,
+                            parent_unit=parent_unit,
+                            rebound_imported=rebound_imported,
+                        )
                         for child in item.body
                     )
                 ),
@@ -1081,7 +1113,11 @@ class ResolveOutputsMixin:
                 key=item.key,
                 title=item.title,
                 items=tuple(
-                    self._rebind_inherited_output_item(child, parent_unit=parent_unit)
+                    self._rebind_inherited_output_item(
+                        child,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
                     for child in item.items
                 ),
                 source_span=item.source_span,
@@ -1093,9 +1129,14 @@ class ResolveOutputsMixin:
                 when_expr=self._rebind_inherited_output_expr(
                     item.when_expr,
                     parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
                 ),
                 items=tuple(
-                    self._rebind_inherited_output_item(child, parent_unit=parent_unit)
+                    self._rebind_inherited_output_item(
+                        child,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
                     for child in item.items
                 ),
                 source_span=item.source_span,
@@ -1106,16 +1147,22 @@ class ResolveOutputsMixin:
                 value=self._rebind_inherited_output_scalar_value(
                     item.value,
                     parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
                 ),
                 when_expr=self._rebind_inherited_output_expr(
                     item.when_expr,
                     parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
                 ),
                 body=(
                     None
                     if item.body is None
                     else tuple(
-                        self._rebind_inherited_output_item(child, parent_unit=parent_unit)
+                        self._rebind_inherited_output_item(
+                            child,
+                            parent_unit=parent_unit,
+                            rebound_imported=rebound_imported,
+                        )
                         for child in item.body
                     )
                 ),
@@ -1126,19 +1173,28 @@ class ResolveOutputsMixin:
                 ref=self._rebind_inherited_output_name_ref(
                     item.ref,
                     parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
                 ),
                 body=(
                     None
                     if item.body is None
                     else tuple(
-                        self._rebind_inherited_output_item(child, parent_unit=parent_unit)
+                        self._rebind_inherited_output_item(
+                            child,
+                            parent_unit=parent_unit,
+                            rebound_imported=rebound_imported,
+                        )
                         for child in item.body
                     )
                 ),
                 source_span=item.source_span,
             )
         if isinstance(item, model.ReadableBlock):
-            return self._rebind_inherited_output_readable_block(item, parent_unit=parent_unit)
+            return self._rebind_inherited_output_readable_block(
+                item,
+                parent_unit=parent_unit,
+                rebound_imported=rebound_imported,
+            )
         return item
 
     def _rebind_inherited_output_scalar_value(
@@ -1146,17 +1202,23 @@ class ResolveOutputsMixin:
         value: model.RecordScalarValue,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.RecordScalarValue:
         if isinstance(value, str):
             return value
         if isinstance(value, model.NameRef):
-            return self._rebind_inherited_output_name_ref(value, parent_unit=parent_unit)
+            return self._rebind_inherited_output_name_ref(
+                value,
+                parent_unit=parent_unit,
+                rebound_imported=rebound_imported,
+            )
         if value.self_rooted or value.root is None:
             return value
         return model.AddressableRef(
             root=self._rebind_inherited_output_name_ref(
                 value.root,
                 parent_unit=parent_unit,
+                rebound_imported=rebound_imported,
             ),
             path=value.path,
             source_span=value.source_span,
@@ -1167,6 +1229,7 @@ class ResolveOutputsMixin:
         ref: model.NameRef,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.NameRef:
         if ref.module_parts:
             return ref
@@ -1175,6 +1238,7 @@ class ResolveOutputsMixin:
         return model.NameRef(
             module_parts=parent_unit.module_parts,
             declaration_name=ref.declaration_name,
+            rebound_imported=rebound_imported,
         )
 
     def _rebind_inherited_output_expr(
@@ -1182,6 +1246,7 @@ class ResolveOutputsMixin:
         expr: model.Expr,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.Expr:
         if isinstance(expr, model.ExprRef):
             if not expr.parts:
@@ -1189,6 +1254,7 @@ class ResolveOutputsMixin:
             rebound_root = self._rebind_inherited_output_name_ref(
                 model.NameRef(module_parts=(), declaration_name=expr.parts[0]),
                 parent_unit=parent_unit,
+                rebound_imported=rebound_imported,
             )
             if not rebound_root.module_parts:
                 return expr
@@ -1199,22 +1265,38 @@ class ResolveOutputsMixin:
             return model.ExprCall(
                 name=expr.name,
                 args=tuple(
-                    self._rebind_inherited_output_expr(arg, parent_unit=parent_unit)
+                    self._rebind_inherited_output_expr(
+                        arg,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
                     for arg in expr.args
                 ),
             )
         if isinstance(expr, model.ExprSet):
             return model.ExprSet(
                 items=tuple(
-                    self._rebind_inherited_output_expr(item, parent_unit=parent_unit)
+                    self._rebind_inherited_output_expr(
+                        item,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
                     for item in expr.items
                 )
             )
         if isinstance(expr, model.ExprBinary):
             return model.ExprBinary(
                 op=expr.op,
-                left=self._rebind_inherited_output_expr(expr.left, parent_unit=parent_unit),
-                right=self._rebind_inherited_output_expr(expr.right, parent_unit=parent_unit),
+                left=self._rebind_inherited_output_expr(
+                    expr.left,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                ),
+                right=self._rebind_inherited_output_expr(
+                    expr.right,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                ),
             )
         return expr
 
@@ -1223,6 +1305,7 @@ class ResolveOutputsMixin:
         block: model.ReadableBlock,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.ReadableBlock:
         return model.ReadableBlock(
             kind=block.kind,
@@ -1231,12 +1314,17 @@ class ResolveOutputsMixin:
             payload=self._rebind_inherited_output_readable_payload(
                 block.payload,
                 parent_unit=parent_unit,
+                rebound_imported=rebound_imported,
             ),
             requirement=block.requirement,
             when_expr=(
                 None
                 if block.when_expr is None
-                else self._rebind_inherited_output_expr(block.when_expr, parent_unit=parent_unit)
+                else self._rebind_inherited_output_expr(
+                    block.when_expr,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                )
             ),
             item_schema=block.item_schema,
             row_schema=block.row_schema,
@@ -1250,6 +1338,7 @@ class ResolveOutputsMixin:
         payload: model.ReadablePayload,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.ReadablePayload:
         if payload is None:
             return None
@@ -1261,6 +1350,7 @@ class ResolveOutputsMixin:
                     rebound_item = self._rebind_inherited_output_readable_block(
                         item,
                         parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
                     )
                     changed = changed or rebound_item != item
                     rebound_items.append(rebound_item)
@@ -1285,6 +1375,7 @@ class ResolveOutputsMixin:
                                             self._rebind_inherited_output_readable_block(
                                                 item,
                                                 parent_unit=parent_unit,
+                                                rebound_imported=rebound_imported,
                                             )
                                             if isinstance(item, model.ReadableBlock)
                                             else item
@@ -1310,6 +1401,7 @@ class ResolveOutputsMixin:
         item: model.TrustSurfaceItem,
         *,
         parent_unit: IndexedUnit,
+        rebound_imported: bool,
     ) -> model.TrustSurfaceItem:
         if item.when_expr is None:
             return item
@@ -1318,6 +1410,7 @@ class ResolveOutputsMixin:
             when_expr=self._rebind_inherited_output_expr(
                 item.when_expr,
                 parent_unit=parent_unit,
+                rebound_imported=rebound_imported,
             ),
             source_span=item.source_span,
         )

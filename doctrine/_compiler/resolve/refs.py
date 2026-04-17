@@ -138,6 +138,8 @@ class ResolveRefsMixin:
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> IndexedUnit:
         target_unit = unit.visible_imported_units.get(ref.module_parts)
+        if target_unit is None and ref.rebound_imported:
+            target_unit = unit.imported_units.get(ref.module_parts)
         if target_unit is None:
             raise reference_compile_error(
                 code="E280",

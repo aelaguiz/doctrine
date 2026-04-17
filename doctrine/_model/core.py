@@ -54,6 +54,11 @@ class NameRef:
     module_parts: tuple[str, ...]
     declaration_name: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    # Set by the inherited-ref rebinder when `module_parts` points at a unit
+    # that is not visible as a module in the current unit (e.g. the author
+    # used `from X import Y as Z` instead of `import X`). The resolver then
+    # falls back to `imported_units` for these refs only.
+    rebound_imported: bool = _field(default=False, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
