@@ -254,6 +254,8 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `119_route_only_final_output_contract` | A dedicated `route_only` final response emits canonical route metadata in `final_output.contract.json`. |
 | `120_route_field_final_output_contract` | A structured final output may own routed handoff truth with one `route field` plus `final_output.route:`. |
 | `121_nullable_route_field_final_output_contract` | A nullable `route field` may mean "no handoff on this turn" while emitted route metadata stays canonical. |
+| `122_skill_package_emit_documents` | `skill package emit:` compiles many prompt-authored `document` declarations into separate bundled `.md` files. |
+| `123_skill_package_emit_documents_mixed_bundle` | `skill package emit:` may live beside bundled agent markdown, runtime metadata, and raw helper files in one package tree. |
 
 ## Useful Commands
 
@@ -277,6 +279,9 @@ uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
 uv run --locked python -m doctrine.emit_docs --target example_115_runtime_agent_packages
 uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
 uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
+uv run --locked python -m doctrine.emit_skill --target example_122_skill_package_emit_documents
+uv run --locked python -m doctrine.emit_skill --target example_123_skill_package_emit_documents_mixed_bundle
+uv run --locked python -m doctrine.emit_skill --target example_124_skill_package_host_binding
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```
@@ -287,6 +292,8 @@ example. Its `build_ref/` tree includes compiled Markdown and
 Examples `95` through `103` are the canonical checked-in skill-package gallery.
 Their `build_ref/` trees are expected emitted package proof, not public
 authoring input.
+Example `124_skill_package_host_binding` is the focused host-binding proof for
+`package:`, `host_contract:`, `bind:`, `host:`, and `SKILL.contract.json`.
 Example `115_runtime_agent_packages` is the canonical checked-in runtime-package
 build proof. Its `build_ref/` tree shows the thin build-handle pattern, one
 package-root `AGENTS.md`, one optional sibling `SOUL.md`, and bundled peer

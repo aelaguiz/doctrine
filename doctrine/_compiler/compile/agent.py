@@ -10,6 +10,7 @@ from doctrine._compiler.naming import (
     _humanize_key,
 )
 from doctrine._compiler.resolved_types import (
+    ActiveSkillBindAgentContext,
     AgentContract,
     AgentFieldCompileSpec,
     CompileError,
@@ -67,6 +68,7 @@ class CompileAgentMixin:
         self._active_previous_turn_input_specs = {
             spec.input_key: spec for spec in previous_turn_input_specs
         }
+        prior_skill_bind_context = self._active_skill_bind_agent_context
         try:
             unresolved_abstract_slots = [
                 slot.key
@@ -124,6 +126,17 @@ class CompileAgentMixin:
                 field for field in agent.fields if isinstance(field, model.FinalOutputField)
             ]
             final_output_field = final_output_fields[0] if final_output_fields else None
+            analysis_field = next(
+                (field for field in agent.fields if isinstance(field, model.AnalysisField)),
+                None,
+            )
+            self._active_skill_bind_agent_context = ActiveSkillBindAgentContext(
+                agent=agent,
+                unit=unit,
+                agent_contract=agent_contract,
+                analysis_field=analysis_field,
+                final_output_field=final_output_field,
+            )
             if has_workflow_slot and review_fields:
                 raise compile_error(
                     code="E480",
@@ -325,6 +338,7 @@ class CompileAgentMixin:
                 io=io_contract,
             )
         finally:
+            self._active_skill_bind_agent_context = prior_skill_bind_context
             self._active_agent_key = None
             self._active_previous_turn_input_specs = {}
 
@@ -593,6 +607,7 @@ class CompileAgentMixin:
                     final_output=final_output,
                     previous_turn_contexts=self._previous_turn_contexts,
                     active_agent_key=self._active_agent_key,
+                    active_skill_bind_agent_context=self._active_skill_bind_agent_context,
                     active_previous_turn_input_specs=self._active_previous_turn_input_specs,
                 )
                 for spec in specs

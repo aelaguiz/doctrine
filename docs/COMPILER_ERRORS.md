@@ -127,7 +127,7 @@ Stability rules:
 | `E284` | Duplicate record key | A record body repeats the same key where the current surface expects uniqueness. |
 | `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]`, a bad `additional_prompt_roots` entry, or a bad provider prompt root. |
 | `E286` | Duplicate active prompts root | A configured or provider `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
-| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one active `prompts/` root. |
+| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one active `prompts/` root, or in both a skill-package source root and an active `prompts/` root. |
 | `E288` | Duplicate declaration name | One module defines the same declaration name more than once. |
 | `E289` | Cyclic import module | Import resolution forms a module cycle. |
 | `E290` | Relative import walks above prompts root | A relative import escapes above the current `prompts/` root. |
@@ -143,7 +143,7 @@ Stability rules:
 | `E301` | Invalid IO bucket item | An `inputs:` or `outputs:` bucket contains an invalid item shape, inline declaration body, or wrong-kind declaration ref. |
 | `E302` | Invalid output attachment declaration | An output attaches an invalid `schema:` or `structure:` surface, such as a sectionless schema or a non-markdown structure target. |
 | `E303` | Invalid schema declaration | A schema artifact or schema group uses an invalid declaration shape, such as a wrong-kind artifact ref, an unknown group member, or an empty group. |
-| `E304` | Invalid skill package bundle | A `skill package` bundle uses an invalid companion path, collides with another emitted path, points at an unreadable bundled file, or lowers a nested agent prompt with the wrong concrete-agent shape. |
+| `E304` | Invalid skill package bundle | A `skill package` bundle uses an invalid `emit:` path, points an `emit:` entry at the wrong declaration kind, collides with another emitted path, points at an unreadable bundled file, or lowers a nested agent prompt with the wrong concrete-agent shape. |
 | `E305` | Invalid document inheritance patch | A document inheritance patch uses the wrong override shape, such as a kind mismatch or a patch without an inherited document parent. |
 | `E306` | Duplicate module alias | One prompt file binds the same visible import-module name more than once, such as `import shared.review as review` plus another visible `review`. |
 | `E307` | Duplicate imported symbol | One prompt file binds the same visible imported symbol more than once, such as `from shared.review import Comment` plus another visible `Comment`. |

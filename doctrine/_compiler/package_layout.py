@@ -9,6 +9,7 @@ from doctrine._compiler.package_diagnostics import (
     package_related_path,
 )
 from doctrine._diagnostics.contracts import DiagnosticRelatedLocation
+from doctrine._model.core import SourceSpan
 
 
 @dataclass(slots=True, frozen=True)
@@ -52,6 +53,7 @@ def register_package_output_path(
     *,
     registry: PackageOutputRegistry,
     source_path: Path | None = None,
+    source_span: SourceSpan | None = None,
 ) -> str:
     if "\\" in path_text:
         raise package_compile_error(
@@ -62,6 +64,7 @@ def register_package_output_path(
                 f"{registry.owner_label}: {path_text}"
             ),
             path=source_path,
+            source_span=source_span,
             hints=("Use relative package paths with `/` separators.",),
         )
     path = PurePosixPath(path_text)
@@ -72,6 +75,7 @@ def register_package_output_path(
             summary="Invalid skill package bundle",
             detail=f"{registry.path_label_singular} is empty in {registry.owner_label}",
             path=source_path,
+            source_span=source_span,
             hints=("Bundle files under a real relative file path.",),
         )
     if path.is_absolute():
@@ -83,6 +87,7 @@ def register_package_output_path(
                 f"{registry.owner_label}: {path_text}"
             ),
             path=source_path,
+            source_span=source_span,
             hints=("Keep bundled files inside the package root.",),
         )
     if any(part in {"", ".", ".."} for part in parts):
@@ -94,6 +99,7 @@ def register_package_output_path(
                 f"{registry.owner_label}: {path_text}"
             ),
             path=source_path,
+            source_span=source_span,
             hints=("Keep bundled files under the package root.",),
         )
     if path.name in {"", ".", ".."}:
@@ -105,6 +111,7 @@ def register_package_output_path(
                 f"{registry.owner_label}: {path_text}"
             ),
             path=source_path,
+            source_span=source_span,
             hints=("Point each bundled path at one file, not a directory.",),
         )
     normalized = path.as_posix()
@@ -118,6 +125,7 @@ def register_package_output_path(
                 f"{registry.owner_label}: {normalized}"
             ),
             path=source_path,
+            source_span=source_span,
             related=_package_collision_related(
                 prior_path=prior_path,
                 source_path=source_path,
@@ -135,6 +143,7 @@ def register_package_output_path(
                 f"{registry.owner_label}: {normalized} vs {prior}"
             ),
             path=source_path,
+            source_span=source_span,
             related=_package_collision_related(
                 prior_path=registry.source_paths.get(prior),
                 source_path=source_path,

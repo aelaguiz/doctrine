@@ -421,6 +421,8 @@ the local section still needs prose or more than one item.
 Use inline `skill` and `skills` to describe capability meaning inside
 `AGENTS.prompt` and `SOUL.prompt`.
 Use `skill package` only when Doctrine must emit a real package tree.
+That package tree may mix `SKILL.md`, explicit `emit:` document companions,
+bundled raw files, and bundled agent markdown companions.
 
 Do not do this:
 - Do not overload inline `skills` when the job is to ship `SKILL.md` plus a
@@ -435,12 +437,19 @@ Authoring tip:
 - When `use_when`, `provides`, `does_not`, or a similar field is really a
   list, use a titleless `bullets` or `checklist` block inside that field.
   That keeps emitted Markdown compact and easy to scan.
+- When a skill package needs host facts, declare `host_contract:` once in the
+  package, point the inline skill at it with `package:`, bind those slots once
+  at the consuming skill entry with `bind:`, and use `host:` inside the
+  prompt-authored emitted package tree. Do not copy the same input or output
+  prose into many agent homes.
 
 Best anchors:
 - [11_skills_and_tools](../examples/11_skills_and_tools/prompts/AGENTS.prompt)
 - [21_first_class_skills_blocks](../examples/21_first_class_skills_blocks/prompts/AGENTS.prompt)
 - [95_skill_package_minimal](../examples/95_skill_package_minimal/prompts/SKILL.prompt)
 - [100_skill_package_bundled_agents](../examples/100_skill_package_bundled_agents/prompts/SKILL.prompt)
+- [122_skill_package_emit_documents](../examples/122_skill_package_emit_documents/prompts/SKILL.prompt)
+- [124_skill_package_host_binding](../examples/124_skill_package_host_binding/prompts/AGENTS.prompt)
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md)
 
 ### Keep the prompt tree modular

@@ -1,0 +1,3 @@
+interface:
+  display_name: Mixed Research Review Kit
+default_prompt: SKILL.md

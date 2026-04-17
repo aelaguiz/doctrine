@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 2.1
+Current Doctrine language version: 2.2
 
 ## The Version Lines
 
@@ -38,6 +38,10 @@ behavior.
 - A new backward-compatible compile or emit API such as provider-supplied
   prompt roots needs the next minor release version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
+- The package host-binding surface that adds inline skill `package:`,
+  package `host_contract:`, skill-entry `bind:`, and package-scoped `host:`
+  refs is one backward-compatible language move. It advances the language
+  line from `2.1` to `2.2`.
 
 ### Doctrine Release Version
 
@@ -78,6 +82,8 @@ Doctrine also ships narrower version lines.
   surface.
 - Emitted skill-package trees from `emit_skill` are part of the public
   surface when Doctrine ships first-party `SKILL.prompt` bundles.
+- When present, emitted `SKILL.contract.json` files are also part of that
+  public skill-package surface.
 - Checked-in public install trees such as `skills/.curated/agent-linter/`
   are also part of the public surface when this repo is used as an
   `npx skills` source.
@@ -126,6 +132,14 @@ Every public release uses one release class.
 - Adding provider-supplied prompt roots is an `additive` release when existing
   `additional_prompt_roots`, local entrypoints, and emit target placement
   still work.
+- Adding `skill package emit:` companion docs and package-local prompt imports
+  is an `additive` release when existing `SKILL.md`, bundled-file, and
+  bundled-agent package behavior still works.
+- Adding package host binding with inline skill `package:`, package
+  `host_contract:`, skill-entry `bind:`, package-scoped `host:` refs, and
+  conditional emitted `SKILL.contract.json` sidecars for host-bound packages is
+  an `additive` release when older inline skills and older skill packages
+  still keep working unchanged.
 - Adding `type: enum` plus `values:` for local `output schema` enums is an
   `additive` release when legacy `type: string` plus `enum:` still works and
   emitted schema files keep the same string-enum wire shape.

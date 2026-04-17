@@ -4,7 +4,12 @@ from doctrine import model
 
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.resolved_types import (
+    ActiveSkillBindAgentContext,
+    AddressableNode,
+    AddressableRootDecl,
+    CompiledSkillPackageContract,
     IndexedUnit,
+    ResolvedSkillBindTarget,
     ResolvedSkillEntry,
     ResolvedSkillsBody,
     ResolvedSkillsItem,
@@ -425,6 +430,308 @@ class ResolveSkillsMixin:
             resolved.append(self._resolve_skill_entry(item, unit=unit))
         return tuple(resolved)
 
+    def _compiled_skill_package_contract(
+        self,
+        *,
+        package_unit: IndexedUnit,
+        package_decl: model.SkillPackageDecl,
+    ) -> CompiledSkillPackageContract:
+        package_key = (package_unit.module_parts, package_decl.name)
+        cached = self._compiled_skill_package_cache.get(package_key)
+        if cached is None:
+            cached = self._compile_skill_package_decl(package_decl, unit=package_unit)
+            self._compiled_skill_package_cache[package_key] = cached
+        return cached.contract
+
+    def _resolve_skill_entry_bind_target(
+        self,
+        target: model.NameRef | model.AddressableRef,
+        *,
+        bind_key: str,
+        unit: IndexedUnit,
+        agent_context: ActiveSkillBindAgentContext,
+    ) -> ResolvedSkillBindTarget:
+        owner_label = f"skill bind `{bind_key}`"
+        if isinstance(target, model.AddressableRef):
+            root = target.root
+            if not target.self_rooted and root is not None and not root.module_parts:
+                if root.declaration_name == "inputs":
+                    if not target.path:
+                        raise self._skills_compile_error(
+                            detail=f"`inputs:` bind target in {owner_label} must name an input key.",
+                            unit=unit,
+                            source_span=target.source_span,
+                        )
+                    binding = agent_context.agent_contract.input_bindings_by_path.get(
+                        (target.path[0],)
+                    )
+                    if binding is None:
+                        raise self._skills_compile_error(
+                            detail=(
+                                f"Unknown input bind target in {owner_label}: "
+                                f"inputs:{'.'.join(target.path)}"
+                            ),
+                            unit=unit,
+                            source_span=target.source_span,
+                        )
+                    return ResolvedSkillBindTarget(
+                        family="input",
+                        unit=binding.artifact.unit,
+                        root_decl=binding.artifact.decl,
+                        path=target.path[1:],
+                    )
+                if root.declaration_name == "outputs":
+                    if not target.path:
+                        raise self._skills_compile_error(
+                            detail=f"`outputs:` bind target in {owner_label} must name an output key.",
+                            unit=unit,
+                            source_span=target.source_span,
+                        )
+                    binding = agent_context.agent_contract.output_bindings_by_path.get(
+                        (target.path[0],)
+                    )
+                    if binding is None:
+                        raise self._skills_compile_error(
+                            detail=(
+                                f"Unknown output bind target in {owner_label}: "
+                                f"outputs:{'.'.join(target.path)}"
+                            ),
+                            unit=unit,
+                            source_span=target.source_span,
+                        )
+                    return ResolvedSkillBindTarget(
+                        family="output",
+                        unit=binding.artifact.unit,
+                        root_decl=binding.artifact.decl,
+                        path=target.path[1:],
+                    )
+                if root.declaration_name == "analysis":
+                    analysis_field = agent_context.analysis_field
+                    if analysis_field is None:
+                        raise self._skills_compile_error(
+                            detail=(
+                                f"Bind target in {owner_label} uses `analysis:`, but agent "
+                                f"`{agent_context.agent.name}` has no `analysis:` field."
+                            ),
+                            unit=unit,
+                            source_span=target.source_span,
+                        )
+                    analysis_unit, analysis_decl = self._resolve_analysis_ref(
+                        analysis_field.value,
+                        unit=agent_context.unit,
+                    )
+                    return ResolvedSkillBindTarget(
+                        family="analysis",
+                        unit=analysis_unit,
+                        root_decl=analysis_decl,
+                        path=target.path,
+                    )
+                if root.declaration_name == "final_output":
+                    final_output_field = agent_context.final_output_field
+                    if final_output_field is None:
+                        raise self._skills_compile_error(
+                            detail=(
+                                f"Bind target in {owner_label} uses `final_output:`, but agent "
+                                f"`{agent_context.agent.name}` has no `final_output:` field."
+                            ),
+                            unit=unit,
+                            source_span=target.source_span,
+                        )
+                    output_unit, output_decl = self._resolve_final_output_decl(
+                        final_output_field.value,
+                        unit=agent_context.unit,
+                        owner_label=f"agent {agent_context.agent.name} final_output",
+                        source_span=final_output_field.source_span,
+                    )
+                    return ResolvedSkillBindTarget(
+                        family="final_output",
+                        unit=output_unit,
+                        root_decl=output_decl,
+                        path=target.path,
+                    )
+
+            target_unit, root_decl = self._resolve_addressable_root_decl(
+                target.root,
+                unit=unit,
+                owner_label=owner_label,
+                ambiguous_label="skill bind target",
+                missing_local_label="skill bind target",
+            )
+            return ResolvedSkillBindTarget(
+                family=self._skill_bind_family_for_root(root_decl),
+                unit=target_unit,
+                root_decl=root_decl,
+                path=target.path,
+            )
+
+        if not target.module_parts:
+            if target.declaration_name == "analysis":
+                analysis_field = agent_context.analysis_field
+                if analysis_field is None:
+                    raise self._skills_compile_error(
+                        detail=(
+                            f"Bind target in {owner_label} uses `analysis`, but agent "
+                            f"`{agent_context.agent.name}` has no `analysis:` field."
+                        ),
+                        unit=unit,
+                        source_span=target.source_span,
+                    )
+                analysis_unit, analysis_decl = self._resolve_analysis_ref(
+                    analysis_field.value,
+                    unit=agent_context.unit,
+                )
+                return ResolvedSkillBindTarget(
+                    family="analysis",
+                    unit=analysis_unit,
+                    root_decl=analysis_decl,
+                )
+            if target.declaration_name == "final_output":
+                final_output_field = agent_context.final_output_field
+                if final_output_field is None:
+                    raise self._skills_compile_error(
+                        detail=(
+                            f"Bind target in {owner_label} uses `final_output`, but agent "
+                            f"`{agent_context.agent.name}` has no `final_output:` field."
+                        ),
+                        unit=unit,
+                        source_span=target.source_span,
+                    )
+                output_unit, output_decl = self._resolve_final_output_decl(
+                    final_output_field.value,
+                    unit=agent_context.unit,
+                    owner_label=f"agent {agent_context.agent.name} final_output",
+                    source_span=final_output_field.source_span,
+                )
+                return ResolvedSkillBindTarget(
+                    family="final_output",
+                    unit=output_unit,
+                    root_decl=output_decl,
+                )
+
+        target_unit, root_decl = self._resolve_addressable_root_decl(
+            target,
+            unit=unit,
+            owner_label=owner_label,
+            ambiguous_label="skill bind target",
+            missing_local_label="skill bind target",
+        )
+        return ResolvedSkillBindTarget(
+            family=self._skill_bind_family_for_root(root_decl),
+            unit=target_unit,
+            root_decl=root_decl,
+        )
+
+    def _skill_bind_family_for_root(
+        self,
+        root_decl: AddressableRootDecl,
+    ) -> str:
+        if isinstance(root_decl, model.InputDecl):
+            return "input"
+        if isinstance(root_decl, model.OutputDecl):
+            return "output"
+        if isinstance(root_decl, model.DocumentDecl):
+            return "document"
+        if isinstance(root_decl, model.AnalysisDecl):
+            return "analysis"
+        if isinstance(root_decl, model.SchemaDecl):
+            return "schema"
+        if isinstance(root_decl, model.TableDecl):
+            return "table"
+        raise ValueError(f"Unsupported skill bind root: {type(root_decl).__name__}")
+
+    def _validate_skill_entry_package_binds(
+        self,
+        entry: model.SkillEntry | model.OverrideSkillEntry,
+        *,
+        skill_decl: model.SkillDecl,
+        metadata_unit: IndexedUnit,
+        package_contract: CompiledSkillPackageContract,
+        agent_context: ActiveSkillBindAgentContext,
+    ) -> None:
+        slot_map = {slot.key: slot for slot in package_contract.host_contract}
+        bind_map = {bind.key: bind for bind in entry.binds}
+
+        if not slot_map:
+            if entry.binds:
+                raise self._skills_compile_error(
+                    detail=(
+                        f"Skill entry `{entry.key}` binds package-backed skill "
+                        f"`{skill_decl.name}`, but package `{package_contract.package_name}` "
+                        "declares no host slots."
+                    ),
+                    unit=metadata_unit,
+                    source_span=entry.binds[0].source_span,
+                )
+            return
+
+        missing_keys = sorted(set(slot_map) - set(bind_map))
+        if missing_keys:
+            raise self._skills_compile_error(
+                detail=(
+                    f"Skill entry `{entry.key}` is missing required binds for package "
+                    f"`{package_contract.package_name}`: {', '.join(missing_keys)}"
+                ),
+                unit=metadata_unit,
+                source_span=entry.source_span,
+            )
+
+        extra_keys = sorted(set(bind_map) - set(slot_map))
+        if extra_keys:
+            first_extra = bind_map[extra_keys[0]]
+            raise self._skills_compile_error(
+                detail=(
+                    f"Skill entry `{entry.key}` binds unknown package host slots for "
+                    f"`{package_contract.package_name}`: {', '.join(extra_keys)}"
+                ),
+                unit=metadata_unit,
+                source_span=first_extra.source_span,
+            )
+
+        resolved_binds = {
+            bind.key: self._resolve_skill_entry_bind_target(
+                bind.target,
+                bind_key=bind.key,
+                unit=metadata_unit,
+                agent_context=agent_context,
+            )
+            for bind in entry.binds
+        }
+        for key, slot in slot_map.items():
+            resolved_bind = resolved_binds[key]
+            if resolved_bind.family != slot.family:
+                bind = bind_map[key]
+                raise self._skills_compile_error(
+                    detail=(
+                        f"Skill entry `{entry.key}` binds slot `{key}` as "
+                        f"`{resolved_bind.family}`, but package "
+                        f"`{package_contract.package_name}` requires `{slot.family}`."
+                    ),
+                    unit=metadata_unit,
+                    source_span=bind.source_span,
+                )
+
+        for artifact in package_contract.artifacts:
+            for host_path in artifact.referenced_host_paths:
+                slot_key, *tail = host_path.split(".")
+                bound_target = resolved_binds[slot_key]
+                if not tail:
+                    continue
+                self._resolve_addressable_path_node(
+                    AddressableNode(
+                        unit=bound_target.unit,
+                        root_decl=bound_target.root_decl,
+                        target=bound_target.root_decl,
+                    ),
+                    (*bound_target.path, *tail),
+                    owner_label=(
+                        f"skill entry `{entry.key}` host bind for "
+                        f"{package_contract.package_name}"
+                    ),
+                    surface_label="skill bind validation",
+                    ref_label=f"{slot_key}:{'.'.join(tail)}",
+                    source_span=bind_map[slot_key].source_span,
+                )
+
     def _resolve_skill_entry(
         self,
         entry: model.SkillEntry | model.OverrideSkillEntry,
@@ -432,11 +739,58 @@ class ResolveSkillsMixin:
         unit: IndexedUnit,
     ) -> ResolvedSkillEntry:
         target_unit, skill_decl = self._resolve_skill_decl(entry.target, unit=unit)
+        package_unit: IndexedUnit | None = None
+        package_decl: model.SkillPackageDecl | None = None
+        package_contract: CompiledSkillPackageContract | None = None
+        if entry.binds and skill_decl.package_link is None:
+            raise self._skills_compile_error(
+                detail=(
+                    f"Skill entry `{entry.key}` uses `bind:`, but skill `{skill_decl.name}` "
+                    "does not declare `package:`."
+                ),
+                unit=unit,
+                source_span=entry.binds[0].source_span,
+            )
+        if skill_decl.package_link is not None:
+            package_unit, package_decl = self._resolve_skill_package_id(
+                skill_decl.package_link.package_id,
+                unit=target_unit,
+                owner_label=f"skill `{skill_decl.name}` package link",
+                source_span=skill_decl.package_link.source_span,
+            )
+            package_contract = self._compiled_skill_package_contract(
+                package_unit=package_unit,
+                package_decl=package_decl,
+            )
+            active_agent_context = self._active_skill_bind_agent_context
+            if active_agent_context is None and (
+                entry.binds or package_contract.host_contract
+            ):
+                raise self._skills_compile_error(
+                    detail=(
+                        f"Package-backed skill `{skill_decl.name}` needs a concrete agent "
+                        "context before Doctrine can validate host binds."
+                    ),
+                    unit=unit,
+                    source_span=entry.source_span,
+                )
+            if active_agent_context is not None:
+                self._validate_skill_entry_package_binds(
+                    entry,
+                    skill_decl=skill_decl,
+                    metadata_unit=unit,
+                    package_contract=package_contract,
+                    agent_context=active_agent_context,
+                )
         return ResolvedSkillEntry(
             key=entry.key,
             metadata_unit=unit,
             target_unit=target_unit,
             skill_decl=skill_decl,
             items=entry.items,
+            binds=entry.binds,
+            package_unit=package_unit,
+            package_decl=package_decl,
+            package_contract=package_contract,
             source_span=entry.source_span,
         )

@@ -25,7 +25,9 @@ def run_emit_checks() -> None:
     _check_emit_docs_rejects_entrypoint_outside_project_root()
     _check_emit_docs_uses_entrypoint_stem_for_output_name()
     _check_emit_skill_uses_source_root_bundle_outputs()
+    _check_emit_skill_emits_document_companions_from_emit_block()
     _check_emit_skill_keeps_mixed_agents_tree_files()
+    _check_emit_skill_emits_contract_json_for_host_bound_packages()
     _check_emit_skill_preserves_binary_assets()
     _check_diagnostic_to_dict_is_json_safe()
 
@@ -504,8 +506,79 @@ output_dir = "build"
             root / "build" / "skills" / "demo_package" / "agents" / "reviewer.md"
         )
         _expect(skill_path.is_file(), f"missing emitted SKILL.md: {skill_path}")
+        _expect(
+            not (root / "build" / "skills" / "demo_package" / "SKILL.contract.json").exists(),
+            "did not expect SKILL.contract.json for a package with no host-binding truth",
+        )
         _expect(checklist_path.is_file(), f"missing bundled reference file: {checklist_path}")
         _expect(reviewer_path.is_file(), f"missing compiled bundled agent file: {reviewer_path}")
+
+
+def _check_emit_skill_emits_document_companions_from_emit_block() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "skills" / "emitted_docs"
+        (prompts / "refs").mkdir(parents=True)
+        skill_prompt = prompts / "SKILL.prompt"
+        skill_prompt.write_text(
+            """from refs.query_patterns import QueryPatterns
+from refs.receipts_template import ReceiptsTemplate
+
+skill package EmittedDocs: "Emitted Docs"
+    metadata:
+        name: "emitted-docs"
+    emit:
+        "references/query-patterns.md": QueryPatterns
+        "references/receipts-template.md": ReceiptsTemplate
+    "Keep the root file short."
+""",
+            encoding="utf-8",
+        )
+        (prompts / "refs" / "query_patterns.prompt").write_text(
+            """document QueryPatterns: "Query Patterns"
+    section summary: "Summary"
+        "Pick the right query before you search."
+""",
+            encoding="utf-8",
+        )
+        (prompts / "refs" / "receipts_template.prompt").write_text(
+            """document ReceiptsTemplate: "Receipts Template"
+    section summary: "Summary"
+        "Keep one clear proof trail for each claim."
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "emitted_docs"
+entrypoint = "prompts/skills/emitted_docs/SKILL.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+        exit_code = emit_skill_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "emitted_docs",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        query_patterns_path = (
+            root / "build" / "skills" / "emitted_docs" / "references" / "query-patterns.md"
+        )
+        receipts_path = (
+            root / "build" / "skills" / "emitted_docs" / "references" / "receipts-template.md"
+        )
+        _expect(
+            not (root / "build" / "skills" / "emitted_docs" / "SKILL.contract.json").exists(),
+            "did not expect SKILL.contract.json for a package with no host-binding truth",
+        )
+        _expect(query_patterns_path.is_file(), f"missing emitted companion doc: {query_patterns_path}")
+        _expect(receipts_path.is_file(), f"missing emitted companion doc: {receipts_path}")
 
 
 def _check_emit_skill_keeps_mixed_agents_tree_files() -> None:
@@ -557,9 +630,84 @@ output_dir = "build"
         _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
         reviewer_path = root / "build" / "skills" / "mixed_agents" / "agents" / "reviewer.md"
         metadata_path = root / "build" / "skills" / "mixed_agents" / "agents" / "openai.yaml"
+        _expect(
+            not (root / "build" / "skills" / "mixed_agents" / "SKILL.contract.json").exists(),
+            "did not expect SKILL.contract.json for a package with no host-binding truth",
+        )
         _expect(reviewer_path.is_file(), f"missing compiled bundled agent file: {reviewer_path}")
         _expect(metadata_path.is_file(), f"missing bundled runtime metadata file: {metadata_path}")
         _expect(metadata_path.read_text(encoding="utf-8") == runtime_metadata, metadata_path.read_text(encoding="utf-8"))
+
+
+def _check_emit_skill_emits_contract_json_for_host_bound_packages() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        prompts = root / "prompts" / "skills" / "host_bound"
+        (prompts / "refs").mkdir(parents=True)
+        (prompts / "agents").mkdir(parents=True)
+        skill_prompt = prompts / "SKILL.prompt"
+        skill_prompt.write_text(
+            """from refs.query_patterns import QueryPatterns
+
+skill package HostBound: "Host Bound"
+    metadata:
+        name: "host-bound"
+    emit:
+        "references/query-patterns.md": QueryPatterns
+    host_contract:
+        document section_map: "Section Map"
+        final_output final_response: "Final Response"
+    "Read {{host:section_map.title}}."
+""",
+            encoding="utf-8",
+        )
+        (prompts / "refs" / "query_patterns.prompt").write_text(
+            """document QueryPatterns: "Query Patterns"
+    section summary: "Summary"
+        "Keep {{host:section_map.title}} stable."
+""",
+            encoding="utf-8",
+        )
+        (prompts / "agents" / "reviewer.prompt").write_text(
+            """agent Reviewer:
+    role: "Review {{host:final_response}}."
+    workflow: "Review"
+        output: "Output"
+            host:final_response
+""",
+            encoding="utf-8",
+        )
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            """[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "host_bound"
+entrypoint = "prompts/skills/host_bound/SKILL.prompt"
+output_dir = "build"
+""",
+            encoding="utf-8",
+        )
+        exit_code = emit_skill_main(
+            [
+                "--pyproject",
+                str(pyproject),
+                "--target",
+                "host_bound",
+            ]
+        )
+        _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
+        contract_path = root / "build" / "skills" / "host_bound" / "SKILL.contract.json"
+        _expect(contract_path.is_file(), f"missing emitted SKILL.contract.json: {contract_path}")
+        payload = json.loads(contract_path.read_text(encoding="utf-8"))
+        _expect(payload["package"]["name"] == "host-bound", str(payload))
+        _expect(
+            payload["artifacts"]["SKILL.md"]["referenced_host_paths"] == ["section_map.title"],
+            str(payload),
+        )
+        _expect(
+            payload["artifacts"]["agents/reviewer.md"]["referenced_host_paths"] == ["final_response"],
+            str(payload),
+        )
 
 
 def _check_emit_skill_preserves_binary_assets() -> None:

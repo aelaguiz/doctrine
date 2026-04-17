@@ -201,6 +201,25 @@ class ParseDiagnosticsTests(unittest.TestCase):
             summary_snippet="Document prose lines must appear before keyed document blocks.",
         )
 
+    def test_skill_package_duplicate_emit_points_at_the_second_block(self) -> None:
+        source = textwrap.dedent(
+            """\
+            skill package LayoutChecklist: "Layout Checklist"
+                emit:
+                    "references/checklist.md": ChecklistGuide
+                emit:
+                    "references/qa.md": QaGuide
+                "Keep the root file short."
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/skill-package-duplicate-emit.prompt",
+            anchor_line="    emit:",
+            summary_snippet="Skill packages may define `emit:` only once.",
+            occurrence=2,
+        )
+
     def test_io_late_prose_points_at_the_late_line(self) -> None:
         source = textwrap.dedent(
             """\

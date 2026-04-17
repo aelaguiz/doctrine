@@ -1,0 +1,14 @@
+from refs.query_patterns import QueryPatterns
+from refs.receipts_template import ReceiptsTemplate
+from refs.runtime_and_commands import RuntimeAndCommands
+
+skill package ResearchReviewKit: "Research Review Kit"
+    metadata:
+        name: "research-review-kit"
+        description: "Keep the root short and emit deeper docs from prompt files."
+    emit:
+        "references/query-patterns.md": QueryPatterns
+        "references/receipts-template.md": ReceiptsTemplate
+        "references/runtime-and-commands.md": RuntimeAndCommands
+    "Use this skill when you need a short root and deeper reusable docs."
+    "Load the emitted docs when the job needs more detail."

@@ -17,3 +17,4 @@ __pycache__/
 repomix*
 build
 /skills/.curated/agent-linter/
+.curated

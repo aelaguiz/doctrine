@@ -155,6 +155,40 @@ class DeclarationTransformerMixin:
             license=values.get("license"),
         )
 
+    def _skill_package_host_contract(
+        self,
+        slots: tuple[model.SkillPackageHostSlot, ...],
+    ) -> tuple[model.SkillPackageHostSlot, ...]:
+        seen_keys: dict[str, model.SkillPackageHostSlot] = {}
+        for slot in slots:
+            existing = seen_keys.get(slot.key)
+            if existing is not None:
+                raise TransformParseFailure(
+                    f"Duplicate skill package host slot: {slot.key}",
+                    hints=("Keep each `host_contract:` slot key only once.",),
+                    line=slot.source_span.line if slot.source_span is not None else None,
+                    column=slot.source_span.column if slot.source_span is not None else None,
+                )
+            seen_keys[slot.key] = slot
+        return slots
+
+    def _skill_entry_binds(
+        self,
+        binds: tuple[model.SkillEntryBind, ...],
+    ) -> tuple[model.SkillEntryBind, ...]:
+        seen_keys: dict[str, model.SkillEntryBind] = {}
+        for bind in binds:
+            existing = seen_keys.get(bind.key)
+            if existing is not None:
+                raise TransformParseFailure(
+                    f"Duplicate skill entry bind: {bind.key}",
+                    hints=("Keep each `bind:` key only once per skill entry.",),
+                    line=bind.source_span.line if bind.source_span is not None else None,
+                    column=bind.source_span.column if bind.source_span is not None else None,
+                )
+            seen_keys[bind.key] = bind
+        return binds
+
     def _agent(self, items, *, abstract: bool, source_span: model.SourceSpan | None = None):
         name = items[0]
         parent_ref: model.NameRef | None = None

@@ -71,7 +71,7 @@ output_shape_decl: "output" "shape" CNAME inheritance? ":" string _NL _INDENT ou
 output_schema_decl: "output" "schema" CNAME inheritance? ":" string _NL _INDENT output_schema_body _DEDENT
 output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DEDENT
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
-skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
+skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
@@ -633,7 +633,12 @@ skills_inherit: "inherit" CNAME _NL? -> skills_inherit
               | "inherit" "{" grouped_inherit_keys "}" _NL? -> skills_inherit_group
 skills_override_section: "override" CNAME ":" string? _NL _INDENT skills_section_body _DEDENT
 skills_override_entry: "override" CNAME ":" name_ref _NL skill_entry_body?
-skill_entry_body: _INDENT record_body _DEDENT
+skill_entry_body: _INDENT skill_entry_body_line+ _DEDENT
+skill_entry_body_line: skill_entry_bind_block
+                     | record_item
+skill_entry_bind_block: "bind" ":" _NL _INDENT skill_entry_bind_item+ _DEDENT
+skill_entry_bind_item: CNAME ":" skill_entry_bind_target _NL?
+?skill_entry_bind_target: path_ref | name_ref
 
 skills_section_body: skills_section_item+
 ?skills_section_item: prose_line _NL?
@@ -834,11 +839,29 @@ record_body: record_item+
             | record_keyed_item
             | record_ref_item
 
+skill_decl_body: skill_decl_item+
+?skill_decl_item: skill_package_link_stmt
+                | record_item
+skill_package_link_stmt: "package" ":" string _NL?
+
 skill_package_body: skill_package_item+
 ?skill_package_item: package_metadata_block
+                   | package_emit_block
+                   | package_host_contract_block
                    | record_item
 package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDENT
 package_metadata_item: CNAME ":" string _NL?
+package_emit_block: "emit" ":" _NL _INDENT package_emit_item+ _DEDENT
+package_emit_item: string ":" name_ref _NL?
+package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot+ _DEDENT
+package_host_slot: package_host_slot_family CNAME ":" string _NL?
+package_host_slot_family: "input" -> package_host_slot_family_input
+                         | "output" -> package_host_slot_family_output
+                         | "document" -> package_host_slot_family_document
+                         | "analysis" -> package_host_slot_family_analysis
+                         | "schema" -> package_host_slot_family_schema
+                         | "table" -> package_host_slot_family_table
+                         | "final_output" -> package_host_slot_family_final_output
 
 record_readable_block: record_section_block
                      | readable_nonsection_block

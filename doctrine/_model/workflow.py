@@ -5,6 +5,7 @@ from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
+    AddressableRef,
     Expr,
     InheritItem,
     NameRef,
@@ -57,6 +58,7 @@ class SkillEntry:
     key: str
     target: NameRef
     items: tuple[RecordItem, ...] = ()
+    binds: tuple["SkillEntryBind", ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -76,6 +78,14 @@ class OverrideSkillEntry:
     key: str
     target: NameRef
     items: tuple[RecordItem, ...] = ()
+    binds: tuple["SkillEntryBind", ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillEntryBind:
+    key: str
+    target: NameRef | AddressableRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

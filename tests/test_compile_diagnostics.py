@@ -5674,6 +5674,171 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("Duplicate skill package bundled path", str(error))
         self.assertIn("Related:", str(error))
 
+    def test_skill_package_emit_path_must_end_in_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                document ChecklistGuide: "Checklist Guide"
+                    section summary: "Summary"
+                        "Use the checklist."
+
+                skill package InvalidEmitPath: "Invalid Emit Path"
+                    emit:
+                        "references/checklist.txt": ChecklistGuide
+                    "Keep the root file short."
+                """,
+                rel_path="prompts/SKILL.prompt",
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 7)
+        self.assertIn("must end in `.md`", str(error))
+
+    def test_skill_package_emit_path_must_stay_under_package_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                document ChecklistGuide: "Checklist Guide"
+                    section summary: "Summary"
+                        "Use the checklist."
+
+                skill package InvalidEmitPath: "Invalid Emit Path"
+                    emit:
+                        "../references/checklist.md": ChecklistGuide
+                    "Keep the root file short."
+                """,
+                rel_path="prompts/SKILL.prompt",
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 7)
+        self.assertIn("must stay within the package root", str(error))
+
+    def test_skill_package_emit_ref_must_point_at_document(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                skill NotADocument: "Not A Document"
+                    purpose: "Do not use this as a document."
+
+                skill package WrongKindEmit: "Wrong Kind Emit"
+                    emit:
+                        "references/checklist.md": NotADocument
+                    "Keep the root file short."
+                """,
+                rel_path="prompts/SKILL.prompt",
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 6)
+        self.assertIn("must point at document declarations", str(error))
+        self.assertIn("skill declaration", str(error))
+
+    def test_skill_package_emit_collision_with_raw_file_reports_related_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "references").mkdir(parents=True)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                document ChecklistGuide: "Checklist Guide"
+                    section summary: "Summary"
+                        "Use the checklist."
+
+                skill package EmitCollision: "Emit Collision"
+                    emit:
+                        "references/checklist.md": ChecklistGuide
+                    "Keep the root file short."
+                """,
+                rel_path="prompts/SKILL.prompt",
+            )
+            collision_path = prompts / "references" / "checklist.md"
+            collision_path.write_text("This bundled file collides with emitted markdown.\n")
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, collision_path.resolve())
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.path,
+            prompt_path.resolve(),
+        )
+        self.assertIn("Duplicate skill package bundled path", str(error))
+
+    def test_skill_package_emit_collision_with_agent_output_reports_related_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "agents").mkdir(parents=True)
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                document ReviewerGuide: "Reviewer Guide"
+                    section summary: "Summary"
+                        "Guide the reviewer."
+
+                skill package EmitCollision: "Emit Collision"
+                    emit:
+                        "agents/reviewer.md": ReviewerGuide
+                    "Keep the root file short."
+                """,
+                rel_path="prompts/SKILL.prompt",
+            )
+            bundled_prompt_path = prompts / "agents" / "reviewer.prompt"
+            bundled_prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    agent Reviewer:
+                        role: "Review the bundle."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            prompt = parse_file(prompt_path)
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(prompt).compile_skill_package()
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E304")
+        self.assertEqual(error.diagnostic.location.path, bundled_prompt_path.resolve())
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.path,
+            prompt_path.resolve(),
+        )
+        self.assertIn("Duplicate skill package bundled path", str(error))
+
     def test_workflow_and_review_conflict_points_at_review_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

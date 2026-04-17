@@ -1,0 +1,11 @@
+from refs.query_patterns import QueryPatterns
+from refs.receipts_template import ReceiptsTemplate
+
+skill package MixedResearchReviewKit: "Mixed Research Review Kit"
+    metadata:
+        name: "mixed-research-review-kit"
+        description: "Ship emitted docs, bundled agents, and helper files together."
+    emit:
+        "references/query-patterns.md": QueryPatterns
+        "references/receipts-template.md": ReceiptsTemplate
+    "Use this skill when one package needs short root guidance and a few deeper files."

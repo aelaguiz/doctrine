@@ -293,6 +293,47 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertIn("### Greeting", rendered)
         self.assertIn("### Draft Review Comment", rendered)
 
+    def test_from_import_does_not_make_the_module_path_visible(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "shared").mkdir(parents=True, exist_ok=True)
+            (prompts / "shared" / "review.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow ImportedFlow: "Imported Flow"
+                        "Use the imported flow."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            prompt_path = (prompts / "AGENTS.prompt").resolve()
+            prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    from shared.review import ImportedFlow
+
+                    agent Demo:
+                        role: "Keep symbol imports and module imports separate."
+                        workflow: "Imported Steps"
+                            # This protects the fail-loud import contract. A symbol import
+                            # keeps `ImportedFlow` visible, but it must not silently make
+                            # `shared.review.ImportedFlow` behave like a module import.
+                            use imported: shared.review.ImportedFlow
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.code, "E280")
+        self.assertEqual(error.diagnostic.location.path, prompt_path)
+        self.assertEqual(error.diagnostic.location.line, 9)
+        self.assertIn("Missing import module: shared.review", str(error))
+
     def test_file_and_directory_module_collision_fails_loud(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -515,6 +556,93 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertIn("Ambiguous import module", error_text)
         self.assertIn("configured prompts root", error_text)
         self.assertIn("provided prompts root `framework_stdlib`", error_text)
+
+    def test_skill_package_entrypoint_loads_package_local_prompt_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "reference_docs"
+            refs = prompts / "refs"
+            refs.mkdir(parents=True, exist_ok=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    from refs.query_patterns import QueryPatterns
+
+                    skill package ReferenceDocs: "Reference Docs"
+                        emit:
+                            "references/query-patterns.md": QueryPatterns
+                        "Keep the root file short."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (refs / "query_patterns.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    document QueryPatterns: "Query Patterns"
+                        section summary: "Summary"
+                            "Pick the right query."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session = CompilationSession(parse_file(prompts / "SKILL.prompt"))
+            loaded = session.load_module(("refs", "query_patterns"))
+
+        imported_binding = session.root_unit.imported_symbols_by_name["QueryPatterns"]
+        self.assertEqual(loaded.prompt_root, prompts)
+        self.assertEqual(loaded.package_root, prompts)
+        self.assertEqual(loaded.prompt_file.source_path, refs / "query_patterns.prompt")
+        self.assertEqual(imported_binding.target_unit.prompt_root, prompts)
+        self.assertEqual(imported_binding.target_unit.package_root, prompts)
+
+    def test_skill_package_entrypoint_fails_loud_on_local_import_collision(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            package_prompts = root / "prompts" / "skills" / "reference_docs"
+            global_shared = root / "prompts" / "shared"
+            local_shared = package_prompts / "shared"
+            global_shared.mkdir(parents=True, exist_ok=True)
+            local_shared.mkdir(parents=True, exist_ok=True)
+            (package_prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import shared.guide
+
+                    skill package ReferenceDocs: "Reference Docs"
+                        "Fail loud when a package-local module collides with the repo root."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (global_shared / "guide.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow GlobalGuide: "Global Guide"
+                        "Use the repo-wide guide."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (local_shared / "guide.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow LocalGuide: "Local Guide"
+                        "Use the package-local guide."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(DoctrineError) as ctx:
+                CompilationSession(parse_file(package_prompts / "SKILL.prompt"))
+
+        error_text = str(ctx.exception)
+        self.assertEqual(ctx.exception.code, "E287")
+        self.assertIn("Ambiguous import module", error_text)
+        self.assertIn("skill package source root", error_text)
+        self.assertIn("entrypoint prompts root", error_text)
 
 
 if __name__ == "__main__":

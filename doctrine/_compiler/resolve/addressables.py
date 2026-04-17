@@ -21,11 +21,50 @@ from doctrine._compiler.resolved_types import (
     ResolvedRenderProfile,
     ReviewSemanticContext,
     RouteSemanticContext,
+    SkillPackageHostCompileContext,
 )
 
 
 class ResolveAddressablesMixin:
     """Addressable and interpolation resolution helpers for ResolveMixin."""
+
+    @contextmanager
+    def _with_skill_package_host_context(self, context: SkillPackageHostCompileContext):
+        self._skill_package_host_context_stack.append(context)
+        try:
+            yield
+        finally:
+            self._skill_package_host_context_stack.pop()
+
+    @contextmanager
+    def _with_skill_package_artifact_context(
+        self,
+        *,
+        path: str,
+        kind: str,
+        source: str | None = None,
+    ):
+        context = self._active_skill_package_host_context()
+        if context is None:
+            yield
+            return
+        prior_path = context.current_artifact_path
+        prior_kind = context.current_artifact_kind
+        prior_source = context.current_artifact_source
+        context.current_artifact_path = path
+        context.current_artifact_kind = kind
+        context.current_artifact_source = source
+        try:
+            yield
+        finally:
+            context.current_artifact_path = prior_path
+            context.current_artifact_kind = prior_kind
+            context.current_artifact_source = prior_source
+
+    def _active_skill_package_host_context(self) -> SkillPackageHostCompileContext | None:
+        if not self._skill_package_host_context_stack:
+            return None
+        return self._skill_package_host_context_stack[-1]
 
     @contextmanager
     def _with_addressable_self_root(self, root_ref: model.NameRef):
@@ -309,6 +348,14 @@ class ResolveAddressablesMixin:
             owner_label=owner_label,
             surface_label=surface_label,
         )
+        host_value = self._resolve_skill_package_host_ref_value(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )
+        if host_value is not None:
+            return host_value
         ref_label = _display_addressable_ref(ref)
         route_value = self._resolve_route_semantic_ref_value(
             ref,
@@ -541,6 +588,63 @@ class ResolveAddressablesMixin:
             surface_label=surface_label,
             render_profile=render_profile,
         )
+
+    def _resolve_skill_package_host_ref_value(
+        self,
+        ref: model.AddressableRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> DisplayValue | None:
+        root = ref.root
+        if ref.self_rooted or root is None:
+            return None
+        if root.module_parts or root.declaration_name != "host":
+            return None
+
+        context = self._active_skill_package_host_context()
+        if context is None:
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"`host:` refs are only available inside prompt-authored skill package "
+                    f"artifacts in {surface_label} {owner_label}."
+                ),
+                unit=unit,
+                source_span=ref.source_span,
+                hints=("Use `host:` only inside a compiled skill package prompt tree.",),
+            )
+        if not ref.path:
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"`host:` refs must include a slot key in {surface_label} {owner_label}.",
+                unit=unit,
+                source_span=ref.source_span,
+                hints=("Use `host:slot_key` or `host:slot_key.path.to.child`.",),
+            )
+
+        slot_key, *tail = ref.path
+        slot = context.host_slots_by_key.get(slot_key)
+        if slot is None:
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Unknown `host:` slot in {surface_label} {owner_label}: {slot_key}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
+                hints=("Declare the slot in the package `host_contract:` block.",),
+            )
+
+        host_path = slot_key if not tail else f"{slot_key}.{'.'.join(tail)}"
+        context.record_host_path(host_path)
+        if not tail:
+            return DisplayValue(text=slot.title, kind="title")
+        return DisplayValue(text=f"{slot.title}:{'.'.join(tail)}", kind="symbol")
 
     def _resolve_addressable_path_node(
         self,

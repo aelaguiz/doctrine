@@ -8,6 +8,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from doctrine.diagnostics import CompileError
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_skill import emit_target_skill
 
@@ -198,9 +199,133 @@ class EmitSkillTests(unittest.TestCase):
             self.assertEqual(emitted[0], skill_path)
             self.assertCountEqual(emitted[1:], (reviewer_path, metadata_path))
             self.assertTrue(skill_path.is_file())
+            self.assertFalse((skill_path.parent / "SKILL.contract.json").exists())
             self.assertTrue(reviewer_path.is_file())
             self.assertTrue(metadata_path.is_file())
             self.assertEqual(metadata_path.read_text(encoding="utf-8"), runtime_metadata)
+
+    def test_emit_skill_emits_document_companions_from_emit_block(self) -> None:
+        # This protects the new first-class package artifact map. A skill
+        # package should emit prompt-authored companion docs from imported
+        # `document` declarations while keeping ordinary bundled files and
+        # bundled agents working on the same package path.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "emitted_docs"
+            (prompts / "refs").mkdir(parents=True)
+            (prompts / "agents").mkdir(parents=True)
+            (prompts / "scripts").mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    from refs.query_patterns import QueryPatterns
+                    from refs.qa_guide import QaGuide
+
+                    skill package EmittedDocs: "Emitted Docs"
+                        metadata:
+                            name: "emitted-docs"
+                        emit:
+                            "references/query-patterns.md": QueryPatterns
+                            "references/qa.md": QaGuide
+                        "Keep the root file short."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "refs" / "query_patterns.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    document QueryPatterns: "Query Patterns"
+                        section summary: "Summary"
+                            "Pick the right query before you search."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "refs" / "qa_guide.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    document QaGuide: "QA Guide"
+                        section checks: "Checks"
+                            "Run the package checks before shipping."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "agents" / "reviewer.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent Reviewer:
+                        role: "Review the package."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            runtime_metadata = textwrap.dedent(
+                """\
+                interface:
+                  display_name: Emitted Docs
+                default_prompt: SKILL.md
+                """
+            )
+            (prompts / "agents" / "openai.yaml").write_text(
+                runtime_metadata,
+                encoding="utf-8",
+            )
+            helper_script = "print('emit docs helper')\n"
+            (prompts / "scripts" / "helper.py").write_text(
+                helper_script,
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/emitted_docs/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emitted = emit_target_skill(target)
+
+            skill_path = root / "build" / "skills" / "emitted_docs" / "SKILL.md"
+            query_patterns_path = (
+                root / "build" / "skills" / "emitted_docs" / "references" / "query-patterns.md"
+            )
+            qa_path = root / "build" / "skills" / "emitted_docs" / "references" / "qa.md"
+            reviewer_path = root / "build" / "skills" / "emitted_docs" / "agents" / "reviewer.md"
+            metadata_path = root / "build" / "skills" / "emitted_docs" / "agents" / "openai.yaml"
+            helper_path = root / "build" / "skills" / "emitted_docs" / "scripts" / "helper.py"
+
+            self.assertEqual(emitted[0], skill_path)
+            self.assertCountEqual(
+                emitted[1:],
+                (
+                    query_patterns_path,
+                    qa_path,
+                    reviewer_path,
+                    metadata_path,
+                    helper_path,
+                ),
+            )
+            self.assertFalse((skill_path.parent / "SKILL.contract.json").exists())
+            self.assertEqual(
+                query_patterns_path.read_text(encoding="utf-8"),
+                "# Query Patterns\n\n## Summary\n\nPick the right query before you search.\n",
+            )
+            self.assertEqual(
+                qa_path.read_text(encoding="utf-8"),
+                "# QA Guide\n\n## Checks\n\nRun the package checks before shipping.\n",
+            )
+            self.assertEqual(metadata_path.read_text(encoding="utf-8"), runtime_metadata)
+            self.assertEqual(helper_path.read_text(encoding="utf-8"), helper_script)
 
     def test_emit_skill_preserves_binary_assets_byte_for_byte(self) -> None:
         # This protects the user-visible outcome where skill packages can ship
@@ -249,6 +374,97 @@ class EmitSkillTests(unittest.TestCase):
             emitted_path = root / "build" / "skills" / "binary_assets" / "assets" / "icon.png"
             self.assertTrue(emitted_path.is_file())
             self.assertEqual(emitted_path.read_bytes(), asset_bytes)
+
+    def test_emit_skill_reserves_contract_path_for_host_bound_bundled_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "reserved_path"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package ReservedPath: "Reserved Path"
+                        metadata:
+                            name: "reserved-path"
+                        host_contract:
+                            final_output final_response: "Final Response"
+                        "Emit through {{host:final_response}}."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "SKILL.contract.json").write_text("{}", encoding="utf-8")
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/reserved_path/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                emit_target_skill(load_emit_targets(pyproject)["demo"])
+
+        self.assertIn("SKILL.contract.json", str(ctx.exception))
+
+    def test_emit_skill_reserves_contract_path_for_host_bound_emitted_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "reserved_doc_path"
+            (prompts / "refs").mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    from refs.query_patterns import QueryPatterns
+
+                    skill package ReservedDocPath: "Reserved Doc Path"
+                        metadata:
+                            name: "reserved-doc-path"
+                        emit:
+                            "SKILL.contract.json": QueryPatterns
+                        host_contract:
+                            document section_map: "Section Map"
+                        "Read {{host:section_map.title}}."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "refs" / "query_patterns.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    document QueryPatterns: "Query Patterns"
+                        section summary: "Summary"
+                            "Keep the host path stable."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/reserved_doc_path/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                emit_target_skill(load_emit_targets(pyproject)["demo"])
+
+        self.assertIn("SKILL.contract.json", str(ctx.exception))
 
     def _skills_cli(self, repo_root: Path) -> Path:
         cli_name = "skills.cmd" if os.name == "nt" else "skills"

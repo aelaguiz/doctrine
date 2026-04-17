@@ -1,0 +1,40 @@
+{
+  "contract_version": 1,
+  "package": {
+    "name": "host-bound-skill",
+    "title": "Host Bound Skill"
+  },
+  "host_contract": {
+    "section_map": {
+      "family": "document",
+      "title": "Section Map"
+    },
+    "final_response": {
+      "family": "final_output",
+      "title": "Final Response"
+    }
+  },
+  "artifacts": {
+    "SKILL.md": {
+      "kind": "skill_package_root",
+      "referenced_host_paths": [
+        "final_response",
+        "section_map.title"
+      ]
+    },
+    "agents/reviewer.md": {
+      "kind": "agent",
+      "source": "agents/reviewer.prompt",
+      "referenced_host_paths": [
+        "final_response"
+      ]
+    },
+    "references/query-patterns.md": {
+      "kind": "document",
+      "source": "refs.query_patterns.QueryPatterns",
+      "referenced_host_paths": [
+        "section_map.title"
+      ]
+    }
+  }
+}

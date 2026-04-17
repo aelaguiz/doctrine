@@ -38,6 +38,8 @@ from doctrine._compiler.types import (
     CompiledSection,
     CompiledSequenceBlock,
     CompiledSkillPackage,
+    CompiledSkillPackageArtifactContract,
+    CompiledSkillPackageContract,
     CompiledSkillPackageFile,
     CompiledTableBlock,
     CompiledTableCell,
@@ -174,7 +176,19 @@ class ResolvedSkillEntry:
     target_unit: IndexedUnit
     skill_decl: model.SkillDecl
     items: tuple[model.RecordItem, ...]
+    binds: tuple[model.SkillEntryBind, ...] = ()
+    package_unit: IndexedUnit | None = None
+    package_decl: model.SkillPackageDecl | None = None
+    package_contract: CompiledSkillPackageContract | None = None
     source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
+
+
+@dataclass(slots=True, frozen=True)
+class ResolvedSkillBindTarget:
+    family: str
+    unit: IndexedUnit
+    root_decl: AddressableRootDecl
+    path: tuple[str, ...] = ()
 
 
 ResolvedSkillsSectionBodyItem: TypeAlias = model.ProseLine | ResolvedSkillEntry
@@ -372,6 +386,15 @@ class AgentContract:
 
 
 @dataclass(slots=True, frozen=True)
+class ActiveSkillBindAgentContext:
+    agent: model.Agent
+    unit: IndexedUnit
+    agent_contract: AgentContract
+    analysis_field: model.AnalysisField | None = None
+    final_output_field: model.FinalOutputField | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class PreviousTurnAgentContext:
     predecessor_agent_keys: tuple[FlowAgentKey, ...] = ()
     predecessor_final_output_keys: tuple["OutputDeclKey", ...] = ()
@@ -426,6 +449,57 @@ class FinalOutputRouteBinding:
     route_field: model.OutputSchemaRouteField
     null_behavior: str
     choices: tuple[model.OutputSchemaRouteChoice, ...]
+
+
+@dataclass(slots=True)
+class SkillPackageHostArtifactState:
+    path: str
+    kind: str
+    source: str | None = None
+    referenced_host_paths: set[str] = dataclass_field(default_factory=set)
+
+
+@dataclass(slots=True)
+class SkillPackageHostCompileContext:
+    package_unit: IndexedUnit
+    package_decl: model.SkillPackageDecl
+    package_id: str
+    host_slots_by_key: dict[str, model.SkillPackageHostSlot]
+    artifacts: dict[str, SkillPackageHostArtifactState] = dataclass_field(default_factory=dict)
+    current_artifact_path: str | None = None
+    current_artifact_kind: str | None = None
+    current_artifact_source: str | None = None
+
+    def record_host_path(self, host_path: str) -> None:
+        if self.current_artifact_path is None or self.current_artifact_kind is None:
+            return
+        artifact = self.artifacts.get(self.current_artifact_path)
+        if artifact is None:
+            artifact = SkillPackageHostArtifactState(
+                path=self.current_artifact_path,
+                kind=self.current_artifact_kind,
+                source=self.current_artifact_source,
+            )
+            self.artifacts[self.current_artifact_path] = artifact
+        artifact.referenced_host_paths.add(host_path)
+
+    def compiled_contract(self) -> CompiledSkillPackageContract:
+        artifacts = tuple(
+            CompiledSkillPackageArtifactContract(
+                path=artifact.path,
+                kind=artifact.kind,
+                source=artifact.source,
+                referenced_host_paths=tuple(sorted(artifact.referenced_host_paths)),
+            )
+            for artifact in sorted(self.artifacts.values(), key=lambda artifact: artifact.path)
+        )
+        return CompiledSkillPackageContract(
+            contract_version=1,
+            package_name=self.package_id,
+            package_title=self.package_decl.title,
+            host_contract=tuple(self.host_slots_by_key.values()),
+            artifacts=artifacts,
+        )
 
 
 @dataclass(slots=True, frozen=True)

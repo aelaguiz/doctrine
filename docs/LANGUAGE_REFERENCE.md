@@ -621,12 +621,16 @@ Find the right repo surface for the current job.
 Doctrine also ships a first-class package surface for real skill bundles.
 
 ```prompt
+from refs.query_patterns import QueryPatterns
+
 skill package GreetingSkill: "Greeting Skill"
     metadata:
         name: "greeting-skill"
         description: "Write short, friendly greetings that sound human."
         version: "1.0.0"
         license: "MIT"
+    emit:
+        "references/query-patterns.md": QueryPatterns
     "Write short, friendly greetings that fit the current conversation."
 ```
 
@@ -638,10 +642,21 @@ Important rules:
   by other readable markdown-bearing surfaces.
 - `metadata:` currently accepts `name`, `description`, `version`, and
   `license`.
+- `emit:` is optional. Use it when a package should emit extra `.md` files
+  from prompt-authored `document` declarations.
+- Each `emit:` entry is `"relative/path.md": DocumentRef`.
+- `emit:` paths must stay under the package source root and end in `.md`.
+- `emit:` refs must point at `document` declarations.
 - If `metadata.name` is omitted, the emitted frontmatter falls back to the
   package declaration key.
 - The directory that contains `SKILL.prompt` is the package source root.
+- Prompt files inside that package may import each other from the package
+  source root with absolute imports such as `from refs.query_patterns import
+  QueryPatterns`, or with relative imports.
 - `SKILL.prompt` compiles to `SKILL.md`.
+- host-bound skill packages also emit `SKILL.contract.json` beside
+  `SKILL.md`.
+- `emit:` writes extra `.md` files under the package-relative paths you name.
 - Any bundled file that is not a `.prompt` file emits under the same relative
   path, byte for byte, so relative Markdown links keep working after emit.
 - Bundled agent prompts under `agents/**/*.prompt` compile to markdown
@@ -649,11 +664,83 @@ Important rules:
 - Other files in the same `agents/` tree still bundle normally.
 - Other descendant prompt-bearing subtrees stay compiler-owned; Doctrine does
   not copy their `.prompt` files through as ordinary bundle files.
+- Package-local import collisions fail loud. Doctrine will not guess between a
+  package-local module and a repo-wide prompt module with the same dotted
+  path.
 - Reserved-path and case-collision errors fail loudly. `SKILL.md` is
   compiler-owned output, not an authored source file.
 - Use inline `skill` and `skills` when the capability only needs reusable
   semantics inside agent doctrine. Use `skill package` when Doctrine should
   author and emit the package tree itself.
+
+### Package Host Binding
+
+Use package host binding when a reusable skill package needs typed host facts
+from the consuming agent without copying that IO prose into every agent home.
+
+Author the package contract once in `SKILL.prompt`:
+
+```prompt
+skill package SectionPipelineSkill: "Section Pipeline Skill"
+    metadata:
+        name: "section-pipeline-skill"
+    host_contract:
+        document section_map: "Section Map"
+        final_output final_response: "Final Response"
+    "Read {{host:section_map.title}}."
+    "Emit through {{host:final_response}}."
+```
+
+Link the inline skill to that package:
+
+```prompt
+skill SectionPipeline: "Section Pipeline"
+    purpose: "Run the section pipeline."
+    package: "section-pipeline-skill"
+```
+
+Bind the host slots where the skill is used:
+
+```prompt
+skills SectionSkills: "Skills"
+    skill section_pipeline: SectionPipeline
+        bind:
+            section_map: SectionMap
+            final_response: final_output
+```
+
+Important rules:
+
+- `host_contract:` is package-scoped. Declare it once on the root
+  `skill package`.
+- `bind:` is call-site scoped. Declare it once on the consuming skill entry.
+- `package:`, `host_contract:`, and `bind:` are semantic only. They do not
+  render into Markdown.
+- The root `SKILL.prompt` body uses `{{host:slot_key}}` and
+  `{{host:slot_key.path.to.child}}` interpolation.
+- Emitted docs and bundled agent prompts use the same `host:` root anywhere
+  that artifact kind already supports normal addressable refs.
+- The first cut supports these host-slot families:
+  - `input`
+  - `output`
+  - `document`
+  - `analysis`
+  - `schema`
+  - `table`
+  - `final_output`
+- Bind targets may point at:
+  - `inputs:key`
+  - `outputs:key`
+  - `analysis`
+  - `final_output`
+  - ordinary declaration refs such as `SectionMap`
+  - addressable child paths on those same roots
+- Every declared host slot must be bound exactly once.
+- Unknown slots, missing binds, extra binds, wrong families, and bad child
+  paths fail loud.
+- When a package has host-binding truth, `SKILL.contract.json` records the
+  package host contract and the host paths used by each emitted prompt-authored
+  artifact.
 
 ## Inputs And Outputs
 

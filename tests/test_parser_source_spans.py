@@ -511,6 +511,38 @@ class ParserSourceSpanTests(unittest.TestCase):
             model.SourceSpan(line=14, column=9),
         )
 
+    def test_skill_package_emit_entries_keep_source_spans(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """\
+                skill package LayoutChecklist: "Layout Checklist"
+                    metadata:
+                        name: "layout-checklist"
+                    emit:
+                        "references/checklist.md": ChecklistGuide
+                        "references/qa.md": QaGuide
+                    "Keep the root file short."
+                """
+            )
+        )
+
+        package = prompt.declarations[0]
+        self.assertIsInstance(package, model.SkillPackageDecl)
+        self.assertEqual(package.source_span, model.SourceSpan(line=1, column=1))
+        self.assertEqual(len(package.emit_entries), 2)
+        self.assertEqual(
+            package.emit_entries[0].source_span,
+            model.SourceSpan(line=5, column=9),
+        )
+        self.assertEqual(package.emit_entries[0].path, "references/checklist.md")
+        self.assertEqual(package.emit_entries[0].ref.declaration_name, "ChecklistGuide")
+        self.assertEqual(
+            package.emit_entries[1].source_span,
+            model.SourceSpan(line=6, column=9),
+        )
+        self.assertEqual(package.emit_entries[1].path, "references/qa.md")
+        self.assertEqual(package.emit_entries[1].ref.declaration_name, "QaGuide")
+
 
 if __name__ == "__main__":
     unittest.main()

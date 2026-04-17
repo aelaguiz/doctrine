@@ -138,6 +138,16 @@ entrypoint = "skills/agent-linter/prompts/SKILL.prompt"
 output_dir = "skills/.curated/agent-linter"
 
 [[tool.doctrine.emit.targets]]
+name = "doctrine_learn_skill"
+entrypoint = "skills/doctrine-learn/prompts/SKILL.prompt"
+output_dir = "skills/doctrine-learn/build"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_learn_public_skill"
+entrypoint = "skills/doctrine-learn/prompts/SKILL.prompt"
+output_dir = "skills/.curated/doctrine-learn"
+
+[[tool.doctrine.emit.targets]]
 name = "example_104_review_final_output_output_schema_blocked_control_ready"
 entrypoint = "examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt"
 output_dir = "examples/104_review_final_output_output_schema_blocked_control_ready/build"
@@ -171,3 +181,18 @@ output_dir = "examples/120_route_field_final_output_contract/build"
 name = "example_121_nullable_route_field_final_output_contract"
 entrypoint = "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt"
 output_dir = "examples/121_nullable_route_field_final_output_contract/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_122_skill_package_emit_documents"
+entrypoint = "examples/122_skill_package_emit_documents/prompts/SKILL.prompt"
+output_dir = "examples/122_skill_package_emit_documents/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_123_skill_package_emit_documents_mixed_bundle"
+entrypoint = "examples/123_skill_package_emit_documents_mixed_bundle/prompts/SKILL.prompt"
+output_dir = "examples/123_skill_package_emit_documents_mixed_bundle/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_124_skill_package_host_binding"
+entrypoint = "examples/124_skill_package_host_binding/prompts/skills/host_bound/SKILL.prompt"
+output_dir = "examples/124_skill_package_host_binding/build"

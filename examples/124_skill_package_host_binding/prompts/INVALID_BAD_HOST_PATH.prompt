@@ -1,0 +1,14 @@
+document SectionMap: "Section Map"
+    section title: "Title"
+        "Map title."
+
+skill InvalidPathSkill: "Invalid Path Skill"
+    purpose: "Run the invalid path package."
+    package: "invalid-host-path-skill"
+
+agent InvalidPathDemo:
+    role: "Use the invalid package."
+    skills: "Skills"
+        skill invalid_path: InvalidPathSkill
+            bind:
+                section_map: SectionMap

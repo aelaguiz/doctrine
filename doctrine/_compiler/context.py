@@ -8,8 +8,10 @@ from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledAgent,
     CompiledSection,
+    CompiledSkillPackage,
     IndexedUnit,
     OutputDeclKey,
+    ActiveSkillBindAgentContext,
     PreviousTurnAgentContext,
     ResolvedAgentSlotState,
     ResolvedAnalysisBody,
@@ -21,6 +23,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedWorkflowBody,
     ReviewSemanticContext,
     RouteSemanticContext,
+    SkillPackageHostCompileContext,
 )
 from doctrine._compiler.display import DisplayMixin
 from doctrine._compiler.compile import CompileMixin
@@ -68,6 +71,11 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             "ResolvedPreviousTurnInputSpec",
         ] = {}
         self._addressable_self_root_stack: list[model.NameRef] = []
+        self._skill_package_host_context_stack: list[SkillPackageHostCompileContext] = (
+            []
+            if session.skill_package_host_context is None
+            else [session.skill_package_host_context]
+        )
         self._workflow_compile_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_resolution_stack: list[tuple[tuple[str, ...], str]] = []
         self._workflow_addressable_resolution_stack: list[tuple[tuple[str, ...], str]] = []
@@ -131,6 +139,11 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             tuple[tuple[str, ...], str],
             tuple[ResolvedAgentSlotState, ...],
         ] = {}
+        self._compiled_skill_package_cache: dict[
+            tuple[tuple[str, ...], str],
+            CompiledSkillPackage,
+        ] = {}
+        self._active_skill_bind_agent_context: ActiveSkillBindAgentContext | None = None
         # Mutable resolution stacks and caches remain local to one compile task.
         self.root_unit = session.root_unit
 

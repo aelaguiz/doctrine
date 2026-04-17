@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TypeAlias
 
+import doctrine._model as model
 from doctrine._model.core import ProseLine, RenderProfileRule, RoleScalar
 from doctrine._model.readable import (
     ReadableDefinitionItem,
@@ -324,11 +325,29 @@ class CompiledAgent:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledSkillPackageArtifactContract:
+    path: str
+    kind: str
+    source: str | None = None
+    referenced_host_paths: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledSkillPackageContract:
+    contract_version: int
+    package_name: str
+    package_title: str
+    host_contract: tuple[model.SkillPackageHostSlot, ...] = ()
+    artifacts: tuple[CompiledSkillPackageArtifactContract, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledSkillPackage:
     name: str
     title: str
     frontmatter: tuple[tuple[str, str], ...]
     root: CompiledSection
+    contract: CompiledSkillPackageContract
     files: tuple["CompiledSkillPackageFile", ...] = ()
 
 

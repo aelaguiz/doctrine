@@ -422,15 +422,20 @@ reference-heavy skills, script-backed helpers, runtime metadata packages,
 plugin bundles, delegating companion-agent packages, larger compendia, and
 path-sensitive bundles, explicit emitted-doc packages, and binary assets.
 
-## First-Party Reference Package
+## First-Party Reference Packages
 
-Doctrine also ships one real first-party skill package under
-`skills/agent-linter/`.
-See [AGENT_LINTER.md](AGENT_LINTER.md) for install, usage, and structured
-output proof.
-It is a good reference when you need a larger package that still stays lean.
-Use a source checkout for this reference package. The published Python package
-does not ship the repo-owned prompt tree or named emit target.
+Doctrine ships two real first-party skill packages under `skills/`:
+
+- `skills/agent-linter/` — the audit counterpart. See
+  [AGENT_LINTER.md](AGENT_LINTER.md) for install, usage, and structured
+  output proof.
+- `skills/doctrine-learn/` — the teaching counterpart. See
+  [DOCTRINE_LEARN.md](DOCTRINE_LEARN.md) for install, the reference map, and
+  how the skill routes to the right depth for each authoring surface.
+
+Both are good references when you need a larger package that still stays lean.
+Use a source checkout for these reference packages. The published Python
+package does not ship the repo-owned prompt trees or named emit targets.
 
 It shows this package shape:
 

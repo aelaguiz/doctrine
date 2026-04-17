@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from doctrine import model
 from doctrine._compiler.constants import (
@@ -9,7 +10,7 @@ from doctrine._compiler.constants import (
     _READABLE_DECL_REGISTRIES,
     _REVIEW_VERDICT_TEXT,
 )
-from doctrine._compiler.indexing import ImportedSymbolBinding
+from doctrine._compiler.indexing import ImportedSymbolBinding, index_unit, skill_package_id
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
 from doctrine._compiler.reference_diagnostics import reference_compile_error, reference_related_site
 from doctrine._compiler.resolved_types import (
@@ -19,6 +20,7 @@ from doctrine._compiler.resolved_types import (
     ReadableDecl,
     ResolvedRenderProfile,
 )
+from doctrine.parser import parse_file
 
 
 @dataclass(slots=True, frozen=True)
@@ -31,19 +33,111 @@ class _RefLookupTarget:
 class ResolveRefsMixin:
     """Ref lookup helpers for ResolveMixin."""
 
+    def _visible_skill_package_lookup_units(self, *, unit: IndexedUnit) -> tuple[IndexedUnit, ...]:
+        units: list[IndexedUnit] = []
+        seen: set[tuple[Path | None, tuple[str, ...]]] = set()
+
+        def _add(target_unit: IndexedUnit) -> None:
+            key = (target_unit.prompt_root, target_unit.module_parts)
+            if key in seen:
+                return
+            seen.add(key)
+            units.append(target_unit)
+
+        _add(unit)
+        for imported_unit in unit.visible_imported_units.values():
+            _add(imported_unit)
+        for binding in unit.imported_symbols_by_name.values():
+            _add(binding.target_unit)
+        return tuple(units)
+
+    def _scanned_skill_package_matches(
+        self,
+        package_id: str,
+    ) -> tuple[tuple[IndexedUnit, model.SkillPackageDecl], ...]:
+        cache = self.session.skill_package_scan_cache
+        if cache is None:
+            matches_by_id: dict[str, list[tuple[IndexedUnit, model.SkillPackageDecl]]] = {}
+            seen_paths: set[Path] = set()
+            for prompt_root in self.session.import_roots:
+                for prompt_path in prompt_root.rglob("SKILL.prompt"):
+                    resolved_prompt_path = prompt_path.resolve()
+                    if resolved_prompt_path in seen_paths:
+                        continue
+                    seen_paths.add(resolved_prompt_path)
+                    prompt_file = parse_file(prompt_path)
+                    package_unit = index_unit(
+                        self.session,
+                        prompt_file,
+                        prompt_root=prompt_root,
+                        module_parts=prompt_path.relative_to(prompt_root).parts[:-1],
+                        module_source_kind="runtime_package",
+                        package_root=prompt_path.parent,
+                        ancestry=(),
+                        allow_parallel_imports=True,
+                    )
+                    for declaration in package_unit.skill_packages_by_name.values():
+                        matches_by_id.setdefault(skill_package_id(declaration), []).append(
+                            (package_unit, declaration)
+                        )
+            self.session.skill_package_scan_cache = {
+                key: tuple(value) for key, value in matches_by_id.items()
+            }
+            cache = self.session.skill_package_scan_cache
+        return () if cache is None else cache.get(package_id, ())
+
+    def _resolve_skill_package_id(
+        self,
+        package_id: str,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
+    ) -> tuple[IndexedUnit, model.SkillPackageDecl]:
+        matches: list[tuple[IndexedUnit, model.SkillPackageDecl]] = []
+        for lookup_unit in self._visible_skill_package_lookup_units(unit=unit):
+            decl = lookup_unit.skill_packages_by_id.get(package_id)
+            if decl is not None:
+                matches.append((lookup_unit, decl))
+
+        if not matches:
+            matches.extend(self._scanned_skill_package_matches(package_id))
+
+        if len(matches) == 1:
+            return matches[0]
+
+        if len(matches) > 1:
+            labels = ", ".join(
+                skill_package_id(decl)
+                if lookup_unit.module_parts == ()
+                else f"{'.'.join(lookup_unit.module_parts)} ({skill_package_id(decl)})"
+                for lookup_unit, decl in matches
+            )
+            raise reference_compile_error(
+                code="E270",
+                summary="Ambiguous skill package id",
+                detail=(
+                    f"Skill package id `{package_id}` in {owner_label} is visible from more than "
+                    f"one package: {labels}"
+                ),
+                unit=unit,
+                source_span=source_span,
+                hints=("Keep visible skill package ids unique, or change the package id.",),
+            )
+
+        raise reference_compile_error(
+            code="E299",
+            summary="Compile failure",
+            detail=f"Missing skill package id in {owner_label}: {package_id}",
+            unit=unit,
+            source_span=source_span,
+            hints=("Add the missing `skill package`, or fix the `package:` id.",),
+        )
+
     def _resolve_visible_imported_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> IndexedUnit:
         target_unit = unit.visible_imported_units.get(ref.module_parts)
-        if target_unit is None:
-            target_unit = next(
-                (
-                    binding.target_unit
-                    for binding in unit.imported_symbols_by_name.values()
-                    if binding.target_unit.module_parts == ref.module_parts
-                ),
-                None,
-            )
         if target_unit is None:
             raise reference_compile_error(
                 code="E280",

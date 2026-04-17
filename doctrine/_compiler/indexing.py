@@ -103,6 +103,7 @@ class IndexedUnit:
     output_schemas_by_name: dict[str, model.OutputSchemaDecl]
     skills_by_name: dict[str, model.SkillDecl]
     skill_packages_by_name: dict[str, model.SkillPackageDecl]
+    skill_packages_by_id: dict[str, model.SkillPackageDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
@@ -148,6 +149,44 @@ def _register_decl(
             ),
             hints=("Keep one declaration for this name in the module.",),
         )
+
+
+def skill_package_id(declaration: model.SkillPackageDecl) -> str:
+    return declaration.metadata.name or declaration.name
+
+
+def _register_skill_package_id(
+    registry: dict[str, model.SkillPackageDecl],
+    declaration: model.SkillPackageDecl,
+    *,
+    module_parts: tuple[str, ...],
+    source_path: Path | None,
+) -> None:
+    package_id = skill_package_id(declaration)
+    existing = registry.get(package_id)
+    if existing is not None:
+        dotted_module = ".".join(module_parts)
+        owner_label = (
+            f"module `{dotted_module}`" if dotted_module else "the root prompt module"
+        )
+        raise compile_error(
+            code="E299",
+            summary="Duplicate skill package id",
+            detail=(
+                f"Skill package id `{package_id}` is defined more than once in {owner_label}."
+            ),
+            path=source_path,
+            source_span=declaration.source_span,
+            related=(
+                related_prompt_site(
+                    label="first package id",
+                    path=source_path,
+                    source_span=getattr(existing, "source_span", None),
+                ),
+            ),
+            hints=("Keep each skill package id unique within one module.",),
+        )
+    registry[package_id] = declaration
 
 
 def _validate_enum_decl(
@@ -304,6 +343,7 @@ def _resolve_module_source_in_root(
     *,
     importer_path: Path | None = None,
     import_source_span=None,
+    file_module_package_root: Path | None = None,
 ) -> ResolvedModuleSource | None:
     file_module_path = _module_path_for_root(prompt_root, module_parts)
     runtime_package_path = _runtime_package_path_for_root(prompt_root, module_parts)
@@ -339,7 +379,7 @@ def _resolve_module_source_in_root(
             prompt_root=prompt_root,
             prompt_path=file_module_path,
             module_source_kind="file_module",
-            package_root=None,
+            package_root=file_module_package_root,
         )
     return None
 
@@ -401,6 +441,7 @@ def index_unit(
     output_schemas_by_name: dict[str, model.OutputSchemaDecl] = {}
     skills_by_name: dict[str, model.SkillDecl] = {}
     skill_packages_by_name: dict[str, model.SkillPackageDecl] = {}
+    skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
 
@@ -622,6 +663,12 @@ def index_unit(
                 source_path=prompt_file.source_path,
             )
             skill_packages_by_name[declaration.name] = declaration
+            _register_skill_package_id(
+                skill_packages_by_id,
+                declaration,
+                module_parts=module_parts,
+                source_path=prompt_file.source_path,
+            )
             continue
         if isinstance(declaration, model.EnumDecl):
             _register_decl(
@@ -664,6 +711,7 @@ def index_unit(
         session,
         imports,
         prompt_root=prompt_root,
+        package_root=package_root,
         module_parts=module_parts,
         importer_path=prompt_file.source_path,
         ancestry=ancestry,
@@ -697,6 +745,7 @@ def index_unit(
         output_schemas_by_name=output_schemas_by_name,
         skills_by_name=skills_by_name,
         skill_packages_by_name=skill_packages_by_name,
+        skill_packages_by_id=skill_packages_by_id,
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
@@ -739,6 +788,7 @@ def load_imports(
     imports: list[model.ImportDecl],
     *,
     prompt_root: Path,
+    package_root: Path | None,
     module_parts: tuple[str, ...],
     importer_path: Path | None,
     ancestry: tuple[ModuleLoadKey, ...],
@@ -777,6 +827,7 @@ def load_imports(
                 session,
                 resolved_module_parts,
                 prompt_root=prompt_root if import_decl.path.level > 0 else None,
+                package_import_root=package_root if import_decl.path.level == 0 else None,
                 ancestry=ancestry,
                 importer_path=importer_path,
                 import_decl=import_decl,
@@ -871,6 +922,7 @@ def load_module(
     module_parts: tuple[str, ...],
     *,
     prompt_root: Path | None,
+    package_import_root: Path | None = None,
     ancestry: tuple[ModuleLoadKey, ...],
     importer_path: Path | None = None,
     import_decl: model.ImportDecl | None = None,
@@ -879,6 +931,7 @@ def load_module(
         session,
         module_parts,
         prompt_root=prompt_root,
+        package_import_root=package_import_root,
         importer_path=importer_path,
         import_decl=import_decl,
     )
@@ -995,11 +1048,48 @@ def load_module(
             ready.set()
 
 
+def _searchable_import_roots(
+    session: "CompilationSession",
+    *,
+    package_import_root: Path | None,
+) -> tuple[tuple[Path, Path | None], ...]:
+    candidate_roots: list[tuple[Path, Path | None]] = []
+    seen_roots: set[Path] = set()
+
+    if package_import_root is not None:
+        resolved_package_root = package_import_root.resolve()
+        candidate_roots.append((package_import_root, package_import_root))
+        seen_roots.add(resolved_package_root)
+
+    for candidate_root in session.import_roots:
+        resolved_candidate_root = candidate_root.resolve()
+        if resolved_candidate_root in seen_roots:
+            continue
+        candidate_roots.append((candidate_root, None))
+        seen_roots.add(resolved_candidate_root)
+
+    return tuple(candidate_roots)
+
+
+def _import_root_label(
+    session: "CompilationSession",
+    prompt_root: Path,
+    *,
+    package_import_root: Path | None,
+) -> str:
+    resolved_root = prompt_root.resolve()
+    if package_import_root is not None and resolved_root == package_import_root.resolve():
+        if resolved_root not in session.import_root_labels:
+            return f"skill package source root `{prompt_root}`"
+    return session.import_root_labels.get(resolved_root, str(prompt_root))
+
+
 def resolve_module_source(
     session: "CompilationSession",
     module_parts: tuple[str, ...],
     *,
     prompt_root: Path | None,
+    package_import_root: Path | None = None,
     importer_path: Path | None = None,
     import_decl: model.ImportDecl | None = None,
 ) -> ResolvedModuleSource:
@@ -1025,13 +1115,17 @@ def resolve_module_source(
 
     matching_sources = tuple(
         resolved
-        for candidate_root in session.import_roots
+        for candidate_root, file_module_package_root in _searchable_import_roots(
+            session,
+            package_import_root=package_import_root,
+        )
         for resolved in (
             _resolve_module_source_in_root(
                 candidate_root,
                 module_parts,
                 importer_path=importer_path,
                 import_source_span=None if import_decl is None else import_decl.source_span,
+                file_module_package_root=file_module_package_root,
             ),
         )
         if resolved is not None
@@ -1048,9 +1142,12 @@ def resolve_module_source(
             hints=("Create the missing prompt file, or fix the import path.",),
         )
     if len(matching_sources) > 1:
-        root_labels = getattr(session, "import_root_labels", {})
         root_list = ", ".join(
-            root_labels.get(source.prompt_root.resolve(), str(source.prompt_root))
+            _import_root_label(
+                session,
+                source.prompt_root,
+                package_import_root=package_import_root,
+            )
             for source in matching_sources
         )
         raise compile_error(

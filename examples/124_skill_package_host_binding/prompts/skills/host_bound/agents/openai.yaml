@@ -1,0 +1,3 @@
+interface:
+  display_name: Host Bound Skill
+default_prompt: SKILL.md

@@ -117,6 +117,9 @@ from doctrine._model.io import (
     RecordSection,
     SkillDecl,
     SkillPackageDecl,
+    SkillPackageEmitEntry,
+    SkillPackageHostSlot,
+    SkillPackageLink,
     SkillPackageMetadata,
     TrustSurfaceItem,
 )
@@ -255,6 +258,7 @@ from doctrine._model.workflow import (
     RouteOnlyGuard,
     RouteOnlyRoute,
     SectionBodyItem,
+    SkillEntryBind,
     SkillEntry,
     SkillsBody,
     SkillsDecl,

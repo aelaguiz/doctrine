@@ -22,9 +22,28 @@ or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
 ### Added
+- Added a first-party `skills/doctrine-learn/` skill package, its
+  `doctrine_learn_skill` and `doctrine_learn_public_skill` emit targets, and
+  live docs at `docs/DOCTRINE_LEARN.md`. The skill is prompt-only and teaches
+  Doctrine authoring end-to-end through twelve loadable references
+  (principles, language overview, agents and workflows, reviews, outputs and
+  schemas, documents and tables, skills and packages, imports and refs, emit
+  targets, authoring patterns, examples ladder, verify and ship).
 - Added a first-party `skills/agent-linter/` skill package, its
   `doctrine_agent_linter_skill` emit target, focused emit proof, and live
   docs for emit, install, and use.
+- Added explicit `emit:` companion docs for `skill package`, plus package-
+  local prompt imports from the `SKILL.prompt` source root so one skill can
+  ship many prompt-authored `.md` files without path magic.
+- Added package host binding for fat skills:
+  - inline skill `package:`
+  - package `host_contract:`
+  - skill-entry `bind:`
+  - package-scoped `host:` refs across the prompt-authored emitted tree
+  - emitted `SKILL.contract.json` sidecars from `emit_skill` for host-bound
+    packages
+- Added the manifest-backed `124_skill_package_host_binding` example and
+  focused unit and smoke proof for package host binding.
 - Added a checked-in public install tree at `skills/.curated/agent-linter/`
   so `npx skills add .` discovers one supported public skill from the repo
   root.
@@ -113,6 +132,8 @@ payload text and breaking releases with no real upgrade steps.
 - Changed `emit_docs`, `emit_flow`, corpus build-contract proof, and
   diagnostic smoke checks to share one runtime frontier instead of assuming
   root-only runtime emit.
+- Changed `emit_skill` to write `SKILL.contract.json` beside `SKILL.md` only
+  when a skill package has real host-binding truth.
 - Clarified the release policy to prefer the next patch version for routine
   public work and keep minor bumps for real backward-compatible public
   additions or soft deprecations.

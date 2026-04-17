@@ -11,8 +11,10 @@ pipeline:
   review, route, and `io` metadata.
   For structured final outputs, it also writes the exact lowered schema JSON
   file that machine consumers should load for payload shape.
-- `doctrine.emit_skill` writes compiled `SKILL.md` package trees plus bundled
-  source-root companion files.
+- `doctrine.emit_skill` writes compiled `SKILL.md` package trees, explicit
+  emitted `.md` companion docs from `emit:`, bundled source-root companion
+  files, and, for host-bound packages, one `SKILL.contract.json` sidecar for
+  package host-binding metadata.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
 
@@ -203,6 +205,7 @@ Emit compiled skill-package trees for one or more configured targets:
 ```bash
 uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
 uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
+uv run --locked python -m doctrine.emit_skill --target example_124_skill_package_host_binding
 uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_skill
 ```
 
@@ -244,6 +247,22 @@ Useful CLI rules:
   the same imports for each concrete root agent.
 - The commands fail loudly on config or compiler errors instead of skipping bad
   targets.
+
+## Skill Package Sidecars
+
+`emit_skill` always writes `SKILL.md`.
+It also writes `SKILL.contract.json` when the package has host-binding truth
+through `host_contract:` or referenced `host:` paths.
+
+`SKILL.contract.json` is the machine-readable sidecar for skill-package truth.
+Today it records:
+
+- the package name and title
+- the package host contract
+- the host paths used by each prompt-authored emitted artifact
+
+That sidecar is part of the public emitted skill-package surface.
+Do not author a real source file at that path.
 
 ## Quick Start Without A Named Target
 
@@ -374,6 +393,7 @@ entrypoint:
 
 ```text
 <output_dir>/<entrypoint-relative-dir>/SKILL.md
+<output_dir>/<entrypoint-relative-dir>/<emit-relative-path>.md
 <output_dir>/<entrypoint-relative-dir>/<bundled-relative-path>
 ```
 
@@ -381,6 +401,10 @@ Important package rules:
 
 - `SKILL.prompt` compiles to `SKILL.md`.
 - The directory that contains `SKILL.prompt` is the package source root.
+- `emit:` may add extra package-relative `.md` files from prompt-authored
+  `document` declarations.
+- Package-local prompt imports may resolve from that source root before
+  Doctrine falls back to repo-wide prompt roots.
 - Any bundled file that is not a `.prompt` file emits under the same relative
   path from that source root, byte for byte.
 - Bundled agent prompts under `agents/**/*.prompt` emit compiled markdown
@@ -408,6 +432,8 @@ examples/73_flow_visualizer_showcase/build/AGENTS.flow.d2
 examples/73_flow_visualizer_showcase/build/AGENTS.flow.svg
 
 examples/95_skill_package_minimal/build/SKILL.md
+examples/122_skill_package_emit_documents/build/references/query-patterns.md
+examples/123_skill_package_emit_documents_mixed_bundle/build/agents/reviewer.md
 examples/96_skill_package_references/build/references/checklist.md
 examples/97_skill_package_scripts/build/scripts/greet.py
 examples/99_skill_package_plugin_metadata/build/.codex-plugin/plugin.json

@@ -1,0 +1,7 @@
+document QueryPatterns: "Query Patterns"
+    section summary: "Summary"
+        "Pick the smallest query that can answer the question."
+
+    bullets steps: "Steps"
+        start_small: "Start with the narrowest search that can work."
+        widen_once: "Widen once if the first pass misses needed context."

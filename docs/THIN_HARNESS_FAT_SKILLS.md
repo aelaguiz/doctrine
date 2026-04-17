@@ -80,6 +80,8 @@ When you review a change, ask:
   slots
 - [AGENT_LINTER.md](AGENT_LINTER.md): the shipped judgment-first review skill
   that catches principle pressure the compiler cannot prove
+- [DOCTRINE_LEARN.md](DOCTRINE_LEARN.md): the shipped teaching-first skill
+  that loads principles, language, packaging, and verification on demand
 - [WARNINGS.md](WARNINGS.md): the scoped plan for a first-class compiler
   warning layer
 

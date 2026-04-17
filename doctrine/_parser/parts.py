@@ -21,6 +21,12 @@ class SkillsBodyParts:
 
 
 @dataclass(slots=True, frozen=True)
+class SkillDeclBodyParts:
+    items: tuple[model.RecordItem, ...]
+    package_link: model.SkillPackageLink | None
+
+
+@dataclass(slots=True, frozen=True)
 class IoBodyParts:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.IoItem, ...]
@@ -203,9 +209,38 @@ class SkillPackageMetadataBlockPart:
 
 
 @dataclass(slots=True, frozen=True)
+class SkillPackageEmitBlockPart:
+    entries: tuple[model.SkillPackageEmitEntry, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageHostContractBlockPart:
+    slots: tuple[model.SkillPackageHostSlot, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class SkillPackageBodyParts:
     items: tuple[model.RecordItem, ...]
     metadata: model.SkillPackageMetadata
+    emit_entries: tuple[model.SkillPackageEmitEntry, ...]
+    host_contract: tuple[model.SkillPackageHostSlot, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class SkillEntryBindBlockPart:
+    binds: tuple[model.SkillEntryBind, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillEntryBodyParts:
+    items: tuple[model.RecordItem, ...]
+    binds: tuple[model.SkillEntryBind, ...]
 
 
 @dataclass(slots=True, frozen=True)
@@ -458,6 +493,9 @@ def _name_ref_from_dotted_name(
 __all__ = [
     "WorkflowBodyParts",
     "SkillsBodyParts",
+    "SkillDeclBodyParts",
+    "SkillEntryBindBlockPart",
+    "SkillEntryBodyParts",
     "IoBodyParts",
     "InputBodyParts",
     "InputStructurePart",
@@ -477,6 +515,8 @@ __all__ = [
     "DecisionItemPart",
     "SkillPackageMetadataFieldPart",
     "SkillPackageMetadataBlockPart",
+    "SkillPackageEmitBlockPart",
+    "SkillPackageHostContractBlockPart",
     "SkillPackageBodyParts",
     "SchemaBodyParts",
     "DocumentBodyParts",

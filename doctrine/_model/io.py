@@ -416,6 +416,7 @@ class SkillDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
+    package_link: "SkillPackageLink" | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -428,11 +429,34 @@ class SkillPackageMetadata:
 
 
 @_dataclass(slots=True, frozen=True)
+class SkillPackageEmitEntry:
+    path: str
+    ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillPackageLink:
+    package_id: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillPackageHostSlot:
+    key: str
+    family: str
+    title: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class SkillPackageDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
     metadata: SkillPackageMetadata
+    emit_entries: tuple[SkillPackageEmitEntry, ...] = ()
+    host_contract: tuple[SkillPackageHostSlot, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

@@ -17,7 +17,11 @@ from doctrine._compiler.types import (
     CompiledSkillPackage,
     FlowGraph,
 )
-from doctrine._compiler.resolved_types import PreviousTurnAgentContext
+from doctrine._compiler.resolved_types import (
+    ActiveSkillBindAgentContext,
+    PreviousTurnAgentContext,
+    SkillPackageHostCompileContext,
+)
 from doctrine.diagnostics import CompileError, DiagnosticLocation, DoctrineError
 from doctrine.project_config import (
     ProvidedPromptRoot,
@@ -43,6 +47,7 @@ class CompilationSession:
         *,
         project_config: ProjectConfig | None = None,
         provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
+        skill_package_host_context: SkillPackageHostCompileContext | None = None,
     ):
         self.prompt_root = resolve_prompt_root(prompt_file.source_path)
         resolved_project_config = project_config
@@ -107,11 +112,14 @@ class CompilationSession:
             compile_config.additional_prompt_roots,
             compile_config.provided_prompt_roots,
         )
+        self.skill_package_host_context = skill_package_host_context
+        self.skill_package_scan_cache: dict[str, tuple[tuple[IndexedUnit, model.SkillPackageDecl], ...]] | None = None
         self._module_cache: dict[ModuleLoadKey, IndexedUnit] = {}
         self._module_load_errors: dict[ModuleLoadKey, Exception] = {}
         self._module_loading: dict[ModuleLoadKey, threading.Event] = {}
         self._module_waits: dict[ModuleLoadKey, ModuleLoadKey] = {}
         self._module_lock = threading.Lock()
+        root_package_root = _entrypoint_package_root(prompt_file)
         # Shared prompt graph data lives on the session; compile contexts stay task-local.
         self.root_unit = index_unit(
             self,
@@ -119,7 +127,7 @@ class CompilationSession:
             prompt_root=self.prompt_root,
             module_parts=(),
             module_source_kind="entrypoint",
-            package_root=None,
+            package_root=root_package_root,
             ancestry=(),
             allow_parallel_imports=True,
         )
@@ -277,6 +285,7 @@ class CompilationSession:
         previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
         | None = None,
         active_agent_key: tuple[tuple[str, ...], str] | None = None,
+        active_skill_bind_agent_context: ActiveSkillBindAgentContext | None = None,
         active_previous_turn_input_specs: dict[tuple[tuple[str, ...], str], object]
         | None = None,
     ) -> CompiledField | None:
@@ -287,6 +296,7 @@ class CompilationSession:
             previous_turn_contexts=previous_turn_contexts,
         )
         context._active_agent_key = active_agent_key
+        context._active_skill_bind_agent_context = active_skill_bind_agent_context
         context._active_previous_turn_input_specs = active_previous_turn_input_specs or {}
         return context._compile_agent_field(
             spec,
@@ -328,7 +338,13 @@ class CompilationSession:
     def load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
         if not module_parts:
             return self.root_unit
-        return load_module(self, module_parts, prompt_root=None, ancestry=())
+        return load_module(
+            self,
+            module_parts,
+            prompt_root=None,
+            package_import_root=self.root_unit.package_root,
+            ancestry=(),
+        )
 
     def provided_prompt_root_for(
         self,
@@ -413,6 +429,18 @@ def extract_target_flow_graph(
         project_config=project_config,
         provided_prompt_roots=provided_prompt_roots,
     ).extract_target_flow_graph(agent_names)
+
+
+def _entrypoint_package_root(prompt_file: model.PromptFile) -> Path | None:
+    source_path = prompt_file.source_path
+    if source_path is None:
+        return None
+    if not any(
+        isinstance(declaration, model.SkillPackageDecl)
+        for declaration in prompt_file.declarations
+    ):
+        return None
+    return source_path.parent
 
 
 def _import_root_labels(

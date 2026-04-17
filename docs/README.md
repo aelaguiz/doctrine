@@ -41,6 +41,9 @@ for repo setup and proof commands.
 
 - [AGENT_LINTER.md](AGENT_LINTER.md): install and use the bundled Doctrine
   Agent Linter skill for prompt, package, flow, and repo-slice audits
+- [DOCTRINE_LEARN.md](DOCTRINE_LEARN.md): install and use the bundled
+  Doctrine Learn skill to teach an agent end-to-end Doctrine authoring —
+  principles, language, packaging, emit, and verification
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
   bindings, target-owned delivery skills, `final_output:`,
   `final_output.route:`, generated schema files, emitted route metadata,
