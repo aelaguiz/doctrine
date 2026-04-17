@@ -486,11 +486,20 @@ Important rules:
   `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, and `rule`.
 - Block headers may carry `required`, `advisory`, or `optional`, plus
   descriptive `when <expr>` metadata.
+- Every non-rule readable block kind has a bare form and a named form.
+  The bare form drops the CNAME key and any heading string (for example,
+  `definitions:`, `callout:`, `table:`, `footnotes:`, `image:`, `code:`,
+  `markdown:`, `html:`). The renderer skips the H3 heading and the
+  `_kind · ..._` descriptor for bare forms. Use the named form (for example,
+  `definitions done_when: "Done When"`) when the block must be addressable
+  from another declaration, when it needs a visible heading, or when the
+  block carries `required`, `advisory`, or `when` metadata.
 - `sequence`, `bullets`, and `checklist` may declare `item_schema:` for typed
   keyed descendants on the list item surface.
 - `sequence`, `bullets`, and `checklist` titles are optional. Keep the key.
   With a title, the list renders as a nested headed block. Without a title,
-  the list renders directly inside the parent section.
+  the list renders directly inside the parent section and is marked
+  anonymous internally.
 - Inline `table` blocks may declare `row_schema:` alongside `columns:` /
   `rows:` and may use structured cell bodies when a row needs nested readable
   content. Documents may also use a named top-level table with

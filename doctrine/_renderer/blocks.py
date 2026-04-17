@@ -361,14 +361,16 @@ def _render_definitions_block(
     depth: int,
     profile: ResolvedRenderProfile,
 ) -> str:
-    metadata = _render_metadata_line(
-        requirement=block.requirement,
-        kind_label="definitions",
-        when_text=block.when_text,
-    )
-    lines = [f"{'#' * depth} {block.title}", ""]
-    if metadata is not None:
-        lines.extend([metadata, ""])
+    lines: list[str] = []
+    if not (block.anonymous and block.title is None):
+        metadata = _render_metadata_line(
+            requirement=block.requirement,
+            kind_label="definitions",
+            when_text=block.when_text,
+        )
+        lines.extend([f"{'#' * depth} {block.title}", ""])
+        if metadata is not None:
+            lines.extend([metadata, ""])
     for item in block.items:
         if not item.body:
             lines.append(f"- **{item.title}**")
@@ -391,14 +393,16 @@ def _render_table_block(
     depth: int,
     profile: ResolvedRenderProfile,
 ) -> str:
-    metadata = _render_metadata_line(
-        requirement=block.requirement,
-        kind_label="table",
-        when_text=block.when_text,
-    )
-    lines = [f"{'#' * depth} {block.title}", ""]
-    if metadata is not None:
-        lines.extend([metadata, ""])
+    lines: list[str] = []
+    if not (block.anonymous and block.title is None):
+        metadata = _render_metadata_line(
+            requirement=block.requirement,
+            kind_label="table",
+            when_text=block.when_text,
+        )
+        lines.extend([f"{'#' * depth} {block.title}", ""])
+        if metadata is not None:
+            lines.extend([metadata, ""])
 
     schema_lines = _render_inline_schema("Row Schema", block.table.row_schema, profile=profile)
     if schema_lines:
@@ -433,15 +437,19 @@ def _render_table_block(
 
 def _render_callout_block(block: CompiledCalloutBlock, *, profile: ResolvedRenderProfile) -> str:
     label = (block.kind or "note").upper()
-    title = f"{label} — {block.title}" if block.title else label
-    lines = [f"> **{title}**"]
-    metadata = _render_metadata_line(
-        requirement=block.requirement,
-        kind_label="callout",
-        when_text=block.when_text,
-    )
-    if metadata is not None:
-        lines.append(f"> {metadata}")
+    lines: list[str] = []
+    if not (block.anonymous and block.title is None):
+        title = f"{label} — {block.title}" if block.title else label
+        lines.append(f"> **{title}**")
+        metadata = _render_metadata_line(
+            requirement=block.requirement,
+            kind_label="callout",
+            when_text=block.when_text,
+        )
+        if metadata is not None:
+            lines.append(f"> {metadata}")
+    else:
+        lines.append(f"> **{label}**")
     for line in block.body:
         text = _render_prose_line(line, profile=profile)
         lines.append(f"> {text}" if text else ">")
@@ -481,28 +489,32 @@ def _render_footnotes_block(
     depth: int,
     profile: ResolvedRenderProfile,
 ) -> str:
-    metadata = _render_metadata_line(
-        requirement=block.requirement,
-        kind_label="footnotes",
-        when_text=block.when_text,
-    )
-    lines = [f"{'#' * depth} {block.title}", ""]
-    if metadata is not None:
-        lines.extend([metadata, ""])
+    lines: list[str] = []
+    if not (block.anonymous and block.title is None):
+        metadata = _render_metadata_line(
+            requirement=block.requirement,
+            kind_label="footnotes",
+            when_text=block.when_text,
+        )
+        lines.extend([f"{'#' * depth} {block.title}", ""])
+        if metadata is not None:
+            lines.extend([metadata, ""])
     for entry in block.entries:
         lines.append(f"[^{entry.key}]: {_render_prose_line(entry.text, profile=profile)}")
     return "\n".join(lines).rstrip()
 
 
 def _render_image_block(block: CompiledImageBlock, *, depth: int) -> str:
-    metadata = _render_metadata_line(
-        requirement=block.requirement,
-        kind_label="image",
-        when_text=block.when_text,
-    )
-    lines = [f"{'#' * depth} {block.title}", ""]
-    if metadata is not None:
-        lines.extend([metadata, ""])
+    lines: list[str] = []
+    if not (block.anonymous and block.title is None):
+        metadata = _render_metadata_line(
+            requirement=block.requirement,
+            kind_label="image",
+            when_text=block.when_text,
+        )
+        lines.extend([f"{'#' * depth} {block.title}", ""])
+        if metadata is not None:
+            lines.extend([metadata, ""])
     lines.append(f"![{block.alt}]({block.src})")
     if block.caption:
         lines.extend(["", block.caption])

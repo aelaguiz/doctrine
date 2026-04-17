@@ -40,6 +40,22 @@ table hidden inside another document. The compiler lowers named table use back
 to the ordinary document table path, so rendering and inheritance stay the
 same.
 
+## Readable Block Parity
+
+Every readable block kind has two forms. The named form takes a CNAME key and
+a heading string, like `definitions done_when: "Done When"`. The bare form
+drops both, like `definitions:`. The named form gives the block an address
+and a visible H3 heading with a `_kind · ..._` descriptor. The bare form
+renders the body straight into the surrounding section, with no heading and
+no descriptor. Authors reach for the named form when another declaration must
+point at the block, when metadata like `required`, `advisory`, or `when`
+needs to attach, or when the author wants the heading to stand out. They
+reach for the bare form when the block is just body prose inside a section.
+This parity holds for `definitions`, `callout`, `table`, `footnotes`,
+`image`, `bullets`, `sequence`, `checklist`, `code`, `markdown`, and `html`,
+so the language does not force an H3 heading on authors who just want the
+body.
+
 ## String Literals
 
 Single-line strings use `"..."` with standard Python escapes (`\"`, `\\`,

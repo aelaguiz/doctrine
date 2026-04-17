@@ -49,6 +49,78 @@ Minimal shape:"""
 """
         "See `examples/58_readable_document_blocks/` for the full mix of block kinds rendered through `structure:`."
 
+    section bare_and_named_readable_blocks: "Bare And Named Readable Blocks"
+        """Every readable block kind has two forms. The bare form drops the CNAME key and any heading string. The named form keeps both. The bare form is the first-class default when the block is just body prose inside a section. The named form is for blocks another declaration must point at, or blocks that carry `required`, `advisory`, `optional`, or `when` metadata.
+
+Bare form looks like this:"""
+        code:
+            language: prompt-fragment
+            text: """section summary: "Summary"
+    "Lead with the release goal."
+
+    definitions:
+        verdict: "Verdict"
+            "Say whether the release is ready."
+
+    callout:
+        kind: note
+        "Ground the claim before you summarize."
+
+    table:
+        columns:
+            gate: "Gate"
+            evidence: "Evidence"
+        rows:
+            release_notes:
+                gate: "Release notes"
+                evidence: "Linked to the shipped proof."
+
+    footnotes:
+        cite: "Referenced in the citation."
+
+    image:
+        src: "./diagram.png"
+        alt: "Flow diagram"
+
+    bullets shared:
+        "First bare bullet."
+        "Second bare bullet."
+
+    sequence steps:
+        "Step one."
+        "Step two."
+
+    checklist gates:
+        "Check one."
+        "Check two."
+
+    code:
+        language: bash
+        text: \"\"\"echo hi
+\"\"\"
+
+    markdown:
+        text: \"\"\"Raw markdown line.
+\"\"\"
+"""
+        "Named form adds a CNAME and a heading string. Use named form when another declaration must reference the block, when the block needs `required`, `advisory`, or `when` metadata, or when the author wants a visible H3 heading:"
+        code:
+            language: prompt-fragment
+            text: """definitions done_when: "Done When" required
+    verdict: "Verdict"
+        "Say whether the release is ready."
+
+table release_gates: "Release Gates" required
+    columns:
+        gate: "Gate"
+        evidence: "Evidence"
+    rows:
+        release_notes:
+            gate: "Release notes"
+            evidence: "Linked to the shipped proof."
+"""
+        "See `examples/128_readable_block_parity/` for every bare form side by side."
+
     section first_class_named_tables: "First-Class Named Tables"
         """A table can live as its own named declaration. That makes the contract reusable and keeps the document body short.
 

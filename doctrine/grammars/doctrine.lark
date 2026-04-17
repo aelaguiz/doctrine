@@ -431,8 +431,10 @@ readable_nonsection_block: readable_sequence_block
                          | readable_bullets_block
                          | readable_checklist_block
                          | readable_definitions_block
+                         | readable_bare_definitions_block
                          | readable_table_block
                          | readable_callout_block
+                         | readable_bare_callout_block
                          | readable_code_block
                          | readable_inline_code_block
                          | readable_markdown_block
@@ -440,7 +442,9 @@ readable_nonsection_block: readable_sequence_block
                          | readable_html_block
                          | readable_inline_html_block
                          | readable_footnotes_block
+                         | readable_bare_footnotes_block
                          | readable_image_block
+                         | readable_bare_image_block
                          | readable_rule_block
 override_readable_nonsection_block: override_readable_sequence_block
                                   | override_readable_properties_block
@@ -464,9 +468,12 @@ readable_guard_shell_block: "guard" CNAME readable_guard _NL _INDENT shared_read
 readable_bullets_block: "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_checklist_block: "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_definitions_block: "definitions" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
+readable_bare_definitions_block: "definitions" ":" _NL _INDENT readable_definitions_body _DEDENT
 readable_table_block: readable_inline_table_block
                     | readable_named_table_block
+                    | readable_bare_table_block
 readable_callout_block: "callout" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
+readable_bare_callout_block: "callout" ":" _NL _INDENT readable_callout_body _DEDENT
 readable_code_block: "code" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
 readable_inline_code_block: "code" ":" _NL _INDENT readable_code_body _DEDENT
 readable_markdown_block: "markdown" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
@@ -474,7 +481,9 @@ readable_inline_markdown_block: "markdown" ":" _NL _INDENT readable_raw_text_bod
 readable_html_block: "html" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
 readable_inline_html_block: "html" ":" _NL _INDENT readable_raw_text_body _DEDENT
 readable_footnotes_block: "footnotes" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_footnotes_body _DEDENT
+readable_bare_footnotes_block: "footnotes" ":" _NL _INDENT readable_footnotes_body _DEDENT
 readable_image_block: "image" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_image_body _DEDENT
+readable_bare_image_block: "image" ":" _NL _INDENT readable_image_body _DEDENT
 readable_rule_block: "rule" CNAME readable_requirement? readable_guard? _NL?
 
 override_readable_sequence_block: "override" "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
@@ -522,6 +531,7 @@ readable_table_body: readable_table_body_line+
                          | readable_table_rows_block
                          | readable_table_notes_block
 readable_inline_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+readable_bare_table_block: "table" ":" _NL _INDENT readable_table_body _DEDENT
 readable_named_table_block: "table" CNAME ":" name_ref readable_requirement? readable_guard? readable_named_table_suffix
 readable_named_table_suffix: _NL _INDENT readable_table_use_body _DEDENT
                            | _NL?

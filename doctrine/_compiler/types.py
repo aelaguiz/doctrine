@@ -35,6 +35,7 @@ class CompiledSequenceBlock:
     when_text: str | None = None
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -45,6 +46,7 @@ class CompiledBulletsBlock:
     when_text: str | None = None
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -55,14 +57,16 @@ class CompiledChecklistBlock:
     when_text: str | None = None
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledDefinitionsBlock:
-    title: str
+    title: str | None
     items: tuple[ReadableDefinitionItem, ...]
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -104,19 +108,21 @@ class CompiledTableData:
 
 @dataclass(slots=True, frozen=True)
 class CompiledTableBlock:
-    title: str
+    title: str | None
     table: CompiledTableData
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledCalloutBlock:
-    title: str
+    title: str | None
     body: tuple[ProseLine, ...]
     kind: str | None = None
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -141,20 +147,22 @@ class CompiledRawTextBlock:
 
 @dataclass(slots=True, frozen=True)
 class CompiledFootnotesBlock:
-    title: str
+    title: str | None
     entries: tuple[ReadableFootnoteItem, ...]
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledImageBlock:
-    title: str
+    title: str | None
     src: str
     alt: str
     caption: str | None = None
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)

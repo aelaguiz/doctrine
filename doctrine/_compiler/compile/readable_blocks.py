@@ -85,11 +85,12 @@ class CompileReadableBlocksMixin:
             unit=unit,
         )
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
-        title = None if block.kind == "properties" and block.anonymous else (
-            block.title if block.kind in {"sequence", "bullets", "checklist"} else (
-                block.title or _humanize_key(block.key)
-            )
-        )
+        if block.anonymous:
+            title = None
+        elif block.kind in {"sequence", "bullets", "checklist"}:
+            title = block.title
+        else:
+            title = block.title or _humanize_key(block.key)
         block_owner_label = f"{owner_label}.{block.key}"
         if block.kind == "section":
             payload = self._require_tuple_payload(
@@ -172,6 +173,7 @@ class CompileReadableBlocksMixin:
                 when_text=when_text,
                 item_schema=item_schema,
                 semantic_target=_semantic_render_target_for_block(block.kind, block.key),
+                anonymous=block.anonymous,
             )
         if block.kind == "properties":
             properties = self._resolve_readable_properties_payload(
@@ -242,6 +244,7 @@ class CompileReadableBlocksMixin:
                 items=tuple(definitions),
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "table":
             if not isinstance(block.payload, model.ReadableTableData):
@@ -392,7 +395,7 @@ class CompileReadableBlocksMixin:
                 render_profile=render_profile,
             )
             return CompiledTableBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 table=CompiledTableData(
                     columns=tuple(resolved_columns),
                     rows=tuple(resolved_rows),
@@ -401,6 +404,7 @@ class CompileReadableBlocksMixin:
                 ),
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "guard":
             payload = self._require_tuple_payload(
@@ -454,7 +458,7 @@ class CompileReadableBlocksMixin:
                     ),
                 )
             return CompiledCalloutBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 kind=block.payload.kind,
                 body=tuple(
                     self._interpolate_authored_prose_line(
@@ -471,6 +475,7 @@ class CompileReadableBlocksMixin:
                 ),
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "code":
             if not isinstance(block.payload, model.ReadableCodeData):
@@ -490,7 +495,7 @@ class CompileReadableBlocksMixin:
                     hints=("Use a multiline string for readable code block text.",),
                 )
             return CompiledCodeBlock(
-                title=None if block.anonymous else (title or _humanize_key(block.key)),
+                title=title,
                 text=block.payload.text,
                 language=block.payload.language,
                 requirement=block.requirement,
@@ -528,7 +533,7 @@ class CompileReadableBlocksMixin:
                     hints=("Use a multiline string for raw markdown or html readable blocks.",),
                 )
             return CompiledRawTextBlock(
-                title=None if block.anonymous else (title or _humanize_key(block.key)),
+                title=title,
                 text=text,
                 kind=block.kind,
                 requirement=block.requirement,
@@ -545,10 +550,11 @@ class CompileReadableBlocksMixin:
                 render_profile=render_profile,
             )
             return CompiledFootnotesBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 entries=footnotes.entries,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "image":
             if not isinstance(block.payload, model.ReadableImageData):
@@ -561,7 +567,7 @@ class CompileReadableBlocksMixin:
                     source_span=readable_source_span(block.payload) or block.source_span,
                 )
             return CompiledImageBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 src=self._interpolate_authored_prose_string(
                     block.payload.src,
                     unit=unit,
@@ -598,6 +604,7 @@ class CompileReadableBlocksMixin:
                 ),
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "rule":
             return CompiledRuleBlock(

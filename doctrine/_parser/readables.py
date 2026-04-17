@@ -30,7 +30,9 @@ class ReadableNodeTransformerMixin:
             title = readable_parts[0]
             readable_parts = readable_parts[1:]
         return _with_source_span(
-            self._readable_block("sequence", key, title, readable_parts),
+            self._readable_block(
+                "sequence", key, title, readable_parts, anonymous=title is None
+            ),
             meta,
         )
 
@@ -75,7 +77,9 @@ class ReadableNodeTransformerMixin:
             title = readable_parts[0]
             readable_parts = readable_parts[1:]
         return _with_source_span(
-            self._readable_block("bullets", key, title, readable_parts),
+            self._readable_block(
+                "bullets", key, title, readable_parts, anonymous=title is None
+            ),
             meta,
         )
 
@@ -87,7 +91,9 @@ class ReadableNodeTransformerMixin:
             title = readable_parts[0]
             readable_parts = readable_parts[1:]
         return _with_source_span(
-            self._readable_block("checklist", key, title, readable_parts),
+            self._readable_block(
+                "checklist", key, title, readable_parts, anonymous=title is None
+            ),
             meta,
         )
 
@@ -95,6 +101,15 @@ class ReadableNodeTransformerMixin:
     def readable_definitions_block(self, meta, key, title, *parts):
         return _with_source_span(
             self._readable_block("definitions", key, title, parts),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def readable_bare_definitions_block(self, meta, items):
+        return _with_source_span(
+            self._readable_block(
+                "definitions", "definitions", None, (items[0],), anonymous=True
+            ),
             meta,
         )
 
@@ -109,6 +124,15 @@ class ReadableNodeTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True)
+    def readable_bare_table_block(self, meta, items):
+        return _with_source_span(
+            self._readable_block(
+                "table", "table", None, (items[0],), anonymous=True
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def readable_named_table_block(self, meta, key, table_ref, *parts):
         return self._named_table_block(model.ReadableBlock, key, table_ref, parts, meta=meta)
@@ -117,6 +141,15 @@ class ReadableNodeTransformerMixin:
     def readable_callout_block(self, meta, key, title, *parts):
         return _with_source_span(
             self._readable_block("callout", key, title, parts),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def readable_bare_callout_block(self, meta, items):
+        return _with_source_span(
+            self._readable_block(
+                "callout", "callout", None, (items[0],), anonymous=True
+            ),
             meta,
         )
 
@@ -187,10 +220,28 @@ class ReadableNodeTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True)
+    def readable_bare_footnotes_block(self, meta, items):
+        return _with_source_span(
+            self._readable_block(
+                "footnotes", "footnotes", None, (items[0],), anonymous=True
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def readable_image_block(self, meta, key, title, *parts):
         return _with_source_span(
             self._readable_block("image", key, title, parts),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def readable_bare_image_block(self, meta, items):
+        return _with_source_span(
+            self._readable_block(
+                "image", "image", None, (items[0],), anonymous=True
+            ),
             meta,
         )
 
