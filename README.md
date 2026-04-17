@@ -86,6 +86,22 @@ Leave one honest handoff and stop.
 
 ## Quickstart
 
+Want the Doctrine skill from this repo?
+
+```bash
+npx skills add .
+```
+
+Run that from the Doctrine repo root.
+That one line installs the checked-in `agent-linter` skill from this repo.
+If the CLI asks where to install it, pick the agent you use.
+
+Want a no-prompt Codex install?
+
+```bash
+npx skills add . -g -a codex -y
+```
+
 When Doctrine is installed from a package index, the distribution name is
 `doctrine-agents`. The Python module name stays `doctrine`.
 

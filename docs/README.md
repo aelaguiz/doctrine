@@ -17,6 +17,8 @@ for repo setup and proof commands.
   runtime stays Markdown
 - [../PRINCIPLES.md](../PRINCIPLES.md): authoring principles for thin
   context, loadable modules, and clean harness boundaries
+- [THIN_HARNESS_FAT_SKILLS.md](THIN_HARNESS_FAT_SKILLS.md): Doctrine's durable
+  read of the thin-harness, fat-skills rule and how to use it in reviews
 - [AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md): the task-first guide for
   choosing the right Doctrine surface when you are porting or authoring real
   agent systems
@@ -37,6 +39,8 @@ for repo setup and proof commands.
 
 ## Feature Guides
 
+- [AGENT_LINTER.md](AGENT_LINTER.md): install and use the bundled Doctrine
+  Agent Linter skill for prompt, package, flow, and repo-slice audits
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
   bindings, target-owned delivery skills, `final_output:`,
   `final_output.route:`, generated schema files, emitted route metadata,
@@ -67,6 +71,9 @@ Some may stay in the repo while active work is still in flight. Once one is no
 longer active, delete it after a restore-point commit and use git history if
 you need the old context.
 
+- [DOCTRINE_RECURRING_VERBOSE_AUTHORING_PATTERNS_AUDIT_2026-04-16.md](DOCTRINE_RECURRING_VERBOSE_AUTHORING_PATTERNS_AUDIT_2026-04-16.md):
+  dated audit of recurring authoring repetition in the shipped corpus and
+  likely next syntax wins
 - [VSCODE_EXTENSION_AUDIT_2026-04-16.md](VSCODE_EXTENSION_AUDIT_2026-04-16.md):
   dated audit of VS Code parity against the shipped language truth
 

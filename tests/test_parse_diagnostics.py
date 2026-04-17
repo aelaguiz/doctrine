@@ -300,6 +300,87 @@ class ParseDiagnosticsTests(unittest.TestCase):
             expected_code="E309",
         )
 
+    def test_final_output_duplicate_output_points_at_the_later_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    output: FinalReply
+                    output: FinalReply
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/final-output-duplicate-output.prompt",
+            anchor_line="        output: FinalReply",
+            summary_snippet="final_output block may define `output:` only once.",
+            occurrence=2,
+            expected_column=9,
+        )
+
+    def test_final_output_duplicate_review_fields_points_at_the_later_block(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+                verdict: "Verdict"
+                    "Say whether the review passed."
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    output: FinalReply
+                    review_fields:
+                        verdict: verdict
+                    review_fields:
+                        verdict: verdict
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/final-output-duplicate-review-fields.prompt",
+            anchor_line="        review_fields:",
+            summary_snippet="final_output block may define `review_fields:` only once.",
+            occurrence=2,
+            expected_column=9,
+        )
+
+    def test_final_output_missing_output_points_at_the_only_body_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    route: next_route
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/final-output-missing-output.prompt",
+            anchor_line="        route: next_route",
+            summary_snippet="final_output block is missing `output:`.",
+            expected_column=16,
+        )
+
     def test_analysis_duplicate_render_profile_points_at_the_later_line(self) -> None:
         source = textwrap.dedent(
             """\

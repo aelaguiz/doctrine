@@ -38,14 +38,17 @@ fan-out, while still writing outputs in deterministic authored order.
 Use [../README.md](../README.md) for the package-install command. The Python
 module path stays `doctrine`.
 
-Use a source checkout when you need `emit_flow`, the example corpus, or the
+Use a source checkout when you need repo-owned named targets such as
+`doctrine_agent_linter_skill`, `emit_flow`, the example corpus, or the
 contributor proof commands in this repo. Use
 [../CONTRIBUTING.md](../CONTRIBUTING.md) for the source-checkout setup path.
 `make setup` owns the repo bootstrap commands.
 
 Important details:
 
-- `emit_docs` and `emit_skill` only need the Python environment.
+- `emit_docs` and `emit_skill` only need the Python environment for your own
+  project targets. Repo-owned first-party targets still need the source
+  checkout that contains their prompt trees and target registry.
 - `emit_flow` also needs a working local `node` runtime plus the pinned
   `@terrastruct/d2` package that `make setup` installs from
   `package-lock.json`.
@@ -70,6 +73,11 @@ output_dir = "examples/73_flow_visualizer_showcase/build"
 name = "example_95_skill_package_minimal"
 entrypoint = "examples/95_skill_package_minimal/prompts/SKILL.prompt"
 output_dir = "examples/95_skill_package_minimal/build"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_agent_linter_skill"
+entrypoint = "skills/agent-linter/prompts/SKILL.prompt"
+output_dir = "skills/agent-linter/build"
 ```
 
 Each target field has one job:
@@ -195,7 +203,15 @@ Emit compiled skill-package trees for one or more configured targets:
 ```bash
 uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
 uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_skill
 ```
+
+The `doctrine_agent_linter_skill` target is the repo's first-party proof that
+Doctrine can emit a real installable skill bundle from `skills/agent-linter/`.
+Because that target lives in this repo's `pyproject.toml` and source tree, use
+a source checkout for this specific bundle.
+Use [AGENT_LINTER.md](AGENT_LINTER.md) for the install and use flow after
+emit.
 
 Emit one workflow data-flow graph from a configured target:
 

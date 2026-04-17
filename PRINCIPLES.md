@@ -2,6 +2,8 @@
 
 This file distills the "thin harness, fat skills" lesson as it applies to
 Doctrine.
+For the longer evergreen guide, see
+[docs/THIN_HARNESS_FAT_SKILLS.md](docs/THIN_HARNESS_FAT_SKILLS.md).
 
 Doctrine helps people author agent systems that stay small, loadable, and
 clear. Doctrine is not the harness. Its job is to help authors give a thin

@@ -257,6 +257,31 @@ reference-heavy skills, script-backed helpers, runtime metadata packages,
 plugin bundles, delegating companion-agent packages, larger compendia, and
 path-sensitive bundles, including binary assets.
 
+## First-Party Reference Package
+
+Doctrine also ships one real first-party skill package under
+`skills/agent-linter/`.
+It is a good reference when you need a larger package that still stays lean.
+Use a source checkout for this reference package. The published Python package
+does not ship the repo-owned prompt tree or named emit target.
+
+It shows this package shape:
+
+- `SKILL.prompt` owns the trigger contract and core workflow
+- `references/` own the deeper doctrine
+- `schemas/` own the machine-readable report contract
+- `agents/openai.yaml` owns runtime metadata
+
+It is also intentionally script-free.
+The bundle keeps judgment in the skill and uses scripts only where
+deterministic value is clearly earned.
+
+Emit it with:
+
+```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_skill
+```
+
 ## Verification
 
 For one package example:

@@ -128,6 +128,16 @@ entrypoint = "examples/103_skill_package_binary_assets/prompts/SKILL.prompt"
 output_dir = "examples/103_skill_package_binary_assets/build"
 
 [[tool.doctrine.emit.targets]]
+name = "doctrine_agent_linter_skill"
+entrypoint = "skills/agent-linter/prompts/SKILL.prompt"
+output_dir = "skills/agent-linter/build"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_agent_linter_public_skill"
+entrypoint = "skills/agent-linter/prompts/SKILL.prompt"
+output_dir = "skills/.curated/agent-linter"
+
+[[tool.doctrine.emit.targets]]
 name = "example_104_review_final_output_output_schema_blocked_control_ready"
 entrypoint = "examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt"
 output_dir = "examples/104_review_final_output_output_schema_blocked_control_ready/build"

@@ -22,6 +22,12 @@ or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
 ### Added
+- Added a first-party `skills/agent-linter/` skill package, its
+  `doctrine_agent_linter_skill` emit target, focused emit proof, and live
+  docs for emit, install, and use.
+- Added a checked-in public install tree at `skills/.curated/agent-linter/`
+  so `npx skills add .` discovers one supported public skill from the repo
+  root.
 - Added the high-value authoring wave: import aliases and symbol imports,
   grouped explicit `inherit { ... }`, bare identity shorthand on
   `review.fields`, `review override fields`, and
@@ -87,6 +93,10 @@ payload text and breaking releases with no real upgrade steps.
   schema shape.
 
 ### Changed
+- Changed the public skill install story to one line:
+  `npx skills add .`.
+- Changed package verification to include pinned `skills` CLI smoke tests for
+  discovery and Codex install.
 - Changed the public docs, teaching examples, and VS Code support to teach
   the preferred additive forms for imports, grouped `inherit`, review-field
   identity binds, first-class IO wrapper shorthand, and self-addressed

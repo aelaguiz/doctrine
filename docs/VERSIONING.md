@@ -73,6 +73,11 @@ Doctrine also ships narrower version lines.
   It is not the Doctrine language version.
 - Emitted Markdown from `emit_docs` and `emit_flow` is part of the public
   surface.
+- Emitted skill-package trees from `emit_skill` are part of the public
+  surface when Doctrine ships first-party `SKILL.prompt` bundles.
+- Checked-in public install trees such as `skills/.curated/agent-linter/`
+  are also part of the public surface when this repo is used as an
+  `npx skills` source.
 - For structured final outputs, emitted
   `schemas/<output-slug>.schema.json` files are also part of the public
   surface for payload wire shape.
@@ -143,6 +148,10 @@ Every public release uses one release class.
   `## Outputs` changes from one layout to another, downstream snapshot,
   parser, or scraper users may need to act even when the language version
   stays the same.
+- First-party emitted skill-package trees are also part of that public
+  surface. If emitted `SKILL.md` content or bundled companion-file layout
+  changes in a way that affects installers or loaders, downstream users may
+  need to act.
 - The same rule applies to render-only compaction such as changing a simple
   output contract from a table to bullets, collapsing redundant compiler-owned
   wrapper headings, or replacing a repeated split-review semantics section
