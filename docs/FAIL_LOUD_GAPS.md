@@ -15,6 +15,25 @@ Use [COMPILER_ERRORS.md](COMPILER_ERRORS.md) for errors that already exist.
 - The accepted result can mislead the author or a downstream reader.
 - The right fix is a compile error, not a docs note or a runtime workaround.
 
+## Classification Rubric
+
+Before a gap becomes a shipped compile error, classify it into one bucket:
+
+- **Confirmed bug fix inside current public compatibility.** The accepted
+  shape was never documented as legal and no shipped example relies on it.
+  Fix the check and add the error code.
+- **Intentional accepted behavior to preserve.** The shape is legal by
+  design. Remove the entry from this doc and note why in a nearby doc if the
+  intent is not obvious from the code.
+- **Public compatibility change.** The accepted shape is legal today but
+  should be rejected going forward. Update [VERSIONING.md](VERSIONING.md)
+  and [../CHANGELOG.md](../CHANGELOG.md) with the break and the upgrade
+  path before shipping.
+
+Every confirmed family also needs one owner layer (grammar, parser,
+indexing, resolve, validate, or compile), one diagnostic code, and at least
+one manifest-backed invalid example.
+
 ## High-Risk Gaps
 
 ### Near-Miss Reserved Agent Field Typos Compile As Normal Authored Slots
