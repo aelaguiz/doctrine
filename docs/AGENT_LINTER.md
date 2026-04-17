@@ -80,6 +80,32 @@ Specific asks should work too:
 The skill should take the full scope the ask deserves.
 If you want repo-wide coverage, say that clearly and it should stay broad.
 
+## Maintainer Source Of Truth
+
+The live package source is `skills/agent-linter/prompts/`.
+
+The repo proof bundle target is:
+
+```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_skill
+```
+
+That writes the emitted proof bundle to `skills/agent-linter/build/`.
+
+The public install bundle target is:
+
+```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
+```
+
+That writes the install tree to `skills/.curated/agent-linter/`.
+
+The current structured-output proof inputs and outputs live under the dated
+`docs/AGENT_LINTER_*` proof files.
+Use
+`docs/AGENT_LINTER_CODEX_CLI_PROOF_2026-04-16.md`
+for the current proof command, fixture, schema, and saved output.
+
 ## Maintainer Refresh
 
 From a Doctrine source checkout, refresh the public install tree with:
@@ -89,5 +115,5 @@ rm -rf skills/.curated/agent-linter
 uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
 ```
 
-That keeps the public `npx skills` surface in sync with
-`skills/agent-linter/prompts/`.
+That keeps the public `npx skills` surface in sync with the live package
+source in `skills/agent-linter/prompts/`.

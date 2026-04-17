@@ -406,9 +406,10 @@ was a read-only audit plus one new dated doc.
 ## 2.1 Real missing surface - previous-turn output reuse
 
 - Rally and PSFlows treat the previous turn result as first-order run truth.
-- Doctrine still names only `Prompt`, `File`, and `EnvVar` as built-in input
-  sources in its live I/O docs.
-- There is already a dated Doctrine note that describes this exact gap.
+- Doctrine now documents the compile and emit side of previous-turn reuse in
+  its live I/O and emit docs.
+- The remaining gap is front-door discoverability and sibling runtime
+  follow-through, not the shipped Doctrine compile and emit contract itself.
 - This is the one comparison-driven issue that looks like a real missing
   language or runtime affordance, not just a docs problem.
 
@@ -419,7 +420,7 @@ Evidence:
 - `../psflows/flows/lessons/prompts/shared/contracts.prompt`
 - `docs/LANGUAGE_REFERENCE.md`
 - `docs/AGENT_IO_DESIGN_NOTES.md`
-- `docs/PREVIOUS_TURN_OUTPUT_INPUT_SOURCE_REFERENCES_2026-04-16.md`
+- `docs/EMIT_GUIDE.md`
 
 ## 2.2 Discoverability gap - provider roots and stdlib imports
 

@@ -13,8 +13,10 @@ related:
   - docs/FAIL_LOUD_GAPS.md
   - docs/FAIL_LOUD_GAP_AUDIT_AND_ENFORCEMENT_2026-04-16.md
   - docs/DOCTRINE_LANGUAGE_AUDIT_2026-04-16.md
-  - docs/DOCTRINE_HIGH_VALUE_AUTHORING_ELEGANCE_WINS_2026-04-16.md
-  - docs/RENDERED_AGENT_MARKDOWN_AUDIT_2026-04-16.md
+  - docs/LANGUAGE_REFERENCE.md
+  - docs/AUTHORING_PATTERNS.md
+  - docs/EMIT_GUIDE.md
+  - examples/README.md
   - doctrine/diagnostics.py
   - doctrine/_diagnostics/contracts.py
   - doctrine/_compiler/diagnostics.py
@@ -131,9 +133,10 @@ That gap is already visible in the repo.
   descriptions, and bad boundaries."
 - `docs/FAIL_LOUD_GAP_AUDIT_AND_ENFORCEMENT_2026-04-16.md` explicitly keeps
   style and best-practice lint out of the error path.
-- `docs/DOCTRINE_HIGH_VALUE_AUTHORING_ELEGANCE_WINS_2026-04-16.md`,
+- `docs/LANGUAGE_REFERENCE.md`, `docs/AUTHORING_PATTERNS.md`,
   `docs/DOCTRINE_LANGUAGE_AUDIT_2026-04-16.md`, and
-  `docs/RENDERED_AGENT_MARKDOWN_AUDIT_2026-04-16.md` all document real
+  the live render guidance in `docs/EMIT_GUIDE.md` plus `examples/README.md`
+  all document real
   repetition, awkward surface shape, or misleading valid authoring that is not
   yet owned by the compiler.
 - Reference-only use cases in sibling repos point at the same general problem:
